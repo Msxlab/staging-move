@@ -1,0 +1,149 @@
+import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
+import { prisma } from "@/lib/db";
+import { resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+
+const fetchProvidersForState = unstable_cache(
+  async (effectiveState: string, category: string | null, scope: string | null) => {
+    const where: Record<string, unknown> = { isActive: true };
+    if (category) where.category = category;
+    if (scope === "FEDERAL" || scope === "STATE") where.scope = scope;
+    if (effectiveState) {
+      where.OR = [
+        { scope: "FEDERAL" },
+        { coverages: { some: { state: effectiveState } } },
+      ];
+    }
+    return prisma.serviceProvider.findMany({
+      where,
+      include: {
+        coverages: effectiveState ? { where: { state: effectiveState } } : false,
+      },
+      orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
+    });
+  },
+  ["providers-by-state"],
+  { revalidate: 3600, tags: ["providers"] }
+);
+
+// GET /api/providers?state=TX&category=UTILITY_ELECTRIC&scope=FEDERAL&q=chase&tags=pet,kids&zip=78701
+export async function GET(request: NextRequest) {
+  try {
+    const rl = await rateLimit(getRateLimitKey(request, "providers"), { limit: 60, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString() } }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const state = searchParams.get("state")?.toUpperCase();
+    const zip = searchParams.get("zip")?.trim();
+    const category = searchParams.get("category");
+    const scope = searchParams.get("scope");
+    const q = searchParams.get("q");
+    const tagsParam = searchParams.get("tags");
+
+    const effectiveState = resolveEffectiveState(state, zip);
+
+    let providers: Awaited<ReturnType<typeof fetchProvidersForState>>;
+    if (q) {
+      // Search across name + description + tags (tags are a JSON string column).
+      const searchConditions: Record<string, unknown>[] = [
+        { name: { contains: q } },
+        { description: { contains: q } },
+        { tags: { contains: q } },
+      ];
+      const where: Record<string, unknown> = {
+        isActive: true,
+        AND: [{ OR: searchConditions }],
+      };
+      if (category) where.category = category;
+      if (scope === "FEDERAL" || scope === "STATE") where.scope = scope;
+      if (effectiveState) {
+        (where.AND as Record<string, unknown>[]).push({
+          OR: [
+            { scope: "FEDERAL" },
+            { coverages: { some: { state: effectiveState } } },
+          ],
+        });
+      }
+      providers = await prisma.serviceProvider.findMany({
+        where,
+        include: {
+          coverages: effectiveState ? { where: { state: effectiveState } } : false,
+        },
+        orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
+      });
+    } else {
+      providers = await fetchProvidersForState(effectiveState || "", category, scope);
+    }
+
+    const tiered = tierProvidersFromDb(
+      providers.map((p) => ({
+        ...p,
+        coverages: "coverages" in p && Array.isArray((p as { coverages?: unknown }).coverages)
+          ? (p as unknown as { coverages: { state: string | null; zipPrefix: string | null; zipExact: string | null }[] }).coverages
+          : [],
+      })),
+      { state, zip }
+    );
+
+    let filtered = tiered.providers;
+
+    if (tagsParam) {
+      const requested = tagsParam.split(",").map((t) => t.trim().toLowerCase());
+      filtered = filtered.filter((p) => {
+        const providerTags = safeJsonArray(p.tags).map((t) => t.toLowerCase());
+        return requested.some((rt) => providerTags.includes(rt));
+      });
+    }
+
+    filtered.sort((a, b) => {
+      const da = a.displayOrder > 0 ? a.displayOrder : Number.MAX_SAFE_INTEGER;
+      const db = b.displayOrder > 0 ? b.displayOrder : Number.MAX_SAFE_INTEGER;
+      if (da !== db) return da - db;
+      if (b.popularityScore !== a.popularityScore) return b.popularityScore - a.popularityScore;
+      return a.name.localeCompare(b.name);
+    });
+
+    const result = filtered.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      category: p.category,
+      subCategory: p.subCategory,
+      description: p.description,
+      website: p.website,
+      phone: p.phone,
+      logoUrl: p.logoUrl,
+      scope: p.scope,
+      states: safeJsonArray(p.states),
+      zipCodes: safeJsonArray(p.zipCodes),
+      tags: safeJsonArray(p.tags),
+      popularityScore: p.popularityScore,
+      displayOrder: p.displayOrder,
+    }));
+
+    const grouped: Record<string, typeof result> = {};
+    for (const p of result) {
+      if (!grouped[p.category]) grouped[p.category] = [];
+      grouped[p.category].push(p);
+    }
+
+    return NextResponse.json({
+      providers: result,
+      grouped,
+      total: result.length,
+      meta: {
+        effectiveState,
+        zipMatchLevel: tiered.zipMatchLevel,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to fetch providers:", error);
+    return NextResponse.json({ error: "Failed to fetch providers" }, { status: 500 });
+  }
+}

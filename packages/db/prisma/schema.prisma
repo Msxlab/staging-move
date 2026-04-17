@@ -1,0 +1,1146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USER & AUTH ====================
+
+model User {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  email     String   @unique @db.VarChar(191)
+  firstName String?  @db.VarChar(100)
+  lastName  String?  @db.VarChar(100)
+  imageUrl  String?  @db.VarChar(500)
+
+  // Password auth (null for pure-OAuth accounts)
+  passwordHash      String? @db.VarChar(255)
+  emailVerifiedAt   DateTime?
+
+  // MFA (TOTP, same pattern as AdminUser)
+  mfaEnabled     Boolean @default(false)
+  mfaSecret      String? @db.Text          // encrypted with FIELD_ENCRYPTION_KEY
+  mfaBackupCodes String? @db.Text          // JSON array of bcrypt hashes
+
+  // OAuth linkage (one row per user; second provider goes into OAuthAccount)
+  oauthAccounts OAuthAccount[]
+
+  // UI preferences (dashboard widget visibility + order, etc.)
+  dashboardWidgetPrefs Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscription   Subscription?
+  profile        Profile?
+  addresses      Address[]
+  services       Service[]
+  tasks          Task[]
+  budgets        Budget[]
+  movingPlans    MovingPlan[]
+  loginSessions  UserLoginSession[]
+  sessions       UserSession[]
+  events         UserEvent[]
+  passwordResetTokens  PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  notifications         Notification[]
+  notificationPreferences NotificationPreference[]
+  supportTickets        SupportTicket[]
+  pushDevices           PushDevice[]
+  providerReviews       ProviderReview[]
+
+  @@index([email])
+}
+
+model PushDevice {
+  id         String   @id @default(cuid()) @db.VarChar(30)
+  userId     String   @db.VarChar(30)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique @db.VarChar(255)
+  platform   String   @db.VarChar(10)  // "ios" | "android"
+  deviceName String?  @db.VarChar(100)
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ==================== AUTH: OAUTH / SESSION / TOKENS ====================
+
+model OAuthAccount {
+  id       String @id @default(cuid()) @db.VarChar(30)
+  userId   String @db.VarChar(30)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider    String @db.VarChar(20)   // "google" | "apple"
+  providerId  String @db.VarChar(255)  // sub claim from ID token
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+model UserLoginSession {
+  id            String  @id @default(cuid()) @db.VarChar(30)
+  userId        String  @db.VarChar(30)
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash     String  @unique @db.VarChar(64)
+  ipAddress     String? @db.VarChar(45)
+  userAgent     String? @db.VarChar(500)
+  browser       String? @db.VarChar(50)
+  os            String? @db.VarChar(50)
+  deviceType    String? @db.VarChar(30)
+  isActive      Boolean @default(true)
+  expiresAt     DateTime
+  lastActivity  DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  userId    String   @db.VarChar(30)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  userId    String   @db.VarChar(30)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String   @db.VarChar(191)
+  tokenHash String   @unique @db.VarChar(64)
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Subscription {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @unique @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  plan   String @default("FREE_TRIAL") @db.VarChar(30)
+  status String @default("TRIALING") @db.VarChar(30)
+  provider String @default("TRIAL") @db.VarChar(30)
+  platform String? @db.VarChar(20)
+
+  stripeCustomerId       String? @unique @db.VarChar(191)
+  stripeSubscriptionId   String? @unique @db.VarChar(191)
+  stripePriceId          String? @db.VarChar(191)
+  stripeCurrentPeriodEnd DateTime?
+  billingProductId       String? @db.VarChar(191)
+  originalTransactionId  String? @unique @db.VarChar(191)
+  latestTransactionId    String? @db.VarChar(191)
+  purchaseToken          String? @db.Text
+  appStoreEnvironment    String? @db.VarChar(30)
+  currentPeriodEndsAt    DateTime?
+  gracePeriodEndsAt      DateTime?
+  lastValidatedAt        DateTime?
+  lastSyncedAt           DateTime?
+
+  trialEndsAt DateTime?
+  canceledAt  DateTime?
+
+  premiumUntil     DateTime?
+  premiumGrantedBy String?   @db.VarChar(30)
+  premiumGrantedAt DateTime?
+  premiumNote      String?   @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@index([provider, status])
+  @@index([platform, provider])
+  @@index([billingProductId])
+  @@index([currentPeriodEndsAt])
+}
+
+// ==================== PROFILE ====================
+
+model Profile {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @unique @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ageRange     String? @db.VarChar(30)
+  familyStatus String? @db.VarChar(30)
+
+  hasChildren   Boolean @default(false)
+  childrenCount Int     @default(0)
+  hasSenior     Boolean @default(false)
+  hasDisability Boolean @default(false)
+  hasPets       Boolean @default(false)
+  petTypes      String  @default("[]") @db.VarChar(500)
+
+  carCount      Int     @default(0)
+  hasMotorcycle  Boolean @default(false)
+  hasBoatRV      Boolean @default(false)
+  needsStorage   Boolean @default(false)
+
+  moveType          String?  @db.VarChar(20)
+  isBusinessOwner   Boolean  @default(false)
+  businessType      String?  @db.VarChar(30)
+  isImmigrant       Boolean  @default(false)
+  immigrationStatus String?  @db.VarChar(30)
+  isMilitary        Boolean  @default(false)
+
+  preferredLanguage String @default("en") @db.VarChar(10)
+  timezone          String @default("America/New_York") @db.VarChar(50)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ==================== ADDRESSES ====================
+
+model Address {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      String @db.VarChar(20)
+  nickname  String? @db.VarChar(50)
+
+  street  String @db.VarChar(200)
+  street2 String? @db.VarChar(200)
+  city    String @db.VarChar(100)
+  state   String @db.VarChar(2)
+  zip     String @db.VarChar(10)
+  country String @default("USA") @db.VarChar(10)
+
+  isPrimary Boolean @default(false)
+  ownership String @db.VarChar(20)
+
+  startDate DateTime
+  endDate   DateTime?
+
+  latitude         Float?
+  longitude        Float?
+  placeId          String? @db.VarChar(191)
+  formattedAddress String? @db.VarChar(500)
+
+  services        Service[]
+  budgets         Budget[]
+  movingPlansFrom MovingPlan[] @relation("FromAddress")
+  movingPlansTo   MovingPlan[] @relation("ToAddress")
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([zip])
+  @@index([state])
+  @@index([userId, zip])
+  @@index([deletedAt])
+}
+
+// ==================== SERVICES ====================
+
+model Service {
+  id        String @id @default(cuid()) @db.VarChar(30)
+  userId    String @db.VarChar(30)
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  addressId String @db.VarChar(30)
+  address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
+
+  providerId String? @db.VarChar(30)
+  provider   ServiceProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+
+  category     String @db.VarChar(50)
+  subCategory  String? @db.VarChar(50)
+  providerName String @db.VarChar(200)
+
+  accountNumber String? @db.VarChar(100)
+  username      String? @db.VarChar(100)
+
+  website String? @db.VarChar(500)
+  phone   String? @db.VarChar(20)
+  email   String? @db.VarChar(191)
+
+  monthlyCost     Float?
+  billingDay      Int?
+  billingCycle    String? @db.VarChar(20)
+  autoRenewal     Boolean  @default(false)
+  contractEndDate DateTime?
+
+  notes String? @db.Text
+
+  isActive      Boolean   @default(true)
+  activatedAt   DateTime?
+  deactivatedAt DateTime?
+
+  migrationAction   String? @db.VarChar(20)
+  previousServiceId  String? @db.VarChar(30)
+
+  personalRating Int?
+  personalReview String? @db.Text
+
+  reminders Reminder[]
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([addressId])
+  @@index([category])
+  @@index([providerName])
+  @@index([providerId])
+  @@index([userId, isActive])
+  @@index([userId, category])
+  @@index([userId, addressId, isActive])
+  @@index([deletedAt])
+}
+
+// ==================== MOVING PLAN ====================
+
+model MovingPlan {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fromAddressId String @db.VarChar(30)
+  fromAddress   Address @relation("FromAddress", fields: [fromAddressId], references: [id])
+
+  toAddressId String @db.VarChar(30)
+  toAddress   Address @relation("ToAddress", fields: [toAddressId], references: [id])
+
+  moveDate          DateTime
+  isTemporary       Boolean @default(false)
+  estimatedDuration Int?
+
+  status String @default("PLANNING") @db.VarChar(20)
+
+  totalTasks     Int @default(0)
+  completedTasks Int @default(0)
+
+  tasks Task[]
+  boxes MovingBox[]
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([fromAddressId])
+  @@index([toAddressId])
+  @@index([moveDate])
+  @@index([deletedAt])
+}
+
+// ==================== TASKS ====================
+
+model Task {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  movingPlanId String? @db.VarChar(30)
+  movingPlan   MovingPlan? @relation(fields: [movingPlanId], references: [id], onDelete: Cascade)
+
+  title       String @db.VarChar(200)
+  description String? @db.Text
+  category    String? @db.VarChar(50)
+
+  dueDate        DateTime?
+  daysBeforeMove Int?
+
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  priority String @default("MEDIUM") @db.VarChar(10)
+
+  assignedTo String? @db.VarChar(30)
+
+  isAutoGenerated Boolean @default(false)
+  templateId      String? @db.VarChar(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([movingPlanId])
+  @@index([dueDate])
+  @@index([completed])
+  @@index([userId, completed])
+  @@index([userId, dueDate])
+}
+
+// ==================== MOVING BOXES ====================
+
+model MovingBox {
+  id           String     @id @default(cuid()) @db.VarChar(30)
+  movingPlanId String     @db.VarChar(30)
+  movingPlan   MovingPlan @relation(fields: [movingPlanId], references: [id], onDelete: Cascade)
+
+  boxNumber Int
+  label     String @db.VarChar(100)
+  room      String? @db.VarChar(50)
+  contents  String @db.Text
+
+  isFragile Boolean @default(false)
+  priority  String  @default("MEDIUM") @db.VarChar(10)
+
+  qrCode String @unique @db.VarChar(191)
+
+  isPacked   Boolean   @default(false)
+  packedAt   DateTime?
+
+  isUnpacked Boolean   @default(false)
+  unpackedAt DateTime?
+
+  photoUrl String? @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([movingPlanId, boxNumber])
+  @@index([movingPlanId])
+  @@index([qrCode])
+}
+
+// ==================== BUDGET ====================
+
+model Budget {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  addressId String? @db.VarChar(30)
+  address   Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+
+  month DateTime
+  year  Int
+
+  plannedIncome   Float?
+  actualIncome    Float?
+  plannedExpenses Float?
+  actualExpenses  Float
+
+  categoryBreakdown String? @db.Text
+
+  savingsRate Float?
+  notes       String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, addressId, month])
+  @@index([userId])
+  @@index([month])
+}
+
+// ==================== REMINDERS ====================
+
+model Reminder {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  serviceId String? @db.VarChar(30)
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  type    String @db.VarChar(30)
+  title   String @db.VarChar(200)
+  message String? @db.Text
+
+  remindAt DateTime
+  sent     Boolean   @default(false)
+  sentAt   DateTime?
+
+  isRecurring    Boolean @default(false)
+  recurrenceRule String? @db.VarChar(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([remindAt, sent])
+  @@index([serviceId])
+}
+
+// ==================== STATE RULES ====================
+
+model StateRule {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  stateCode String @unique @db.VarChar(5)
+  stateName String @db.VarChar(50)
+
+  dmvRules          String? @db.Text
+  voterRegistration String? @db.Text
+  utilityInfo       String? @db.Text
+  taxInfo           String? @db.Text
+  insuranceRules    String? @db.Text
+  commonProviders   String? @db.Text
+
+  updatedAt DateTime @updatedAt
+
+  @@index([stateCode])
+}
+
+model ServiceProvider {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  name         String @db.VarChar(200)
+  slug         String   @unique @db.VarChar(191)
+  category     String @db.VarChar(50)
+  subCategory  String? @db.VarChar(50)
+  description  String? @db.Text
+
+  website      String? @db.VarChar(500)
+  phone        String? @db.VarChar(20)
+  logoUrl      String? @db.VarChar(500)
+
+  scope        String   @default("FEDERAL") @db.VarChar(20)
+  states       String   @default("[]") @db.VarChar(2000)
+  zipCodes     String   @default("[]") @db.VarChar(2000)
+
+  tags         String   @default("[]") @db.VarChar(2000)
+
+  popularityScore Int    @default(0)
+  isActive        Boolean @default(true)
+  displayOrder    Int     @default(0)
+
+  reviewCount    Int     @default(0)
+  avgRating      Float?
+  userCount      Int     @default(0)
+  lastUpdatedBy  String? @db.VarChar(30)
+
+  services  Service[]
+  coverages ServiceProviderCoverage[]
+  reviews   ProviderReview[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([scope])
+  @@index([slug])
+}
+
+model ProviderReview {
+  id         String   @id @default(cuid()) @db.VarChar(30)
+  userId     String   @db.VarChar(30)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId String   @db.VarChar(30)
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  rating     Int      // 1..5
+  comment    String?  @db.Text
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, providerId])
+  @@index([providerId])
+  @@index([userId])
+}
+
+model ServiceProviderCoverage {
+  id         String @id @default(cuid()) @db.VarChar(30)
+  providerId String @db.VarChar(30)
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  state      String? @db.VarChar(2)
+  zipPrefix  String? @db.VarChar(5)
+  zipExact   String? @db.VarChar(10)
+
+  createdAt DateTime @default(now())
+
+  @@index([state, zipPrefix])
+  @@index([zipExact])
+  @@index([providerId])
+}
+
+// ==================== AUDIT LOG ====================
+
+model AuditLog {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  userId     String @db.VarChar(30)
+  action     String @db.VarChar(20)
+  entityType String @db.VarChar(50)
+  entityId   String @db.VarChar(30)
+
+  changes   String? @db.Text
+  ipAddress String? @db.VarChar(45)
+  userAgent String? @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+}
+
+// ==================== USER ANALYTICS ====================
+
+model UserSession {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  ipAddress       String? @db.VarChar(45)
+  userAgent       String? @db.VarChar(500)
+
+  browser         String? @db.VarChar(50)
+  browserVersion  String? @db.VarChar(20)
+  os              String? @db.VarChar(50)
+  osVersion       String? @db.VarChar(20)
+  device          String? @db.VarChar(50)
+  deviceType      String? @db.VarChar(20) // MOBILE, TABLET, DESKTOP
+
+  platform        String? @db.VarChar(20) // WEB, ANDROID_APP, IOS_APP, PWA
+  screenResolution String? @db.VarChar(20)
+  language        String? @db.VarChar(10)
+
+  country         String? @db.VarChar(50)
+  city            String? @db.VarChar(100)
+  region          String? @db.VarChar(100)
+  latitude        Float?
+  longitude       Float?
+
+  sessionStart    DateTime @default(now())
+  sessionEnd      DateTime?
+  lastActivity    DateTime @default(now())
+  pageViews       Int      @default(1)
+  isActive        Boolean  @default(true)
+
+  events UserEvent[]
+
+  @@index([userId])
+  @@index([sessionStart])
+  @@index([platform])
+  @@index([os])
+  @@index([country])
+  @@index([deviceType])
+  @@index([isActive])
+}
+
+model UserEvent {
+  id        String @id @default(cuid()) @db.VarChar(30)
+  userId    String @db.VarChar(30)
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sessionId String? @db.VarChar(30)
+  session   UserSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  event     String   @db.VarChar(50) // PAGE_VIEW, BUTTON_CLICK, SEARCH, LOGIN, LOGOUT, EXPORT, etc.
+  page      String?  @db.VarChar(200) // /dashboard, /services/new, etc.
+  metadata  String?  @db.Text // JSON: search terms, filters, etc.
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([event])
+  @@index([createdAt])
+  @@index([userId, event])
+}
+
+// ==================== ADMIN PANEL ====================
+
+model AdminUser {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  email     String   @unique @db.VarChar(191)
+  password  String   @db.VarChar(255)
+  firstName String   @db.VarChar(100)
+  lastName  String   @db.VarChar(100)
+  role      String   @default("MODERATOR") @db.VarChar(20)
+  isActive  Boolean  @default(true)
+
+  // MFA (TOTP)
+  mfaEnabled    Boolean  @default(false)
+  mfaSecret     String?  @db.VarChar(255) // Encrypted TOTP secret
+  mfaVerifiedAt DateTime? // When MFA was last verified (for grace window)
+  mfaBackupCodes String? @db.Text // JSON array of hashed backup codes
+
+  lastLoginAt DateTime?
+  createdBy   String? @db.VarChar(30)
+
+  permissions AdminPermission[]
+  auditLogs   AdminAuditLog[]
+  sessions    AdminSession[]
+  loginLogs   AdminLoginLog[]
+  runtimeConfigUpdates RuntimeConfigEntry[] @relation("RuntimeConfigUpdatedBy")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([role])
+}
+
+model AdminSession {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  adminUserId String    @db.VarChar(30)
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  tokenHash   String    @db.VarChar(64) // SHA-256 of the JWT token (for revocation)
+  ipAddress   String?   @db.VarChar(45)
+  userAgent   String?   @db.VarChar(500)
+  browser     String?   @db.VarChar(50)
+  os          String?   @db.VarChar(50)
+  deviceType  String?   @db.VarChar(20)
+  country     String?   @db.VarChar(50)
+  city        String?   @db.VarChar(100)
+
+  isActive    Boolean   @default(true)
+  lastActivity DateTime @default(now())
+  expiresAt   DateTime
+
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId])
+  @@index([tokenHash])
+  @@index([isActive])
+  @@index([expiresAt])
+}
+
+model AdminLoginLog {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  adminUserId String?   @db.VarChar(30)
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
+
+  email       String    @db.VarChar(191)
+  success     Boolean   @default(false)
+  failReason  String?   @db.VarChar(50) // INVALID_PASSWORD, INVALID_MFA, INACTIVE_ADMIN, UNKNOWN_EMAIL, RATE_LIMITED
+
+  ipAddress   String?   @db.VarChar(45)
+  userAgent   String?   @db.VarChar(500)
+  browser     String?   @db.VarChar(50)
+  os          String?   @db.VarChar(50)
+  country     String?   @db.VarChar(50)
+  city        String?   @db.VarChar(100)
+
+  mfaUsed     Boolean   @default(false)
+  mfaMethod   String?   @db.VarChar(20) // TOTP, BACKUP_CODE
+
+  createdAt   DateTime  @default(now())
+
+  @@index([adminUserId, createdAt])
+  @@index([email, createdAt])
+  @@index([ipAddress])
+  @@index([success])
+}
+
+model AdminPermission {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  adminUserId String    @db.VarChar(30)
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  resource  String @db.VarChar(50)
+  canRead   Boolean @default(true)
+  canCreate Boolean @default(false)
+  canUpdate Boolean @default(false)
+  canDelete Boolean @default(false)
+
+  @@unique([adminUserId, resource])
+  @@index([adminUserId])
+}
+
+model AdminAuditLog {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  adminUserId String    @db.VarChar(30)
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  action     String @db.VarChar(20)
+  entityType String @db.VarChar(50)
+  entityId   String @db.VarChar(30)
+  changes    String? @db.Text
+  ipAddress  String? @db.VarChar(45)
+
+  createdAt DateTime @default(now())
+
+  @@index([adminUserId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model RuntimeConfigEntry {
+  id          String  @id @default(cuid()) @db.VarChar(30)
+  key         String  @unique @db.VarChar(100)
+  label       String  @db.VarChar(120)
+  description String? @db.VarChar(500)
+  scope       String  @default("GLOBAL") @db.VarChar(20)
+  category    String  @db.VarChar(30)
+  isSecret    Boolean @default(true)
+
+  valueEncrypted String? @db.Text
+  valuePlain     String? @db.Text
+
+  isActive             Boolean   @default(true)
+  source               String    @default("ENV") @db.VarChar(20)
+  lastValidatedAt      DateTime?
+  lastValidationStatus String?   @db.VarChar(20)
+  rotationNotes        String?   @db.Text
+
+  updatedByAdminId String?    @db.VarChar(30)
+  updatedByAdmin   AdminUser? @relation("RuntimeConfigUpdatedBy", fields: [updatedByAdminId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([scope, category])
+  @@index([isActive])
+  @@index([source])
+}
+
+// ==================== NOTIFICATION ENGINE (M1) ====================
+
+model NotificationPreference {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  channel   String  @db.VarChar(20) // EMAIL, IN_APP, PUSH
+  type      String  @db.VarChar(30) // REMINDER, MARKETING, SYSTEM, MODERATION
+  enabled   Boolean @default(true)
+  frequency String  @default("IMMEDIATE") @db.VarChar(20) // IMMEDIATE, DAILY_DIGEST, WEEKLY
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, channel, type])
+  @@index([userId])
+}
+
+model Notification {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String  @db.VarChar(30) // BILL_REMINDER, MOVE_REMINDER, REVIEW_STATUS, SYSTEM, MARKETING, TASK_DUE, CONTRACT_EXPIRY
+  title   String  @db.VarChar(200)
+  body    String  @db.Text
+  href    String? @db.VarChar(500)
+  icon    String? @db.VarChar(50)
+
+  channel String @default("IN_APP") @db.VarChar(20) // EMAIL, IN_APP, PUSH
+
+  read    Boolean   @default(false)
+  readAt  DateTime?
+  sent    Boolean   @default(false)
+  sentAt  DateTime?
+
+  sendAt    DateTime  @default(now())
+  expiresAt DateTime?
+
+  metadata String? @db.Text // JSON
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, type])
+  @@index([sendAt, sent])
+  @@index([channel])
+}
+
+model NotificationQueue {
+  id     String @id @default(cuid()) @db.VarChar(30)
+
+  userId    String? @db.VarChar(30)
+  broadcast Boolean @default(false)
+
+  type    String @db.VarChar(30)
+  title   String @db.VarChar(200)
+  body    String @db.Text
+  href    String? @db.VarChar(500)
+  channel String  @default("IN_APP") @db.VarChar(20)
+
+  sendAt    DateTime
+  sent      Boolean   @default(false)
+  sentAt    DateTime?
+  error     String? @db.Text
+
+  createdBy String? @db.VarChar(30) // admin user id
+
+  createdAt DateTime @default(now())
+
+  @@index([sendAt, sent])
+  @@index([broadcast])
+}
+
+// ==================== EMAIL TEMPLATE SYSTEM (M7) ====================
+
+model EmailTemplate {
+  id       String @id @default(cuid()) @db.VarChar(30)
+  slug     String @unique @db.VarChar(100)
+  name     String @db.VarChar(100)
+  subject  String @db.VarChar(200)
+  body     String @db.LongText // HTML content
+  category String  @default("SYSTEM") @db.VarChar(20) // SYSTEM, MARKETING, TRANSACTIONAL, NOTIFICATION
+
+  variables String? @db.Text // JSON: list of available variables like {{firstName}}, {{link}}
+
+  isActive  Boolean @default(true)
+  isDefault Boolean @default(false)
+
+  createdBy String? @db.VarChar(30)
+  updatedBy String? @db.VarChar(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  emailLogs EmailLog[]
+
+  @@index([category])
+  @@index([isActive])
+}
+
+model EmailLog {
+  id         String @id @default(cuid()) @db.VarChar(30)
+  templateId String? @db.VarChar(30)
+  template   EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  dedupeKey         String? @unique @db.VarChar(191)
+  providerMessageId String? @db.VarChar(191)
+
+  to      String @db.VarChar(191)
+  subject String @db.VarChar(200)
+  status  String @default("PENDING") @db.VarChar(20) // PENDING, SENT, FAILED, BOUNCED
+  error   String? @db.Text
+
+  sentAt    DateTime?
+  openedAt  DateTime?
+
+  metadata String? @db.Text // JSON
+
+  createdAt DateTime @default(now())
+
+  @@index([templateId])
+  @@index([to])
+  @@index([providerMessageId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ==================== HELP CENTER / CMS (M10) ====================
+
+model HelpArticle {
+  id          String @id @default(cuid()) @db.VarChar(30)
+  slug        String @unique @db.VarChar(191)
+  title       String @db.VarChar(200)
+  content     String @db.LongText
+  excerpt     String? @db.VarChar(500)
+  category    String @db.VarChar(50)
+  tags        String  @default("[]") @db.VarChar(2000) // JSON array
+  order       Int     @default(0)
+  isPublished Boolean @default(false)
+
+  viewCount   Int @default(0)
+  helpfulYes  Int @default(0)
+  helpfulNo   Int @default(0)
+
+  createdBy String? @db.VarChar(30)
+  updatedBy String? @db.VarChar(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+  @@index([slug])
+}
+
+model FAQ {
+  id       String @id @default(cuid()) @db.VarChar(30)
+  question String @db.VarChar(500)
+  answer   String @db.Text
+  category String @db.VarChar(50)
+  order    Int    @default(0)
+  isPublished Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+}
+
+// ==================== FEATURE FLAGS (M11) ====================
+
+model FeatureFlag {
+  id          String @id @default(cuid()) @db.VarChar(30)
+  name        String @unique @db.VarChar(100)
+  description String? @db.VarChar(500)
+  enabled     Boolean @default(false)
+
+  targetType  String  @default("ALL") @db.VarChar(20) // ALL, PERCENTAGE, USER_LIST, PLAN
+  targetValue String? @db.Text // JSON: { percentage: 10 } or { userIds: [...] } or { plans: ["PRO"] }
+
+  createdBy String? @db.VarChar(30)
+  updatedBy String? @db.VarChar(30)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+  @@index([enabled])
+}
+
+// ==================== SECURITY & COMPLIANCE (M13) ====================
+
+model IPRule {
+  id        String @id @default(cuid()) @db.VarChar(30)
+  ipAddress String @db.VarChar(45)
+  type      String @db.VarChar(20) // WHITELIST, BLACKLIST
+  reason    String? @db.VarChar(500)
+  isActive  Boolean @default(true)
+
+  createdBy String? @db.VarChar(30)
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([ipAddress, type])
+  @@index([ipAddress])
+  @@index([type, isActive])
+}
+
+model RateLimitLog {
+  id        String @id @default(cuid()) @db.VarChar(30)
+  ipAddress String @db.VarChar(45)
+  endpoint  String @db.VarChar(200)
+  count     Int    @default(1)
+  blocked   Boolean @default(false)
+
+  windowStart DateTime
+  windowEnd   DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([ipAddress, endpoint])
+  @@index([blocked])
+  @@index([windowStart])
+}
+
+// ==================== WEBHOOK IDEMPOTENCY ====================
+
+model ProcessedWebhookEvent {
+  id        String   @id @db.VarChar(255) // Stripe event ID (evt_...)
+  source    String   @db.VarChar(30)      // "stripe", "clerk", etc.
+  processedAt DateTime @default(now())
+
+  @@index([source])
+  @@index([processedAt])
+}
+
+model GDPRRequest {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  type   String @db.VarChar(20) // EXPORT, DELETE, RECTIFY
+  status String @default("PENDING") @db.VarChar(20) // PENDING, PROCESSING, COMPLETED, REJECTED
+
+  requestData String? @db.Text // JSON
+  resultUrl   String? @db.VarChar(500)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+// ==================== BACKUP ====================
+
+model BackupRecord {
+  id          String @id @default(cuid()) @db.VarChar(30)
+  type        String @db.VarChar(30) // FULL, USERS, PROVIDERS, SERVICES, MOVING_PLANS
+  status      String @default("PENDING") @db.VarChar(20) // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  format      String @default("JSON") @db.VarChar(10) // JSON, CSV
+
+  fileName    String? @db.VarChar(255)
+  fileSize    Int?
+  recordCount Int?
+
+  tables      String? @db.Text // JSON array of table names included
+  errorMessage String? @db.Text
+
+  createdBy   String  @db.VarChar(30)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdBy])
+  @@index([createdAt])
+}
+
+// ==================== SUPPORT TICKETS ====================
+
+model SupportTicket {
+  id          String @id @default(cuid()) @db.VarChar(30)
+  userId      String @db.VarChar(30)
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subject     String @db.VarChar(255)
+  category    String @default("GENERAL") @db.VarChar(30) // GENERAL, BUG, BILLING, ACCOUNT, FEATURE_REQUEST
+  priority    String @default("MEDIUM") @db.VarChar(20)  // LOW, MEDIUM, HIGH, URGENT
+  status      String @default("OPEN") @db.VarChar(20)    // OPEN, IN_PROGRESS, WAITING_USER, RESOLVED, CLOSED
+
+  // Source platform
+  platform    String @default("WEB") @db.VarChar(10)     // WEB, MOBILE, ADMIN
+
+  // Assignment
+  assignedTo  String? @db.VarChar(30) // AdminUser id
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+
+  messages    TicketMessage[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([assignedTo])
+  @@index([priority])
+  @@index([createdAt])
+}
+
+model TicketMessage {
+  id        String @id @default(cuid()) @db.VarChar(30)
+  ticketId  String @db.VarChar(30)
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  // Who sent the message
+  senderType String @db.VarChar(10) // USER, ADMIN, SYSTEM
+  senderId   String @db.VarChar(30) // userId or adminUserId
+
+  content    String @db.Text
+  // Optional file attachment (Cloudinary URL)
+  attachmentUrl String? @db.VarChar(500)
+
+  isInternal Boolean @default(false) // Admin-only internal notes, not visible to user
+
+  createdAt DateTime @default(now())
+
+  @@index([ticketId, createdAt])
+  @@index([senderId])
+}

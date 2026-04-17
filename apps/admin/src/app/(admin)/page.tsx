@@ -1,0 +1,218 @@
+export const dynamic = "force-dynamic";
+
+import { prisma } from "@/lib/db";
+import {
+  Users,
+  CreditCard,
+  Truck,
+  Building2,
+  ArrowRight,
+  MapPin,
+  Calendar,
+  BarChart3,
+  Activity,
+} from "lucide-react";
+import Link from "next/link";
+import { HealthCard } from "./health-card";
+
+async function getStats() {
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  const [
+    totalUsers,
+    activeSubscriptions,
+    activeMovingPlans,
+    totalProviders,
+    recentUsers,
+    newUsersThisWeek,
+    newUsersLastWeek,
+    upcomingMoves,
+    activeSessions,
+    totalSessions,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
+    prisma.movingPlan.count({ where: { status: { in: ["PLANNING", "IN_PROGRESS"] } } }),
+    prisma.serviceProvider.count({ where: { isActive: true } }),
+    prisma.user.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, email: true, firstName: true, lastName: true, createdAt: true },
+    }),
+    prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
+    prisma.user.count({ where: { createdAt: { gte: new Date(sevenDaysAgo.getTime() - 7 * 24 * 60 * 60 * 1000), lt: sevenDaysAgo } } }),
+    prisma.movingPlan.findMany({
+      where: { moveDate: { gte: now, lte: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000) }, status: { in: ["PLANNING", "IN_PROGRESS"] } },
+      include: {
+        user: { select: { email: true, firstName: true, lastName: true } },
+        fromAddress: { select: { city: true, state: true } },
+        toAddress: { select: { city: true, state: true } },
+      },
+      orderBy: { moveDate: "asc" },
+      take: 5,
+    }),
+    prisma.userSession.count({ where: { isActive: true } }),
+    prisma.userSession.count(),
+  ]);
+
+  const weeklyTrend = newUsersLastWeek > 0
+    ? Math.round(((newUsersThisWeek - newUsersLastWeek) / newUsersLastWeek) * 100)
+    : newUsersThisWeek > 0 ? 100 : 0;
+
+  return {
+    totalUsers, activeSubscriptions, activeMovingPlans, totalProviders,
+    recentUsers, newUsersThisWeek, weeklyTrend, upcomingMoves,
+    activeSessions, totalSessions,
+  };
+}
+
+export default async function DashboardPage() {
+  const stats = await getStats();
+
+  const kpiCards = [
+    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-blue-500", bg: "bg-blue-500/10", href: "/users" },
+    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: CreditCard, color: "text-green-500", bg: "bg-green-500/10", href: "/subscriptions" },
+    { label: "Active Moves", value: stats.activeMovingPlans, icon: Truck, color: "text-purple-500", bg: "bg-purple-500/10", href: "/moving" },
+    { label: "Providers", value: stats.totalProviders, icon: Building2, color: "text-cyan-500", bg: "bg-cyan-500/10", href: "/providers" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="mt-1 text-muted-foreground">System overview and key metrics</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
+            <p className="text-xs text-muted-foreground">New this week</p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-bold text-foreground">{stats.newUsersThisWeek}</span>
+              {stats.weeklyTrend !== 0 && (
+                <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-green-500" : "text-red-500"}`}>
+                  {stats.weeklyTrend > 0 ? "+" : ""}{stats.weeklyTrend}%
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
+            <p className="text-xs text-muted-foreground">Active Sessions</p>
+            <div className="flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-lg font-bold text-foreground">{stats.activeSessions}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpiCards.map((card) => (
+          <Link key={card.label} href={card.href}
+            className="rounded-xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-primary/20">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
+                <p className="mt-2 text-3xl font-bold text-foreground">{card.value.toLocaleString()}</p>
+              </div>
+              <div className={`rounded-lg p-3 ${card.bg}`}>
+                <card.icon className={`h-6 w-6 ${card.color}`} />
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: "Add Provider", desc: "New service provider", href: "/providers", icon: Building2, color: "text-cyan-500" },
+          { label: "User Analytics", desc: `${stats.totalSessions} sessions`, href: "/analytics", icon: BarChart3, color: "text-purple-500" },
+          { label: "Upcoming Moves", desc: `${stats.upcomingMoves.length} in 2 weeks`, href: "/moving", icon: Truck, color: "text-blue-500" },
+        ].map((action) => (
+          <Link key={action.label} href={action.href}
+            className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md hover:border-primary/20">
+            <div className="rounded-lg bg-muted p-2.5">
+              <action.icon className={`h-5 w-5 ${action.color}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">{action.label}</p>
+              <p className="text-xs text-muted-foreground">{action.desc}</p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+        ))}
+      </div>
+
+      {/* System Health */}
+      <HealthCard />
+
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Recent Users */}
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Recent Users</h2>
+            <a href="/users" className="text-xs text-primary hover:underline">View all →</a>
+          </div>
+          <div className="space-y-2.5">
+            {stats.recentUsers.map((user: any) => (
+              <Link key={user.id} href={`/users/${user.id}`} className="flex items-center justify-between rounded-lg border border-border p-2.5 hover:bg-accent/30 transition-colors">
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground text-sm truncate">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+                <p className="text-[11px] text-muted-foreground flex-shrink-0">
+                  {new Date(user.createdAt).toLocaleDateString()}
+                </p>
+              </Link>
+            ))}
+            {stats.recentUsers.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4 text-center">No users yet</p>
+            )}
+          </div>
+        </div>
+
+        {/* Upcoming Moves */}
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-foreground">Upcoming Moves</h2>
+            <a href="/moving" className="text-xs text-primary hover:underline">View all →</a>
+          </div>
+          <div className="space-y-2.5">
+            {stats.upcomingMoves.map((move: any) => {
+              const days = Math.ceil((new Date(move.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+              return (
+                <div key={move.id} className="rounded-lg border border-border p-2.5">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <MapPin className="h-3 w-3 text-orange-500" />
+                    <span className="text-foreground font-medium truncate">{move.fromAddress?.city}, {move.fromAddress?.state}</span>
+                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground" />
+                    <MapPin className="h-3 w-3 text-green-500" />
+                    <span className="text-foreground font-medium truncate">{move.toAddress?.city}, {move.toAddress?.state}</span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-[11px] text-muted-foreground truncate">{move.user?.email}</span>
+                    <span className={`text-[11px] font-medium ${days <= 3 ? "text-red-500" : days <= 7 ? "text-yellow-500" : "text-muted-foreground"}`}>
+                      {days}d left
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            {stats.upcomingMoves.length === 0 && (
+              <div className="flex flex-col items-center py-6 text-muted-foreground">
+                <Calendar className="mb-2 h-6 w-6" />
+                <p className="text-xs">No upcoming moves</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

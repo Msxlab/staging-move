@@ -1,0 +1,541 @@
+/**
+ * Migration Engine
+ *
+ * Analyzes a user's existing services at their "from" address and determines
+ * what needs to happen at the "to" address:
+ *   - KEEP:     Federal provider, no change needed (e.g., Chase, Geico)
+ *   - TRANSFER: Same provider available in destination state
+ *   - SWITCH:   Provider not in destination state → recommend alternative
+ *   - NEW:      Essential service the user doesn't have yet
+ *   - CANCEL:   Service only relevant to origin (e.g., NYC MetroCard)
+ */
+
+import { SERVICE_PRIORITY_MAP, type ServicePriorityItem } from "./constants";
+import type { UserChecklistProfile, TaskTemplate } from "./relocation-checklist";
+
+// ── Types ──
+
+export type MigrationAction = "TRANSFER" | "SWITCH" | "NEW" | "CANCEL" | "KEEP";
+
+export interface ServiceWithProvider {
+  id: string;
+  category: string;
+  providerName: string;
+  providerId?: string | null;
+  isActive: boolean;
+  monthlyCost?: number | null;
+  migrationAction?: MigrationAction | null;
+  provider?: {
+    id: string;
+    name: string;
+    scope: string;
+    states: string[];
+    category: string;
+  } | null;
+}
+
+export interface ProviderForMigration {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  scope: string;
+  states: string[];
+  popularityScore: number;
+  avgRating?: number | null;
+  reviewCount?: number;
+}
+
+export interface MigrationItem {
+  category: string;
+  categoryLabel: string;
+  currentService?: {
+    id: string;
+    providerName: string;
+    providerId?: string | null;
+    monthlyCost?: number | null;
+    migrationAction?: MigrationAction | null;
+  };
+  recommendedProvider?: {
+    id: string;
+    name: string;
+    slug: string;
+    reason: string;
+  };
+  action: MigrationAction;
+  urgency: "URGENT" | "HIGH" | "MEDIUM" | "LOW";
+  phase: number;
+  note: string;
+  icon: string;
+}
+
+export interface MigrationAnalysis {
+  fromState: string;
+  toState: string;
+  keeps: MigrationItem[];
+  transfers: MigrationItem[];
+  switches: MigrationItem[];
+  newNeeded: MigrationItem[];
+  cancels: MigrationItem[];
+  summary: {
+    total: number;
+    keeps: number;
+    transfers: number;
+    switches: number;
+    newNeeded: number;
+    cancels: number;
+  };
+}
+
+// ── Category labels ──
+
+const CATEGORY_LABELS: Record<string, string> = {
+  GOVERNMENT_POSTAL: "Mail & Postal", GOVERNMENT_TAX: "Tax (IRS)", GOVERNMENT_DMV: "DMV",
+  GOVERNMENT_BENEFITS: "Benefits", GOVERNMENT_VOTER: "Voter Registration",
+  GOVERNMENT_IMMIGRATION: "Immigration", GOVERNMENT_OTHER: "Government",
+  UTILITY_ELECTRIC: "Electric", UTILITY_GAS: "Gas", UTILITY_WATER: "Water",
+  UTILITY_INTERNET: "Internet", UTILITY_PHONE: "Phone", UTILITY_CABLE: "Cable/TV",
+  UTILITY_TRASH: "Trash", UTILITY_SEWER: "Sewer",
+  FINANCIAL_BANK: "Bank", FINANCIAL_CREDIT_CARD: "Credit Cards",
+  FINANCIAL_INSURANCE_AUTO: "Auto Insurance", FINANCIAL_INSURANCE_HOME: "Home Insurance",
+  FINANCIAL_INSURANCE_HEALTH: "Health Insurance", FINANCIAL_MORTGAGE: "Mortgage",
+  FINANCIAL_INSURANCE_LIFE: "Life Insurance", FINANCIAL_INSURANCE_PET: "Pet Insurance",
+  FINANCIAL_INSURANCE_FLOOD: "Flood Insurance",
+  HOUSING_STORAGE: "Storage", HOUSING_HOA: "HOA", HOUSING_HOME_SERVICE: "Home Services",
+  HOUSING_LAWN_CARE: "Lawn Care", HOUSING_PEST_CONTROL: "Pest Control",
+  HEALTHCARE_DOCTORS: "Doctors", HEALTHCARE_DENTIST: "Dentist",
+  HEALTHCARE_PHARMACY: "Pharmacy", HEALTHCARE_VET: "Veterinary",
+  HEALTHCARE_SENIOR: "Senior Care",
+  TRANSPORTATION_TOLL: "Toll Pass", TRANSPORTATION_TRANSIT: "Transit",
+  KIDS_SCHOOL: "School", KIDS_DAYCARE: "Daycare",
+  FITNESS_GYM: "Gym", SHOPPING_SUBSCRIPTION: "Subscriptions",
+};
+
+const CATEGORY_ICONS: Record<string, string> = {
+  UTILITY_ELECTRIC: "⚡", UTILITY_GAS: "🔥", UTILITY_WATER: "💧",
+  UTILITY_INTERNET: "🌐", UTILITY_PHONE: "📱", UTILITY_CABLE: "📺",
+  UTILITY_TRASH: "🗑️", UTILITY_SEWER: "🚰",
+  GOVERNMENT_POSTAL: "📬", GOVERNMENT_TAX: "🧾", GOVERNMENT_DMV: "🪪",
+  GOVERNMENT_BENEFITS: "🏛️", GOVERNMENT_VOTER: "🗳️", GOVERNMENT_IMMIGRATION: "🌍",
+  FINANCIAL_BANK: "🏦", FINANCIAL_CREDIT_CARD: "💳",
+  FINANCIAL_INSURANCE_AUTO: "🚗", FINANCIAL_INSURANCE_HOME: "🏠",
+  FINANCIAL_INSURANCE_HEALTH: "🏥", FINANCIAL_MORTGAGE: "🔑",
+  FINANCIAL_INSURANCE_LIFE: "🛡️", FINANCIAL_INSURANCE_PET: "🐾",
+  HEALTHCARE_DOCTORS: "🩺", HEALTHCARE_DENTIST: "🦷", HEALTHCARE_PHARMACY: "💊",
+  HEALTHCARE_VET: "🐾", HEALTHCARE_SENIOR: "👴",
+  TRANSPORTATION_TOLL: "🛣️", TRANSPORTATION_TRANSIT: "🚌",
+  HOUSING_STORAGE: "📦", HOUSING_HOA: "🏢", HOUSING_HOME_SERVICE: "🔧",
+  KIDS_SCHOOL: "🏫", KIDS_DAYCARE: "👶", FITNESS_GYM: "💪",
+};
+
+// Categories that are inherently location-specific (cancel when moving away)
+const LOCAL_ONLY_CATEGORIES = new Set([
+  "TRANSPORTATION_TRANSIT",
+  "TRANSPORTATION_PARKING",
+  "HOUSING_HOA",
+]);
+
+// Categories where the provider typically operates federally / nationwide
+const TYPICALLY_FEDERAL_CATEGORIES = new Set([
+  "GOVERNMENT_POSTAL",
+  "GOVERNMENT_TAX",
+  "GOVERNMENT_BENEFITS",
+  "GOVERNMENT_IMMIGRATION",
+  "FINANCIAL_BANK",
+  "FINANCIAL_CREDIT_CARD",
+  "FINANCIAL_INSURANCE_LIFE",
+  "SHOPPING_SUBSCRIPTION",
+]);
+
+// ── Core logic ──
+
+function evaluateCondition(condition: string, profile: UserChecklistProfile): boolean {
+  switch (condition) {
+    case "hasChildren": return profile.hasChildren;
+    case "hasPets": return profile.hasPets;
+    case "hasSenior": return profile.hasSenior;
+    case "hasDisability": return profile.hasDisability;
+    case "needsStorage": return profile.needsStorage;
+    case "hasMotorcycle": return profile.hasMotorcycle;
+    case "hasBoatRV": return profile.hasBoatRV;
+    case "isImmigrant": return profile.isImmigrant;
+    case "isBusinessOwner": return profile.isBusinessOwner;
+    case "carCount>0": return profile.carCount > 0;
+    default: return true;
+  }
+}
+
+function findBestProvider(
+  category: string,
+  toState: string,
+  availableProviders: ProviderForMigration[],
+): ProviderForMigration | null {
+  const candidates = availableProviders.filter((p) => {
+    if (p.category !== category) return false;
+    if (p.scope === "FEDERAL") return true;
+    return p.states.includes(toState);
+  });
+
+  if (candidates.length === 0) return null;
+
+  // Sort by: state-specific first, then by popularity, then by rating
+  candidates.sort((a, b) => {
+    const aLocal = a.scope === "STATE" && a.states.includes(toState) ? 1 : 0;
+    const bLocal = b.scope === "STATE" && b.states.includes(toState) ? 1 : 0;
+    if (bLocal !== aLocal) return bLocal - aLocal;
+    if ((b.avgRating || 0) !== (a.avgRating || 0)) return (b.avgRating || 0) - (a.avgRating || 0);
+    return (b.popularityScore || 0) - (a.popularityScore || 0);
+  });
+
+  return candidates[0];
+}
+
+/**
+ * Analyze migration needs given the user's existing services and available providers.
+ */
+export function analyzeMigration(
+  existingServices: ServiceWithProvider[],
+  fromState: string,
+  toState: string,
+  availableProviders: ProviderForMigration[],
+  profile: UserChecklistProfile,
+): MigrationAnalysis {
+  const keeps: MigrationItem[] = [];
+  const transfers: MigrationItem[] = [];
+  const switches: MigrationItem[] = [];
+  const cancels: MigrationItem[] = [];
+  const newNeeded: MigrationItem[] = [];
+
+  const activeServices = existingServices.filter((s) => s.isActive);
+  const coveredCategories = new Set(activeServices.map((s) => s.category));
+
+  // ── Step 1: Analyze existing services ──
+  for (const svc of activeServices) {
+    const categoryLabel = CATEGORY_LABELS[svc.category] || svc.category;
+    const icon = CATEGORY_ICONS[svc.category] || "📋";
+
+    const baseItem = {
+      category: svc.category,
+      categoryLabel,
+      icon,
+      currentService: {
+        id: svc.id,
+        providerName: svc.providerName,
+        providerId: svc.providerId,
+        monthlyCost: svc.monthlyCost,
+        migrationAction: svc.migrationAction ?? null,
+      },
+    };
+
+    // Local-only services → CANCEL
+    if (LOCAL_ONLY_CATEGORIES.has(svc.category)) {
+      cancels.push({
+        ...baseItem,
+        action: "CANCEL",
+        urgency: "LOW",
+        phase: 1,
+        note: `${svc.providerName} is specific to ${fromState}. Cancel before moving.`,
+      });
+      continue;
+    }
+
+    // Federal / nationwide providers → KEEP
+    const providerScope = svc.provider?.scope;
+    if (providerScope === "FEDERAL" || TYPICALLY_FEDERAL_CATEGORIES.has(svc.category)) {
+      keeps.push({
+        ...baseItem,
+        action: "KEEP",
+        urgency: "LOW",
+        phase: 2,
+        note: `${svc.providerName} operates nationwide. Update your address.`,
+      });
+      continue;
+    }
+
+    // State-scoped provider: check if available in destination
+    if (providerScope === "STATE" && svc.provider) {
+      const providerStates = svc.provider.states || [];
+      if (providerStates.includes(toState)) {
+        // Same provider available in new state → TRANSFER
+        transfers.push({
+          ...baseItem,
+          action: "TRANSFER",
+          urgency: "MEDIUM",
+          phase: 1,
+          note: `${svc.providerName} is available in ${toState}. Transfer your account.`,
+        });
+      } else {
+        // Provider not in new state → SWITCH
+        const recommended = findBestProvider(svc.category, toState, availableProviders);
+        switches.push({
+          ...baseItem,
+          action: "SWITCH",
+          urgency: "HIGH",
+          phase: 1,
+          note: `${svc.providerName} is not available in ${toState}.${recommended ? ` Switch to ${recommended.name}.` : " Find a new provider."}`,
+          recommendedProvider: recommended
+            ? { id: recommended.id, name: recommended.name, slug: recommended.slug, reason: `Top-rated ${categoryLabel} in ${toState}` }
+            : undefined,
+        });
+      }
+      continue;
+    }
+
+    // Unknown scope or no provider linked → check if provider name matches any available
+    const matchingProvider = availableProviders.find(
+      (p) => p.name.toLowerCase() === svc.providerName.toLowerCase() && p.category === svc.category,
+    );
+
+    if (matchingProvider) {
+      if (matchingProvider.scope === "FEDERAL") {
+        keeps.push({ ...baseItem, action: "KEEP", urgency: "LOW", phase: 2, note: `${svc.providerName} operates nationwide. Update your address.` });
+      } else if (matchingProvider.states.includes(toState)) {
+        transfers.push({ ...baseItem, action: "TRANSFER", urgency: "MEDIUM", phase: 1, note: `${svc.providerName} is available in ${toState}. Transfer your account.` });
+      } else {
+        const recommended = findBestProvider(svc.category, toState, availableProviders);
+        switches.push({
+          ...baseItem,
+          action: "SWITCH",
+          urgency: "HIGH",
+          phase: 1,
+          note: `${svc.providerName} is not available in ${toState}.${recommended ? ` Switch to ${recommended.name}.` : ""}`,
+          recommendedProvider: recommended
+            ? { id: recommended.id, name: recommended.name, slug: recommended.slug, reason: `Top-rated ${categoryLabel} in ${toState}` }
+            : undefined,
+        });
+      }
+    } else {
+      // Can't determine → default to KEEP with address update reminder
+      keeps.push({ ...baseItem, action: "KEEP", urgency: "LOW", phase: 2, note: `Update ${svc.providerName} with your new address.` });
+    }
+  }
+
+  // ── Step 2: Find missing essential services (NEW) ──
+  for (const item of SERVICE_PRIORITY_MAP) {
+    // Only suggest essentials
+    if (!item.isRequired) continue;
+    // Skip if user already has this category covered
+    if (coveredCategories.has(item.category)) continue;
+    // Check profile conditions
+    if (!item.moveTypes.includes(profile.moveType)) continue;
+    let conditionsMet = true;
+    for (const cond of item.conditions) {
+      if (!evaluateCondition(cond, profile)) { conditionsMet = false; break; }
+    }
+    if (!conditionsMet) continue;
+    // Skip government services that don't need a "provider"
+    if (item.category.startsWith("GOVERNMENT_") && item.category !== "GOVERNMENT_DMV") continue;
+
+    const recommended = findBestProvider(item.category, toState, availableProviders);
+    const categoryLabel = CATEGORY_LABELS[item.category] || item.category;
+    const icon = CATEGORY_ICONS[item.category] || item.icon;
+
+    newNeeded.push({
+      category: item.category,
+      categoryLabel,
+      icon,
+      action: "NEW",
+      urgency: item.priority as "URGENT" | "HIGH" | "MEDIUM" | "LOW",
+      phase: item.phase,
+      note: `You need ${categoryLabel} in ${toState}.${recommended ? ` Recommended: ${recommended.name}.` : ""}`,
+      recommendedProvider: recommended
+        ? { id: recommended.id, name: recommended.name, slug: recommended.slug, reason: `Top provider for ${categoryLabel} in ${toState}` }
+        : undefined,
+    });
+  }
+
+  // Deduplicate newNeeded by category
+  const seenNewCategories = new Set<string>();
+  const deduplicatedNew = newNeeded.filter((item) => {
+    if (seenNewCategories.has(item.category)) return false;
+    seenNewCategories.add(item.category);
+    return true;
+  });
+
+  const total = keeps.length + transfers.length + switches.length + deduplicatedNew.length + cancels.length;
+
+  return {
+    fromState,
+    toState,
+    keeps,
+    transfers,
+    switches,
+    newNeeded: deduplicatedNew,
+    cancels,
+    summary: {
+      total,
+      keeps: keeps.length,
+      transfers: transfers.length,
+      switches: switches.length,
+      newNeeded: deduplicatedNew.length,
+      cancels: cancels.length,
+    },
+  };
+}
+
+/**
+ * Generate a compact summary string for the AI assistant.
+ */
+export function getMigrationContextForAI(analysis: MigrationAnalysis): string {
+  const parts: string[] = [];
+  parts.push(`Migration ${analysis.fromState} → ${analysis.toState}:`);
+  parts.push(`${analysis.summary.keeps} KEEP, ${analysis.summary.transfers} TRANSFER, ${analysis.summary.switches} SWITCH, ${analysis.summary.newNeeded} NEW, ${analysis.summary.cancels} CANCEL.`);
+
+  if (analysis.switches.length > 0) {
+    parts.push(
+      "Need to switch: " +
+      analysis.switches.map((s) => {
+        const rec = s.recommendedProvider ? ` → ${s.recommendedProvider.name}` : "";
+        return `${s.currentService?.providerName}${rec} (${s.categoryLabel})`;
+      }).join(", ") + "."
+    );
+  }
+
+  if (analysis.newNeeded.length > 0) {
+    parts.push(
+      "Need new: " +
+      analysis.newNeeded.map((n) => {
+        const rec = n.recommendedProvider ? ` (rec: ${n.recommendedProvider.name})` : "";
+        return `${n.categoryLabel}${rec}`;
+      }).join(", ") + "."
+    );
+  }
+
+  return parts.join(" ");
+}
+
+// ── Category → generic templateId mapping for deduplication ──
+
+const CATEGORY_TO_TEMPLATE: Record<string, string[]> = {
+  UTILITY_ELECTRIC: ["P1_ELECTRIC", "P1_OLD_UTILITIES"],
+  UTILITY_WATER: ["P1_WATER"],
+  UTILITY_GAS: ["P1_GAS"],
+  UTILITY_INTERNET: ["P1_INTERNET"],
+  FINANCIAL_BANK: ["P2_BANKS", "B2_BIZ_BANK"],
+  FINANCIAL_CREDIT_CARD: ["P2_CREDIT_CARDS"],
+  FINANCIAL_MORTGAGE: ["P2_MORTGAGE"],
+  FINANCIAL_INSURANCE_AUTO: ["P3_AUTO_INSURANCE"],
+  FINANCIAL_INSURANCE_HOME: ["P1_RENTERS_INSURANCE"],
+  FINANCIAL_INSURANCE_HEALTH: ["P3_HEALTH_INSURANCE"],
+  FINANCIAL_INSURANCE_LIFE: ["P4_LIFE_INSURANCE"],
+  FINANCIAL_INSURANCE_PET: ["P4_PET_INSURANCE"],
+  HEALTHCARE_DOCTORS: ["P4_DOCTOR", "P0_MEDICAL_RECORDS"],
+  HEALTHCARE_DENTIST: ["P4_DENTIST"],
+  HEALTHCARE_PHARMACY: ["P4_PHARMACY"],
+  HEALTHCARE_VET: ["P4_VET", "P0_PET_VET"],
+  HEALTHCARE_SENIOR: ["P4_SENIOR_CARE"],
+  FITNESS_GYM: ["P4_GYM"],
+  TRANSPORTATION_TOLL: ["P4_TOLL_PASS"],
+  KIDS_SCHOOL: ["P0_SCHOOL_RECORDS", "P4_SCHOOL_ENROLL"],
+  KIDS_DAYCARE: ["P4_DAYCARE"],
+  HOUSING_HOA: ["P5_HOA"],
+  SHOPPING_SUBSCRIPTION: ["P4_SUBSCRIPTIONS"],
+};
+
+export interface MigrationTaskResult {
+  tasks: TaskTemplate[];
+  replaces: string[];
+}
+
+/**
+ * Convert migration analysis into personalized task templates.
+ * Returns tasks AND a list of generic templateIds they replace.
+ */
+export function generateMigrationTasks(
+  analysis: MigrationAnalysis,
+  moveDate: Date,
+  toState: string,
+): MigrationTaskResult {
+  const tasks: TaskTemplate[] = [];
+  const replaces: string[] = [];
+  const moveDateMs = moveDate.getTime();
+
+  // Helper: get due date from daysRelativeToMove
+  const dueFrom = (daysRel: number) => new Date(moveDateMs + daysRel * 86400000);
+  const buildMigrationTemplateId = (prefix: string, serviceId: string) => {
+    const maxServiceIdLength = Math.max(1, 30 - prefix.length);
+    return `${prefix}${serviceId.slice(-maxServiceIdLength)}`;
+  };
+
+  // ── KEEP items → "Update [Provider] address" ──
+  for (const item of analysis.keeps) {
+    const svcId = item.currentService?.id || "unknown";
+    tasks.push({
+      title: `${item.icon} Update ${item.currentService?.providerName || item.categoryLabel} address`,
+      description: `${item.note}\n\nThis provider operates nationwide — just update your address to your new location in ${toState}.`,
+      category: item.category,
+      priority: "MEDIUM",
+      dueDate: dueFrom(3),
+      daysBeforeMove: -3,
+      isAutoGenerated: true,
+      templateId: buildMigrationTemplateId("MIG_KEEP_", svcId),
+    });
+    const genericIds = CATEGORY_TO_TEMPLATE[item.category] || [];
+    replaces.push(...genericIds);
+  }
+
+  // ── TRANSFER items → "Transfer [Provider] to [state]" ──
+  for (const item of analysis.transfers) {
+    const svcId = item.currentService?.id || "unknown";
+    tasks.push({
+      title: `${item.icon} Transfer ${item.currentService?.providerName || item.categoryLabel} to ${toState}`,
+      description: `${item.note}\n\nYour current provider is available in ${toState}. Contact them to transfer your account to the new address.`,
+      category: item.category,
+      priority: "HIGH",
+      dueDate: dueFrom(-3),
+      daysBeforeMove: 3,
+      isAutoGenerated: true,
+      templateId: buildMigrationTemplateId("MIG_TRANSFER_", svcId),
+    });
+    const genericIds = CATEGORY_TO_TEMPLATE[item.category] || [];
+    replaces.push(...genericIds);
+  }
+
+  // ── SWITCH items → "Switch from [Old] to [New]" ──
+  for (const item of analysis.switches) {
+    const svcId = item.currentService?.id || "unknown";
+    const oldName = item.currentService?.providerName || "current provider";
+    const newName = item.recommendedProvider?.name;
+    const switchTitle = newName
+      ? `${item.icon} Switch from ${oldName} to ${newName}`
+      : `${item.icon} Find replacement for ${oldName}`;
+    const switchDesc = newName
+      ? `${item.note}\n\n${oldName} is not available in ${toState}. We recommend switching to ${newName}.`
+      : `${item.note}\n\n${oldName} is not available in ${toState}. You'll need to find a new ${item.categoryLabel} provider.`;
+
+    tasks.push({
+      title: switchTitle,
+      description: switchDesc,
+      category: item.category,
+      priority: "HIGH",
+      dueDate: dueFrom(-3),
+      daysBeforeMove: 3,
+      isAutoGenerated: true,
+      templateId: buildMigrationTemplateId("MIG_SWITCH_", svcId),
+    });
+    const genericIds = CATEGORY_TO_TEMPLATE[item.category] || [];
+    replaces.push(...genericIds);
+  }
+
+  // ── CANCEL items → "Cancel [Provider]" ──
+  for (const item of analysis.cancels) {
+    const svcId = item.currentService?.id || "unknown";
+    tasks.push({
+      title: `${item.icon} Cancel ${item.currentService?.providerName || item.categoryLabel}`,
+      description: `${item.note}\n\nThis service is specific to your current location and won't be needed after your move.`,
+      category: item.category,
+      priority: "MEDIUM",
+      dueDate: dueFrom(-1),
+      daysBeforeMove: 1,
+      isAutoGenerated: true,
+      templateId: buildMigrationTemplateId("MIG_CANCEL_", svcId),
+    });
+    const genericIds = CATEGORY_TO_TEMPLATE[item.category] || [];
+    replaces.push(...genericIds);
+  }
+
+  // Deduplicate replaces list
+  const uniqueReplaces = [...new Set(replaces)];
+
+  return { tasks, replaces: uniqueReplaces };
+}

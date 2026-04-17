@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="180" y1="200" x2="340" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e0e7ff"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <!-- House/pin shape -->
+  <path d="M256 120 L160 200 L160 340 C160 352 170 362 182 362 L330 362 C342 362 352 352 352 340 L352 200 Z" fill="white" fill-opacity="0.15"/>
+  <!-- Arrow pointing right (relocation) -->
+  <path d="M200 256 L312 256 M280 220 L320 256 L280 292" stroke="url(#arrow)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Small location dot -->
+  <circle cx="256" cy="170" r="18" fill="white" fill-opacity="0.9"/>
+</svg>

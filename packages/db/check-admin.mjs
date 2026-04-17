@@ -1,0 +1,1 @@
+﻿import { PrismaClient } from '@prisma/client'; async function main() { const p = new PrismaClient(); const r = await p.adminUser.findMany(); console.log(JSON.stringify(r.map(u => ({id:u.id,email:u.email,isActive:u.isActive})))); await p.$disconnect(); } main();

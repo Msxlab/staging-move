@@ -1,0 +1,75 @@
+# ---------------------------------------------------------------
+# LocateFlow reverse proxy — Caddy automatic HTTPS
+# ---------------------------------------------------------------
+#
+# Environment substitutions (provided by docker-compose via CADDY_*):
+#   {$WEB_DOMAIN}     — e.g. app.locateflow.com
+#   {$ADMIN_DOMAIN}   — e.g. admin.locateflow.com
+#   {$ACME_EMAIL}     — email for Let's Encrypt notifications
+#
+# Caddy auto-provisions TLS certs for the declared hostnames.
+# For local testing override domains to http://localhost with `:80`.
+# ---------------------------------------------------------------
+
+{
+	email {$ACME_EMAIL}
+	# Remove server banner to reduce fingerprinting.
+	servers {
+		metrics
+	}
+}
+
+# ── Web client ──────────────────────────────────────────────────
+{$WEB_DOMAIN} {
+	encode gzip zstd
+
+	# Strip spoofable forwarded headers from incoming requests before
+	# Caddy sets its own. Apps trust `X-Forwarded-For` only from this edge.
+	request_header -CF-Connecting-IP
+	request_header -X-Real-IP
+	request_header -X-Forwarded-For
+
+	reverse_proxy web:3000 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	# HSTS (also set by the app, but redundant at the edge is fine).
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+	header X-Content-Type-Options "nosniff"
+	header X-Frame-Options "DENY"
+	header Referrer-Policy "strict-origin-when-cross-origin"
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+# ── Admin panel ─────────────────────────────────────────────────
+{$ADMIN_DOMAIN} {
+	encode gzip zstd
+
+	request_header -CF-Connecting-IP
+	request_header -X-Real-IP
+	request_header -X-Forwarded-For
+
+	reverse_proxy admin:3001 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+	header X-Content-Type-Options "nosniff"
+	header X-Frame-Options "DENY"
+	header Referrer-Policy "strict-origin-when-cross-origin"
+
+	log {
+		output stdout
+		format json
+	}
+}

@@ -1,0 +1,131 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: locateflow-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-locateflow_root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-locateflow}
+      MYSQL_USER: ${MYSQL_USER:-locateflow}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-locateflow_dev_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max-connections=200
+      - --innodb-buffer-pool-size=256M
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  db-init:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    container_name: locateflow-db-init
+    working_dir: /workspace
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-locateflow}:${MYSQL_PASSWORD:-locateflow_dev_password}@mysql:3306/${MYSQL_DATABASE:-locateflow}
+      ADMIN_SEED_EMAIL: ${ADMIN_SEED_EMAIL:-admin@locateflow.com}
+      ADMIN_SEED_PASSWORD: ${ADMIN_SEED_PASSWORD:?ADMIN_SEED_PASSWORD is required}
+    volumes:
+      - .:/workspace
+      - pnpm_store:/pnpm/store
+      - root_node_modules:/workspace/node_modules
+      - web_node_modules:/workspace/apps/web/node_modules
+      - admin_node_modules:/workspace/apps/admin/node_modules
+      - mobile_node_modules:/workspace/apps/mobile/node_modules
+      - db_node_modules:/workspace/packages/db/node_modules
+      - shared_node_modules:/workspace/packages/shared/node_modules
+    command: sh -lc "pnpm install --frozen-lockfile && pnpm --filter @locateflow/db generate && pnpm db:push && pnpm db:seed:all"
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    container_name: locateflow-web
+    restart: unless-stopped
+    working_dir: /workspace
+    depends_on:
+      mysql:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-locateflow}:${MYSQL_PASSWORD:-locateflow_dev_password}@mysql:3306/${MYSQL_DATABASE:-locateflow}
+      DEV_AUTH_BYPASS: ${DEV_AUTH_BYPASS:-false}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?FIELD_ENCRYPTION_KEY is required}
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/workspace
+      - pnpm_store:/pnpm/store
+      - root_node_modules:/workspace/node_modules
+      - web_node_modules:/workspace/apps/web/node_modules
+      - admin_node_modules:/workspace/apps/admin/node_modules
+      - mobile_node_modules:/workspace/apps/mobile/node_modules
+      - db_node_modules:/workspace/packages/db/node_modules
+      - shared_node_modules:/workspace/packages/shared/node_modules
+      - web_next:/workspace/apps/web/.next
+    command: sh -lc "pnpm --filter @locateflow/web dev"
+
+  admin:
+    build:
+      context: .
+      dockerfile: docker/dev.Dockerfile
+    container_name: locateflow-admin
+    restart: unless-stopped
+    working_dir: /workspace
+    depends_on:
+      mysql:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER:-locateflow}:${MYSQL_PASSWORD:-locateflow_dev_password}@mysql:3306/${MYSQL_DATABASE:-locateflow}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET is required}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?FIELD_ENCRYPTION_KEY is required}
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+    ports:
+      - "3001:3001"
+    volumes:
+      - .:/workspace
+      - pnpm_store:/pnpm/store
+      - root_node_modules:/workspace/node_modules
+      - web_node_modules:/workspace/apps/web/node_modules
+      - admin_node_modules:/workspace/apps/admin/node_modules
+      - mobile_node_modules:/workspace/apps/mobile/node_modules
+      - db_node_modules:/workspace/packages/db/node_modules
+      - shared_node_modules:/workspace/packages/shared/node_modules
+      - admin_next:/workspace/apps/admin/.next
+    command: sh -lc "pnpm --filter @locateflow/admin dev"
+
+volumes:
+  mysql_data:
+    driver: local
+  pnpm_store:
+  root_node_modules:
+  web_node_modules:
+  admin_node_modules:
+  mobile_node_modules:
+  db_node_modules:
+  shared_node_modules:
+  web_next:
+  admin_next:

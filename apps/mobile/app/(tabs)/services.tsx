@@ -1,0 +1,554 @@
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Zap,
+  Plus,
+  DollarSign,
+  Globe,
+  Phone,
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  X,
+  MapPin,
+  Wallet,
+} from "lucide-react-native";
+import { theme } from "@/lib/theme";
+import { api } from "@/lib/api";
+import {
+  getCategoryIcon,
+  getCategoryLabel,
+  getMergedDisplayCategoryIcon,
+  getMergedDisplayCategoryKey,
+  getMergedDisplayCategoryLabel,
+} from "@/lib/recommendation-engine";
+import { Card } from "@/components/ui/Card";
+import { Badge as UiBadge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { CategoryIcon } from "@/components/ui/CategoryIcon";
+import {
+  SERVICE_CATEGORIES,
+  generateChecklist,
+  RELOCATION_PHASES,
+  type UserChecklistProfile,
+  type RelocationChecklist,
+  type ChecklistStateRuleContext,
+} from "@locateflow/shared";
+
+const catColors: Record<string, string> = {
+  GOVERNMENT: "#ef4444", UTILITY: "#f59e0b", FINANCIAL: "#10b981",
+  HOUSING: "#0ea5e9", HEALTHCARE: "#f43f5e", TRANSPORTATION: "#3b82f6",
+  KIDS: "#a855f7", FITNESS: "#f97316", SHOPPING: "#ec4899", OTHER: "#6b7280",
+};
+
+const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
+const serviceCategoryIcons: Record<string, string> = {
+  GOVERNMENT: "🏛️",
+  UTILITY: "⚡",
+  FINANCIAL: "💳",
+  HOUSING: "🏠",
+  HEALTHCARE: "🏥",
+  TRANSPORTATION: "🚗",
+  KIDS: "👶",
+  FITNESS: "💪",
+  SHOPPING: "🛒",
+  OTHER: "📋",
+};
+
+function getServiceCategoryGroup(category: string): string {
+  if (!category) return "OTHER";
+  if (serviceCategoryValues.has(category)) return category;
+  return category.split("_")[0] || "OTHER";
+}
+
+function getServiceCategoryColor(category: string): string {
+  return catColors[getServiceCategoryGroup(category)] || catColors[category] || catColors.OTHER;
+}
+
+function getServiceCategoryLabel(category: string): string {
+  return SERVICE_CATEGORIES.find((c) => c.value === category)?.label || getMergedDisplayCategoryLabel(category) || getCategoryLabel(category);
+}
+
+function getServiceCategoryIcon(category: string): string {
+  return serviceCategoryIcons[category] || getMergedDisplayCategoryIcon(category) || getCategoryIcon(category);
+}
+
+export default function ServicesScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ addressId?: string | string[] }>();
+  const [services, setServices] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [filterCat, setFilterCat] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null | undefined>(undefined);
+  const [addressFilterInitialized, setAddressFilterInitialized] = useState(false);
+  const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
+  const [editingCost, setEditingCost] = useState<string | null>(null);
+  const [costValue, setCostValue] = useState("");
+  const [savingCost, setSavingCost] = useState(false);
+
+  const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
+
+  const handleSaveCost = async (serviceId: string) => {
+    const parsed = parseFloat(costValue);
+    if (isNaN(parsed) || parsed < 0) {
+      Alert.alert("Invalid", "Please enter a valid cost.");
+      return;
+    }
+    setSavingCost(true);
+    const res = await api.patch<any>(`/api/services/${serviceId}`, { monthlyCost: parsed });
+    setSavingCost(false);
+    if (res.error) {
+      Alert.alert("Error", res.error);
+    } else {
+      setEditingCost(null);
+      setCostValue("");
+      fetchServices();
+    }
+  };
+
+  const fetchServices = useCallback(async () => {
+    const [servicesRes, addressesRes] = await Promise.all([
+      api.get<any>("/api/services", selectedAddressId ? { addressId: selectedAddressId } : undefined),
+      api.get<any>("/api/addresses"),
+    ]);
+    const svcs = servicesRes.data?.services || [];
+    const nextAddresses = addressesRes.data?.addresses || [];
+    setServices(svcs);
+    setAddresses(nextAddresses);
+
+    if (nextAddresses.length === 0) {
+      setSelectedAddressId(null);
+      setAddressFilterInitialized(true);
+    } else if (!addressFilterInitialized) {
+      const requested = requestedAddressId && nextAddresses.find((a: any) => a.id === requestedAddressId);
+      const primary = nextAddresses.find((a: any) => a.isPrimary);
+      setSelectedAddressId(requested?.id || primary?.id || nextAddresses[0].id);
+      setAddressFilterInitialized(true);
+    } else if (selectedAddressId && !nextAddresses.some((a: any) => a.id === selectedAddressId)) {
+      setSelectedAddressId(null);
+    }
+
+    // Build checklist if active move exists
+    try {
+      const [movingRes, profileRes] = await Promise.all([
+        api.get<any>("/api/moving"),
+        api.get<any>("/api/profile"),
+      ]);
+      const plans = movingRes.data?.plans || [];
+      const activePlan = plans.find((p: any) => p.status === "PLANNING" || p.status === "IN_PROGRESS");
+      if (activePlan) {
+        const prof = profileRes.data?.profile || profileRes.data || {};
+        const cp: UserChecklistProfile = {
+          hasChildren: prof.hasChildren ?? false, childrenCount: prof.childrenCount ?? 0,
+          hasPets: prof.hasPets ?? false, hasSenior: prof.hasSenior ?? false,
+          carCount: prof.carCount ?? 0, hasDisability: prof.hasDisability ?? false,
+          needsStorage: prof.needsStorage ?? false, hasMotorcycle: prof.hasMotorcycle ?? false,
+          hasBoatRV: prof.hasBoatRV ?? false, isImmigrant: prof.isImmigrant ?? false,
+          isBusinessOwner: prof.isBusinessOwner ?? false, moveType: prof.moveType || "PERSONAL",
+        };
+        const cats = new Set<string>(svcs.map((s: any) => s.category as string));
+        const tmpls = new Set<string>(
+          (activePlan.tasks || []).filter((t: any) => t.completed && t.templateId).map((t: any) => t.templateId as string)
+        );
+        const toState = activePlan.toAddress?.state || "";
+        let stateRule: ChecklistStateRuleContext | null = null;
+        if (toState) {
+          try {
+            const stateRuleRes = await api.get<any>("/api/state-rules", { state: toState });
+            stateRule = stateRuleRes.data?.stateRule || null;
+          } catch {
+            stateRule = null;
+          }
+        }
+        setChecklist(generateChecklist(cp, new Date(activePlan.moveDate), activePlan.fromAddress?.state || "", toState, cats, tmpls, stateRule));
+      } else {
+        setChecklist(null);
+      }
+    } catch { /* non-blocking */ }
+  }, [addressFilterInitialized, requestedAddressId, selectedAddressId]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    await fetchServices();
+    setLoading(false);
+  }, [fetchServices]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchServices();
+    setRefreshing(false);
+  }, [fetchServices]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading) return <LoadingScreen />;
+
+  const filtered = filterCat ? services.filter((s) => getMergedDisplayCategoryKey(s.category) === filterCat) : services;
+  const totalMonthly = filtered.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
+  const selectedAddress = selectedAddressId ? addresses.find((address) => address.id === selectedAddressId) : null;
+  const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => getServiceCategoryLabel(a).localeCompare(getServiceCategoryLabel(b)));
+  const uncostedCount = filtered.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Services</Text>
+          <Text style={styles.subtitle}>
+            {selectedAddress ? `${selectedAddress.nickname || selectedAddress.city} · ` : ""}
+            {filtered.length} service{filtered.length !== 1 ? "s" : ""} · ${totalMonthly.toLocaleString()}/mo
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={[styles.addButton, addresses.length === 0 && { opacity: 0.5 }]}
+          onPress={() => router.push(selectedAddressId ? ({ pathname: "/services/new", params: { addressId: selectedAddressId } } as any) : ("/services/new" as any))}
+          disabled={addresses.length === 0}
+          activeOpacity={0.7}
+        >
+          <Plus size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryRow}>
+          <View style={styles.summaryItem}>
+            <MapPin size={15} color={theme.colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.summaryLabel}>Viewing address</Text>
+              <Text style={styles.summaryValue} numberOfLines={1}>
+                {selectedAddress ? (selectedAddress.nickname || `${selectedAddress.city}, ${selectedAddress.state}`) : "All addresses"}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.summaryItem}>
+            <Wallet size={15} color={theme.colors.emerald.text} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.summaryLabel}>Budget tracked</Text>
+              <Text style={styles.summaryValue}>${totalMonthly.toLocaleString()}/mo</Text>
+            </View>
+          </View>
+        </View>
+        {uncostedCount > 0 ? (
+          <Text style={styles.summaryHint}>
+            {uncostedCount} service{uncostedCount !== 1 ? "s" : ""} still missing cost. Add monthly amounts to track your real budget.
+          </Text>
+        ) : (
+          <Text style={styles.summaryHint}>
+            Monthly total updates from the services listed for the selected address.
+          </Text>
+        )}
+      </View>
+
+      {addresses.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.addressRow} contentContainerStyle={styles.addressContent}>
+          <TouchableOpacity
+            style={[styles.addressChip, !selectedAddressId && styles.addressChipActive]}
+            onPress={() => setSelectedAddressId(null)}
+          >
+            <Text style={[styles.addressChipText, !selectedAddressId && styles.addressChipTextActive]}>All addresses</Text>
+          </TouchableOpacity>
+          {addresses.map((address) => (
+            <TouchableOpacity
+              key={address.id}
+              style={[styles.addressChip, selectedAddressId === address.id && styles.addressChipActive]}
+              onPress={() => setSelectedAddressId(address.id)}
+            >
+              <Text style={[styles.addressChipText, selectedAddressId === address.id && styles.addressChipTextActive]} numberOfLines={1} ellipsizeMode="tail">
+                {address.nickname || `${address.city}, ${address.state}`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Category Filter */}
+      {categories.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterContent}>
+          <TouchableOpacity
+            style={[styles.filterChip, !filterCat && styles.filterChipActive]}
+            onPress={() => setFilterCat(null)}
+          >
+            <Text style={[styles.filterText, !filterCat && styles.filterTextActive]}>All</Text>
+          </TouchableOpacity>
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.filterChip, filterCat === cat && styles.filterChipActive]}
+              onPress={() => setFilterCat(filterCat === cat ? null : cat)}
+            >
+              <View style={[styles.filterDot, { backgroundColor: getServiceCategoryColor(cat) }]} />
+              <Text style={[styles.filterText, filterCat === cat && styles.filterTextActive]} numberOfLines={1} ellipsizeMode="tail">
+                {getServiceCategoryIcon(cat)} {getServiceCategoryLabel(cat)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Phase-Aware Checklist Widget */}
+        {checklist && (() => {
+          const phase = RELOCATION_PHASES.find((p) => p.phase === checklist.currentPhase);
+          const currentItems = checklist.phases.find((p) => p.phase === checklist.currentPhase);
+          const pending = currentItems?.items.filter((i) => !i.isCompleted).slice(0, 3) || [];
+          return (
+            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)", backgroundColor: "rgba(249,115,22,0.04)", padding: 14 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <CategoryIcon emoji={phase?.icon || ""} size={16} color={theme.colors.primary} />
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: theme.colors.text }}>
+                    {phase?.label || "Checklist"}
+                  </Text>
+                </View>
+                <Text style={{ fontSize: 12, fontWeight: "700", color: theme.colors.primary }}>
+                  {checklist.progressPercent}%
+                </Text>
+              </View>
+
+              <View style={{ height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.05)", marginBottom: 10, overflow: "hidden" }}>
+                <View style={{ height: "100%", borderRadius: 2, backgroundColor: theme.colors.primary, width: `${checklist.progressPercent}%` }} />
+              </View>
+
+              {checklist.overdueItems.length > 0 && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, padding: 8, borderRadius: 8, backgroundColor: "rgba(239,68,68,0.08)" }}>
+                  <AlertTriangle size={12} color="#ef4444" />
+                  <Text style={{ fontSize: 11, color: "#f87171", flex: 1 }} numberOfLines={1}>
+                    {checklist.overdueItems.length} overdue: {checklist.overdueItems[0]?.title}
+                  </Text>
+                </View>
+              )}
+
+              {pending.map((item) => (
+                <View key={item.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 6 }}>
+                  <CategoryIcon emoji={item.icon} size={14} color={theme.colors.textSecondary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 12, color: theme.colors.textSecondary }} numberOfLines={1}>{item.title}</Text>
+                    {item.stateNote ? (
+                      <Text style={{ fontSize: 10, color: "#fbbf24" }} numberOfLines={2}>{item.stateNote}</Text>
+                    ) : null}
+                  </View>
+                  {item.estimatedMinutes ? (
+                    <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>~{item.estimatedMinutes}m</Text>
+                  ) : null}
+                </View>
+              ))}
+
+              {checklist.nextAction && !checklist.nextAction.isCompleted && (
+                <TouchableOpacity
+                  style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 8, paddingVertical: 10, borderRadius: 10, backgroundColor: theme.colors.primary }}
+                  onPress={() => router.push("/services/new" as any)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#fff" }}>Add Next Service</Text>
+                  <ArrowRight size={14} color="#fff" />
+                </TouchableOpacity>
+              )}
+            </View>
+          );
+        })()}
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={<Zap size={32} color={theme.colors.primary} />}
+            title={filterCat ? "No services in this category" : "No services yet"}
+            description="Add services to track your subscriptions and expenses."
+            actionLabel="Add Service"
+            onAction={() => router.push("/services/new" as any)}
+          />
+        ) : (
+          <View style={styles.list}>
+            {filtered.map((service: any) => (
+              <Card key={service.id} variant="default" onPress={() => editingCost !== service.id && router.push(`/services/${service.id}` as any)}>
+                <View style={styles.serviceTop}>
+                  <View style={[styles.catDot, { backgroundColor: getServiceCategoryColor(service.category) + "30", borderColor: getServiceCategoryColor(service.category) + "50" }]}>
+                    <Text style={styles.catIcon}>{getServiceCategoryIcon(service.category)}</Text>
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={styles.serviceName} numberOfLines={1}>{service.providerName}</Text>
+                    <Text style={styles.serviceCategory} numberOfLines={1}>
+                      {getServiceCategoryLabel(service.category)}
+                      {service.address ? ` · ${service.address.nickname || service.address.city}` : ""}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={{ alignItems: "flex-end" }}
+                    onPress={(e) => {
+                      e.stopPropagation?.();
+                      if (editingCost === service.id) {
+                        setEditingCost(null);
+                      } else {
+                        setEditingCost(service.id);
+                        setCostValue(service.monthlyCost ? String(service.monthlyCost) : "");
+                      }
+                    }}
+                    activeOpacity={0.6}
+                  >
+                    {service.monthlyCost > 0 ? (
+                      <Text style={styles.cost}>${service.monthlyCost.toLocaleString()}<Text style={styles.costPer}>/mo</Text></Text>
+                    ) : (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(245,158,11,0.1)", borderWidth: 1, borderColor: "rgba(245,158,11,0.25)" }}>
+                        <DollarSign size={10} color="#fbbf24" />
+                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#fbbf24" }}>Add cost</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Inline cost editor */}
+                {editingCost === service.id && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border }}>
+                    <DollarSign size={14} color={theme.colors.textMuted} />
+                    <TextInput
+                      style={{ flex: 1, fontSize: 14, color: theme.colors.text, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
+                      placeholder="Monthly cost"
+                      placeholderTextColor={theme.colors.textMuted}
+                      keyboardType="decimal-pad"
+                      value={costValue}
+                      onChangeText={setCostValue}
+                      autoFocus
+                    />
+                    <TouchableOpacity
+                      onPress={() => handleSaveCost(service.id)}
+                      disabled={savingCost}
+                      style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center" }}
+                    >
+                      <Check size={14} color="#fff" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => { setEditingCost(null); setCostValue(""); }}
+                      style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" }}
+                    >
+                      <X size={14} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                <View style={styles.serviceDetails}>
+                  {service.website && (
+                    <View style={[styles.detailItem, { flexShrink: 1, minWidth: 0 }]}>
+                      <Globe size={12} color={theme.colors.textMuted} />
+                      <Text style={styles.detailText} numberOfLines={1}>{service.website.replace(/^https?:\/\//, "")}</Text>
+                    </View>
+                  )}
+                  {service.phone && (
+                    <View style={[styles.detailItem, { flexShrink: 1, minWidth: 0 }]}>
+                      <Phone size={12} color={theme.colors.textMuted} />
+                      <Text style={styles.detailText} numberOfLines={1}>{service.phone}</Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.serviceFooter}>
+                  <UiBadge label={service.isActive ? "Active" : "Inactive"} variant={service.isActive ? "success" : "neutral"} />
+                  {service.billingCycle && (
+                    <UiBadge label={service.billingCycle.replace("_", " ")} variant="info" />
+                  )}
+                </View>
+              </Card>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },
+  subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
+  addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
+  summaryCard: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  summaryRow: { flexDirection: "row", gap: 10 },
+  summaryItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+  },
+  summaryLabel: { fontSize: 11, color: theme.colors.textMuted, marginBottom: 2 },
+  summaryValue: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
+  summaryHint: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 12, lineHeight: 18 },
+  addressRow: { marginBottom: 10 },
+  addressContent: { paddingHorizontal: 20, paddingVertical: 2, gap: 8, alignItems: "center" },
+  addressChip: {
+    minWidth: 92,
+    maxWidth: 180,
+    minHeight: 42,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.32)" },
+  addressChipText: { fontSize: 13, fontWeight: "700", color: theme.colors.textSecondary, textAlign: "center" },
+  addressChipTextActive: { color: theme.colors.orange.text },
+  filterRow: { marginBottom: 10 },
+  filterContent: { paddingHorizontal: 20, paddingVertical: 2, gap: 8, alignItems: "center" },
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    minHeight: 38,
+    minWidth: 74,
+    maxWidth: 168,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.3)" },
+  filterDot: { width: 8, height: 8, borderRadius: 4 },
+  filterText: { flexShrink: 1, fontSize: 13, color: theme.colors.textSecondary, fontWeight: "700" },
+  filterTextActive: { color: theme.colors.orange.text },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 140, paddingTop: 8 },
+  list: { gap: 12 },
+  serviceTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  catDot: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  catIcon: { fontSize: 16 },
+  serviceName: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
+  serviceCategory: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  cost: { fontSize: 16, fontWeight: "800", color: theme.colors.emerald.text },
+  costPer: { fontSize: 11, fontWeight: "500", color: theme.colors.textTertiary },
+  serviceDetails: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border },
+  detailItem: { flexDirection: "row", alignItems: "center", gap: 4, maxWidth: "48%" },
+  detailText: { fontSize: 12, color: theme.colors.textTertiary, flexShrink: 1 },
+  serviceFooter: { flexDirection: "row", gap: 6, marginTop: 10 },
+});

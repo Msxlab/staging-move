@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm --filter @locateflow/db exec prisma validate)",
+      "Bash(npx prisma *)",
+      "Bash(DATABASE_URL=\"mysql://u:p@localhost:3306/db\" npx prisma validate)",
+      "Bash(DATABASE_URL=\"mysql://u:p@localhost:3306/db\" npx --prefix \"C:/Users/Windows/Documents/move-main/move-main/packages/db\" prisma validate --schema \"C:/Users/Windows/Documents/move-main/move-main/packages/db/prisma/schema.prisma\")",
+      "Bash(pnpm --filter @locateflow/admin exec tsc --noEmit)",
+      "Bash(npx tsc *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(pnpm --version)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm --filter @locateflow/web test)",
+      "Bash(pnpm --filter @locateflow/db exec prisma generate)",
+      "Bash(pnpm --filter @locateflow/web add next-themes)",
+      "Bash(DATABASE_URL=\"mysql://dummy:dummy@localhost:3306/dummy\" pnpm exec prisma validate)",
+      "Bash(DATABASE_URL=\"mysql://dummy:dummy@localhost:3306/dummy\" pnpm exec prisma generate)",
+      "Bash(pnpm --filter @locateflow/web add -D @next/bundle-analyzer)",
+      "Bash(pnpm --filter @locateflow/shared test)",
+      "Bash(ls node_modules/.bin/vitest)",
+      "Bash(ls apps/web/node_modules/.bin/vitest)",
+      "Bash(ls packages/shared/node_modules/.bin/vitest)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm --filter @locateflow/shared lint)",
+      "Bash(pnpm --filter @locateflow/shared run test)",
+      "Bash(dir /b packages\\\\shared\\\\package.json)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm tsx *)",
+      "Bash(pnpm lint *)",
+      "Bash(npx eslint *)",
+      "Bash(pnpm --filter @locateflow/shared exec vitest run)",
+      "Bash(pnpm --filter @locateflow/web exec tsc --noEmit)",
+      "Bash(pnpm --filter @locateflow/web exec vitest run)",
+      "Bash(pnpm --filter @locateflow/mobile exec tsc --noEmit)"
+    ]
+  }
+}

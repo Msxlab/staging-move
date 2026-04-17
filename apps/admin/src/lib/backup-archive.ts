@@ -1,0 +1,192 @@
+export interface BackupArchiveMetadata {
+  backupId: string;
+  fileName: string;
+  createdAt: string;
+  createdBy: string;
+  type: string;
+  format: string;
+  tables: string[];
+  totalRecords: number;
+  tableCounts: Record<string, number>;
+}
+
+export type BackupArchivePayload =
+  | {
+      type: "plain";
+      rawContent: string;
+      data: Record<string, any[]>;
+    }
+  | {
+      type: "encrypted";
+      encryptedData: string;
+      iv: string;
+      authTag: string;
+    };
+
+export interface BackupArchive {
+  version: 1;
+  metadata: BackupArchiveMetadata;
+  signature: string | null;
+  payload: BackupArchivePayload;
+}
+
+function normalizeDataMap(raw: any): Record<string, any[]> {
+  if (!raw || typeof raw !== "object") return {};
+  return Object.fromEntries(
+    Object.entries(raw).filter((entry): entry is [string, any[]] => Array.isArray(entry[1]))
+  );
+}
+
+export function createBackupArchive(input: {
+  metadata: BackupArchiveMetadata;
+  rawContent: string;
+  signature: string | null;
+  encrypted?: {
+    encryptedData: string;
+    iv: string;
+    authTag: string;
+  } | null;
+}): BackupArchive {
+  if (input.encrypted) {
+    return {
+      version: 1,
+      metadata: input.metadata,
+      signature: input.signature,
+      payload: {
+        type: "encrypted",
+        encryptedData: input.encrypted.encryptedData,
+        iv: input.encrypted.iv,
+        authTag: input.encrypted.authTag,
+      },
+    };
+  }
+
+  let parsed: any = null;
+  try {
+    parsed = JSON.parse(input.rawContent);
+  } catch {
+    parsed = null;
+  }
+
+  return {
+    version: 1,
+    metadata: input.metadata,
+    signature: input.signature,
+    payload: {
+      type: "plain",
+      rawContent: input.rawContent,
+      data: normalizeDataMap(parsed?.data ?? parsed),
+    },
+  };
+}
+
+export function parseBackupArchive(input: unknown): BackupArchive | null {
+  if (!input || typeof input !== "object") return null;
+  const value = input as Record<string, any>;
+  const metadata = value.metadata;
+  const payload = value.payload;
+
+  if (value.version !== 1 || !metadata || typeof metadata !== "object" || !payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const tables = Array.isArray(metadata.tables) ? metadata.tables.filter((table: unknown): table is string => typeof table === "string") : [];
+  const tableCounts = metadata.tableCounts && typeof metadata.tableCounts === "object"
+    ? Object.fromEntries(
+        Object.entries(metadata.tableCounts).filter(
+          (entry): entry is [string, number] => typeof entry[0] === "string" && typeof entry[1] === "number"
+        )
+      )
+    : {};
+
+  if (payload.type === "encrypted") {
+    if (
+      typeof payload.encryptedData !== "string" ||
+      typeof payload.iv !== "string" ||
+      typeof payload.authTag !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      version: 1,
+      metadata: {
+        backupId: typeof metadata.backupId === "string" ? metadata.backupId : "unknown",
+        fileName: typeof metadata.fileName === "string" ? metadata.fileName : "backup.json",
+        createdAt: typeof metadata.createdAt === "string" ? metadata.createdAt : new Date(0).toISOString(),
+        createdBy: typeof metadata.createdBy === "string" ? metadata.createdBy : "unknown",
+        type: typeof metadata.type === "string" ? metadata.type : "FULL",
+        format: typeof metadata.format === "string" ? metadata.format : "JSON",
+        tables,
+        totalRecords: typeof metadata.totalRecords === "number" ? metadata.totalRecords : 0,
+        tableCounts,
+      },
+      signature: typeof value.signature === "string" ? value.signature : null,
+      payload: {
+        type: "encrypted",
+        encryptedData: payload.encryptedData,
+        iv: payload.iv,
+        authTag: payload.authTag,
+      },
+    };
+  }
+
+  if (payload.type === "plain") {
+    if (typeof payload.rawContent !== "string") return null;
+    return {
+      version: 1,
+      metadata: {
+        backupId: typeof metadata.backupId === "string" ? metadata.backupId : "unknown",
+        fileName: typeof metadata.fileName === "string" ? metadata.fileName : "backup.json",
+        createdAt: typeof metadata.createdAt === "string" ? metadata.createdAt : new Date(0).toISOString(),
+        createdBy: typeof metadata.createdBy === "string" ? metadata.createdBy : "unknown",
+        type: typeof metadata.type === "string" ? metadata.type : "FULL",
+        format: typeof metadata.format === "string" ? metadata.format : "JSON",
+        tables,
+        totalRecords: typeof metadata.totalRecords === "number" ? metadata.totalRecords : 0,
+        tableCounts,
+      },
+      signature: typeof value.signature === "string" ? value.signature : null,
+      payload: {
+        type: "plain",
+        rawContent: payload.rawContent,
+        data: normalizeDataMap(payload.data),
+      },
+    };
+  }
+
+  return null;
+}
+
+export function extractBackupPreview(input: unknown): {
+  archive: BackupArchive | null;
+  isEncrypted: boolean;
+  tables: string[];
+  tableCounts: Record<string, number>;
+  totalRecords: number;
+  data: Record<string, any[]> | null;
+} {
+  const archive = parseBackupArchive(input);
+  if (archive) {
+    return {
+      archive,
+      isEncrypted: archive.payload.type === "encrypted",
+      tables: archive.metadata.tables,
+      tableCounts: archive.metadata.tableCounts,
+      totalRecords: archive.metadata.totalRecords,
+      data: archive.payload.type === "plain" ? archive.payload.data : null,
+    };
+  }
+
+  const raw = input as any;
+  const data = normalizeDataMap(raw?.data ?? raw);
+  const tableCounts = Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value.length]));
+  return {
+    archive: null,
+    isEncrypted: false,
+    tables: Object.keys(tableCounts),
+    tableCounts,
+    totalRecords: Object.values(tableCounts).reduce((sum, count) => sum + count, 0),
+    data,
+  };
+}

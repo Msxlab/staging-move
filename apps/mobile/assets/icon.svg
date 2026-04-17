@@ -1,0 +1,38 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="256" fill="#0a0a0f"/>
+  <rect x="64" y="64" width="896" height="896" rx="224" fill="#12121a"/>
+  <defs>
+    <linearGradient id="pinGrad" x1="180" y1="60" x2="332" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="dotGrad" x1="220" y1="220" x2="292" y2="292" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="100" y1="350" x2="412" y2="350" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97316" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#FBBF24" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#F97316" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="flowGrad" x1="300" y1="580" x2="724" y2="580" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F97316" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#FBBF24" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#F97316" stop-opacity="0.4"/>
+    </linearGradient>
+  </defs>
+  <!-- Glow effect -->
+  <circle cx="512" cy="480" r="200" fill="#F97316" opacity="0.08"/>
+  <!-- Location pin body -->
+  <path d="M512 240C512 240 340 420 340 560C340 655 417 732 512 732C607 732 684 655 684 560C684 420 512 240 512 240Z" fill="url(#pinGrad)" opacity="0.15"/>
+  <path d="M512 280C512 280 370 440 370 560C370 638 434 702 512 702C590 702 654 638 654 560C654 440 512 280 512 280Z" stroke="url(#pinGrad)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Inner circle (dot) -->
+  <circle cx="512" cy="540" r="44" fill="url(#dotGrad)"/>
+  <!-- Flow waves -->
+  <path d="M360 620C400 590 440 640 480 610C520 580 560 630 600 600C640 570 680 620 700 610" stroke="url(#flowGrad)" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <path d="M340 660C380 630 420 680 460 650C500 620 540 670 580 640C620 610 660 660 700 640" stroke="url(#flowGrad)" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.5"/>
+  <!-- Brand text -->
+  <text x="512" y="870" text-anchor="middle" font-family="system-ui" font-size="110" font-weight="800" letter-spacing="-2">
+    <tspan fill="white">Locate</tspan><tspan fill="#FBBF24">Flow</tspan>
+  </text>
+</svg>

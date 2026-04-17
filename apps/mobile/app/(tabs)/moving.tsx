@@ -1,0 +1,177 @@
+import React, { useEffect, useState, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  Truck,
+  Plus,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  MapPin,
+} from "lucide-react-native";
+import { theme } from "@/lib/theme";
+import { api } from "@/lib/api";
+import { Card } from "@/components/ui/Card";
+import { Badge as UiBadge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
+
+const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
+  PLANNING: "neutral",
+  IN_PROGRESS: "primary",
+  COMPLETED: "success",
+  CANCELLED: "error",
+};
+
+export default function MovingScreen() {
+  const router = useRouter();
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchPlans = useCallback(async () => {
+    const res = await api.get<any>("/api/moving");
+    if (res.data) setPlans(res.data.plans || []);
+  }, []);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    await fetchPlans();
+    setLoading(false);
+  }, [fetchPlans]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchPlans();
+    setRefreshing(false);
+  }, [fetchPlans]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading) return <LoadingScreen />;
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Moving Plans</Text>
+          <Text style={styles.subtitle}>{plans.length} plan{plans.length !== 1 ? "s" : ""}</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push("/moving/new" as any)}
+          activeOpacity={0.7}
+        >
+          <Plus size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+      >
+        {plans.length === 0 ? (
+          <EmptyState
+            icon={<Truck size={32} color={theme.colors.primary} />}
+            title="No moving plans"
+            description="Create a moving plan to organize your relocation tasks and timeline."
+            actionLabel="Plan a Move"
+            onAction={() => router.push("/moving/new" as any)}
+          />
+        ) : (
+          <View style={styles.list}>
+            {plans.map((plan: any) => {
+              const totalTasks = plan.tasks?.length || 0;
+              const completedTasks = plan.tasks?.filter((t: any) => t.completed === true).length || 0;
+              const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+              const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+              return (
+                <Card key={plan.id} variant="default" onPress={() => router.push(`/moving/${plan.id}` as any)}>
+                  <View style={styles.planTop}>
+                    <View style={styles.planIcon}>
+                      <Truck size={20} color={theme.colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.planTitle}>
+                        {plan.fromAddress?.city || "—"} → {plan.toAddress?.city || "—"}
+                      </Text>
+                      <View style={styles.planMeta}>
+                        <Calendar size={12} color={theme.colors.textMuted} />
+                        <Text style={styles.planDate}>
+                          {new Date(plan.moveDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </Text>
+                        {daysUntil > 0 && (
+                          <Text style={styles.daysLeft}>{daysUntil} days left</Text>
+                        )}
+                      </View>
+                    </View>
+                    <UiBadge label={plan.status.replace("_", " ")} variant={statusVariant[plan.status] || "neutral"} />
+                  </View>
+
+                  {/* Progress */}
+                  <View style={styles.progressRow}>
+                    <View style={styles.progressBg}>
+                      <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                    </View>
+                    <Text style={styles.progressText}>{completedTasks}/{totalTasks}</Text>
+                  </View>
+
+                  {/* Addresses */}
+                  <View style={styles.addressRow}>
+                    <View style={styles.addressItem}>
+                      <MapPin size={12} color={theme.colors.textMuted} />
+                      <Text style={styles.addressText} numberOfLines={1}>
+                        {plan.fromAddress?.street || "Origin"}, {plan.fromAddress?.state || ""}
+                      </Text>
+                    </View>
+                    <ArrowRight size={12} color={theme.colors.textMuted} />
+                    <View style={styles.addressItem}>
+                      <MapPin size={12} color={theme.colors.emerald.text} />
+                      <Text style={styles.addressText} numberOfLines={1}>
+                        {plan.toAddress?.street || "Destination"}, {plan.toAddress?.state || ""}
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              );
+            })}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
+  title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },
+  subtitle: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
+  addButton: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.primary, alignItems: "center", justifyContent: "center", ...theme.shadow.glow },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
+  list: { gap: 12 },
+  planTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  planIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)", alignItems: "center", justifyContent: "center" },
+  planTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
+  planMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  planDate: { fontSize: 12, color: theme.colors.textTertiary },
+  daysLeft: { fontSize: 11, color: theme.colors.amber.text, fontWeight: "600", marginLeft: 6 },
+  progressRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.colors.border },
+  progressBg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.05)" },
+  progressFill: { height: "100%", borderRadius: 3, backgroundColor: theme.colors.primary },
+  progressText: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: "500" },
+  addressRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
+  addressItem: { flexDirection: "row", alignItems: "center", gap: 4, flex: 1 },
+  addressText: { fontSize: 11, color: theme.colors.textTertiary },
+});

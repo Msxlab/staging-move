@@ -1,0 +1,258 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root,
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 96%;
+
+    --primary: 24 94% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 43 96% 56%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 222 30% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 222 30% 14%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --success: 142 76% 36%;
+    --info: 199 89% 48%;
+
+    --border: 222 20% 16%;
+    --input: 222 20% 16%;
+    --ring: 24 94% 53%;
+
+    --radius: 0.75rem;
+
+    --surface: #0f172a;
+    --surface-secondary: #1e293b;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-hover: rgba(255, 255, 255, 0.1);
+    --text-primary: rgba(255, 255, 255, 1);
+    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-tertiary: rgba(255, 255, 255, 0.45);
+  }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 24 94% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 43 96% 56%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --success: 142 76% 36%;
+    --info: 199 89% 48%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 24 94% 50%;
+
+    --radius: 0.75rem;
+
+    --surface: #f8fafc;
+    --surface-secondary: #ffffff;
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-hover: rgba(0, 0, 0, 0.04);
+    --text-primary: rgba(15, 23, 42, 1);
+    --text-secondary: rgba(15, 23, 42, 0.6);
+    --text-tertiary: rgba(15, 23, 42, 0.45);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  /* Accessible focus-visible styles for all interactive elements */
+  :focus-visible {
+    @apply outline-none ring-2 ring-orange-500 ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: var(--glass-bg);
+    @apply backdrop-blur-xl;
+    border: 1px solid var(--glass-border);
+  }
+  .glass-card {
+    @apply rounded-2xl backdrop-blur-xl shadow-xl;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+  }
+  .glass-hover {
+    @apply transition-all;
+  }
+  .glass-hover:hover {
+    background: var(--glass-hover);
+  }
+}
+
+/* Hide gradient blobs in light mode */
+.light .dark-only-blobs {
+  opacity: 0;
+}
+
+/* =========================================
+   LIGHT MODE — comprehensive overrides
+   Converts dark-first Tailwind utilities to
+   light equivalents via CSS class selectors.
+   ========================================= */
+
+/* --- Text colors: white → slate-900 --- */
+.light .text-white { color: rgba(15, 23, 42, 1); }
+.light .text-white\/90 { color: rgba(15, 23, 42, 0.9); }
+.light .text-white\/80 { color: rgba(15, 23, 42, 0.8); }
+.light .text-white\/70 { color: rgba(15, 23, 42, 0.7); }
+.light .text-white\/60 { color: rgba(15, 23, 42, 0.6); }
+.light .text-white\/50 { color: rgba(15, 23, 42, 0.5); }
+.light .text-white\/40 { color: rgba(15, 23, 42, 0.4); }
+.light .text-white\/30 { color: rgba(15, 23, 42, 0.3); }
+.light .text-white\/25 { color: rgba(15, 23, 42, 0.25); }
+.light .text-white\/20 { color: rgba(15, 23, 42, 0.2); }
+.light .text-white\/15 { color: rgba(15, 23, 42, 0.15); }
+.light .text-white\/10 { color: rgba(15, 23, 42, 0.1); }
+
+/* Hover text */
+.light .hover\:text-white:hover { color: rgba(15, 23, 42, 1); }
+.light .hover\:text-white\/70:hover { color: rgba(15, 23, 42, 0.7); }
+.light .hover\:text-white\/40:hover { color: rgba(15, 23, 42, 0.4); }
+.light .group:hover .group-hover\:text-white { color: rgba(15, 23, 42, 1); }
+
+/* Placeholder text */
+.light .placeholder\:text-white\/30::placeholder { color: rgba(15, 23, 42, 0.3); }
+
+/* --- Background colors: white/alpha → black/alpha --- */
+.light .bg-white\/5 { background-color: rgba(0, 0, 0, 0.03); }
+.light .bg-white\/10 { background-color: rgba(0, 0, 0, 0.05); }
+.light .bg-white\/\[0\.02\] { background-color: rgba(0, 0, 0, 0.015); }
+.light .bg-white\/\[0\.03\] { background-color: rgba(0, 0, 0, 0.02); }
+.light .bg-white\/\[0\.05\] { background-color: rgba(0, 0, 0, 0.03); }
+.light .bg-white\/\[0\.07\] { background-color: rgba(0, 0, 0, 0.04); }
+
+/* Hover backgrounds */
+.light .hover\:bg-white\/5:hover { background-color: rgba(0, 0, 0, 0.04); }
+.light .hover\:bg-white\/10:hover { background-color: rgba(0, 0, 0, 0.06); }
+.light .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(0, 0, 0, 0.03); }
+.light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(0, 0, 0, 0.04); }
+.light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(0, 0, 0, 0.05); }
+
+/* Group hover backgrounds */
+.light .group:hover .group-hover\:bg-orange-500 { background-color: rgb(249 115 22); }
+
+/* --- Border colors: white/alpha → black/alpha --- */
+.light .border-white\/5 { border-color: rgba(0, 0, 0, 0.05); }
+.light .border-white\/10 { border-color: rgba(0, 0, 0, 0.08); }
+.light .border-white\/\[0\.03\] { border-color: rgba(0, 0, 0, 0.04); }
+.light .border-white\/\[0\.05\] { border-color: rgba(0, 0, 0, 0.06); }
+
+/* --- Divide colors --- */
+.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(0, 0, 0, 0.05); }
+
+/* --- Ring colors --- */
+.light .focus\:ring-orange-500\/50:focus { --tw-ring-color: rgba(249, 115, 22, 0.3); }
+
+/* --- Black overlay in light mode: soften --- */
+.light .bg-black\/50 { background-color: rgba(0, 0, 0, 0.3); }
+.light .bg-black\/60 { background-color: rgba(0, 0, 0, 0.35); }
+
+/* --- Specific input overrides --- */
+.light input,
+.light select,
+.light textarea {
+  color: rgba(15, 23, 42, 0.9);
+}
+.light input::placeholder,
+.light textarea::placeholder {
+  color: rgba(15, 23, 42, 0.35);
+}
+
+/* --- Sidebar: keep dark in light mode for contrast --- */
+.light aside {
+  background: #1e293b;
+}
+.light aside .text-white,
+.light aside .text-white\/80,
+.light aside .text-white\/70,
+.light aside .text-white\/60,
+.light aside .text-white\/50,
+.light aside .text-white\/40,
+.light aside .text-white\/30 {
+  color: inherit;
+}
+
+/* --- Preserve white text on colored backgrounds --- */
+.light .bg-orange-500 .text-white,
+.light .bg-orange-600 .text-white,
+.light .bg-red-500 .text-white,
+.light .bg-red-600 .text-white,
+.light .bg-amber-500 .text-white,
+.light .bg-amber-600 .text-white,
+.light .bg-emerald-500 .text-white,
+.light .bg-emerald-600 .text-white,
+.light .bg-orange-500.text-white,
+.light .bg-red-500.text-white,
+.light .bg-amber-500.text-white,
+.light .bg-emerald-500.text-white {
+  color: rgb(255, 255, 255);
+}
+
+/* Buttons with colored bg should keep white text */
+.light button.bg-orange-500,
+.light button.bg-red-500,
+.light button.bg-amber-500,
+.light button.bg-emerald-500,
+.light a.bg-orange-500 {
+  color: rgb(255, 255, 255);
+}
+
+/* Badges on orange bg */
+.light .bg-orange-500 {
+  color: rgb(255, 255, 255);
+}
+
+/* Keep notification badge white on orange */
+.light .bg-orange-500.text-white,
+.light span.bg-orange-500 {
+  color: rgb(255, 255, 255);
+}

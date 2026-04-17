@@ -1,0 +1,16 @@
+.git
+.github
+.idea
+.vscode
+.turbo
+node_modules
+**/node_modules
+.next
+**/.next
+build
+dist
+out
+coverage
+.env
+.env*.local
+apps/web/public/uploads

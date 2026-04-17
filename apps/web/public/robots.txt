@@ -1,0 +1,27 @@
+# https://www.robotstxt.org/robotstxt.html
+
+User-agent: *
+Allow: /
+
+# Authenticated user area — not for indexing
+Disallow: /dashboard
+Disallow: /settings/
+Disallow: /moving
+Disallow: /moving/
+Disallow: /services
+Disallow: /services/
+Disallow: /addresses
+Disallow: /addresses/
+Disallow: /budget
+Disallow: /budget/
+Disallow: /providers
+Disallow: /providers/
+
+# API endpoints — never crawl
+Disallow: /api/
+
+# Auth callback pages
+Disallow: /verify-email/
+Disallow: /reset-password/
+
+Sitemap: https://locateflow.app/sitemap.xml

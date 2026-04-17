@@ -1,0 +1,38 @@
+{
+  "name": "locateflow",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "docker:logs": "docker compose logs -f",
+    "docker:db:init": "docker compose run --rm db-init",
+    "db:generate": "pnpm --filter @locateflow/db generate",
+    "db:migrate": "pnpm --filter @locateflow/db migrate",
+    "db:push": "pnpm --filter @locateflow/db push",
+    "db:seed": "pnpm --filter @locateflow/db seed",
+    "db:seed:all": "pnpm --filter @locateflow/db seed:all",
+    "db:seed:master": "pnpm --filter @locateflow/db seed:master",
+    "db:studio": "pnpm --filter @locateflow/db studio",
+    "mobile:dev": "pnpm --filter @locateflow/mobile dev",
+    "mobile:dev:client": "pnpm --filter @locateflow/mobile dev:client",
+    "mobile:prebuild": "pnpm --filter @locateflow/mobile prebuild",
+    "mobile:prebuild:clean": "pnpm --filter @locateflow/mobile prebuild:clean",
+    "mobile:android": "pnpm --filter @locateflow/mobile android",
+    "mobile:ios": "pnpm --filter @locateflow/mobile ios",
+    "mobile:build:dev:android": "pnpm --filter @locateflow/mobile build:dev:android",
+    "mobile:build:dev:ios": "pnpm --filter @locateflow/mobile build:dev:ios",
+    "mobile:build:simulator:ios": "pnpm --filter @locateflow/mobile build:simulator:ios"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}
