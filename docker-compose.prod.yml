@@ -7,12 +7,17 @@
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 #
 # Services:
-#   mysql    — MySQL 8 with data volume (healthcheck)
-#   migrate  — One-shot: prisma migrate deploy + seed-admin
-#   web      — Next.js client (port 3000, internal)
-#   admin    — Next.js admin panel (port 3001, internal)
-#   caddy    — Reverse proxy + automatic TLS (ports 80/443)
-#   cron     — mcuadros/ofelia; triggers the 5 cron jobs via HTTP
+#   mysql              — MySQL 8 with data volume (healthcheck)
+#   migrate            — One-shot: prisma migrate deploy + seed-admin
+#   web                — Next.js client (port 3000, internal)
+#   admin              — Next.js admin panel (port 3001, internal)
+#   caddy              — Reverse proxy + automatic TLS (ports 80/443)
+#   cron               — mcuadros/ofelia; triggers the 5 cron jobs via HTTP
+#   glitchtip          — Open-source error tracking (Sentry-API compatible)
+#   glitchtip-worker   — Celery worker + beat for GlitchTip
+#   glitchtip-db       — Postgres 15 dedicated to GlitchTip
+#   glitchtip-redis    — Redis cache for GlitchTip
+#   imgproxy           — Signed image transform proxy; fetches from R2
 # ---------------------------------------------------------------
 
 services:
@@ -103,6 +108,16 @@ services:
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
       NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      # File storage — R2 (server-only) + imgproxy (client reads public URL)
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_REGION: ${R2_REGION:-auto}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
+      IMGPROXY_KEY: ${IMGPROXY_KEY:-}
+      IMGPROXY_SALT: ${IMGPROXY_SALT:-}
+      NEXT_PUBLIC_IMGPROXY_URL: ${NEXT_PUBLIC_IMGPROXY_URL:-}
     expose:
       - "3000"
     logging:
@@ -132,6 +147,17 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-}
       UPSTASH_REDIS_REST_URL: ${UPSTASH_REDIS_REST_URL:-}
       UPSTASH_REDIS_REST_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-}
+      NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+      # File storage — admin also writes (avatar change, provider logo upload).
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_REGION: ${R2_REGION:-auto}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL:-}
+      IMGPROXY_KEY: ${IMGPROXY_KEY:-}
+      IMGPROXY_SALT: ${IMGPROXY_SALT:-}
+      NEXT_PUBLIC_IMGPROXY_URL: ${NEXT_PUBLIC_IMGPROXY_URL:-}
     expose:
       - "3001"
     logging:
@@ -147,6 +173,8 @@ services:
     depends_on:
       - web
       - admin
+      - glitchtip
+      - imgproxy
     ports:
       - "80:80"
       - "443:443"
@@ -154,11 +182,132 @@ services:
     environment:
       WEB_DOMAIN: ${WEB_DOMAIN:?WEB_DOMAIN is required (e.g. app.example.com)}
       ADMIN_DOMAIN: ${ADMIN_DOMAIN:?ADMIN_DOMAIN is required (e.g. admin.example.com)}
+      ERRORS_DOMAIN: ${ERRORS_DOMAIN:?ERRORS_DOMAIN is required (e.g. errors.example.com)}
+      IMG_DOMAIN: ${IMG_DOMAIN:?IMG_DOMAIN is required (e.g. img.example.com)}
       ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required (Let's Encrypt contact)}
     volumes:
       - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ──────────────────────────────────────────────────────────────
+  # GlitchTip — open-source, Sentry-API-compatible error tracking.
+  # `@sentry/nextjs` keeps working as-is; we only swap the DSN in
+  # NEXT_PUBLIC_SENTRY_DSN to point at this instance.
+  # ──────────────────────────────────────────────────────────────
+  glitchtip-db:
+    image: postgres:15-alpine
+    container_name: locateflow-glitchtip-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: ${GLITCHTIP_DB_PASSWORD:?GLITCHTIP_DB_PASSWORD is required}
+      POSTGRES_DB: glitchtip
+    volumes:
+      - glitchtip_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U glitchtip -d glitchtip"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  glitchtip-redis:
+    image: redis:7-alpine
+    container_name: locateflow-glitchtip-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  glitchtip:
+    image: glitchtip/glitchtip:latest
+    container_name: locateflow-glitchtip
+    restart: unless-stopped
+    depends_on:
+      glitchtip-db:
+        condition: service_healthy
+      glitchtip-redis:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379/0
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:?GLITCHTIP_SECRET_KEY is required (openssl rand -hex 32)}
+      PORT: 8000
+      GLITCHTIP_DOMAIN: https://${ERRORS_DOMAIN}
+      DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-alerts@${WEB_DOMAIN}}
+      EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
+      # Disable open registration after you create the first admin account.
+      ENABLE_USER_REGISTRATION: ${GLITCHTIP_ENABLE_REGISTRATION:-false}
+      # Lower retention on a single-node deploy to keep Postgres small.
+      GLITCHTIP_MAX_EVENT_LIFE_DAYS: ${GLITCHTIP_RETENTION_DAYS:-90}
+    expose:
+      - "8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  glitchtip-worker:
+    image: glitchtip/glitchtip:latest
+    container_name: locateflow-glitchtip-worker
+    restart: unless-stopped
+    depends_on:
+      glitchtip:
+        condition: service_started
+    command: ./bin/run-celery-with-beat.sh
+    environment:
+      DATABASE_URL: postgres://glitchtip:${GLITCHTIP_DB_PASSWORD}@glitchtip-db:5432/glitchtip
+      REDIS_URL: redis://glitchtip-redis:6379/0
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY}
+      GLITCHTIP_DOMAIN: https://${ERRORS_DOMAIN}
+      DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-alerts@${WEB_DOMAIN}}
+      EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+  # ──────────────────────────────────────────────────────────────
+  # imgproxy — signed image transform proxy. Fetches from Cloudflare
+  # R2 (or any S3-compatible bucket) and returns resized/reformatted
+  # images. All requests are HMAC-signed so clients can't abuse it.
+  # ──────────────────────────────────────────────────────────────
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    container_name: locateflow-imgproxy
+    restart: unless-stopped
+    environment:
+      IMGPROXY_KEY: ${IMGPROXY_KEY:?IMGPROXY_KEY is required (openssl rand -hex 32)}
+      IMGPROXY_SALT: ${IMGPROXY_SALT:?IMGPROXY_SALT is required (openssl rand -hex 32)}
+      IMGPROXY_USE_S3: "true"
+      IMGPROXY_S3_ENDPOINT: ${R2_ENDPOINT:?R2_ENDPOINT is required (e.g. https://<account>.r2.cloudflarestorage.com)}
+      IMGPROXY_S3_REGION: ${R2_REGION:-auto}
+      AWS_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?R2_ACCESS_KEY_ID is required}
+      AWS_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?R2_SECRET_ACCESS_KEY is required}
+      IMGPROXY_ENABLE_WEBP_DETECTION: "true"
+      IMGPROXY_ENABLE_AVIF_DETECTION: "true"
+      # Strip EXIF metadata (includes GPS coords) from uploaded photos.
+      IMGPROXY_STRIP_METADATA: "true"
+      # Hard caps to prevent DoS-via-oversize-image.
+      IMGPROXY_MAX_SRC_RESOLUTION: "50"
+      IMGPROXY_MAX_SRC_FILE_SIZE: "20971520"
+    expose:
+      - "8080"
     logging:
       driver: json-file
       options:
@@ -194,3 +343,4 @@ volumes:
   mysql_data:
   caddy_data:
   caddy_config:
+  glitchtip_db:

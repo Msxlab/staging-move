@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 // Default retention: 30 days for completed backups, 7 days for failed
 const RETENTION_DAYS_COMPLETED = 30;
@@ -10,11 +11,8 @@ const MAX_BACKUPS_KEEP = 50; // Keep at most 50 recent backups regardless of age
 // POST /api/backup/retention — run retention cleanup (manual or cron)
 export async function POST(request: NextRequest) {
   try {
-    // Allow both admin-triggered and cron-triggered
-    const cronSecret = process.env.CRON_SECRET;
-    const authHeader = request.headers.get("authorization");
-    const isCron = cronSecret && authHeader === `Bearer ${cronSecret}`;
-
+    // Allow both admin-triggered and cron-triggered.
+    const isCron = verifyInternalAuth(request.headers.get("authorization"), "cron");
     if (!isCron) {
       await requirePermission("settings", "canDelete", { minimumRole: "SUPER_ADMIN" });
     }

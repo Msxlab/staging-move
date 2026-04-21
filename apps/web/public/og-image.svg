@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="hsl(262 83% 58%)"/>
+      <stop offset="1" stop-color="hsl(222 47% 11%)"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="300" cy="315" r="400" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="hsl(262 83% 58%)" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="hsl(262 83% 58%)" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="300" cy="315" r="400" fill="url(#glow)"/>
+
+  <!-- Logo mark -->
+  <g transform="translate(96,96)">
+    <rect width="128" height="128" rx="28" fill="white" fill-opacity="0.08"/>
+    <g transform="translate(0,0) scale(2)">
+      <path d="M40 20 L52 30 L52 46 L30 46 L30 30 Z" fill="white" opacity="0.35"/>
+      <path d="M12 30 L26 18 L40 30 L40 48 L12 48 Z" fill="white" opacity="0.65"/>
+      <path d="M26 16 C30 16 33 19 33 23 C33 28 26 34 26 34 C26 34 19 28 19 23 C19 19 22 16 26 16 Z" fill="white"/>
+      <circle cx="26" cy="23" r="3" fill="hsl(262 83% 58%)"/>
+    </g>
+  </g>
+
+  <!-- Headline -->
+  <text x="96" y="320"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="76" font-weight="800"
+        letter-spacing="-0.03em"
+        fill="white">Every Address.</text>
+  <text x="96" y="400"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="76" font-weight="800"
+        letter-spacing="-0.03em"
+        fill="hsl(262 100% 80%)">Every Service.</text>
+  <text x="96" y="480"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="76" font-weight="800"
+        letter-spacing="-0.03em"
+        fill="white">One Place.</text>
+
+  <!-- Subline -->
+  <text x="96" y="560"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="28" font-weight="500"
+        fill="white" fill-opacity="0.7">Track every provider tied to your homes — and move with confidence.</text>
+
+  <!-- Brand -->
+  <text x="1104" y="96"
+        text-anchor="end"
+        font-family="Inter, system-ui, sans-serif"
+        font-size="28" font-weight="700"
+        letter-spacing="0.08em"
+        fill="white" fill-opacity="0.75">LOCATEFLOW</text>
+</svg>

@@ -5,23 +5,41 @@ import { checkIPAccess } from "@/lib/ip-rules";
 
 // ── Public routes (no auth required) ───────────────────────────
 const PUBLIC_PATHS = [
-  "/", "/help", "/privacy", "/terms", "/disclaimer", "/cookie-policy",
-  "/contact", "/pricing",
-  "/sign-in", "/sign-up",
-  "/forgot-password", "/reset-password", "/verify-email",
+  "/",
+  "/help",
+  "/privacy",
+  "/terms",
+  "/disclaimer",
+  "/cookie-policy",
+  "/contact",
+  "/pricing",
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
 ];
 const PUBLIC_API_PREFIXES = [
   "/api/internal/",
   "/api/health",
   "/api/help",
-  "/api/auth/", // register/login/verify-email/password-reset/oauth
+  "/api/auth/oauth/",
   "/api/webhooks/",
   "/api/tracking",
   "/api/address-autocomplete", // landing-page feature
 ];
-const PUBLIC_API_GET = [
-  "/api/providers",
+const PUBLIC_API_EXACT = [
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/verify-email",
+  "/api/auth/password/reset/request",
+  "/api/auth/password/reset/confirm",
+  // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated
+  // session cookie enters the browser. The token in the query string is
+  // HMAC-signed + DB-validated inside the route itself, so auth here.
+  "/api/auth/impersonate-handoff",
 ];
+const PUBLIC_API_GET = ["/api/providers"];
 
 function isPublicPath(pathname: string): boolean {
   for (const p of PUBLIC_PATHS) {
@@ -31,6 +49,9 @@ function isPublicPath(pathname: string): boolean {
 }
 
 function isPublicApi(pathname: string, method: string): boolean {
+  for (const p of PUBLIC_API_EXACT) {
+    if (pathname === p) return true;
+  }
   for (const p of PUBLIC_API_PREFIXES) {
     if (pathname.startsWith(p)) return true;
   }
@@ -63,7 +84,9 @@ function applyBodySizeLimit(req: NextRequest): NextResponse | null {
 
   if (size > limit) {
     return NextResponse.json(
-      { error: `Request body too large. Maximum: ${Math.round(limit / 1024 / 1024)}MB` },
+      {
+        error: `Request body too large. Maximum: ${Math.round(limit / 1024 / 1024)}MB`,
+      },
       { status: 413 },
     );
   }
@@ -84,9 +107,15 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   if (!isMutation) return null;
 
   const contentType = req.headers.get("content-type") || "";
-  if (!contentType.includes("application/json") && !contentType.includes("multipart/form-data")) {
+  if (
+    !contentType.includes("application/json") &&
+    !contentType.includes("multipart/form-data")
+  ) {
     return NextResponse.json(
-      { error: "Invalid Content-Type. API mutations require application/json or multipart/form-data." },
+      {
+        error:
+          "Invalid Content-Type. API mutations require application/json or multipart/form-data.",
+      },
       { status: 403 },
     );
   }
@@ -100,7 +129,10 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   const origin = req.headers.get("origin");
   if (origin && origin !== allowedOrigin) {
     return NextResponse.json(
-      { error: "Invalid Origin. API mutations must originate from the same site." },
+      {
+        error:
+          "Invalid Origin. API mutations must originate from the same site.",
+      },
       { status: 403 },
     );
   }
@@ -110,13 +142,19 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
     try {
       if (new URL(referer).origin !== allowedOrigin) {
         return NextResponse.json(
-          { error: "Invalid Referer. API mutations must originate from the same site." },
+          {
+            error:
+              "Invalid Referer. API mutations must originate from the same site.",
+          },
           { status: 403 },
         );
       }
     } catch {
       return NextResponse.json(
-        { error: "Invalid Referer. API mutations must originate from the same site." },
+        {
+          error:
+            "Invalid Referer. API mutations must originate from the same site.",
+        },
         { status: 403 },
       );
     }
@@ -143,7 +181,9 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
       {
         status: 429,
         headers: {
-          "Retry-After": String(Math.ceil((result.resetAt - Date.now()) / 1000)),
+          "Retry-After": String(
+            Math.ceil((result.resetAt - Date.now()) / 1000),
+          ),
           "X-RateLimit-Limit": String(config.limit),
           "X-RateLimit-Remaining": "0",
         },
@@ -154,19 +194,31 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
 }
 
 // ── Session check ──────────────────────────────────────────────
-const userJwtSecret = process.env.USER_JWT_SECRET || process.env.ADMIN_JWT_SECRET;
+const userJwtSecret = process.env.USER_JWT_SECRET;
 if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET (or ADMIN_JWT_SECRET) must be set and at least 32 characters");
+  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
 }
 const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
 
+function readBearerToken(request: NextRequest): string | null {
+  const auth =
+    request.headers.get("authorization") ||
+    request.headers.get("Authorization");
+  if (!auth) return null;
+  const m = auth.match(/^Bearer\s+(.+)$/i);
+  return m ? m[1].trim() : null;
+}
+
 async function hasValidSession(request: NextRequest): Promise<boolean> {
-  const token = request.cookies.get("user_session")?.value;
+  // Web: httpOnly cookie. Mobile: Authorization: Bearer <token>.
+  // Both flows are JWT-signed with the same USER_JWT_SECRET; DB-row validation
+  // (isActive, expiresAt, fingerprint) still runs inside route handlers via
+  // requireDbUserId() / getUserSession(). Middleware is edge-safe — no DB.
+  const token =
+    request.cookies.get("user_session")?.value || readBearerToken(request);
   if (!token) return false;
   try {
     await jwtVerify(token, JWT_SECRET);
-    // NOTE: DB validation (isActive, expiresAt) runs in API routes via
-    // requireDbUserId(); middleware only verifies JWT to keep it edge-safe.
     return true;
   } catch {
     return false;
@@ -178,12 +230,20 @@ export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl?.pathname || "";
 
   // IP block / allow-list (runs first).
-  if (!pathname.startsWith("/api/internal/") && !pathname.startsWith("/api/health")) {
-    const ip = (request.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
+  if (
+    !pathname.startsWith("/api/internal/") &&
+    !pathname.startsWith("/api/health")
+  ) {
+    const ip = (request.headers.get("x-forwarded-for") || "unknown")
+      .split(",")[0]
+      .trim();
     const baseUrl = request.nextUrl.origin;
     const ipCheck = await checkIPAccess(ip, baseUrl);
     if (ipCheck.blocked) {
-      return NextResponse.json({ error: ipCheck.reason || "Access denied" }, { status: 403 });
+      return NextResponse.json(
+        { error: ipCheck.reason || "Access denied" },
+        { status: 403 },
+      );
     }
   }
 
@@ -215,8 +275,5 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next|.*\\..*).*)",
-    "/api/(.*)",
-  ],
+  matcher: ["/((?!_next|.*\\..*).*)", "/api/(.*)"],
 };

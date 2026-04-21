@@ -35,6 +35,8 @@ export interface UserProfile {
   currentPhase?: number;
   moveType?: string;
   daysUntilMove?: number;
+  /** "RENT" | "OWN" | "OTHER" — drives renters vs home-insurance steering */
+  ownership?: string;
 }
 
 export interface Provider {
@@ -55,6 +57,12 @@ export interface Provider {
   avgRating?: number | null;
   reviewCount?: number;
   userCount?: number;
+  coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address";
+  coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address";
+  coverageNote?: string | null;
+  coverageSourceUrl?: string | null;
+  requiresAddressCheck?: boolean;
+  requiresPolygonCheck?: boolean;
 }
 
 export interface RecommendationExplanation {
@@ -135,8 +143,10 @@ export const CATEGORY_META: Record<string, { label: string; icon: string; order:
   UTILITY_SEWER: { label: "Sewer", icon: "🚰", order: 20 },
   FINANCIAL_BANK: { label: "Banks", icon: "🏦", order: 21 },
   FINANCIAL_CREDIT_CARD: { label: "Credit Cards", icon: "💳", order: 22 },
+  FINANCIAL_FINTECH: { label: "Payment Apps", icon: "💸", order: 22.5 },
   FINANCIAL_INSURANCE_AUTO: { label: "Auto Insurance", icon: "🚗", order: 23 },
   FINANCIAL_INSURANCE_HOME: { label: "Home Insurance", icon: "🏠", order: 24 },
+  FINANCIAL_INSURANCE_RENTERS: { label: "Renters Insurance", icon: "🔑", order: 24.5 },
   FINANCIAL_INSURANCE_HEALTH: { label: "Health Insurance", icon: "🏥", order: 25 },
   FINANCIAL_MORTGAGE: { label: "Mortgage", icon: "🔑", order: 26 },
   FINANCIAL_LOAN: { label: "Loans", icon: "💰", order: 27 },
@@ -158,6 +168,7 @@ export const CATEGORY_META: Record<string, { label: string; icon: string; order:
   HOUSING_SECURITY: { label: "Home Security", icon: "🔒", order: 43 },
   SECURITY_IDENTITY: { label: "Identity Protection", icon: "🛡️", order: 43.5 },
   HEALTHCARE_DOCTORS: { label: "Doctors", icon: "🩺", order: 44 },
+  HEALTHCARE_TELEMEDICINE: { label: "Telemedicine", icon: "💻", order: 44.5 },
   HEALTHCARE_DENTIST: { label: "Dentist", icon: "🦷", order: 45 },
   HEALTHCARE_PHARMACY: { label: "Pharmacy", icon: "💊", order: 46 },
   HEALTHCARE_VET: { label: "Veterinary", icon: "🐾", order: 47 },
@@ -176,6 +187,7 @@ export const CATEGORY_META: Record<string, { label: string; icon: string; order:
   SHOPPING_SUBSCRIPTION: { label: "Subscriptions", icon: "📦", order: 58 },
   SHOPPING_RETAIL: { label: "Shopping", icon: "🛒", order: 59 },
   GROCERY_DELIVERY: { label: "Grocery Delivery", icon: "🛒", order: 60 },
+  LOCAL_DINING: { label: "Dining & Food", icon: "🍽️", order: 60.5 },
   PET_SERVICES: { label: "Pet Services", icon: "🐕", order: 61 },
   LEGAL_SERVICES: { label: "Legal", icon: "⚖️", order: 62 },
 };
@@ -204,8 +216,10 @@ export const PROVIDER_CATEGORY_VALUES = [
   "UTILITY_SEWER",
   "FINANCIAL_BANK",
   "FINANCIAL_CREDIT_CARD",
+  "FINANCIAL_FINTECH",
   "FINANCIAL_INSURANCE_AUTO",
   "FINANCIAL_INSURANCE_HOME",
+  "FINANCIAL_INSURANCE_RENTERS",
   "FINANCIAL_INSURANCE_HEALTH",
   "FINANCIAL_MORTGAGE",
   "FINANCIAL_LOAN",
@@ -227,6 +241,7 @@ export const PROVIDER_CATEGORY_VALUES = [
   "HOUSING_SECURITY",
   "SECURITY_IDENTITY",
   "HEALTHCARE_DOCTORS",
+  "HEALTHCARE_TELEMEDICINE",
   "HEALTHCARE_DENTIST",
   "HEALTHCARE_PHARMACY",
   "HEALTHCARE_VET",
@@ -245,6 +260,7 @@ export const PROVIDER_CATEGORY_VALUES = [
   "SHOPPING_SUBSCRIPTION",
   "SHOPPING_RETAIL",
   "GROCERY_DELIVERY",
+  "LOCAL_DINING",
   "PET_SERVICES",
   "LEGAL_SERVICES",
 ] as const;
@@ -300,15 +316,15 @@ export function groupByMergedDisplayCategory<T extends { category: string }>(ite
 const CRITICAL_CATEGORIES = new Set([
   "GOVERNMENT_POSTAL", "GOVERNMENT_TAX", "GOVERNMENT_DMV", "GOVERNMENT_IMMIGRATION",
   "GOVERNMENT_ID", "UTILITY_ELECTRIC", "UTILITY_WATER", "UTILITY_GAS",
-  "FINANCIAL_INSURANCE_HOME", "FINANCIAL_INSURANCE_AUTO",
+  "FINANCIAL_INSURANCE_HOME", "FINANCIAL_INSURANCE_RENTERS", "FINANCIAL_INSURANCE_AUTO",
 ]);
 
 // IMPORTANT: Major quality-of-life, should be done within first 30 days
 const IMPORTANT_CATEGORIES = new Set([
   "GOVERNMENT_BENEFITS", "GOVERNMENT_VOTER", "GOVERNMENT_HEALTH",
   "UTILITY_INTERNET", "UTILITY_PHONE", "UTILITY_TRASH", "UTILITY_SEWER",
-  "FINANCIAL_BANK", "FINANCIAL_INSURANCE_HEALTH", "FINANCIAL_MORTGAGE",
-  "HEALTHCARE_DOCTORS", "HEALTHCARE_PHARMACY", "HEALTHCARE_DENTIST",
+  "FINANCIAL_BANK", "FINANCIAL_FINTECH", "FINANCIAL_INSURANCE_HEALTH", "FINANCIAL_MORTGAGE",
+  "HEALTHCARE_DOCTORS", "HEALTHCARE_TELEMEDICINE", "HEALTHCARE_PHARMACY", "HEALTHCARE_DENTIST",
   "KIDS_SCHOOL", "KIDS_DAYCARE", "TRANSPORTATION_TOLL",
   "HOUSING_SECURITY", "HOUSING_MOVING",
 ]);
@@ -498,6 +514,41 @@ export function scoreProviders(
       if (provider.scope === "STATE" && provider.states?.includes(userState)) {
         score += 15;
         reasons.push(`Available in ${userState}`);
+      }
+
+      if (provider.coverageMatchLevel === "exact") {
+        score += 8;
+        reasons.push("Exact ZIP match");
+      } else if (provider.coverageMatchLevel === "prefix") {
+        score += 5;
+        reasons.push("Local ZIP-area match");
+      } else if (provider.coverageMatchLevel === "polygon") {
+        score += 2;
+        reasons.push("Route/corridor coverage");
+      }
+
+      if (provider.requiresAddressCheck) {
+        score -= 3;
+        reasons.push("Confirm availability by address");
+      }
+
+      // 4b. Ownership-aware steering: renters vs homeowners insurance
+      if (profile.ownership === "RENT") {
+        if (provider.category === "FINANCIAL_INSURANCE_RENTERS") {
+          score += 20;
+          reasons.unshift("You're renting — renters insurance is required");
+        } else if (provider.category === "FINANCIAL_INSURANCE_HOME") {
+          score -= 25;
+        } else if (provider.category === "FINANCIAL_MORTGAGE") {
+          score -= 30;
+        }
+      } else if (profile.ownership === "OWN") {
+        if (provider.category === "FINANCIAL_INSURANCE_HOME") {
+          score += 15;
+          reasons.unshift("You own — keep homeowners insurance active");
+        } else if (provider.category === "FINANCIAL_INSURANCE_RENTERS") {
+          score -= 30;
+        }
       }
 
       if (context?.stateRule && userState) {

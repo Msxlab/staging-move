@@ -2,9 +2,11 @@
 # LocateFlow reverse proxy — Caddy automatic HTTPS
 # ---------------------------------------------------------------
 #
-# Environment substitutions (provided by docker-compose via CADDY_*):
+# Environment substitutions (provided by docker-compose):
 #   {$WEB_DOMAIN}     — e.g. app.locateflow.com
 #   {$ADMIN_DOMAIN}   — e.g. admin.locateflow.com
+#   {$ERRORS_DOMAIN}  — e.g. errors.locateflow.com  (GlitchTip)
+#   {$IMG_DOMAIN}     — e.g. img.locateflow.com     (imgproxy)
 #   {$ACME_EMAIL}     — email for Let's Encrypt notifications
 #
 # Caddy auto-provisions TLS certs for the declared hostnames.
@@ -66,6 +68,66 @@
 	header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
 	header X-Content-Type-Options "nosniff"
 	header X-Frame-Options "DENY"
+	header Referrer-Policy "strict-origin-when-cross-origin"
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+# ── GlitchTip (error tracking) ──────────────────────────────────
+# The `@sentry/nextjs` SDK POSTs event payloads directly from the browser,
+# so this hostname is effectively a public ingress endpoint. We still
+# apply HSTS + frame deny because the GlitchTip UI is hosted here too.
+{$ERRORS_DOMAIN} {
+	encode gzip zstd
+
+	request_header -CF-Connecting-IP
+	request_header -X-Real-IP
+	request_header -X-Forwarded-For
+
+	reverse_proxy glitchtip:8000 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+	header X-Content-Type-Options "nosniff"
+	header X-Frame-Options "DENY"
+	header Referrer-Policy "strict-origin-when-cross-origin"
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+# ── imgproxy (signed image transforms) ──────────────────────────
+# Only GET is meaningful here. Every URL is HMAC-signed by the app;
+# unsigned requests return 403 at the imgproxy layer itself.
+{$IMG_DOMAIN} {
+	encode gzip zstd
+
+	@methodAllowed method GET HEAD OPTIONS
+	handle @methodAllowed {
+		reverse_proxy imgproxy:8080 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+	handle {
+		respond "Method not allowed" 405
+	}
+
+	# Long-cache public transforms; filenames embed a content hash so
+	# we can hand out "immutable" without cache-poisoning risk.
+	header Cache-Control "public, max-age=31536000, immutable"
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+	header X-Content-Type-Options "nosniff"
 	header Referrer-Policy "strict-origin-when-cross-origin"
 
 	log {

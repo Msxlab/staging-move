@@ -4,9 +4,9 @@ React Native (Expo) mobile app for LocateFlow — Android & iOS from a single co
 
 ## Tech Stack
 
-- **Expo SDK 52** + Expo Router v4 (file-based navigation)
+- **Expo SDK 54** + Expo Router v6 (file-based navigation)
 - **NativeWind v4** (TailwindCSS for React Native)
-- **Clerk Expo** (authentication — same user pool as web)
+- **Custom JWT auth** (Bearer token from `/api/auth/login`, stored in Expo SecureStore)
 - **Zustand** (state management)
 - **React Hook Form + Zod** (form validation — shared with web)
 - **Lucide React Native** (icons)
@@ -29,7 +29,6 @@ npx expo start
 Copy `.env.example` to `.env.local` and fill in:
 
 ```
-EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_key
 EXPO_PUBLIC_API_URL=http://YOUR_LOCAL_IP:3000/api
 ```
 
@@ -56,7 +55,7 @@ eas submit -p ios
 
 ```
 app/                  # Expo Router screens
-├── (auth)/           # Sign In / Sign Up
+├── (auth)/           # Sign In / Sign Up / OAuth handoff
 ├── (tabs)/           # Main tab navigator
 │   ├── index.tsx     # Dashboard
 │   ├── addresses.tsx # Addresses list
@@ -68,18 +67,26 @@ app/                  # Expo Router screens
 ├── providers/        # Provider search & detail
 ├── badges/           # Badge collection
 ├── assistant/        # AI chat assistant
-└── _layout.tsx       # Root layout (Clerk, theme)
+└── _layout.tsx       # Root layout (auth hydration, theme, routing)
 
 src/
 ├── components/ui/    # Reusable UI components
-├── lib/              # API client, auth, theme, haptics
-├── store/            # Zustand stores
-└── styles/           # Global CSS (NativeWind)
+├── hooks/            # React Query data hooks
+├── lib/              # API client, auth-store, theme, haptics, push
+└── styles/           # Global styling helpers
 ```
+
+## Authentication
+
+- The web app issues a JWT at `/api/auth/login`.
+- Mobile stores that token in Expo SecureStore.
+- All authenticated API calls send `Authorization: Bearer <token>` via the shared API client.
+- `refreshUser()` hydrates the signed-in user via `/api/auth/me`.
 
 ## Shared Code
 
 The app uses `@locateflow/shared` package for:
+
 - Zod validators (same as web)
 - TypeScript types
 - Constants (categories, states, colors)

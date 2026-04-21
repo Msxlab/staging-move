@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { trackBlockedIPAttempt, trackSessionHijackAttempt } from "@/lib/security-monitor";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyInternalAuth(request.headers.get("authorization"), "internal")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

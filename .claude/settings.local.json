@@ -31,7 +31,16 @@
       "Bash(pnpm --filter @locateflow/shared exec vitest run)",
       "Bash(pnpm --filter @locateflow/web exec tsc --noEmit)",
       "Bash(pnpm --filter @locateflow/web exec vitest run)",
-      "Bash(pnpm --filter @locateflow/mobile exec tsc --noEmit)"
+      "Bash(pnpm --filter @locateflow/mobile exec tsc --noEmit)",
+      "Bash(xargs grep *)",
+      "Bash(grep -v \"^--$\")",
+      "Bash(pnpm --filter @locateflow/db exec tsc --noEmit)",
+      "Bash(pnpm verify:typecheck)",
+      "Bash(echo \"---exit $?\")",
+      "Bash(docker compose *)",
+      "Bash(docker --version)",
+      "Bash(pnpm view *)",
+      "Bash(pnpm --filter @locateflow/admin test)"
     ]
   }
 }

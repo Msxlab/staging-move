@@ -26,5 +26,23 @@ if (typeof process !== "undefined") {
 }
 
 export * from "@prisma/client";
+export {
+  withSoftDelete,
+  SOFT_DELETE_MODELS,
+  restoreSoftDeleted,
+} from "./soft-delete";
+export {
+  OptimisticLockError,
+  updateWithVersion,
+  isOptimisticLockError,
+} from "./optimistic-locking";
 export { rebuildProviderCoverage, type RebuildCoverageInput } from "./provider-coverage";
+export {
+  getProviderCoverageMetadata,
+  getProviderCoverageMetadataMap,
+  type ProviderCoverageMetadata,
+  type ProviderCoverageModel,
+  type ProviderCoveragePoint,
+  type ProviderCoveragePolygon,
+} from "./provider-coverage-metadata";
 export default db;

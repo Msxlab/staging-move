@@ -3,13 +3,19 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { decrypt } from "@/lib/shared-encryption";
 
-// GET /api/export?type=addresses|services|budget|moving|full&format=csv|json
+// GET /api/export?type=addresses|services|budget|moving|full&format=csv|json&includeNotes=true
+//
+// `notes` is a free-form, encrypted field; decrypting it into the export
+// default would produce an exported plaintext copy that can easily leak via
+// logs, proxies, or email attachments. We require an explicit opt-in via
+// `?includeNotes=true` to return decrypted notes; otherwise notes are omitted.
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "full";
     const format = searchParams.get("format") || "json";
+    const includeNotes = searchParams.get("includeNotes") === "true";
 
     // Mask sensitive fields in export data
     const maskValue = (val: string, visibleEnd = 4): string => {
@@ -22,21 +28,43 @@ export async function GET(request: NextRequest) {
       if (!domain) return "****";
       return local.slice(0, 2) + "****@" + domain;
     };
+    const readEncrypted = (value: string | null | undefined): string => {
+      if (!value) return "";
+      return decrypt(value);
+    };
     const maskSensitiveFields = (items: any[]) =>
-      items.map((item: any) => ({
-        ...item,
-        ...(item.accountNumber && { accountNumber: maskValue(decrypt(item.accountNumber)) }),
-        ...(item.phone && { phone: maskValue(item.phone) }),
-        ...(item.email && { email: maskEmail(item.email) }),
-        ...(item.username && { username: maskValue(decrypt(item.username), 2) }),
-      }));
+      items.map((item: any) => {
+        const out = { ...item };
+        if (item.accountNumber)
+          out.accountNumber = maskValue(readEncrypted(item.accountNumber));
+        if (item.phone) out.phone = maskValue(readEncrypted(item.phone));
+        if (item.email) out.email = maskEmail(item.email);
+        if (item.username)
+          out.username = maskValue(readEncrypted(item.username), 2);
+        if ("notes" in item) {
+          out.notes = includeNotes ? readEncrypted(item.notes) : null;
+        }
+        return out;
+      });
 
     let data: any = {};
 
     if (type === "addresses" || type === "full") {
       data.addresses = await prisma.address.findMany({
         where: { userId },
-        select: { nickname: true, type: true, street: true, street2: true, city: true, state: true, zip: true, ownership: true, isPrimary: true, startDate: true, endDate: true },
+        select: {
+          nickname: true,
+          type: true,
+          street: true,
+          street2: true,
+          city: true,
+          state: true,
+          zip: true,
+          ownership: true,
+          isPrimary: true,
+          startDate: true,
+          endDate: true,
+        },
       });
     }
 
@@ -44,9 +72,19 @@ export async function GET(request: NextRequest) {
       const rawServices = await prisma.service.findMany({
         where: { userId },
         select: {
-          category: true, providerName: true, accountNumber: true, website: true, phone: true, email: true,
-          monthlyCost: true, billingDay: true, billingCycle: true, autoRenewal: true, contractEndDate: true,
-          isActive: true, notes: true,
+          category: true,
+          providerName: true,
+          accountNumber: true,
+          website: true,
+          phone: true,
+          email: true,
+          monthlyCost: true,
+          billingDay: true,
+          billingCycle: true,
+          autoRenewal: true,
+          contractEndDate: true,
+          isActive: true,
+          notes: true,
           address: { select: { nickname: true, city: true, state: true } },
         },
       });
@@ -56,7 +94,16 @@ export async function GET(request: NextRequest) {
     if (type === "budget" || type === "full") {
       data.budgets = await prisma.budget.findMany({
         where: { userId },
-        select: { month: true, year: true, plannedIncome: true, actualIncome: true, plannedExpenses: true, actualExpenses: true, categoryBreakdown: true, notes: true },
+        select: {
+          month: true,
+          year: true,
+          plannedIncome: true,
+          actualIncome: true,
+          plannedExpenses: true,
+          actualExpenses: true,
+          categoryBreakdown: true,
+          notes: true,
+        },
       });
     }
 
@@ -66,8 +113,25 @@ export async function GET(request: NextRequest) {
         include: {
           fromAddress: { select: { city: true, state: true } },
           toAddress: { select: { city: true, state: true } },
-          tasks: { select: { title: true, category: true, priority: true, completed: true, dueDate: true } },
-          boxes: { select: { boxNumber: true, label: true, room: true, contents: true, isPacked: true, isFragile: true } },
+          tasks: {
+            select: {
+              title: true,
+              category: true,
+              priority: true,
+              completed: true,
+              dueDate: true,
+            },
+          },
+          boxes: {
+            select: {
+              boxNumber: true,
+              label: true,
+              room: true,
+              contents: true,
+              isPacked: true,
+              isFragile: true,
+            },
+          },
         },
       });
     }
@@ -91,7 +155,12 @@ export async function GET(request: NextRequest) {
         const flatItems = items.map((item: any) => {
           const flat: Record<string, string> = {};
           for (const [key, val] of Object.entries(item)) {
-            if (val && typeof val === "object" && !Array.isArray(val) && !(val instanceof Date)) {
+            if (
+              val &&
+              typeof val === "object" &&
+              !Array.isArray(val) &&
+              !(val instanceof Date)
+            ) {
               for (const [k2, v2] of Object.entries(val as any)) {
                 flat[`${key}_${k2}`] = String(v2 ?? "");
               }
@@ -105,14 +174,20 @@ export async function GET(request: NextRequest) {
         });
 
         const headerSet = new Set<string>();
-        for (const item of flatItems) Object.keys(item).forEach((k) => headerSet.add(k));
+        for (const item of flatItems)
+          Object.keys(item).forEach((k) => headerSet.add(k));
         const headers: string[] = Array.from(headerSet);
         csvContent = headers.join(",") + "\n";
         for (const item of flatItems) {
-          csvContent += headers.map((h) => {
-            const v = safeCsvValue(item[h] || "");
-            return v.includes(",") || v.includes('"') ? `"${v.replace(/"/g, '""')}"` : v;
-          }).join(",") + "\n";
+          csvContent +=
+            headers
+              .map((h) => {
+                const v = safeCsvValue(item[h] || "");
+                return v.includes(",") || v.includes('"')
+                  ? `"${v.replace(/"/g, '""')}"`
+                  : v;
+              })
+              .join(",") + "\n";
         }
       }
 

@@ -120,6 +120,39 @@ docker compose -f docker-compose.prod.yml exec -T mysql \
 - [ ] Regular offsite backups of the `mysql_data` volume.
 - [ ] DNS CAA records limit cert issuance to `letsencrypt.org`.
 
+## Managed Runtime Config
+
+LocateFlow supports a managed runtime-config catalog in the admin panel at
+`/runtime-config`. The source-of-truth for supported keys lives in
+`packages/shared/src/runtime-config.ts`, and values can come from either:
+
+- deployment env vars (`.env.production` / container env)
+- encrypted DB overrides managed by `SUPER_ADMIN`
+
+Step-up password confirmation is required before changing or resetting a key.
+Resetting a key disables the DB override and falls back to the deployment env.
+
+Keys that are especially important to set at deploy time:
+
+- `USER_JWT_SECRET`
+- `FIELD_ENCRYPTION_KEY`
+- `CRON_SECRET`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_INDIVIDUAL`
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
+- `GOOGLE_MAPS_API_KEY`
+
+Optional but supported offsite backup settings:
+
+- `BACKUP_STORAGE_PROVIDER`
+- `BACKUP_STORAGE_BUCKET`
+- `BACKUP_STORAGE_REGION`
+- `BACKUP_STORAGE_ENDPOINT`
+- `BACKUP_STORAGE_ACCESS_KEY_ID`
+- `BACKUP_STORAGE_SECRET_ACCESS_KEY`
+
 ## Troubleshooting
 
 **TLS cert fails to provision.**

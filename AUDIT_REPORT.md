@@ -32,11 +32,11 @@ LocateFlow is a SaaS relocation management platform built as a pnpm/Turborepo mo
 
 ### If You Only Fix 3 Things, Fix These
 
-| Priority | Finding | Why |
-|----------|---------|-----|
-| 1 | **SEC-001: Dev auth bypass** | Any deployment without Clerk vars gives full unauthenticated access to all user data |
-| 2 | **SEC-003: Cron endpoint bypass** | Bill reminder and weekly digest crons are publicly accessible if CRON_SECRET is unset |
-| 3 | **SEC-005: Admin brute-force** | No rate limiting or lockout on admin login allows credential stuffing |
+| Priority | Finding                           | Why                                                                                   |
+| -------- | --------------------------------- | ------------------------------------------------------------------------------------- |
+| 1        | **SEC-001: Dev auth bypass**      | Any deployment without Clerk vars gives full unauthenticated access to all user data  |
+| 2        | **SEC-003: Cron endpoint bypass** | Bill reminder and weekly digest crons are publicly accessible if CRON_SECRET is unset |
+| 3        | **SEC-005: Admin brute-force**    | No rate limiting or lockout on admin login allows credential stuffing                 |
 
 ---
 
@@ -44,16 +44,16 @@ LocateFlow is a SaaS relocation management platform built as a pnpm/Turborepo mo
 
 ### Component List
 
-| Component | Tech | Port | Auth |
-|-----------|------|------|------|
-| Web App | Next.js 15, React 19, Clerk | 3000 | Clerk (OAuth/session) |
-| Admin Panel | Next.js 15, React 19 | 3001 | Custom JWT + bcrypt |
-| Database | Prisma + SQLite | — | Direct file access |
-| File Storage | Cloudinary (prod) / local disk (dev) | — | API keys |
-| Email | Resend | — | API key |
-| Payments | Stripe (webhooks) | — | Webhook signature |
-| Rate Limiting | Upstash Redis (prod) / in-memory (dev) | — | API tokens |
-| Observability | Sentry scaffold (not installed) | — | DSN |
+| Component     | Tech                                   | Port | Auth                  |
+| ------------- | -------------------------------------- | ---- | --------------------- |
+| Web App       | Next.js 15, React 19, Clerk            | 3000 | Clerk (OAuth/session) |
+| Admin Panel   | Next.js 15, React 19                   | 3001 | Custom JWT + bcrypt   |
+| Database      | Prisma + SQLite                        | —    | Direct file access    |
+| File Storage  | Cloudinary (prod) / local disk (dev)   | —    | API keys              |
+| Email         | Resend                                 | —    | API key               |
+| Payments      | Stripe (webhooks)                      | —    | Webhook signature     |
+| Rate Limiting | Upstash Redis (prod) / in-memory (dev) | —    | API tokens            |
+| Observability | Sentry scaffold (not installed)        | —    | DSN                   |
 
 ### Data Flow Summary
 
@@ -106,20 +106,20 @@ Admin Browser ──► Admin App (Next.js) ──► Prisma ──► SQLite (s
 
 ## Top Priority Fixes (Ranked)
 
-| Rank | ID | Severity | Area | One-line Fix |
-|------|----|----------|------|-------------|
-| 1 | SEC-001 | Critical | Auth | Remove dev auth bypass or add ironclad env guard |
-| 2 | SEC-003 | Critical | Auth | Fail-closed when CRON_SECRET is unset |
-| 3 | SEC-005 | High | Auth | Add rate limiting + lockout to admin login |
-| 4 | SEC-004 | High | Auth | Add authentication to referral POST endpoint |
-| 5 | SEC-006 | High | Path Traversal | Sanitize file paths in document deletion |
-| 6 | SEC-002 | High | AuthZ | Admin CRUD routes use only `requireAdmin()` — no RBAC enforcement |
-| 7 | SEC-007 | High | Headers | Add security headers to admin panel |
-| 8 | SEC-008 | High | CSRF | Add CSRF protection to admin panel mutations |
-| 9 | SEC-009 | Medium | Auth | Strengthen admin password policy (min 12 chars, complexity) |
-| 10 | SEC-010 | Medium | Session | Admin JWT has no revocation; deactivated admins stay logged in until token expires |
-| 11 | REL-001 | High | Database | Replace SQLite with PostgreSQL for production |
-| 12 | SEC-011 | Medium | Tracking | Session PATCH has no ownership check (IDOR) |
+| Rank | ID      | Severity | Area           | One-line Fix                                                                       |
+| ---- | ------- | -------- | -------------- | ---------------------------------------------------------------------------------- |
+| 1    | SEC-001 | Critical | Auth           | Remove dev auth bypass or add ironclad env guard                                   |
+| 2    | SEC-003 | Critical | Auth           | Fail-closed when CRON_SECRET is unset                                              |
+| 3    | SEC-005 | High     | Auth           | Add rate limiting + lockout to admin login                                         |
+| 4    | SEC-004 | High     | Auth           | Add authentication to referral POST endpoint                                       |
+| 5    | SEC-006 | High     | Path Traversal | Sanitize file paths in document deletion                                           |
+| 6    | SEC-002 | High     | AuthZ          | Admin CRUD routes use only `requireAdmin()` — no RBAC enforcement                  |
+| 7    | SEC-007 | High     | Headers        | Add security headers to admin panel                                                |
+| 8    | SEC-008 | High     | CSRF           | Add CSRF protection to admin panel mutations                                       |
+| 9    | SEC-009 | Medium   | Auth           | Strengthen admin password policy (min 12 chars, complexity)                        |
+| 10   | SEC-010 | Medium   | Session        | Admin JWT has no revocation; deactivated admins stay logged in until token expires |
+| 11   | REL-001 | High     | Database       | Replace SQLite with PostgreSQL for production                                      |
+| 12   | SEC-011 | Medium   | Tracking       | Session PATCH has no ownership check (IDOR)                                        |
 
 ---
 
@@ -136,19 +136,21 @@ Admin Browser ──► Admin App (Next.js) ──► Prisma ──► SQLite (s
 - **Category:** AuthN
 - **Affected:** `apps/web/src/lib/auth.ts`, `apps/web/src/middleware.ts`
 
-**Evidence:**
+**Status note: this finding is historical context from the pre-migration Clerk implementation and does not reflect the current in-house JWT auth stack.**
 
 ```typescript
 // apps/web/src/lib/auth.ts:5-27
-const hasClerk = Boolean(process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const hasClerk = Boolean(
+  process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+);
 
 if (!hasClerk) {
-    if (process.env.NODE_ENV !== "development") {
-      throw new Error("AUTH_NOT_CONFIGURED...");
-    }
-    console.warn("⚠️  Using dev auth bypass (dev-user) — NOT FOR PRODUCTION");
-    const devClerkId = "dev-user";
-    // ... auto-creates user and returns userId
+  if (process.env.NODE_ENV !== "development") {
+    throw new Error("AUTH_NOT_CONFIGURED...");
+  }
+  console.warn("⚠️  Using dev auth bypass (dev-user) — NOT FOR PRODUCTION");
+  const devClerkId = "dev-user";
+  // ... auto-creates user and returns userId
 }
 ```
 
@@ -167,6 +169,7 @@ if (!hasClerk) {
 **Likelihood:** High — environment misconfiguration is common; `NODE_ENV` can be `production` in build but the middleware check uses a separate `isDev` variable.
 
 **Recommendation:**
+
 1. Remove the dev bypass entirely. Use Clerk's test keys for local development.
 2. If a bypass is truly needed, gate it on an explicit `DEV_AUTH_BYPASS=true` env var that is **never** set in CI/CD or deployment configs.
 3. The middleware `isDev` check should be removed — use the Clerk middleware unconditionally.
@@ -219,8 +222,11 @@ The `checkPermission()` function exists in `auth.ts` but is **never called** by 
 ```typescript
 // apps/web/src/app/api/cron/bill-reminders/route.ts:12-15
 const authHeader = req.headers.get("authorization");
-if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+if (
+  process.env.CRON_SECRET &&
+  authHeader !== `Bearer ${process.env.CRON_SECRET}`
+) {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 ```
 
@@ -229,10 +235,11 @@ The condition is `process.env.CRON_SECRET && ...` — if `CRON_SECRET` is not se
 **Impact:** Anyone can trigger bill reminder and weekly digest emails for all users, causing spam and potential phishing vector (emails appear legitimate from the LocateFlow domain). Also exposes user emails and financial data in the response.
 
 **Recommendation:** Invert the logic — fail closed:
+
 ```typescript
 const cronSecret = process.env.CRON_SECRET;
 if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 ```
 
@@ -257,7 +264,10 @@ export async function POST(req: NextRequest) {
   if (action === "track_click" && code) {
     const ref = await p.referralCode.findUnique({ where: { code } });
     if (ref) {
-      await p.referralCode.update({ where: { id: ref.id }, data: { clicks: { increment: 1 } } });
+      await p.referralCode.update({
+        where: { id: ref.id },
+        data: { clicks: { increment: 1 } },
+      });
     }
     return NextResponse.json({ success: true });
   }
@@ -293,17 +303,18 @@ Additionally, the login response distinguishes between "User not found" (line 17
 
 ```typescript
 if (!admin) {
-    return NextResponse.json({ error: "User not found" }, { status: 401 });
+  return NextResponse.json({ error: "User not found" }, { status: 401 });
 }
 // ...
 if (!valid) {
-    return NextResponse.json({ error: "Wrong password" }, { status: 401 });
+  return NextResponse.json({ error: "Wrong password" }, { status: 401 });
 }
 ```
 
 **Impact:** Attackers can brute-force admin credentials with no throttling. Different error messages reveal whether an email exists in the admin system.
 
 **Recommendation:**
+
 1. Add rate limiting (e.g., 5 attempts per 15 minutes per IP).
 2. Implement account lockout after N failed attempts.
 3. Use a generic error message: "Invalid email or password."
@@ -336,12 +347,13 @@ If `doc.fileUrl` contains `../../../etc/passwd` or similar traversal sequences (
 **Likelihood:** Medium — requires either a DB injection or a bug in the upload flow that allows path manipulation.
 
 **Recommendation:**
+
 ```typescript
 const resolved = path.resolve(path.join(process.cwd(), "public"), doc.fileUrl);
 const publicDir = path.resolve(path.join(process.cwd(), "public"));
 if (!resolved.startsWith(publicDir)) {
-    console.warn("Path traversal blocked:", doc.fileUrl);
-    return; // Don't delete
+  console.warn("Path traversal blocked:", doc.fileUrl);
+  return; // Don't delete
 }
 await unlink(resolved);
 ```
@@ -409,7 +421,10 @@ export async function middleware(request: NextRequest) {
 ```typescript
 // apps/admin/src/app/api/auth/password/route.ts:15-17
 if (newPassword.length < 6) {
-    return NextResponse.json({ error: "New password must be at least 6 characters" }, { status: 400 });
+  return NextResponse.json(
+    { error: "New password must be at least 6 characters" },
+    { status: 400 },
+  );
 }
 ```
 
@@ -438,6 +453,7 @@ const hashedPassword = await bcrypt.hash(body.password, 12);
 The JWT is a stateless token with 24h expiry. When an admin is deactivated (`isActive = false`), `requireAdmin()` checks the DB, but:
 
 1. The middleware only verifies the JWT signature — it does **not** check `isActive`:
+
 ```typescript
 // apps/admin/src/middleware.ts:32-34
 try {
@@ -466,14 +482,15 @@ try {
 ```typescript
 // apps/web/src/app/api/tracking/session/route.ts:53-62
 const { sessionId, pageViews } = await request.json();
-if (!sessionId) return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+if (!sessionId)
+  return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
 
 await prisma.userSession.update({
-    where: { id: sessionId },
-    data: {
-        lastActivity: new Date(),
-        pageViews: pageViews || undefined,
-    },
+  where: { id: sessionId },
+  data: {
+    lastActivity: new Date(),
+    pageViews: pageViews || undefined,
+  },
 });
 ```
 
@@ -541,13 +558,13 @@ style-src 'self' 'unsafe-inline' ...
 ```typescript
 // Storing notification preferences in AuditLog:
 await prisma.auditLog.create({
-    data: {
-        userId,
-        action: "NOTIFICATION_PREFS",
-        entityType: "config",
-        entityId: userId,
-        changes: JSON.stringify(prefs),
-    },
+  data: {
+    userId,
+    action: "NOTIFICATION_PREFS",
+    entityType: "config",
+    entityId: userId,
+    changes: JSON.stringify(prefs),
+  },
 });
 ```
 
@@ -598,7 +615,7 @@ Two Next.js apps (web + admin) share the same SQLite file. SQLite does not suppo
 
 ```typescript
 const users = await prisma.user.findMany({
-    select: { id: true, email: true, firstName: true, lastName: true },
+  select: { id: true, email: true, firstName: true, lastName: true },
 });
 // Iterates over ALL users, no opt-out check
 ```
@@ -621,14 +638,14 @@ No check against `NotificationPreference` or the `weeklySummary` preference. All
 **Evidence:**
 
 ```typescript
-const currentDay = now.getDate();  // e.g., 29
+const currentDay = now.getDate(); // e.g., 29
 const futureDay = futureDate.getDate(); // e.g., 1 (if reminderDays=3 and now is Jan 29)
 
 const services = await prisma.service.findMany({
-    where: {
-        billingDay: { gte: currentDay, lte: futureDay }, // 29 <= billingDay <= 1 → always false
-    },
-    // ...
+  where: {
+    billingDay: { gte: currentDay, lte: futureDay }, // 29 <= billingDay <= 1 → always false
+  },
+  // ...
 });
 ```
 
@@ -678,7 +695,10 @@ This pattern is used for ~10+ models added after the initial Prisma generation. 
 ```typescript
 let code = generateCode();
 let exists = await p.referralCode.findUnique({ where: { code } });
-while (exists) { code = generateCode(); exists = await p.referralCode.findUnique({ where: { code } }); }
+while (exists) {
+  code = generateCode();
+  exists = await p.referralCode.findUnique({ where: { code } });
+}
 
 referralCode = await p.referralCode.create({ data: { userId: user.id, code } });
 ```
@@ -703,13 +723,20 @@ TOCTOU race: between checking for existence and creating the record, another req
 **Evidence:**
 
 ```typescript
-for (const user of users) { // Iterates ALL users
-    const [services, tasks, completedTasks] = await Promise.all([
-        prisma.service.findMany({ where: { userId: user.id, isActive: true } }),
-        prisma.task.count({ where: { userId: user.id, completed: false } }),
-        prisma.task.count({ where: { userId: user.id, completed: true, completedAt: { gte: weekAgo } } }),
-    ]);
-    // ... 3 more queries per user
+for (const user of users) {
+  // Iterates ALL users
+  const [services, tasks, completedTasks] = await Promise.all([
+    prisma.service.findMany({ where: { userId: user.id, isActive: true } }),
+    prisma.task.count({ where: { userId: user.id, completed: false } }),
+    prisma.task.count({
+      where: {
+        userId: user.id,
+        completed: true,
+        completedAt: { gte: weekAgo },
+      },
+    }),
+  ]);
+  // ... 3 more queries per user
 }
 ```
 
@@ -870,26 +897,27 @@ const Sentry = require("@sentry/nextjs");
 
 ## Quick Wins (< 1 day each)
 
-| # | Action | Finding |
-|---|--------|---------|
-| 1 | Fix cron auth to fail-closed (`if (!secret \|\| header !== ...)`) | SEC-003 |
-| 2 | Add rate limiting to admin login (in-memory counter, 5/15min) | SEC-005 |
-| 3 | Unify login error message to "Invalid email or password" | SEC-005 |
-| 4 | Add auth check to referral POST | SEC-004 |
-| 5 | Add `path.resolve` guard to document deletion | SEC-006 |
-| 6 | Copy security headers config to admin `next.config.js` | SEC-007 |
-| 7 | Add CSRF Content-Type check to admin middleware | SEC-008 |
-| 8 | Set password minimum to 12 chars in all endpoints | SEC-009 |
-| 9 | Add ownership check to tracking session PATCH | SEC-011 |
-| 10 | Cap `perPage` parameters with `Math.min()` | PERF-002 |
-| 11 | HTML-escape email template interpolations | SEC-012 |
-| 12 | Add `where: { userId }` to chat session lookups in assistant API | SEC-011 |
+| #   | Action                                                            | Finding  |
+| --- | ----------------------------------------------------------------- | -------- |
+| 1   | Fix cron auth to fail-closed (`if (!secret \|\| header !== ...)`) | SEC-003  |
+| 2   | Add rate limiting to admin login (in-memory counter, 5/15min)     | SEC-005  |
+| 3   | Unify login error message to "Invalid email or password"          | SEC-005  |
+| 4   | Add auth check to referral POST                                   | SEC-004  |
+| 5   | Add `path.resolve` guard to document deletion                     | SEC-006  |
+| 6   | Copy security headers config to admin `next.config.js`            | SEC-007  |
+| 7   | Add CSRF Content-Type check to admin middleware                   | SEC-008  |
+| 8   | Set password minimum to 12 chars in all endpoints                 | SEC-009  |
+| 9   | Add ownership check to tracking session PATCH                     | SEC-011  |
+| 10  | Cap `perPage` parameters with `Math.min()`                        | PERF-002 |
+| 11  | HTML-escape email template interpolations                         | SEC-012  |
+| 12  | Add `where: { userId }` to chat session lookups in assistant API  | SEC-011  |
 
 ---
 
 ## Medium-term Hardening Plan (1–4 weeks)
 
 ### Week 1: Critical Auth & Access Control
+
 - [ ] Remove or gate the dev auth bypass (SEC-001)
 - [ ] Implement RBAC enforcement on all admin API routes (SEC-002)
 - [ ] Add admin login rate limiting and account lockout (SEC-005)
@@ -897,6 +925,7 @@ const Sentry = require("@sentry/nextjs");
 - [ ] Add path traversal guard (SEC-006)
 
 ### Week 2: Security Headers, CSRF, Session Management
+
 - [ ] Add security headers to admin panel (SEC-007)
 - [ ] Add CSRF protection to admin panel (SEC-008)
 - [ ] Implement JWT revocation or short-lived tokens (SEC-010)
@@ -904,6 +933,7 @@ const Sentry = require("@sentry/nextjs");
 - [ ] Fix CSP to remove `unsafe-eval` (SEC-013)
 
 ### Week 3: Database, Performance, Correctness
+
 - [ ] Migrate from SQLite to PostgreSQL (REL-001)
 - [ ] Fix bill reminder month-boundary logic (REL-003)
 - [ ] Fix weekly digest to check notification preferences (REL-002)
@@ -912,6 +942,7 @@ const Sentry = require("@sentry/nextjs");
 - [ ] Use `NotificationPreference` model (SEC-014)
 
 ### Week 4: CI/CD, Testing, Observability
+
 - [ ] Create GitHub Actions CI pipeline (DEVOPS-001)
 - [ ] Add API route integration tests (DEVOPS-002)
 - [ ] Install and configure Sentry (DEVOPS-004)
@@ -924,25 +955,30 @@ const Sentry = require("@sentry/nextjs");
 ## Suggested Automated Checks
 
 ### SAST / Linting
+
 - **ESLint security plugin:** `eslint-plugin-security` — catches unsafe regex, eval, etc.
 - **Semgrep:** Run `semgrep --config=p/owasp-top-ten` for OWASP pattern matching
 - **TypeScript strict mode:** Enable `strict: true` in all `tsconfig.json` files
 
 ### Dependency Scanning
+
 - **`pnpm audit`** — run in CI on every PR
 - **Snyk or Socket.dev** — deeper supply chain analysis
 - **Renovate or Dependabot** — automated dependency updates
 
 ### Secret Scanning
+
 - **Gitleaks** — scan for hardcoded secrets in git history
 - **GitHub Secret Scanning** — enable if using GitHub
 
 ### Testing
+
 - **Vitest** — extend existing setup to cover API routes
 - **Playwright** — E2E tests for critical flows (login, CRUD, admin)
 - **Coverage threshold** — enforce minimum coverage in CI
 
 ### CI/CD Integration (GitHub Actions)
+
 ```yaml
 # .github/workflows/ci.yml
 name: CI
@@ -968,17 +1004,17 @@ jobs:
 
 ### Files/Areas Reviewed
 
-| Area | Files Reviewed |
-|------|---------------|
-| **Schema** | `packages/db/prisma/schema.prisma` (1058 lines, 35+ models) |
-| **Web Auth** | `apps/web/src/lib/auth.ts`, `apps/web/src/middleware.ts` |
-| **Admin Auth** | `apps/admin/src/lib/auth.ts`, `apps/admin/src/middleware.ts` |
-| **Web API Routes** | All 32 route files in `apps/web/src/app/api/` |
-| **Admin API Routes** | All 20+ route files in `apps/admin/src/app/api/` |
-| **Libraries** | `rate-limit.ts`, `storage.ts`, `validators.ts`, `email.ts`, `audit.ts`, `feature-flags.ts`, `family-access.ts`, `sentry.ts`, `ai-moderation.ts`, `db.ts` |
-| **Config** | `next.config.js` (both), `package.json` (all 3), `turbo.json`, `.env.example`, `.gitignore`, `pnpm-workspace.yaml` |
-| **Seed Scripts** | `seed-admin.ts` |
-| **PWA** | `public/sw.js` |
+| Area                 | Files Reviewed                                                                                                                                           |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Schema**           | `packages/db/prisma/schema.prisma` (1058 lines, 35+ models)                                                                                              |
+| **Web Auth**         | `apps/web/src/lib/auth.ts`, `apps/web/src/middleware.ts`                                                                                                 |
+| **Admin Auth**       | `apps/admin/src/lib/auth.ts`, `apps/admin/src/middleware.ts`                                                                                             |
+| **Web API Routes**   | All 32 route files in `apps/web/src/app/api/`                                                                                                            |
+| **Admin API Routes** | All 20+ route files in `apps/admin/src/app/api/`                                                                                                         |
+| **Libraries**        | `rate-limit.ts`, `storage.ts`, `validators.ts`, `email.ts`, `audit.ts`, `feature-flags.ts`, `family-access.ts`, `sentry.ts`, `ai-moderation.ts`, `db.ts` |
+| **Config**           | `next.config.js` (both), `package.json` (all 3), `turbo.json`, `.env.example`, `.gitignore`, `pnpm-workspace.yaml`                                       |
+| **Seed Scripts**     | `seed-admin.ts`                                                                                                                                          |
+| **PWA**              | `public/sw.js`                                                                                                                                           |
 
 ### Configuration Notes
 

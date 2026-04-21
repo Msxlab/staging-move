@@ -3,16 +3,48 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { rebuildProviderCoverage } from "@locateflow/db";
+import { findProviderConflicts, normalizeProviderRecord, slugifyProviderName } from "@locateflow/shared";
 
-function parseArray(value: unknown): string[] {
-  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === "string");
-  if (typeof value !== "string") return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
-  } catch {
-    return [];
+function parseIncomingProvider(raw: Record<string, unknown>) {
+  return normalizeProviderRecord({
+    name: typeof raw.name === "string" ? raw.name.trim() : "",
+    slug: typeof raw.slug === "string" && raw.slug.trim() ? raw.slug.trim() : slugifyProviderName(String(raw.name || "")),
+    category: typeof raw.category === "string" ? raw.category.trim().toUpperCase() : "",
+    subCategory: typeof raw.subCategory === "string" && raw.subCategory.trim() ? raw.subCategory.trim() : null,
+    description: typeof raw.description === "string" && raw.description.trim() ? raw.description.trim() : null,
+    website: typeof raw.website === "string" && raw.website.trim() ? raw.website.trim() : null,
+    phone: typeof raw.phone === "string" && raw.phone.trim() ? raw.phone.trim() : null,
+    logoUrl: typeof raw.logoUrl === "string" && raw.logoUrl.trim() ? raw.logoUrl.trim() : null,
+    scope: typeof raw.scope === "string" ? raw.scope : "FEDERAL",
+    states: raw.states as string[] | string | null | undefined,
+    zipCodes: raw.zipCodes as string[] | string | null | undefined,
+    tags: raw.tags as string[] | string | null | undefined,
+    popularityScore: Number(raw.popularityScore) || 0,
+    isActive: raw.isActive !== "false" && raw.isActive !== false,
+    displayOrder: Number(raw.displayOrder) || 0,
+  });
+}
+
+async function loadComparableProviders() {
+  return prisma.serviceProvider.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      category: true,
+      website: true,
+    },
+  });
+}
+
+function getConflictMessage(conflictType: string, name: string, slug: string) {
+  if (conflictType === "slug") {
+    return `Provider slug already exists: ${slug}`;
   }
+  if (conflictType === "website-category") {
+    return `Provider website already exists in this category: ${name}`;
+  }
+  return `Provider already exists in this category: ${name}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -76,19 +108,20 @@ export async function GET(request: NextRequest) {
 
     if (grouped) {
       const groups: Record<string, any[]> = {};
-      providers.forEach((p: any) => {
-        if (!groups[p.category]) groups[p.category] = [];
-        groups[p.category].push(p);
+      providers.forEach((provider: any) => {
+        if (!groups[provider.category]) groups[provider.category] = [];
+        groups[provider.category].push(provider);
       });
+
       return NextResponse.json({
         groups,
         total,
-        categoryStats: categoryStats.map((c: any) => ({
-          category: c.category,
-          count: c._count.id,
-          avgScore: Math.round((c._avg.popularityScore || 0) * 10) / 10,
+        categoryStats: categoryStats.map((item: any) => ({
+          category: item.category,
+          count: item._count.id,
+          avgScore: Math.round((item._avg.popularityScore || 0) * 10) / 10,
         })),
-        scopeStats: scopeStats.map((s: any) => ({ scope: s.scope, count: s._count.id })),
+        scopeStats: scopeStats.map((item: any) => ({ scope: item.scope, count: item._count.id })),
         activeCount,
         inactiveCount,
         page,
@@ -115,7 +148,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT - Bulk CSV import
 export async function PUT(request: NextRequest) {
   try {
     const session = await requirePermission("providers", "canCreate", { minimumRole: "MODERATOR" });
@@ -129,44 +161,63 @@ export async function PUT(request: NextRequest) {
     let created = 0;
     let skipped = 0;
     const errors: string[] = [];
+    const knownProviders = await loadComparableProviders();
 
     for (const row of rows) {
-      if (!row.name || !row.category) {
+      const normalized = parseIncomingProvider(row);
+      if (!normalized.name || !normalized.category) {
         skipped++;
         continue;
       }
-      const slug = row.slug || row.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+      const conflicts = findProviderConflicts(knownProviders, normalized);
+      if (conflicts.length > 0) {
+        skipped++;
+        const firstConflict = conflicts[0];
+        errors.push(getConflictMessage(firstConflict.type, firstConflict.existingName, firstConflict.existingSlug));
+        continue;
+      }
+
       try {
-        const existing = await prisma.serviceProvider.findUnique({ where: { slug } });
-        if (existing) { skipped++; continue; }
-
-        const scope = row.scope || "FEDERAL";
-        const states = parseArray(row.states);
-        const zipCodes = parseArray(row.zipCodes);
-
-        await prisma.$transaction(async (tx) => {
-          const prov = await tx.serviceProvider.create({
+        const createdProvider = await prisma.$transaction(async (tx) => {
+          const provider = await tx.serviceProvider.create({
             data: {
-              name: row.name,
-              slug,
-              category: row.category,
-              subCategory: row.subCategory || null,
-              description: row.description || null,
-              website: row.website || null,
-              phone: row.phone || null,
-              scope,
-              states: JSON.stringify(states),
-              zipCodes: JSON.stringify(zipCodes),
-              tags: row.tags ? (typeof row.tags === "string" ? row.tags : JSON.stringify(row.tags)) : "[]",
-              popularityScore: parseInt(row.popularityScore) || 0,
-              isActive: row.isActive !== "false" && row.isActive !== false,
+              name: normalized.name,
+              slug: normalized.slug,
+              category: normalized.category,
+              subCategory: normalized.subCategory,
+              description: normalized.description,
+              website: normalized.website,
+              phone: normalized.phone,
+              logoUrl: normalized.logoUrl,
+              scope: normalized.scope,
+              states: JSON.stringify(normalized.states),
+              zipCodes: JSON.stringify(normalized.zipCodes),
+              tags: JSON.stringify(normalized.tags),
+              popularityScore: normalized.popularityScore || 0,
+              isActive: normalized.isActive ?? true,
+              displayOrder: normalized.displayOrder || 0,
             },
           });
-          await rebuildProviderCoverage(tx, { providerId: prov.id, scope, states, zipCodes });
+          await rebuildProviderCoverage(tx, {
+            providerId: provider.id,
+            scope: normalized.scope,
+            states: normalized.states,
+            zipCodes: normalized.zipCodes,
+          });
+          return provider;
+        });
+
+        knownProviders.push({
+          id: createdProvider.id,
+          name: createdProvider.name,
+          slug: createdProvider.slug,
+          category: createdProvider.category,
+          website: createdProvider.website,
         });
         created++;
-      } catch (e: any) {
-        errors.push(`${row.name}: ${e.message?.slice(0, 80)}`);
+      } catch (error: any) {
+        errors.push(`${normalized.name}: ${error.message?.slice(0, 80)}`);
       }
     }
 
@@ -199,33 +250,48 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requirePermission("providers", "canCreate", { minimumRole: "MODERATOR" });
     const body = await request.json();
+    const normalized = parseIncomingProvider(body);
 
-    const scope = body.scope || "FEDERAL";
-    const states = parseArray(body.states);
-    const zipCodes = parseArray(body.zipCodes);
+    if (!normalized.name || !normalized.category) {
+      return NextResponse.json({ error: "Name and category are required" }, { status: 400 });
+    }
+
+    const conflicts = findProviderConflicts(await loadComparableProviders(), normalized);
+    if (conflicts.length > 0) {
+      const firstConflict = conflicts[0];
+      return NextResponse.json(
+        { error: getConflictMessage(firstConflict.type, firstConflict.existingName, firstConflict.existingSlug) },
+        { status: 409 }
+      );
+    }
 
     const provider = await prisma.$transaction(async (tx) => {
-      const prov = await tx.serviceProvider.create({
+      const createdProvider = await tx.serviceProvider.create({
         data: {
-          name: body.name,
-          slug: body.slug,
-          category: body.category,
-          subCategory: body.subCategory || null,
-          description: body.description || null,
-          website: body.website || null,
-          phone: body.phone || null,
-          logoUrl: body.logoUrl || null,
-          scope,
-          states: JSON.stringify(states),
-          zipCodes: JSON.stringify(zipCodes),
-          tags: body.tags ? JSON.stringify(body.tags) : "[]",
-          popularityScore: body.popularityScore || 0,
-          isActive: body.isActive ?? true,
-          displayOrder: body.displayOrder || 0,
+          name: normalized.name,
+          slug: normalized.slug,
+          category: normalized.category,
+          subCategory: normalized.subCategory,
+          description: normalized.description,
+          website: normalized.website,
+          phone: normalized.phone,
+          logoUrl: normalized.logoUrl,
+          scope: normalized.scope,
+          states: JSON.stringify(normalized.states),
+          zipCodes: JSON.stringify(normalized.zipCodes),
+          tags: JSON.stringify(normalized.tags),
+          popularityScore: normalized.popularityScore || 0,
+          isActive: normalized.isActive ?? true,
+          displayOrder: normalized.displayOrder || 0,
         },
       });
-      await rebuildProviderCoverage(tx, { providerId: prov.id, scope, states, zipCodes });
-      return prov;
+      await rebuildProviderCoverage(tx, {
+        providerId: createdProvider.id,
+        scope: normalized.scope,
+        states: normalized.states,
+        zipCodes: normalized.zipCodes,
+      });
+      return createdProvider;
     });
 
     await prisma.adminAuditLog.create({

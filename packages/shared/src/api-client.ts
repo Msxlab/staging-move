@@ -94,7 +94,7 @@ export class ApiClient {
       }
 
       if (contentType.includes("application/json")) {
-        const data = await response.json();
+        const data = await response.json() as T;
         return { data };
       }
 

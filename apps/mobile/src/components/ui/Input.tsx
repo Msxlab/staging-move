@@ -16,6 +16,7 @@ interface InputProps extends TextInputProps {
   error?: string;
   hint?: string;
   icon?: React.ReactNode;
+  leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   containerStyle?: ViewStyle;
   isPassword?: boolean;
@@ -26,6 +27,7 @@ export function Input({
   error,
   hint,
   icon,
+  leftIcon,
   rightIcon,
   containerStyle,
   isPassword,
@@ -34,6 +36,7 @@ export function Input({
 }: InputProps) {
   const [focused, setFocused] = useState(false);
   const [secureEntry, setSecureEntry] = useState(isPassword);
+  const leadingIcon = leftIcon || icon;
 
   return (
     <View style={containerStyle}>
@@ -45,9 +48,9 @@ export function Input({
           error && styles.inputError,
         ]}
       >
-        {icon && <View style={styles.iconLeft}>{icon}</View>}
+        {leadingIcon && <View style={styles.iconLeft}>{leadingIcon}</View>}
         <TextInput
-          style={[styles.input, icon ? styles.inputWithIcon : undefined, style]}
+          style={[styles.input, leadingIcon ? styles.inputWithIcon : undefined, style]}
           placeholderTextColor={theme.colors.textMuted}
           selectionColor={theme.colors.primary}
           onFocus={() => setFocused(true)}

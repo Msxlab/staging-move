@@ -5,6 +5,7 @@ import {
   verifyPassword,
   createUserSession,
   generateFingerprint,
+  generateMobileFingerprint,
 } from "@/lib/user-auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { decrypt } from "@/lib/shared-encryption";
@@ -113,12 +114,23 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const fp = await generateFingerprint(ip, ua);
   const parsedUA = parseUA(ua);
+  // Mobile clients can signal their client type explicitly; otherwise fall
+  // back to UA-derived deviceType. Mobile sessions use UA-only fingerprint
+  // so network switches (Wi-Fi ↔ LTE) don't invalidate them.
+  const clientHeader = (request.headers.get("x-client-type") || "").toLowerCase();
+  const isMobileClient =
+    clientHeader === "mobile" ||
+    parsedUA.deviceType === "Mobile" ||
+    parsedUA.deviceType === "Tablet";
+  const fp = isMobileClient
+    ? await generateMobileFingerprint(ua)
+    : await generateFingerprint(ip, ua);
   const token = await createUserSession({
     userId: user.id,
     email: user.email,
     fingerprint: fp,
+    clientType: isMobileClient ? "mobile" : "web",
     ipAddress: ip,
     userAgent: ua,
     browser: parsedUA.browser,

@@ -1,53 +1,103 @@
-export const theme = {
-  colors: {
-    primary: "#F97316",
-    primaryLight: "#FB923C",
-    primaryDark: "#EA580C",
-    primaryFaded: "rgba(249, 115, 22, 0.15)",
-    accent: "#FBBF24",
-    success: "#10b981",
-    successFaded: "rgba(16, 185, 129, 0.15)",
-    warning: "#f59e0b",
-    warningFaded: "rgba(245, 158, 11, 0.15)",
-    error: "#ef4444",
-    errorFaded: "rgba(239, 68, 68, 0.15)",
-    info: "#3b82f6",
-    infoFaded: "rgba(59, 130, 246, 0.15)",
+import { useColorScheme } from "react-native";
 
-    background: "#0a0a0f",
-    surface: "#12121a",
-    card: "#1a1a25",
-    cardHover: "#22222f",
-    elevated: "#252530",
+// ──────────────────────────────────────────────────────────────────────
+// Dual-palette theming.
+//
+// Backward compatibility note: `theme` (default export used everywhere
+// today) continues to be the dark palette. Screens opt into theme-aware
+// rendering by switching to `useAppTheme()`. This avoids a cross-app
+// codemod and lets us flip the global toggle (app.json
+// userInterfaceStyle: "automatic") without breaking the existing UI.
+// ──────────────────────────────────────────────────────────────────────
 
-    border: "rgba(255, 255, 255, 0.08)",
-    borderLight: "rgba(255, 255, 255, 0.12)",
-    borderFocus: "rgba(249, 115, 22, 0.5)",
+const darkColors = {
+  primary: "#F97316",
+  primaryLight: "#FB923C",
+  primaryDark: "#EA580C",
+  primaryFaded: "rgba(249, 115, 22, 0.15)",
+  accent: "#FBBF24",
+  success: "#10b981",
+  successFaded: "rgba(16, 185, 129, 0.15)",
+  warning: "#f59e0b",
+  warningFaded: "rgba(245, 158, 11, 0.15)",
+  error: "#ef4444",
+  errorFaded: "rgba(239, 68, 68, 0.15)",
+  info: "#3b82f6",
+  infoFaded: "rgba(59, 130, 246, 0.15)",
 
-    glass: {
-      bg: "rgba(255, 255, 255, 0.06)",
-      border: "rgba(255, 255, 255, 0.12)",
-      highlight: "rgba(255, 255, 255, 0.08)",
-    },
+  background: "#0a0a0f",
+  surface: "#12121a",
+  card: "#1a1a25",
+  cardHover: "#22222f",
+  elevated: "#252530",
 
-    text: "#ffffff",
-    textSecondary: "rgba(255, 255, 255, 0.7)",
-    textTertiary: "rgba(255, 255, 255, 0.4)",
-    textMuted: "rgba(255, 255, 255, 0.2)",
+  border: "rgba(255, 255, 255, 0.08)",
+  borderLight: "rgba(255, 255, 255, 0.12)",
+  borderFocus: "rgba(249, 115, 22, 0.5)",
 
-    orange: { bg: "rgba(249, 115, 22, 0.1)", border: "rgba(249, 115, 22, 0.2)", text: "#FB923C" },
-    emerald: { bg: "rgba(16, 185, 129, 0.1)", border: "rgba(16, 185, 129, 0.2)", text: "#6ee7b7" },
-    amber: { bg: "rgba(245, 158, 11, 0.1)", border: "rgba(245, 158, 11, 0.2)", text: "#fcd34d" },
-    rose: { bg: "rgba(244, 63, 94, 0.1)", border: "rgba(244, 63, 94, 0.2)", text: "#fda4af" },
-    sky: { bg: "rgba(14, 165, 233, 0.1)", border: "rgba(14, 165, 233, 0.2)", text: "#7dd3fc" },
-    cyan: { bg: "rgba(6, 182, 212, 0.1)", border: "rgba(6, 182, 212, 0.2)", text: "#67e8f9" },
-
-    gradient: {
-      primary: ["#F97316", "#FBBF24"] as readonly [string, string],
-      warm: ["#EA580C", "#F97316"] as readonly [string, string],
-      glow: ["rgba(249, 115, 22, 0.4)", "rgba(251, 191, 36, 0.1)"] as readonly [string, string],
-    },
+  glass: {
+    bg: "rgba(255, 255, 255, 0.06)",
+    border: "rgba(255, 255, 255, 0.12)",
+    highlight: "rgba(255, 255, 255, 0.08)",
   },
+
+  text: "#ffffff",
+  textSecondary: "rgba(255, 255, 255, 0.7)",
+  textTertiary: "rgba(255, 255, 255, 0.4)",
+  textMuted: "rgba(255, 255, 255, 0.2)",
+
+  orange: { bg: "rgba(249, 115, 22, 0.1)", border: "rgba(249, 115, 22, 0.2)", text: "#FB923C" },
+  emerald: { bg: "rgba(16, 185, 129, 0.1)", border: "rgba(16, 185, 129, 0.2)", text: "#6ee7b7" },
+  amber: { bg: "rgba(245, 158, 11, 0.1)", border: "rgba(245, 158, 11, 0.2)", text: "#fcd34d" },
+  rose: { bg: "rgba(244, 63, 94, 0.1)", border: "rgba(244, 63, 94, 0.2)", text: "#fda4af" },
+  sky: { bg: "rgba(14, 165, 233, 0.1)", border: "rgba(14, 165, 233, 0.2)", text: "#7dd3fc" },
+  cyan: { bg: "rgba(6, 182, 212, 0.1)", border: "rgba(6, 182, 212, 0.2)", text: "#67e8f9" },
+
+  gradient: {
+    primary: ["#F97316", "#FBBF24"] as readonly [string, string],
+    warm: ["#EA580C", "#F97316"] as readonly [string, string],
+    glow: ["rgba(249, 115, 22, 0.4)", "rgba(251, 191, 36, 0.1)"] as readonly [string, string],
+  },
+} as const;
+
+// Light palette — same brand orange, surfaces inverted, text darkened.
+// Tones chosen to hit WCAG AA on common Tailwind-ish contrast checks.
+const lightColors = {
+  ...darkColors,
+
+  primaryFaded: "rgba(249, 115, 22, 0.10)",
+
+  background: "#ffffff",
+  surface: "#f8fafc",
+  card: "#ffffff",
+  cardHover: "#f1f5f9",
+  elevated: "#f8fafc",
+
+  border: "rgba(15, 23, 42, 0.08)",
+  borderLight: "rgba(15, 23, 42, 0.12)",
+  borderFocus: "rgba(234, 88, 12, 0.5)",
+
+  glass: {
+    bg: "rgba(15, 23, 42, 0.04)",
+    border: "rgba(15, 23, 42, 0.08)",
+    highlight: "rgba(15, 23, 42, 0.04)",
+  },
+
+  text: "#0f172a",
+  textSecondary: "rgba(15, 23, 42, 0.75)",
+  textTertiary: "rgba(15, 23, 42, 0.5)",
+  textMuted: "rgba(15, 23, 42, 0.3)",
+
+  orange: { bg: "rgba(249, 115, 22, 0.08)", border: "rgba(249, 115, 22, 0.25)", text: "#C2410C" },
+  emerald: { bg: "rgba(16, 185, 129, 0.08)", border: "rgba(16, 185, 129, 0.25)", text: "#047857" },
+  amber: { bg: "rgba(245, 158, 11, 0.08)", border: "rgba(245, 158, 11, 0.25)", text: "#B45309" },
+  rose: { bg: "rgba(244, 63, 94, 0.08)", border: "rgba(244, 63, 94, 0.25)", text: "#BE123C" },
+  sky: { bg: "rgba(14, 165, 233, 0.08)", border: "rgba(14, 165, 233, 0.25)", text: "#0369A1" },
+  cyan: { bg: "rgba(6, 182, 212, 0.08)", border: "rgba(6, 182, 212, 0.25)", text: "#0E7490" },
+} as const;
+
+export const theme = {
+  colors: darkColors,
   spacing: {
     xs: 4,
     sm: 8,
@@ -99,3 +149,35 @@ export const theme = {
 } as const;
 
 export type Theme = typeof theme;
+
+/**
+ * Light-palette equivalent of the default `theme`. Structure is identical
+ * so any component that accepts `Theme` can accept this. Cast through
+ * unknown because `darkColors` is `as const` (narrow literal types);
+ * `lightColors` uses different string literals but the same shape.
+ */
+export const lightTheme = {
+  ...theme,
+  colors: lightColors,
+} as unknown as Theme;
+
+/** Explicit opt-in: resolve a palette by name. */
+export function themeForScheme(scheme: "light" | "dark" | null | undefined): Theme {
+  return scheme === "light" ? lightTheme : theme;
+}
+
+/**
+ * React hook that returns the active palette based on the OS setting.
+ * Screens that want to respect light mode should read their colors from
+ * this hook instead of the static `theme` export:
+ *
+ *   const t = useAppTheme();
+ *   <View style={{ backgroundColor: t.colors.background }} />
+ *
+ * Legacy screens using `theme` directly will continue to render dark —
+ * the migration is intentionally gradual.
+ */
+export function useAppTheme(): Theme {
+  const scheme = useColorScheme();
+  return themeForScheme(scheme);
+}

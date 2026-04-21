@@ -1,0 +1,1819 @@
+# State Provider Official Registry
+
+Generated: 2026-04-18T17:41:23.376Z
+
+## Summary
+
+- States covered: 51
+- Unique state-scoped providers in registry: 289
+- State provider assignments: 424
+- Existing seed providers: 237
+- Catalog-added providers: 47
+- Catalog backlog providers: 5
+- ZIP-modeled providers: 74
+- State-only providers: 210
+- Second wave backlog: promote_zip=83, live_address=8, polygon=58, manual_research=106
+
+## AK
+
+- Totals: total=6, existing_seed=4, catalog_added=1, catalog_backlog=1, zip_modeled=1, state_only=4, promote_zip=0, live_address=2, polygon=1, manual_research=3
+
+### Electric
+
+- Chugach Electric | existing_seed | current=state | next=manual_research | official=https://www.chugachelectric.com/ | status=partial | confidence=medium
+  note: Home | Chugach Electric Association Inc.
+
+### Gas
+
+- ENSTAR Natural Gas | existing_seed | current=state | next=manual_research | official=https://www.enstarnaturalgas.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Water
+
+- Anchorage Water & Wastewater Utility | existing_seed | current=state | next=manual_research | official=https://www.awwu.biz/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Internet
+
+- Alaska Communications | catalog_backlog | current=catalog_only | next=live_address | official=https://www.alaskacommunications.com/Residential | status=catalog_only | confidence=catalog
+  note: Alaska Communications is a major Alaska ISP/voice provider. The official surface is address-qualified rather than ZIP-complete.
+- GCI | existing_seed | current=state | next=live_address | official=https://www.gci.com/business/support/coverage-map | status=resolved | confidence=high
+  note: GCI&#x27;s Alaska Network Coverage Map | Enterprise Network | GCI
+
+### Transit
+
+- People Mover | catalog_added | current=zip_prefix | next=polygon | official=https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx | status=resolved | confidence=high
+  note: Anchorage People Mover is the largest public transit provider in Alaska and was not in seed.
+
+## AL
+
+- Totals: total=6, existing_seed=5, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=5, promote_zip=1, live_address=1, polygon=0, manual_research=3
+
+### Electric
+
+- Alabama Power | existing_seed | current=state | next=promote_zip | official=https://www.alabamapower.com/company/about-us/service-territory-maps.html | status=resolved | confidence=high
+  note: Service Territory Maps
+
+### Gas
+
+- Alagasco | existing_seed | current=state | next=manual_research | official=https://www.spireenergy.com/ | status=partial | confidence=medium
+  note: Spire Inc. | Natural Gas Company
+
+### Water
+
+- Birmingham Water Works | existing_seed | current=state | next=manual_research | official=https://www.bwwb.org/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- MAX Transit | catalog_added | current=zip_prefix | next=none | official=https://maxtransit.org | status=resolved | confidence=high
+  note: Birmingham-area transit provider missing from the seed; modeled with Birmingham metro ZIP prefixes.
+
+## AR
+
+- Totals: total=7, existing_seed=6, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=7, promote_zip=2, live_address=1, polygon=0, manual_research=4
+
+### Electric
+
+- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- Entergy Arkansas | catalog_added | current=state | next=manual_research | official=https://www.entergy-arkansas.com | status=partial | confidence=medium
+  note: Major Arkansas electric utility identified in state rules but missing from seed.
+- OG&E | existing_seed | current=state | next=manual_research | official=https://www.oge.com/ | status=partial | confidence=medium
+  note: OG&E - Home
+
+### Gas
+
+- CenterPoint Energy Arkansas | existing_seed | current=state | next=promote_zip | official=https://www.centerpointenergy.com/en-us/home-service-plus/about-hsp/areas-we-serve | status=resolved | confidence=high
+  note: AC & Furnace Repair Minneapolis/St. Paul | CenterPoint Energy Home Service Plus
+
+### Water
+
+- Central Arkansas Water | existing_seed | current=state | next=promote_zip | official=https://carkw.com/about/supporting-our-communities/ | status=resolved | confidence=high
+  note: Supporting Our Communities | Central Arkansas Water
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+
+## AZ
+
+- Totals: total=11, existing_seed=10, catalog_added=1, catalog_backlog=0, zip_modeled=5, state_only=6, promote_zip=1, live_address=3, polygon=0, manual_research=5
+
+### Electric
+
+- APS (Arizona Public Service) | existing_seed | current=zip_prefix | next=none | official=https://www.aps.com/en/Business/Service-Plans/Service-Area-Maps | status=resolved | confidence=high
+  note: Business service area map
+- SRP (Salt River Project) | existing_seed | current=state | next=manual_research | official=https://www.srpnet.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Gas
+
+- Southwest Gas | existing_seed | current=state | next=promote_zip | official=https://www.swgas.com/en/pipeline-safety | status=resolved | confidence=high
+  note: Natural Gas Pipeline Safety
+
+### Water
+
+- Mesa Utilities | existing_seed | current=zip_prefix | next=none | official=https://www.mesaaz.gov/Government/Management-Budget/Valley-Cities-Affordability-and-Homeowners-Comparisons | status=resolved | confidence=high
+  note: Valley Cities Affordability and Homeowner's Comparisons - City of Mesa
+- Phoenix Water Services | existing_seed | current=zip_prefix | next=manual_research | official=https://www.phoenix.gov/administration/departments/cityclerk/programs-services/annexations/phoenix-boundary-maps.html | status=resolved | confidence=high
+  note: Phoenix Boundary Maps | City of Phoenix
+- Tucson Water | existing_seed | current=zip_prefix | next=manual_research | official=https://www.tucsonaz.gov/Departments/Transportation-Mobility/Maps-and-Records/Maps-Records-Downloads | status=partial | confidence=medium
+  note: Maps & Records Downloads City of Tucson
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+### Transit
+
+- Valley Metro | catalog_added | current=zip_prefix | next=manual_research | official=https://www.valleymetro.org/maps-schedules | status=blocked | confidence=low
+  note: Phoenix-area Valley Metro was absent from seed and is modeled with core metro ZIP prefixes.
+
+## CA
+
+- Totals: total=16, existing_seed=15, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=14, promote_zip=3, live_address=2, polygon=7, manual_research=2
+
+### Electric
+
+- PG&E | existing_seed | current=state | next=promote_zip | official=https://www.pge.com/en/featured/pge-service-area.html | status=resolved | confidence=high
+  note: PG&E service area | PG&E
+- San Diego Gas & Electric | catalog_added | current=zip_prefix | next=none | official=https://www.sdge.com/landservices | status=resolved | confidence=high
+  note: SDG&E serves San Diego County and parts of southern Orange County; modeled conservatively with southern California ZIP prefixes.
+- SoCal Edison | existing_seed | current=state | next=promote_zip | official=https://www.sce.com/partners/consulting-services/power-requests | status=resolved | confidence=high
+  note: Power Requests and Upgrades | SCE
+
+### Gas
+
+- SoCal Gas | existing_seed | current=state | next=promote_zip | official=https://www.socalgas.com/safety/methane-emissions/methane-emissions-map | status=resolved | confidence=high
+  note: Methane Emissions Map | SoCalGas
+
+### Water
+
+- LADWP | existing_seed | current=state | next=manual_research | official=https://www.ladwp.com/ | status=partial | confidence=medium
+  note: LADWP Home | Los Angeles Department of Water and Power
+
+### Internet
+
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+- Spectrum Maine | existing_seed | current=state | next=manual_research | official=https://www.spectrum.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Transit
+
+- AC Transit | existing_seed | current=zip_prefix | next=none | official=https://www.actransit.org/overview-maps | status=resolved | confidence=high
+  note: AC Transit Overview Maps | Alameda-Contra Costa Transit District
+- BART | existing_seed | current=state | next=polygon | official=https://www.bart.gov/system-map | status=resolved | confidence=high
+  note: System Map | Bay Area Rapid Transit
+- Caltrain | existing_seed | current=state | next=polygon | official=https://www.caltrain.com/?service=weekday&amp;active_tab=route_map_tab | status=resolved | confidence=high
+  note: Home | Caltrain
+- LA Metro | existing_seed | current=state | next=polygon | official=https://www.metro.net/riding/schedules-2/ | status=partial | confidence=medium
+  note: Schedules - LA Metro
+- San Diego MTS | existing_seed | current=state | next=polygon | official=https://www.sdmts.com/getting-around/maps-and-schedules | status=resolved | confidence=high
+  note: Maps and Schedules | San Diego Metropolitan Transit System
+- SF Muni | existing_seed | current=state | next=polygon | official=https://www.sfmta.com/maps | status=resolved | confidence=high
+  note: Maps | SFMTA
+- VTA | existing_seed | current=state | next=polygon | official=https://www.vta.org/go/maps | status=resolved | confidence=high
+  note: Maps | VTA
+
+### Toll
+
+- FasTrak | existing_seed | current=state | next=polygon | official=https://www.bayareafastrak.org/coverage-map | status=resolved | confidence=high
+  note: Pardon Our Interruption
+
+## CO
+
+- Totals: total=10, existing_seed=9, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=8, promote_zip=2, live_address=1, polygon=3, manual_research=3
+
+### Electric
+
+- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- Xcel Energy | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+- Xcel Energy ND | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+
+### Gas
+
+- Black Hills Energy Colorado | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+
+### Water
+
+- Denver Water | existing_seed | current=zip_prefix | next=none | official=https://www.denverwater.org/about-us/how-we-operate/service-area | status=resolved | confidence=high
+  note: Service Area | Denver Water
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+### Transit
+
+- RTD | existing_seed | current=state | next=polygon | official=https://www.rtd-denver.com/routes-services | status=resolved | confidence=high
+  note: Routes and Services | RTD-Denver
+- RTD Denver | catalog_added | current=zip_prefix | next=polygon | official=https://www.rtd-denver.com/system-map | status=resolved | confidence=high
+  note: Regional Transportation District is the core transit provider for Denver metro.
+
+### Toll
+
+- ExpressToll | existing_seed | current=state | next=polygon | official=https://www.expresstoll.com/coverage-map | status=partial | confidence=medium
+  note: ExpressTollWeb
+
+## CT
+
+- Totals: total=9, existing_seed=7, catalog_added=1, catalog_backlog=1, zip_modeled=1, state_only=7, promote_zip=4, live_address=2, polygon=0, manual_research=3
+
+### Electric
+
+- Eversource | existing_seed | current=state | next=promote_zip | official=https://www.eversource.com/business/services/communities-we-serve | status=resolved | confidence=high
+  note: Communities We Serve | Eversource
+- Eversource NH | existing_seed | current=state | next=promote_zip | official=https://www.eversource.com/business/services/communities-we-serve | status=resolved | confidence=high
+  note: Communities We Serve | Eversource
+- United Illuminating | catalog_added | current=zip_prefix | next=manual_research | official=https://www.uinet.com/ourcompany/whoweare/servicearea | status=blocked | confidence=low
+  note: United Illuminating covers southern Connecticut and is a material seed gap for CT.
+
+### Gas
+
+- Connecticut Natural Gas | catalog_backlog | current=catalog_only | next=promote_zip | official=https://portal.ct.gov/pura/gas/gas | status=catalog_only | confidence=catalog
+  note: Connecticut Natural Gas is an official Connecticut PURA-listed utility gap; left catalog-only until we materialize cleaner territory ZIPs.
+- Southern Connecticut Gas | existing_seed | current=state | next=manual_research | official=https://www.soconngas.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Water
+
+- Aquarion Water | existing_seed | current=state | next=manual_research | official=https://www.aquarionwater.com/ | status=partial | confidence=medium
+  note: Aquarion Water Company
+
+### Internet
+
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+- Optimum | existing_seed | current=state | next=promote_zip | official=https://www.optimum.com/optimum-communities | status=resolved | confidence=high
+  note: Optimum Communities
+
+## DC
+
+- Totals: total=5, existing_seed=4, catalog_added=1, catalog_backlog=0, zip_modeled=4, state_only=1, promote_zip=0, live_address=0, polygon=1, manual_research=2
+
+### Electric
+
+- Pepco | existing_seed | current=zip_prefix | next=none | official=https://www.pepco.com/coverage-map | status=resolved | confidence=high
+
+### Gas
+
+- Washington Gas | existing_seed | current=zip_prefix | next=none | official=https://www.washingtongas.com/services/contractors/service-territory | status=resolved | confidence=high
+  note: Washington Gas Service Territory
+
+### Water
+
+- DC Water | existing_seed | current=zip_prefix | next=manual_research | official=https://www.dcwater.com/events/lead-free-dc-greater-washington-region-clean-cities-coalition-5k-walk-and-green-expo | status=resolved | confidence=high
+  note: Lead Free DC at Greater Washington Region Clean Cities Coalition 5K Walk and Green Expo | DC Water
+
+### Transit
+
+- DC Streetcar | catalog_added | current=zip_prefix | next=polygon | official=https://dcstreetcar.com | status=partial | confidence=medium
+  note: DC Streetcar adds a district-specific transit option beyond WMATA.
+- WMATA (Metro) | existing_seed | current=state | next=manual_research | official=https://www.wmata.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (500)
+
+## DE
+
+- Totals: total=4, existing_seed=3, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=4, promote_zip=3, live_address=0, polygon=1, manual_research=0
+
+### Electric
+
+- Delmarva Power | existing_seed | current=state | next=promote_zip | official=https://www.delmarva.com/coverage-map | status=resolved | confidence=high
+
+### Gas
+
+- Chesapeake Utilities Delaware | existing_seed | current=state | next=promote_zip | official=https://www.chpkgas.com/about-us/service-areas/ | status=resolved | confidence=high
+  note: Service Areas - Chesapeake Utilities Natural Gas
+
+### Water
+
+- Artesian Water Company | existing_seed | current=state | next=promote_zip | official=https://www.artesianwater.com/my-bills-services/our-service-areas/ | status=resolved | confidence=high
+  note: Our Service Areas | Artesian Water
+
+### Transit
+
+- DART First State | catalog_added | current=state | next=polygon | official=https://dartfirststate.com/map/ | status=resolved | confidence=high
+  note: DART First State operates statewide bus and paratransit service in Delaware.
+
+## FL
+
+- Totals: total=14, existing_seed=13, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=13, promote_zip=2, live_address=2, polygon=3, manual_research=6
+
+### Electric
+
+- Duke Energy Florida | existing_seed | current=state | next=manual_research | official=https://www.duke-energy.com/florida | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+- FPL (Florida Power & Light) | existing_seed | current=state | next=promote_zip | official=https://www.fpl.com/clean-energy/natural-gas/west-county.html | status=resolved | confidence=high
+  note: FPL | Clean Energy | West County Energy Center
+- Orlando Utilities Commission | existing_seed | current=state | next=promote_zip | official=https://www.ouc.com/community/focus-areas/ | status=resolved | confidence=high
+  note: Our Community Focus Areas | Social Impact | OUC
+- Tampa Electric | catalog_added | current=zip_prefix | next=none | official=https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/ | status=resolved | confidence=high
+  note: Tampa Electric is a major missing Florida electric provider with a clear Tampa Bay service area.
+
+### Gas
+
+- TECO Peoples Gas | existing_seed | current=state | next=manual_research | official=https://www.tecoenergy.com/ | status=partial | confidence=medium
+  note: TECO Energy
+
+### Water
+
+- JEA | existing_seed | current=state | next=manual_research | official=https://www.jea.com/Engineering_and_Construction/Electric_Development/Street_and_Area_Lights/ | status=partial | confidence=medium
+  note: Street and Area Lights | Electric Development | Engineering and Construction | JEA
+- Miami-Dade Water & Sewer | existing_seed | current=state | next=manual_research | official=https://www.miamidade.gov/global/service.page?Mduid_service=ser1536071310599328 | status=resolved | confidence=high
+  note: iWASD GIS Service Maps
+- Tampa Water Department | existing_seed | current=state | next=manual_research | official=https://www.tampa.gov/guide/zoning | status=resolved | confidence=high
+  note: Maps | City of Tampa
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- Lynx | existing_seed | current=state | next=polygon | official=https://www.golynx.com/maps-schedules/map-gallery.stml | status=resolved | confidence=high
+  note: Map Gallery | Public Transportation in Orange, Seminole & Osceola
+- Miami-Dade Transit | existing_seed | current=state | next=polygon | official=https://www.miamidade.gov/global/transportation/safety-guidelines.page | status=partial | confidence=medium
+  note: Safety Guidelines
+
+### Toll
+
+- SunPass | existing_seed | current=state | next=polygon | official=https://www.sunpass.com/coverage-map | status=resolved | confidence=high
+
+## GA
+
+- Totals: total=9, existing_seed=8, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=9, promote_zip=4, live_address=2, polygon=1, manual_research=2
+
+### Electric
+
+- Georgia Power | existing_seed | current=state | next=promote_zip | official=https://www.georgiapower.com/ | status=partial | confidence=medium
+  note: Georgia Power | Reliable Energy for a Growing Georgia
+
+### Gas
+
+- Atlanta Gas Light | catalog_added | current=state | next=promote_zip | official=https://www.atlantagaslight.com | status=resolved | confidence=high
+  note: Atlanta Gas Light remains a key Georgia gas infrastructure provider missing from seed.
+- Georgia Natural Gas | existing_seed | current=state | next=promote_zip | official=https://gng.com/shop-plans/featured-cities | status=resolved | confidence=high
+  note: Is Georgia Natural Gas available in your area? | GNG
+
+### Water
+
+- Atlanta Watershed Management | existing_seed | current=state | next=promote_zip | official=https://atlantawatershed.org/ | status=resolved | confidence=high
+  note: Atlanta Watershed Management
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+### Transit
+
+- MARTA | existing_seed | current=state | next=polygon | official=https://itsmarta.com/bus-reroutes.aspx | status=resolved | confidence=high
+  note: MARTA
+
+### Toll
+
+- Peach Pass | existing_seed | current=state | next=manual_research | official=https://peachpass.com/ | status=partial | confidence=medium
+  note: Peach Pass | Travel Georgia&#039;s Express Lanes with Peach Pass
+
+## HI
+
+- Totals: total=6, existing_seed=5, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=5, promote_zip=2, live_address=1, polygon=2, manual_research=1
+
+### Electric
+
+- Hawaiian Electric (HECO) | existing_seed | current=state | next=promote_zip | official=https://www.hawaiianelectric.com/clean-energy-hawaii/sustainability/sustainability-report-and-maps | status=resolved | confidence=high
+  note: Sustainability Report & Maps | Hawaiian Electric
+
+### Gas
+
+- Hawaii Gas | existing_seed | current=state | next=promote_zip | official=https://www.hawaiigas.com/site-map | status=partial | confidence=medium
+  note: Site Map | Hawaii Gas
+
+### Water
+
+- Board of Water Supply (Honolulu) | existing_seed | current=state | next=manual_research | official=https://www.boardofwatersupply.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Internet
+
+- Hawaiian Telcom | existing_seed | current=state | next=live_address | official=https://www.hawaiiantel.com/business/Business/Check-Availability | status=resolved | confidence=high
+  note: Check Availability
+
+### Transit
+
+- Skyline | catalog_added | current=zip_prefix | next=polygon | official=https://www.honolulu.gov/skyline | status=resolved | confidence=high
+  note: Honolulu Skyline adds a rail-specific transit surface beyond TheBus.
+- TheBus | existing_seed | current=state | next=polygon | official=https://www.thebus.org/SystemMap/SystemMapAll.asp | status=resolved | confidence=high
+  note: TheBus New
+
+## IA
+
+- Totals: total=9, existing_seed=8, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=9, promote_zip=3, live_address=2, polygon=0, manual_research=4
+
+### Electric
+
+- Alliant Energy | catalog_added | current=state | next=promote_zip | official=https://www.alliantenergy.com/who-we-are/communities-we-serve | status=resolved | confidence=high
+  note: Alliant Energy is a major Iowa/Wisconsin utility called out in state rules but missing from seed.
+- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- MidAmerican Energy | existing_seed | current=state | next=promote_zip | official=https://www.midamericanenergy.com/territory-communitylist | status=resolved | confidence=high
+  note: Service Territory
+
+### Gas
+
+- Black Hills Energy Iowa | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+
+### Water
+
+- Iowa American Water | existing_seed | current=state | next=promote_zip | official=https://www.amwater.com/corp/Customers-and-Communities/American-Water-Charitable-Foundation/apply-for-a-grant | status=resolved | confidence=high
+  note: Apply For A Grant
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+- Mediacom | existing_seed | current=state | next=manual_research | official=https://www.mediacomcable.com | status=blocked | confidence=low
+  note: fetch failed
+
+## ID
+
+- Totals: total=7, existing_seed=6, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=7, promote_zip=4, live_address=1, polygon=0, manual_research=2
+
+### Electric
+
+- Idaho Power | catalog_added | current=state | next=promote_zip | official=https://www.idahopower.com | status=resolved | confidence=high
+  note: Idaho Power is the dominant investor-owned electric utility in southern Idaho and a major catalog gap.
+- Rocky Mountain Power | existing_seed | current=state | next=manual_research | official=https://www.rockymountainpower.net/community/service-area.html | status=partial | confidence=medium
+  note: Areas We Serve
+
+### Gas
+
+- Dominion Energy Utah | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+  note: Infrastructure Availability Map | South Carolina | Dominion Energy
+- Intermountain Gas | existing_seed | current=state | next=promote_zip | official=https://www.intgas.com/customers-encouraged-to-monitor-natural-gas-meter-and-furnace-vent-areas-2/ | status=resolved | confidence=high
+  note: Customers encouraged to monitor natural gas meter and furnace vent areas - Intermountain Gas Company
+
+### Water
+
+- Suez Idaho (Veolia) | existing_seed | current=state | next=promote_zip | official=https://mywater.veolia.us/community-environment/veolia-watershed-recreation-program | status=resolved | confidence=high
+  note: Veolia Watershed Recreation Program | Veolia Water
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+
+## IL
+
+- Totals: total=13, existing_seed=12, catalog_added=1, catalog_backlog=0, zip_modeled=6, state_only=7, promote_zip=3, live_address=1, polygon=1, manual_research=5
+
+### Electric
+
+- Ameren Illinois | catalog_added | current=state | next=promote_zip | official=https://www.ameren.com/illinois/about | status=resolved | confidence=high
+  note: Ameren Illinois is the major downstate Illinois electric utility and was not represented directly in seed.
+- Ameren Missouri | existing_seed | current=state | next=promote_zip | official=https://www.ameren.com/coverage-map | status=resolved | confidence=high
+  note: Pardon Our Interruption
+- ComEd | existing_seed | current=zip_prefix | next=none | official=https://www.comed.com/coverage-map | status=resolved | confidence=high
+
+### Gas
+
+- Nicor Gas | existing_seed | current=zip_prefix | next=none | official=https://www.nicorgas.com/company/where-we-are/our-service-area/distribution-pipeline.html | status=resolved | confidence=high
+  note: Distribution Pipeline
+- Peoples Gas | existing_seed | current=state | next=manual_research | official=https://www.peoplesgasdelivery.com/ | status=partial | confidence=medium
+  note: Peoples Gas
+
+### Water
+
+- Chicago Water Department | existing_seed | current=zip_prefix | next=manual_research | official=https://www.chicago.gov/water | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+- Illinois American Water | existing_seed | current=state | next=promote_zip | official=https://www.amwater.com/corp/Customers-and-Communities/American-Water-Charitable-Foundation/apply-for-a-grant | status=resolved | confidence=high
+  note: Apply For A Grant
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- CTA | existing_seed | current=zip_prefix | next=manual_research | official=https://www.transitchicago.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+- Metra | existing_seed | current=state | next=manual_research | official=https://www.metrarail.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+- Pace Bus | existing_seed | current=zip_prefix | next=none | official=https://www.pacebus.com/accessible-fixed-routes | status=resolved | confidence=high
+  note: accessible fixed routes | Pace Suburban Bus
+
+### Toll
+
+- I-PASS | existing_seed | current=zip_prefix | next=polygon | official=https://getipass.com/coverage-map | status=resolved | confidence=high
+  note: Illinois Tollway
+
+## IN
+
+- Totals: total=7, existing_seed=6, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=6, promote_zip=2, live_address=1, polygon=1, manual_research=2
+
+### Electric
+
+- Duke Energy Indiana | existing_seed | current=state | next=manual_research | official=https://www.duke-energy.com/indiana | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+- Indiana Michigan Power | catalog_added | current=zip_prefix | next=none | official=https://www.indianamichiganpower.com | status=partial | confidence=medium
+  note: Indiana Michigan Power is a large AEP utility missing from Indiana coverage.
+
+### Gas
+
+- Citizens Energy Group | existing_seed | current=state | next=promote_zip | official=https://www.citizensenergygroup.com/Tools/Utility-Availability | status=resolved | confidence=high
+  note: Utility Availability - Citizens Energy Group
+
+### Water
+
+- Indiana American Water | existing_seed | current=state | next=promote_zip | official=https://www.amwater.com/corp/Customers-and-Communities/American-Water-Charitable-Foundation/apply-for-a-grant | status=resolved | confidence=high
+  note: Apply For A Grant
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- IndyGo | existing_seed | current=state | next=polygon | official=https://www.indygo.net/plan-your-trip/ | status=resolved | confidence=high
+  note: Plan Your Trip - IndyGo
+
+## KS
+
+- Totals: total=10, existing_seed=9, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=9, promote_zip=1, live_address=2, polygon=1, manual_research=6
+
+### Electric
+
+- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- Evergy | existing_seed | current=state | next=promote_zip | official=https://www.evergy.com/manage-account/rate-information-link/service-areas | status=resolved | confidence=high
+  note: Service Areas - Evergy
+
+### Gas
+
+- Kansas Gas Service | existing_seed | current=state | next=manual_research | official=https://www.kansasgasservice.com/ | status=partial | confidence=medium
+  note: Kansas Gas Service - Natural Gas Distribution
+
+### Water
+
+- WaterOne | existing_seed | current=state | next=manual_research | official=https://www.waterone.org/402/Map-Requests | status=resolved | confidence=high
+  note: Map Requests | WaterOne
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+- Midco | existing_seed | current=state | next=manual_research | official=https://www.midco.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Transit
+
+- RideKC | catalog_added | current=zip_prefix | next=polygon | official=https://ridekc.org/rider-guide/system-map | status=resolved | confidence=high
+  note: Kansas City regional transit system missing from both Kansas and Missouri seed surfaces.
+
+### Toll
+
+- K-TAG | existing_seed | current=state | next=manual_research | official=https://ksturnpike.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+## KY
+
+- Totals: total=4, existing_seed=3, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=3, promote_zip=3, live_address=0, polygon=0, manual_research=0
+
+### Electric
+
+- Kentucky Utilities | existing_seed | current=state | next=promote_zip | official=https://lge-ku.com/our-company/community/neighbor-neighbor/trimble-county-generating-station | status=partial | confidence=medium
+  note: Trimble County Generating Station | LG&E and KU
+- Louisville Gas & Electric | catalog_added | current=zip_prefix | next=none | official=https://lge-ku.com | status=partial | confidence=medium
+  note: LG&E is the core Louisville-area utility and was missing from Kentucky coverage.
+
+### Gas
+
+- Atmos Energy Kentucky | existing_seed | current=state | next=promote_zip | official=https://www.atmosenergy.com/community/fueling-safe-and-thriving-communities/ | status=partial | confidence=medium
+
+### Water
+
+- Louisville Water Company | existing_seed | current=state | next=promote_zip | official=https://louisvillewater.com/map-featured-projects/ | status=resolved | confidence=high
+  note: Featured Projects - Louisville Water Company
+
+## LA
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=7, promote_zip=1, live_address=1, polygon=1, manual_research=4
+
+### Electric
+
+- Entergy Louisiana | existing_seed | current=state | next=manual_research | official=https://www.entergylouisiana.com/ | status=partial | confidence=medium
+  note: Entergy Louisiana - We power life.
+
+### Gas
+
+- Atmos Energy Louisiana | existing_seed | current=state | next=promote_zip | official=https://www.atmosenergy.com/community/fueling-safe-and-thriving-communities/ | status=partial | confidence=medium
+
+### Water
+
+- Sewerage & Water Board of New Orleans | existing_seed | current=state | next=manual_research | official=https://www.swbno.org/Projects/RoadWork | status=partial | confidence=medium
+  note: RoadWork Mapping Application - Sewerage & Water Board of New Orleans
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+
+### Transit
+
+- Capital Area Transit System | catalog_added | current=zip_prefix | next=none | official=https://www.brcats.com | status=resolved | confidence=high
+  note: Baton Rouge CATS expands Louisiana transit beyond the New Orleans region already in seed.
+- New Orleans Regional Transit Authority | existing_seed | current=state | next=polygon | official=https://www.norta.com/ride-with-us/system-overview | status=resolved | confidence=high
+  note: New Orleans Regional Transit Authority - System Overview
+
+### Toll
+
+- GeauxPass | existing_seed | current=state | next=manual_research | official=https://www.geauxpass.com | status=blocked | confidence=low
+  note: fetch failed
+
+## MA
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=7, promote_zip=4, live_address=0, polygon=1, manual_research=2
+
+### Electric
+
+- Eversource | existing_seed | current=state | next=promote_zip | official=https://www.eversource.com/business/services/communities-we-serve | status=resolved | confidence=high
+  note: Communities We Serve | Eversource
+- Eversource NH | existing_seed | current=state | next=promote_zip | official=https://www.eversource.com/business/services/communities-we-serve | status=resolved | confidence=high
+  note: Communities We Serve | Eversource
+
+### Gas
+
+- National Grid MA | existing_seed | current=state | next=promote_zip | official=https://www.nationalgridus.com/NY-Business/Natural-Gas-Safety/Gas-Leak-Map | status=resolved | confidence=high
+  note: Natural Gas Leak Map | National Grid
+- Unitil New Hampshire | existing_seed | current=state | next=promote_zip | official=https://unitil.com/electric-gas-service/service-areas | status=resolved | confidence=high
+  note: Service Areas | Unitil
+
+### Water
+
+- Aquarion Water | existing_seed | current=state | next=manual_research | official=https://www.aquarionwater.com/ | status=partial | confidence=medium
+  note: Aquarion Water Company
+- Boston Water and Sewer Commission | existing_seed | current=state | next=manual_research | official=https://www.bwsc.org/environment-education/maproom/water-service-map | status=resolved | confidence=high
+  note: Water Service Map | Boston Water and Sewer Commission
+- Massachusetts Water Resources Authority | catalog_added | current=zip_prefix | next=none | official=https://www.mwra.com | status=resolved | confidence=high
+  note: MWRA covers Boston-region wholesale water/sewer service and adds a missing Massachusetts water surface.
+
+### Transit
+
+- MBTA | existing_seed | current=state | next=polygon | official=https://www.mbta.com/maps | status=resolved | confidence=high
+  note: Maps | MBTA
+
+## MD
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=4, state_only=4, promote_zip=2, live_address=0, polygon=1, manual_research=2
+
+### Electric
+
+- Baltimore Gas & Electric | existing_seed | current=zip_prefix | next=none | official=https://www.bge.com/coverage-map | status=resolved | confidence=high
+- Delmarva Power | existing_seed | current=state | next=promote_zip | official=https://www.delmarva.com/coverage-map | status=resolved | confidence=high
+- Pepco | existing_seed | current=zip_prefix | next=none | official=https://www.pepco.com/coverage-map | status=resolved | confidence=high
+
+### Gas
+
+- Chesapeake Utilities Delaware | existing_seed | current=state | next=promote_zip | official=https://www.chpkgas.com/about-us/service-areas/ | status=resolved | confidence=high
+  note: Service Areas - Chesapeake Utilities Natural Gas
+- Washington Gas | existing_seed | current=zip_prefix | next=none | official=https://www.washingtongas.com/services/contractors/service-territory | status=resolved | confidence=high
+  note: Washington Gas Service Territory
+
+### Water
+
+- WSSC Water | existing_seed | current=state | next=manual_research | official=https://www.wsscwater.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (520)
+
+### Transit
+
+- MTA Maryland | catalog_added | current=zip_prefix | next=polygon | official=https://www.mta.maryland.gov/transit-maps | status=resolved | confidence=high
+  note: Maryland Transit Administration adds a missing Baltimore-centric transit surface.
+- WMATA (Metro) | existing_seed | current=state | next=manual_research | official=https://www.wmata.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (500)
+
+## ME
+
+- Totals: total=7, existing_seed=6, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=6, promote_zip=1, live_address=2, polygon=1, manual_research=3
+
+### Electric
+
+- Central Maine Power | existing_seed | current=state | next=manual_research | official=https://www.cmpco.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+- Versant Power | existing_seed | current=state | next=promote_zip | official=https://vpcapmap.cliffhanger-solutions.com/ | status=partial | confidence=medium
+  note: Atlas Enterprise Edition - Delivering More Than Maps
+
+### Gas
+
+- Summit Natural Gas of Maine | existing_seed | current=state | next=live_address | official=https://summitnaturalgas.com/service-areas | status=resolved | confidence=high
+  note: ServiceAreas - Summit Natural Gas
+
+### Water
+
+- Maine Water Company | existing_seed | current=state | next=manual_research | official=https://www.mainewater.com/ | status=partial | confidence=medium
+  note: Maine Water a refreshing utility experience.
+
+### Internet
+
+- Consolidated Communications VT | existing_seed | current=state | next=live_address | official=https://www.consolidated.com/coverage-map | status=resolved | confidence=high
+  note: Consolidated Communications is Now Fidium | Internet, Phone &…
+- Spectrum Maine | existing_seed | current=state | next=manual_research | official=https://www.spectrum.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Transit
+
+- Greater Portland METRO | catalog_added | current=zip_prefix | next=polygon | official=https://gpmetro.org | status=resolved | confidence=high
+  note: Greater Portland METRO adds a missing Maine transit provider with a compact service footprint.
+
+## MI
+
+- Totals: total=5, existing_seed=4, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=4, promote_zip=2, live_address=0, polygon=0, manual_research=3
+
+### Electric
+
+- DTE Energy | existing_seed | current=state | next=promote_zip | official=https://www.dteenergy.com/us/en/business/service-request/system-improvements/system-improvements/power-improvements-map.html | status=resolved | confidence=high
+  note: Power Improvements Map | DTE Energy
+
+### Gas
+
+- Consumers Energy | existing_seed | current=state | next=promote_zip | official=https://www.consumersenergy.com/about-us/natural-gas-operations/four-cities-pipeline | status=resolved | confidence=high
+  note: Four Cities Metro Pipeline | Consumers Energy
+
+### Water
+
+- Great Lakes Water Authority | existing_seed | current=state | next=manual_research | official=https://www.glwater.org/ | status=partial | confidence=medium
+  note: Great Lakes Water Authority - Michigan&#039;s source for water
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Transit
+
+- SMART | catalog_added | current=zip_prefix | next=manual_research | official=https://www.smartbus.org/Routes-Schedules/System-Map | status=blocked | confidence=low
+  note: Suburban Mobility Authority for Regional Transportation adds the Detroit suburban network missing from seed.
+
+## MN
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=8, promote_zip=3, live_address=0, polygon=1, manual_research=4
+
+### Electric
+
+- Xcel Energy | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+- Xcel Energy ND | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+
+### Gas
+
+- CenterPoint Energy Minnesota | existing_seed | current=state | next=promote_zip | official=https://www.centerpointenergy.com/en-us/home-service-plus/about-hsp/areas-we-serve | status=resolved | confidence=high
+  note: AC & Furnace Repair Minneapolis/St. Paul | CenterPoint Energy Home Service Plus
+- Minnesota Energy Resources | catalog_added | current=state | next=manual_research | official=https://www.minnesotaenergyresources.com | status=partial | confidence=medium
+  note: Minnesota Energy Resources adds a missing statewide gas utility surface beyond CenterPoint.
+
+### Water
+
+- Minneapolis Water | existing_seed | current=state | next=manual_research | official=https://www2.minneapolismn.gov/business-services/licenses-permits-inspections/business-licenses/alcohol-tobacco/new/retailers/off-sale-map/ | status=partial | confidence=medium
+  note: Off-Sale Businesses Map - City of Minneapolis
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Midco | existing_seed | current=state | next=manual_research | official=https://www.midco.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Transit
+
+- Metro Transit MN | existing_seed | current=state | next=polygon | official=https://www.metrotransit.org/stops-stations | status=resolved | confidence=high
+  note: Stops & Stations - Metro Transit
+
+## MO
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=7, promote_zip=4, live_address=1, polygon=2, manual_research=1
+
+### Electric
+
+- Ameren Missouri | existing_seed | current=state | next=promote_zip | official=https://www.ameren.com/coverage-map | status=resolved | confidence=high
+  note: Pardon Our Interruption
+- Evergy | existing_seed | current=state | next=promote_zip | official=https://www.evergy.com/manage-account/rate-information-link/service-areas | status=resolved | confidence=high
+  note: Service Areas - Evergy
+
+### Gas
+
+- Spire Missouri | existing_seed | current=state | next=promote_zip | official=https://www.spireenergy.com/county-map-service-areas | status=resolved | confidence=high
+  note: Map of Natural Gas Service Areas by County | Spire Inc.
+
+### Water
+
+- Missouri American Water | existing_seed | current=state | next=promote_zip | official=https://www.amwater.com/corp/Customers-and-Communities/American-Water-Charitable-Foundation/apply-for-a-grant | status=resolved | confidence=high
+  note: Apply For A Grant
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+### Transit
+
+- Metro Transit St. Louis | existing_seed | current=state | next=polygon | official=https://www.metrostlouis.org/system-maps/ | status=resolved | confidence=high
+  note: System Maps | Metro Transit – Saint Louis
+- RideKC | catalog_added | current=zip_prefix | next=polygon | official=https://ridekc.org/rider-guide/system-map | status=resolved | confidence=high
+  note: Kansas City regional transit system missing from both Kansas and Missouri seed surfaces.
+
+## MS
+
+- Totals: total=6, existing_seed=5, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=5, promote_zip=2, live_address=0, polygon=1, manual_research=3
+
+### Electric
+
+- Entergy Mississippi | existing_seed | current=state | next=manual_research | official=https://www.entergymississippi.com/ | status=partial | confidence=medium
+  note: Entergy Mississippi - We power life.
+- Mississippi Power | existing_seed | current=state | next=manual_research | official=https://www.mississippipower.com/ | status=partial | confidence=medium
+  note: Mississippi Power
+
+### Gas
+
+- Atmos Energy Mississippi | existing_seed | current=state | next=promote_zip | official=https://www.atmosenergy.com/community/fueling-safe-and-thriving-communities/ | status=partial | confidence=medium
+
+### Water
+
+- Jackson Water | existing_seed | current=state | next=promote_zip | official=https://jacksonms.gov/government/city-departments/planning-and-development/office-of-city-planning/gis/map-requests/ | status=resolved | confidence=high
+  note: Map requests - City of Jackson
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Transit
+
+- Coast Transit Authority | catalog_added | current=zip_prefix | next=polygon | official=https://coasttransit.com | status=resolved | confidence=high
+  note: Mississippi Gulf Coast transit provider missing from seed.
+
+## MT
+
+- Totals: total=5, existing_seed=4, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=4, promote_zip=1, live_address=0, polygon=1, manual_research=3
+
+### Electric
+
+- MDU Resources | existing_seed | current=state | next=promote_zip | official=https://www.montana-dakota.com/customers-encouraged-to-monitor-natural-gas-meter-and-furnace-vent-areas-2/ | status=resolved | confidence=high
+  note: Customers encouraged to monitor natural gas meter and furnace vent areas - Montana-Dakota Utilities Company
+
+### Gas
+
+- NorthWestern Energy | existing_seed | current=state | next=manual_research | official=https://www.northwesternenergy.com/ | status=partial | confidence=medium
+  note: NorthWestern Energy | Delivering a Bright Future.
+
+### Water
+
+- City of Billings Water | existing_seed | current=state | next=manual_research | official=https://city-of-billings-map-library-billings.hub.arcgis.com/ | status=partial | confidence=medium
+  note: City of Billings Public Geoportal
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Transit
+
+- Mountain Line | catalog_added | current=zip_prefix | next=polygon | official=https://mountainline.com/system-map/ | status=resolved | confidence=high
+  note: Missoula-area transit addition for Montana.
+
+## NC
+
+- Totals: total=13, existing_seed=12, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=11, promote_zip=2, live_address=1, polygon=2, manual_research=7
+
+### Electric
+
+- Dominion Energy | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+  note: Infrastructure Availability Map | South Carolina | Dominion Energy
+- Duke Energy NC | existing_seed | current=state | next=manual_research | official=https://www.duke-energy.com/north-carolina | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Gas
+
+- Piedmont Natural Gas | catalog_added | current=state | next=manual_research | official=https://www.piedmontng.com | status=blocked | confidence=low
+  note: Piedmont Natural Gas is a major Carolinas utility missing from the seed surface.
+- Piedmont Natural Gas Tennessee | existing_seed | current=state | next=manual_research | official=https://www.piedmontng.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+- PSNC Energy | existing_seed | current=state | next=promote_zip | official=https://www.enbridgegas.com/north-carolina?utm_source=dominionenergy | status=resolved | confidence=high
+  note: North Carolina | Enbridge Gas
+
+### Water
+
+- Charlotte Water | existing_seed | current=zip_prefix | next=manual_research | official=https://www.charlottenc.gov/Events-directory/Community-Area-Planning-Workshop-Virtual | status=resolved | confidence=high
+  note: Community Area Planning Workshop - Virtual - City of Charlotte
+- Durham Water | existing_seed | current=state | next=manual_research | official=https://www.durhamnc.gov/608/Water-Management | status=blocked | confidence=low
+  note: Homepage fetch failed (404)
+- Raleigh Water | existing_seed | current=zip_prefix | next=none | official=https://raleighnc.gov/apps-maps-and-open-data | status=resolved | confidence=high
+  note: Apps, Maps, and Open Data | Raleighnc.gov
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+- Spectrum Maine | existing_seed | current=state | next=manual_research | official=https://www.spectrum.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Transit
+
+- GoRaleigh | existing_seed | current=state | next=polygon | official=https://goraleigh.org/maps-schedules/gocary | status=resolved | confidence=high
+  note: Maps & Schedules | GoRaleigh
+- GoTriangle | existing_seed | current=state | next=polygon | official=https://gotriangle.org/maps-and-schedules/ | status=resolved | confidence=high
+  note: Maps and Schedules &#8211; GoTriangle
+
+## ND
+
+- Totals: total=6, existing_seed=5, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=6, promote_zip=4, live_address=0, polygon=0, manual_research=2
+
+### Electric
+
+- MDU Resources | existing_seed | current=state | next=promote_zip | official=https://www.montana-dakota.com/customers-encouraged-to-monitor-natural-gas-meter-and-furnace-vent-areas-2/ | status=resolved | confidence=high
+  note: Customers encouraged to monitor natural gas meter and furnace vent areas - Montana-Dakota Utilities Company
+- Xcel Energy ND | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+
+### Gas
+
+- Montana-Dakota Utilities | catalog_added | current=state | next=promote_zip | official=https://www.montana-dakota.com | status=resolved | confidence=high
+  note: Montana-Dakota Utilities closes a multi-state utility gap across the northern plains.
+- Xcel Energy North Dakota Gas | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+
+### Water
+
+- Fargo Water | existing_seed | current=state | next=manual_research | official=https://www.fargond.gov/maps | status=partial | confidence=medium
+  note: The City of Fargo - City Maps
+
+### Internet
+
+- Midco | existing_seed | current=state | next=manual_research | official=https://www.midco.com | status=blocked | confidence=low
+  note: fetch failed
+
+## NE
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=7, promote_zip=1, live_address=2, polygon=0, manual_research=5
+
+### Electric
+
+- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- Omaha Public Power District | catalog_added | current=zip_prefix | next=manual_research | official=https://www.oppd.com/about/service-area/ | status=partial | confidence=medium
+  note: OPPD is a major Nebraska public-power provider missing from seed.
+
+### Gas
+
+- Black Hills Energy Nebraska | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- NorthWestern Energy | existing_seed | current=state | next=manual_research | official=https://www.northwesternenergy.com/ | status=partial | confidence=medium
+  note: NorthWestern Energy | Delivering a Bright Future.
+
+### Water
+
+- Metropolitan Utilities District (Omaha) | existing_seed | current=state | next=promote_zip | official=https://www.mudomaha.com/subdivision-map/ | status=resolved | confidence=high
+  note: Subdivision Map - Metropolitan Utilities District
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+## NH
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=7, promote_zip=3, live_address=1, polygon=1, manual_research=3
+
+### Electric
+
+- Eversource | existing_seed | current=state | next=promote_zip | official=https://www.eversource.com/business/services/communities-we-serve | status=resolved | confidence=high
+  note: Communities We Serve | Eversource
+- Eversource NH | existing_seed | current=state | next=promote_zip | official=https://www.eversource.com/business/services/communities-we-serve | status=resolved | confidence=high
+  note: Communities We Serve | Eversource
+- Liberty Utilities NH | existing_seed | current=state | next=manual_research | official=https://libertyutilities.com/ | status=partial | confidence=medium
+  note: Liberty Utilities | Home
+
+### Gas
+
+- Unitil New Hampshire | existing_seed | current=state | next=promote_zip | official=https://unitil.com/electric-gas-service/service-areas | status=resolved | confidence=high
+  note: Service Areas | Unitil
+
+### Water
+
+- Aquarion Water | existing_seed | current=state | next=manual_research | official=https://www.aquarionwater.com/ | status=partial | confidence=medium
+  note: Aquarion Water Company
+- Pennichuck Water | existing_seed | current=state | next=manual_research | official=https://www.pennichuck.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Internet
+
+- Consolidated Communications VT | existing_seed | current=state | next=live_address | official=https://www.consolidated.com/coverage-map | status=resolved | confidence=high
+  note: Consolidated Communications is Now Fidium | Internet, Phone &…
+
+### Transit
+
+- COAST | catalog_added | current=zip_prefix | next=polygon | official=https://coastbus.org/schedules | status=resolved | confidence=high
+  note: COAST adds a New Hampshire transit provider for the Seacoast region.
+
+## NJ
+
+- Totals: total=9, existing_seed=8, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=8, promote_zip=5, live_address=0, polygon=2, manual_research=2
+
+### Electric
+
+- JCP&L | existing_seed | current=state | next=promote_zip | official=https://www.firstenergycorp.com/page_not_found.html | status=partial | confidence=medium
+  note: Page Not Found
+- PSE&G | existing_seed | current=state | next=promote_zip | official=https://www.psegliny.com | status=resolved | confidence=high
+  note: Long Island electric utility surface missing from the seed's New York coverage.
+
+### Gas
+
+- Elizabethtown Gas | existing_seed | current=state | next=promote_zip | official=https://www.southerncompanygas.com/sustainability/our-communities.html | status=resolved | confidence=high
+  note: Our Communities
+- NJ Natural Gas | existing_seed | current=state | next=manual_research | official=https://www.njng.com/ | status=partial | confidence=medium
+  note: New Jersey Natural Gas | Reliable Energy and Natural Gas Services
+
+### Water
+
+- New Jersey American Water | existing_seed | current=state | next=promote_zip | official=https://www.amwater.com/corp/Customers-and-Communities/American-Water-Charitable-Foundation/apply-for-a-grant | status=resolved | confidence=high
+  note: Apply For A Grant
+
+### Internet
+
+- Optimum | existing_seed | current=state | next=promote_zip | official=https://www.optimum.com/optimum-communities | status=resolved | confidence=high
+  note: Optimum Communities
+
+### Transit
+
+- NJ Transit | existing_seed | current=state | next=polygon | official=https://www.njtransit.com/accessibility/System-Map | status=resolved | confidence=high
+  note: System Maps | New Jersey Public Transportation Corporation
+- PATCO Speedline | catalog_added | current=zip_prefix | next=polygon | official=https://www.drpa.org/patco/index.html | status=partial | confidence=medium
+  note: PATCO adds a missing NJ/PA rail corridor provider between South Jersey and Philadelphia.
+
+### Toll
+
+- NJ E-ZPass | existing_seed | current=state | next=manual_research | official=https://www.ezpassnj.com/ | status=partial | confidence=medium
+
+## NM
+
+- Totals: total=5, existing_seed=4, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=4, promote_zip=2, live_address=0, polygon=1, manual_research=2
+
+### Electric
+
+- PNM | existing_seed | current=state | next=promote_zip | official=https://www.pnm.com/supportingcommunities | status=resolved | confidence=high
+  note: Apply for a Sponsorship - pnmprod - pnm.com
+
+### Gas
+
+- New Mexico Gas Company | existing_seed | current=state | next=promote_zip | official=https://www.nmgco.com/account/error?aspxerrorpath=/coverage-map | status=resolved | confidence=high
+  note: New Mexico Gas Company Error
+
+### Water
+
+- Albuquerque Bernalillo County Water Utility | existing_seed | current=state | next=manual_research | official=https://www.abcwua.org/?da_image=know-your-zone-map-2 | status=resolved | confidence=high
+  note: Know Your Zone Map - Albuquerque Bernalillo County Water Utility Authority
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Transit
+
+- ABQ RIDE | catalog_added | current=zip_prefix | next=polygon | official=https://www.cabq.gov/transit/routes-and-schedules/system-map | status=resolved | confidence=high
+  note: Albuquerque transit addition for New Mexico.
+
+## NV
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=6, promote_zip=2, live_address=2, polygon=1, manual_research=2
+
+### Electric
+
+- NV Energy | existing_seed | current=state | next=promote_zip | official=https://www.nvenergy.com/about-nvenergy/economic-development/counties | status=partial | confidence=medium
+  note: NV Energy
+
+### Gas
+
+- Southwest Gas | existing_seed | current=state | next=promote_zip | official=https://www.swgas.com/en/pipeline-safety | status=resolved | confidence=high
+  note: Natural Gas Pipeline Safety
+
+### Water
+
+- Las Vegas Valley Water | existing_seed | current=zip_prefix | next=none | official=https://www.lvvwd.com/customer-service/service-areas/index.html | status=resolved | confidence=high
+  note: Other Service Areas
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+### Transit
+
+- RTC Southern Nevada | existing_seed | current=state | next=manual_research | official=https://www.rtcsnv.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+- RTC Washoe | catalog_added | current=zip_prefix | next=polygon | official=https://rtcwashoe.com/public-transportation/system-map/ | status=resolved | confidence=high
+  note: RTC Washoe adds northern Nevada transit coverage beyond Las Vegas-area service already in seed.
+
+## NY
+
+- Totals: total=9, existing_seed=8, catalog_added=1, catalog_backlog=0, zip_modeled=3, state_only=6, promote_zip=2, live_address=1, polygon=2, manual_research=2
+
+### Electric
+
+- Con Edison | existing_seed | current=zip_prefix | next=none | official=https://www.coned.com/en/business-partners/service-territories | status=resolved | confidence=high
+  note: Service Territory | Con Edison
+- PSEG Long Island | catalog_added | current=zip_prefix | next=none | official=https://www.psegliny.com | status=resolved | confidence=high
+  note: Long Island electric utility surface missing from the seed's New York coverage.
+
+### Gas
+
+- National Grid NY | existing_seed | current=state | next=promote_zip | official=https://www.nationalgridus.com/NY-Business/Natural-Gas-Safety/Gas-Leak-Map | status=resolved | confidence=high
+  note: Natural Gas Leak Map | National Grid
+
+### Water
+
+- NYC Water Board | existing_seed | current=zip_prefix | next=manual_research | official=https://nyc.maps.arcgis.com/home/index.html | status=partial | confidence=medium
+  note: Homepage fetch failed (404)
+
+### Internet
+
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+- Optimum | existing_seed | current=state | next=promote_zip | official=https://www.optimum.com/optimum-communities | status=resolved | confidence=high
+  note: Optimum Communities
+- Spectrum Maine | existing_seed | current=state | next=manual_research | official=https://www.spectrum.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Transit
+
+- MTA | existing_seed | current=state | next=polygon | official=https://www.mta.info/maps | status=resolved | confidence=high
+  note: MTA Maps
+
+### Toll
+
+- NY E-ZPass | existing_seed | current=state | next=polygon | official=https://www.e-zpassny.com/es/resources/roads-and-travel/plaza-abbreviations | status=partial | confidence=medium
+
+## OH
+
+- Totals: total=13, existing_seed=12, catalog_added=0, catalog_backlog=1, zip_modeled=3, state_only=9, promote_zip=2, live_address=2, polygon=2, manual_research=4
+
+### Electric
+
+- AEP Ohio | existing_seed | current=state | next=promote_zip | official=https://www.aepohio.com/company/about/choice/cres/service-territory-maps | status=resolved | confidence=high
+  note: Service Territory Maps
+- Ohio Edison | existing_seed | current=state | next=promote_zip | official=https://www.firstenergycorp.com/page_not_found.html | status=partial | confidence=medium
+  note: Page Not Found
+
+### Gas
+
+- Columbia Gas of Ohio | existing_seed | current=state | next=manual_research | official=https://www.columbiagasohio.com/services/add-or-convert-to-gas/gas-availability-form | status=partial | confidence=medium
+  note: Natural Gas Availability Form - Columbia Gas of Ohio
+
+### Water
+
+- Cincinnati Water Works | existing_seed | current=zip_prefix | next=none | official=https://www.cincinnati-oh.gov/water/about/outside-our-service-area/ | status=resolved | confidence=high
+  note: Outside Our Service Area - GCWW
+- Cleveland Water | existing_seed | current=state | next=manual_research | official=https://www.clevelandwater.com/ | status=partial | confidence=medium
+  note: Homepage | Cleveland Water Department
+- Columbus Utilities | existing_seed | current=zip_prefix | next=none | official=https://www.columbus.gov/Services/Columbus-Water-Power/About-Columbus-Water-Power/Division-of-Power/Connecting-to-City-Power/Connect-to-City-Power-Service-Area-Map | status=resolved | confidence=high
+  note: Connect to City Power - Service Area Map - City of Columbus, Ohio
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+- Spectrum Maine | existing_seed | current=state | next=manual_research | official=https://www.spectrum.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Transit
+
+- COTA | existing_seed | current=zip_prefix | next=none | official=https://www.cota.com/services/cota-bus/ | status=resolved | confidence=high
+  note: COTA Bus | COTA, Central Ohio Transit Authority. Let&#x27;s Go!
+- RTA Cleveland | existing_seed | current=state | next=polygon | official=https://www.riderta.com/facilities | status=resolved | confidence=high
+  note: Major Stations | RideRTA
+
+### Toll
+
+- Ohio Turnpike E-ZPass | catalog_backlog | current=catalog_only | next=polygon | official=https://www.ezpassoh.com | status=catalog_only | confidence=catalog
+  note: Ohio toll coverage is corridor-driven rather than ZIP-clean, so this remains catalog-only until polygon modeling lands.
+
+## OK
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=7, promote_zip=1, live_address=1, polygon=0, manual_research=6
+
+### Electric
+
+- OG&E | existing_seed | current=state | next=manual_research | official=https://www.oge.com/ | status=partial | confidence=medium
+  note: OG&E - Home
+- Public Service Oklahoma (PSO) | existing_seed | current=state | next=promote_zip | official=https://www.psoklahoma.com/community/projects/upgrades/okmulgeearea | status=resolved | confidence=high
+  note: Okmulgee Area Project
+
+### Gas
+
+- Oklahoma Natural Gas (ONE Gas) | existing_seed | current=state | next=manual_research | official=https://www.oklahomanaturalgas.com/ | status=partial | confidence=medium
+  note: Oklahoma Natural Gas
+
+### Water
+
+- Oklahoma City Utilities | existing_seed | current=state | next=manual_research | official=https://www.okc.gov/Events-directory/Cancellation-MAPS-4-Citizens-Advisory-Board-7325 | status=partial | confidence=medium
+  note: MAPS 4 Citizens Advisory Board Meeting | City of OKC
+- Tulsa Water | existing_seed | current=state | next=manual_research | official=https://www.cityoftulsa.org/coverage | status=resolved | confidence=high
+  note: City of Tulsa
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+
+### Transit
+
+- EMBARK | catalog_added | current=zip_prefix | next=manual_research | official=https://embarkok.com/system-map/ | status=blocked | confidence=low
+  note: Oklahoma City EMBARK adds a missing Oklahoma transit provider.
+
+## OR
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=8, promote_zip=2, live_address=1, polygon=1, manual_research=4
+
+### Electric
+
+- Pacific Power | catalog_added | current=state | next=manual_research | official=https://www.pacificpower.net/about.html | status=partial | confidence=medium
+  note: Pacific Power is a major Oregon utility missing from seed.
+- Portland General Electric | existing_seed | current=state | next=promote_zip | official=https://portlandgeneral.com/about/info/service-area | status=resolved | confidence=high
+  note: PGE Service Area | PGE
+
+### Gas
+
+- Cascade Natural Gas | existing_seed | current=state | next=manual_research | official=https://www.cngc.com/ | status=partial | confidence=medium
+  note: Home - Cascade Natural Gas Corporation
+- NW Natural Gas | existing_seed | current=state | next=manual_research | official=https://www.nwnatural.com/gas-availability | status=partial | confidence=medium
+  note: Check Gas Availability - NW Natural
+
+### Water
+
+- Portland Water Bureau | existing_seed | current=state | next=promote_zip | official=https://www.portland.gov/service-areas/public-works | status=resolved | confidence=high
+  note: Public Works | Portland.gov
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- TriMet | existing_seed | current=state | next=polygon | official=http://www.trimet.org/map/ | status=partial | confidence=medium
+  note: Plan and track your trip on TriMet
+
+## PA
+
+- Totals: total=12, existing_seed=10, catalog_added=2, catalog_backlog=0, zip_modeled=4, state_only=8, promote_zip=1, live_address=1, polygon=3, manual_research=4
+
+### Electric
+
+- PECO Energy | existing_seed | current=zip_prefix | next=none | official=https://www.peco.com/coverage-map | status=resolved | confidence=high
+- PPL Electric | existing_seed | current=state | next=manual_research | official=https://www.pplelectric.com/sitecore/content/ppl-jss-app/home/More/About-Us/PPL-Service-Area | status=partial | confidence=medium
+  note: PPL Electric Utilities
+
+### Gas
+
+- Columbia Gas of Pennsylvania | catalog_added | current=state | next=manual_research | official=https://www.columbiagaspa.com | status=partial | confidence=medium
+  note: Major Pennsylvania gas utility called out in state rules but missing from seed.
+- UGI Utilities | existing_seed | current=state | next=promote_zip | official=https://gasavailability.ugileads.com/?origin_link=mainnav | status=resolved | confidence=high
+  note: Natural Gas Availability by Address – UGI Utilities
+
+### Water
+
+- Philadelphia Water Department | existing_seed | current=zip_prefix | next=none | official=https://water.phila.gov/sustainability/watershed-protection/ | status=resolved | confidence=high
+  note: Watershed Protection &#8211; Philadelphia Water Department
+- Pittsburgh Water & Sewer | existing_seed | current=state | next=manual_research | official=https://pittsburghwater.gov | status=blocked | confidence=low
+  note: fetch failed
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- PATCO Speedline | catalog_added | current=zip_prefix | next=polygon | official=https://www.drpa.org/patco/index.html | status=partial | confidence=medium
+  note: PATCO adds a missing NJ/PA rail corridor provider between South Jersey and Philadelphia.
+- Pittsburgh Port Authority | existing_seed | current=state | next=polygon | official=https://www.rideprt.org/inside-Pittsburgh-Regional-Transit/rider-info/how-to-ride/how-to-ride-the-inclines/ | status=resolved | confidence=high
+  note: How to Ride the Inclines
+- SEPTA | existing_seed | current=zip_prefix | next=none | official=https://www.septa.org/coverage-map | status=resolved | confidence=high
+  note: Southeastern Pennsylvania Transportation Authority | Serving Bucks, Chester, Delaware, Montgomery, and Philadelphia counties
+
+### Toll
+
+- PA Turnpike E-ZPass | existing_seed | current=state | next=polygon | official=https://www.paturnpike.com/traveling/turnpike-maps | status=resolved | confidence=high
+  note: Turnpike Maps & References | PA Turnpike
+
+## RI
+
+- Totals: total=5, existing_seed=4, catalog_added=1, catalog_backlog=0, zip_modeled=0, state_only=5, promote_zip=0, live_address=1, polygon=1, manual_research=3
+
+### Electric
+
+- Rhode Island Energy | existing_seed | current=state | next=manual_research | official=https://www.rienergy.com/ | status=partial | confidence=medium
+  note: Rhode Island Energy
+
+### Gas
+
+- Rhode Island Energy Gas | existing_seed | current=state | next=manual_research | official=https://www.rienergy.com/ | status=partial | confidence=medium
+  note: Rhode Island Energy
+
+### Water
+
+- Providence Water | existing_seed | current=state | next=manual_research | official=https://www.provwater.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Internet
+
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+
+### Transit
+
+- RIPTA | catalog_added | current=state | next=polygon | official=https://ripta.com/statewide-system-map/ | status=resolved | confidence=high
+  note: RIPTA provides statewide Rhode Island transit service and should exist explicitly in seed.
+
+## SC
+
+- Totals: total=7, existing_seed=5, catalog_added=2, catalog_backlog=0, zip_modeled=1, state_only=6, promote_zip=2, live_address=0, polygon=0, manual_research=5
+
+### Electric
+
+- Dominion Energy | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+  note: Infrastructure Availability Map | South Carolina | Dominion Energy
+- Duke Energy NC | existing_seed | current=state | next=manual_research | official=https://www.duke-energy.com/north-carolina | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Gas
+
+- Dominion Energy South Carolina Gas | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+  note: Infrastructure Availability Map | South Carolina | Dominion Energy
+- Piedmont Natural Gas | catalog_added | current=state | next=manual_research | official=https://www.piedmontng.com | status=blocked | confidence=low
+  note: Piedmont Natural Gas is a major Carolinas utility missing from the seed surface.
+- Piedmont Natural Gas Tennessee | existing_seed | current=state | next=manual_research | official=https://www.piedmontng.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Water
+
+- Charleston Water System | existing_seed | current=state | next=manual_research | official=https://experience.arcgis.com/experience/e77bdcce1f464add853e3aae4d274897/ | status=partial | confidence=medium
+  note: Experience
+
+### Transit
+
+- CARTA | catalog_added | current=zip_prefix | next=manual_research | official=https://ridecarta.com | status=blocked | confidence=low
+  note: Charleston Area Regional Transportation Authority adds a South Carolina transit option beyond utility-only coverage.
+
+## SD
+
+- Totals: total=9, existing_seed=7, catalog_added=2, catalog_backlog=0, zip_modeled=1, state_only=8, promote_zip=4, live_address=0, polygon=1, manual_research=4
+
+### Electric
+
+- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- MDU Resources | existing_seed | current=state | next=promote_zip | official=https://www.montana-dakota.com/customers-encouraged-to-monitor-natural-gas-meter-and-furnace-vent-areas-2/ | status=resolved | confidence=high
+  note: Customers encouraged to monitor natural gas meter and furnace vent areas - Montana-Dakota Utilities Company
+- Xcel Energy ND | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+
+### Gas
+
+- MDU Resources South Dakota Gas | existing_seed | current=state | next=promote_zip | official=https://www.montana-dakota.com/customers-encouraged-to-monitor-natural-gas-meter-and-furnace-vent-areas-2/ | status=resolved | confidence=high
+  note: Customers encouraged to monitor natural gas meter and furnace vent areas - Montana-Dakota Utilities Company
+- Montana-Dakota Utilities | catalog_added | current=state | next=promote_zip | official=https://www.montana-dakota.com | status=resolved | confidence=high
+  note: Montana-Dakota Utilities closes a multi-state utility gap across the northern plains.
+- NorthWestern Energy | existing_seed | current=state | next=manual_research | official=https://www.northwesternenergy.com/ | status=partial | confidence=medium
+  note: NorthWestern Energy | Delivering a Bright Future.
+
+### Water
+
+- Sioux Falls Water | existing_seed | current=state | next=manual_research | official=https://www.siouxfalls.gov/public-works/water | status=blocked | confidence=low
+  note: Homepage fetch failed (404)
+
+### Internet
+
+- Midco | existing_seed | current=state | next=manual_research | official=https://www.midco.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Transit
+
+- Sioux Area Metro | catalog_added | current=zip_prefix | next=polygon | official=https://www.siouxfalls.gov/sam | status=resolved | confidence=high
+  note: Sioux Falls transit surface for South Dakota.
+
+## TN
+
+- Totals: total=6, existing_seed=5, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=4, promote_zip=0, live_address=1, polygon=1, manual_research=4
+
+### Electric
+
+- Memphis Light, Gas and Water | catalog_added | current=zip_prefix | next=manual_research | official=https://www.mlgw.com | status=blocked | confidence=low
+  note: MLGW is a major missing Memphis-area multi-utility provider.
+- Nashville Electric Service | existing_seed | current=state | next=manual_research | official=https://www.nespower.com/ | status=partial | confidence=medium
+  note: Nashville Electric Service | NES
+
+### Gas
+
+- Piedmont Natural Gas Tennessee | existing_seed | current=state | next=manual_research | official=https://www.piedmontng.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Water
+
+- Nashville Water Services | existing_seed | current=zip_prefix | next=manual_research | official=https://www.nashville.gov/departments/government/maps | status=partial | confidence=medium
+  note: NashvilleMaps | Nashville.gov
+
+### Internet
+
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+### Transit
+
+- WeGo Public Transit | existing_seed | current=state | next=polygon | official=https://www.wegotransit.com/ride/maps-schedules/bus/ | status=resolved | confidence=high
+  note: Maps & Schedules - Ride | WeGo Public Transit
+
+## TX
+
+- Totals: total=20, existing_seed=18, catalog_added=1, catalog_backlog=1, zip_modeled=7, state_only=12, promote_zip=3, live_address=2, polygon=6, manual_research=7
+
+### Electric
+
+- Oncor Electric Delivery | catalog_backlog | current=catalog_only | next=polygon | official=https://www.oncor.com | status=catalog_only | confidence=catalog
+  note: Oncor is a critical Texas delivery utility, but its territory should be polygon-modeled rather than blindly state-scoped.
+- Reliant Energy | existing_seed | current=state | next=promote_zip | official=https://www.reliant.com/en/residential/electricity/areas-we-serve | status=resolved | confidence=high
+  note: Areas we serve | Reliant Energy
+- TXU Energy | existing_seed | current=state | next=manual_research | official=https://www.txu.com/ | status=partial | confidence=medium
+  note: TXU Energy | Texas Electricity Plans & Rates | Home & Business
+
+### Gas
+
+- Atmos Energy | existing_seed | current=state | next=promote_zip | official=https://www.atmosenergy.com/community/fueling-safe-and-thriving-communities/ | status=partial | confidence=medium
+- CenterPoint Energy | existing_seed | current=state | next=promote_zip | official=https://www.centerpointenergy.com/en-us/home-service-plus/about-hsp/areas-we-serve | status=resolved | confidence=high
+  note: AC & Furnace Repair Minneapolis/St. Paul | CenterPoint Energy Home Service Plus
+
+### Water
+
+- Austin Water | existing_seed | current=zip_prefix | next=manual_research | official=https://www.austintexas.gov/water | status=resolved | confidence=high
+  note: Austin Water | City of Austin | AustinTexas.gov
+- Dallas Water Utilities | existing_seed | current=zip_prefix | next=manual_research | official=https://dallascityhall.com/government/citycouncil/district10/Pages/map-2.aspx | status=partial | confidence=medium
+  note: District 10 map-2
+- Houston Public Works | existing_seed | current=zip_prefix | next=manual_research | official=https://www.houstontx.gov/publicworks | status=blocked | confidence=low
+  note: Homepage fetch failed (404)
+- San Antonio Water System | existing_seed | current=zip_prefix | next=none | official=https://www.saws.org/about-saws/service-areas/ | status=resolved | confidence=high
+  note: Service Areas - San Antonio Water System
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+- Spectrum Maine | existing_seed | current=state | next=manual_research | official=https://www.spectrum.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Transit
+
+- CapMetro | existing_seed | current=zip_prefix | next=polygon | official=https://www.capmetro.org/ride/plan/schedmap | status=resolved | confidence=high
+  note: Schedules & Maps – Capital Metro – Austin Public Transit
+- DART | existing_seed | current=state | next=polygon | official=https://www.dart.org/guide/transit-and-use/dart-schedules-and-maps | status=resolved | confidence=high
+  note: DART Schedules and Maps
+- Houston METRO | existing_seed | current=state | next=polygon | official=https://www.ridemetro.org/riding-metro/system-map | status=resolved | confidence=high
+  note: METRO System Map | Bus | Light Rail | HOV | Transit Facilities | Houston, TX
+- Trinity Metro | existing_seed | current=zip_prefix | next=none | official=https://ridetrinitymetro.org/abc-maps/ | status=resolved | confidence=high
+  note: Network Alternatives - Trinity Metro
+- VIA Metropolitan Transit | existing_seed | current=state | next=polygon | official=https://www.viainfo.net/2017/11/07/via-viva-routes-will-operate-extended-hours-luminaria/ | status=resolved | confidence=high
+  note: VIA VIVA Routes will Operate Extended Hours for Luminaria - VIA Metropolitan Transit
+
+### Toll
+
+- North Texas Tollway Authority | catalog_added | current=zip_prefix | next=polygon | official=https://www.ntta.org | status=resolved | confidence=high
+  note: NTTA adds a Dallas-Fort Worth toll corridor provider beyond statewide Texas toll tags.
+- TxTag | existing_seed | current=state | next=manual_research | official=https://www.txtag.org | status=blocked | confidence=low
+  note: fetch failed
+
+## UT
+
+- Totals: total=7, existing_seed=6, catalog_added=0, catalog_backlog=1, zip_modeled=0, state_only=6, promote_zip=2, live_address=1, polygon=2, manual_research=2
+
+### Electric
+
+- Rocky Mountain Power | existing_seed | current=state | next=manual_research | official=https://www.rockymountainpower.net/community/service-area.html | status=partial | confidence=medium
+  note: Areas We Serve
+
+### Gas
+
+- Dominion Energy Utah | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+  note: Infrastructure Availability Map | South Carolina | Dominion Energy
+
+### Water
+
+- Salt Lake City Public Utilities | existing_seed | current=state | next=promote_zip | official=https://www.slc.gov/utilities/gis-mapping/ | status=resolved | confidence=high
+  note: GIS Mapping &#038; IT | Public Utilities
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Google Fiber | existing_seed | current=state | next=live_address | official=https://fiber.google.com/cities/atlanta/support/ | status=resolved | confidence=high
+  note: Google Fiber Internet Support & Service | Atlanta, GA
+
+### Transit
+
+- UTA | existing_seed | current=state | next=polygon | official=https://www.rideuta.com/Rider-Tools/Schedules-and-Maps | status=resolved | confidence=high
+  note: Schedules and Maps
+
+### Toll
+
+- Express Pass | catalog_backlog | current=catalog_only | next=polygon | official=https://www.expresspass.utah.gov | status=catalog_only | confidence=catalog
+  note: Utah Express Pass is corridor-based toll coverage and remains catalog-only until toll polygons land.
+
+## VA
+
+- Totals: total=9, existing_seed=8, catalog_added=1, catalog_backlog=0, zip_modeled=3, state_only=6, promote_zip=3, live_address=1, polygon=1, manual_research=3
+
+### Electric
+
+- Appalachian Power WV | existing_seed | current=state | next=promote_zip | official=https://www.appalachianpower.com/company/about/wheeling | status=resolved | confidence=high
+  note: Ohio and Marshall County Customer Information
+- Dominion Energy | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+  note: Infrastructure Availability Map | South Carolina | Dominion Energy
+
+### Gas
+
+- Washington Gas | existing_seed | current=zip_prefix | next=none | official=https://www.washingtongas.com/services/contractors/service-territory | status=resolved | confidence=high
+  note: Washington Gas Service Territory
+
+### Water
+
+- Fairfax Water | existing_seed | current=zip_prefix | next=manual_research | official=https://www.fairfaxwater.org/ | status=blocked | confidence=low
+  note: Homepage fetch failed (520)
+- Virginia American Water | existing_seed | current=state | next=promote_zip | official=https://www.amwater.com/corp/Customers-and-Communities/American-Water-Charitable-Foundation/apply-for-a-grant | status=resolved | confidence=high
+  note: Apply For A Grant
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Cox Communications | existing_seed | current=state | next=live_address | official=https://www.cox.com/pfserver/error.html | status=partial | confidence=medium
+  note: Cox Residential Services | Official Site
+
+### Transit
+
+- Hampton Roads Transit | catalog_added | current=zip_prefix | next=polygon | official=https://gohrt.com/routes/ | status=resolved | confidence=high
+  note: HRT expands Virginia transit coverage beyond DC-region rail providers.
+- WMATA (Metro) | existing_seed | current=state | next=manual_research | official=https://www.wmata.com/ | status=blocked | confidence=low
+  note: Homepage fetch failed (500)
+
+## VT
+
+- Totals: total=5, existing_seed=4, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=3, promote_zip=1, live_address=1, polygon=0, manual_research=1
+
+### Electric
+
+- Green Mountain Power | existing_seed | current=state | next=promote_zip | official=https://greenmountainpower.com/active-solar-net-metering-within-gmp-territory/ | status=partial | confidence=medium
+  note: Active Solar Net Metering within GMP Territory - Green Mountain Power
+
+### Gas
+
+- Vermont Gas Systems | existing_seed | current=zip_prefix | next=none | official=https://vgsvt.com/service/coverage-map/ | status=resolved | confidence=high
+  note: Coverage Map &#8211; VGS
+
+### Water
+
+- Burlington Department of Public Works Water | existing_seed | current=state | next=manual_research | official=https://www.burlingtonvt.gov/DPW/Water | status=blocked | confidence=low
+  note: Homepage fetch failed (404)
+
+### Internet
+
+- Consolidated Communications VT | existing_seed | current=state | next=live_address | official=https://www.consolidated.com/coverage-map | status=resolved | confidence=high
+  note: Consolidated Communications is Now Fidium | Internet, Phone &…
+
+### Transit
+
+- Green Mountain Transit | catalog_added | current=zip_prefix | next=none | official=https://ridegmt.com | status=resolved | confidence=high
+  note: Green Mountain Transit adds a Vermont transit provider beyond utility-only coverage.
+
+## WA
+
+- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=6, promote_zip=1, live_address=1, polygon=1, manual_research=4
+
+### Electric
+
+- Puget Sound Energy | existing_seed | current=state | next=manual_research | official=https://www.pse.com/servererrorpage?aspxerrorpath=/ | status=blocked | confidence=low
+  note: Homepage fetch failed (500)
+- Seattle City Light | existing_seed | current=zip_prefix | next=none | official=https://www.seattle.gov/city-light/in-the-community/social-responsibility/educating-communities | status=resolved | confidence=high
+  note: Educating Communities - City Light | seattle.gov
+
+### Gas
+
+- Cascade Natural Gas | existing_seed | current=state | next=manual_research | official=https://www.cngc.com/ | status=partial | confidence=medium
+  note: Home - Cascade Natural Gas Corporation
+
+### Water
+
+- Seattle Public Utilities | existing_seed | current=state | next=promote_zip | official=https://www.seattle.gov/utilities/construction-resources/water/water-drainage-and-wastewater-availability-certificate | status=resolved | confidence=high
+  note: Water, Drainage, and Wastewater Availability Certificate (WAC) - Utilities | seattle.gov
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- King County Metro | catalog_added | current=zip_prefix | next=polygon | official=https://kingcounty.gov/en/dept/metro | status=resolved | confidence=high
+  note: King County Metro adds the largest Washington transit network beyond Seattle-only utilities.
+
+### Toll
+
+- Good To Go! | existing_seed | current=state | next=manual_research | official=https://wsdot.wa.gov/goodtogo | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+## WI
+
+- Totals: total=11, existing_seed=10, catalog_added=1, catalog_backlog=0, zip_modeled=2, state_only=9, promote_zip=3, live_address=1, polygon=0, manual_research=6
+
+### Electric
+
+- Alliant Energy | catalog_added | current=state | next=promote_zip | official=https://www.alliantenergy.com/who-we-are/communities-we-serve | status=resolved | confidence=high
+  note: Alliant Energy is a major Iowa/Wisconsin utility called out in state rules but missing from seed.
+- We Energies | existing_seed | current=state | next=manual_research | official=https://www.we-energies.com/ | status=partial | confidence=medium
+  note: We Energies
+- Xcel Energy | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+- Xcel Energy ND | existing_seed | current=state | next=promote_zip | official=https://www.xcelenergy.com/working_with_us/how_to_interconnect/hosting_capacity_map_disclaimer | status=partial | confidence=medium
+  note: Xcel Energy - Hosting Capacity Map Disclaimer
+
+### Gas
+
+- Wisconsin Public Service Gas | existing_seed | current=state | next=manual_research | official=https://www.wisconsinpublicservice.com/ | status=partial | confidence=medium
+  note: Wisconsin Public Service
+
+### Water
+
+- Milwaukee Water Works | existing_seed | current=zip_prefix | next=manual_research | official=https://city.milwaukee.gov/water | status=blocked | confidence=low
+  note: Homepage fetch failed (403)
+
+### Internet
+
+- CenturyLink (Lumen) | existing_seed | current=state | next=manual_research | official=https://www.centurylink.com | status=blocked | confidence=low
+  note: fetch failed
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+- Midco | existing_seed | current=state | next=manual_research | official=https://www.midco.com | status=blocked | confidence=low
+  note: fetch failed
+- Spectrum Maine | existing_seed | current=state | next=manual_research | official=https://www.spectrum.com | status=blocked | confidence=low
+  note: The operation was aborted due to timeout
+
+### Transit
+
+- Milwaukee County Transit System | existing_seed | current=zip_prefix | next=none | official=https://www.ridemcts.com/accessibility/transit-plus/transit-plus-fares-and-service-area | status=resolved | confidence=high
+  note: Transit Plus Paratransit Services
+
+## WV
+
+- Totals: total=6, existing_seed=5, catalog_added=1, catalog_backlog=0, zip_modeled=1, state_only=5, promote_zip=3, live_address=1, polygon=0, manual_research=1
+
+### Electric
+
+- Appalachian Power WV | existing_seed | current=state | next=promote_zip | official=https://www.appalachianpower.com/company/about/wheeling | status=resolved | confidence=high
+  note: Ohio and Marshall County Customer Information
+- Mon Power | existing_seed | current=state | next=promote_zip | official=https://www.firstenergycorp.com/page_not_found.html | status=partial | confidence=medium
+  note: Page Not Found
+
+### Gas
+
+- Mountaineer Gas | existing_seed | current=state | next=manual_research | official=https://www.mountaineergas.com | status=blocked | confidence=low
+  note: fetch failed
+
+### Water
+
+- West Virginia American Water | existing_seed | current=state | next=promote_zip | official=https://www.amwater.com/corp/Customers-and-Communities/American-Water-Charitable-Foundation/apply-for-a-grant | status=resolved | confidence=high
+  note: Apply For A Grant
+
+### Internet
+
+- Frontier Communications | existing_seed | current=state | next=live_address | official=https://frontier.com/local | status=resolved | confidence=high
+  note: Frontier Address Check | Internet Coverage and Service
+
+### Transit
+
+- Mountain Line Transit Authority | catalog_added | current=zip_prefix | next=none | official=https://busride.org/routes/ | status=resolved | confidence=high
+  note: West Virginia transit addition centered on Morgantown.
+
+## WY
+
+- Totals: total=8, existing_seed=6, catalog_added=2, catalog_backlog=0, zip_modeled=1, state_only=7, promote_zip=3, live_address=0, polygon=1, manual_research=4
+
+### Electric
+
+- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+- MDU Resources | existing_seed | current=state | next=promote_zip | official=https://www.montana-dakota.com/customers-encouraged-to-monitor-natural-gas-meter-and-furnace-vent-areas-2/ | status=resolved | confidence=high
+  note: Customers encouraged to monitor natural gas meter and furnace vent areas - Montana-Dakota Utilities Company
+- Rocky Mountain Power | existing_seed | current=state | next=manual_research | official=https://www.rockymountainpower.net/community/service-area.html | status=partial | confidence=medium
+  note: Areas We Serve
+
+### Gas
+
+- Dominion Energy Utah | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+  note: Infrastructure Availability Map | South Carolina | Dominion Energy
+- Montana-Dakota Utilities | catalog_added | current=state | next=promote_zip | official=https://www.montana-dakota.com | status=resolved | confidence=high
+  note: Montana-Dakota Utilities closes a multi-state utility gap across the northern plains.
+- Source Gas Distribution Wyoming | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
+  note: Stay safe during extreme cold | Black Hills Energy
+
+### Water
+
+- Cheyenne Board of Public Utilities | existing_seed | current=state | next=manual_research | official=https://experience.arcgis.com/experience/98cc0f0b77f147df89fae212a43c0726 | status=partial | confidence=medium
+  note: Experience
+
+### Transit
+
+- Cheyenne Transit Program | catalog_added | current=zip_prefix | next=polygon | official=https://www.cheyennecity.org/Your-Government/Departments/Public-Works/Transit/Fixed-Route-Service | status=resolved | confidence=high
+  note: Cheyenne Transit Program adds a Wyoming public transit surface beyond utilities.
+

@@ -6,6 +6,19 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "audit:providers": "pnpm exec tsx scripts/audit-provider-seed.ts",
+    "audit:providers:write": "pnpm exec tsx scripts/audit-provider-seed.ts --write",
+    "audit:providers:coverage": "pnpm exec tsx scripts/audit-provider-coverage.ts",
+    "audit:providers:state-completeness": "pnpm exec tsx scripts/audit-state-provider-completeness.ts --skip-fetch",
+    "audit:providers:state-completeness:write": "pnpm exec tsx scripts/audit-state-provider-completeness.ts",
+    "inventory:providers:coverage-surface": "pnpm exec tsx scripts/inventory-provider-coverage-surface.ts --write",
+    "research:providers:official-coverage": "pnpm exec tsx scripts/research-provider-official-coverage.ts --write",
+    "report:providers:state-registry": "pnpm exec tsx scripts/generate-state-provider-registry.ts",
+    "summarize:providers:coverage-state": "pnpm exec tsx scripts/summarize-provider-coverage-by-state.ts",
+    "verify:provider-guards": "pnpm audit:providers && pnpm audit:providers:coverage && pnpm audit:providers:state-completeness && pnpm --filter @locateflow/web test",
+    "verify:typecheck": "pnpm --filter @locateflow/web exec tsc --noEmit && pnpm --filter @locateflow/admin exec tsc --noEmit && pnpm --filter @locateflow/mobile exec tsc --noEmit && pnpm --filter @locateflow/db exec tsc --noEmit",
+    "verify:tests": "pnpm --filter @locateflow/web test",
+    "verify:ci": "pnpm verify:typecheck && pnpm verify:provider-guards",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v",
@@ -26,7 +39,8 @@
     "mobile:ios": "pnpm --filter @locateflow/mobile ios",
     "mobile:build:dev:android": "pnpm --filter @locateflow/mobile build:dev:android",
     "mobile:build:dev:ios": "pnpm --filter @locateflow/mobile build:dev:ios",
-    "mobile:build:simulator:ios": "pnpm --filter @locateflow/mobile build:simulator:ios"
+    "mobile:build:simulator:ios": "pnpm --filter @locateflow/mobile build:simulator:ios",
+    "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts"
   },
   "devDependencies": {
     "turbo": "^2.3.0"

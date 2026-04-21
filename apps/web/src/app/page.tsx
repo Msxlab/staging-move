@@ -2,56 +2,36 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getUserSession } from "@/lib/user-auth";
 import {
-  Home,
   MapPin,
-  Truck,
+  Zap,
   DollarSign,
   FileText,
-  Users,
+  Truck,
+  Bell,
   CheckCircle2,
   ArrowRight,
   Shield,
-  Zap,
   ChevronDown,
   Star,
   Quote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_OG_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, absoluteUrl } from "@/lib/seo";
-
-type MarketingPlan = {
-  id: "FREE_TRIAL" | "INDIVIDUAL";
-  displayName: string;
-  priceLabel: string;
-  periodLabel: string;
-  isPaid: boolean;
-  marketingFeatures: string[];
-};
-
-const SUBSCRIPTION_PLAN_ORDER: MarketingPlan["id"][] = ["FREE_TRIAL", "INDIVIDUAL"];
-
-const SUBSCRIPTION_PLANS: Record<MarketingPlan["id"], MarketingPlan> = {
-  FREE_TRIAL: {
-    id: "FREE_TRIAL",
-    displayName: "Free Trial",
-    priceLabel: "Free",
-    periodLabel: "7 days",
-    isPaid: false,
-    marketingFeatures: ["Up to 2 addresses", "Up to 10 services", "Basic moving checklist"],
-  },
-  INDIVIDUAL: {
-    id: "INDIVIDUAL",
-    displayName: "Individual",
-    priceLabel: "$4.99",
-    periodLabel: "/month",
-    isPaid: true,
-    marketingFeatures: ["Up to 10 addresses", "Up to 100 services", "Full moving planner", "QR box tracking"],
-  },
-};
-
-function getSubscriptionPlanDefinition(planId: MarketingPlan["id"]) {
-  return SUBSCRIPTION_PLANS[planId];
-}
+import {
+  DEFAULT_OG_IMAGE,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  absoluteUrl,
+} from "@/lib/seo";
+import {
+  BILLING_PLAN_DEFINITIONS,
+  UPCOMING_BILLING_PLAN_DEFINITIONS,
+  TRIAL_DURATION_DAYS,
+} from "@locateflow/shared";
+import { LogoMark, Wordmark } from "@/components/marketing/logo";
+import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle";
+import { PricingSection } from "@/components/marketing/pricing-section";
+import { AppStoreCTA } from "@/components/marketing/app-store-cta";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -66,8 +46,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: absoluteUrl(DEFAULT_OG_IMAGE),
-        width: 512,
-        height: 512,
+        width: 1200,
+        height: 630,
         alt: SITE_NAME,
       },
     ],
@@ -84,7 +64,7 @@ export default async function LandingPage() {
   const session = await getUserSession();
   const userId = session?.userId ?? null;
   const primaryHref = userId ? "/dashboard" : "/sign-up";
-  const secondaryLabel = userId ? "Open Dashboard" : "Get Started Free";
+  const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -93,15 +73,20 @@ export default async function LandingPage() {
     operatingSystem: "Web, iOS, Android",
     description: SITE_DESCRIPTION,
     url: absoluteUrl("/"),
-    offers: SUBSCRIPTION_PLAN_ORDER.map((planId) => {
-      const plan = getSubscriptionPlanDefinition(planId);
-      return {
+    offers: [
+      {
         "@type": "Offer",
-        name: plan.displayName,
-        price: plan.isPaid ? plan.priceLabel.replace(/[^0-9.]/g, "") : "0",
+        name: BILLING_PLAN_DEFINITIONS.FREE_TRIAL.displayName,
+        price: "0",
         priceCurrency: "USD",
-      };
-    }),
+      },
+      {
+        "@type": "Offer",
+        name: individualPlan.displayName,
+        price: String(individualPlan.monthlyPriceUsd),
+        priceCurrency: "USD",
+      },
+    ],
   };
 
   return (
@@ -113,10 +98,7 @@ export default async function LandingPage() {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Home className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">LocateFlow</span>
-          </div>
+          <Wordmark />
           <nav className="hidden md:flex items-center gap-6">
             <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Features
@@ -128,10 +110,11 @@ export default async function LandingPage() {
               How It Works
             </Link>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 md:gap-2">
+            <LandingThemeToggle />
             {userId ? (
               <>
-                <Link href="/dashboard">
+                <Link href="/dashboard" className="hidden sm:block">
                   <Button variant="ghost" size="sm">Dashboard</Button>
                 </Link>
                 <Link href="/dashboard">
@@ -140,11 +123,11 @@ export default async function LandingPage() {
               </>
             ) : (
               <>
-                <Link href="/sign-in">
+                <Link href="/sign-in" className="hidden sm:block">
                   <Button variant="ghost" size="sm">Sign In</Button>
                 </Link>
                 <Link href="/sign-up">
-                  <Button size="sm">Get Started Free</Button>
+                  <Button size="sm">Start Free Trial</Button>
                 </Link>
               </>
             )}
@@ -153,11 +136,11 @@ export default async function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container py-20 md:py-32">
+      <section className="container py-20 md:py-28">
         <div className="mx-auto max-w-3xl text-center space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm text-muted-foreground">
             <Zap className="h-3.5 w-3.5 text-primary" />
-            Smart Moving & Address Management
+            Know every company that has your address
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             Every Address.{" "}
@@ -165,8 +148,10 @@ export default async function LandingPage() {
             One Place.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            Track all your subscriptions, utilities, and services across multiple addresses.
-            Get AI-powered assistance when you move. Never miss an address update again.
+            LocateFlow keeps a living list of every utility, bank, insurance,
+            and subscription tied to each home you live in. Move out, move in,
+            or just tidy up — you&apos;ll always know who has your address and
+            what to do about it.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href={primaryHref}>
@@ -182,50 +167,72 @@ export default async function LandingPage() {
             </Link>
           </div>
           <p className="text-sm text-muted-foreground">
-            Free 7-day trial. No credit card required.
+            Free {TRIAL_DURATION_DAYS}-day trial · No credit card required · Cancel anytime
           </p>
+        </div>
+
+        {/* Social proof strip — placeholder numbers until live metrics land. */}
+        <div className="mx-auto mt-14 max-w-4xl">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 rounded-2xl border bg-card/40 px-6 py-5 text-center">
+            <div>
+              <p className="text-2xl font-bold tracking-tight">2,400+</p>
+              <p className="text-xs text-muted-foreground mt-1">Moves organized</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold tracking-tight">50</p>
+              <p className="text-xs text-muted-foreground mt-1">US states supported</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold tracking-tight">120k+</p>
+              <p className="text-xs text-muted-foreground mt-1">Services tracked</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold tracking-tight">4.8 ★</p>
+              <p className="text-xs text-muted-foreground mt-1">Beta rating</p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Features Grid */}
       <section id="features" className="container py-20 border-t">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Everything You Need to Manage Your Move</h2>
+          <h2 className="text-3xl font-bold mb-4">Everything connected to your address — in one place</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From tracking utilities to packing boxes, LocateFlow handles every detail of your relocation.
+            From the utility bill on your counter to the streaming sub you forgot about, LocateFlow keeps the full list current.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             {
               icon: MapPin,
-              title: "Address Management",
-              description: "Track multiple addresses with full service histories. Home, work, vacation — all organized.",
+              title: "Address Hub",
+              description: "One dashboard per home. Every service, every contract, every note lives alongside the address it belongs to.",
             },
             {
               icon: Zap,
-              title: "Service Tracking",
-              description: "Monitor utilities, banks, insurance, subscriptions. Know exactly what's tied to each address.",
+              title: "Service Directory",
+              description: "Utilities, banks, insurance, streaming, gym, HOA — track who has your address, account numbers, and renewal dates.",
             },
             {
-              icon: Truck,
-              title: "Moving Assistant",
-              description: "AI-generated checklists and timelines. State-specific tasks, deadlines, and reminders.",
+              icon: Bell,
+              title: "Renewal & Bill Reminders",
+              description: "Smart alerts before a bill is due or a contract auto-renews. Stop paying for things you forgot about.",
             },
             {
               icon: DollarSign,
-              title: "Budget Tracking",
-              description: "See your monthly expenses across all services. Compare costs between locations.",
+              title: "Budget Overview",
+              description: "See monthly spend across every provider tied to each address. Compare costs between homes at a glance.",
             },
             {
               icon: FileText,
-              title: "Document Management",
-              description: "Upload and OCR contracts, bills, and papers. Everything searchable and organized.",
+              title: "Document Vault",
+              description: "Upload contracts, bills, and leases. OCR-indexed so you can find a clause in seconds — not an inbox search.",
             },
             {
-              icon: Users,
-              title: "Family Sharing",
-              description: "Coordinate with family members. Shared addresses, delegated tasks, unified budget view.",
+              icon: Truck,
+              title: "Moving Companion",
+              description: "When you relocate, we turn your service list into a checklist: transfer, cancel, or reconnect with one click.",
             },
           ].map((feature) => (
             <div
@@ -247,24 +254,24 @@ export default async function LandingPage() {
         <div className="container">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-            <p className="text-muted-foreground text-lg">Three simple steps to organize your move</p>
+            <p className="text-muted-foreground text-lg">Three simple steps to take control of your service footprint</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               {
                 step: "1",
                 title: "Add Your Addresses",
-                description: "Enter your current and new address. We'll detect your state and customize your experience.",
+                description: "Tell us where you live. State and ZIP are enough — we auto-suggest the providers people in your area typically use.",
               },
               {
                 step: "2",
-                title: "Track Your Services",
-                description: "Add utilities, banks, insurance, and subscriptions. We'll suggest common ones for your area.",
+                title: "Link Every Service",
+                description: "Utilities, banks, insurance, streaming, anything else. Add them in seconds and we remember the account number, renewal date, and monthly cost.",
               },
               {
                 step: "3",
-                title: "Plan Your Move",
-                description: "Get a personalized timeline with tasks, reminders, and state-specific requirements.",
+                title: "Stay Ahead of Change",
+                description: "Moving? Cancelling? Shopping around? Filter, transfer, or unsubscribe from one place — we even generate the to-do list for you.",
               },
             ].map((item) => (
               <div key={item.step} className="text-center space-y-4">
@@ -279,53 +286,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="container py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Simple, Transparent Pricing</h2>
-          <p className="text-muted-foreground text-lg">Start free, upgrade when you need more</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {SUBSCRIPTION_PLAN_ORDER.map((planId) => {
-            const plan = getSubscriptionPlanDefinition(planId);
-            const isPopular = plan.id === "INDIVIDUAL";
-            const subtitle = plan.id === "FREE_TRIAL"
-              ? `Try it out for ${plan.periodLabel}`
-              : "For personal use";
-
-            return (
-              <div key={plan.id} className={`rounded-xl ${isPopular ? "border-2 border-primary" : "border"} p-8 space-y-6 relative`}>
-                {isPopular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                    Most Popular
-                  </div>
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold">{plan.displayName}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-                </div>
-                <div>
-                  <span className="text-4xl font-bold">{plan.priceLabel === "Free" ? "$0" : plan.priceLabel}</span>
-                  <span className="text-muted-foreground">{plan.priceLabel === "Free" ? "" : plan.periodLabel}</span>
-                </div>
-                <ul className="space-y-3 text-sm">
-                  {plan.marketingFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-success" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link href={primaryHref} className="block">
-                  <Button variant={isPopular ? "default" : "outline"} className="w-full">
-                    {userId ? secondaryLabel : plan.id === "FREE_TRIAL" ? "Start Free Trial" : "Get Started"}
-                  </Button>
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      <PricingSection ctaHref={primaryHref} ctaLabelLoggedIn={!!userId} />
 
       {/* Testimonials */}
       <section className="container py-20 border-t">
@@ -364,11 +325,12 @@ export default async function LandingPage() {
           </div>
           <div className="space-y-3">
             {[
-              { q: "Is there really a free trial?", a: "Yes! You get 7 days free with no credit card required. You can upgrade anytime to unlock unlimited features." },
-              { q: "What happens to my data if I cancel?", a: "Your data remains available for 30 days after cancellation. You can export everything as CSV or PDF before that." },
-              { q: "Can I share with my family?", a: "Absolutely! The Family plan supports up to 5 members with role-based permissions — Admin, Editor, or Viewer." },
+              { q: "Is there really a free trial?", a: `Yes. You get ${TRIAL_DURATION_DAYS} days free with no credit card required. Upgrade to Individual when you're ready — or not, and we'll export your data for you.` },
+              { q: "What happens to my data if I cancel?", a: "Your data stays available for 30 days after cancellation. You can export everything as CSV or PDF before that. You can also request full deletion at any time (GDPR / CCPA compliant)." },
+              { q: "Can I share with my family?", a: `Family plans are coming soon — they'll support up to 5 household members with shared addresses, per-person task assignments, and a unified budget. In the meantime, ${UPCOMING_BILLING_PLAN_DEFINITIONS.FAMILY.displayName} interest can be registered on the contact page so we notify you at launch.` },
+              { q: "Do you have a plan for realtors or relocation teams?", a: "Pro is on the roadmap. It will include unlimited addresses, team seats, white-label reports, and API access. Drop us a line via the contact page if you'd like early access." },
               { q: "Which states are supported?", a: "LocateFlow supports all 50 US states with state-specific DMV rules, voter registration info, utility providers, and tax requirements." },
-              { q: "Is my data secure?", a: "Yes. We use industry-standard encryption, and your data is never shared with third parties. You can request full data deletion at any time (GDPR compliant)." },
+              { q: "Is my data secure?", a: "Yes. Sensitive fields are encrypted at rest, sessions are fingerprint-bound, and we never sell data. Full GDPR and CCPA rights are honored." },
             ].map((faq) => (
               <details key={faq.q} className="group rounded-xl border bg-card">
                 <summary className="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium">
@@ -382,17 +344,41 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* Mobile App CTA */}
+      <section className="container py-20 border-t">
+        <div className="grid md:grid-cols-2 gap-10 items-center max-w-5xl mx-auto">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              Mobile apps — coming soon
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight">Your service list in your pocket</h2>
+            <p className="text-muted-foreground">
+              Snap a photo of a bill, add a service on the go, and get push
+              reminders before a contract renews. iOS and Android apps are in
+              closed beta — join the waitlist to be first in line.
+            </p>
+            <AppStoreCTA />
+          </div>
+          <div className="relative">
+            <div className="aspect-[3/4] rounded-3xl border bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center">
+              <LogoMark size={96} className="opacity-90" />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="bg-primary text-primary-foreground py-20">
         <div className="container text-center space-y-6">
           <Shield className="h-12 w-12 mx-auto opacity-80" />
-          <h2 className="text-3xl font-bold">Ready to Simplify Your Move?</h2>
+          <h2 className="text-3xl font-bold">Ready to Take Control of Your Address Footprint?</h2>
           <p className="text-lg opacity-80 max-w-xl mx-auto">
-            Join thousands of people who use LocateFlow to manage their addresses and services.
+            Start a free {TRIAL_DURATION_DAYS}-day trial. No credit card, no lock-in, and your data is always exportable.
           </p>
           <Link href={primaryHref}>
             <Button size="lg" variant="secondary" className="text-base px-8">
-              {userId ? "Open Dashboard" : "Start Your Free Trial"}
+              {userId ? "Open Dashboard" : "Start Free Trial"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -405,10 +391,10 @@ export default async function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Home className="h-5 w-5 text-primary" />
+                <LogoMark size={24} />
                 <span className="font-semibold">LocateFlow</span>
               </div>
-              <p className="text-sm text-muted-foreground">Smart relocation management for modern movers.</p>
+              <p className="text-sm text-muted-foreground">Every provider with your address — tracked, tidy, and under your control.</p>
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-3">Product</h4>

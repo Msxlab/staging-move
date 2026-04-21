@@ -1,18 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { rebuildProviderCoverage } from "@locateflow/db";
+import { findProviderConflicts, normalizeProviderRecord } from "@locateflow/shared";
 
-function parseArray(value: unknown): string[] {
-  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === "string");
-  if (typeof value !== "string") return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === "string") : [];
-  } catch {
-    return [];
+function getConflictMessage(conflictType: string, name: string, slug: string) {
+  if (conflictType === "slug") {
+    return `Provider slug already exists: ${slug}`;
   }
+  if (conflictType === "website-category") {
+    return `Provider website already exists in this category: ${name}`;
+  }
+  return `Provider already exists in this category: ${name}`;
+}
+
+function buildNormalizedCandidate(existing: any, patch: Record<string, unknown>) {
+  return normalizeProviderRecord({
+    id: existing.id,
+    name: typeof patch.name === "string" ? patch.name.trim() : existing.name,
+    slug: typeof patch.slug === "string" && patch.slug.trim() ? patch.slug.trim() : existing.slug,
+    category: typeof patch.category === "string" ? patch.category.trim().toUpperCase() : existing.category,
+    subCategory: patch.subCategory !== undefined
+      ? (typeof patch.subCategory === "string" && patch.subCategory.trim() ? patch.subCategory.trim() : null)
+      : existing.subCategory,
+    description: patch.description !== undefined
+      ? (typeof patch.description === "string" && patch.description.trim() ? patch.description.trim() : null)
+      : existing.description,
+    website: patch.website !== undefined
+      ? (typeof patch.website === "string" && patch.website.trim() ? patch.website.trim() : null)
+      : existing.website,
+    phone: patch.phone !== undefined
+      ? (typeof patch.phone === "string" && patch.phone.trim() ? patch.phone.trim() : null)
+      : existing.phone,
+    logoUrl: patch.logoUrl !== undefined
+      ? (typeof patch.logoUrl === "string" && patch.logoUrl.trim() ? patch.logoUrl.trim() : null)
+      : existing.logoUrl,
+    scope: typeof patch.scope === "string" ? patch.scope : existing.scope,
+    states: patch.states !== undefined ? patch.states as string[] | string | null : existing.states,
+    zipCodes: patch.zipCodes !== undefined ? patch.zipCodes as string[] | string | null : existing.zipCodes,
+    tags: patch.tags !== undefined ? patch.tags as string[] | string | null : existing.tags,
+    popularityScore: patch.popularityScore !== undefined ? Number(patch.popularityScore) || 0 : existing.popularityScore,
+    isActive: patch.isActive !== undefined ? patch.isActive !== "false" && patch.isActive !== false : existing.isActive,
+    displayOrder: patch.displayOrder !== undefined ? Number(patch.displayOrder) || 0 : existing.displayOrder,
+  });
 }
 
 export async function GET(
@@ -54,36 +85,67 @@ export async function PATCH(
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
     }
 
+    const normalized = buildNormalizedCandidate(existing, body);
+    const comparableProviders = await prisma.serviceProvider.findMany({
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        category: true,
+        website: true,
+      },
+    });
+    const conflicts = findProviderConflicts(comparableProviders, normalized, { ignoreId: id });
+    if (conflicts.length > 0) {
+      const firstConflict = conflicts[0];
+      return NextResponse.json(
+        { error: getConflictMessage(firstConflict.type, firstConflict.existingName, firstConflict.existingSlug) },
+        { status: 409 }
+      );
+    }
+
     const updateData: any = {};
-    const fields = ["name", "slug", "category", "subCategory", "description", "website", "phone", "logoUrl", "scope", "popularityScore", "isActive", "displayOrder"];
-    for (const field of fields) {
-      if (body[field] !== undefined) updateData[field] = body[field];
+    const scalarFields = [
+      "name",
+      "slug",
+      "category",
+      "subCategory",
+      "description",
+      "website",
+      "phone",
+      "logoUrl",
+      "scope",
+      "popularityScore",
+      "isActive",
+      "displayOrder",
+    ] as const;
+
+    for (const field of scalarFields) {
+      if (body[field] === undefined) continue;
+      updateData[field] = normalized[field];
     }
 
     const coverageChanged =
       body.states !== undefined || body.zipCodes !== undefined || body.scope !== undefined;
-    const nextStates = body.states !== undefined ? parseArray(body.states) : parseArray(existing.states);
-    const nextZipCodes = body.zipCodes !== undefined ? parseArray(body.zipCodes) : parseArray(existing.zipCodes);
-    const nextScope = body.scope !== undefined ? body.scope : existing.scope;
 
-    if (body.states !== undefined) updateData.states = JSON.stringify(nextStates);
-    if (body.zipCodes !== undefined) updateData.zipCodes = JSON.stringify(nextZipCodes);
-    if (body.tags !== undefined) updateData.tags = JSON.stringify(body.tags);
+    if (body.states !== undefined) updateData.states = JSON.stringify(normalized.states);
+    if (body.zipCodes !== undefined) updateData.zipCodes = JSON.stringify(normalized.zipCodes);
+    if (body.tags !== undefined) updateData.tags = JSON.stringify(normalized.tags);
 
     const provider = await prisma.$transaction(async (tx) => {
-      const prov = await tx.serviceProvider.update({
+      const updatedProvider = await tx.serviceProvider.update({
         where: { id },
         data: updateData,
       });
       if (coverageChanged) {
         await rebuildProviderCoverage(tx, {
           providerId: id,
-          scope: nextScope,
-          states: nextStates,
-          zipCodes: nextZipCodes,
+          scope: normalized.scope,
+          states: normalized.states,
+          zipCodes: normalized.zipCodes,
         });
       }
-      return prov;
+      return updatedProvider;
     });
 
     await prisma.adminAuditLog.create({
@@ -118,6 +180,22 @@ export async function DELETE(
   try {
     const session = await requirePermission("providers", "canDelete", { minimumRole: "ADMIN" });
     const { id } = await params;
+
+    // Step-up auth: provider deletion is destructive and affects user matches.
+    let confirmPassword: string | undefined;
+    try {
+      const body = await request.json();
+      confirmPassword = body?.confirmPassword;
+    } catch {
+      /* no body is fine — password will be required and the 403 response tells the client */
+    }
+    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true },
+        { status: 403 },
+      );
+    }
 
     const provider = await prisma.serviceProvider.findUnique({ where: { id } });
     if (!provider) {

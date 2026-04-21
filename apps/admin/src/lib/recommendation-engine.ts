@@ -4,4 +4,4 @@ export {
   getCategoryLabel,
   getCategoryIcon,
   getCategoryOrder,
-} from "../../../../packages/shared/src/recommendation-engine";
+} from "@locateflow/shared";

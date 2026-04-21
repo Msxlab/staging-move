@@ -22,6 +22,7 @@ The LocateFlow monorepo is a well-structured pnpm + Turborepo workspace with thr
 3. **Add `DELETE /api/family/[id]` endpoint** — mobile's "Remove Member" button calls a non-existent API route
 
 **Top-level stats:**
+
 - **53 findings** total: 3 Critical, 6 High, 15 Medium, 15 Low, 14 Info
 - **3 screens missing** in mobile that cause navigation crashes
 - **4 API contract mismatches** between mobile and web
@@ -34,14 +35,14 @@ The LocateFlow monorepo is a well-structured pnpm + Turborepo workspace with thr
 
 ### Component List
 
-| Component | Tech | Port | Purpose |
-|-----------|------|------|---------|
-| `apps/web` | Next.js 16.1.6, React 19, Clerk, Stripe | 3000 | Main client app |
-| `apps/mobile` | Expo SDK 54, React Native 0.81, Clerk Expo | — | Native mobile app |
-| `apps/admin` | Next.js 15.1.0, JWT auth (jose + bcrypt) | 3001 | Admin panel |
-| `packages/db` | Prisma, MySQL 8.0 | — | Shared database schema |
-| `packages/shared` | TypeScript | — | Shared types, validators, API client, constants |
-| MySQL | Docker, mysql:8.0 | 3306 | Primary database |
+| Component         | Tech                                            | Port | Purpose                                         |
+| ----------------- | ----------------------------------------------- | ---- | ----------------------------------------------- |
+| `apps/web`        | Next.js 16.1.6, React 19, JWT auth, Stripe      | 3000 | Main client app                                 |
+| `apps/mobile`     | Expo SDK 54, React Native 0.81, Bearer JWT auth | —    | Native mobile app                               |
+| `apps/admin`      | Next.js 15.1.0, JWT auth (jose + bcrypt)        | 3001 | Admin panel                                     |
+| `packages/db`     | Prisma, MySQL 8.0                               | —    | Shared database schema                          |
+| `packages/shared` | TypeScript                                      | —    | Shared types, validators, API client, constants |
+| MySQL             | Docker, mysql:8.0                               | 3306 | Primary database                                |
 
 ### Data Flow
 
@@ -59,27 +60,27 @@ The LocateFlow monorepo is a well-structured pnpm + Turborepo workspace with thr
 
 ### Trust Boundaries
 
-- **User ↔ App:** Clerk authentication (web + mobile), JWT (admin)
+- **User ↔ App:** JWT cookie auth (web), Bearer JWT auth (mobile), JWT auth (admin)
 - **App ↔ DB:** Prisma ORM with parameterized queries
-- **App ↔ External:** Clerk, Stripe, Cloudinary, OpenAI, Resend, Upstash Redis
-- **Mobile ↔ Web API:** Bearer token via Clerk `getToken()`, all API calls go through `packages/shared/ApiClient`
+- **App ↔ External:** Stripe, Cloudinary, OpenAI, Resend, Upstash Redis
+- **Mobile ↔ Web API:** Bearer token from `/api/auth/login`, all API calls go through `packages/shared/ApiClient`
 
 ---
 
 ## Top Priority Fixes (Ranked)
 
-| Rank | ID | Severity | Area | One-line Fix |
-|------|----|----------|------|-------------|
-| 1 | MOB-001 | Critical | Mobile | Create `app/providers/[id].tsx` — provider detail screen |
-| 2 | MOB-002 | Critical | Mobile | Create `app/reviews/new.tsx` — review creation form |
-| 3 | MOB-003 | Critical | Mobile | Create `app/budget/new.tsx` — budget entry form |
-| 4 | API-001 | High | API | Add `DELETE` handler to `/api/family/route.ts` or create `/api/family/[id]/route.ts` |
-| 5 | API-002 | High | API/Mobile | Fix task status: mobile sends `{status: "COMPLETED"}` but API expects `{completed: true}` |
-| 6 | MOB-004 | High | Mobile | Fix providers double-filtering (remove client-side filter or server-side param) |
-| 7 | MOB-005 | High | Mobile | Wire dashboard notification bell `onPress` handler |
-| 8 | WEB-001 | Medium | Web | Fix services page sorting — `newest`/`oldest` return constant values |
-| 9 | MOB-006 | Medium | Mobile | Add proper date picker instead of "YYYY-MM-DD" text input |
-| 10 | SEC-001 | Medium | Security | Remove `|| true` from CI `pnpm audit` to catch vulnerable deps |
+| Rank | ID      | Severity | Area       | One-line Fix                                                                              |
+| ---- | ------- | -------- | ---------- | ----------------------------------------------------------------------------------------- | --- | ------------------------------------------------- |
+| 1    | MOB-001 | Critical | Mobile     | Create `app/providers/[id].tsx` — provider detail screen                                  |
+| 2    | MOB-002 | Critical | Mobile     | Create `app/reviews/new.tsx` — review creation form                                       |
+| 3    | MOB-003 | Critical | Mobile     | Create `app/budget/new.tsx` — budget entry form                                           |
+| 4    | API-001 | High     | API        | Add `DELETE` handler to `/api/family/route.ts` or create `/api/family/[id]/route.ts`      |
+| 5    | API-002 | High     | API/Mobile | Fix task status: mobile sends `{status: "COMPLETED"}` but API expects `{completed: true}` |
+| 6    | MOB-004 | High     | Mobile     | Fix providers double-filtering (remove client-side filter or server-side param)           |
+| 7    | MOB-005 | High     | Mobile     | Wire dashboard notification bell `onPress` handler                                        |
+| 8    | WEB-001 | Medium   | Web        | Fix services page sorting — `newest`/`oldest` return constant values                      |
+| 9    | MOB-006 | Medium   | Mobile     | Add proper date picker instead of "YYYY-MM-DD" text input                                 |
+| 10   | SEC-001 | Medium   | Security   | Remove `                                                                                  |     | true`from CI`pnpm audit` to catch vulnerable deps |
 
 ---
 
@@ -130,6 +131,7 @@ The providers list navigates to `/providers/${provider.id}` on tap, but the only
 ```
 
 And in the empty state (line 92):
+
 ```
 onAction={() => router.push("/reviews/new" as any)}
 ```
@@ -159,6 +161,7 @@ No `apps/mobile/app/reviews/new.tsx` file exists.
 ```
 
 And in empty state (line 97):
+
 ```
 onAction={() => router.push("/budget/new" as any)}
 ```
@@ -187,6 +190,7 @@ No `apps/mobile/app/budget/new.tsx` file exists.
 **Evidence:**
 
 Mobile calls:
+
 ```
 // apps/mobile/app/family/index.tsx:77
 const res = await api.delete(`/api/family/${id}`);
@@ -212,6 +216,7 @@ But web API at `apps/web/src/app/api/family/route.ts` only exports `GET` and `PO
 **Evidence:**
 
 Prisma schema for Task model:
+
 ```
 // packages/db/prisma/schema.prisma:277-280
 completed   Boolean   @default(false)
@@ -220,12 +225,14 @@ priority String @default("MEDIUM") @db.VarChar(10)
 ```
 
 The Task model has a `completed` boolean field, NOT a `status` enum. But mobile code checks:
+
 ```
 // apps/mobile/app/moving/[id].tsx:120
 const completedTasks = tasks.filter((t: any) => t.status === "COMPLETED").length;
 ```
 
 And the task toggle sends:
+
 ```
 // apps/mobile/app/moving/[id].tsx:93
 const newStatus = currentStatus === "COMPLETED" ? "PENDING" : "COMPLETED";
@@ -234,7 +241,8 @@ const res = await api.patch(`/api/tasks/${taskId}`, { status: newStatus });
 
 The API expects `{completed: true/false}`, not `{status: "COMPLETED"}`.
 
-**Impact:** 
+**Impact:**
+
 1. All tasks always show as incomplete (progress bar always at 0%)
 2. Tapping a task to toggle completion doesn't work
 3. The `(tabs)/moving.tsx` list also uses `t.status === "COMPLETED"` (line 95) — same bug
@@ -271,7 +279,8 @@ const filtered = search
   : providers;
 ```
 
-**Impact:** 
+**Impact:**
+
 1. Server-side search uses wrong param name (`search` instead of `q`) — server ignores it
 2. Client-side filtering then applies — but on all providers since server didn't filter
 3. If server param was correct, results would be double-filtered
@@ -322,6 +331,7 @@ No `onPress` handler. The bell icon is purely decorative.
 **Evidence:**
 
 Web uses 50+ sub-categories with detailed `CATEGORY_META`:
+
 ```
 // apps/web/src/app/(app)/services/page.tsx:14-45
 const CATEGORY_META: Record<string, { label: string; icon: string }> = {
@@ -332,6 +342,7 @@ const CATEGORY_META: Record<string, { label: string; icon: string }> = {
 ```
 
 Mobile uses only 10 top-level groups from shared constants:
+
 ```
 // apps/mobile/app/(tabs)/services.tsx:27
 import { SERVICE_CATEGORIES } from "@locateflow/shared";
@@ -479,10 +490,12 @@ Web has `SessionTracker` component that tracks browser, OS, device, page views. 
 **Impact:** "Newest" and "Oldest" sorting produce unpredictable results (implementation-defined behavior for non-transitive comparators).
 
 **Recommendation:** Sort by `createdAt`:
+
 ```js
 case "newest": return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
 case "oldest": return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
 ```
+
 Note: The `Service` interface doesn't include `createdAt` — add it to the interface or fetch it from the API.
 
 ---
@@ -515,6 +528,7 @@ Four sequential API calls: profile → addresses → tasks → moving. Each wait
 **Impact:** Dashboard load time = sum of all 4 API calls. On slow networks, this could take 4-8 seconds.
 
 **Recommendation:** Use `Promise.all()`:
+
 ```js
 const [profRes, addrRes, taskRes, movingRes] = await Promise.all([
   api.get("/api/profile"),
@@ -523,6 +537,7 @@ const [profRes, addrRes, taskRes, movingRes] = await Promise.all([
   api.get("/api/moving"),
 ]);
 ```
+
 Or better: create a single `/api/dashboard` endpoint that returns all data in one call.
 
 ---
@@ -570,7 +585,7 @@ Should be `t.completed === true`.
 #### COR-005: Mobile Dashboard Task Count Bug
 
 - **Severity:** High
-- **Confidence:** High  
+- **Confidence:** High
 - **Category:** Mobile / Logic Error
 - **Affected components:** `apps/mobile/app/(tabs)/index.tsx`
 
@@ -712,6 +727,7 @@ All mobile screens fetch the complete dataset: `api.get("/api/services")`, `api.
 Neither app exposes `/api/health` or `/api/healthz` for monitoring.
 
 **Recommendation:** Add a simple health endpoint that checks DB connectivity:
+
 ```ts
 export async function GET() {
   try {
@@ -755,6 +771,7 @@ export async function GET() {
 - **Affected components:** `.github/workflows/ci.yml`
 
 CI runs TypeScript checks for web and admin but not mobile:
+
 ```
 - name: TypeScript (web)
   run: pnpm --filter @locateflow/web exec tsc --noEmit
@@ -778,7 +795,8 @@ No `pnpm --filter @locateflow/mobile exec tsc --noEmit`.
 
 The entire monorepo has only 1 test file: `apps/web/src/lib/recommendation-engine.test.ts`. CI runs `pnpm --filter @locateflow/web test || true` — failures are also swallowed.
 
-**Recommendation:** 
+**Recommendation:**
+
 1. Remove `|| true` from test step
 2. Add API route tests (at minimum for critical endpoints: services, addresses, moving)
 3. Add mobile component tests with React Native Testing Library
@@ -820,6 +838,7 @@ No backup scripts, procedures, or documentation for MySQL data backup/restore.
 - **Category:** Code Quality
 
 `recommendation-engine.ts` exists in both:
+
 - `apps/web/src/lib/recommendation-engine.ts`
 - `apps/mobile/src/lib/recommendation-engine.ts`
 
@@ -836,6 +855,7 @@ The mobile version is a "port" of the web version with the same logic.
 - **Category:** Code Quality
 
 Nearly every mobile screen uses `any[]` or `any` for state:
+
 ```ts
 const [services, setServices] = useState<any[]>([]);
 const [providers, setProviders] = useState<any[]>([]);
@@ -888,6 +908,7 @@ Multiple admin API routes cast `prisma as any` to work around models not being i
 ## Medium-term Hardening Plan (1–4 weeks)
 
 ### Week 1: Critical fixes + API parity
+
 - Create all 3 missing mobile screens (providers detail, review form, budget form)
 - Add `DELETE /api/family/[id]` endpoint
 - Fix all task status mismatches across mobile
@@ -895,6 +916,7 @@ Multiple admin API routes cast `prisma as any` to work around models not being i
 - Wire notification bell
 
 ### Week 2: Feature parity
+
 - Enhance mobile service filtering (sub-categories, sorting, address filter)
 - Add date picker component for moving plan form
 - Merge or differentiate community/reviews screens
@@ -902,6 +924,7 @@ Multiple admin API routes cast `prisma as any` to work around models not being i
 - Add box tracking section to moving plan detail
 
 ### Week 3: Reliability + security
+
 - Add error boundaries to mobile app
 - Add retry logic to API client
 - Add pagination to mobile lists
@@ -911,6 +934,7 @@ Multiple admin API routes cast `prisma as any` to work around models not being i
 - Run `prisma generate` to fix admin `prisma as any` casts
 
 ### Week 4: Quality + DevOps
+
 - Add mobile type-check to CI
 - Write API route tests for critical endpoints
 - Replace `any` types with shared types in mobile
@@ -921,45 +945,45 @@ Multiple admin API routes cast `prisma as any` to work around models not being i
 
 ## Suggested Automated Checks
 
-| Tool | Purpose | Integration |
-|------|---------|-------------|
-| `tsc --noEmit` (mobile) | Type checking | Add to CI `lint-and-typecheck` job |
-| `pnpm audit --audit-level=critical` | Dependency vulnerabilities | Remove `|| true` in CI |
-| `gitleaks` | Secret scanning | Already in CI ✅ |
-| `eslint` with `@typescript-eslint` | Code linting | Already configured, add to CI |
-| `vitest` | Unit/API tests | Already configured for web, expand coverage |
-| React Native Testing Library | Mobile component tests | Add to mobile project |
-| Maestro or Detox | Mobile E2E tests | New addition |
+| Tool                                | Purpose                    | Integration                                 |
+| ----------------------------------- | -------------------------- | ------------------------------------------- | --- | ----------- |
+| `tsc --noEmit` (mobile)             | Type checking              | Add to CI `lint-and-typecheck` job          |
+| `pnpm audit --audit-level=critical` | Dependency vulnerabilities | Remove `                                    |     | true` in CI |
+| `gitleaks`                          | Secret scanning            | Already in CI ✅                            |
+| `eslint` with `@typescript-eslint`  | Code linting               | Already configured, add to CI               |
+| `vitest`                            | Unit/API tests             | Already configured for web, expand coverage |
+| React Native Testing Library        | Mobile component tests     | Add to mobile project                       |
+| Maestro or Detox                    | Mobile E2E tests           | New addition                                |
 
 ## Appendix
 
 ### Files Reviewed (high level)
 
-| Area | Files Reviewed |
-|------|---------------|
-| Mobile screens | All 38 files in `apps/mobile/app/` |
-| Mobile lib | All 7 files in `apps/mobile/src/lib/` |
-| Mobile components | All 9 files in `apps/mobile/src/components/` |
-| Web pages | All 35 page files in `apps/web/src/app/(app)/` |
-| Web API routes | All 36 route files in `apps/web/src/app/api/` |
-| Web lib | All 16 lib files in `apps/web/src/lib/` |
-| Admin pages | All 20+ page files in `apps/admin/src/app/` |
-| Admin API routes | All 33 route files in `apps/admin/src/app/api/` |
-| Shared package | All 5 source files in `packages/shared/src/` |
-| Database | `schema.prisma` (1069 lines), all seed files |
-| Config | `package.json` × 5, `tsconfig.json` × 5, `docker-compose.yml`, `ci.yml`, `.env.example` |
+| Area              | Files Reviewed                                                                          |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| Mobile screens    | All 38 files in `apps/mobile/app/`                                                      |
+| Mobile lib        | All 7 files in `apps/mobile/src/lib/`                                                   |
+| Mobile components | All 9 files in `apps/mobile/src/components/`                                            |
+| Web pages         | All 35 page files in `apps/web/src/app/(app)/`                                          |
+| Web API routes    | All 36 route files in `apps/web/src/app/api/`                                           |
+| Web lib           | All 16 lib files in `apps/web/src/lib/`                                                 |
+| Admin pages       | All 20+ page files in `apps/admin/src/app/`                                             |
+| Admin API routes  | All 33 route files in `apps/admin/src/app/api/`                                         |
+| Shared package    | All 5 source files in `packages/shared/src/`                                            |
+| Database          | `schema.prisma` (1069 lines), all seed files                                            |
+| Config            | `package.json` × 5, `tsconfig.json` × 5, `docker-compose.yml`, `ci.yml`, `.env.example` |
 
 ### Configuration Notes
 
 - **Database:** MySQL 8.0 via Docker, Prisma ORM, 35+ models
-- **Auth:** Clerk (web + mobile), JWT with jose + bcrypt (admin)
+- **Auth:** JWT cookies (web), Bearer JWT (mobile), JWT with jose + bcrypt (admin)
 - **Payments:** Stripe (web only)
 - **Email:** Resend
 - **Storage:** Cloudinary
 - **AI:** OpenAI
 - **Rate Limiting:** Upstash Redis
 - **Mobile:** Expo SDK 54, React Native 0.81, NativeWind
-- **Secrets:** `.env` files (gitignored), `.env.example` committed with placeholders ✅
+- **Secrets:** `.env` files (gitignored), `.env.example` committed with placeholders
 
 ### Open Questions / Assumptions
 

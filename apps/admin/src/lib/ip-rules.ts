@@ -5,6 +5,8 @@
  * Used by admin middleware to block/allow IPs.
  */
 
+import { getInternalCallerSecret } from "@/lib/internal-secrets";
+
 interface IPRule {
   ipAddress: string;
   type: "WHITELIST" | "BLACKLIST";
@@ -18,11 +20,11 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 async function refreshCache(baseUrl: string): Promise<void> {
   try {
-    const cronSecret = process.env.CRON_SECRET;
-    if (!cronSecret) return;
+    const secret = getInternalCallerSecret("internal");
+    if (!secret) return;
 
     const res = await fetch(`${baseUrl}/api/internal/ip-rules`, {
-      headers: { Authorization: `Bearer ${cronSecret}` },
+      headers: { Authorization: `Bearer ${secret}` },
     });
 
     if (res.ok) {

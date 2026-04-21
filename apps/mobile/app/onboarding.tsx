@@ -77,14 +77,27 @@ const OWNERSHIP_TYPES = [
   { value: "OTHER", label: "Other" },
 ];
 
-const PROFILE_TOGGLES = [
+// Household details that carry no legal-sensitivity weight. Users can toggle
+// these without any opt-in — they help the checklist generator tailor tasks
+// (e.g. "pack pet supplies", "book a U-Haul").
+const COMMON_PROFILE_TOGGLES = [
   { key: "hasChildren", label: "Children" },
   { key: "hasPets", label: "Pets" },
-  { key: "hasSenior", label: "Senior" },
-  { key: "hasDisability", label: "Disability" },
+  { key: "hasSenior", label: "Senior household member" },
   { key: "needsStorage", label: "Storage" },
   { key: "hasMotorcycle", label: "Motorcycle" },
   { key: "hasBoatRV", label: "Boat / RV" },
+];
+
+// GDPR Art. 9 special-category / CCPA sensitive PI. Collected only when the
+// user explicitly opts in and can always be skipped. Kept separate so the UI
+// can surface the extra consent + "why we ask" copy next to the controls.
+const SENSITIVE_PROFILE_TOGGLES = [
+  {
+    key: "hasDisability",
+    label: "Someone at home has a disability",
+    why: "So we can suggest accessibility-friendly movers and flag state-level DMV accommodations when you relocate.",
+  },
 ];
 
 const MOVE_TYPES = [
@@ -140,6 +153,10 @@ export default function OnboardingScreen() {
   const [providerSearch, setProviderSearch] = useState("");
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [billingData, setBillingData] = useState<Record<string, { monthlyCost: string; billingCycle: string }>>({});
+
+  // Consent gate for sensitive fields (disability, immigration). Default off;
+  // user must explicitly opt in before the sensitive toggles do anything.
+  const [sensitiveOptIn, setSensitiveOptIn] = useState(false);
 
   // Step 3 – Moving plan
   const [wantsToMove, setWantsToMove] = useState<boolean | null>(null);
@@ -555,8 +572,11 @@ export default function OnboardingScreen() {
               </View>
 
               <Text style={styles.fieldLabel}>Household Details</Text>
+              <Text style={{ fontSize: 12, color: theme.colors.textTertiary, marginBottom: 8 }}>
+                Tap the ones that apply — all optional. We use these only to tailor your checklist.
+              </Text>
               <View style={styles.toggleGrid}>
-                {PROFILE_TOGGLES.map(({ key, label }) => (
+                {COMMON_PROFILE_TOGGLES.map(({ key, label }) => (
                   <TouchableOpacity key={key}
                     style={[styles.toggleChip, (profile as any)[key] && styles.toggleChipActive]}
                     onPress={() => { hapticLight(); updateProfile(key, !(profile as any)[key]); }}>
@@ -564,6 +584,71 @@ export default function OnboardingScreen() {
                     <Text style={[styles.toggleChipText, (profile as any)[key] && styles.toggleChipTextActive]}>{label}</Text>
                   </TouchableOpacity>
                 ))}
+              </View>
+
+              {/* Sensitive-category opt-in. Off by default; toggles unlock
+                  the disability field only after the user consents. */}
+              <View style={{
+                marginTop: 16,
+                padding: 12,
+                borderRadius: theme.radius.md,
+                borderWidth: 1,
+                borderColor: theme.colors.borderLight,
+                backgroundColor: theme.colors.glass.bg,
+              }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    hapticLight();
+                    if (sensitiveOptIn) {
+                      // Opting out wipes any answers the user gave so we
+                      // never retain sensitive data without consent.
+                      setSensitiveOptIn(false);
+                      updateProfile("hasDisability", false);
+                    } else {
+                      setSensitiveOptIn(true);
+                    }
+                  }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+                >
+                  <View
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      borderWidth: 2,
+                      borderColor: sensitiveOptIn ? theme.colors.primary : theme.colors.borderLight,
+                      backgroundColor: sensitiveOptIn ? theme.colors.primary : "transparent",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {sensitiveOptIn && <Check size={14} color="#fff" />}
+                  </View>
+                  <Text style={{ flex: 1, color: theme.colors.text, fontSize: 13, fontWeight: "600" }}>
+                    Share accessibility details (optional)
+                  </Text>
+                </TouchableOpacity>
+                <Text style={{ marginTop: 6, fontSize: 11, color: theme.colors.textTertiary, lineHeight: 16 }}>
+                  These fields are sensitive under US and EU privacy law. They&apos;re never required, never shared, and you can turn this off any time in Settings → Privacy.
+                </Text>
+                {sensitiveOptIn && (
+                  <View style={[styles.toggleGrid, { marginTop: 12 }]}>
+                    {SENSITIVE_PROFILE_TOGGLES.map(({ key, label, why }) => (
+                      <View key={key} style={{ width: "100%" }}>
+                        <TouchableOpacity
+                          style={[styles.toggleChip, (profile as any)[key] && styles.toggleChipActive, { width: "100%" }]}
+                          onPress={() => { hapticLight(); updateProfile(key, !(profile as any)[key]); }}
+                        >
+                          {(profile as any)[key] && <Check size={14} color={theme.colors.primary} />}
+                          <Text style={[styles.toggleChipText, (profile as any)[key] && styles.toggleChipTextActive]}>{label}</Text>
+                        </TouchableOpacity>
+                        <Text style={{ marginTop: 4, marginLeft: 4, fontSize: 11, color: theme.colors.textTertiary, lineHeight: 15 }}>
+                          Why we ask: {why}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
 
               {profile.hasChildren && (
@@ -616,21 +701,28 @@ export default function OnboardingScreen() {
                 </View>
               )}
 
-              <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Immigration Status</Text>
-              <View style={styles.chipRow}>
-                {IMMIGRATION_STATUSES.map((is_) => (
-                  <TouchableOpacity key={is_.value}
-                    style={[styles.chip, profile.immigrationStatus === is_.value && styles.chipActive]}
-                    onPress={() => {
-                      hapticLight();
-                      const newVal = profile.immigrationStatus === is_.value ? "" : is_.value;
-                      updateProfile("immigrationStatus", newVal);
-                      updateProfile("isImmigrant", newVal !== "" && newVal !== "CITIZEN");
-                    }}>
-                    <Text style={[styles.chipText, profile.immigrationStatus === is_.value && styles.chipTextActive]}>{is_.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              {sensitiveOptIn ? (
+                <>
+                  <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Immigration Status (optional)</Text>
+                  <Text style={{ fontSize: 11, color: theme.colors.textTertiary, marginBottom: 8, lineHeight: 15 }}>
+                    Why we ask: some states (CA, NY, WA) have different DMV document rules for new residents depending on visa status. Skip if it doesn&apos;t apply.
+                  </Text>
+                  <View style={styles.chipRow}>
+                    {IMMIGRATION_STATUSES.map((is_) => (
+                      <TouchableOpacity key={is_.value}
+                        style={[styles.chip, profile.immigrationStatus === is_.value && styles.chipActive]}
+                        onPress={() => {
+                          hapticLight();
+                          const newVal = profile.immigrationStatus === is_.value ? "" : is_.value;
+                          updateProfile("immigrationStatus", newVal);
+                          updateProfile("isImmigrant", newVal !== "" && newVal !== "CITIZEN");
+                        }}>
+                        <Text style={[styles.chipText, profile.immigrationStatus === is_.value && styles.chipTextActive]}>{is_.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              ) : null}
 
               <LegalConsentPanel
                 consents={legalConsents}
@@ -841,15 +933,15 @@ export default function OnboardingScreen() {
               <View style={[styles.stepIcon, { backgroundColor: theme.colors.successFaded, borderColor: "rgba(16,185,129,0.3)" }]}>
                 <Truck size={28} color={theme.colors.success} />
               </View>
-              <Text style={styles.stepTitle}>Planning a Move?</Text>
+              <Text style={styles.stepTitle}>Do you have a move planned?</Text>
               <Text style={styles.stepDesc}>
-                We'll create a personalized relocation checklist with tasks and deadlines
+                If yes, we&apos;ll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.
               </Text>
 
               {wantsToMove === null && (
                 <View style={{ marginTop: 32, gap: 12, width: "100%" }}>
-                  <Button title="Yes, Plan My Move" onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="lg" />
-                  <Button title="Not Right Now" onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
+                  <Button title="Yes, plan my move" onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="lg" />
+                  <Button title="Not right now" onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
                 </View>
               )}
 

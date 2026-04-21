@@ -74,6 +74,55 @@ describe("export route", () => {
     expect(data.services[0].phone).toBe("****4567");
   });
 
+  it("omits notes by default and decrypts them only when includeNotes=true", async () => {
+    mockPrisma.service.findMany.mockResolvedValue([
+      {
+        category: "UTILITY",
+        providerName: "Austin Energy",
+        accountNumber: null,
+        website: null,
+        phone: null,
+        email: null,
+        monthlyCost: 0,
+        billingDay: 1,
+        billingCycle: "MONTHLY",
+        autoRenewal: false,
+        contractEndDate: null,
+        isActive: true,
+        notes: "enc-note-ciphertext",
+        address: { nickname: "Home", city: "Austin", state: "TX" },
+      },
+    ]);
+
+    const withoutNotes = await GET(makeRequest("?type=services&format=json"));
+    const withoutText = JSON.parse(await withoutNotes.text());
+    expect(withoutText.services[0].notes).toBeNull();
+
+    mockPrisma.service.findMany.mockResolvedValue([
+      {
+        category: "UTILITY",
+        providerName: "Austin Energy",
+        accountNumber: null,
+        website: null,
+        phone: null,
+        email: null,
+        monthlyCost: 0,
+        billingDay: 1,
+        billingCycle: "MONTHLY",
+        autoRenewal: false,
+        contractEndDate: null,
+        isActive: true,
+        notes: "enc-note-ciphertext",
+        address: { nickname: "Home", city: "Austin", state: "TX" },
+      },
+    ]);
+    const withNotes = await GET(
+      makeRequest("?type=services&format=json&includeNotes=true"),
+    );
+    const withText = JSON.parse(await withNotes.text());
+    expect(withText.services[0].notes).toBe("decrypted:enc-note-ciphertext");
+  });
+
   it("prefixes dangerous CSV values to prevent formula injection", async () => {
     mockPrisma.service.findMany.mockResolvedValue([
       {

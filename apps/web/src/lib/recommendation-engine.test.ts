@@ -124,6 +124,29 @@ describe("scoreProviders", () => {
     // GOVERNMENT_DMV has essential weight of 12
     expect(scored.matchReasons).toContain("Essential service");
   });
+
+  it("should add coverage-aware reasons for local ZIP matches", () => {
+    const localUtility = makeProvider({
+      id: "1",
+      category: "UTILITY_ELECTRIC",
+      coverageMatchLevel: "prefix",
+      coverageModel: "zip_prefix",
+    });
+    const [scored] = scoreProviders([localUtility], BASE_PROFILE, "TX");
+    expect(scored.matchReasons).toContain("Local ZIP-area match");
+  });
+
+  it("should warn when provider still needs address-level confirmation", () => {
+    const addressChecked = makeProvider({
+      id: "1",
+      category: "UTILITY_INTERNET",
+      coverageMatchLevel: "live_address",
+      coverageModel: "live_address",
+      requiresAddressCheck: true,
+    });
+    const [scored] = scoreProviders([addressChecked], BASE_PROFILE, "TX");
+    expect(scored.matchReasons).toContain("Confirm availability by address");
+  });
 });
 
 describe("getRecommendedProviders", () => {

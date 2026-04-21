@@ -12,9 +12,9 @@ import { prisma } from "@/lib/db";
 
 // ── Secret / constants ──────────────────────────────────────
 
-const userJwtSecret = process.env.USER_JWT_SECRET || process.env.ADMIN_JWT_SECRET;
+const userJwtSecret = process.env.USER_JWT_SECRET;
 if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET (or ADMIN_JWT_SECRET as fallback) must be set and at least 32 characters");
+  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
 }
 const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
 
@@ -24,29 +24,50 @@ const SESSION_TTL_SEC = SESSION_TTL_DAYS * 24 * 60 * 60;
 
 export const BCRYPT_COST = 12;
 
+export type SessionClientType = "web" | "mobile";
+
 export interface UserSessionClaims {
   userId: string;
   email: string;
   fp?: string;
+  fpMode?: SessionClientType;
   sessionId?: string;
 }
 
 // ── Fingerprint + token hashing ─────────────────────────────
 
-export async function generateFingerprint(ip: string, userAgent: string): Promise<string> {
-  const raw = `${ip}|${userAgent}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(raw);
+async function sha256Hex(raw: string): Promise<string> {
+  const data = new TextEncoder().encode(raw);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// Web: IP + UA — strict. A hijacked cookie from a different IP is rejected.
+export async function generateFingerprint(
+  ip: string,
+  userAgent: string,
+): Promise<string> {
+  return sha256Hex(`${ip}|${userAgent}`);
+}
+
+// Mobile: UA only. Mobile IP changes frequently (Wi-Fi ↔ LTE, carrier NAT),
+// so including IP would force re-login on every network switch. UA stays
+// stable across network changes and still detects device-swap hijack.
+export async function generateMobileFingerprint(
+  userAgent: string,
+): Promise<string> {
+  return sha256Hex(`mobile|${userAgent}`);
 }
 
 export async function hashSessionToken(token: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(token);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // ── Password ────────────────────────────────────────────────
@@ -55,7 +76,10 @@ export async function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain, BCRYPT_COST);
 }
 
-export async function verifyPassword(plain: string, hash: string): Promise<boolean> {
+export async function verifyPassword(
+  plain: string,
+  hash: string,
+): Promise<boolean> {
   return bcrypt.compare(plain, hash);
 }
 
@@ -64,11 +88,15 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
  * Policy: >= 12 chars, must contain upper + lower + digit + special.
  */
 export function validatePasswordPolicy(password: string): string | null {
-  if (!password || password.length < 12) return "Password must be at least 12 characters.";
-  if (!/[A-Z]/.test(password)) return "Password must contain an uppercase letter.";
-  if (!/[a-z]/.test(password)) return "Password must contain a lowercase letter.";
+  if (!password || password.length < 12)
+    return "Password must be at least 12 characters.";
+  if (!/[A-Z]/.test(password))
+    return "Password must contain an uppercase letter.";
+  if (!/[a-z]/.test(password))
+    return "Password must contain a lowercase letter.";
   if (!/[0-9]/.test(password)) return "Password must contain a digit.";
-  if (!/[^A-Za-z0-9]/.test(password)) return "Password must contain a special character.";
+  if (!/[^A-Za-z0-9]/.test(password))
+    return "Password must contain a special character.";
   return null;
 }
 
@@ -102,14 +130,21 @@ export async function createUserSession(input: {
   userId: string;
   email: string;
   fingerprint?: string;
+  clientType?: SessionClientType;
   ipAddress?: string;
   userAgent?: string;
   browser?: string;
   os?: string;
   deviceType?: string;
 }): Promise<string> {
-  const claims: Record<string, unknown> = { userId: input.userId, email: input.email };
-  if (input.fingerprint) claims.fp = input.fingerprint;
+  const claims: Record<string, unknown> = {
+    userId: input.userId,
+    email: input.email,
+  };
+  if (input.fingerprint) {
+    claims.fp = input.fingerprint;
+    claims.fpMode = input.clientType ?? "web";
+  }
 
   const token = await new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
@@ -143,7 +178,10 @@ export async function createUserSession(input: {
   return token;
 }
 
-async function readTokenFromRequest(): Promise<{ token: string; source: "cookie" | "header" } | null> {
+async function readTokenFromRequest(): Promise<{
+  token: string;
+  source: "cookie" | "header";
+} | null> {
   // Cookie first — web uses httpOnly cookie.
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get(COOKIE_NAME)?.value;
@@ -178,24 +216,56 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
     }
   };
 
+  const invalidateSession = async () => {
+    await prisma.userLoginSession
+      .updateMany({
+        where: { tokenHash, isActive: true },
+        data: { isActive: false },
+      })
+      .catch(() => null);
+  };
+
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
 
-    const record = await prisma.userLoginSession.findFirst({
-      where: { tokenHash, isActive: true },
-      select: { id: true, userId: true, expiresAt: true },
-    }).catch(() => null);
+    const record = await prisma.userLoginSession
+      .findFirst({
+        where: { tokenHash, isActive: true },
+        select: { id: true, userId: true, expiresAt: true },
+      })
+      .catch(() => null);
 
     if (!record) {
       await clearIfCookie();
       return null;
     }
 
-    if (record.userId !== payload.userId || record.expiresAt.getTime() <= Date.now()) {
-      await prisma.userLoginSession.updateMany({
-        where: { tokenHash, isActive: true },
-        data: { isActive: false },
-      }).catch(() => null);
+    if (typeof payload.fp === "string" && payload.fp) {
+      const hdrs = await headers().catch(() => null);
+      const userAgent = hdrs?.get("user-agent") || "unknown";
+      const fpMode: SessionClientType =
+        payload.fpMode === "mobile" ? "mobile" : "web";
+      const currentFp =
+        fpMode === "mobile"
+          ? await generateMobileFingerprint(userAgent).catch(() => null)
+          : await generateFingerprint(
+              getRequestIpFromHeaderValue(
+                hdrs?.get("x-forwarded-for") || hdrs?.get("x-real-ip") || null,
+              ),
+              userAgent,
+            ).catch(() => null);
+      if (!currentFp || currentFp !== payload.fp) {
+        await invalidateSession();
+        await clearIfCookie();
+        return null;
+      }
+    }
+
+    if (
+      record.userId !== payload.userId ||
+      record.expiresAt.getTime() <= Date.now()
+    ) {
+      await invalidateSession();
       await clearIfCookie();
       return null;
     }
@@ -204,16 +274,21 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
       userId: payload.userId as string,
       email: payload.email as string,
       fp: (payload.fp as string) || undefined,
+      fpMode:
+        payload.fpMode === "mobile" || payload.fpMode === "web"
+          ? (payload.fpMode as SessionClientType)
+          : undefined,
       sessionId: record.id,
     };
   } catch {
-    await prisma.userLoginSession.updateMany({
-      where: { tokenHash, isActive: true },
-      data: { isActive: false },
-    }).catch(() => null);
+    await invalidateSession();
     await clearIfCookie();
     return null;
   }
+}
+
+function getRequestIpFromHeaderValue(value: string | null): string {
+  return value?.split(",")[0].trim() || "unknown";
 }
 
 export async function destroyUserSession(): Promise<void> {
@@ -222,10 +297,12 @@ export async function destroyUserSession(): Promise<void> {
   if (token) {
     const tokenHash = await hashSessionToken(token).catch(() => null);
     if (tokenHash) {
-      await prisma.userLoginSession.updateMany({
-        where: { tokenHash, isActive: true },
-        data: { isActive: false, lastActivity: new Date() },
-      }).catch(() => null);
+      await prisma.userLoginSession
+        .updateMany({
+          where: { tokenHash, isActive: true },
+          data: { isActive: false, lastActivity: new Date() },
+        })
+        .catch(() => null);
     }
   }
   clearSessionCookie(cookieStore);
@@ -257,10 +334,12 @@ export async function requireDbUserId(): Promise<string> {
 
   // Update lastActivity (non-blocking).
   if (session.sessionId) {
-    prisma.userLoginSession.updateMany({
-      where: { id: session.sessionId, isActive: true },
-      data: { lastActivity: new Date() },
-    }).catch(() => null);
+    prisma.userLoginSession
+      .updateMany({
+        where: { id: session.sessionId, isActive: true },
+        data: { lastActivity: new Date() },
+      })
+      .catch(() => null);
   }
 
   return user.id;
@@ -269,7 +348,7 @@ export async function requireDbUserId(): Promise<string> {
 export async function validateFingerprint(
   session: UserSessionClaims,
   ip: string,
-  userAgent: string
+  userAgent: string,
 ): Promise<boolean> {
   if (!session.fp) return true;
   const currentFp = await generateFingerprint(ip, userAgent);
@@ -288,7 +367,12 @@ export async function findOrLinkOAuthUser(input: {
 }): Promise<string> {
   // 1) Existing OAuth link
   const existingLink = await prisma.oAuthAccount.findUnique({
-    where: { provider_providerId: { provider: input.provider, providerId: input.providerId } },
+    where: {
+      provider_providerId: {
+        provider: input.provider,
+        providerId: input.providerId,
+      },
+    },
     select: { userId: true },
   });
   if (existingLink) return existingLink.userId;
@@ -300,7 +384,11 @@ export async function findOrLinkOAuthUser(input: {
   });
   if (userByEmail) {
     await prisma.oAuthAccount.create({
-      data: { userId: userByEmail.id, provider: input.provider, providerId: input.providerId },
+      data: {
+        userId: userByEmail.id,
+        provider: input.provider,
+        providerId: input.providerId,
+      },
     });
     // OAuth providers have already verified the email — mark verified if not already.
     if (!userByEmail.emailVerifiedAt) {

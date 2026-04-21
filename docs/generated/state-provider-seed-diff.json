@@ -1,0 +1,2216 @@
+{
+  "generatedAt": "2026-04-20T19:23:27.601Z",
+  "additions": [
+    {
+      "providerName": "MAX Transit",
+      "states": [
+        "AL"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://maxtransit.org",
+      "coverageModel": "zip_prefix",
+      "note": "Birmingham-area transit provider missing from the seed; modeled with Birmingham metro ZIP prefixes.",
+      "seedRecord": {
+        "name": "MAX Transit",
+        "slug": "max-transit-al",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Birmingham-Jefferson County MAX bus transit service",
+        "website": "https://maxtransit.org",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "350",
+          "351",
+          "352"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "transit",
+          "bus",
+          "birmingham"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "MAX Transit",
+        "slug": "max-transit-al"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://maxtransit.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "People Mover",
+      "states": [
+        "AK"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx",
+      "coverageModel": "zip_prefix",
+      "note": "Anchorage People Mover is the largest public transit provider in Alaska and was not in seed.",
+      "seedRecord": {
+        "name": "People Mover",
+        "slug": "people-mover-ak",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Municipality of Anchorage public transit service",
+        "website": "https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "995"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "transit",
+          "bus",
+          "anchorage"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "People Mover",
+        "slug": "people-mover-ak"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Valley Metro",
+      "states": [
+        "AZ"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.valleymetro.org/maps-schedules",
+      "coverageModel": "zip_prefix",
+      "note": "Phoenix-area Valley Metro was absent from seed and is modeled with core metro ZIP prefixes.",
+      "seedRecord": {
+        "name": "Valley Metro",
+        "slug": "valley-metro-az",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Phoenix metro bus and light rail transit network",
+        "website": "https://www.valleymetro.org/maps-schedules",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "850",
+          "851",
+          "852",
+          "853"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "transit",
+          "bus",
+          "rail",
+          "phoenix"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Valley Metro",
+        "slug": "valley-metro-az"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.valleymetro.org/maps-schedules",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Entergy Arkansas",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.entergy-arkansas.com",
+      "coverageModel": "state",
+      "note": "Major Arkansas electric utility identified in state rules but missing from seed.",
+      "seedRecord": {
+        "name": "Entergy Arkansas",
+        "slug": "entergy-ar",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric utility serving much of Arkansas",
+        "website": "https://www.entergy-arkansas.com",
+        "states": [
+          "AR"
+        ],
+        "popularityScore": 84,
+        "tags": [
+          "electric",
+          "utility"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Entergy Arkansas",
+        "slug": "entergy-ar"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.entergy-arkansas.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "San Diego Gas & Electric",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.sdge.com/landservices",
+      "coverageModel": "zip_prefix",
+      "note": "SDG&E serves San Diego County and parts of southern Orange County; modeled conservatively with southern California ZIP prefixes.",
+      "seedRecord": {
+        "name": "San Diego Gas & Electric",
+        "slug": "sdge",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric and gas utility for San Diego County and nearby coastal communities",
+        "website": "https://www.sdge.com",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "919",
+          "920",
+          "921"
+        ],
+        "popularityScore": 86,
+        "tags": [
+          "electric",
+          "gas",
+          "utility",
+          "san-diego"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "San Diego Gas & Electric",
+        "slug": "sdge"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.sdge.com/landservices",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "RTD Denver",
+      "states": [
+        "CO"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.rtd-denver.com/system-map",
+      "coverageModel": "zip_prefix",
+      "note": "Regional Transportation District is the core transit provider for Denver metro.",
+      "seedRecord": {
+        "name": "RTD Denver",
+        "slug": "rtd-denver",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Regional Transportation District bus and rail service in Denver metro",
+        "website": "https://www.rtd-denver.com/system-map",
+        "states": [
+          "CO"
+        ],
+        "zipCodes": [
+          "800",
+          "801",
+          "802",
+          "803",
+          "804"
+        ],
+        "popularityScore": 76,
+        "tags": [
+          "transit",
+          "bus",
+          "rail",
+          "denver"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "RTD Denver",
+        "slug": "rtd-denver"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.rtd-denver.com/system-map",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "United Illuminating",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.uinet.com/ourcompany/whoweare/servicearea",
+      "coverageModel": "zip_prefix",
+      "note": "United Illuminating covers southern Connecticut and is a material seed gap for CT.",
+      "seedRecord": {
+        "name": "United Illuminating",
+        "slug": "ui-ct",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric utility serving southern Connecticut communities",
+        "website": "https://www.uinet.com",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "064",
+          "065",
+          "066",
+          "067",
+          "068"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "electric",
+          "utility",
+          "connecticut"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "United Illuminating",
+        "slug": "ui-ct"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.uinet.com/ourcompany/whoweare/servicearea",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "DART First State",
+      "states": [
+        "DE"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://dartfirststate.com/map/",
+      "coverageModel": "state",
+      "note": "DART First State operates statewide bus and paratransit service in Delaware.",
+      "seedRecord": {
+        "name": "DART First State",
+        "slug": "dart-first-state",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Statewide Delaware bus and paratransit network",
+        "website": "https://dartfirststate.com",
+        "states": [
+          "DE"
+        ],
+        "popularityScore": 74,
+        "tags": [
+          "transit",
+          "bus",
+          "delaware"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "DART First State",
+        "slug": "dart-first-state"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://dartfirststate.com/map/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "DC Streetcar",
+      "states": [
+        "DC"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://dcstreetcar.com",
+      "coverageModel": "zip_prefix",
+      "note": "DC Streetcar adds a district-specific transit option beyond WMATA.",
+      "seedRecord": {
+        "name": "DC Streetcar",
+        "slug": "dc-streetcar",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "District streetcar transit service on the H Street/Benning corridor",
+        "website": "https://dcstreetcar.com",
+        "states": [
+          "DC"
+        ],
+        "zipCodes": [
+          "200"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "transit",
+          "streetcar",
+          "dc"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "DC Streetcar",
+        "slug": "dc-streetcar"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://dcstreetcar.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Tampa Electric",
+      "states": [
+        "FL"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/",
+      "coverageModel": "zip_prefix",
+      "note": "Tampa Electric is a major missing Florida electric provider with a clear Tampa Bay service area.",
+      "seedRecord": {
+        "name": "Tampa Electric",
+        "slug": "tampa-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric utility serving the Tampa Bay area",
+        "website": "https://www.tampaelectric.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "335",
+          "336",
+          "337",
+          "338",
+          "346"
+        ],
+        "popularityScore": 80,
+        "tags": [
+          "electric",
+          "utility",
+          "tampa"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Tampa Electric",
+        "slug": "tampa-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Atlanta Gas Light",
+      "states": [
+        "GA"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.atlantagaslight.com",
+      "coverageModel": "state",
+      "note": "Atlanta Gas Light remains a key Georgia gas infrastructure provider missing from seed.",
+      "seedRecord": {
+        "name": "Atlanta Gas Light",
+        "slug": "atlanta-gas-light",
+        "category": "UTILITY_GAS",
+        "description": "Georgia natural gas distribution utility and pipeline operator",
+        "website": "https://www.atlantagaslight.com",
+        "states": [
+          "GA"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "gas",
+          "utility",
+          "georgia"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Atlanta Gas Light",
+        "slug": "atlanta-gas-light"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.atlantagaslight.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Skyline",
+      "states": [
+        "HI"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.honolulu.gov/skyline",
+      "coverageModel": "zip_prefix",
+      "note": "Honolulu Skyline adds a rail-specific transit surface beyond TheBus.",
+      "seedRecord": {
+        "name": "Skyline",
+        "slug": "skyline-hi",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Honolulu rail transit service on Oahu",
+        "website": "https://www.honolulu.gov/skyline",
+        "states": [
+          "HI"
+        ],
+        "zipCodes": [
+          "968"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "transit",
+          "rail",
+          "honolulu"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Skyline",
+        "slug": "skyline-hi"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.honolulu.gov/skyline",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Idaho Power",
+      "states": [
+        "ID"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.idahopower.com",
+      "coverageModel": "state",
+      "note": "Idaho Power is the dominant investor-owned electric utility in southern Idaho and a major catalog gap.",
+      "seedRecord": {
+        "name": "Idaho Power",
+        "slug": "idaho-power",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric utility serving southern Idaho and eastern Oregon",
+        "website": "https://www.idahopower.com",
+        "states": [
+          "ID"
+        ],
+        "popularityScore": 84,
+        "tags": [
+          "electric",
+          "utility",
+          "idaho"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Idaho Power",
+        "slug": "idaho-power"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.idahopower.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Ameren Illinois",
+      "states": [
+        "IL"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.ameren.com/illinois/about",
+      "coverageModel": "state",
+      "note": "Ameren Illinois is the major downstate Illinois electric utility and was not represented directly in seed.",
+      "seedRecord": {
+        "name": "Ameren Illinois",
+        "slug": "ameren-il",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric and gas utility serving central and southern Illinois",
+        "website": "https://www.ameren.com/illinois",
+        "states": [
+          "IL"
+        ],
+        "popularityScore": 82,
+        "tags": [
+          "electric",
+          "gas",
+          "utility",
+          "illinois"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Ameren Illinois",
+        "slug": "ameren-il"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.ameren.com/illinois/about",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Indiana Michigan Power",
+      "states": [
+        "IN"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.indianamichiganpower.com",
+      "coverageModel": "zip_prefix",
+      "note": "Indiana Michigan Power is a large AEP utility missing from Indiana coverage.",
+      "seedRecord": {
+        "name": "Indiana Michigan Power",
+        "slug": "indiana-michigan-power",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric utility serving northern and eastern Indiana",
+        "website": "https://www.indianamichiganpower.com",
+        "states": [
+          "IN"
+        ],
+        "zipCodes": [
+          "460",
+          "461",
+          "463",
+          "465",
+          "466",
+          "467",
+          "468",
+          "469"
+        ],
+        "popularityScore": 76,
+        "tags": [
+          "electric",
+          "utility",
+          "indiana"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Indiana Michigan Power",
+        "slug": "indiana-michigan-power"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.indianamichiganpower.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Alliant Energy",
+      "states": [
+        "IA",
+        "WI"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.alliantenergy.com/who-we-are/communities-we-serve",
+      "coverageModel": "state",
+      "note": "Alliant Energy is a major Iowa/Wisconsin utility called out in state rules but missing from seed.",
+      "seedRecord": {
+        "name": "Alliant Energy",
+        "slug": "alliant-energy",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric and gas utility serving Iowa and Wisconsin communities",
+        "website": "https://www.alliantenergy.com",
+        "states": [
+          "IA",
+          "WI"
+        ],
+        "popularityScore": 82,
+        "tags": [
+          "electric",
+          "gas",
+          "utility"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Alliant Energy",
+        "slug": "alliant-energy"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.alliantenergy.com/who-we-are/communities-we-serve",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "RideKC",
+      "states": [
+        "KS",
+        "MO"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://ridekc.org/rider-guide/system-map",
+      "coverageModel": "zip_prefix",
+      "note": "Kansas City regional transit system missing from both Kansas and Missouri seed surfaces.",
+      "seedRecord": {
+        "name": "RideKC",
+        "slug": "ridekc",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Kansas City regional bus and streetcar transit network",
+        "website": "https://ridekc.org",
+        "states": [
+          "KS",
+          "MO"
+        ],
+        "zipCodes": [
+          "640",
+          "641",
+          "660",
+          "661",
+          "662"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "transit",
+          "bus",
+          "streetcar",
+          "kansas-city"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "RideKC",
+        "slug": "ridekc"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://ridekc.org/rider-guide/system-map",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Louisville Gas & Electric",
+      "states": [
+        "KY"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://lge-ku.com",
+      "coverageModel": "zip_prefix",
+      "note": "LG&E is the core Louisville-area utility and was missing from Kentucky coverage.",
+      "seedRecord": {
+        "name": "Louisville Gas & Electric",
+        "slug": "lge-ky",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric and gas utility serving Louisville and surrounding Kentucky communities",
+        "website": "https://lge-ku.com",
+        "states": [
+          "KY"
+        ],
+        "zipCodes": [
+          "400",
+          "401",
+          "402"
+        ],
+        "popularityScore": 80,
+        "tags": [
+          "electric",
+          "gas",
+          "utility",
+          "louisville"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Louisville Gas & Electric",
+        "slug": "lge-ky"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://lge-ku.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Capital Area Transit System",
+      "states": [
+        "LA"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.brcats.com",
+      "coverageModel": "zip_prefix",
+      "note": "Baton Rouge CATS expands Louisiana transit beyond the New Orleans region already in seed.",
+      "legacyNames": [
+        "CATS Baton Rouge"
+      ],
+      "seedRecord": {
+        "name": "Capital Area Transit System",
+        "slug": "cats-la",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Baton Rouge bus transit network",
+        "website": "https://www.brcats.com",
+        "states": [
+          "LA"
+        ],
+        "zipCodes": [
+          "707",
+          "708"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "transit",
+          "bus",
+          "baton-rouge"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Capital Area Transit System",
+        "slug": "cats-la"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.brcats.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Greater Portland METRO",
+      "states": [
+        "ME"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://gpmetro.org",
+      "coverageModel": "zip_prefix",
+      "note": "Greater Portland METRO adds a missing Maine transit provider with a compact service footprint.",
+      "seedRecord": {
+        "name": "Greater Portland METRO",
+        "slug": "gpmetro-me",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Greater Portland bus transit network",
+        "website": "https://gpmetro.org",
+        "states": [
+          "ME"
+        ],
+        "zipCodes": [
+          "040",
+          "041"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "transit",
+          "bus",
+          "portland-maine"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Greater Portland METRO",
+        "slug": "gpmetro-me"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://gpmetro.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "MTA Maryland",
+      "states": [
+        "MD"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.mta.maryland.gov/transit-maps",
+      "coverageModel": "zip_prefix",
+      "note": "Maryland Transit Administration adds a missing Baltimore-centric transit surface.",
+      "seedRecord": {
+        "name": "MTA Maryland",
+        "slug": "mta-md",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Maryland Transit Administration local, light rail, subway, MARC, and commuter bus network",
+        "website": "https://www.mta.maryland.gov",
+        "states": [
+          "MD"
+        ],
+        "zipCodes": [
+          "206",
+          "207",
+          "208",
+          "209",
+          "210",
+          "211",
+          "212",
+          "214",
+          "217"
+        ],
+        "popularityScore": 74,
+        "tags": [
+          "transit",
+          "bus",
+          "rail",
+          "maryland"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "MTA Maryland",
+        "slug": "mta-md"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.mta.maryland.gov/transit-maps",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Massachusetts Water Resources Authority",
+      "states": [
+        "MA"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.mwra.com",
+      "coverageModel": "zip_prefix",
+      "note": "MWRA covers Boston-region wholesale water/sewer service and adds a missing Massachusetts water surface.",
+      "legacyNames": [
+        "MWRA"
+      ],
+      "seedRecord": {
+        "name": "Massachusetts Water Resources Authority",
+        "slug": "mwra-ma",
+        "category": "UTILITY_WATER",
+        "description": "Boston-region water and wastewater authority",
+        "website": "https://www.mwra.com",
+        "states": [
+          "MA"
+        ],
+        "zipCodes": [
+          "017",
+          "018",
+          "019",
+          "020",
+          "021",
+          "022",
+          "023",
+          "024",
+          "027"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "water",
+          "utility",
+          "boston"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Massachusetts Water Resources Authority",
+        "slug": "mwra-ma"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.mwra.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "SMART",
+      "states": [
+        "MI"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.smartbus.org/Routes-Schedules/System-Map",
+      "coverageModel": "zip_prefix",
+      "note": "Suburban Mobility Authority for Regional Transportation adds the Detroit suburban network missing from seed.",
+      "seedRecord": {
+        "name": "SMART",
+        "slug": "smart-mi",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Detroit suburban bus transit network",
+        "website": "https://www.smartbus.org",
+        "states": [
+          "MI"
+        ],
+        "zipCodes": [
+          "480",
+          "481",
+          "482",
+          "483"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "transit",
+          "bus",
+          "detroit"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "SMART",
+        "slug": "smart-mi"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.smartbus.org/Routes-Schedules/System-Map",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Minnesota Energy Resources",
+      "states": [
+        "MN"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.minnesotaenergyresources.com",
+      "coverageModel": "state",
+      "note": "Minnesota Energy Resources adds a missing statewide gas utility surface beyond CenterPoint.",
+      "seedRecord": {
+        "name": "Minnesota Energy Resources",
+        "slug": "mn-energy-resources",
+        "category": "UTILITY_GAS",
+        "description": "Natural gas utility serving Minnesota communities",
+        "website": "https://www.minnesotaenergyresources.com",
+        "states": [
+          "MN"
+        ],
+        "popularityScore": 74,
+        "tags": [
+          "gas",
+          "utility",
+          "minnesota"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Minnesota Energy Resources",
+        "slug": "mn-energy-resources"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.minnesotaenergyresources.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Coast Transit Authority",
+      "states": [
+        "MS"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://coasttransit.com",
+      "coverageModel": "zip_prefix",
+      "note": "Mississippi Gulf Coast transit provider missing from seed.",
+      "seedRecord": {
+        "name": "Coast Transit Authority",
+        "slug": "coast-transit-ms",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Mississippi Gulf Coast regional bus transit service",
+        "website": "https://coasttransit.com",
+        "states": [
+          "MS"
+        ],
+        "zipCodes": [
+          "395"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "transit",
+          "bus",
+          "gulf-coast"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Coast Transit Authority",
+        "slug": "coast-transit-ms"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://coasttransit.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Mountain Line",
+      "states": [
+        "MT"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://mountainline.com/system-map/",
+      "coverageModel": "zip_prefix",
+      "note": "Missoula-area transit addition for Montana.",
+      "seedRecord": {
+        "name": "Mountain Line",
+        "slug": "mountain-line-mt",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Missoula urban transit district bus service",
+        "website": "https://mountainline.com",
+        "states": [
+          "MT"
+        ],
+        "zipCodes": [
+          "598"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "transit",
+          "bus",
+          "missoula"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Mountain Line",
+        "slug": "mountain-line-mt"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://mountainline.com/system-map/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Omaha Public Power District",
+      "states": [
+        "NE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.oppd.com/about/service-area/",
+      "coverageModel": "zip_prefix",
+      "note": "OPPD is a major Nebraska public-power provider missing from seed.",
+      "legacyNames": [
+        "OPPD"
+      ],
+      "seedRecord": {
+        "name": "Omaha Public Power District",
+        "slug": "oppd-ne",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Public electric utility serving Omaha and eastern Nebraska",
+        "website": "https://www.oppd.com",
+        "states": [
+          "NE"
+        ],
+        "zipCodes": [
+          "680",
+          "681"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "electric",
+          "utility",
+          "omaha"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Omaha Public Power District",
+        "slug": "oppd-ne"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.oppd.com/about/service-area/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "RTC Washoe",
+      "states": [
+        "NV"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://rtcwashoe.com/public-transportation/system-map/",
+      "coverageModel": "zip_prefix",
+      "note": "RTC Washoe adds northern Nevada transit coverage beyond Las Vegas-area service already in seed.",
+      "seedRecord": {
+        "name": "RTC Washoe",
+        "slug": "rtc-washoe",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Reno-Sparks regional bus transit network",
+        "website": "https://rtcwashoe.com",
+        "states": [
+          "NV"
+        ],
+        "zipCodes": [
+          "894",
+          "895"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "transit",
+          "bus",
+          "reno",
+          "sparks"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "RTC Washoe",
+        "slug": "rtc-washoe"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://rtcwashoe.com/public-transportation/system-map/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "COAST",
+      "states": [
+        "NH"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://coastbus.org/schedules",
+      "coverageModel": "zip_prefix",
+      "note": "COAST adds a New Hampshire transit provider for the Seacoast region.",
+      "seedRecord": {
+        "name": "COAST",
+        "slug": "coast-nh",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Seacoast regional fixed-route and regional bus transit service",
+        "website": "https://coastbus.org",
+        "states": [
+          "NH"
+        ],
+        "zipCodes": [
+          "038"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "transit",
+          "bus",
+          "new-hampshire",
+          "seacoast"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "COAST",
+        "slug": "coast-nh"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://coastbus.org/schedules",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "PATCO Speedline",
+      "states": [
+        "NJ",
+        "PA"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.drpa.org/patco/index.html",
+      "coverageModel": "zip_prefix",
+      "note": "PATCO adds a missing NJ/PA rail corridor provider between South Jersey and Philadelphia.",
+      "legacyNames": [
+        "PATCO"
+      ],
+      "seedRecord": {
+        "name": "PATCO Speedline",
+        "slug": "patco",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Rapid transit line between South Jersey and Center City Philadelphia",
+        "website": "https://www.drpa.org/patco/index.html",
+        "states": [
+          "NJ",
+          "PA"
+        ],
+        "zipCodes": [
+          "080",
+          "081",
+          "191"
+        ],
+        "popularityScore": 74,
+        "tags": [
+          "transit",
+          "rail",
+          "philadelphia",
+          "south-jersey"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "PATCO Speedline",
+        "slug": "patco"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.drpa.org/patco/index.html",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "ABQ RIDE",
+      "states": [
+        "NM"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.cabq.gov/transit/routes-and-schedules/system-map",
+      "coverageModel": "zip_prefix",
+      "note": "Albuquerque transit addition for New Mexico.",
+      "seedRecord": {
+        "name": "ABQ RIDE",
+        "slug": "abq-ride",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Albuquerque bus rapid transit and local bus service",
+        "website": "https://www.cabq.gov/transit",
+        "states": [
+          "NM"
+        ],
+        "zipCodes": [
+          "870",
+          "871"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "transit",
+          "bus",
+          "albuquerque"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "ABQ RIDE",
+        "slug": "abq-ride"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.cabq.gov/transit/routes-and-schedules/system-map",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "PSEG Long Island",
+      "states": [
+        "NY"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.psegliny.com",
+      "coverageModel": "zip_prefix",
+      "note": "Long Island electric utility surface missing from the seed's New York coverage.",
+      "legacyNames": [
+        "PSEG"
+      ],
+      "seedRecord": {
+        "name": "PSEG Long Island",
+        "slug": "pseg-li",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric utility service for Nassau and Suffolk counties",
+        "website": "https://www.psegliny.com",
+        "states": [
+          "NY"
+        ],
+        "zipCodes": [
+          "117",
+          "118",
+          "119"
+        ],
+        "popularityScore": 80,
+        "tags": [
+          "electric",
+          "utility",
+          "long-island"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "PSEG Long Island",
+        "slug": "pseg-li"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.psegliny.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Piedmont Natural Gas",
+      "states": [
+        "NC",
+        "SC"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.piedmontng.com",
+      "coverageModel": "state",
+      "note": "Piedmont Natural Gas is a major Carolinas utility missing from the seed surface.",
+      "seedRecord": {
+        "name": "Piedmont Natural Gas",
+        "slug": "piedmont-carolinas",
+        "category": "UTILITY_GAS",
+        "description": "Natural gas utility serving North Carolina and South Carolina communities",
+        "website": "https://www.piedmontng.com",
+        "states": [
+          "NC",
+          "SC"
+        ],
+        "popularityScore": 82,
+        "tags": [
+          "gas",
+          "utility",
+          "carolinas"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Piedmont Natural Gas",
+        "slug": "piedmont-carolinas"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.piedmontng.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Montana-Dakota Utilities",
+      "states": [
+        "ND",
+        "SD",
+        "WY"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.montana-dakota.com",
+      "coverageModel": "state",
+      "note": "Montana-Dakota Utilities closes a multi-state utility gap across the northern plains.",
+      "legacyNames": [
+        "MDU"
+      ],
+      "seedRecord": {
+        "name": "Montana-Dakota Utilities",
+        "slug": "mdu",
+        "category": "UTILITY_GAS",
+        "description": "Gas and electric utility serving parts of the Dakotas and Wyoming",
+        "website": "https://www.montana-dakota.com",
+        "states": [
+          "ND",
+          "SD",
+          "WY"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "gas",
+          "electric",
+          "utility"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Montana-Dakota Utilities",
+        "slug": "mdu"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.montana-dakota.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "EMBARK",
+      "states": [
+        "OK"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://embarkok.com/system-map/",
+      "coverageModel": "zip_prefix",
+      "note": "Oklahoma City EMBARK adds a missing Oklahoma transit provider.",
+      "seedRecord": {
+        "name": "EMBARK",
+        "slug": "embark-ok",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Oklahoma City metro transit network",
+        "website": "https://embarkok.com",
+        "states": [
+          "OK"
+        ],
+        "zipCodes": [
+          "730",
+          "731"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "transit",
+          "bus",
+          "oklahoma-city"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "EMBARK",
+        "slug": "embark-ok"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://embarkok.com/system-map/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Pacific Power",
+      "states": [
+        "OR"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.pacificpower.net/about.html",
+      "coverageModel": "state",
+      "note": "Pacific Power is a major Oregon utility missing from seed.",
+      "seedRecord": {
+        "name": "Pacific Power",
+        "slug": "pacific-power-or",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Electric utility serving Oregon communities outside the Portland General Electric footprint",
+        "website": "https://www.pacificpower.net",
+        "states": [
+          "OR"
+        ],
+        "popularityScore": 82,
+        "tags": [
+          "electric",
+          "utility",
+          "oregon"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Pacific Power",
+        "slug": "pacific-power-or"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.pacificpower.net/about.html",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Columbia Gas of Pennsylvania",
+      "states": [
+        "PA"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.columbiagaspa.com",
+      "coverageModel": "state",
+      "note": "Major Pennsylvania gas utility called out in state rules but missing from seed.",
+      "seedRecord": {
+        "name": "Columbia Gas of Pennsylvania",
+        "slug": "columbia-gas-pa",
+        "category": "UTILITY_GAS",
+        "description": "Natural gas utility serving Pennsylvania communities",
+        "website": "https://www.columbiagaspa.com",
+        "states": [
+          "PA"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "gas",
+          "utility",
+          "pennsylvania"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Columbia Gas of Pennsylvania",
+        "slug": "columbia-gas-pa"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.columbiagaspa.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "RIPTA",
+      "states": [
+        "RI"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://ripta.com/statewide-system-map/",
+      "coverageModel": "state",
+      "note": "RIPTA provides statewide Rhode Island transit service and should exist explicitly in seed.",
+      "seedRecord": {
+        "name": "RIPTA",
+        "slug": "ripta",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Rhode Island statewide public transit authority",
+        "website": "https://ripta.com",
+        "states": [
+          "RI"
+        ],
+        "popularityScore": 76,
+        "tags": [
+          "transit",
+          "bus",
+          "rhode-island"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "RIPTA",
+        "slug": "ripta"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://ripta.com/statewide-system-map/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "CARTA",
+      "states": [
+        "SC"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://ridecarta.com",
+      "coverageModel": "zip_prefix",
+      "note": "Charleston Area Regional Transportation Authority adds a South Carolina transit option beyond utility-only coverage.",
+      "seedRecord": {
+        "name": "CARTA",
+        "slug": "carta-sc",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Charleston-area regional bus transit service",
+        "website": "https://www.ridecarta.com",
+        "states": [
+          "SC"
+        ],
+        "zipCodes": [
+          "294"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "transit",
+          "bus",
+          "charleston"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "CARTA",
+        "slug": "carta-sc"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://ridecarta.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Sioux Area Metro",
+      "states": [
+        "SD"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.siouxfalls.gov/sam",
+      "coverageModel": "zip_prefix",
+      "note": "Sioux Falls transit surface for South Dakota.",
+      "seedRecord": {
+        "name": "Sioux Area Metro",
+        "slug": "sioux-area-metro",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Sioux Falls fixed-route bus transit system",
+        "website": "https://www.siouxfalls.gov/sam",
+        "states": [
+          "SD"
+        ],
+        "zipCodes": [
+          "570",
+          "571"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "transit",
+          "bus",
+          "sioux-falls"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Sioux Area Metro",
+        "slug": "sioux-area-metro"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.siouxfalls.gov/sam",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Memphis Light, Gas and Water",
+      "states": [
+        "TN"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.mlgw.com",
+      "coverageModel": "zip_prefix",
+      "note": "MLGW is a major missing Memphis-area multi-utility provider.",
+      "seedRecord": {
+        "name": "Memphis Light, Gas and Water",
+        "slug": "mlgw",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Memphis-area electric, gas, and water utility",
+        "website": "https://www.mlgw.com",
+        "states": [
+          "TN"
+        ],
+        "zipCodes": [
+          "380",
+          "381"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "electric",
+          "gas",
+          "water",
+          "utility",
+          "memphis"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Memphis Light, Gas and Water",
+        "slug": "mlgw"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.mlgw.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "North Texas Tollway Authority",
+      "states": [
+        "TX"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.ntta.org",
+      "coverageModel": "zip_prefix",
+      "note": "NTTA adds a Dallas-Fort Worth toll corridor provider beyond statewide Texas toll tags.",
+      "legacyNames": [
+        "NTTA"
+      ],
+      "seedRecord": {
+        "name": "North Texas Tollway Authority",
+        "slug": "ntta",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "North Texas regional toll road authority and toll account provider",
+        "website": "https://www.ntta.org",
+        "states": [
+          "TX"
+        ],
+        "zipCodes": [
+          "750",
+          "751",
+          "752",
+          "753",
+          "754",
+          "760",
+          "761",
+          "762"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "toll",
+          "driving",
+          "dallas-fort-worth"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "North Texas Tollway Authority",
+        "slug": "ntta"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.ntta.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Green Mountain Transit",
+      "states": [
+        "VT"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://ridegmt.com",
+      "coverageModel": "zip_prefix",
+      "note": "Green Mountain Transit adds a Vermont transit provider beyond utility-only coverage.",
+      "seedRecord": {
+        "name": "Green Mountain Transit",
+        "slug": "gmt-vt",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Central and northwestern Vermont regional transit service",
+        "website": "https://ridegmt.com",
+        "states": [
+          "VT"
+        ],
+        "zipCodes": [
+          "054",
+          "056",
+          "057"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "transit",
+          "bus",
+          "vermont"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Green Mountain Transit",
+        "slug": "gmt-vt"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://ridegmt.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Hampton Roads Transit",
+      "states": [
+        "VA"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://gohrt.com/routes/",
+      "coverageModel": "zip_prefix",
+      "note": "HRT expands Virginia transit coverage beyond DC-region rail providers.",
+      "seedRecord": {
+        "name": "Hampton Roads Transit",
+        "slug": "hrt-va",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Hampton Roads regional bus, ferry, and light rail transit service",
+        "website": "https://gohrt.com",
+        "states": [
+          "VA"
+        ],
+        "zipCodes": [
+          "233",
+          "234",
+          "235",
+          "236"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "transit",
+          "bus",
+          "light-rail",
+          "hampton-roads"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Hampton Roads Transit",
+        "slug": "hrt-va"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://gohrt.com/routes/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "King County Metro",
+      "states": [
+        "WA"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://kingcounty.gov/en/dept/metro",
+      "coverageModel": "zip_prefix",
+      "note": "King County Metro adds the largest Washington transit network beyond Seattle-only utilities.",
+      "seedRecord": {
+        "name": "King County Metro",
+        "slug": "king-county-metro",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Seattle and King County bus transit network",
+        "website": "https://kingcounty.gov/en/dept/metro",
+        "states": [
+          "WA"
+        ],
+        "zipCodes": [
+          "980",
+          "981"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "transit",
+          "bus",
+          "seattle"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "King County Metro",
+        "slug": "king-county-metro"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://kingcounty.gov/en/dept/metro",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Mountain Line Transit Authority",
+      "states": [
+        "WV"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://busride.org/routes/",
+      "coverageModel": "zip_prefix",
+      "note": "West Virginia transit addition centered on Morgantown.",
+      "seedRecord": {
+        "name": "Mountain Line Transit Authority",
+        "slug": "mlta-wv",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Morgantown-area fixed-route and regional bus transit",
+        "website": "https://busride.org",
+        "states": [
+          "WV"
+        ],
+        "zipCodes": [
+          "265"
+        ],
+        "popularityScore": 56,
+        "tags": [
+          "transit",
+          "bus",
+          "morgantown"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Mountain Line Transit Authority",
+        "slug": "mlta-wv"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://busride.org/routes/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Cheyenne Transit Program",
+      "states": [
+        "WY"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://www.cheyennecity.org/Your-Government/Departments/Public-Works/Transit/Fixed-Route-Service",
+      "coverageModel": "zip_prefix",
+      "note": "Cheyenne Transit Program adds a Wyoming public transit surface beyond utilities.",
+      "seedRecord": {
+        "name": "Cheyenne Transit Program",
+        "slug": "cheyenne-transit",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "Cheyenne local bus transit service",
+        "website": "https://www.cheyennecity.org/Your-Government/Departments/Public-Works/Transit/Fixed-Route-Service",
+        "states": [
+          "WY"
+        ],
+        "zipCodes": [
+          "820"
+        ],
+        "popularityScore": 54,
+        "tags": [
+          "transit",
+          "bus",
+          "cheyenne"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Cheyenne Transit Program",
+        "slug": "cheyenne-transit"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.cheyennecity.org/Your-Government/Departments/Public-Works/Transit/Fixed-Route-Service",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    }
+  ],
+  "backlog": [
+    {
+      "providerName": "Alaska Communications",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_INTERNET",
+      "officialUrl": "https://www.alaskacommunications.com/Residential",
+      "coverageModel": "live_address",
+      "note": "Alaska Communications is a major Alaska ISP/voice provider. The official surface is address-qualified rather than ZIP-complete.",
+      "legacyNames": [
+        "ACS"
+      ],
+      "rawSeedMatch": null,
+      "mergedSeedMatch": null,
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.alaskacommunications.com/Residential",
+        "title": null,
+        "error": null
+      },
+      "status": "catalog_backlog"
+    },
+    {
+      "providerName": "Connecticut Natural Gas",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://portal.ct.gov/pura/gas/gas",
+      "coverageModel": "zip_prefix",
+      "note": "Connecticut Natural Gas is an official Connecticut PURA-listed utility gap; left catalog-only until we materialize cleaner territory ZIPs.",
+      "rawSeedMatch": null,
+      "mergedSeedMatch": null,
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://portal.ct.gov/pura/gas/gas",
+        "title": null,
+        "error": null
+      },
+      "status": "catalog_backlog"
+    },
+    {
+      "providerName": "Ohio Turnpike E-ZPass",
+      "states": [
+        "OH"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.ezpassoh.com",
+      "coverageModel": "polygon",
+      "note": "Ohio toll coverage is corridor-driven rather than ZIP-clean, so this remains catalog-only until polygon modeling lands.",
+      "rawSeedMatch": null,
+      "mergedSeedMatch": null,
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.ezpassoh.com",
+        "title": null,
+        "error": null
+      },
+      "status": "catalog_backlog"
+    },
+    {
+      "providerName": "Oncor Electric Delivery",
+      "states": [
+        "TX"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.oncor.com",
+      "coverageModel": "polygon",
+      "note": "Oncor is a critical Texas delivery utility, but its territory should be polygon-modeled rather than blindly state-scoped.",
+      "rawSeedMatch": null,
+      "mergedSeedMatch": null,
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.oncor.com",
+        "title": null,
+        "error": null
+      },
+      "status": "catalog_backlog"
+    },
+    {
+      "providerName": "Express Pass",
+      "states": [
+        "UT"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.expresspass.utah.gov",
+      "coverageModel": "polygon",
+      "note": "Utah Express Pass is corridor-based toll coverage and remains catalog-only until toll polygons land.",
+      "rawSeedMatch": null,
+      "mergedSeedMatch": null,
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.expresspass.utah.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "catalog_backlog"
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
-import { resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
+import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 const fetchProvidersForState = unstable_cache(
@@ -41,10 +42,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const state = searchParams.get("state")?.toUpperCase();
     const zip = searchParams.get("zip")?.trim();
+    const latitudeParam = searchParams.get("lat");
+    const longitudeParam = searchParams.get("lng");
     const category = searchParams.get("category");
     const scope = searchParams.get("scope");
     const q = searchParams.get("q");
     const tagsParam = searchParams.get("tags");
+    const latitude = latitudeParam !== null ? Number(latitudeParam) : null;
+    const longitude = longitudeParam !== null ? Number(longitudeParam) : null;
+    const normalizedLatitude = Number.isFinite(latitude) ? latitude : null;
+    const normalizedLongitude = Number.isFinite(longitude) ? longitude : null;
 
     const effectiveState = resolveEffectiveState(state, zip);
 
@@ -81,15 +88,29 @@ export async function GET(request: NextRequest) {
       providers = await fetchProvidersForState(effectiveState || "", category, scope);
     }
 
-    const tiered = tierProvidersFromDb(
-      providers.map((p) => ({
+    const providersWithCoverageMetadata = providers.map((p) => {
+      const metadata = getProviderCoverageMetadata(p.slug);
+      const zipCodes = safeJsonArray(p.zipCodes);
+      const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+
+      return {
         ...p,
+        zipCodes,
+        coverageModel,
+        coverageNote: metadata?.note || null,
+        coverageSourceUrl: metadata?.officialUrl || null,
         coverages: "coverages" in p && Array.isArray((p as { coverages?: unknown }).coverages)
           ? (p as unknown as { coverages: { state: string | null; zipPrefix: string | null; zipExact: string | null }[] }).coverages
           : [],
-      })),
-      { state, zip }
-    );
+      };
+    });
+
+    const tiered = tierProvidersFromDb(providersWithCoverageMetadata, {
+      state,
+      zip,
+      latitude: normalizedLatitude,
+      longitude: normalizedLongitude,
+    });
 
     let filtered = tiered.providers;
 
@@ -121,10 +142,21 @@ export async function GET(request: NextRequest) {
       logoUrl: p.logoUrl,
       scope: p.scope,
       states: safeJsonArray(p.states),
-      zipCodes: safeJsonArray(p.zipCodes),
+      zipCodes: Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes),
       tags: safeJsonArray(p.tags),
       popularityScore: p.popularityScore,
       displayOrder: p.displayOrder,
+      coverageModel: p.coverageModel || "state",
+      coverageMatchLevel: getProviderMatchLevelFromDb(p, {
+        state,
+        zip,
+        latitude: normalizedLatitude,
+        longitude: normalizedLongitude,
+      }),
+      coverageNote: ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null,
+      coverageSourceUrl: ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null,
+      requiresAddressCheck: p.coverageModel === "live_address",
+      requiresPolygonCheck: p.coverageModel === "polygon",
     }));
 
     const grouped: Record<string, typeof result> = {};
@@ -140,6 +172,12 @@ export async function GET(request: NextRequest) {
       meta: {
         effectiveState,
         zipMatchLevel: tiered.zipMatchLevel,
+        coordinatesUsed: normalizedLatitude !== null && normalizedLongitude !== null,
+        coverageModels: {
+          polygon: result.filter((provider) => provider.coverageModel === "polygon").length,
+          liveAddress: result.filter((provider) => provider.coverageModel === "live_address").length,
+          zipPrefix: result.filter((provider) => provider.coverageModel === "zip_prefix").length,
+        },
       },
     });
   } catch (error) {

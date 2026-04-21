@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { processPendingAccountDeletionRequests } from "@/lib/account-deletion";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 /**
  * Data retention cron endpoint.
@@ -12,8 +13,12 @@ import { processPendingAccountDeletionRequests } from "@/lib/account-deletion";
  * Recommended schedule: daily at 3:00 AM UTC.
  */
 export async function POST(request: NextRequest) {
-  const secret = request.headers.get("x-cron-secret") || request.headers.get("authorization")?.replace("Bearer ", "");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  // Accept either the `Authorization: Bearer ...` header (preferred) or the
+  // legacy `x-cron-secret` header for compatibility with older schedulers.
+  const xCronSecret = request.headers.get("x-cron-secret");
+  const authHeader = request.headers.get("authorization");
+  const effective = authHeader || (xCronSecret ? `Bearer ${xCronSecret}` : null);
+  if (!verifyInternalAuth(effective, "cron")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

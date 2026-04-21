@@ -95,6 +95,35 @@ jobs:
       - name: Run tests (web)
         run: pnpm --filter @locateflow/web test
 
+      - name: Run tests (admin)
+        run: pnpm --filter @locateflow/admin test
+
+  provider-guards:
+    name: Provider Data Guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Provider seed audit
+        run: pnpm audit:providers
+
+      - name: Provider coverage audit
+        run: pnpm audit:providers:coverage
+
+      - name: State provider completeness audit
+        run: pnpm audit:providers:state-completeness
+
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest

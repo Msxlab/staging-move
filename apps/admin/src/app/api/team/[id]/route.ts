@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -66,6 +66,22 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     if (id === session.adminId) {
       return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
+    }
+
+    // Step-up auth: deleting a team member wipes their audit trail.
+    let confirmPassword: string | undefined;
+    try {
+      const body = await request.json();
+      confirmPassword = body?.confirmPassword;
+    } catch {
+      /* empty body — the 403 below triggers the password prompt */
+    }
+    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true },
+        { status: 403 },
+      );
     }
 
     await prisma.adminPermission.deleteMany({ where: { adminUserId: id } });

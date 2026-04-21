@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ElementType, type FormEvent, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ElementType,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -91,7 +100,10 @@ interface VerifyResult {
   message: string;
   checks: VerifyCheck[];
   totalRecords: number;
-  tableStats: Record<string, { count: number; sampleFields: string[]; dbCount?: number }>;
+  tableStats: Record<
+    string,
+    { count: number; sampleFields: string[]; dbCount?: number }
+  >;
 }
 
 interface ImportResult {
@@ -99,8 +111,15 @@ interface ImportResult {
   mode: string;
   message?: string;
   tables?: string[];
-  results?: Record<string, { imported: number; skipped: number; errors: number; deleted?: number }>;
-  summary?: { totalImported: number; totalSkipped: number; totalErrors: number };
+  results?: Record<
+    string,
+    { imported: number; skipped: number; errors: number; deleted?: number }
+  >;
+  summary?: {
+    totalImported: number;
+    totalSkipped: number;
+    totalErrors: number;
+  };
 }
 
 interface PasswordPromptState {
@@ -113,9 +132,21 @@ interface PasswordPromptState {
 const BACKUP_TYPES = [
   { value: "FULL", label: "Full Backup", desc: "All protected tables" },
   { value: "USERS", label: "Users", desc: "Users, profiles, subscriptions" },
-  { value: "PROVIDERS", label: "Providers", desc: "Provider catalog and reviews" },
-  { value: "SERVICES", label: "Services", desc: "Services and related records" },
-  { value: "MOVING_PLANS", label: "Moving Plans", desc: "Plans, tasks and documents" },
+  {
+    value: "PROVIDERS",
+    label: "Providers",
+    desc: "Provider catalog and reviews",
+  },
+  {
+    value: "SERVICES",
+    label: "Services",
+    desc: "Services and related records",
+  },
+  {
+    value: "MOVING_PLANS",
+    label: "Moving Plans",
+    desc: "Plans, tasks and documents",
+  },
 ] as const;
 
 const FALLBACK_TABLES = [
@@ -135,7 +166,13 @@ const FALLBACK_TABLES = [
   "notifications",
 ];
 
-const STATUS_FILTERS = ["ALL", "COMPLETED", "FAILED", "IN_PROGRESS", "PENDING"] as const;
+const STATUS_FILTERS = [
+  "ALL",
+  "COMPLETED",
+  "FAILED",
+  "IN_PROGRESS",
+  "PENDING",
+] as const;
 const OFFSITE_FILTERS = ["ALL", "stored", "failed", "disabled"] as const;
 
 const statusToneClasses: Record<string, string> = {
@@ -161,7 +198,10 @@ function formatBytes(bytes?: number | null): string {
   if (!bytes) return "0 B";
   const units = ["B", "KB", "MB", "GB"];
   const size = Math.max(bytes, 0);
-  const unitIndex = Math.min(Math.floor(Math.log(size || 1) / Math.log(1024)), units.length - 1);
+  const unitIndex = Math.min(
+    Math.floor(Math.log(size || 1) / Math.log(1024)),
+    units.length - 1,
+  );
   return `${(size / Math.pow(1024, unitIndex)).toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
@@ -183,7 +223,9 @@ function parseTables(value?: string | null): string[] {
   if (!value) return [];
   try {
     const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
   } catch {
     return [];
   }
@@ -193,22 +235,42 @@ function getBackupTypeLabel(type: string) {
   return BACKUP_TYPES.find((item) => item.value === type)?.label || type;
 }
 
-function extractImportPreview(parsed: any): { payload: Record<string, unknown>; preview: Record<string, number>; encrypted: boolean } {
-  const archive = parsed && parsed.version === 1 && parsed.metadata && parsed.payload ? parsed : null;
+function extractImportPreview(parsed: any): {
+  payload: Record<string, unknown>;
+  preview: Record<string, number>;
+  encrypted: boolean;
+} {
+  const archive =
+    parsed && parsed.version === 1 && parsed.metadata && parsed.payload
+      ? parsed
+      : null;
 
   if (archive) {
-    const metadataCounts = archive.metadata?.tableCounts && typeof archive.metadata.tableCounts === "object"
-      ? archive.metadata.tableCounts
-      : {};
+    const metadataCounts =
+      archive.metadata?.tableCounts &&
+      typeof archive.metadata.tableCounts === "object"
+        ? archive.metadata.tableCounts
+        : {};
     const tables = Array.isArray(archive.metadata?.tables)
-      ? archive.metadata.tables.filter((table: unknown): table is string => typeof table === "string")
+      ? archive.metadata.tables.filter(
+          (table: unknown): table is string => typeof table === "string",
+        )
       : Object.keys(metadataCounts);
     const preview = Object.fromEntries(
-      tables.map((table: string) => [table, typeof metadataCounts[table] === "number" ? metadataCounts[table] : 0])
+      tables.map((table: string) => [
+        table,
+        typeof metadataCounts[table] === "number" ? metadataCounts[table] : 0,
+      ]),
     );
 
-    if (Object.keys(preview).length === 0 && archive.payload?.type === "plain" && archive.payload?.data) {
-      for (const [key, value] of Object.entries(archive.payload.data as Record<string, unknown>)) {
+    if (
+      Object.keys(preview).length === 0 &&
+      archive.payload?.type === "plain" &&
+      archive.payload?.data
+    ) {
+      for (const [key, value] of Object.entries(
+        archive.payload.data as Record<string, unknown>,
+      )) {
         if (Array.isArray(value)) preview[key] = value.length;
       }
     }
@@ -222,7 +284,9 @@ function extractImportPreview(parsed: any): { payload: Record<string, unknown>; 
 
   const data = parsed?.data || parsed;
   const preview: Record<string, number> = {};
-  for (const [key, value] of Object.entries((data || {}) as Record<string, unknown>)) {
+  for (const [key, value] of Object.entries(
+    (data || {}) as Record<string, unknown>,
+  )) {
     if (Array.isArray(value)) preview[key] = value.length;
   }
 
@@ -233,8 +297,13 @@ function extractImportPreview(parsed: any): { payload: Record<string, unknown>; 
   };
 }
 
-function downloadFile(content: BlobPart | Blob, fileName: string, type = "application/json") {
-  const blob = content instanceof Blob ? content : new Blob([content], { type });
+function downloadFile(
+  content: BlobPart | Blob,
+  fileName: string,
+  type = "application/json",
+) {
+  const blob =
+    content instanceof Blob ? content : new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -245,16 +314,39 @@ function downloadFile(content: BlobPart | Blob, fileName: string, type = "applic
   URL.revokeObjectURL(url);
 }
 
-function buildToneClass(tone: "neutral" | "success" | "warning" | "danger" | "info") {
-  if (tone === "success") return "border-green-500/20 bg-green-500/5 text-green-500";
-  if (tone === "warning") return "border-amber-500/20 bg-amber-500/5 text-amber-400";
+async function downloadBackupFromUrl(url: string, fileName: string) {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  if (!response.ok) {
+    let message = "Failed to download backup archive";
+    try {
+      const parsed = JSON.parse(await blob.text());
+      message = parsed.error || message;
+    } catch {
+      message = (await blob.text()) || message;
+    }
+    throw new Error(message);
+  }
+
+  downloadFile(blob, fileName, blob.type || "application/json");
+}
+
+function buildToneClass(
+  tone: "neutral" | "success" | "warning" | "danger" | "info",
+) {
+  if (tone === "success")
+    return "border-green-500/20 bg-green-500/5 text-green-500";
+  if (tone === "warning")
+    return "border-amber-500/20 bg-amber-500/5 text-amber-400";
   if (tone === "danger") return "border-red-500/20 bg-red-500/5 text-red-500";
   if (tone === "info") return "border-blue-500/20 bg-blue-500/5 text-blue-400";
   return "border-border bg-background text-foreground";
 }
 
 export function BackupControlPlane() {
-  const passwordResolverRef = useRef<((value: string | null) => void) | null>(null);
+  const passwordResolverRef = useRef<((value: string | null) => void) | null>(
+    null,
+  );
   const hasLoadedBackupsRef = useRef(false);
   const [passwordPrompt, setPasswordPrompt] = useState<PasswordPromptState>({
     open: false,
@@ -265,26 +357,39 @@ export function BackupControlPlane() {
   const [passwordValue, setPasswordValue] = useState("");
   const [backups, setBackups] = useState<BackupRecord[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
-  const [tableMap, setTableMap] = useState<Record<string, BackupTableConfig>>({});
+  const [tableMap, setTableMap] = useState<Record<string, BackupTableConfig>>(
+    {},
+  );
   const [storage, setStorage] = useState<BackupStorageSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [downloadingBackupId, setDownloadingBackupId] = useState<string | null>(null);
+  const [downloadingBackupId, setDownloadingBackupId] = useState<string | null>(
+    null,
+  );
   const [selectedType, setSelectedType] = useState("FULL");
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
   const [selectedBackupId, setSelectedBackupId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<(typeof STATUS_FILTERS)[number]>("ALL");
+  const [statusFilter, setStatusFilter] =
+    useState<(typeof STATUS_FILTERS)[number]>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
-  const [offsiteFilter, setOffsiteFilter] = useState<(typeof OFFSITE_FILTERS)[number]>("ALL");
+  const [offsiteFilter, setOffsiteFilter] =
+    useState<(typeof OFFSITE_FILTERS)[number]>("ALL");
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [importPayload, setImportPayload] = useState<Record<string, unknown> | null>(null);
-  const [importPreview, setImportPreview] = useState<Record<string, number> | null>(null);
+  const [importPayload, setImportPayload] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
+  const [importPreview, setImportPreview] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const [importTables, setImportTables] = useState<string[]>([]);
   const [importMode, setImportMode] = useState<"MERGE" | "REPLACE">("MERGE");
   const [importIsEncrypted, setImportIsEncrypted] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<VerifyResult | null>(null);
+  const [verificationResult, setVerificationResult] =
+    useState<VerifyResult | null>(null);
   const [verifying, setVerifying] = useState(false);
   const [dryRunResult, setDryRunResult] = useState<ImportResult | null>(null);
   const [dryRunning, setDryRunning] = useState(false);
@@ -292,26 +397,34 @@ export function BackupControlPlane() {
   const [importing, setImporting] = useState(false);
 
   const availableTables = useMemo(
-    () => (Object.keys(tableMap).length > 0 ? Object.keys(tableMap) : FALLBACK_TABLES),
-    [tableMap]
+    () =>
+      Object.keys(tableMap).length > 0
+        ? Object.keys(tableMap)
+        : FALLBACK_TABLES,
+    [tableMap],
   );
 
   const totalDatabaseRecords = useMemo(
     () => Object.values(stats).reduce((sum, value) => sum + value, 0),
-    [stats]
+    [stats],
   );
 
   const filteredBackups = useMemo(() => {
     const query = search.trim().toLowerCase();
     return backups.filter((backup) => {
-      const statusMatch = statusFilter === "ALL" || backup.status === statusFilter;
+      const statusMatch =
+        statusFilter === "ALL" || backup.status === statusFilter;
       const typeMatch = typeFilter === "ALL" || backup.type === typeFilter;
-      const offsiteMatch = offsiteFilter === "ALL" || (backup.offsite?.status || "disabled") === offsiteFilter;
+      const offsiteMatch =
+        offsiteFilter === "ALL" ||
+        (backup.offsite?.status || "disabled") === offsiteFilter;
       const searchMatch =
         query.length === 0 ||
         (backup.fileName || "").toLowerCase().includes(query) ||
         backup.id.toLowerCase().includes(query) ||
-        (backup.createdByLabel || backup.createdBy || "").toLowerCase().includes(query) ||
+        (backup.createdByLabel || backup.createdBy || "")
+          .toLowerCase()
+          .includes(query) ||
         backup.type.toLowerCase().includes(query);
       return statusMatch && typeMatch && offsiteMatch && searchMatch;
     });
@@ -319,17 +432,21 @@ export function BackupControlPlane() {
 
   const selectedBackup = useMemo(
     () => backups.find((backup) => backup.id === selectedBackupId) || null,
-    [backups, selectedBackupId]
+    [backups, selectedBackupId],
   );
 
   const completedBackups = useMemo(
     () => backups.filter((backup) => backup.status === "COMPLETED"),
-    [backups]
+    [backups],
   );
 
   const latestCompletedBackup = completedBackups[0] || null;
-  const failedBackups = backups.filter((backup) => backup.status === "FAILED").length;
-  const offsiteProtectedCount = completedBackups.filter((backup) => backup.offsite?.status === "stored").length;
+  const failedBackups = backups.filter(
+    (backup) => backup.status === "FAILED",
+  ).length;
+  const offsiteProtectedCount = completedBackups.filter(
+    (backup) => backup.offsite?.status === "stored",
+  ).length;
 
   const recoveryPosture = useMemo(() => {
     if (!latestCompletedBackup) {
@@ -340,7 +457,9 @@ export function BackupControlPlane() {
       };
     }
 
-    const ageHours = (Date.now() - new Date(latestCompletedBackup.createdAt).getTime()) / (1000 * 60 * 60);
+    const ageHours =
+      (Date.now() - new Date(latestCompletedBackup.createdAt).getTime()) /
+      (1000 * 60 * 60);
     if (latestCompletedBackup.offsite?.status === "stored" && ageHours <= 24) {
       return {
         tone: "success" as const,
@@ -353,7 +472,8 @@ export function BackupControlPlane() {
       return {
         tone: "warning" as const,
         title: "Partially protected",
-        description: "A fresh backup exists, but offsite protection is incomplete.",
+        description:
+          "A fresh backup exists, but offsite protection is incomplete.",
       };
     }
 
@@ -361,7 +481,8 @@ export function BackupControlPlane() {
       return {
         tone: "warning" as const,
         title: "Attention needed",
-        description: "Your most recent completed backup is aging out of the ideal recovery window.",
+        description:
+          "Your most recent completed backup is aging out of the ideal recovery window.",
       };
     }
 
@@ -373,7 +494,11 @@ export function BackupControlPlane() {
   }, [latestCompletedBackup]);
 
   const riskItems = useMemo(() => {
-    const items: Array<{ tone: "warning" | "danger" | "info"; title: string; detail: string }> = [];
+    const items: Array<{
+      tone: "warning" | "danger" | "info";
+      title: string;
+      detail: string;
+    }> = [];
 
     if (!storage?.ready) {
       items.push({
@@ -399,7 +524,9 @@ export function BackupControlPlane() {
       items.push({
         tone: "danger",
         title: "Latest backup failed offsite replication",
-        detail: latestCompletedBackup.offsite.reason || "Review storage credentials and bucket access before the next backup window.",
+        detail:
+          latestCompletedBackup.offsite.reason ||
+          "Review storage credentials and bucket access before the next backup window.",
       });
     }
 
@@ -407,7 +534,8 @@ export function BackupControlPlane() {
       items.push({
         tone: "warning",
         title: `${failedBackups} backup job(s) failed`,
-        detail: "Inspect the failed jobs in the activity table and resolve blocking issues.",
+        detail:
+          "Inspect the failed jobs in the activity table and resolve blocking issues.",
       });
     }
 
@@ -415,7 +543,8 @@ export function BackupControlPlane() {
       items.push({
         tone: "info",
         title: "Recovery posture looks healthy",
-        detail: "No immediate backup or offsite replication risks are detected in recent jobs.",
+        detail:
+          "No immediate backup or offsite replication risks are detected in recent jobs.",
       });
     }
 
@@ -428,12 +557,19 @@ export function BackupControlPlane() {
       return;
     }
 
-    if (!selectedBackupId || !backups.some((backup) => backup.id === selectedBackupId)) {
+    if (
+      !selectedBackupId ||
+      !backups.some((backup) => backup.id === selectedBackupId)
+    ) {
       setSelectedBackupId(backups[0].id);
     }
   }, [backups, selectedBackupId]);
 
-  async function requestPassword(title: string, description: string, actionLabel: string) {
+  async function requestPassword(
+    title: string,
+    description: string,
+    actionLabel: string,
+  ) {
     return new Promise<string | null>((resolve) => {
       passwordResolverRef.current = resolve;
       setPasswordValue("");
@@ -452,7 +588,12 @@ export function BackupControlPlane() {
   async function submitWithPassword(
     url: string,
     payload: Record<string, unknown>,
-    options: { title: string; description: string; actionLabel?: string; errorMessage: string }
+    options: {
+      title: string;
+      description: string;
+      actionLabel?: string;
+      errorMessage: string;
+    },
   ) {
     let requestBody: Record<string, unknown> = payload;
 
@@ -468,11 +609,15 @@ export function BackupControlPlane() {
         return data;
       }
 
-      if (response.status === 403 && data?.requiresPassword && !requestBody.confirmPassword) {
+      if (
+        response.status === 403 &&
+        data?.requiresPassword &&
+        !requestBody.confirmPassword
+      ) {
         const confirmedPassword = await requestPassword(
           options.title,
           options.description,
-          options.actionLabel || "Confirm"
+          options.actionLabel || "Confirm",
         );
         if (!confirmedPassword) {
           throw new Error(data?.error || "Password confirmation required.");
@@ -530,10 +675,11 @@ export function BackupControlPlane() {
         },
         {
           title: "Create encrypted backup",
-          description: "Confirm your admin password to export system data and issue an encrypted archive.",
+          description:
+            "Confirm your admin password to export system data and issue an encrypted archive.",
           actionLabel: "Create backup",
           errorMessage: "Failed to create backup",
-        }
+        },
       );
 
       if (data.downloadData) {
@@ -545,7 +691,7 @@ export function BackupControlPlane() {
       toast.success(
         data.offsite?.status === "stored"
           ? "Backup created and replicated offsite"
-          : "Backup created. Offsite replication is not available for this job"
+          : "Backup created. Offsite replication is not available for this job",
       );
     } catch (error: any) {
       toast.error(error?.message || "Failed to create backup");
@@ -565,12 +711,16 @@ export function BackupControlPlane() {
           const parsed = JSON.parse(await blob.text());
           message = parsed.error || message;
         } catch {
-          message = await blob.text() || message;
+          message = (await blob.text()) || message;
         }
         throw new Error(message);
       }
 
-      downloadFile(blob, backup.fileName || `backup-${backup.id}.json`, blob.type || "application/json");
+      downloadFile(
+        blob,
+        backup.fileName || `backup-${backup.id}.json`,
+        blob.type || "application/json",
+      );
       toast.success("Backup archive downloaded from offsite storage");
     } catch (error: any) {
       toast.error(error?.message || "Failed to download backup archive");
@@ -630,7 +780,11 @@ export function BackupControlPlane() {
         throw new Error(data.error || "Verification failed");
       }
       setVerificationResult(data);
-      toast.success(data.success ? "Archive verification passed" : "Archive verification returned warnings or failures");
+      toast.success(
+        data.success
+          ? "Archive verification passed"
+          : "Archive verification returned warnings or failures",
+      );
     } catch (error: any) {
       toast.error(error?.message || "Verification failed");
     } finally {
@@ -645,7 +799,11 @@ export function BackupControlPlane() {
       const response = await fetch("/api/backup/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...importPayload, tables: importTables, mode: "DRY_RUN" }),
+        body: JSON.stringify({
+          ...importPayload,
+          tables: importTables,
+          mode: "DRY_RUN",
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -668,18 +826,23 @@ export function BackupControlPlane() {
         "/api/backup/import",
         { ...importPayload, tables: importTables, mode: importMode },
         {
-          title: importMode === "REPLACE" ? "Run replace restore" : "Run merge restore",
+          title:
+            importMode === "REPLACE"
+              ? "Run replace restore"
+              : "Run merge restore",
           description:
             importMode === "REPLACE"
               ? "Confirm your admin password to replace selected tables with archive data. The route performs an all-or-nothing transaction."
               : "Confirm your admin password to merge the selected archive data into the live database.",
           actionLabel: importMode === "REPLACE" ? "Replace data" : "Run merge",
           errorMessage: "Import failed",
-        }
+        },
       );
       setImportResult(result);
       await loadBackups();
-      toast.success(`Restore completed: ${result.summary?.totalImported || 0} records imported`);
+      toast.success(
+        `Restore completed: ${result.summary?.totalImported || 0} records imported`,
+      );
     } catch (error: any) {
       toast.error(error?.message || "Import failed");
     } finally {
@@ -690,8 +853,13 @@ export function BackupControlPlane() {
   const selectedBackupTables = useMemo(() => {
     if (!selectedBackup) return [] as Array<[string, number]>;
     const tableCounts = selectedBackup.archive?.tableCounts || {};
-    const tableNames = Object.keys(tableCounts).length > 0 ? Object.keys(tableCounts) : parseTables(selectedBackup.tables);
-    return tableNames.map((table) => [table, tableCounts[table] ?? 0] as [string, number]);
+    const tableNames =
+      Object.keys(tableCounts).length > 0
+        ? Object.keys(tableCounts)
+        : parseTables(selectedBackup.tables);
+    return tableNames.map(
+      (table) => [table, tableCounts[table] ?? 0] as [string, number],
+    );
   }, [selectedBackup]);
 
   if (loading) {
@@ -707,9 +875,13 @@ export function BackupControlPlane() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Backup Control Plane</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Backup Control Plane
+            </h1>
             <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-              Create encrypted archives, inspect replication health, verify restore safety, and manage historical backup jobs from one operational console.
+              Create encrypted archives, inspect replication health, verify
+              restore safety, and manage historical backup jobs from one
+              operational console.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -718,10 +890,17 @@ export function BackupControlPlane() {
               disabled={refreshing}
               className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
             >
-              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              <RefreshCw
+                className={cn("h-4 w-4", refreshing && "animate-spin")}
+              />
               Refresh
             </button>
-            <div className={cn("rounded-lg border px-4 py-2 text-sm font-medium", buildToneClass(recoveryPosture.tone))}>
+            <div
+              className={cn(
+                "rounded-lg border px-4 py-2 text-sm font-medium",
+                buildToneClass(recoveryPosture.tone),
+              )}
+            >
               {recoveryPosture.title}
             </div>
           </div>
@@ -739,14 +918,22 @@ export function BackupControlPlane() {
             icon={Database}
             label="Completed jobs"
             value={completedBackups.length.toString()}
-            hint={latestCompletedBackup ? `Last completed ${formatRelativeTime(latestCompletedBackup.createdAt)}` : "No successful backup yet"}
+            hint={
+              latestCompletedBackup
+                ? `Last completed ${formatRelativeTime(latestCompletedBackup.createdAt)}`
+                : "No successful backup yet"
+            }
             tone="neutral"
           />
           <MetricCard
             icon={Cloud}
             label="Offsite protected"
             value={`${offsiteProtectedCount}`}
-            hint={completedBackups.length > 0 ? `${Math.round((offsiteProtectedCount / completedBackups.length) * 100) || 0}% of completed jobs are re-downloadable` : "Offsite copy unavailable until a backup completes"}
+            hint={
+              completedBackups.length > 0
+                ? `${Math.round((offsiteProtectedCount / completedBackups.length) * 100) || 0}% of completed jobs are re-downloadable`
+                : "Offsite copy unavailable until a backup completes"
+            }
             tone={storage?.ready ? "success" : "warning"}
           />
           <MetricCard
@@ -767,10 +954,17 @@ export function BackupControlPlane() {
               action={
                 <button
                   onClick={createBackup}
-                  disabled={creating || (selectedType !== "FULL" && selectedTables.length === 0)}
+                  disabled={
+                    creating ||
+                    (selectedType !== "FULL" && selectedTables.length === 0)
+                  }
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
-                  {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {creating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
                   {creating ? "Creating..." : "Create backup"}
                 </button>
               }
@@ -786,19 +980,27 @@ export function BackupControlPlane() {
                           "rounded-xl border p-4 text-left transition",
                           selectedType === type.value
                             ? "border-primary bg-primary/10"
-                            : "border-border bg-background hover:bg-accent/50"
+                            : "border-border bg-background hover:bg-accent/50",
                         )}
                       >
-                        <p className="text-sm font-semibold text-foreground">{type.label}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{type.desc}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {type.label}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {type.desc}
+                        </p>
                       </button>
                     ))}
                   </div>
                   {selectedType !== "FULL" ? (
                     <div className="rounded-xl border border-border bg-background p-4">
                       <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-medium text-foreground">Included tables</p>
-                        <p className="text-xs text-muted-foreground">{selectedTables.length} selected</p>
+                        <p className="text-sm font-medium text-foreground">
+                          Included tables
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedTables.length} selected
+                        </p>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {availableTables.map((table) => {
@@ -806,15 +1008,22 @@ export function BackupControlPlane() {
                           return (
                             <button
                               key={table}
-                              onClick={() => setSelectedTables((current) => current.includes(table) ? current.filter((item) => item !== table) : [...current, table])}
+                              onClick={() =>
+                                setSelectedTables((current) =>
+                                  current.includes(table)
+                                    ? current.filter((item) => item !== table)
+                                    : [...current, table],
+                                )
+                              }
                               className={cn(
                                 "rounded-full border px-3 py-1.5 text-xs font-medium transition",
                                 active
                                   ? "border-primary/30 bg-primary/10 text-primary"
-                                  : "border-border bg-card text-muted-foreground hover:bg-accent"
+                                  : "border-border bg-card text-muted-foreground hover:bg-accent",
                               )}
                             >
-                              {tableMap[table]?.label || table} ({stats[table] || 0})
+                              {tableMap[table]?.label || table} (
+                              {stats[table] || 0})
                             </button>
                           );
                         })}
@@ -823,13 +1032,44 @@ export function BackupControlPlane() {
                   ) : null}
                 </div>
                 <div className="rounded-xl border border-border bg-background p-4">
-                  <p className="text-sm font-medium text-foreground">Job summary</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Job summary
+                  </p>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                    <SummaryItem label="Type" value={getBackupTypeLabel(selectedType)} />
-                    <SummaryItem label="Scope" value={selectedType === "FULL" ? `${Object.keys(stats).length} live tables` : `${selectedTables.length} selected tables`} />
-                    <SummaryItem label="Estimated records" value={(selectedType === "FULL" ? totalDatabaseRecords : selectedTables.reduce((sum, table) => sum + (stats[table] || 0), 0)).toLocaleString()} />
-                    <SummaryItem label="Archive format" value="Encrypted JSON archive" />
-                    <SummaryItem label="Historical retrieval" value={storage?.ready ? "Available via offsite storage" : "Only immediate browser download"} />
+                    <SummaryItem
+                      label="Type"
+                      value={getBackupTypeLabel(selectedType)}
+                    />
+                    <SummaryItem
+                      label="Scope"
+                      value={
+                        selectedType === "FULL"
+                          ? `${Object.keys(stats).length} live tables`
+                          : `${selectedTables.length} selected tables`
+                      }
+                    />
+                    <SummaryItem
+                      label="Estimated records"
+                      value={(selectedType === "FULL"
+                        ? totalDatabaseRecords
+                        : selectedTables.reduce(
+                            (sum, table) => sum + (stats[table] || 0),
+                            0,
+                          )
+                      ).toLocaleString()}
+                    />
+                    <SummaryItem
+                      label="Archive format"
+                      value="Encrypted JSON archive"
+                    />
+                    <SummaryItem
+                      label="Historical retrieval"
+                      value={
+                        storage?.ready
+                          ? "Available via offsite storage"
+                          : "Only immediate browser download"
+                      }
+                    />
                   </div>
                 </div>
               </div>
@@ -856,14 +1096,45 @@ export function BackupControlPlane() {
                       <Filter className="h-4 w-4" />
                       Filters
                     </div>
-                    <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as (typeof STATUS_FILTERS)[number])} className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none">
-                      {STATUS_FILTERS.map((option) => <option key={option} value={option}>{option === "ALL" ? "All statuses" : option}</option>)}
+                    <select
+                      value={statusFilter}
+                      onChange={(event) =>
+                        setStatusFilter(
+                          event.target.value as (typeof STATUS_FILTERS)[number],
+                        )
+                      }
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+                    >
+                      {STATUS_FILTERS.map((option) => (
+                        <option key={option} value={option}>
+                          {option === "ALL" ? "All statuses" : option}
+                        </option>
+                      ))}
                     </select>
-                    <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none">
+                    <select
+                      value={typeFilter}
+                      onChange={(event) => setTypeFilter(event.target.value)}
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+                    >
                       <option value="ALL">All types</option>
-                      {Array.from(new Set(backups.map((backup) => backup.type))).map((type) => <option key={type} value={type}>{getBackupTypeLabel(type)}</option>)}
+                      {Array.from(
+                        new Set(backups.map((backup) => backup.type)),
+                      ).map((type) => (
+                        <option key={type} value={type}>
+                          {getBackupTypeLabel(type)}
+                        </option>
+                      ))}
                     </select>
-                    <select value={offsiteFilter} onChange={(event) => setOffsiteFilter(event.target.value as (typeof OFFSITE_FILTERS)[number])} className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none">
+                    <select
+                      value={offsiteFilter}
+                      onChange={(event) =>
+                        setOffsiteFilter(
+                          event.target
+                            .value as (typeof OFFSITE_FILTERS)[number],
+                        )
+                      }
+                      className="rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+                    >
                       <option value="ALL">All offsite states</option>
                       <option value="stored">Offsite stored</option>
                       <option value="failed">Offsite failed</option>
@@ -883,7 +1154,9 @@ export function BackupControlPlane() {
                           <th className="px-4 py-3 font-medium">Records</th>
                           <th className="px-4 py-3 font-medium">Archive</th>
                           <th className="px-4 py-3 font-medium">Offsite</th>
-                          <th className="px-4 py-3 font-medium text-right">Actions</th>
+                          <th className="px-4 py-3 font-medium text-right">
+                            Actions
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border bg-card">
@@ -897,78 +1170,160 @@ export function BackupControlPlane() {
                               />
                             </td>
                           </tr>
-                        ) : filteredBackups.map((backup) => {
-                          const statusClass = statusToneClasses[backup.status] || "bg-slate-500/10 text-slate-400 border-slate-500/20";
-                          const offsiteStatus = backup.offsite?.status || "disabled";
-                          const offsiteClass = offsiteToneClasses[offsiteStatus] || offsiteToneClasses.disabled;
-                          return (
-                            <tr
-                              key={backup.id}
-                              onClick={() => setSelectedBackupId(backup.id)}
-                              className={cn(
-                                "cursor-pointer transition hover:bg-accent/30",
-                                selectedBackupId === backup.id && "bg-primary/5"
-                              )}
-                            >
-                              <td className="px-4 py-4 align-top">
-                                <div className="space-y-1">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <p className="font-medium text-foreground">{backup.fileName || `backup-${backup.id}`}</p>
-                                    <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-medium", statusClass)}>{backup.status}</span>
+                        ) : (
+                          filteredBackups.map((backup) => {
+                            const statusClass =
+                              statusToneClasses[backup.status] ||
+                              "bg-slate-500/10 text-slate-400 border-slate-500/20";
+                            const offsiteStatus =
+                              backup.offsite?.status || "disabled";
+                            const offsiteClass =
+                              offsiteToneClasses[offsiteStatus] ||
+                              offsiteToneClasses.disabled;
+                            return (
+                              <tr
+                                key={backup.id}
+                                onClick={() => setSelectedBackupId(backup.id)}
+                                className={cn(
+                                  "cursor-pointer transition hover:bg-accent/30",
+                                  selectedBackupId === backup.id &&
+                                    "bg-primary/5",
+                                )}
+                              >
+                                <td className="px-4 py-4 align-top">
+                                  <div className="space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="font-medium text-foreground">
+                                        {backup.fileName ||
+                                          `backup-${backup.id}`}
+                                      </p>
+                                      <span
+                                        className={cn(
+                                          "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                                          statusClass,
+                                        )}
+                                      >
+                                        {backup.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      {truncate(backup.id, 18)} ·{" "}
+                                      {getBackupTypeLabel(backup.type)}
+                                    </p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">{truncate(backup.id, 18)} · {getBackupTypeLabel(backup.type)}</p>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 align-top text-xs text-muted-foreground">
-                                <div>{formatDateTime(backup.createdAt)}</div>
-                                <div className="mt-1 flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" />{formatRelativeTime(backup.createdAt)}</div>
-                              </td>
-                              <td className="px-4 py-4 align-top text-xs text-muted-foreground">{backup.createdByLabel || backup.createdBy}</td>
-                              <td className="px-4 py-4 align-top text-xs text-muted-foreground">
-                                <div>{(backup.recordCount || 0).toLocaleString()} rows</div>
-                                <div className="mt-1">{formatBytes(backup.fileSize)}</div>
-                              </td>
-                              <td className="px-4 py-4 align-top text-xs text-muted-foreground">
-                                <div className="flex flex-wrap gap-1.5">
-                                  <InlineBadge tone={backup.archive?.encrypted ? "success" : "warning"}>{backup.archive?.encrypted ? "Encrypted" : "Plain"}</InlineBadge>
-                                  <InlineBadge tone={backup.archive?.signature ? "success" : "warning"}>{backup.archive?.signature ? "Signed" : "Unsigned"}</InlineBadge>
-                                </div>
-                                <div className="mt-2">{selectedBackupId === backup.id ? selectedBackupTables.length : Object.keys(backup.archive?.tableCounts || {}).length || parseTables(backup.tables).length} tables</div>
-                              </td>
-                              <td className="px-4 py-4 align-top text-xs text-muted-foreground">
-                                <div className="flex flex-wrap gap-1.5">
-                                  <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-medium", offsiteClass)}>{offsiteStatus === "stored" ? "Stored" : offsiteStatus === "failed" ? "Failed" : "Disabled"}</span>
-                                </div>
-                                <div className="mt-2">{backup.offsite?.location ? truncate(backup.offsite.location, 36) : backup.offsite?.reason || "No retained offsite copy"}</div>
-                              </td>
-                              <td className="px-4 py-4 align-top text-right">
-                                <div className="flex justify-end gap-2">
-                                  <button
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      setSelectedBackupId(backup.id);
-                                    }}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-                                  >
-                                    <Eye className="h-3.5 w-3.5" />
-                                    Inspect
-                                  </button>
-                                  <button
-                                    onClick={(event) => {
-                                      event.stopPropagation();
-                                      void handleHistoricalDownload(backup);
-                                    }}
-                                    disabled={backup.offsite?.status !== "stored" || downloadingBackupId === backup.id}
-                                    className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-                                  >
-                                    {downloadingBackupId === backup.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                                    Download
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                                </td>
+                                <td className="px-4 py-4 align-top text-xs text-muted-foreground">
+                                  <div>{formatDateTime(backup.createdAt)}</div>
+                                  <div className="mt-1 flex items-center gap-1">
+                                    <Clock3 className="h-3.5 w-3.5" />
+                                    {formatRelativeTime(backup.createdAt)}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 align-top text-xs text-muted-foreground">
+                                  {backup.createdByLabel || backup.createdBy}
+                                </td>
+                                <td className="px-4 py-4 align-top text-xs text-muted-foreground">
+                                  <div>
+                                    {(backup.recordCount || 0).toLocaleString()}{" "}
+                                    rows
+                                  </div>
+                                  <div className="mt-1">
+                                    {formatBytes(backup.fileSize)}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 align-top text-xs text-muted-foreground">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <InlineBadge
+                                      tone={
+                                        backup.archive?.encrypted
+                                          ? "success"
+                                          : "warning"
+                                      }
+                                    >
+                                      {backup.archive?.encrypted
+                                        ? "Encrypted"
+                                        : "Plain"}
+                                    </InlineBadge>
+                                    <InlineBadge
+                                      tone={
+                                        backup.archive?.signature
+                                          ? "success"
+                                          : "warning"
+                                      }
+                                    >
+                                      {backup.archive?.signature
+                                        ? "Signed"
+                                        : "Unsigned"}
+                                    </InlineBadge>
+                                  </div>
+                                  <div className="mt-2">
+                                    {selectedBackupId === backup.id
+                                      ? selectedBackupTables.length
+                                      : Object.keys(
+                                          backup.archive?.tableCounts || {},
+                                        ).length ||
+                                        parseTables(backup.tables).length}{" "}
+                                    tables
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 align-top text-xs text-muted-foreground">
+                                  <div className="flex flex-wrap gap-1.5">
+                                    <span
+                                      className={cn(
+                                        "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                                        offsiteClass,
+                                      )}
+                                    >
+                                      {offsiteStatus === "stored"
+                                        ? "Stored"
+                                        : offsiteStatus === "failed"
+                                          ? "Failed"
+                                          : "Disabled"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-2">
+                                    {backup.offsite?.location
+                                      ? truncate(backup.offsite.location, 36)
+                                      : backup.offsite?.reason ||
+                                        "No retained offsite copy"}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 align-top text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        setSelectedBackupId(backup.id);
+                                      }}
+                                      className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
+                                    >
+                                      <Eye className="h-3.5 w-3.5" />
+                                      Inspect
+                                    </button>
+                                    <button
+                                      onClick={(event) => {
+                                        event.stopPropagation();
+                                        void handleHistoricalDownload(backup);
+                                      }}
+                                      disabled={
+                                        backup.offsite?.status !== "stored" ||
+                                        downloadingBackupId === backup.id
+                                      }
+                                      className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      {downloadingBackupId === backup.id ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Download className="h-3.5 w-3.5" />
+                                      )}
+                                      Download
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -984,8 +1339,13 @@ export function BackupControlPlane() {
               <div className="space-y-5">
                 <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-background px-6 py-10 text-center transition hover:bg-accent/30">
                   <FileUp className="h-8 w-8 text-muted-foreground" />
-                  <p className="mt-3 text-sm font-medium text-foreground">{importFile ? importFile.name : "Select a backup archive"}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">JSON archives exported by this system can be verified, previewed, and restored here.</p>
+                  <p className="mt-3 text-sm font-medium text-foreground">
+                    {importFile ? importFile.name : "Select a backup archive"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    JSON archives exported by this system can be verified,
+                    previewed, and restored here.
+                  </p>
                   <input
                     type="file"
                     accept=".json"
@@ -1004,14 +1364,29 @@ export function BackupControlPlane() {
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-sm font-semibold text-foreground">Archive preview</p>
-                          <InlineBadge tone={importIsEncrypted ? "success" : "warning"}>{importIsEncrypted ? "Encrypted archive" : "Plain archive"}</InlineBadge>
+                          <p className="text-sm font-semibold text-foreground">
+                            Archive preview
+                          </p>
+                          <InlineBadge
+                            tone={importIsEncrypted ? "success" : "warning"}
+                          >
+                            {importIsEncrypted
+                              ? "Encrypted archive"
+                              : "Plain archive"}
+                          </InlineBadge>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {Object.keys(importPreview).length} tables · {Object.values(importPreview).reduce((sum, value) => sum + value, 0).toLocaleString()} records staged for verification.
+                          {Object.keys(importPreview).length} tables ·{" "}
+                          {Object.values(importPreview)
+                            .reduce((sum, value) => sum + value, 0)
+                            .toLocaleString()}{" "}
+                          records staged for verification.
                         </p>
                       </div>
-                      <button onClick={clearImportState} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
+                      <button
+                        onClick={clearImportState}
+                        className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
+                      >
                         <X className="h-3.5 w-3.5" />
                         Clear archive
                       </button>
@@ -1023,12 +1398,18 @@ export function BackupControlPlane() {
                         return (
                           <button
                             key={table}
-                            onClick={() => setImportTables((current) => current.includes(table) ? current.filter((item) => item !== table) : [...current, table])}
+                            onClick={() =>
+                              setImportTables((current) =>
+                                current.includes(table)
+                                  ? current.filter((item) => item !== table)
+                                  : [...current, table],
+                              )
+                            }
                             className={cn(
                               "rounded-full border px-3 py-1.5 text-xs font-medium transition",
                               selected
                                 ? "border-primary/30 bg-primary/10 text-primary"
-                                : "border-border bg-card text-muted-foreground hover:bg-accent"
+                                : "border-border bg-card text-muted-foreground hover:bg-accent",
                             )}
                           >
                             {tableMap[table]?.label || table} ({count})
@@ -1039,7 +1420,9 @@ export function BackupControlPlane() {
 
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)]">
                       <div className="rounded-xl border border-border bg-card p-4">
-                        <p className="text-sm font-medium text-foreground">Restore mode</p>
+                        <p className="text-sm font-medium text-foreground">
+                          Restore mode
+                        </p>
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
                           <button
                             onClick={() => setImportMode("MERGE")}
@@ -1047,11 +1430,16 @@ export function BackupControlPlane() {
                               "rounded-xl border p-3 text-left transition",
                               importMode === "MERGE"
                                 ? "border-primary bg-primary/10"
-                                : "border-border bg-background hover:bg-accent"
+                                : "border-border bg-background hover:bg-accent",
                             )}
                           >
-                            <p className="text-sm font-semibold text-foreground">Merge</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Only inserts non-existing records and preserves live data.</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              Merge
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Only inserts non-existing records and preserves
+                              live data.
+                            </p>
                           </button>
                           <button
                             onClick={() => setImportMode("REPLACE")}
@@ -1059,33 +1447,66 @@ export function BackupControlPlane() {
                               "rounded-xl border p-3 text-left transition",
                               importMode === "REPLACE"
                                 ? "border-red-500/30 bg-red-500/10"
-                                : "border-border bg-background hover:bg-accent"
+                                : "border-border bg-background hover:bg-accent",
                             )}
                           >
-                            <p className="text-sm font-semibold text-foreground">Replace</p>
-                            <p className="mt-1 text-xs text-muted-foreground">Deletes selected tables first, then restores archive rows transactionally.</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              Replace
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Deletes selected tables first, then restores
+                              archive rows transactionally.
+                            </p>
                           </button>
                         </div>
                         {importMode === "REPLACE" ? (
                           <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400">
-                            Replace mode is destructive. The API rolls back on failure, but you should still verify and dry-run first.
+                            Replace mode is destructive. The API rolls back on
+                            failure, but you should still verify and dry-run
+                            first.
                           </div>
                         ) : null}
                       </div>
 
                       <div className="rounded-xl border border-border bg-card p-4">
-                        <p className="text-sm font-medium text-foreground">Restore workflow</p>
+                        <p className="text-sm font-medium text-foreground">
+                          Restore workflow
+                        </p>
                         <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                          <button onClick={() => void runVerification()} disabled={verifying} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50">
-                            {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                          <button
+                            onClick={() => void runVerification()}
+                            disabled={verifying}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                          >
+                            {verifying ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="h-4 w-4" />
+                            )}
                             Verify
                           </button>
-                          <button onClick={() => void runDryRun()} disabled={dryRunning || importTables.length === 0} className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50">
-                            {dryRunning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Table2 className="h-4 w-4" />}
+                          <button
+                            onClick={() => void runDryRun()}
+                            disabled={dryRunning || importTables.length === 0}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                          >
+                            {dryRunning ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Table2 className="h-4 w-4" />
+                            )}
                             Dry run
                           </button>
-                          <button onClick={() => void executeImport()} disabled={importing || importTables.length === 0} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-                            {importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          <button
+                            onClick={() => void executeImport()}
+                            disabled={importing || importTables.length === 0}
+                            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                          >
+                            {importing ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4" />
+                            )}
                             Execute
                           </button>
                         </div>
@@ -1107,18 +1528,47 @@ export function BackupControlPlane() {
                         {verificationResult ? (
                           <div className="space-y-4">
                             <div className="flex flex-wrap items-center gap-2">
-                              <InlineBadge tone={verificationResult.verdict === "PASS" ? "success" : verificationResult.verdict === "WARN" ? "warning" : "danger"}>{verificationResult.verdict}</InlineBadge>
-                              <span className="text-xs text-muted-foreground">{verificationResult.totalRecords.toLocaleString()} records analyzed</span>
+                              <InlineBadge
+                                tone={
+                                  verificationResult.verdict === "PASS"
+                                    ? "success"
+                                    : verificationResult.verdict === "WARN"
+                                      ? "warning"
+                                      : "danger"
+                                }
+                              >
+                                {verificationResult.verdict}
+                              </InlineBadge>
+                              <span className="text-xs text-muted-foreground">
+                                {verificationResult.totalRecords.toLocaleString()}{" "}
+                                records analyzed
+                              </span>
                             </div>
-                            <p className="text-sm text-muted-foreground">{verificationResult.message}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {verificationResult.message}
+                            </p>
                             <div className="space-y-2">
                               {verificationResult.checks.map((check) => (
-                                <div key={`${check.name}-${check.detail}`} className="rounded-xl border border-border bg-background p-3">
+                                <div
+                                  key={`${check.name}-${check.detail}`}
+                                  className="rounded-xl border border-border bg-background p-3"
+                                >
                                   <div className="flex items-center justify-between gap-3">
-                                    <p className="text-sm font-medium text-foreground">{check.name}</p>
-                                    <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-medium", checkToneClasses[check.status])}>{check.status}</span>
+                                    <p className="text-sm font-medium text-foreground">
+                                      {check.name}
+                                    </p>
+                                    <span
+                                      className={cn(
+                                        "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                                        checkToneClasses[check.status],
+                                      )}
+                                    >
+                                      {check.status}
+                                    </span>
                                   </div>
-                                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{check.detail}</p>
+                                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                                    {check.detail}
+                                  </p>
                                 </div>
                               ))}
                             </div>
@@ -1135,18 +1585,43 @@ export function BackupControlPlane() {
                         {dryRunResult?.summary ? (
                           <div className="space-y-4">
                             <div className="grid grid-cols-3 gap-3">
-                              <MiniStat title="Import" value={dryRunResult.summary.totalImported} tone="success" />
-                              <MiniStat title="Skip" value={dryRunResult.summary.totalSkipped} tone="warning" />
-                              <MiniStat title="Errors" value={dryRunResult.summary.totalErrors} tone="danger" />
+                              <MiniStat
+                                title="Import"
+                                value={dryRunResult.summary.totalImported}
+                                tone="success"
+                              />
+                              <MiniStat
+                                title="Skip"
+                                value={dryRunResult.summary.totalSkipped}
+                                tone="warning"
+                              />
+                              <MiniStat
+                                title="Errors"
+                                value={dryRunResult.summary.totalErrors}
+                                tone="danger"
+                              />
                             </div>
                             {dryRunResult.results ? (
                               <div className="space-y-2">
-                                {Object.entries(dryRunResult.results).map(([table, result]) => (
-                                  <div key={table} className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground">
-                                    <span>{tableMap[table]?.label || table}</span>
-                                    <span>{result.imported} import · {result.skipped} skip{typeof result.deleted === "number" ? ` · ${result.deleted} delete` : ""}</span>
-                                  </div>
-                                ))}
+                                {Object.entries(dryRunResult.results).map(
+                                  ([table, result]) => (
+                                    <div
+                                      key={table}
+                                      className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-xs text-muted-foreground"
+                                    >
+                                      <span>
+                                        {tableMap[table]?.label || table}
+                                      </span>
+                                      <span>
+                                        {result.imported} import ·{" "}
+                                        {result.skipped} skip
+                                        {typeof result.deleted === "number"
+                                          ? ` · ${result.deleted} delete`
+                                          : ""}
+                                      </span>
+                                    </div>
+                                  ),
+                                )}
                               </div>
                             ) : null}
                           </div>
@@ -1159,11 +1634,25 @@ export function BackupControlPlane() {
                         <div className="flex items-start gap-3">
                           <CheckCircle2 className="mt-0.5 h-5 w-5 text-green-500" />
                           <div className="space-y-3">
-                            <p className="text-sm font-semibold text-foreground">Restore completed</p>
+                            <p className="text-sm font-semibold text-foreground">
+                              Restore completed
+                            </p>
                             <div className="grid grid-cols-3 gap-3">
-                              <MiniStat title="Imported" value={importResult.summary.totalImported} tone="success" />
-                              <MiniStat title="Skipped" value={importResult.summary.totalSkipped} tone="warning" />
-                              <MiniStat title="Errors" value={importResult.summary.totalErrors} tone="danger" />
+                              <MiniStat
+                                title="Imported"
+                                value={importResult.summary.totalImported}
+                                tone="success"
+                              />
+                              <MiniStat
+                                title="Skipped"
+                                value={importResult.summary.totalSkipped}
+                                tone="warning"
+                              />
+                              <MiniStat
+                                title="Errors"
+                                value={importResult.summary.totalErrors}
+                                tone="danger"
+                              />
                             </div>
                           </div>
                         </div>
@@ -1176,12 +1665,33 @@ export function BackupControlPlane() {
           </div>
 
           <div className="space-y-6">
-            <Panel icon={Cloud} title="Offsite storage health" description="Historical archive retrieval depends on successful replication to the configured storage target.">
+            <Panel
+              icon={Cloud}
+              title="Offsite storage health"
+              description="Historical archive retrieval depends on successful replication to the configured storage target."
+            >
               <div className="space-y-4">
-                <div className={cn("rounded-2xl border p-4", buildToneClass(storage?.ready ? "success" : storage?.configured ? "warning" : "danger"))}>
+                <div
+                  className={cn(
+                    "rounded-2xl border p-4",
+                    buildToneClass(
+                      storage?.ready
+                        ? "success"
+                        : storage?.configured
+                          ? "warning"
+                          : "danger",
+                    ),
+                  )}
+                >
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{storage?.ready ? "Ready for historical retention" : storage?.configured ? "Configuration incomplete" : "Not configured"}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {storage?.ready
+                          ? "Ready for historical retention"
+                          : storage?.configured
+                            ? "Configuration incomplete"
+                            : "Not configured"}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {storage?.ready
                           ? "Completed jobs can be re-downloaded from offsite storage."
@@ -1192,14 +1702,36 @@ export function BackupControlPlane() {
                               : "Only the immediate browser download exists until offsite storage is configured."}
                       </p>
                     </div>
-                    <InlineBadge tone={storage?.ready ? "success" : storage?.configured ? "warning" : "danger"}>{storage?.ready ? "Ready" : storage?.configured ? "Attention" : "Offline"}</InlineBadge>
+                    <InlineBadge
+                      tone={
+                        storage?.ready
+                          ? "success"
+                          : storage?.configured
+                            ? "warning"
+                            : "danger"
+                      }
+                    >
+                      {storage?.ready
+                        ? "Ready"
+                        : storage?.configured
+                          ? "Attention"
+                          : "Offline"}
+                    </InlineBadge>
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <SummaryItem label="Provider" value={storage?.provider || "—"} />
+                  <SummaryItem
+                    label="Provider"
+                    value={storage?.provider || "—"}
+                  />
                   <SummaryItem label="Bucket" value={storage?.bucket || "—"} />
                   <SummaryItem label="Region" value={storage?.region || "—"} />
-                  <SummaryItem label="Credentials" value={storage?.credentialsConfigured ? "Configured" : "Missing"} />
+                  <SummaryItem
+                    label="Credentials"
+                    value={
+                      storage?.credentialsConfigured ? "Configured" : "Missing"
+                    }
+                  />
                 </div>
                 {storage?.endpoint ? (
                   <div className="rounded-xl border border-border bg-background p-3 text-xs text-muted-foreground">
@@ -1209,83 +1741,228 @@ export function BackupControlPlane() {
               </div>
             </Panel>
 
-            <Panel icon={FileJson} title="Selected backup detail" description="Inspect archive diagnostics, included tables, creator context, and offsite retention state.">
+            <Panel
+              icon={FileJson}
+              title="Selected backup detail"
+              description="Inspect archive diagnostics, included tables, creator context, and offsite retention state."
+            >
               {selectedBackup ? (
                 <div className="space-y-5">
                   <div className="rounded-2xl border border-border bg-background p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{selectedBackup.fileName || `backup-${selectedBackup.id}`}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{selectedBackup.createdByLabel || selectedBackup.createdBy} · {getBackupTypeLabel(selectedBackup.type)}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {selectedBackup.fileName ||
+                            `backup-${selectedBackup.id}`}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {selectedBackup.createdByLabel ||
+                            selectedBackup.createdBy}{" "}
+                          · {getBackupTypeLabel(selectedBackup.type)}
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-medium", statusToneClasses[selectedBackup.status] || "bg-slate-500/10 text-slate-400 border-slate-500/20")}>{selectedBackup.status}</span>
-                        <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-medium", offsiteToneClasses[selectedBackup.offsite?.status || "disabled"] || offsiteToneClasses.disabled)}>{selectedBackup.offsite?.status === "stored" ? "Offsite stored" : selectedBackup.offsite?.status === "failed" ? "Offsite failed" : "Offsite disabled"}</span>
+                        <span
+                          className={cn(
+                            "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                            statusToneClasses[selectedBackup.status] ||
+                              "bg-slate-500/10 text-slate-400 border-slate-500/20",
+                          )}
+                        >
+                          {selectedBackup.status}
+                        </span>
+                        <span
+                          className={cn(
+                            "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                            offsiteToneClasses[
+                              selectedBackup.offsite?.status || "disabled"
+                            ] || offsiteToneClasses.disabled,
+                          )}
+                        >
+                          {selectedBackup.offsite?.status === "stored"
+                            ? "Offsite stored"
+                            : selectedBackup.offsite?.status === "failed"
+                              ? "Offsite failed"
+                              : "Offsite disabled"}
+                        </span>
                       </div>
                     </div>
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <SummaryItem label="Created" value={formatDateTime(selectedBackup.createdAt)} />
-                      <SummaryItem label="Completed" value={selectedBackup.completedAt ? formatDateTime(selectedBackup.completedAt) : "—"} />
-                      <SummaryItem label="Archive size" value={formatBytes(selectedBackup.fileSize)} />
-                      <SummaryItem label="Rows" value={(selectedBackup.recordCount || 0).toLocaleString()} />
+                      <SummaryItem
+                        label="Created"
+                        value={formatDateTime(selectedBackup.createdAt)}
+                      />
+                      <SummaryItem
+                        label="Completed"
+                        value={
+                          selectedBackup.completedAt
+                            ? formatDateTime(selectedBackup.completedAt)
+                            : "—"
+                        }
+                      />
+                      <SummaryItem
+                        label="Archive size"
+                        value={formatBytes(selectedBackup.fileSize)}
+                      />
+                      <SummaryItem
+                        label="Rows"
+                        value={(
+                          selectedBackup.recordCount || 0
+                        ).toLocaleString()}
+                      />
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <InlineBadge tone={selectedBackup.archive?.encrypted ? "success" : "warning"}>{selectedBackup.archive?.encrypted ? "Encrypted" : "Plain archive"}</InlineBadge>
-                      <InlineBadge tone={selectedBackup.archive?.signature ? "success" : "warning"}>{selectedBackup.archive?.signature ? "HMAC signed" : "No signature"}</InlineBadge>
-                      <InlineBadge tone={selectedBackup.offsite?.status === "stored" ? "success" : selectedBackup.offsite?.status === "failed" ? "danger" : "warning"}>{selectedBackup.offsite?.status === "stored" ? "Re-downloadable" : selectedBackup.offsite?.status === "failed" ? "Retention failed" : "Browser-only copy"}</InlineBadge>
+                      <InlineBadge
+                        tone={
+                          selectedBackup.archive?.encrypted
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {selectedBackup.archive?.encrypted
+                          ? "Encrypted"
+                          : "Plain archive"}
+                      </InlineBadge>
+                      <InlineBadge
+                        tone={
+                          selectedBackup.archive?.signature
+                            ? "success"
+                            : "warning"
+                        }
+                      >
+                        {selectedBackup.archive?.signature
+                          ? "HMAC signed"
+                          : "No signature"}
+                      </InlineBadge>
+                      <InlineBadge
+                        tone={
+                          selectedBackup.offsite?.status === "stored"
+                            ? "success"
+                            : selectedBackup.offsite?.status === "failed"
+                              ? "danger"
+                              : "warning"
+                        }
+                      >
+                        {selectedBackup.offsite?.status === "stored"
+                          ? "Re-downloadable"
+                          : selectedBackup.offsite?.status === "failed"
+                            ? "Retention failed"
+                            : "Browser-only copy"}
+                      </InlineBadge>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
                       <button
-                        onClick={() => void handleHistoricalDownload(selectedBackup)}
-                        disabled={selectedBackup.offsite?.status !== "stored" || downloadingBackupId === selectedBackup.id}
+                        onClick={() =>
+                          void handleHistoricalDownload(selectedBackup)
+                        }
+                        disabled={
+                          selectedBackup.offsite?.status !== "stored" ||
+                          downloadingBackupId === selectedBackup.id
+                        }
                         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {downloadingBackupId === selectedBackup.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                        {downloadingBackupId === selectedBackup.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
                         Download archive
                       </button>
                     </div>
                   </div>
 
                   <div className="rounded-2xl border border-border bg-background p-4">
-                    <p className="text-sm font-medium text-foreground">Offsite retention</p>
+                    <p className="text-sm font-medium text-foreground">
+                      Offsite retention
+                    </p>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <SummaryItem label="Location" value={selectedBackup.offsite?.location || "Not retained offsite"} />
-                      <SummaryItem label="Uploaded" value={selectedBackup.offsite?.uploadedAt ? formatDateTime(selectedBackup.offsite.uploadedAt) : "—"} />
-                      <SummaryItem label="Bucket" value={selectedBackup.offsite?.bucket || "—"} />
-                      <SummaryItem label="Region" value={selectedBackup.offsite?.region || "—"} />
+                      <SummaryItem
+                        label="Location"
+                        value={
+                          selectedBackup.offsite?.location ||
+                          "Not retained offsite"
+                        }
+                      />
+                      <SummaryItem
+                        label="Uploaded"
+                        value={
+                          selectedBackup.offsite?.uploadedAt
+                            ? formatDateTime(selectedBackup.offsite.uploadedAt)
+                            : "—"
+                        }
+                      />
+                      <SummaryItem
+                        label="Bucket"
+                        value={selectedBackup.offsite?.bucket || "—"}
+                      />
+                      <SummaryItem
+                        label="Region"
+                        value={selectedBackup.offsite?.region || "—"}
+                      />
                     </div>
                     <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
                       {selectedBackup.offsite?.status === "stored"
                         ? "This archive can be retrieved later from offsite storage through the jobs table or this detail panel."
-                        : selectedBackup.offsite?.reason || "No local archive retention is configured on the server. If offsite storage is unavailable, only the original browser download exists."}
+                        : selectedBackup.offsite?.reason ||
+                          "No local archive retention is configured on the server. If offsite storage is unavailable, only the original browser download exists."}
                     </div>
                   </div>
 
                   <div className="rounded-2xl border border-border bg-background p-4">
-                    <p className="text-sm font-medium text-foreground">Included tables</p>
+                    <p className="text-sm font-medium text-foreground">
+                      Included tables
+                    </p>
                     <div className="mt-3 space-y-2 max-h-72 overflow-y-auto pr-1">
-                      {selectedBackupTables.length > 0 ? selectedBackupTables.map(([table, count]) => (
-                        <div key={table} className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground">
-                          <span>{tableMap[table]?.label || table}</span>
-                          <span>{count.toLocaleString()} rows</span>
-                        </div>
-                      )) : (
-                        <EmptyState icon={Table2} title="No table breakdown available" description="This backup record does not include table-level archive diagnostics." compact />
+                      {selectedBackupTables.length > 0 ? (
+                        selectedBackupTables.map(([table, count]) => (
+                          <div
+                            key={table}
+                            className="flex items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-xs text-muted-foreground"
+                          >
+                            <span>{tableMap[table]?.label || table}</span>
+                            <span>{count.toLocaleString()} rows</span>
+                          </div>
+                        ))
+                      ) : (
+                        <EmptyState
+                          icon={Table2}
+                          title="No table breakdown available"
+                          description="This backup record does not include table-level archive diagnostics."
+                          compact
+                        />
                       )}
                     </div>
                   </div>
                 </div>
               ) : (
-                <EmptyState icon={Eye} title="Choose a backup job" description="Select a job from the table to inspect archive diagnostics, offsite status, and table coverage." />
+                <EmptyState
+                  icon={Eye}
+                  title="Choose a backup job"
+                  description="Select a job from the table to inspect archive diagnostics, offsite status, and table coverage."
+                />
               )}
             </Panel>
 
-            <Panel icon={ShieldAlert} title="Operational risks" description="These signals summarize the current recovery posture based on recent jobs and storage readiness.">
+            <Panel
+              icon={ShieldAlert}
+              title="Operational risks"
+              description="These signals summarize the current recovery posture based on recent jobs and storage readiness."
+            >
               <div className="space-y-3">
                 {riskItems.map((item) => (
-                  <div key={`${item.title}-${item.detail}`} className={cn("rounded-2xl border p-4", buildToneClass(item.tone))}>
-                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{item.detail}</p>
+                  <div
+                    key={`${item.title}-${item.detail}`}
+                    className={cn(
+                      "rounded-2xl border p-4",
+                      buildToneClass(item.tone),
+                    )}
+                  >
+                    <p className="text-sm font-semibold text-foreground">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {item.detail}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1299,10 +1976,17 @@ export function BackupControlPlane() {
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-lg font-semibold text-foreground">{passwordPrompt.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{passwordPrompt.description}</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {passwordPrompt.title}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {passwordPrompt.description}
+                </p>
               </div>
-              <button onClick={() => resolvePasswordPrompt(null)} className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground">
+              <button
+                onClick={() => resolvePasswordPrompt(null)}
+                className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -1310,11 +1994,15 @@ export function BackupControlPlane() {
               className="mt-5 space-y-4"
               onSubmit={(event: FormEvent<HTMLFormElement>) => {
                 event.preventDefault();
-                resolvePasswordPrompt(passwordValue.trim() ? passwordValue : null);
+                resolvePasswordPrompt(
+                  passwordValue.trim() ? passwordValue : null,
+                );
               }}
             >
               <div>
-                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">Admin password</label>
+                <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Admin password
+                </label>
                 <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2">
                   <Lock className="h-4 w-4 text-muted-foreground" />
                   <input
@@ -1328,10 +2016,17 @@ export function BackupControlPlane() {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-2">
-                <button type="button" onClick={() => resolvePasswordPrompt(null)} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent">
+                <button
+                  type="button"
+                  onClick={() => resolvePasswordPrompt(null)}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+                >
                   Cancel
                 </button>
-                <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+                <button
+                  type="submit"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
                   {passwordPrompt.actionLabel}
                 </button>
               </div>
@@ -1343,7 +2038,13 @@ export function BackupControlPlane() {
   );
 }
 
-function Panel(props: { icon: ElementType; title: string; description: string; action?: ReactNode; children: ReactNode }) {
+function Panel(props: {
+  icon: ElementType;
+  title: string;
+  description: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   const Icon = props.icon;
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
@@ -1354,27 +2055,50 @@ function Panel(props: { icon: ElementType; title: string; description: string; a
               <Icon className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">{props.title}</h2>
-              <p className="mt-1 text-sm text-muted-foreground">{props.description}</p>
+              <h2 className="text-lg font-semibold text-foreground">
+                {props.title}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {props.description}
+              </p>
             </div>
           </div>
         </div>
-        {props.action ? <div className="flex-shrink-0">{props.action}</div> : null}
+        {props.action ? (
+          <div className="flex-shrink-0">{props.action}</div>
+        ) : null}
       </div>
       <div className="mt-5">{props.children}</div>
     </section>
   );
 }
 
-function MetricCard(props: { icon: ElementType; label: string; value: string; hint: string; tone: "neutral" | "success" | "warning" | "danger" | "info" }) {
+function MetricCard(props: {
+  icon: ElementType;
+  label: string;
+  value: string;
+  hint: string;
+  tone: "neutral" | "success" | "warning" | "danger" | "info";
+}) {
   const Icon = props.icon;
   return (
-    <div className={cn("rounded-2xl border p-5 shadow-sm", buildToneClass(props.tone))}>
+    <div
+      className={cn(
+        "rounded-2xl border p-5 shadow-sm",
+        buildToneClass(props.tone),
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{props.label}</p>
-          <p className="mt-2 text-2xl font-bold text-foreground">{props.value}</p>
-          <p className="mt-2 text-xs leading-5 text-muted-foreground">{props.hint}</p>
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {props.label}
+          </p>
+          <p className="mt-2 text-2xl font-bold text-foreground">
+            {props.value}
+          </p>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">
+            {props.hint}
+          </p>
         </div>
         <div className="rounded-xl bg-card/60 p-2.5">
           <Icon className="h-5 w-5" />
@@ -1387,21 +2111,39 @@ function MetricCard(props: { icon: ElementType; label: string; value: string; hi
 function SummaryItem(props: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3">
-      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{props.label}</p>
-      <div className="mt-2 text-sm font-medium text-foreground break-words">{props.value}</div>
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+        {props.label}
+      </p>
+      <div className="mt-2 text-sm font-medium text-foreground break-words">
+        {props.value}
+      </div>
     </div>
   );
 }
 
-function InlineBadge(props: { tone: "success" | "warning" | "danger" | "info"; children: ReactNode }) {
+function InlineBadge(props: {
+  tone: "success" | "warning" | "danger" | "info";
+  children: ReactNode;
+}) {
   return (
-    <span className={cn("rounded-full border px-2.5 py-0.5 text-[11px] font-medium", buildToneClass(props.tone))}>
+    <span
+      className={cn(
+        "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+        buildToneClass(props.tone),
+      )}
+    >
       {props.children}
     </span>
   );
 }
 
-function ResultCard(props: { icon: ElementType; title: string; emptyTitle: string; emptyDescription: string; children: ReactNode }) {
+function ResultCard(props: {
+  icon: ElementType;
+  title: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  children: ReactNode;
+}) {
   const Icon = props.icon;
   const hasChildren = Boolean(props.children);
   return (
@@ -1411,30 +2153,64 @@ function ResultCard(props: { icon: ElementType; title: string; emptyTitle: strin
         <p className="text-sm font-medium text-foreground">{props.title}</p>
       </div>
       <div className="mt-4">
-        {hasChildren ? props.children : <EmptyState icon={Icon} title={props.emptyTitle} description={props.emptyDescription} compact />}
+        {hasChildren ? (
+          props.children
+        ) : (
+          <EmptyState
+            icon={Icon}
+            title={props.emptyTitle}
+            description={props.emptyDescription}
+            compact
+          />
+        )}
       </div>
     </div>
   );
 }
 
-function MiniStat(props: { title: string; value: number; tone: "success" | "warning" | "danger" }) {
+function MiniStat(props: {
+  title: string;
+  value: number;
+  tone: "success" | "warning" | "danger";
+}) {
   return (
-    <div className={cn("rounded-xl border p-3 text-center", buildToneClass(props.tone))}>
-      <p className="text-lg font-bold text-foreground">{props.value.toLocaleString()}</p>
-      <p className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">{props.title}</p>
+    <div
+      className={cn(
+        "rounded-xl border p-3 text-center",
+        buildToneClass(props.tone),
+      )}
+    >
+      <p className="text-lg font-bold text-foreground">
+        {props.value.toLocaleString()}
+      </p>
+      <p className="mt-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+        {props.title}
+      </p>
     </div>
   );
 }
 
-function EmptyState(props: { icon: ElementType; title: string; description: string; compact?: boolean }) {
+function EmptyState(props: {
+  icon: ElementType;
+  title: string;
+  description: string;
+  compact?: boolean;
+}) {
   const Icon = props.icon;
   return (
-    <div className={cn("flex flex-col items-center justify-center text-center", props.compact ? "py-4" : "py-8")}>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center text-center",
+        props.compact ? "py-4" : "py-8",
+      )}
+    >
       <div className="rounded-full bg-muted/30 p-3 text-muted-foreground">
         <Icon className={cn(props.compact ? "h-5 w-5" : "h-6 w-6")} />
       </div>
       <p className="mt-3 text-sm font-medium text-foreground">{props.title}</p>
-      <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">{props.description}</p>
+      <p className="mt-1 max-w-sm text-xs leading-5 text-muted-foreground">
+        {props.description}
+      </p>
     </div>
   );
 }

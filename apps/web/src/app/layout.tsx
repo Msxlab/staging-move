@@ -19,18 +19,20 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "LocateFlow — Address & Moving Management",
+    default: "LocateFlow — Every provider tied to your address, in one place",
     template: "%s · LocateFlow",
   },
   description:
-    "Manage your addresses, services, and relocations in one place. Track providers, plan moves, and stay organized.",
+    "Track every utility, bank, insurance, and subscription tied to each of your homes. Smart reminders, document OCR, and a one-click moving checklist when you relocate.",
   keywords: [
-    "moving",
     "address management",
-    "relocation",
-    "utility providers",
+    "service provider tracker",
+    "utility tracking",
+    "subscription tracker",
+    "bill reminders",
     "moving checklist",
-    "services",
+    "household services",
+    "relocation",
   ],
   applicationName: "LocateFlow",
   authors: [{ name: "LocateFlow" }],
@@ -38,16 +40,20 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "LocateFlow",
-    title: "LocateFlow — Address & Moving Management",
+    title: "LocateFlow — Every provider tied to your address, in one place",
     description:
-      "Manage your addresses, services, and relocations in one place.",
+      "Track every utility, bank, insurance, and subscription tied to each of your homes. One dashboard. Smart reminders. Never lose track again.",
+    images: [
+      { url: "/og-image.svg", width: 1200, height: 630, alt: "LocateFlow" },
+    ],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LocateFlow — Address & Moving Management",
+    title: "LocateFlow — Every provider tied to your address, in one place",
     description:
-      "Manage your addresses, services, and relocations in one place.",
+      "Track every utility, bank, insurance, and subscription tied to each of your homes.",
+    images: ["/og-image.svg"],
   },
   robots: {
     index: true,
@@ -75,7 +81,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LocateFlow" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+        <link rel="icon" type="image/svg+xml" href="/logo-mark.svg" />
+        <link rel="mask-icon" href="/logo-mark.svg" color="#7c3aed" />
       </head>
       <body className={inter.className}>
         <QueryProvider>

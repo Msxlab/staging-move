@@ -71,8 +71,8 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Arial", "Helvetica Neue", "Helvetica", "sans-serif"],
-        mono: ["Consolas", "Courier New", "monospace"],
+        sans: ["Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        mono: ["JetBrains Mono", "Consolas", "Courier New", "monospace"],
       },
     },
   },

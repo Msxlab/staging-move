@@ -1,0 +1,4270 @@
+{
+  "generatedAt": "2026-04-18T17:23:41.413Z",
+  "rawCount": 700,
+  "sanitizedCount": 700,
+  "locationSensitiveCategories": [
+    "UTILITY_ELECTRIC",
+    "UTILITY_GAS",
+    "UTILITY_WATER",
+    "UTILITY_INTERNET",
+    "TRANSPORTATION_TRANSIT",
+    "TRANSPORTATION_TOLL"
+  ],
+  "highRiskLocalCategories": [
+    "UTILITY_WATER",
+    "TRANSPORTATION_TRANSIT",
+    "TRANSPORTATION_TOLL"
+  ],
+  "categoryStats": [
+    {
+      "category": "EDUCATION_ONLINE",
+      "label": "Online Learning",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_BANK",
+      "label": "Banks",
+      "total": 18,
+      "federal": 18,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_CREDIT_CARD",
+      "label": "Credit Cards",
+      "total": 12,
+      "federal": 12,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_AUTO",
+      "label": "Auto Insurance",
+      "total": 7,
+      "federal": 7,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_BOAT",
+      "label": "Boat Insurance",
+      "total": 1,
+      "federal": 1,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_FLOOD",
+      "label": "Flood Insurance",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_HEALTH",
+      "label": "Health Insurance",
+      "total": 44,
+      "federal": 10,
+      "state": 34,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 86
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_HOME",
+      "label": "Home Insurance",
+      "total": 6,
+      "federal": 6,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_LIFE",
+      "label": "Life Insurance",
+      "total": 5,
+      "federal": 5,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+      "label": "Motorcycle Ins.",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_PET",
+      "label": "Pet Insurance",
+      "total": 3,
+      "federal": 3,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_LOAN",
+      "label": "Loans",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FINANCIAL_MORTGAGE",
+      "label": "Mortgage",
+      "total": 6,
+      "federal": 6,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "FITNESS_GYM",
+      "label": "Fitness & Gym",
+      "total": 7,
+      "federal": 7,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_BENEFITS",
+      "label": "Benefits",
+      "total": 3,
+      "federal": 3,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_DMV",
+      "label": "DMV",
+      "total": 51,
+      "federal": 0,
+      "state": 51,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 51
+    },
+    {
+      "category": "GOVERNMENT_EDUCATION",
+      "label": "Education / FAFSA",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_EMERGENCY",
+      "label": "Emergency (FEMA)",
+      "total": 1,
+      "federal": 1,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_HEALTH",
+      "label": "Healthcare.gov",
+      "total": 3,
+      "federal": 3,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_HOUSING",
+      "label": "Housing (HUD)",
+      "total": 1,
+      "federal": 1,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_ID",
+      "label": "Passport / ID",
+      "total": 1,
+      "federal": 1,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_IMMIGRATION",
+      "label": "Immigration",
+      "total": 1,
+      "federal": 1,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_OTHER",
+      "label": "Gov. Other",
+      "total": 6,
+      "federal": 6,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_POSTAL",
+      "label": "Mail & Postal",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "GOVERNMENT_TAX",
+      "label": "Tax (IRS)",
+      "total": 3,
+      "federal": 2,
+      "state": 1,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 1
+    },
+    {
+      "category": "GOVERNMENT_VOTER",
+      "label": "Voter Registration",
+      "total": 52,
+      "federal": 1,
+      "state": 51,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 51
+    },
+    {
+      "category": "GROCERY_DELIVERY",
+      "label": "Grocery Delivery",
+      "total": 7,
+      "federal": 7,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HEALTHCARE_DENTIST",
+      "label": "Dentist",
+      "total": 1,
+      "federal": 1,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HEALTHCARE_DOCTORS",
+      "label": "Doctors",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HEALTHCARE_PHARMACY",
+      "label": "Pharmacy",
+      "total": 7,
+      "federal": 7,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HEALTHCARE_SENIOR",
+      "label": "Senior Care",
+      "total": 3,
+      "federal": 3,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HEALTHCARE_VET",
+      "label": "Veterinary",
+      "total": 6,
+      "federal": 6,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_CLEANING",
+      "label": "Cleaning",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_HOA",
+      "label": "HOA",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_HOME_SERVICE",
+      "label": "Home Services",
+      "total": 8,
+      "federal": 8,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_LAWN_CARE",
+      "label": "Lawn Care",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_MOVING",
+      "label": "Moving",
+      "total": 9,
+      "federal": 9,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_PEST_CONTROL",
+      "label": "Pest Control",
+      "total": 3,
+      "federal": 3,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_REAL_ESTATE",
+      "label": "Real Estate",
+      "total": 6,
+      "federal": 6,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_SECURITY",
+      "label": "Home Security",
+      "total": 8,
+      "federal": 8,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "HOUSING_STORAGE",
+      "label": "Storage",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "KIDS_ACTIVITY",
+      "label": "Kids Activities",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "KIDS_DAYCARE",
+      "label": "Daycare",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "KIDS_SCHOOL",
+      "label": "Schools",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "LEGAL_SERVICES",
+      "label": "Legal",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "PET_SERVICES",
+      "label": "Pet Services",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "SECURITY_IDENTITY",
+      "label": "Identity Protection",
+      "total": 4,
+      "federal": 4,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "SHOPPING_RETAIL",
+      "label": "Shopping",
+      "total": 18,
+      "federal": 12,
+      "state": 6,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 46
+    },
+    {
+      "category": "SHOPPING_SUBSCRIPTION",
+      "label": "Subscriptions",
+      "total": 17,
+      "federal": 17,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "TRANSPORTATION_AUTO",
+      "label": "Auto Services",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "TRANSPORTATION_OTHER",
+      "label": "Car Rental & Other",
+      "total": 5,
+      "federal": 5,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "TRANSPORTATION_PARKING",
+      "label": "Parking",
+      "total": 1,
+      "federal": 1,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "TRANSPORTATION_RIDESHARE",
+      "label": "Rideshare",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "TRANSPORTATION_TOLL",
+      "label": "Toll Pass",
+      "total": 14,
+      "federal": 1,
+      "state": 13,
+      "withZipRules": 2,
+      "exactRows": 0,
+      "prefixRows": 17,
+      "stateRows": 11
+    },
+    {
+      "category": "TRANSPORTATION_TRANSIT",
+      "label": "Transit",
+      "total": 66,
+      "federal": 0,
+      "state": 66,
+      "withZipRules": 33,
+      "exactRows": 0,
+      "prefixRows": 94,
+      "stateRows": 35
+    },
+    {
+      "category": "UTILITY_CABLE",
+      "label": "Cable / TV",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "UTILITY_ELECTRIC",
+      "label": "Electric",
+      "total": 71,
+      "federal": 0,
+      "state": 71,
+      "withZipRules": 15,
+      "exactRows": 0,
+      "prefixRows": 82,
+      "stateRows": 86
+    },
+    {
+      "category": "UTILITY_GAS",
+      "label": "Gas",
+      "total": 56,
+      "federal": 0,
+      "state": 56,
+      "withZipRules": 3,
+      "exactRows": 0,
+      "prefixRows": 19,
+      "stateRows": 66
+    },
+    {
+      "category": "UTILITY_INTERNET",
+      "label": "Internet",
+      "total": 17,
+      "federal": 6,
+      "state": 11,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 94
+    },
+    {
+      "category": "UTILITY_PHONE",
+      "label": "Phone",
+      "total": 15,
+      "federal": 15,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "UTILITY_TRASH",
+      "label": "Trash & Waste",
+      "total": 2,
+      "federal": 2,
+      "state": 0,
+      "withZipRules": 0,
+      "exactRows": 0,
+      "prefixRows": 0,
+      "stateRows": 0
+    },
+    {
+      "category": "UTILITY_WATER",
+      "label": "Water",
+      "total": 67,
+      "federal": 0,
+      "state": 67,
+      "withZipRules": 21,
+      "exactRows": 0,
+      "prefixRows": 68,
+      "stateRows": 48
+    }
+  ],
+  "localScopeOverbroad": [
+    {
+      "name": "ExpressToll",
+      "slug": "expresstoll",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "CO"
+      ],
+      "website": "https://www.expresstoll.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "FasTrak",
+      "slug": "fastrak",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.bayareafastrak.org",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "GeauxPass",
+      "slug": "geauxpass",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "LA"
+      ],
+      "website": "https://www.geauxpass.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Good To Go!",
+      "slug": "good-to-go",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "WA"
+      ],
+      "website": "https://www.wsdot.wa.gov/goodtogo",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "K-TAG",
+      "slug": "ktag",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "KS"
+      ],
+      "website": "https://www.ksturnpike.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "NJ E-ZPass",
+      "slug": "nj-ezpass",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "NJ"
+      ],
+      "website": "https://www.ezpassnj.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "NY E-ZPass",
+      "slug": "ny-ezpass",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "NY"
+      ],
+      "website": "https://www.e-zpassny.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "PA Turnpike E-ZPass",
+      "slug": "pa-ezpass",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "PA"
+      ],
+      "website": "https://www.paturnpike.com/ezpass",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Peach Pass",
+      "slug": "peach-pass",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "GA"
+      ],
+      "website": "https://www.peachpass.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "SunPass",
+      "slug": "sunpass",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.sunpass.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "TxTag",
+      "slug": "txtag",
+      "category": "TRANSPORTATION_TOLL",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.txtag.org",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "BART",
+      "slug": "bart",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.bart.gov",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Caltrain",
+      "slug": "caltrain",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.caltrain.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "DART",
+      "slug": "dart",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.dart.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "DART First State",
+      "slug": "dart-first-state",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "DE"
+      ],
+      "website": "https://dartfirststate.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "GoRaleigh",
+      "slug": "goraleigh",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "NC"
+      ],
+      "website": "https://goraleigh.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "GoTriangle",
+      "slug": "gotriangle",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "NC"
+      ],
+      "website": "https://gotriangle.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Houston METRO",
+      "slug": "metro-houston",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.ridemetro.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "IndyGo",
+      "slug": "indygo",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "IN"
+      ],
+      "website": "https://www.indygo.net",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "LA Metro",
+      "slug": "la-metro",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.metro.net",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Lynx",
+      "slug": "lynx",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.golynx.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "MARTA",
+      "slug": "marta",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "GA"
+      ],
+      "website": "https://www.itsmarta.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "MBTA",
+      "slug": "mbta",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "MA"
+      ],
+      "website": "https://www.mbta.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Metra",
+      "slug": "metra",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "IL"
+      ],
+      "website": "https://www.metrarail.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Metro Transit MN",
+      "slug": "metro-mn",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "MN"
+      ],
+      "website": "https://www.metrotransit.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Metro Transit St. Louis",
+      "slug": "metro-stl",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "MO"
+      ],
+      "website": "https://www.metrostlouis.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Miami-Dade Transit",
+      "slug": "miami-transit",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.miamidade.gov/transit",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "MTA",
+      "slug": "mta",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "NY"
+      ],
+      "website": "https://www.mta.info",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "New Orleans Regional Transit Authority",
+      "slug": "norta",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "LA"
+      ],
+      "website": "https://www.norta.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "NJ Transit",
+      "slug": "nj-transit",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "NJ"
+      ],
+      "website": "https://www.njtransit.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Pittsburgh Port Authority",
+      "slug": "pittsburgh-port-auth",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "PA"
+      ],
+      "website": "https://www.rideprt.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "RIPTA",
+      "slug": "ripta",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "RI"
+      ],
+      "website": "https://ripta.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "RTA Cleveland",
+      "slug": "rta-cleveland",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "OH"
+      ],
+      "website": "https://www.riderta.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "RTC Southern Nevada",
+      "slug": "rtc-snv",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "NV"
+      ],
+      "website": "https://www.rtcsnv.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "RTD",
+      "slug": "rtd",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "CO"
+      ],
+      "website": "https://www.rtd-denver.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "San Diego MTS",
+      "slug": "mts-sd",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.sdmts.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "SF Muni",
+      "slug": "muni",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.sfmta.com",
+      "risk": "high",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "TheBus",
+      "slug": "thebus-hi",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "HI"
+      ],
+      "website": "https://www.thebus.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "TriMet",
+      "slug": "trimet",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "OR"
+      ],
+      "website": "https://www.trimet.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "UTA",
+      "slug": "uta",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "UT"
+      ],
+      "website": "https://www.rideuta.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "VIA Metropolitan Transit",
+      "slug": "via-sa",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.viainfo.net",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "VTA",
+      "slug": "vta",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.vta.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "WeGo Public Transit",
+      "slug": "wego-tn",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "TN"
+      ],
+      "website": "https://www.wegotransit.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "WMATA (Metro)",
+      "slug": "wmata",
+      "category": "TRANSPORTATION_TRANSIT",
+      "scope": "STATE",
+      "states": [
+        "VA",
+        "DC",
+        "MD"
+      ],
+      "website": "https://www.wmata.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "AEP Ohio",
+      "slug": "aep-ohio",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "OH"
+      ],
+      "website": "https://www.aepohio.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Alabama Power",
+      "slug": "alabama-power",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "AL"
+      ],
+      "website": "https://www.alabamapower.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Alliant Energy",
+      "slug": "alliant-energy",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "IA",
+        "WI"
+      ],
+      "website": "https://www.alliantenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Ameren Illinois",
+      "slug": "ameren-il",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "IL"
+      ],
+      "website": "https://www.ameren.com/illinois",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Ameren Missouri",
+      "slug": "ameren-mo",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "MO",
+        "IL"
+      ],
+      "website": "https://www.ameren.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Appalachian Power WV",
+      "slug": "apco-wv",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "WV",
+        "VA"
+      ],
+      "website": "https://www.appalachianpower.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Black Hills Energy SD",
+      "slug": "bhe-sd",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "SD",
+        "CO",
+        "WY",
+        "NE",
+        "IA",
+        "KS",
+        "AR"
+      ],
+      "website": "https://www.blackhillsenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Central Maine Power",
+      "slug": "cmp-me",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "ME"
+      ],
+      "website": "https://www.cmpco.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Chugach Electric",
+      "slug": "chugach-electric",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "AK"
+      ],
+      "website": "https://www.chugachelectric.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Delmarva Power",
+      "slug": "delmarva-power-de",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "DE",
+        "MD"
+      ],
+      "website": "https://www.delmarva.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Dominion Energy",
+      "slug": "dominion",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "VA",
+        "NC",
+        "SC"
+      ],
+      "website": "https://www.dominionenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "DTE Energy",
+      "slug": "dte",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "MI"
+      ],
+      "website": "https://www.dteenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Duke Energy Florida",
+      "slug": "duke-fl",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.duke-energy.com/florida",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Duke Energy Indiana",
+      "slug": "duke-in",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "IN"
+      ],
+      "website": "https://www.duke-energy.com/indiana",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Duke Energy NC",
+      "slug": "duke-nc",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "NC",
+        "SC"
+      ],
+      "website": "https://www.duke-energy.com/north-carolina",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Entergy Arkansas",
+      "slug": "entergy-ar",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "AR"
+      ],
+      "website": "https://www.entergy-arkansas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Entergy Louisiana",
+      "slug": "entergy-la",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "LA"
+      ],
+      "website": "https://www.entergy-louisiana.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Entergy Mississippi",
+      "slug": "entergy-ms",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "MS"
+      ],
+      "website": "https://www.entergy-mississippi.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Evergy",
+      "slug": "evergy",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "KS",
+        "MO"
+      ],
+      "website": "https://www.evergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Eversource",
+      "slug": "eversource",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "MA",
+        "CT",
+        "NH"
+      ],
+      "website": "https://www.eversource.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Eversource NH",
+      "slug": "eversource-nh",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "NH",
+        "CT",
+        "MA"
+      ],
+      "website": "https://www.eversource.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "FPL (Florida Power & Light)",
+      "slug": "fpl",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.fpl.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Georgia Power",
+      "slug": "georgia-power",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "GA"
+      ],
+      "website": "https://www.georgiapower.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Green Mountain Power",
+      "slug": "gmp-vt",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "VT"
+      ],
+      "website": "https://www.greenmountainpower.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Hawaiian Electric (HECO)",
+      "slug": "heco",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "HI"
+      ],
+      "website": "https://www.hawaiianelectric.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Idaho Power",
+      "slug": "idaho-power",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "ID"
+      ],
+      "website": "https://www.idahopower.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "JCP&L",
+      "slug": "jcpl",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "NJ"
+      ],
+      "website": "https://www.firstenergycorp.com/jcpl",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Kentucky Utilities",
+      "slug": "ky-utilities",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "KY"
+      ],
+      "website": "https://www.lge-ku.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Liberty Utilities NH",
+      "slug": "liberty-nh",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "NH"
+      ],
+      "website": "https://www.libertyutilities.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "MDU Resources",
+      "slug": "mdu-nd",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "ND",
+        "MT",
+        "SD",
+        "WY"
+      ],
+      "website": "https://www.montana-dakota.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "MidAmerican Energy",
+      "slug": "midamerican",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "IA"
+      ],
+      "website": "https://www.midamericanenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Mississippi Power",
+      "slug": "mississippi-power",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "MS"
+      ],
+      "website": "https://www.mississippipower.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Mon Power",
+      "slug": "mon-power-wv",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "WV"
+      ],
+      "website": "https://www.firstenergycorp.com/monpower",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Nashville Electric Service",
+      "slug": "nes-tn",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "TN"
+      ],
+      "website": "https://www.nespower.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "NV Energy",
+      "slug": "nv-energy",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "NV"
+      ],
+      "website": "https://www.nvenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "OG&E",
+      "slug": "oge-ok",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "OK",
+        "AR"
+      ],
+      "website": "https://www.oge.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Ohio Edison",
+      "slug": "ohio-edison",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "OH"
+      ],
+      "website": "https://www.firstenergycorp.com/ohio-edison",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Orlando Utilities Commission",
+      "slug": "ouc",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.ouc.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Pacific Power",
+      "slug": "pacific-power-or",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "OR"
+      ],
+      "website": "https://www.pacificpower.net",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "PG&E",
+      "slug": "pge",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.pge.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "PNM",
+      "slug": "pnm-nm",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "NM"
+      ],
+      "website": "https://www.pnm.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Portland General Electric",
+      "slug": "pge-or",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "OR"
+      ],
+      "website": "https://www.portlandgeneral.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "PPL Electric",
+      "slug": "ppl",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "PA"
+      ],
+      "website": "https://www.pplelectric.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "PSE&G",
+      "slug": "pseg",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "NJ"
+      ],
+      "website": "https://www.pseg.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Public Service Oklahoma (PSO)",
+      "slug": "pso-ok",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "OK"
+      ],
+      "website": "https://www.psoklahoma.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Puget Sound Energy",
+      "slug": "pse-wa",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "WA"
+      ],
+      "website": "https://www.pse.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Reliant Energy",
+      "slug": "reliant",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.reliant.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Rhode Island Energy",
+      "slug": "ri-energy",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "RI"
+      ],
+      "website": "https://www.rienergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Rocky Mountain Power",
+      "slug": "rmp-ut",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "UT",
+        "WY",
+        "ID"
+      ],
+      "website": "https://www.rockymountainpower.net",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "SoCal Edison",
+      "slug": "sce",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.sce.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "SRP (Salt River Project)",
+      "slug": "srp-az",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "AZ"
+      ],
+      "website": "https://www.srpnet.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "TXU Energy",
+      "slug": "txu-energy",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.txu.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Versant Power",
+      "slug": "versant-me",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "ME"
+      ],
+      "website": "https://www.versantpower.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "We Energies",
+      "slug": "we-energies",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "WI"
+      ],
+      "website": "https://www.we-energies.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Xcel Energy",
+      "slug": "xcel-energy",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "CO",
+        "MN",
+        "WI"
+      ],
+      "website": "https://www.xcelenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Xcel Energy ND",
+      "slug": "xcel-nd",
+      "category": "UTILITY_ELECTRIC",
+      "scope": "STATE",
+      "states": [
+        "ND",
+        "MN",
+        "CO",
+        "WI",
+        "SD"
+      ],
+      "website": "https://www.xcelenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Alagasco",
+      "slug": "alagasco",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "AL"
+      ],
+      "website": "https://www.alagasco.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Atlanta Gas Light",
+      "slug": "atlanta-gas-light",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "GA"
+      ],
+      "website": "https://www.atlantagaslight.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Atmos Energy",
+      "slug": "atmos-energy",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.atmosenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Atmos Energy Kentucky",
+      "slug": "atmos-ky",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "KY"
+      ],
+      "website": "https://www.atmosenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Atmos Energy Louisiana",
+      "slug": "atmos-la",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "LA"
+      ],
+      "website": "https://www.atmosenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Atmos Energy Mississippi",
+      "slug": "atmos-ms",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "MS"
+      ],
+      "website": "https://www.atmosenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Black Hills Energy Colorado",
+      "slug": "bhe-co-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "CO"
+      ],
+      "website": "https://www.blackhillsenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Black Hills Energy Iowa",
+      "slug": "bhe-ia-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "IA"
+      ],
+      "website": "https://www.blackhillsenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Black Hills Energy Nebraska",
+      "slug": "bhe-ne-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NE"
+      ],
+      "website": "https://www.blackhillsenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Cascade Natural Gas",
+      "slug": "cascade-wa-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "WA",
+        "OR"
+      ],
+      "website": "https://www.cngc.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "CenterPoint Energy",
+      "slug": "centerpoint",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "TX"
+      ],
+      "website": "https://www.centerpointenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "CenterPoint Energy Arkansas",
+      "slug": "centerpoint-ar",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "AR"
+      ],
+      "website": "https://www.centerpointenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "CenterPoint Energy Minnesota",
+      "slug": "centerpoint-mn",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "MN"
+      ],
+      "website": "https://www.centerpointenergy.com/minnesota",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Chesapeake Utilities Delaware",
+      "slug": "chpk-de-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "DE",
+        "MD"
+      ],
+      "website": "https://www.chpkgas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Citizens Energy Group",
+      "slug": "citizens-energy-in",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "IN"
+      ],
+      "website": "https://www.citizensenergygroup.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Columbia Gas of Ohio",
+      "slug": "columbia-gas-oh",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "OH"
+      ],
+      "website": "https://www.columbiagasohio.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Columbia Gas of Pennsylvania",
+      "slug": "columbia-gas-pa",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "PA"
+      ],
+      "website": "https://www.columbiagaspa.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Consumers Energy",
+      "slug": "consumers-energy",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "MI"
+      ],
+      "website": "https://www.consumersenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Dominion Energy South Carolina Gas",
+      "slug": "dominion-sc-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "SC"
+      ],
+      "website": "https://www.dominionenergy.com/south-carolina",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Dominion Energy Utah",
+      "slug": "dominion-ut-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "UT",
+        "WY",
+        "ID"
+      ],
+      "website": "https://www.dominionenergy.com/utah",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Elizabethtown Gas",
+      "slug": "elizabethtown-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NJ"
+      ],
+      "website": "https://www.southerncompanygas.com/elizabethtown-gas",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "ENSTAR Natural Gas",
+      "slug": "enstar-ak",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "AK"
+      ],
+      "website": "https://www.enstarnaturalgas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Georgia Natural Gas",
+      "slug": "gng",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "GA"
+      ],
+      "website": "https://www.gng.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Hawaii Gas",
+      "slug": "hawaii-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "HI"
+      ],
+      "website": "https://www.hawaiigas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Intermountain Gas",
+      "slug": "intgas-id",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "ID"
+      ],
+      "website": "https://www.intgas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Kansas Gas Service",
+      "slug": "kgs-ks",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "KS"
+      ],
+      "website": "https://www.kansasgasservice.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "MDU Resources South Dakota Gas",
+      "slug": "mdu-sd-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "SD"
+      ],
+      "website": "https://www.montana-dakota.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Minnesota Energy Resources",
+      "slug": "mn-energy-resources",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "MN"
+      ],
+      "website": "https://www.minnesotaenergyresources.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Montana-Dakota Utilities",
+      "slug": "mdu",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "ND",
+        "SD",
+        "WY"
+      ],
+      "website": "https://www.montana-dakota.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Mountaineer Gas",
+      "slug": "mountaineer-wv",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "WV"
+      ],
+      "website": "https://www.mountaineergas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "National Grid MA",
+      "slug": "national-grid-ma",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "MA"
+      ],
+      "website": "https://www.nationalgridus.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "National Grid NY",
+      "slug": "national-grid-ny",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NY"
+      ],
+      "website": "https://www.nationalgridus.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "New Mexico Gas Company",
+      "slug": "nmgas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NM"
+      ],
+      "website": "https://www.nmgco.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "NJ Natural Gas",
+      "slug": "njng",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NJ"
+      ],
+      "website": "https://www.njng.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "NorthWestern Energy",
+      "slug": "nwe-mt",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "MT",
+        "SD",
+        "NE"
+      ],
+      "website": "https://www.northwesternenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "NW Natural Gas",
+      "slug": "nw-natural",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "OR"
+      ],
+      "website": "https://www.nwnatural.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Oklahoma Natural Gas (ONE Gas)",
+      "slug": "ong-ok",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "OK"
+      ],
+      "website": "https://www.oklahomanaturalgas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Peoples Gas",
+      "slug": "peoples-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "IL"
+      ],
+      "website": "https://www.peoplesgasdelivery.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Piedmont Natural Gas",
+      "slug": "piedmont-carolinas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NC",
+        "SC"
+      ],
+      "website": "https://www.piedmontng.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Piedmont Natural Gas Tennessee",
+      "slug": "piedmont-tn",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "TN",
+        "NC",
+        "SC"
+      ],
+      "website": "https://www.piedmontng.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "PSNC Energy",
+      "slug": "psnc",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NC"
+      ],
+      "website": "https://www.psncenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Rhode Island Energy Gas",
+      "slug": "ri-energy-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "RI"
+      ],
+      "website": "https://www.rienergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "SoCal Gas",
+      "slug": "socalgas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.socalgas.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Source Gas Distribution Wyoming",
+      "slug": "source-gas-wy",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "WY"
+      ],
+      "website": "https://www.blackhillsenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Southern Connecticut Gas",
+      "slug": "socogas-ct",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "CT"
+      ],
+      "website": "https://www.soconngas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Southwest Gas",
+      "slug": "southwest-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "AZ",
+        "NV"
+      ],
+      "website": "https://www.swgas.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Spire Missouri",
+      "slug": "spire-mo",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "MO"
+      ],
+      "website": "https://www.spireenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Summit Natural Gas of Maine",
+      "slug": "summit-me",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "ME"
+      ],
+      "website": "https://www.summitnaturalgas.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "TECO Peoples Gas",
+      "slug": "teco-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.tecoenergy.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "UGI Utilities",
+      "slug": "ugi",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "PA"
+      ],
+      "website": "https://www.ugi.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Unitil New Hampshire",
+      "slug": "unitil-nh",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "NH",
+        "MA"
+      ],
+      "website": "https://www.unitil.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Wisconsin Public Service Gas",
+      "slug": "wps-wi-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "WI"
+      ],
+      "website": "https://www.wisconsinpublicservice.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Xcel Energy North Dakota Gas",
+      "slug": "xcel-nd-gas",
+      "category": "UTILITY_GAS",
+      "scope": "STATE",
+      "states": [
+        "ND"
+      ],
+      "website": "https://www.xcelenergy.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "CenturyLink (Lumen)",
+      "slug": "centurylink",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "AL",
+        "AZ",
+        "AR",
+        "CO",
+        "FL",
+        "GA",
+        "ID",
+        "IL",
+        "IN",
+        "IA",
+        "KS",
+        "LA",
+        "MI",
+        "MN",
+        "MS",
+        "MO",
+        "MT",
+        "NE",
+        "NV",
+        "NM",
+        "NC",
+        "OH",
+        "OK",
+        "OR",
+        "PA",
+        "TX",
+        "UT",
+        "VA",
+        "WA",
+        "WI"
+      ],
+      "website": "https://www.centurylink.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Consolidated Communications VT",
+      "slug": "consolidated-vt",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "VT",
+        "NH",
+        "ME"
+      ],
+      "website": "https://www.consolidated.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Cox Communications",
+      "slug": "cox",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "AZ",
+        "AR",
+        "CA",
+        "CT",
+        "FL",
+        "GA",
+        "ID",
+        "IA",
+        "KS",
+        "LA",
+        "NE",
+        "NV",
+        "OH",
+        "OK",
+        "RI",
+        "VA"
+      ],
+      "website": "https://www.cox.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Frontier Communications",
+      "slug": "frontier",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "AL",
+        "AZ",
+        "CA",
+        "CT",
+        "FL",
+        "IL",
+        "IN",
+        "NY",
+        "OH",
+        "OR",
+        "PA",
+        "TX",
+        "WA",
+        "WV",
+        "WI"
+      ],
+      "website": "https://www.frontier.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "GCI",
+      "slug": "gci-ak",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "AK"
+      ],
+      "website": "https://www.gci.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Google Fiber",
+      "slug": "google-fiber",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "TX",
+        "NC",
+        "TN",
+        "GA",
+        "MO",
+        "KS",
+        "UT",
+        "CO",
+        "AZ",
+        "NE",
+        "NV",
+        "IA"
+      ],
+      "website": "https://fiber.google.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Hawaiian Telcom",
+      "slug": "hawaiian-telcom",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "HI"
+      ],
+      "website": "https://www.hawaiiantel.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Mediacom",
+      "slug": "mediacom-ia",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "IA"
+      ],
+      "website": "https://www.mediacomcable.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Midco",
+      "slug": "midco-nd",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "ND",
+        "SD",
+        "MN",
+        "WI",
+        "KS"
+      ],
+      "website": "https://www.midco.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Optimum",
+      "slug": "optimum",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "NY",
+        "NJ",
+        "CT"
+      ],
+      "website": "https://www.optimum.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Spectrum Maine",
+      "slug": "spectrum-me",
+      "category": "UTILITY_INTERNET",
+      "scope": "STATE",
+      "states": [
+        "ME",
+        "NY",
+        "OH",
+        "TX",
+        "WI",
+        "NC",
+        "CA"
+      ],
+      "website": "https://www.spectrum.com",
+      "risk": "medium",
+      "reason": "location-sensitive category has only state coverage"
+    },
+    {
+      "name": "Albuquerque Bernalillo County Water Utility",
+      "slug": "abcwua-nm",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "NM"
+      ],
+      "website": "https://www.abcwua.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Anchorage Water & Wastewater Utility",
+      "slug": "anchorage-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "AK"
+      ],
+      "website": "https://www.awwu.biz",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Aquarion Water",
+      "slug": "aquarion-ct",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "CT",
+        "MA",
+        "NH"
+      ],
+      "website": "https://www.aquarionwater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Artesian Water Company",
+      "slug": "artesian-de",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "DE"
+      ],
+      "website": "https://www.artesianwater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Atlanta Watershed Management",
+      "slug": "atlanta-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "GA"
+      ],
+      "website": "https://www.atlantawatershed.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Birmingham Water Works",
+      "slug": "bwwb",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "AL"
+      ],
+      "website": "https://www.bwwb.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Board of Water Supply (Honolulu)",
+      "slug": "honolulu-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "HI"
+      ],
+      "website": "https://www.boardofwatersupply.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Boston Water and Sewer Commission",
+      "slug": "bwsc-ma",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "MA"
+      ],
+      "website": "https://www.bwsc.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Burlington Department of Public Works Water",
+      "slug": "burlington-water-vt",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "VT"
+      ],
+      "website": "https://www.burlingtonvt.gov/DPW/Water",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Central Arkansas Water",
+      "slug": "central-ar-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "AR"
+      ],
+      "website": "https://carkw.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Charleston Water System",
+      "slug": "charleston-water-sc",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "SC"
+      ],
+      "website": "https://www.charlestonwater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Cheyenne Board of Public Utilities",
+      "slug": "cheyenne-bopu-wy",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "WY"
+      ],
+      "website": "https://www.cheyennebopu.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "City of Billings Water",
+      "slug": "billings-water-mt",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "MT"
+      ],
+      "website": "https://ci.billings.mt.us/160/Public-Works",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Cleveland Water",
+      "slug": "cleveland-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "OH"
+      ],
+      "website": "https://www.clevelandwater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Durham Water",
+      "slug": "durham-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "NC"
+      ],
+      "website": "https://www.durhamnc.gov/608/Water-Management",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Fargo Water",
+      "slug": "fargo-water-nd",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "ND"
+      ],
+      "website": "https://www.fargond.gov/city-government/departments/water",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Great Lakes Water Authority",
+      "slug": "glwa-mi",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "MI"
+      ],
+      "website": "https://www.glwater.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Illinois American Water",
+      "slug": "il-american-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "IL"
+      ],
+      "website": "https://www.amwater.com/ilaw",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Indiana American Water",
+      "slug": "indiana-american-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "IN"
+      ],
+      "website": "https://www.amwater.com/inaw",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Iowa American Water",
+      "slug": "iowa-american-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "IA"
+      ],
+      "website": "https://www.amwater.com/iaaw",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Jackson Water",
+      "slug": "jackson-water-ms",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "MS"
+      ],
+      "website": "https://www.jacksonms.gov/public-works",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "JEA",
+      "slug": "jea",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.jea.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "LADWP",
+      "slug": "ladwp",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "CA"
+      ],
+      "website": "https://www.ladwp.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Louisville Water Company",
+      "slug": "louisville-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "KY"
+      ],
+      "website": "https://www.louisvillewater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Maine Water Company",
+      "slug": "maine-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "ME"
+      ],
+      "website": "https://www.mainewater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Metropolitan Utilities District (Omaha)",
+      "slug": "mud-ne",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "NE"
+      ],
+      "website": "https://www.mudomaha.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Miami-Dade Water & Sewer",
+      "slug": "miami-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.miamidade.gov/water",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Minneapolis Water",
+      "slug": "minneapolis-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "MN"
+      ],
+      "website": "https://www2.minneapolismn.gov/government/departments/public-works/water",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Missouri American Water",
+      "slug": "missouri-american-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "MO"
+      ],
+      "website": "https://www.amwater.com/moaw",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "New Jersey American Water",
+      "slug": "nj-american-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "NJ"
+      ],
+      "website": "https://www.amwater.com/njaw",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Oklahoma City Utilities",
+      "slug": "okc-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "OK"
+      ],
+      "website": "https://www.okc.gov/departments/utilities",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Pennichuck Water",
+      "slug": "pennichuck-nh",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "NH"
+      ],
+      "website": "https://www.pennichuck.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Pittsburgh Water & Sewer",
+      "slug": "pittsburgh-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "PA"
+      ],
+      "website": "https://pittsburghwater.gov",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Portland Water Bureau",
+      "slug": "portland-water-or",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "OR"
+      ],
+      "website": "https://www.portland.gov/water",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Providence Water",
+      "slug": "providence-water-ri",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "RI"
+      ],
+      "website": "https://www.provwater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Salt Lake City Public Utilities",
+      "slug": "slc-water-ut",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "UT"
+      ],
+      "website": "https://www.slc.gov/utilities",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Seattle Public Utilities",
+      "slug": "spu-wa",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "WA"
+      ],
+      "website": "https://www.seattle.gov/utilities",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Sewerage & Water Board of New Orleans",
+      "slug": "swbno",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "LA"
+      ],
+      "website": "https://www.swbno.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Sioux Falls Water",
+      "slug": "sioux-falls-water-sd",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "SD"
+      ],
+      "website": "https://www.siouxfalls.org/public-works/water",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Suez Idaho (Veolia)",
+      "slug": "veolia-id",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "ID"
+      ],
+      "website": "https://www.mywater.veolia.us",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Tampa Water Department",
+      "slug": "tampa-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "FL"
+      ],
+      "website": "https://www.tampa.gov/water",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Tulsa Water",
+      "slug": "tulsa-water-ok",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "OK"
+      ],
+      "website": "https://www.cityoftulsa.org/government/departments/water-and-sewer",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "Virginia American Water",
+      "slug": "va-american-water",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "VA"
+      ],
+      "website": "https://www.amwater.com/vaaw",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "WaterOne",
+      "slug": "waterone-ks",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "KS"
+      ],
+      "website": "https://www.waterone.org",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "West Virginia American Water",
+      "slug": "wvaw",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "WV"
+      ],
+      "website": "https://www.amwater.com/wvaw",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    },
+    {
+      "name": "WSSC Water",
+      "slug": "wssc-md",
+      "category": "UTILITY_WATER",
+      "scope": "STATE",
+      "states": [
+        "MD"
+      ],
+      "website": "https://www.wsscwater.com",
+      "risk": "high",
+      "reason": "locality signal in name/description with state-only coverage"
+    }
+  ],
+  "federalAddressQualified": [
+    {
+      "name": "Amazon Fresh",
+      "slug": "amazon-fresh",
+      "category": "GROCERY_DELIVERY",
+      "website": "https://www.amazon.com/fresh",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Blue Apron",
+      "slug": "blue-apron",
+      "category": "GROCERY_DELIVERY",
+      "website": "https://www.blueapron.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "DoorDash",
+      "slug": "doordash",
+      "category": "GROCERY_DELIVERY",
+      "website": "https://www.doordash.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "HelloFresh",
+      "slug": "hellofresh",
+      "category": "GROCERY_DELIVERY",
+      "website": "https://www.hellofresh.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Instacart",
+      "slug": "instacart",
+      "category": "GROCERY_DELIVERY",
+      "website": "https://www.instacart.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Shipt",
+      "slug": "shipt",
+      "category": "GROCERY_DELIVERY",
+      "website": "https://www.shipt.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Walmart+ Delivery",
+      "slug": "walmart-plus",
+      "category": "GROCERY_DELIVERY",
+      "website": "https://www.walmart.com/plus",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Angi (Angie's List)",
+      "slug": "angi",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.angi.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Home Depot",
+      "slug": "home-depot",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.homedepot.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Lowe's",
+      "slug": "lowes",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.lowes.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Ring",
+      "slug": "ring-security",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.ring.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Roto-Rooter",
+      "slug": "roto-rooter",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.rotorooter.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "ServPro",
+      "slug": "servpro",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.servpro.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "TaskRabbit",
+      "slug": "taskrabbit",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.taskrabbit.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Thumbtack",
+      "slug": "thumbtack",
+      "category": "HOUSING_HOME_SERVICE",
+      "website": "https://www.thumbtack.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "1-800-GOT-JUNK",
+      "slug": "got-junk",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.1800gotjunk.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Allied Van Lines",
+      "slug": "allied-van-lines",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.allied.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Budget Truck Rental",
+      "slug": "budget-truck",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.budgettruck.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Mayflower Moving",
+      "slug": "mayflower",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.mayflower.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Penske Truck Rental",
+      "slug": "penske",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.pensketruckrental.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "PODS",
+      "slug": "pods",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.pods.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Two Men and a Truck",
+      "slug": "two-men-truck",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.twomenandatruck.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "U-Haul",
+      "slug": "uhaul",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.uhaul.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "United Van Lines",
+      "slug": "united-van-lines",
+      "category": "HOUSING_MOVING",
+      "website": "https://www.unitedvanlines.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "AT&T Fiber",
+      "slug": "att-fiber",
+      "category": "UTILITY_INTERNET",
+      "website": "https://www.att.com/internet/fiber",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Spectrum",
+      "slug": "spectrum",
+      "category": "UTILITY_INTERNET",
+      "website": "https://www.spectrum.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Starlink",
+      "slug": "starlink",
+      "category": "UTILITY_INTERNET",
+      "website": "https://www.starlink.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "T-Mobile Home Internet",
+      "slug": "t-mobile-home",
+      "category": "UTILITY_INTERNET",
+      "website": "https://www.t-mobile.com/home-internet",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Verizon Fios",
+      "slug": "verizon-fios",
+      "category": "UTILITY_INTERNET",
+      "website": "https://www.verizon.com/fios",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Xfinity (Comcast)",
+      "slug": "xfinity",
+      "category": "UTILITY_INTERNET",
+      "website": "https://www.xfinity.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Republic Services",
+      "slug": "republic-services",
+      "category": "UTILITY_TRASH",
+      "website": "https://www.republicservices.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    },
+    {
+      "name": "Waste Management",
+      "slug": "waste-management",
+      "category": "UTILITY_TRASH",
+      "website": "https://www.wm.com",
+      "risk": "medium",
+      "reason": "national brand likely requires address-level serviceability check"
+    }
+  ],
+  "stateRiskMatrix": [
+    {
+      "state": "CA",
+      "locationSensitiveProviders": 23,
+      "highRiskLocalProviders": 8,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 7
+      }
+    },
+    {
+      "state": "FL",
+      "locationSensitiveProviders": 21,
+      "highRiskLocalProviders": 7,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 4,
+        "UTILITY_WATER": 3,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 2
+      }
+    },
+    {
+      "state": "TX",
+      "locationSensitiveProviders": 26,
+      "highRiskLocalProviders": 4,
+      "categories": {
+        "UTILITY_INTERNET": 10,
+        "TRANSPORTATION_TOLL": 3,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_GAS": 2,
+        "TRANSPORTATION_TRANSIT": 5,
+        "UTILITY_WATER": 4
+      }
+    },
+    {
+      "state": "PA",
+      "locationSensitiveProviders": 19,
+      "highRiskLocalProviders": 4,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 2,
+        "TRANSPORTATION_TRANSIT": 3,
+        "UTILITY_WATER": 2,
+        "UTILITY_GAS": 2
+      }
+    },
+    {
+      "state": "NC",
+      "locationSensitiveProviders": 20,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 3,
+        "UTILITY_GAS": 3,
+        "TRANSPORTATION_TRANSIT": 2
+      }
+    },
+    {
+      "state": "GA",
+      "locationSensitiveProviders": 16,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 1,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 2
+      }
+    },
+    {
+      "state": "NJ",
+      "locationSensitiveProviders": 16,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 2,
+        "UTILITY_GAS": 2
+      }
+    },
+    {
+      "state": "LA",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 2,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "MA",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 6,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_GAS": 2,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_WATER": 3
+      }
+    },
+    {
+      "state": "MD",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 6,
+        "TRANSPORTATION_TOLL": 1,
+        "TRANSPORTATION_TRANSIT": 2,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_GAS": 2,
+        "UTILITY_WATER": 1
+      }
+    },
+    {
+      "state": "NH",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_WATER": 2,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "DE",
+      "locationSensitiveProviders": 11,
+      "highRiskLocalProviders": 3,
+      "categories": {
+        "UTILITY_INTERNET": 6,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "IL",
+      "locationSensitiveProviders": 20,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_GAS": 2,
+        "TRANSPORTATION_TRANSIT": 3,
+        "UTILITY_WATER": 2
+      }
+    },
+    {
+      "state": "OH",
+      "locationSensitiveProviders": 19,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 10,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 3,
+        "TRANSPORTATION_TRANSIT": 2
+      }
+    },
+    {
+      "state": "CO",
+      "locationSensitiveProviders": 17,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 3,
+        "TRANSPORTATION_TRANSIT": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "KS",
+      "locationSensitiveProviders": 17,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 10,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "NY",
+      "locationSensitiveProviders": 16,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "SD",
+      "locationSensitiveProviders": 16,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 3,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "VA",
+      "locationSensitiveProviders": 16,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "TRANSPORTATION_TRANSIT": 2,
+        "UTILITY_WATER": 2,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "MN",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 2
+      }
+    },
+    {
+      "state": "MO",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 2
+      }
+    },
+    {
+      "state": "OK",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 2,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "OR",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_GAS": 2,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_WATER": 1
+      }
+    },
+    {
+      "state": "WA",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 2,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "WY",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 6,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 3,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "IN",
+      "locationSensitiveProviders": 14,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 1
+      }
+    },
+    {
+      "state": "HI",
+      "locationSensitiveProviders": 13,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 2,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "ND",
+      "locationSensitiveProviders": 13,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 2
+      }
+    },
+    {
+      "state": "UT",
+      "locationSensitiveProviders": 13,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "RI",
+      "locationSensitiveProviders": 12,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "KY",
+      "locationSensitiveProviders": 11,
+      "highRiskLocalProviders": 2,
+      "categories": {
+        "UTILITY_INTERNET": 6,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "IA",
+      "locationSensitiveProviders": 16,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 10,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "CT",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "NE",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 2
+      }
+    },
+    {
+      "state": "NV",
+      "locationSensitiveProviders": 15,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 9,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_GAS": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 2
+      }
+    },
+    {
+      "state": "AR",
+      "locationSensitiveProviders": 14,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 3,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "ID",
+      "locationSensitiveProviders": 14,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 2
+      }
+    },
+    {
+      "state": "ME",
+      "locationSensitiveProviders": 14,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "SC",
+      "locationSensitiveProviders": 14,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 6,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 3,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "AL",
+      "locationSensitiveProviders": 13,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 8,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "MS",
+      "locationSensitiveProviders": 13,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "TN",
+      "locationSensitiveProviders": 13,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "WV",
+      "locationSensitiveProviders": 13,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "AK",
+      "locationSensitiveProviders": 12,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "DC",
+      "locationSensitiveProviders": 12,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 6,
+        "TRANSPORTATION_TOLL": 1,
+        "TRANSPORTATION_TRANSIT": 2,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1
+      }
+    },
+    {
+      "state": "MI",
+      "locationSensitiveProviders": 12,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "MT",
+      "locationSensitiveProviders": 12,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "NM",
+      "locationSensitiveProviders": 12,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_WATER": 1,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "VT",
+      "locationSensitiveProviders": 12,
+      "highRiskLocalProviders": 1,
+      "categories": {
+        "UTILITY_INTERNET": 7,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 1,
+        "UTILITY_GAS": 1,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "AZ",
+      "locationSensitiveProviders": 18,
+      "highRiskLocalProviders": 0,
+      "categories": {
+        "UTILITY_INTERNET": 10,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 2,
+        "UTILITY_WATER": 3,
+        "UTILITY_GAS": 1,
+        "TRANSPORTATION_TRANSIT": 1
+      }
+    },
+    {
+      "state": "WI",
+      "locationSensitiveProviders": 18,
+      "highRiskLocalProviders": 0,
+      "categories": {
+        "UTILITY_INTERNET": 10,
+        "TRANSPORTATION_TOLL": 1,
+        "UTILITY_ELECTRIC": 4,
+        "UTILITY_WATER": 1,
+        "TRANSPORTATION_TRANSIT": 1,
+        "UTILITY_GAS": 1
+      }
+    }
+  ]
+}

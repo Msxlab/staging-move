@@ -94,28 +94,32 @@ export function ProvidersClient({
   initialProviders,
   addresses,
   initialState,
+  initialZip,
   initialAddressId,
 }: {
   initialProviders: ProviderItem[];
   addresses: AddressOption[];
   initialState: string | null;
+  initialZip: string | null;
   initialAddressId: string | null;
 }) {
   const [providers, setProviders] = useState<ProviderItem[]>(initialProviders);
   const [loading, setLoading] = useState(false);
   const [selectedState, setSelectedState] = useState<string | null>(initialState);
+  const [selectedZip, setSelectedZip] = useState<string | null>(initialZip);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(initialAddressId);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [recs, setRecs] = useState<RecommendationsResponse | null>(null);
   const [recsLoading, setRecsLoading] = useState(false);
 
-  // Load providers for selected state via the public API (cached/revalidated server-side)
-  const fetchProviders = useCallback(async (state: string | null, q: string, category: string | null) => {
+  // Load providers for selected state/zip via the public API (cached/revalidated server-side)
+  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string, category: string | null) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (state) params.set("state", state);
+      if (zip) params.set("zip", zip);
       if (q) params.set("q", q);
       if (category) params.set("category", category);
       const res = await fetch(`/api/providers?${params.toString()}`);
@@ -149,11 +153,11 @@ export function ProvidersClient({
     fetchRecommendations(selectedAddressId);
   }, [selectedAddressId, fetchRecommendations]);
 
-  // Debounced server-side search when q or category or state change
+  // Debounced server-side search when q or category or state/zip change
   useEffect(() => {
-    const t = setTimeout(() => fetchProviders(selectedState, search.trim(), categoryFilter), 250);
+    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim(), categoryFilter), 250);
     return () => clearTimeout(t);
-  }, [selectedState, search, categoryFilter, fetchProviders]);
+  }, [selectedState, selectedZip, search, categoryFilter, fetchProviders]);
 
   // Build distinct categories from visible providers, sorted by provider count
   const categoryCounts = useMemo(() => {
@@ -175,10 +179,12 @@ export function ProvidersClient({
     const match = addresses.find((a) => a.id === addressId) || null;
     setSelectedAddressId(match?.id ?? null);
     setSelectedState(match?.state ?? null);
+    setSelectedZip(match?.zip ?? null);
   };
 
   const onStateChange = (state: string) => {
     setSelectedState(state || null);
+    setSelectedZip(null);
   };
 
   return (

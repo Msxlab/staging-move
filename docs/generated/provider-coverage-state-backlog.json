@@ -1,0 +1,1025 @@
+{
+  "generatedAt": "2026-04-18T17:41:23.376Z",
+  "states": [
+    {
+      "state": "TX",
+      "totalProviders": 26,
+      "modeledAsStateOnly": 12,
+      "resolved": 16,
+      "partial": 4,
+      "blocked": 6,
+      "zipReady": 5,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 6,
+      "manualResearch": 9,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "NC",
+      "totalProviders": 20,
+      "modeledAsStateOnly": 11,
+      "resolved": 11,
+      "partial": 1,
+      "blocked": 8,
+      "zipReady": 3,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 3,
+      "manualResearch": 9,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "FL",
+      "totalProviders": 21,
+      "modeledAsStateOnly": 13,
+      "resolved": 12,
+      "partial": 5,
+      "blocked": 4,
+      "zipReady": 3,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 4,
+      "manualResearch": 8,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "KS",
+      "totalProviders": 17,
+      "modeledAsStateOnly": 9,
+      "resolved": 8,
+      "partial": 4,
+      "blocked": 5,
+      "zipReady": 1,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 2,
+      "manualResearch": 8,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "WI",
+      "totalProviders": 18,
+      "modeledAsStateOnly": 9,
+      "resolved": 7,
+      "partial": 5,
+      "blocked": 6,
+      "zipReady": 4,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
+      "manualResearch": 8,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "OK",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 6,
+      "partial": 5,
+      "blocked": 4,
+      "zipReady": 1,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
+      "manualResearch": 8,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "IL",
+      "totalProviders": 20,
+      "modeledAsStateOnly": 7,
+      "resolved": 12,
+      "partial": 2,
+      "blocked": 6,
+      "zipReady": 6,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 7,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "NE",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 6,
+      "partial": 6,
+      "blocked": 3,
+      "zipReady": 1,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 1,
+      "manualResearch": 7,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "AZ",
+      "totalProviders": 18,
+      "modeledAsStateOnly": 6,
+      "resolved": 10,
+      "partial": 3,
+      "blocked": 5,
+      "zipReady": 3,
+      "liveAddressCheck": 7,
+      "polygonOrCorridor": 1,
+      "manualResearch": 7,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "SC",
+      "totalProviders": 14,
+      "modeledAsStateOnly": 6,
+      "resolved": 6,
+      "partial": 2,
+      "blocked": 6,
+      "zipReady": 2,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 1,
+      "manualResearch": 7,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "IA",
+      "totalProviders": 16,
+      "modeledAsStateOnly": 9,
+      "resolved": 8,
+      "partial": 4,
+      "blocked": 4,
+      "zipReady": 3,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 1,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "OH",
+      "totalProviders": 19,
+      "modeledAsStateOnly": 9,
+      "resolved": 10,
+      "partial": 5,
+      "blocked": 4,
+      "zipReady": 5,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "MN",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 8,
+      "resolved": 6,
+      "partial": 5,
+      "blocked": 4,
+      "zipReady": 3,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "OR",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 8,
+      "resolved": 7,
+      "partial": 5,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "PA",
+      "totalProviders": 19,
+      "modeledAsStateOnly": 8,
+      "resolved": 11,
+      "partial": 4,
+      "blocked": 4,
+      "zipReady": 4,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 4,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "SD",
+      "totalProviders": 16,
+      "modeledAsStateOnly": 8,
+      "resolved": 8,
+      "partial": 4,
+      "blocked": 4,
+      "zipReady": 4,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "AR",
+      "totalProviders": 14,
+      "modeledAsStateOnly": 7,
+      "resolved": 6,
+      "partial": 5,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "LA",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 6,
+      "partial": 5,
+      "blocked": 4,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "WY",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 8,
+      "partial": 5,
+      "blocked": 2,
+      "zipReady": 3,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "WA",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 6,
+      "resolved": 8,
+      "partial": 2,
+      "blocked": 5,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "TN",
+      "totalProviders": 13,
+      "modeledAsStateOnly": 4,
+      "resolved": 6,
+      "partial": 3,
+      "blocked": 4,
+      "zipReady": 0,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 6,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "CO",
+      "totalProviders": 17,
+      "modeledAsStateOnly": 8,
+      "resolved": 8,
+      "partial": 6,
+      "blocked": 3,
+      "zipReady": 3,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 4,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "CT",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 8,
+      "partial": 3,
+      "blocked": 4,
+      "zipReady": 3,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 1,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "NH",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 9,
+      "partial": 3,
+      "blocked": 3,
+      "zipReady": 3,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "ME",
+      "totalProviders": 14,
+      "modeledAsStateOnly": 6,
+      "resolved": 7,
+      "partial": 3,
+      "blocked": 4,
+      "zipReady": 1,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 2,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "VA",
+      "totalProviders": 16,
+      "modeledAsStateOnly": 6,
+      "resolved": 9,
+      "partial": 2,
+      "blocked": 5,
+      "zipReady": 4,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "AL",
+      "totalProviders": 13,
+      "modeledAsStateOnly": 5,
+      "resolved": 7,
+      "partial": 2,
+      "blocked": 4,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "MS",
+      "totalProviders": 13,
+      "modeledAsStateOnly": 5,
+      "resolved": 6,
+      "partial": 4,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "RI",
+      "totalProviders": 12,
+      "modeledAsStateOnly": 5,
+      "resolved": 5,
+      "partial": 4,
+      "blocked": 3,
+      "zipReady": 0,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "AK",
+      "totalProviders": 12,
+      "modeledAsStateOnly": 4,
+      "resolved": 6,
+      "partial": 2,
+      "blocked": 4,
+      "zipReady": 0,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "MI",
+      "totalProviders": 12,
+      "modeledAsStateOnly": 4,
+      "resolved": 6,
+      "partial": 2,
+      "blocked": 4,
+      "zipReady": 2,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 1,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "MT",
+      "totalProviders": 12,
+      "modeledAsStateOnly": 4,
+      "resolved": 6,
+      "partial": 3,
+      "blocked": 3,
+      "zipReady": 1,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 5,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "CA",
+      "totalProviders": 23,
+      "modeledAsStateOnly": 14,
+      "resolved": 16,
+      "partial": 4,
+      "blocked": 3,
+      "zipReady": 5,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 8,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "GA",
+      "totalProviders": 16,
+      "modeledAsStateOnly": 9,
+      "resolved": 9,
+      "partial": 4,
+      "blocked": 3,
+      "zipReady": 4,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "NJ",
+      "totalProviders": 16,
+      "modeledAsStateOnly": 8,
+      "resolved": 9,
+      "partial": 5,
+      "blocked": 2,
+      "zipReady": 5,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 3,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "ID",
+      "totalProviders": 14,
+      "modeledAsStateOnly": 7,
+      "resolved": 8,
+      "partial": 3,
+      "blocked": 3,
+      "zipReady": 4,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "MA",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 11,
+      "partial": 2,
+      "blocked": 2,
+      "zipReady": 5,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "IN",
+      "totalProviders": 14,
+      "modeledAsStateOnly": 6,
+      "resolved": 8,
+      "partial": 2,
+      "blocked": 4,
+      "zipReady": 3,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "ND",
+      "totalProviders": 13,
+      "modeledAsStateOnly": 6,
+      "resolved": 6,
+      "partial": 4,
+      "blocked": 3,
+      "zipReady": 4,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 1,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "NV",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 6,
+      "resolved": 8,
+      "partial": 3,
+      "blocked": 4,
+      "zipReady": 3,
+      "liveAddressCheck": 6,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "NY",
+      "totalProviders": 16,
+      "modeledAsStateOnly": 6,
+      "resolved": 10,
+      "partial": 3,
+      "blocked": 3,
+      "zipReady": 4,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 3,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "UT",
+      "totalProviders": 13,
+      "modeledAsStateOnly": 6,
+      "resolved": 8,
+      "partial": 2,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "MD",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 4,
+      "resolved": 10,
+      "partial": 1,
+      "blocked": 4,
+      "zipReady": 5,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "NM",
+      "totalProviders": 12,
+      "modeledAsStateOnly": 4,
+      "resolved": 8,
+      "partial": 1,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "DC",
+      "totalProviders": 12,
+      "modeledAsStateOnly": 1,
+      "resolved": 7,
+      "partial": 2,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 4,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "MO",
+      "totalProviders": 15,
+      "modeledAsStateOnly": 7,
+      "resolved": 11,
+      "partial": 1,
+      "blocked": 3,
+      "zipReady": 4,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 3,
+      "manualResearch": 3,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "HI",
+      "totalProviders": 13,
+      "modeledAsStateOnly": 5,
+      "resolved": 8,
+      "partial": 2,
+      "blocked": 3,
+      "zipReady": 2,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 3,
+      "manualResearch": 3,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "WV",
+      "totalProviders": 13,
+      "modeledAsStateOnly": 5,
+      "resolved": 8,
+      "partial": 2,
+      "blocked": 3,
+      "zipReady": 4,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
+      "manualResearch": 3,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "VT",
+      "totalProviders": 12,
+      "modeledAsStateOnly": 3,
+      "resolved": 7,
+      "partial": 2,
+      "blocked": 3,
+      "zipReady": 3,
+      "liveAddressCheck": 5,
+      "polygonOrCorridor": 1,
+      "manualResearch": 3,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "DE",
+      "totalProviders": 11,
+      "modeledAsStateOnly": 4,
+      "resolved": 8,
+      "partial": 1,
+      "blocked": 2,
+      "zipReady": 3,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 2,
+      "manualResearch": 2,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    },
+    {
+      "state": "KY",
+      "totalProviders": 11,
+      "modeledAsStateOnly": 3,
+      "resolved": 5,
+      "partial": 4,
+      "blocked": 2,
+      "zipReady": 4,
+      "liveAddressCheck": 4,
+      "polygonOrCorridor": 1,
+      "manualResearch": 2,
+      "sampleProviders": [
+        "Xfinity (Comcast)",
+        "Spectrum",
+        "AT&T Fiber",
+        "Verizon Fios",
+        "T-Mobile Home Internet",
+        "Starlink"
+      ]
+    }
+  ]
+}

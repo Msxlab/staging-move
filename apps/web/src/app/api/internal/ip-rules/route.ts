@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 // Internal endpoint for middleware IP rule cache refresh.
-// Protected by CRON_SECRET — not exposed to users.
+// Authenticates with INTERNAL_WEBHOOK_SECRET (falls back to CRON_SECRET).
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyInternalAuth(request.headers.get("authorization"), "internal")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

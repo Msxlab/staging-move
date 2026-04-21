@@ -1,4 +1,3 @@
-
 export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
@@ -17,10 +16,12 @@ export interface PaginatedResponse<T> {
 
 export interface User {
   id: string;
-  clerkId: string;
   email: string;
   firstName?: string | null;
   lastName?: string | null;
+  imageUrl?: string | null;
+  emailVerifiedAt?: string | null;
+  mfaEnabled?: boolean;
   ageRange?: string | null;
   familyStatus: string;
   hasChildren: boolean;
@@ -260,9 +261,19 @@ export interface DashboardStats {
 
 // ==================== SUPPORT TICKETS ====================
 
-export type TicketCategory = "GENERAL" | "BUG" | "BILLING" | "ACCOUNT" | "FEATURE_REQUEST";
+export type TicketCategory =
+  | "GENERAL"
+  | "BUG"
+  | "BILLING"
+  | "ACCOUNT"
+  | "FEATURE_REQUEST";
 export type TicketPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
-export type TicketStatus = "OPEN" | "IN_PROGRESS" | "WAITING_USER" | "RESOLVED" | "CLOSED";
+export type TicketStatus =
+  | "OPEN"
+  | "IN_PROGRESS"
+  | "WAITING_USER"
+  | "RESOLVED"
+  | "CLOSED";
 export type TicketPlatform = "WEB" | "MOBILE" | "ADMIN";
 export type MessageSenderType = "USER" | "ADMIN" | "SYSTEM";
 

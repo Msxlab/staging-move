@@ -17,6 +17,12 @@ interface Provider {
   tags: string[];
   popularityScore: number;
   displayOrder: number;
+  coverageModel?: string;
+  coverageMatchLevel?: string;
+  coverageNote?: string | null;
+  coverageSourceUrl?: string | null;
+  requiresAddressCheck?: boolean;
+  requiresPolygonCheck?: boolean;
 }
 
 interface ProvidersResponse {
@@ -26,12 +32,15 @@ interface ProvidersResponse {
   meta: {
     effectiveState: string | null;
     zipMatchLevel: string | null;
+    coordinatesUsed?: boolean;
   };
 }
 
 interface ProviderQuery {
   state?: string;
   zip?: string;
+  lat?: number;
+  lng?: number;
   category?: string;
   scope?: "FEDERAL" | "STATE";
   q?: string;
@@ -43,6 +52,8 @@ function providersKey(q: ProviderQuery) {
     "providers",
     q.state ?? "",
     q.zip ?? "",
+    q.lat ?? "",
+    q.lng ?? "",
     q.category ?? "",
     q.scope ?? "",
     q.q ?? "",
@@ -54,6 +65,8 @@ async function fetchProviders(q: ProviderQuery): Promise<ProvidersResponse> {
   const params: Record<string, string> = {};
   if (q.state) params.state = q.state;
   if (q.zip) params.zip = q.zip;
+  if (typeof q.lat === "number") params.lat = q.lat.toString();
+  if (typeof q.lng === "number") params.lng = q.lng.toString();
   if (q.category) params.category = q.category;
   if (q.scope) params.scope = q.scope;
   if (q.q) params.q = q.q;

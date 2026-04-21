@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 // POST /api/cron/provider-stats
 // Daily cron: recalculate userCount, reviewCount, avgRating for all providers
 export async function POST(request: NextRequest) {
   try {
-    // Verify cron secret
-    const authHeader = request.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

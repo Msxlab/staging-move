@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { EyeOff, KeyRound, Save, ShieldAlert } from "lucide-react";
+import { EyeOff, KeyRound, RefreshCw, Save, ShieldAlert } from "lucide-react";
 
 interface RuntimeConfigCatalogItem {
   key: string;
@@ -268,4 +268,3 @@ function StatusBadge({ label, tone }: { label: string; tone: "success" | "warnin
 
   return <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${tones[tone]}`}>{label}</span>;
 }
-

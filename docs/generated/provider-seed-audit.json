@@ -1,0 +1,905 @@
+{
+  "generatedAt": "2026-04-18T17:23:41.368Z",
+  "rawCount": 700,
+  "sanitizedCount": 700,
+  "renamed": [],
+  "deduped": [],
+  "categoryStats": [
+    {
+      "category": "UTILITY_ELECTRIC",
+      "count": 71,
+      "label": "Electric"
+    },
+    {
+      "category": "UTILITY_WATER",
+      "count": 67,
+      "label": "Water"
+    },
+    {
+      "category": "TRANSPORTATION_TRANSIT",
+      "count": 66,
+      "label": "Transit"
+    },
+    {
+      "category": "UTILITY_GAS",
+      "count": 56,
+      "label": "Gas"
+    },
+    {
+      "category": "GOVERNMENT_VOTER",
+      "count": 52,
+      "label": "Voter Registration"
+    },
+    {
+      "category": "GOVERNMENT_DMV",
+      "count": 51,
+      "label": "DMV"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_HEALTH",
+      "count": 44,
+      "label": "Health Insurance"
+    },
+    {
+      "category": "FINANCIAL_BANK",
+      "count": 18,
+      "label": "Banks"
+    },
+    {
+      "category": "SHOPPING_RETAIL",
+      "count": 18,
+      "label": "Shopping"
+    },
+    {
+      "category": "SHOPPING_SUBSCRIPTION",
+      "count": 17,
+      "label": "Subscriptions"
+    },
+    {
+      "category": "UTILITY_INTERNET",
+      "count": 17,
+      "label": "Internet"
+    },
+    {
+      "category": "UTILITY_PHONE",
+      "count": 15,
+      "label": "Phone"
+    },
+    {
+      "category": "TRANSPORTATION_TOLL",
+      "count": 14,
+      "label": "Toll Pass"
+    },
+    {
+      "category": "FINANCIAL_CREDIT_CARD",
+      "count": 12,
+      "label": "Credit Cards"
+    },
+    {
+      "category": "HOUSING_MOVING",
+      "count": 9,
+      "label": "Moving"
+    },
+    {
+      "category": "HOUSING_HOME_SERVICE",
+      "count": 8,
+      "label": "Home Services"
+    },
+    {
+      "category": "HOUSING_SECURITY",
+      "count": 8,
+      "label": "Home Security"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_AUTO",
+      "count": 7,
+      "label": "Auto Insurance"
+    },
+    {
+      "category": "FITNESS_GYM",
+      "count": 7,
+      "label": "Fitness & Gym"
+    },
+    {
+      "category": "GROCERY_DELIVERY",
+      "count": 7,
+      "label": "Grocery Delivery"
+    },
+    {
+      "category": "HEALTHCARE_PHARMACY",
+      "count": 7,
+      "label": "Pharmacy"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_HOME",
+      "count": 6,
+      "label": "Home Insurance"
+    },
+    {
+      "category": "FINANCIAL_MORTGAGE",
+      "count": 6,
+      "label": "Mortgage"
+    },
+    {
+      "category": "GOVERNMENT_OTHER",
+      "count": 6,
+      "label": "Gov. Other"
+    },
+    {
+      "category": "HEALTHCARE_VET",
+      "count": 6,
+      "label": "Veterinary"
+    },
+    {
+      "category": "HOUSING_REAL_ESTATE",
+      "count": 6,
+      "label": "Real Estate"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_LIFE",
+      "count": 5,
+      "label": "Life Insurance"
+    },
+    {
+      "category": "TRANSPORTATION_OTHER",
+      "count": 5,
+      "label": "Car Rental & Other"
+    },
+    {
+      "category": "EDUCATION_ONLINE",
+      "count": 4,
+      "label": "Online Learning"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_FLOOD",
+      "count": 4,
+      "label": "Flood Insurance"
+    },
+    {
+      "category": "GOVERNMENT_POSTAL",
+      "count": 4,
+      "label": "Mail & Postal"
+    },
+    {
+      "category": "HEALTHCARE_DOCTORS",
+      "count": 4,
+      "label": "Doctors"
+    },
+    {
+      "category": "HOUSING_CLEANING",
+      "count": 4,
+      "label": "Cleaning"
+    },
+    {
+      "category": "HOUSING_LAWN_CARE",
+      "count": 4,
+      "label": "Lawn Care"
+    },
+    {
+      "category": "HOUSING_STORAGE",
+      "count": 4,
+      "label": "Storage"
+    },
+    {
+      "category": "KIDS_DAYCARE",
+      "count": 4,
+      "label": "Daycare"
+    },
+    {
+      "category": "KIDS_SCHOOL",
+      "count": 4,
+      "label": "Schools"
+    },
+    {
+      "category": "PET_SERVICES",
+      "count": 4,
+      "label": "Pet Services"
+    },
+    {
+      "category": "SECURITY_IDENTITY",
+      "count": 4,
+      "label": "Identity Protection"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_PET",
+      "count": 3,
+      "label": "Pet Insurance"
+    },
+    {
+      "category": "GOVERNMENT_BENEFITS",
+      "count": 3,
+      "label": "Benefits"
+    },
+    {
+      "category": "GOVERNMENT_HEALTH",
+      "count": 3,
+      "label": "Healthcare.gov"
+    },
+    {
+      "category": "GOVERNMENT_TAX",
+      "count": 3,
+      "label": "Tax (IRS)"
+    },
+    {
+      "category": "HEALTHCARE_SENIOR",
+      "count": 3,
+      "label": "Senior Care"
+    },
+    {
+      "category": "HOUSING_PEST_CONTROL",
+      "count": 3,
+      "label": "Pest Control"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+      "count": 2,
+      "label": "Motorcycle Ins."
+    },
+    {
+      "category": "FINANCIAL_LOAN",
+      "count": 2,
+      "label": "Loans"
+    },
+    {
+      "category": "GOVERNMENT_EDUCATION",
+      "count": 2,
+      "label": "Education / FAFSA"
+    },
+    {
+      "category": "HOUSING_HOA",
+      "count": 2,
+      "label": "HOA"
+    },
+    {
+      "category": "KIDS_ACTIVITY",
+      "count": 2,
+      "label": "Kids Activities"
+    },
+    {
+      "category": "LEGAL_SERVICES",
+      "count": 2,
+      "label": "Legal"
+    },
+    {
+      "category": "TRANSPORTATION_AUTO",
+      "count": 2,
+      "label": "Auto Services"
+    },
+    {
+      "category": "TRANSPORTATION_RIDESHARE",
+      "count": 2,
+      "label": "Rideshare"
+    },
+    {
+      "category": "UTILITY_CABLE",
+      "count": 2,
+      "label": "Cable / TV"
+    },
+    {
+      "category": "UTILITY_TRASH",
+      "count": 2,
+      "label": "Trash & Waste"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_BOAT",
+      "count": 1,
+      "label": "Boat Insurance"
+    },
+    {
+      "category": "GOVERNMENT_EMERGENCY",
+      "count": 1,
+      "label": "Emergency (FEMA)"
+    },
+    {
+      "category": "GOVERNMENT_HOUSING",
+      "count": 1,
+      "label": "Housing (HUD)"
+    },
+    {
+      "category": "GOVERNMENT_ID",
+      "count": 1,
+      "label": "Passport / ID"
+    },
+    {
+      "category": "GOVERNMENT_IMMIGRATION",
+      "count": 1,
+      "label": "Immigration"
+    },
+    {
+      "category": "HEALTHCARE_DENTIST",
+      "count": 1,
+      "label": "Dentist"
+    },
+    {
+      "category": "TRANSPORTATION_PARKING",
+      "count": 1,
+      "label": "Parking"
+    }
+  ],
+  "scopeStats": [
+    {
+      "scope": "STATE",
+      "count": 427
+    },
+    {
+      "scope": "FEDERAL",
+      "count": 273
+    }
+  ],
+  "slugDuplicates": [],
+  "sameCategoryNameDuplicates": [],
+  "crossCategoryNameDuplicates": [],
+  "crossCategoryDomainDuplicates": [
+    {
+      "key": "blackhillsenergy.com",
+      "providers": [
+        {
+          "name": "Black Hills Energy SD",
+          "slug": "bhe-sd",
+          "category": "UTILITY_ELECTRIC",
+          "website": "blackhillsenergy.com"
+        },
+        {
+          "name": "Black Hills Energy Colorado",
+          "slug": "bhe-co-gas",
+          "category": "UTILITY_GAS",
+          "website": "blackhillsenergy.com"
+        },
+        {
+          "name": "Black Hills Energy Iowa",
+          "slug": "bhe-ia-gas",
+          "category": "UTILITY_GAS",
+          "website": "blackhillsenergy.com"
+        },
+        {
+          "name": "Black Hills Energy Nebraska",
+          "slug": "bhe-ne-gas",
+          "category": "UTILITY_GAS",
+          "website": "blackhillsenergy.com"
+        },
+        {
+          "name": "Source Gas Distribution Wyoming",
+          "slug": "source-gas-wy",
+          "category": "UTILITY_GAS",
+          "website": "blackhillsenergy.com"
+        }
+      ]
+    },
+    {
+      "key": "costco.com",
+      "providers": [
+        {
+          "name": "Costco",
+          "slug": "costco",
+          "category": "SHOPPING_SUBSCRIPTION",
+          "website": "costco.com"
+        },
+        {
+          "name": "Costco Pharmacy",
+          "slug": "costco-pharmacy",
+          "category": "HEALTHCARE_PHARMACY",
+          "website": "costco.com"
+        },
+        {
+          "name": "Costco Optical",
+          "slug": "costco-optical",
+          "category": "HEALTHCARE_PHARMACY",
+          "website": "costco.com"
+        }
+      ]
+    },
+    {
+      "key": "dominionenergy.com",
+      "providers": [
+        {
+          "name": "Dominion Energy",
+          "slug": "dominion",
+          "category": "UTILITY_ELECTRIC",
+          "website": "dominionenergy.com"
+        },
+        {
+          "name": "Dominion Energy South Carolina Gas",
+          "slug": "dominion-sc-gas",
+          "category": "UTILITY_GAS",
+          "website": "dominionenergy.com"
+        },
+        {
+          "name": "Dominion Energy Utah",
+          "slug": "dominion-ut-gas",
+          "category": "UTILITY_GAS",
+          "website": "dominionenergy.com"
+        }
+      ]
+    },
+    {
+      "key": "montana-dakota.com",
+      "providers": [
+        {
+          "name": "MDU Resources",
+          "slug": "mdu-nd",
+          "category": "UTILITY_ELECTRIC",
+          "website": "montana-dakota.com"
+        },
+        {
+          "name": "MDU Resources South Dakota Gas",
+          "slug": "mdu-sd-gas",
+          "category": "UTILITY_GAS",
+          "website": "montana-dakota.com"
+        },
+        {
+          "name": "Montana-Dakota Utilities",
+          "slug": "mdu",
+          "category": "UTILITY_GAS",
+          "website": "montana-dakota.com"
+        }
+      ]
+    },
+    {
+      "key": "progressive.com",
+      "providers": [
+        {
+          "name": "Progressive",
+          "slug": "progressive",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "progressive.com"
+        },
+        {
+          "name": "Progressive Motorcycle",
+          "slug": "progressive-motorcycle",
+          "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+          "website": "progressive.com"
+        },
+        {
+          "name": "Progressive Boat Insurance",
+          "slug": "progressive-boat",
+          "category": "FINANCIAL_INSURANCE_BOAT",
+          "website": "progressive.com"
+        }
+      ]
+    },
+    {
+      "key": "spectrum.com",
+      "providers": [
+        {
+          "name": "Spectrum Mobile",
+          "slug": "spectrum-mobile",
+          "category": "UTILITY_PHONE",
+          "website": "spectrum.com"
+        },
+        {
+          "name": "Spectrum",
+          "slug": "spectrum",
+          "category": "UTILITY_INTERNET",
+          "website": "spectrum.com"
+        },
+        {
+          "name": "Spectrum Maine",
+          "slug": "spectrum-me",
+          "category": "UTILITY_INTERNET",
+          "website": "spectrum.com"
+        }
+      ]
+    },
+    {
+      "key": "xcelenergy.com",
+      "providers": [
+        {
+          "name": "Xcel Energy",
+          "slug": "xcel-energy",
+          "category": "UTILITY_ELECTRIC",
+          "website": "xcelenergy.com"
+        },
+        {
+          "name": "Xcel Energy ND",
+          "slug": "xcel-nd",
+          "category": "UTILITY_ELECTRIC",
+          "website": "xcelenergy.com"
+        },
+        {
+          "name": "Xcel Energy North Dakota Gas",
+          "slug": "xcel-nd-gas",
+          "category": "UTILITY_GAS",
+          "website": "xcelenergy.com"
+        }
+      ]
+    },
+    {
+      "key": "amazon.com",
+      "providers": [
+        {
+          "name": "Amazon Prime",
+          "slug": "amazon-prime",
+          "category": "SHOPPING_SUBSCRIPTION",
+          "website": "amazon.com"
+        },
+        {
+          "name": "Amazon Fresh",
+          "slug": "amazon-fresh",
+          "category": "GROCERY_DELIVERY",
+          "website": "amazon.com"
+        }
+      ]
+    },
+    {
+      "key": "att.com",
+      "providers": [
+        {
+          "name": "AT&T",
+          "slug": "att",
+          "category": "UTILITY_PHONE",
+          "website": "att.com"
+        },
+        {
+          "name": "AT&T Fiber",
+          "slug": "att-fiber",
+          "category": "UTILITY_INTERNET",
+          "website": "att.com"
+        }
+      ]
+    },
+    {
+      "key": "bankofamerica.com",
+      "providers": [
+        {
+          "name": "Bank of America",
+          "slug": "bank-of-america",
+          "category": "FINANCIAL_BANK",
+          "website": "bankofamerica.com"
+        },
+        {
+          "name": "Bank of America Credit Cards",
+          "slug": "boa-cards",
+          "category": "FINANCIAL_CREDIT_CARD",
+          "website": "bankofamerica.com"
+        }
+      ]
+    },
+    {
+      "key": "capitalone.com",
+      "providers": [
+        {
+          "name": "Capital One",
+          "slug": "capital-one",
+          "category": "FINANCIAL_BANK",
+          "website": "capitalone.com"
+        },
+        {
+          "name": "Capital One Credit Cards",
+          "slug": "capital-one-cards",
+          "category": "FINANCIAL_CREDIT_CARD",
+          "website": "capitalone.com"
+        }
+      ]
+    },
+    {
+      "key": "chewy.com",
+      "providers": [
+        {
+          "name": "Chewy",
+          "slug": "chewy",
+          "category": "SHOPPING_SUBSCRIPTION",
+          "website": "chewy.com"
+        },
+        {
+          "name": "Chewy Connect with a Vet",
+          "slug": "chewy-vet",
+          "category": "HEALTHCARE_VET",
+          "website": "chewy.com"
+        }
+      ]
+    },
+    {
+      "key": "citi.com",
+      "providers": [
+        {
+          "name": "Citibank",
+          "slug": "citibank",
+          "category": "FINANCIAL_BANK",
+          "website": "citi.com"
+        },
+        {
+          "name": "Citi Cards",
+          "slug": "citi-cards",
+          "category": "FINANCIAL_CREDIT_CARD",
+          "website": "citi.com"
+        }
+      ]
+    },
+    {
+      "key": "cvs.com",
+      "providers": [
+        {
+          "name": "CVS Pharmacy",
+          "slug": "cvs",
+          "category": "HEALTHCARE_PHARMACY",
+          "website": "cvs.com"
+        },
+        {
+          "name": "MinuteClinic (CVS)",
+          "slug": "minuteclinic",
+          "category": "HEALTHCARE_DOCTORS",
+          "website": "cvs.com"
+        }
+      ]
+    },
+    {
+      "key": "discover.com",
+      "providers": [
+        {
+          "name": "Discover Bank",
+          "slug": "discover-bank",
+          "category": "FINANCIAL_BANK",
+          "website": "discover.com"
+        },
+        {
+          "name": "Discover Card",
+          "slug": "discover-card",
+          "category": "FINANCIAL_CREDIT_CARD",
+          "website": "discover.com"
+        }
+      ]
+    },
+    {
+      "key": "geico.com",
+      "providers": [
+        {
+          "name": "GEICO",
+          "slug": "geico",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "geico.com"
+        },
+        {
+          "name": "GEICO Motorcycle",
+          "slug": "geico-motorcycle",
+          "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+          "website": "geico.com"
+        }
+      ]
+    },
+    {
+      "key": "maine.gov",
+      "providers": [
+        {
+          "name": "Maine BMV",
+          "slug": "dmv-me",
+          "category": "GOVERNMENT_DMV",
+          "website": "maine.gov"
+        },
+        {
+          "name": "Maine Secretary of State — Voter",
+          "slug": "vote-me",
+          "category": "GOVERNMENT_VOTER",
+          "website": "maine.gov"
+        }
+      ]
+    },
+    {
+      "key": "miamidade.gov",
+      "providers": [
+        {
+          "name": "Miami-Dade Water & Sewer",
+          "slug": "miami-water",
+          "category": "UTILITY_WATER",
+          "website": "miamidade.gov"
+        },
+        {
+          "name": "Miami-Dade Transit",
+          "slug": "miami-transit",
+          "category": "TRANSPORTATION_TRANSIT",
+          "website": "miamidade.gov"
+        }
+      ]
+    },
+    {
+      "key": "nj.gov",
+      "providers": [
+        {
+          "name": "New Jersey MVC",
+          "slug": "dmv-nj",
+          "category": "GOVERNMENT_DMV",
+          "website": "nj.gov"
+        },
+        {
+          "name": "NJ Division of Taxation",
+          "slug": "nj-tax",
+          "category": "GOVERNMENT_TAX",
+          "website": "nj.gov"
+        }
+      ]
+    },
+    {
+      "key": "oklahoma.gov",
+      "providers": [
+        {
+          "name": "Oklahoma DPS",
+          "slug": "dmv-ok",
+          "category": "GOVERNMENT_DMV",
+          "website": "oklahoma.gov"
+        },
+        {
+          "name": "Oklahoma State Election Board",
+          "slug": "vote-ok",
+          "category": "GOVERNMENT_VOTER",
+          "website": "oklahoma.gov"
+        }
+      ]
+    },
+    {
+      "key": "portal.ct.gov",
+      "providers": [
+        {
+          "name": "Connecticut DMV",
+          "slug": "dmv-ct",
+          "category": "GOVERNMENT_DMV",
+          "website": "portal.ct.gov"
+        },
+        {
+          "name": "Connecticut Secretary of State — Voter",
+          "slug": "vote-ct",
+          "category": "GOVERNMENT_VOTER",
+          "website": "portal.ct.gov"
+        }
+      ]
+    },
+    {
+      "key": "rienergy.com",
+      "providers": [
+        {
+          "name": "Rhode Island Energy",
+          "slug": "ri-energy",
+          "category": "UTILITY_ELECTRIC",
+          "website": "rienergy.com"
+        },
+        {
+          "name": "Rhode Island Energy Gas",
+          "slug": "ri-energy-gas",
+          "category": "UTILITY_GAS",
+          "website": "rienergy.com"
+        }
+      ]
+    },
+    {
+      "key": "ring.com",
+      "providers": [
+        {
+          "name": "Ring",
+          "slug": "ring-security",
+          "category": "HOUSING_HOME_SERVICE",
+          "website": "ring.com"
+        },
+        {
+          "name": "Ring Alarm",
+          "slug": "ring-alarm",
+          "category": "HOUSING_SECURITY",
+          "website": "ring.com"
+        }
+      ]
+    },
+    {
+      "key": "seattle.gov",
+      "providers": [
+        {
+          "name": "Seattle City Light",
+          "slug": "seattle-city-light",
+          "category": "UTILITY_ELECTRIC",
+          "website": "seattle.gov"
+        },
+        {
+          "name": "Seattle Public Utilities",
+          "slug": "spu-wa",
+          "category": "UTILITY_WATER",
+          "website": "seattle.gov"
+        }
+      ]
+    },
+    {
+      "key": "statefarm.com",
+      "providers": [
+        {
+          "name": "State Farm",
+          "slug": "state-farm",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "statefarm.com"
+        },
+        {
+          "name": "State Farm Home",
+          "slug": "state-farm-home",
+          "category": "FINANCIAL_INSURANCE_HOME",
+          "website": "statefarm.com"
+        }
+      ]
+    },
+    {
+      "key": "t-mobile.com",
+      "providers": [
+        {
+          "name": "T-Mobile",
+          "slug": "t-mobile",
+          "category": "UTILITY_PHONE",
+          "website": "t-mobile.com"
+        },
+        {
+          "name": "T-Mobile Home Internet",
+          "slug": "t-mobile-home",
+          "category": "UTILITY_INTERNET",
+          "website": "t-mobile.com"
+        }
+      ]
+    },
+    {
+      "key": "usbank.com",
+      "providers": [
+        {
+          "name": "US Bank",
+          "slug": "us-bank",
+          "category": "FINANCIAL_BANK",
+          "website": "usbank.com"
+        },
+        {
+          "name": "U.S. Bank Credit Cards",
+          "slug": "us-bank-cards",
+          "category": "FINANCIAL_CREDIT_CARD",
+          "website": "usbank.com"
+        }
+      ]
+    },
+    {
+      "key": "verizon.com",
+      "providers": [
+        {
+          "name": "Verizon",
+          "slug": "verizon",
+          "category": "UTILITY_PHONE",
+          "website": "verizon.com"
+        },
+        {
+          "name": "Verizon Fios",
+          "slug": "verizon-fios",
+          "category": "UTILITY_INTERNET",
+          "website": "verizon.com"
+        }
+      ]
+    },
+    {
+      "key": "walmart.com",
+      "providers": [
+        {
+          "name": "Walmart",
+          "slug": "walmart",
+          "category": "SHOPPING_RETAIL",
+          "website": "walmart.com"
+        },
+        {
+          "name": "Walmart+ Delivery",
+          "slug": "walmart-plus",
+          "category": "GROCERY_DELIVERY",
+          "website": "walmart.com"
+        }
+      ]
+    },
+    {
+      "key": "xfinity.com",
+      "providers": [
+        {
+          "name": "Xfinity Mobile",
+          "slug": "xfinity-mobile",
+          "category": "UTILITY_PHONE",
+          "website": "xfinity.com"
+        },
+        {
+          "name": "Xfinity (Comcast)",
+          "slug": "xfinity",
+          "category": "UTILITY_INTERNET",
+          "website": "xfinity.com"
+        }
+      ]
+    }
+  ],
+  "coverageSummary": {
+    "exactZipRules": 0,
+    "prefixZipRules": 280,
+    "stateWideRows": 575,
+    "emptyCoverageRows": 273,
+    "anomalies": []
+  }
+}

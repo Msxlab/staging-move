@@ -26,4 +26,4 @@ export {
   type RecommendationResult,
   type RecommendationContext,
   type RecommendationStateRuleContext,
-} from "../../../../packages/shared/src/recommendation-engine";
+} from "@locateflow/shared";

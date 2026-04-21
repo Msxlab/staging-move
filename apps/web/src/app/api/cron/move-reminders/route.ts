@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendMoveReminderEmail } from "@/lib/email-service";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser } from "@/lib/notification-preferences";
 
 export const runtime = "nodejs";
@@ -8,13 +9,7 @@ export const runtime = "nodejs";
 // Cron handler for move reminders — Send reminders 7, 3, 1 days before move
 async function handleCron(request: NextRequest) {
   try {
-    const expectedSecret = process.env.CRON_SECRET;
-    if (!expectedSecret || expectedSecret.length < 16) {
-      console.error("CRON_SECRET is not configured or too short");
-      return NextResponse.json({ error: "Cron not configured" }, { status: 503 });
-    }
-    const cronSecret = request.headers.get("authorization")?.replace("Bearer ", "");
-    if (!cronSecret || cronSecret !== expectedSecret) {
+    if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

@@ -2,8 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Crown, Sparkles } from "lucide-react";
-import { BILLING_PLAN_ORDER, BILLING_PLAN_DEFINITIONS, type UnifiedEntitlementSnapshot } from "@/lib/shared-billing";
+import { ArrowLeft, Check, Crown, Lock, Sparkles } from "lucide-react";
+import {
+  BILLING_PLAN_ORDER,
+  BILLING_PLAN_DEFINITIONS,
+  UPCOMING_BILLING_PLAN_ORDER,
+  UPCOMING_BILLING_PLAN_DEFINITIONS,
+  type UnifiedEntitlementSnapshot,
+} from "@/lib/shared-billing";
+
+type Cycle = "monthly" | "yearly";
 
 type SubscriptionRecord = {
   plan?: string | null;
@@ -49,6 +57,7 @@ export default function SubscriptionManagementPage() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cycle, setCycle] = useState<Cycle>("yearly");
 
   async function load() {
     setLoading(true);
@@ -92,7 +101,7 @@ export default function SubscriptionManagementPage() {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, cycle }),
       });
       const data = await response.json();
       if (!response.ok || !data?.url) {
@@ -173,77 +182,178 @@ export default function SubscriptionManagementPage() {
       {loading ? (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-white/50">Loading subscription...</div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {BILLING_PLAN_ORDER.map((planKey) => {
-            const plan = BILLING_PLAN_DEFINITIONS[planKey];
-            const isCurrent = currentPlanKey === planKey;
-            const isPaid = planKey === "INDIVIDUAL";
-            const paidPlanKey = planKey === "INDIVIDUAL" ? planKey : null;
+        <>
+          {/* Billing cycle toggle — applies to the Individual upgrade button
+              and also makes Family/Pro teaser prices match what the user is
+              comparing against. */}
+          <div className="flex justify-center">
+            <div
+              role="tablist"
+              aria-label="Billing cycle"
+              className="inline-flex items-center rounded-full border border-white/10 bg-white/5 p-1"
+            >
+              <button
+                role="tab"
+                aria-selected={cycle === "monthly"}
+                onClick={() => setCycle("monthly")}
+                className={`rounded-full px-5 py-1.5 text-sm font-medium transition ${
+                  cycle === "monthly"
+                    ? "bg-orange-500 text-white"
+                    : "text-white/50 hover:text-white"
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                role="tab"
+                aria-selected={cycle === "yearly"}
+                onClick={() => setCycle("yearly")}
+                className={`rounded-full px-5 py-1.5 text-sm font-medium transition ${
+                  cycle === "yearly"
+                    ? "bg-orange-500 text-white"
+                    : "text-white/50 hover:text-white"
+                }`}
+              >
+                Yearly
+                <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-300">
+                  Save 17%
+                </span>
+              </button>
+            </div>
+          </div>
 
-            return (
-              <div key={planKey} className={`relative overflow-hidden rounded-2xl border bg-white/5 backdrop-blur-xl ${isCurrent ? "border-orange-500/40 ring-1 ring-orange-500/20" : "border-white/10"}`}>
-                {isCurrent ? (
-                  <div className="absolute right-3 top-3">
-                    <span className="flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/20 px-2 py-0.5 text-[9px] font-medium text-orange-300">
-                      <Sparkles className="h-2.5 w-2.5" /> Current
-                    </span>
-                  </div>
-                ) : null}
-                <div className="p-5 pb-3">
-                  <h3 className="text-base font-semibold text-white">{plan.displayName}</h3>
-                  <div className="mt-2">
-                    <span className="text-2xl font-bold text-white">{plan.priceLabel}</span>
-                    <span className="text-sm text-white/40"> {plan.periodLabel}</span>
-                  </div>
-                  {plan.yearlyPriceLabel ? <span className="mt-1 block text-[11px] text-white/30">or {plan.yearlyPriceLabel}</span> : null}
-                </div>
-                <div className="space-y-3 px-5 pb-5">
-                  <ul className="space-y-2">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2 text-xs text-white/60">
-                        <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {BILLING_PLAN_ORDER.map((planKey) => {
+              const plan = BILLING_PLAN_DEFINITIONS[planKey];
+              const isCurrent = currentPlanKey === planKey;
+              const isPaid = planKey === "INDIVIDUAL";
+              const paidPlanKey = planKey === "INDIVIDUAL" ? planKey : null;
 
+              const displayPrice =
+                cycle === "yearly" && plan.yearlyPriceLabel
+                  ? plan.yearlyPriceLabel.split("/")[0]
+                  : plan.priceLabel;
+              const displayPeriod = cycle === "yearly" ? "/year" : plan.periodLabel;
+
+              return (
+                <div key={planKey} className={`relative overflow-hidden rounded-2xl border bg-white/5 backdrop-blur-xl ${isCurrent ? "border-orange-500/40 ring-1 ring-orange-500/20" : "border-white/10"}`}>
                   {isCurrent ? (
-                    canManageStripeBilling ? (
+                    <div className="absolute right-3 top-3">
+                      <span className="flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/20 px-2 py-0.5 text-[9px] font-medium text-orange-300">
+                        <Sparkles className="h-2.5 w-2.5" /> Current
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="p-5 pb-3">
+                    <h3 className="text-base font-semibold text-white">{plan.displayName}</h3>
+                    <div className="mt-2">
+                      <span className="text-2xl font-bold text-white">{displayPrice}</span>
+                      <span className="text-sm text-white/40"> {displayPeriod}</span>
+                    </div>
+                    {cycle === "yearly" && plan.yearlyPriceLabel ? (
+                      <span className="mt-1 block text-[11px] text-white/30">Billed as {plan.yearlyPriceLabel}</span>
+                    ) : null}
+                  </div>
+                  <div className="space-y-3 px-5 pb-5">
+                    <ul className="space-y-2">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2 text-xs text-white/60">
+                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {isCurrent ? (
+                      canManageStripeBilling ? (
+                        <button
+                          type="button"
+                          onClick={() => void openPortal()}
+                          disabled={processing === "MANAGE"}
+                          className="w-full rounded-xl border border-white/10 py-2 text-sm font-medium text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {processing === "MANAGE" ? "Opening..." : "Manage Billing"}
+                        </button>
+                      ) : (
+                        <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-white/10 py-2 text-sm text-white/30">
+                          Current Plan
+                        </button>
+                      )
+                    ) : isPaid ? (
                       <button
                         type="button"
-                        onClick={() => void openPortal()}
-                        disabled={processing === "MANAGE"}
-                        className="w-full rounded-xl border border-white/10 py-2 text-sm font-medium text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={() => {
+                          if (!paidPlanKey) return;
+                          void startCheckout(paidPlanKey);
+                        }}
+                        disabled={processing === planKey}
+                        className="w-full rounded-xl py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 bg-orange-500 text-white hover:bg-orange-600"
                       >
-                        {processing === "MANAGE" ? "Opening..." : "Manage Billing"}
+                        {processing === planKey
+                          ? "Redirecting..."
+                          : `Upgrade — ${cycle === "yearly" ? "yearly" : "monthly"}`}
                       </button>
                     ) : (
                       <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-white/10 py-2 text-sm text-white/30">
-                        Current Plan
+                        Included by default
                       </button>
-                    )
-                  ) : isPaid ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!paidPlanKey) return;
-                        void startCheckout(paidPlanKey);
-                      }}
-                      disabled={processing === planKey}
-                      className="w-full rounded-xl py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 bg-orange-500 text-white hover:bg-orange-600"
-                    >
-                      {processing === planKey ? "Redirecting..." : `Upgrade to ${plan.displayName}`}
-                    </button>
-                  ) : (
-                    <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-white/10 py-2 text-sm text-white/30">
-                      Included by default
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+
+            {/* Upcoming plan teasers — locked CTAs so the user sees the roadmap
+                but can't try to subscribe to something that doesn't exist yet. */}
+            {UPCOMING_BILLING_PLAN_ORDER.map((planKey) => {
+              const plan = UPCOMING_BILLING_PLAN_DEFINITIONS[planKey];
+              const displayPrice =
+                cycle === "yearly" && plan.yearlyPriceLabel
+                  ? plan.yearlyPriceLabel.split("/")[0]
+                  : plan.priceLabel;
+              const displayPeriod = cycle === "yearly" ? "/year" : plan.periodLabel;
+              return (
+                <div
+                  key={planKey}
+                  aria-disabled="true"
+                  className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-xl"
+                >
+                  <div className="absolute right-3 top-3">
+                    <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-medium text-amber-300">
+                      <Sparkles className="h-2.5 w-2.5" /> Coming soon
+                    </span>
+                  </div>
+                  <div className="p-5 pb-3">
+                    <h3 className="text-base font-semibold text-white/70">{plan.displayName}</h3>
+                    <div className="mt-2">
+                      <span className="text-2xl font-bold text-white/70">{displayPrice}</span>
+                      <span className="text-sm text-white/30"> {displayPeriod}</span>
+                    </div>
+                    {cycle === "yearly" && plan.yearlyPriceLabel ? (
+                      <span className="mt-1 block text-[11px] text-white/30">Billed as {plan.yearlyPriceLabel}</span>
+                    ) : null}
+                  </div>
+                  <div className="space-y-3 px-5 pb-5">
+                    <ul className="space-y-2">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2 text-xs text-white/50">
+                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/30" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    <Link
+                      href="/contact"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 py-2 text-sm font-medium text-white/50 transition hover:bg-white/5"
+                    >
+                      <Lock className="h-3.5 w-3.5" /> Notify me at launch
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

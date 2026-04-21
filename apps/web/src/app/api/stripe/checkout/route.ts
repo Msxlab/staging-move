@@ -23,11 +23,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
-    const { plan } = await request.json();
+    const { plan, cycle: rawCycle } = await request.json();
 
     if (plan !== "INDIVIDUAL") {
       return NextResponse.json({ error: "Invalid plan. Must be INDIVIDUAL." }, { status: 400 });
     }
+
+    const cycle: "monthly" | "yearly" =
+      rawCycle === "yearly" ? "yearly" : "monthly";
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -59,10 +62,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const priceId = await getStripePriceIdForPlan(plan);
+    const priceId = await getStripePriceIdForPlan(plan, cycle);
 
     if (!priceId) {
-      return NextResponse.json({ error: `Stripe price not configured for ${plan} plan` }, { status: 503 });
+      return NextResponse.json({ error: `Stripe price not configured for ${plan} ${cycle}` }, { status: 503 });
     }
 
     const appUrl = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -74,7 +77,7 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: true,
       success_url: `${appUrl}/settings/subscription?success=true`,
       cancel_url: `${appUrl}/settings/subscription?canceled=true`,
-      metadata: { userId, plan, provider: "STRIPE", platform: "web" },
+      metadata: { userId, plan, cycle, provider: "STRIPE", platform: "web" },
     });
 
     return NextResponse.json({ url: session.url });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { checkIPAccess } from "@/lib/ip-rules";
+import { getInternalCallerSecret } from "@/lib/internal-secrets";
 
 // NOTE: Do NOT import PrismaClient here — middleware runs on Edge Runtime
 // where Node.js-only DB drivers (SQLite/libSQL) cannot execute.
@@ -19,15 +20,15 @@ async function emitSecurityEvent(
   request: NextRequest,
   event: { type: "BLOCKED_IP_ATTEMPT" | "SESSION_HIJACK_ATTEMPT"; ip: string; pathname: string; adminId?: string }
 ) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) return;
+  const secret = getInternalCallerSecret("internal");
+  if (!secret) return;
 
   try {
     await fetch(new URL("/api/internal/security-event", request.url), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${cronSecret}`,
+        Authorization: `Bearer ${secret}`,
       },
       body: JSON.stringify(event),
     });
@@ -229,7 +230,7 @@ export async function middleware(request: NextRequest) {
           type: "SESSION_HIJACK_ATTEMPT",
           ip,
           pathname,
-          adminId: typeof payload.sub === "string" ? payload.sub : undefined,
+          adminId: typeof payload.adminId === "string" ? payload.adminId : undefined,
         });
         // Fingerprint mismatch — possible session hijacking
         if (isApiRoute) {

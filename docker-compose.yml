@@ -64,9 +64,10 @@ services:
         condition: service_completed_successfully
     environment:
       DATABASE_URL: mysql://${MYSQL_USER:-locateflow}:${MYSQL_PASSWORD:-locateflow_dev_password}@mysql:3306/${MYSQL_DATABASE:-locateflow}
-      DEV_AUTH_BYPASS: ${DEV_AUTH_BYPASS:-false}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      USER_JWT_SECRET: ${USER_JWT_SECRET:?USER_JWT_SECRET is required}
       FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?FIELD_ENCRYPTION_KEY is required}
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
       NEXT_TELEMETRY_DISABLED: "1"
@@ -100,6 +101,7 @@ services:
       DATABASE_URL: mysql://${MYSQL_USER:-locateflow}:${MYSQL_PASSWORD:-locateflow_dev_password}@mysql:3306/${MYSQL_DATABASE:-locateflow}
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET is required}
       FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:?FIELD_ENCRYPTION_KEY is required}
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
       NEXT_TELEMETRY_DISABLED: "1"

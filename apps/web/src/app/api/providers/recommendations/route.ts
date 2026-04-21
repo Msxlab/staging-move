@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import {
@@ -7,7 +8,7 @@ import {
   type UserProfile,
   type Provider,
 } from "@/lib/recommendation-engine";
-import { resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
+import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 // GET /api/providers/recommendations — personalized, completion-aware recommendations
@@ -42,6 +43,8 @@ export async function GET(request: NextRequest) {
     const fallbackZip = requestedZip || primaryAddr?.zip || "";
 
     const effectiveState = resolveEffectiveState(fallbackState, fallbackZip);
+    const fallbackLatitude = primaryAddr?.latitude ?? null;
+    const fallbackLongitude = primaryAddr?.longitude ?? null;
 
     const providers = await prisma.serviceProvider.findMany({
       where: {
@@ -55,14 +58,29 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const withCoverages = providers.map((p) => ({
-      ...p,
-      coverages: "coverages" in p && Array.isArray((p as { coverages?: unknown }).coverages)
-        ? (p as unknown as { coverages: { state: string | null; zipPrefix: string | null; zipExact: string | null }[] }).coverages
-        : [],
-    }));
+    const withCoverages = providers.map((p) => {
+      const metadata = getProviderCoverageMetadata(p.slug);
+      const zipCodes = safeJsonArray(p.zipCodes);
+      const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
 
-    const tiered = tierProvidersFromDb(withCoverages, { state: fallbackState, zip: fallbackZip });
+      return {
+        ...p,
+        zipCodes,
+        coverageModel,
+        coverageNote: metadata?.note || null,
+        coverageSourceUrl: metadata?.officialUrl || null,
+        coverages: "coverages" in p && Array.isArray((p as { coverages?: unknown }).coverages)
+          ? (p as unknown as { coverages: { state: string | null; zipPrefix: string | null; zipExact: string | null }[] }).coverages
+          : [],
+      };
+    });
+
+    const tiered = tierProvidersFromDb(withCoverages, {
+      state: fallbackState,
+      zip: fallbackZip,
+      latitude: fallbackLatitude,
+      longitude: fallbackLongitude,
+    });
 
     let currentPhase = 0;
     if (movingPlan?.moveDate) {
@@ -86,6 +104,7 @@ export async function GET(request: NextRequest) {
       hasMotorcycle: profile?.hasMotorcycle || false,
       hasBoatRV: profile?.hasBoatRV || false,
       currentPhase,
+      ownership: primaryAddr?.ownership || undefined,
     };
 
     const parsedProviders: Provider[] = tiered.providers.map((p) => ({
@@ -99,13 +118,24 @@ export async function GET(request: NextRequest) {
       phone: p.phone,
       scope: p.scope,
       states: safeJsonArray(p.states),
-      zipCodes: safeJsonArray(p.zipCodes),
+      zipCodes: Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes),
       tags: safeJsonArray(p.tags),
       popularityScore: p.popularityScore || 0,
       displayOrder: p.displayOrder || 0,
       avgRating: p.avgRating,
       reviewCount: p.reviewCount || 0,
       userCount: p.userCount || 0,
+      coverageModel: p.coverageModel || "state",
+      coverageMatchLevel: getProviderMatchLevelFromDb(p, {
+        state: fallbackState,
+        zip: fallbackZip,
+        latitude: fallbackLatitude,
+        longitude: fallbackLongitude,
+      }),
+      coverageNote: ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null,
+      coverageSourceUrl: ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null,
+      requiresAddressCheck: p.coverageModel === "live_address",
+      requiresPolygonCheck: p.coverageModel === "polygon",
     }));
 
     const existingNames = new Set(services.map((s) => (s.providerName || "").toLowerCase()));
@@ -166,6 +196,12 @@ export async function GET(request: NextRequest) {
         requestedState: requestedState || null,
         requestedZip: requestedZip || null,
         zipMatchLevel: tiered.zipMatchLevel,
+        addressCoordinatesUsed: fallbackLatitude !== null && fallbackLongitude !== null,
+        coverageModels: {
+          polygon: parsedProviders.filter((provider) => provider.coverageModel === "polygon").length,
+          liveAddress: parsedProviders.filter((provider) => provider.coverageModel === "live_address").length,
+          zipPrefix: parsedProviders.filter((provider) => provider.coverageModel === "zip_prefix").length,
+        },
         addressId: primaryAddr?.id || null,
         currentPhase,
         totalServices: services.length,

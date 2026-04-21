@@ -10,12 +10,12 @@ export const FEDERAL_NEW = [
   // ══════════════════════════════════════════════════════════
   // GOVERNMENT SERVICES
   // ══════════════════════════════════════════════════════════
-  { name: "USPS (US Postal Service)", slug: "usps", category: "GOVERNMENT_POSTAL", description: "Mail forwarding, address change, PO boxes", website: "https://www.usps.com", phone: "1-800-275-8777", scope: "FEDERAL", popularityScore: 99, tags: ["mail", "government", "essential"] },
-  { name: "USPS (Address Change)", slug: "usps-address-change", category: "GOVERNMENT_POSTAL", description: "Official USPS mail forwarding and address change", website: "https://moversguide.usps.com", phone: "1-800-275-8777", scope: "FEDERAL", popularityScore: 98, tags: ["mail", "postal", "address-change"] },
+  { name: "USPS", slug: "usps", category: "GOVERNMENT_POSTAL", description: "Mail forwarding, address change, PO boxes", website: "https://www.usps.com", phone: "1-800-275-8777", scope: "FEDERAL", popularityScore: 99, tags: ["mail", "government", "essential"] },
+  { name: "USPS Movers Guide", slug: "usps-address-change", category: "GOVERNMENT_POSTAL", description: "Official USPS mail forwarding and address change", website: "https://moversguide.usps.com", phone: "1-800-275-8777", scope: "FEDERAL", popularityScore: 98, tags: ["mail", "postal", "address-change"] },
   { name: "UPS", slug: "ups", category: "GOVERNMENT_POSTAL", description: "Package delivery and shipping", website: "https://www.ups.com", phone: "1-800-742-5877", scope: "FEDERAL", popularityScore: 85, tags: ["mail", "shipping"] },
   { name: "FedEx", slug: "fedex", category: "GOVERNMENT_POSTAL", description: "Express shipping and delivery", website: "https://www.fedex.com", phone: "1-800-463-3339", scope: "FEDERAL", popularityScore: 85, tags: ["mail", "shipping"] },
-  { name: "IRS (Internal Revenue Service)", slug: "irs", category: "GOVERNMENT_TAX", description: "Federal tax administration — address change, tax returns, refunds", website: "https://www.irs.gov", phone: "1-800-829-1040", scope: "FEDERAL", popularityScore: 98, tags: ["tax", "government", "essential"] },
-  { name: "IRS (Tax Address Update)", slug: "irs-address", category: "GOVERNMENT_TAX", description: "Update your address with the IRS (Form 8822)", website: "https://www.irs.gov/faqs/irs-procedures/address-changes", phone: "1-800-829-1040", scope: "FEDERAL", popularityScore: 95, tags: ["tax", "irs"] },
+  { name: "IRS", slug: "irs", category: "GOVERNMENT_TAX", description: "Federal tax administration — address change, tax returns, refunds", website: "https://www.irs.gov", phone: "1-800-829-1040", scope: "FEDERAL", popularityScore: 98, tags: ["tax", "government", "essential"] },
+  { name: "IRS Form 8822", slug: "irs-address", category: "GOVERNMENT_TAX", description: "Update your address with the IRS (Form 8822)", website: "https://www.irs.gov/faqs/irs-procedures/address-changes", phone: "1-800-829-1040", scope: "FEDERAL", popularityScore: 95, tags: ["tax", "irs"] },
   { name: "USCIS (Immigration)", slug: "uscis", category: "GOVERNMENT_IMMIGRATION", description: "Immigration services — green card, citizenship, visa, AR-11 address change", website: "https://www.uscis.gov", phone: "1-800-375-5283", scope: "FEDERAL", popularityScore: 92, tags: ["immigration", "government", "essential"] },
   { name: "SSA (Social Security)", slug: "ssa", category: "GOVERNMENT_BENEFITS", description: "Social Security cards, benefits, retirement, address update", website: "https://www.ssa.gov", phone: "1-800-772-1213", scope: "FEDERAL", popularityScore: 95, tags: ["social-security", "government", "essential", "senior"] },
   { name: "VA (Veterans Affairs)", slug: "va-gov", category: "GOVERNMENT_BENEFITS", description: "Veteran benefits, healthcare, disability", website: "https://www.va.gov", phone: "1-800-827-1000", scope: "FEDERAL", popularityScore: 88, tags: ["veterans", "government", "military"] },
@@ -52,6 +52,11 @@ export const FEDERAL_NEW = [
   { name: "Navy Federal Credit Union", slug: "navy-federal", category: "FINANCIAL_BANK", description: "Largest credit union in the US (military)", website: "https://www.navyfederal.org", phone: "1-888-842-6328", scope: "FEDERAL", popularityScore: 80, tags: ["banking", "credit-union", "military"] },
   { name: "PenFed Credit Union", slug: "penfed", category: "FINANCIAL_BANK", description: "Pentagon Federal Credit Union", website: "https://www.penfed.org", phone: "1-800-247-5626", scope: "FEDERAL", popularityScore: 65, tags: ["banking", "credit-union", "military"] },
   { name: "Alliant Credit Union", slug: "alliant-cu", category: "FINANCIAL_BANK", description: "Large online credit union", website: "https://www.alliantcreditunion.org", phone: "1-800-328-1935", scope: "FEDERAL", popularityScore: 60, tags: ["banking", "credit-union"] },
+  { name: "Truist", slug: "truist", category: "FINANCIAL_BANK", description: "Retail and commercial bank with strong Southeast footprint", website: "https://www.truist.com", phone: "1-844-487-8478", scope: "FEDERAL", popularityScore: 78, tags: ["banking"] },
+  { name: "Regions Bank", slug: "regions-bank", category: "FINANCIAL_BANK", description: "Regional bank with branch, mobile, and online banking", website: "https://www.regions.com", scope: "FEDERAL", popularityScore: 72, tags: ["banking"] },
+  { name: "Huntington Bank", slug: "huntington-bank", category: "FINANCIAL_BANK", description: "Midwest-focused bank with strong digital banking", website: "https://www.huntington.com", scope: "FEDERAL", popularityScore: 70, tags: ["banking"] },
+  { name: "Citizens Bank", slug: "citizens-bank", category: "FINANCIAL_BANK", description: "Consumer and business banking across the Northeast and beyond", website: "https://www.citizensbank.com", scope: "FEDERAL", popularityScore: 68, tags: ["banking"] },
+  { name: "KeyBank", slug: "keybank", category: "FINANCIAL_BANK", description: "Regional bank with checking, lending, and online banking", website: "https://www.key.com", scope: "FEDERAL", popularityScore: 66, tags: ["banking"] },
 
   // ══════════════════════════════════════════════════════════
   // CREDIT CARDS
@@ -135,7 +140,7 @@ export const FEDERAL_NEW = [
   // ══════════════════════════════════════════════════════════
   { name: "Rocket Mortgage", slug: "rocket-mortgage", category: "FINANCIAL_MORTGAGE", description: "Online mortgage lender", website: "https://www.rocketmortgage.com", phone: "1-800-785-4632", scope: "FEDERAL", popularityScore: 82, tags: ["mortgage", "home"] },
   { name: "Better.com", slug: "better", category: "FINANCIAL_MORTGAGE", description: "Digital mortgage lender", website: "https://www.better.com", scope: "FEDERAL", popularityScore: 65, tags: ["mortgage", "home"] },
-  { name: "SoFi", slug: "sofi", category: "FINANCIAL_LOAN", description: "Personal loans, student refinancing, investing", website: "https://www.sofi.com", phone: "1-855-456-7634", scope: "FEDERAL", popularityScore: 82, tags: ["loan", "banking"] },
+  { name: "SoFi", slug: "sofi", category: "FINANCIAL_FINTECH", description: "All-in-one banking, loans, and investing", website: "https://www.sofi.com", phone: "1-855-456-7634", scope: "FEDERAL", popularityScore: 82, tags: ["loan", "banking", "fintech"] },
   { name: "LendingClub", slug: "lendingclub", category: "FINANCIAL_LOAN", description: "Personal loans and banking", website: "https://www.lendingclub.com", phone: "1-888-596-3157", scope: "FEDERAL", popularityScore: 72, tags: ["loan"] },
 
   // ══════════════════════════════════════════════════════════
@@ -190,6 +195,16 @@ export const FEDERAL_NEW = [
   { name: "YMCA", slug: "ymca", category: "FITNESS_GYM", description: "Community programs, youth activities, fitness", website: "https://www.ymca.org", scope: "FEDERAL", popularityScore: 88, tags: ["gym", "fitness", "kids", "community"] },
   { name: "Peloton", slug: "peloton", category: "FITNESS_GYM", subCategory: "ONLINE", description: "Connected fitness at home", website: "https://www.onepeloton.com", scope: "FEDERAL", popularityScore: 62, tags: ["fitness", "home", "online"] },
 
+  // FITNESS / STUDIO
+  { name: "Pure Barre", slug: "pure-barre", category: "FITNESS_STUDIO", description: "Low-impact barre fitness studios", website: "https://www.purebarre.com", scope: "FEDERAL", popularityScore: 68, tags: ["fitness", "barre"] },
+  { name: "Barry's", slug: "barrys", category: "FITNESS_STUDIO", description: "High-intensity interval and strength training studios", website: "https://www.barrys.com", scope: "FEDERAL", popularityScore: 65, tags: ["fitness", "hiit"] },
+  { name: "SoulCycle", slug: "soulcycle", category: "FITNESS_STUDIO", description: "Boutique indoor cycling studios", website: "https://www.soul-cycle.com", scope: "FEDERAL", popularityScore: 62, tags: ["fitness", "cycling"] },
+  { name: "CorePower Yoga", slug: "corepower-yoga", category: "FITNESS_STUDIO", description: "Heated yoga and sculpt studios", website: "https://www.corepoweryoga.com", scope: "FEDERAL", popularityScore: 70, tags: ["fitness", "yoga"] },
+  { name: "F45 Training", slug: "f45", category: "FITNESS_STUDIO", description: "Functional 45-minute group workouts", website: "https://www.f45training.com", scope: "FEDERAL", popularityScore: 60, tags: ["fitness", "hiit"] },
+  { name: "Club Pilates", slug: "club-pilates", category: "FITNESS_STUDIO", description: "Reformer Pilates studio franchise", website: "https://www.clubpilates.com", scope: "FEDERAL", popularityScore: 65, tags: ["fitness", "pilates"] },
+  { name: "CycleBar", slug: "cyclebar", category: "FITNESS_STUDIO", description: "Premium indoor cycling studios", website: "https://www.cyclebar.com", scope: "FEDERAL", popularityScore: 55, tags: ["fitness", "cycling"] },
+  { name: "StretchLab", slug: "stretchlab", category: "FITNESS_STUDIO", description: "Assisted stretching studios", website: "https://www.stretchlab.com", scope: "FEDERAL", popularityScore: 58, tags: ["fitness", "recovery"] },
+
   // ══════════════════════════════════════════════════════════
   // SUBSCRIPTIONS & STREAMING
   // ══════════════════════════════════════════════════════════
@@ -220,14 +235,13 @@ export const FEDERAL_NEW = [
   { name: "Rite Aid", slug: "rite-aid", category: "HEALTHCARE_PHARMACY", description: "Pharmacy and wellness products", website: "https://www.riteaid.com", phone: "1-800-748-3243", scope: "FEDERAL", popularityScore: 80, tags: ["pharmacy", "health"] },
   { name: "Costco Pharmacy", slug: "costco-pharmacy", category: "HEALTHCARE_PHARMACY", description: "Pharmacy services for Costco members", website: "https://www.costco.com/pharmacy", phone: "1-800-607-6861", scope: "FEDERAL", popularityScore: 75, tags: ["pharmacy", "health"] },
   { name: "Costco Optical", slug: "costco-optical", category: "HEALTHCARE_PHARMACY", description: "Eye exams and eyewear", website: "https://www.costco.com/optical", scope: "FEDERAL", popularityScore: 72, tags: ["vision", "health"] },
-  { name: "Teladoc Health", slug: "teladoc", category: "HEALTHCARE_DOCTORS", description: "Telehealth / virtual doctor visits", website: "https://www.teladoc.com", phone: "1-800-835-2362", scope: "FEDERAL", popularityScore: 78, tags: ["health", "doctor", "online"] },
+  { name: "Teladoc Health", slug: "teladoc", category: "HEALTHCARE_TELEMEDICINE", description: "Virtual care for general medical, mental health, and more", website: "https://www.teladoc.com", phone: "1-800-835-2362", scope: "FEDERAL", popularityScore: 85, tags: ["telemedicine", "virtual", "health"] },
   { name: "ZocDoc", slug: "zocdoc", category: "HEALTHCARE_DOCTORS", description: "Find and book doctors online", website: "https://www.zocdoc.com", scope: "FEDERAL", popularityScore: 72, tags: ["health", "doctor"] },
-  { name: "One Medical", slug: "one-medical", category: "HEALTHCARE_DOCTORS", description: "Membership-based primary care", website: "https://www.onemedical.com", scope: "FEDERAL", popularityScore: 75, tags: ["health", "doctor"] },
+  { name: "One Medical", slug: "one-medical", category: "HEALTHCARE_TELEMEDICINE", description: "Primary care memberships with same-day virtual visits", website: "https://www.onemedical.com", phone: "1-888-663-6331", scope: "FEDERAL", popularityScore: 78, tags: ["telemedicine", "primary-care", "membership"] },
   { name: "MinuteClinic (CVS)", slug: "minuteclinic", category: "HEALTHCARE_DOCTORS", description: "Walk-in clinics inside CVS stores", website: "https://www.cvs.com/minuteclinic", phone: "1-866-389-2727", scope: "FEDERAL", popularityScore: 80, tags: ["health", "doctor"] },
   { name: "Aspen Dental", slug: "aspen-dental", category: "HEALTHCARE_DENTIST", description: "Dental care with 1000+ offices", website: "https://www.aspendental.com", phone: "1-844-789-2572", scope: "FEDERAL", popularityScore: 80, tags: ["health", "dental"] },
   { name: "Banfield Pet Hospital", slug: "banfield", category: "HEALTHCARE_VET", description: "Preventive pet care", website: "https://www.banfield.com", phone: "1-866-894-7927", scope: "FEDERAL", popularityScore: 70, tags: ["pet", "vet", "dog", "cat"] },
   { name: "VCA Animal Hospitals", slug: "vca", category: "HEALTHCARE_VET", description: "Veterinary care network", website: "https://www.vcahospitals.com", scope: "FEDERAL", popularityScore: 65, tags: ["pet", "vet"] },
-  { name: "Rover", slug: "rover", category: "HEALTHCARE_VET", description: "Dog walking and pet sitting marketplace", website: "https://www.rover.com", scope: "FEDERAL", popularityScore: 78, tags: ["pet", "dog", "sitting"] },
   { name: "Visiting Angels", slug: "visiting-angels", category: "HEALTHCARE_SENIOR", description: "In-home senior care services", website: "https://www.visitingangels.com", phone: "1-800-365-4189", scope: "FEDERAL", popularityScore: 78, tags: ["senior"] },
   { name: "Home Instead", slug: "home-instead", category: "HEALTHCARE_SENIOR", description: "Personalized in-home senior care", website: "https://www.homeinstead.com", phone: "1-888-484-5759", scope: "FEDERAL", popularityScore: 80, tags: ["senior"] },
   { name: "Meals on Wheels", slug: "meals-on-wheels", category: "HEALTHCARE_SENIOR", description: "Home-delivered meals for seniors", website: "https://www.mealsonwheelsamerica.org", scope: "FEDERAL", popularityScore: 82, tags: ["senior"] },
@@ -239,7 +253,7 @@ export const FEDERAL_NEW = [
   { name: "KinderCare", slug: "kindercare", category: "KIDS_DAYCARE", description: "Early childhood education", website: "https://www.kindercare.com", scope: "FEDERAL", popularityScore: 65, tags: ["kids", "daycare", "children"] },
   { name: "Bright Horizons", slug: "bright-horizons", category: "KIDS_DAYCARE", description: "Child care and early education", website: "https://www.brighthorizons.com", scope: "FEDERAL", popularityScore: 62, tags: ["kids", "daycare", "children"] },
   { name: "Care.com", slug: "care-com", category: "KIDS_DAYCARE", description: "Find babysitters, nannies, and daycares", website: "https://www.care.com", scope: "FEDERAL", popularityScore: 85, tags: ["kids", "daycare", "children", "senior"] },
-  { name: "The Goddard School", slug: "goddard-school", category: "KIDS_SCHOOL", description: "Play-based preschool and childcare", website: "https://www.goddardschool.com", scope: "FEDERAL", popularityScore: 70, tags: ["kids", "education", "children"] },
+  { name: "The Goddard School", slug: "goddard-school", category: "KIDS_DAYCARE", description: "Play-based preschool and childcare franchise", website: "https://www.goddardschool.com", scope: "FEDERAL", popularityScore: 72, tags: ["kids", "daycare", "preschool"] },
   { name: "Head Start", slug: "head-start", category: "KIDS_SCHOOL", description: "Federal early childhood education", website: "https://www.acf.hhs.gov/ohs", scope: "FEDERAL", popularityScore: 78, tags: ["kids", "education", "children"] },
   { name: "Boys & Girls Clubs", slug: "bgca", category: "KIDS_ACTIVITY", description: "Youth development programs", website: "https://www.bgca.org", scope: "FEDERAL", popularityScore: 82, tags: ["kids", "children"] },
 
@@ -287,11 +301,13 @@ export const FEDERAL_NEW = [
   { name: "TaskRabbit", slug: "taskrabbit", category: "HOUSING_HOME_SERVICE", description: "Hire local help for moving, assembly, handyman", website: "https://www.taskrabbit.com", scope: "FEDERAL", popularityScore: 75, tags: ["home", "handyman", "moving"] },
   { name: "Thumbtack", slug: "thumbtack", category: "HOUSING_HOME_SERVICE", description: "Find local professionals for any project", website: "https://www.thumbtack.com", scope: "FEDERAL", popularityScore: 72, tags: ["home", "services"] },
   { name: "Angi (Angie's List)", slug: "angi", category: "HOUSING_HOME_SERVICE", description: "Home service professionals", website: "https://www.angi.com", scope: "FEDERAL", popularityScore: 78, tags: ["home", "services"] },
-  { name: "ADT Security", slug: "adt", category: "HOUSING_HOME_SERVICE", description: "Home security and alarm systems", website: "https://www.adt.com", phone: "1-800-716-3640", scope: "FEDERAL", popularityScore: 85, tags: ["home", "security"] },
-  { name: "SimpliSafe", slug: "simplisafe", category: "HOUSING_HOME_SERVICE", description: "DIY home security systems", website: "https://www.simplisafe.com", scope: "FEDERAL", popularityScore: 78, tags: ["home", "security"] },
   { name: "Ring", slug: "ring-security", category: "HOUSING_HOME_SERVICE", description: "Video doorbells and home security", website: "https://www.ring.com", scope: "FEDERAL", popularityScore: 82, tags: ["home", "security"] },
   { name: "Roto-Rooter", slug: "roto-rooter", category: "HOUSING_HOME_SERVICE", description: "Plumbing and water cleanup", website: "https://www.rotorooter.com", phone: "1-800-768-6911", scope: "FEDERAL", popularityScore: 72, tags: ["plumbing"] },
   { name: "ServPro", slug: "servpro", category: "HOUSING_HOME_SERVICE", description: "Fire, water, and mold restoration", website: "https://www.servpro.com", phone: "1-800-737-8776", scope: "FEDERAL", popularityScore: 65, tags: ["restoration", "damage"] },
+  { name: "Ace Hardware", slug: "ace-hardware", category: "HOUSING_HOME_SERVICE", description: "Local hardware stores plus repair and project services", website: "https://www.acehardware.com", scope: "FEDERAL", popularityScore: 80, tags: ["home", "improvement", "repair"] },
+  { name: "True Value", slug: "true-value", category: "HOUSING_HOME_SERVICE", description: "Hardware, paint, and home project supplies", website: "https://www.truevalue.com", scope: "FEDERAL", popularityScore: 70, tags: ["home", "improvement"] },
+  { name: "HomeAdvisor", slug: "homeadvisor", category: "HOUSING_HOME_SERVICE", description: "Find local contractors and home repair professionals", website: "https://www.homeadvisor.com", scope: "FEDERAL", popularityScore: 68, tags: ["home", "services"] },
+  { name: "Mr. Handyman", slug: "mr-handyman", category: "HOUSING_HOME_SERVICE", description: "Handyman and home repair services", website: "https://www.mrhandyman.com", scope: "FEDERAL", popularityScore: 64, tags: ["home", "handyman", "repair"] },
   { name: "TruGreen", slug: "trugreen", category: "HOUSING_LAWN_CARE", description: "America's #1 lawn care company", website: "https://www.trugreen.com", phone: "1-800-464-0171", scope: "FEDERAL", popularityScore: 88, tags: ["lawn", "home"] },
   { name: "Stanley Steemer", slug: "stanley-steemer", category: "HOUSING_LAWN_CARE", description: "Carpet and floor cleaning", website: "https://www.stanleysteemer.com", phone: "1-800-786-5397", scope: "FEDERAL", popularityScore: 68, tags: ["cleaning", "carpet"] },
   { name: "Terminix", slug: "terminix", category: "HOUSING_PEST_CONTROL", description: "Pest control and termite treatment", website: "https://www.terminix.com", phone: "1-866-569-4035", scope: "FEDERAL", popularityScore: 88, tags: ["pest", "termite"] },
@@ -321,9 +337,7 @@ export const FEDERAL_NEW = [
   // ══════════════════════════════════════════════════════════
   { name: "Uber", slug: "uber", category: "TRANSPORTATION_RIDESHARE", description: "Ride-sharing and delivery services", website: "https://www.uber.com", scope: "FEDERAL", popularityScore: 95, tags: ["ride-share", "delivery"] },
   { name: "Lyft", slug: "lyft", category: "TRANSPORTATION_RIDESHARE", description: "Ride-sharing service", website: "https://www.lyft.com", scope: "FEDERAL", popularityScore: 88, tags: ["ride-share"] },
-  { name: "DoorDash", slug: "doordash", category: "SHOPPING_SUBSCRIPTION", description: "Food delivery and DashPass membership", website: "https://www.doordash.com", scope: "FEDERAL", popularityScore: 90, tags: ["delivery", "food"] },
-  { name: "Instacart", slug: "instacart", category: "SHOPPING_SUBSCRIPTION", description: "Grocery delivery and pickup", website: "https://www.instacart.com", scope: "FEDERAL", popularityScore: 85, tags: ["delivery", "grocery"] },
-  { name: "Grubhub", slug: "grubhub", category: "SHOPPING_SUBSCRIPTION", description: "Food ordering and delivery", website: "https://www.grubhub.com", scope: "FEDERAL", popularityScore: 78, tags: ["delivery", "food"] },
+  { name: "Grubhub", slug: "grubhub", category: "LOCAL_DINING", description: "Order delivery and pickup from local restaurants", website: "https://www.grubhub.com", phone: "1-877-585-7878", scope: "FEDERAL", popularityScore: 82, tags: ["dining", "delivery"] },
 
   // ══════════════════════════════════════════════════════════
   // SHOPPING / RETAIL
@@ -335,8 +349,6 @@ export const FEDERAL_NEW = [
   { name: "Trader Joe's", slug: "trader-joes", category: "SHOPPING_RETAIL", description: "Specialty grocery chain", website: "https://www.traderjoes.com", scope: "FEDERAL", popularityScore: 88, tags: ["shopping", "grocery"] },
   { name: "Whole Foods Market", slug: "whole-foods", category: "SHOPPING_RETAIL", description: "Natural and organic foods by Amazon", website: "https://www.wholefoodsmarket.com", scope: "FEDERAL", popularityScore: 82, tags: ["shopping", "grocery"] },
   { name: "Aldi", slug: "aldi", category: "SHOPPING_RETAIL", description: "Discount grocery stores", website: "https://www.aldi.us", scope: "FEDERAL", popularityScore: 85, tags: ["shopping", "grocery", "budget"] },
-  { name: "PetSmart", slug: "petsmart", category: "SHOPPING_RETAIL", description: "Pet supplies and services", website: "https://www.petsmart.com", phone: "1-888-839-9638", scope: "FEDERAL", popularityScore: 82, tags: ["pet", "supplies"] },
-  { name: "Petco", slug: "petco", category: "SHOPPING_RETAIL", description: "Pet health and wellness", website: "https://www.petco.com", phone: "1-877-738-6742", scope: "FEDERAL", popularityScore: 78, tags: ["pet", "supplies"] },
 
   // ══════════════════════════════════════════════════════════
   // CONVENIENCE / GAS STATIONS (NEW)
@@ -709,6 +721,12 @@ export const STATE_PROVIDERS = [
   { name: "Meijer", slug: "meijer", category: "SHOPPING_RETAIL", description: "Midwest supercenter chain", website: "https://www.meijer.com", scope: "STATE", states: ["MI", "OH", "IN", "IL", "WI", "KY"], popularityScore: 78, tags: ["shopping", "grocery"] },
   { name: "Kroger", slug: "kroger", category: "SHOPPING_RETAIL", description: "Grocery chain in 35 states", website: "https://www.kroger.com", phone: "1-800-576-4377", scope: "FEDERAL", popularityScore: 85, tags: ["shopping", "grocery"] },
   { name: "Safeway", slug: "safeway", category: "SHOPPING_RETAIL", description: "Grocery chain in western US", website: "https://www.safeway.com", scope: "STATE", states: ["AK", "AZ", "CA", "CO", "DC", "DE", "HI", "ID", "MD", "MT", "NE", "NM", "NV", "OR", "SD", "VA", "WA", "WY"], popularityScore: 80, tags: ["shopping", "grocery"] },
+  { name: "Hy-Vee", slug: "hy-vee", category: "SHOPPING_RETAIL", description: "Midwest supermarket chain", website: "https://www.hy-vee.com", scope: "STATE", states: ["IA", "IL", "KS", "MN", "MO", "NE", "SD", "WI"], popularityScore: 75, tags: ["shopping", "grocery"] },
+  { name: "WinCo Foods", slug: "winco", category: "SHOPPING_RETAIL", description: "Employee-owned discount grocery chain", website: "https://www.wincofoods.com", scope: "STATE", states: ["AZ", "CA", "ID", "MT", "NV", "OK", "OR", "TX", "UT", "WA"], popularityScore: 72, tags: ["shopping", "grocery", "budget"] },
+  { name: "Giant Food", slug: "giant-food", category: "SHOPPING_RETAIL", description: "Mid-Atlantic grocery chain", website: "https://www.giantfood.com", scope: "STATE", states: ["DC", "DE", "MD", "PA", "VA"], popularityScore: 78, tags: ["shopping", "grocery"] },
+  { name: "Stop & Shop", slug: "stop-shop", category: "SHOPPING_RETAIL", description: "Northeast supermarket chain", website: "https://www.stopandshop.com", scope: "STATE", states: ["CT", "MA", "NJ", "NY", "RI"], popularityScore: 75, tags: ["shopping", "grocery"] },
+  { name: "Fred Meyer", slug: "fred-meyer", category: "SHOPPING_RETAIL", description: "Pacific Northwest one-stop shopping chain", website: "https://www.fredmeyer.com", scope: "STATE", states: ["AK", "ID", "OR", "WA"], popularityScore: 72, tags: ["shopping", "grocery"] },
+  { name: "Albertsons", slug: "albertsons", category: "SHOPPING_RETAIL", description: "Regional grocery store network", website: "https://www.albertsons.com", scope: "STATE", states: ["AR", "AZ", "CA", "CO", "ID", "LA", "MT", "NE", "NV", "NM", "ND", "OR", "SD", "TX", "UT", "WA", "WY"], popularityScore: 78, tags: ["shopping", "grocery"] },
 
   // ── Maine (ME) — Coverage Gap Fix ──
   { name: "Central Maine Power", slug: "cmp-me", category: "UTILITY_ELECTRIC", description: "Electric utility for central and southern Maine", website: "https://www.cmpco.com", phone: "1-800-750-4000", scope: "STATE", states: ["ME"], popularityScore: 88, tags: ["electric"] },
@@ -776,27 +794,20 @@ export const STATE_PROVIDERS = [
   { name: "Wag!", slug: "wag", category: "PET_SERVICES", description: "On-demand dog walking and pet care", website: "https://www.wagwalking.com", scope: "FEDERAL", popularityScore: 72, tags: ["pet", "dog"] },
   { name: "PetSmart", slug: "petsmart", category: "PET_SERVICES", description: "Pet supplies, grooming, boarding, training", website: "https://www.petsmart.com", phone: "1-888-839-9638", scope: "FEDERAL", popularityScore: 85, tags: ["pet", "dog", "cat"] },
   { name: "Petco", slug: "petco", category: "PET_SERVICES", description: "Pet health, supplies, and veterinary care", website: "https://www.petco.com", phone: "1-877-738-6742", scope: "FEDERAL", popularityScore: 82, tags: ["pet", "dog", "cat", "vet"] },
+  { name: "Camp Bow Wow", slug: "camp-bow-wow", category: "PET_SERVICES", description: "Dog daycare, boarding, and grooming", website: "https://www.campbowwow.com", scope: "FEDERAL", popularityScore: 64, tags: ["pet", "dog"] },
+  { name: "Dogtopia", slug: "dogtopia", category: "PET_SERVICES", description: "Dog daycare, boarding, and spa services", website: "https://www.dogtopia.com", scope: "FEDERAL", popularityScore: 62, tags: ["pet", "dog"] },
 
   // ── MOVING SERVICES ──
-  { name: "U-Haul", slug: "uhaul", category: "HOUSING_MOVING", description: "DIY moving trucks, trailers, and storage", website: "https://www.uhaul.com", phone: "1-800-468-4285", scope: "FEDERAL", popularityScore: 95, tags: ["moving", "storage"] },
-  { name: "PODS", slug: "pods", category: "HOUSING_MOVING", description: "Portable storage containers for moving", website: "https://www.pods.com", phone: "1-855-706-4758", scope: "FEDERAL", popularityScore: 82, tags: ["moving", "storage"] },
-  { name: "Budget Truck Rental", slug: "budget-truck", category: "HOUSING_MOVING", description: "Affordable moving truck rental", website: "https://www.budgettruck.com", phone: "1-800-462-8343", scope: "FEDERAL", popularityScore: 72, tags: ["moving"] },
-  { name: "Penske Truck Rental", slug: "penske", category: "HOUSING_MOVING", description: "One-way and local truck rental", website: "https://www.pensketruckrental.com", phone: "1-800-222-0277", scope: "FEDERAL", popularityScore: 70, tags: ["moving"] },
-  { name: "Two Men and a Truck", slug: "two-men-truck", category: "HOUSING_MOVING", description: "Full-service moving company", website: "https://www.twomenandatruck.com", phone: "1-800-345-1070", scope: "FEDERAL", popularityScore: 68, tags: ["moving"] },
-  { name: "TaskRabbit", slug: "taskrabbit", category: "HOUSING_MOVING", description: "Hire movers, handymen, and more", website: "https://www.taskrabbit.com", scope: "FEDERAL", popularityScore: 72, tags: ["moving", "home"] },
 
   // ── LEGAL SERVICES ──
   { name: "LegalZoom", slug: "legalzoom", category: "LEGAL_SERVICES", description: "Online legal services — wills, LLC, address change", website: "https://www.legalzoom.com", phone: "1-800-773-0888", scope: "FEDERAL", popularityScore: 78, tags: ["legal"] },
   { name: "Rocket Lawyer", slug: "rocket-lawyer", category: "LEGAL_SERVICES", description: "Legal documents and attorney access", website: "https://www.rocketlawyer.com", scope: "FEDERAL", popularityScore: 68, tags: ["legal"] },
 
   // ── LAWN CARE ──
-  { name: "TruGreen", slug: "trugreen", category: "HOUSING_LAWN_CARE", description: "America's #1 lawn care company", website: "https://www.trugreen.com", phone: "1-800-464-0171", scope: "FEDERAL", popularityScore: 82, tags: ["lawn", "home"] },
   { name: "Lawn Love", slug: "lawn-love", category: "HOUSING_LAWN_CARE", description: "On-demand lawn care and landscaping", website: "https://www.lawnlove.com", scope: "FEDERAL", popularityScore: 65, tags: ["lawn", "home"] },
   { name: "Sunday Lawn Care", slug: "sunday-lawn", category: "HOUSING_LAWN_CARE", description: "Custom lawn care plan delivered to your door", website: "https://www.getsunday.com", scope: "FEDERAL", popularityScore: 60, tags: ["lawn", "home"] },
 
   // ── PEST CONTROL ──
-  { name: "Terminix", slug: "terminix", category: "HOUSING_PEST_CONTROL", description: "Termite and pest control since 1927", website: "https://www.terminix.com", phone: "1-866-569-4035", scope: "FEDERAL", popularityScore: 85, tags: ["pest", "home"] },
-  { name: "Orkin", slug: "orkin", category: "HOUSING_PEST_CONTROL", description: "Pest, termite, and mosquito control", website: "https://www.orkin.com", phone: "1-877-819-5061", scope: "FEDERAL", popularityScore: 82, tags: ["pest", "home"] },
   { name: "Rentokil (Ehrlich)", slug: "rentokil", category: "HOUSING_PEST_CONTROL", description: "Pest control services", website: "https://www.rentokil.com/us", scope: "FEDERAL", popularityScore: 68, tags: ["pest", "home"] },
 
   // ── SMART HOME ──
@@ -804,7 +815,6 @@ export const STATE_PROVIDERS = [
   { name: "Arlo", slug: "arlo", category: "HOUSING_SECURITY", subCategory: "SMART_HOME", description: "Wire-free smart security cameras", website: "https://www.arlo.com", scope: "FEDERAL", popularityScore: 70, tags: ["security", "home"] },
 
   // ── IDENTITY PROTECTION ──
-  { name: "LifeLock (Norton)", slug: "lifelock", category: "FINANCIAL_CREDIT_CARD", subCategory: "IDENTITY", description: "Identity theft protection and credit monitoring", website: "https://www.lifelock.com", phone: "1-800-543-3562", scope: "FEDERAL", popularityScore: 78, tags: ["identity", "security"] },
   { name: "Experian IdentityWorks", slug: "experian-id", category: "FINANCIAL_CREDIT_CARD", subCategory: "IDENTITY", description: "Credit monitoring and identity protection", website: "https://www.experian.com/consumer-products/identity-theft-and-credit-protection.html", scope: "FEDERAL", popularityScore: 72, tags: ["identity", "security"] },
   { name: "Credit Karma", slug: "credit-karma", category: "FINANCIAL_CREDIT_CARD", subCategory: "CREDIT", description: "Free credit scores and monitoring", website: "https://www.creditkarma.com", scope: "FEDERAL", popularityScore: 85, tags: ["identity", "banking"] },
 
@@ -936,4 +946,70 @@ export const STATE_PROVIDERS = [
   { name: "West Virginia Secretary of State — Voter", slug: "vote-wv", category: "GOVERNMENT_VOTER", description: "West Virginia voter registration (GoVoteWV)", website: "https://ovr.sos.wv.gov", phone: "1-304-558-6000", scope: "STATE", states: ["WV"], popularityScore: 68, tags: ["voter", "government", "essential"] },
   { name: "Wisconsin Elections Commission", slug: "vote-wi", category: "GOVERNMENT_VOTER", description: "Wisconsin voter registration (MyVote.wi.gov)", website: "https://myvote.wi.gov", phone: "1-608-266-8005", scope: "STATE", states: ["WI"], popularityScore: 74, tags: ["voter", "government", "essential"] },
   { name: "Wyoming Secretary of State — Voter", slug: "vote-wy", category: "GOVERNMENT_VOTER", description: "Wyoming voter registration and elections", website: "https://sos.wyo.gov/elections", phone: "1-307-777-5860", scope: "STATE", states: ["WY"], popularityScore: 66, tags: ["voter", "government", "essential"] },
+
+  // ── Renters Insurance (FINANCIAL_INSURANCE_RENTERS) ──
+  { name: "Lemonade Renters", slug: "lemonade-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "AI-powered renters insurance starting at $5/mo", website: "https://www.lemonade.com/renters-insurance", phone: "1-844-733-8666", scope: "FEDERAL", popularityScore: 82, tags: ["renters", "insurance", "rental"] },
+  { name: "State Farm Renters", slug: "state-farm-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters insurance from State Farm", website: "https://www.statefarm.com/insurance/home-and-property/renters", phone: "1-800-782-8332", scope: "FEDERAL", popularityScore: 85, tags: ["renters", "insurance"] },
+  { name: "Allstate Renters", slug: "allstate-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters coverage from Allstate", website: "https://www.allstate.com/renters-insurance", phone: "1-800-255-7828", scope: "FEDERAL", popularityScore: 80, tags: ["renters", "insurance"] },
+  { name: "Geico Renters", slug: "geico-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters insurance from Geico", website: "https://www.geico.com/renters-insurance", phone: "1-800-841-3000", scope: "FEDERAL", popularityScore: 78, tags: ["renters", "insurance"] },
+  { name: "Progressive Renters", slug: "progressive-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters insurance from Progressive", website: "https://www.progressive.com/renters", phone: "1-866-749-7436", scope: "FEDERAL", popularityScore: 76, tags: ["renters", "insurance"] },
+  { name: "Liberty Mutual Renters", slug: "liberty-mutual-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters insurance from Liberty Mutual", website: "https://www.libertymutual.com/renters-insurance", phone: "1-800-290-8711", scope: "FEDERAL", popularityScore: 72, tags: ["renters", "insurance"] },
+  { name: "USAA Renters", slug: "usaa-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters insurance for military families", website: "https://www.usaa.com/inet/wc/insurance-renters-product", phone: "1-800-531-8722", scope: "FEDERAL", popularityScore: 75, tags: ["renters", "insurance", "military"] },
+  { name: "Assurant Renters", slug: "assurant-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters insurance commonly offered via apartment communities", website: "https://www.assurant.com/renters-insurance", phone: "1-888-260-7736", scope: "FEDERAL", popularityScore: 60, tags: ["renters", "insurance", "apartment"] },
+  { name: "Toggle Renters", slug: "toggle-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Customizable renters insurance by Farmers", website: "https://gettoggle.com", scope: "FEDERAL", popularityScore: 58, tags: ["renters", "insurance"] },
+  { name: "Jetty Renters", slug: "jetty-renters", category: "FINANCIAL_INSURANCE_RENTERS", description: "Renters insurance built for apartment dwellers", website: "https://www.jetty.com/renters-insurance", scope: "FEDERAL", popularityScore: 55, tags: ["renters", "insurance", "apartment"] },
+
+  // ── Payment Apps / Fintech (FINANCIAL_FINTECH) ──
+  { name: "Venmo", slug: "venmo", category: "FINANCIAL_FINTECH", description: "Send and receive money with friends", website: "https://venmo.com", scope: "FEDERAL", popularityScore: 92, tags: ["payments", "p2p", "fintech"] },
+  { name: "PayPal", slug: "paypal", category: "FINANCIAL_FINTECH", description: "Digital payments and money transfers", website: "https://www.paypal.com", phone: "1-888-221-1161", scope: "FEDERAL", popularityScore: 90, tags: ["payments", "fintech"] },
+  { name: "Zelle", slug: "zelle", category: "FINANCIAL_FINTECH", description: "Bank-backed instant money transfers", website: "https://www.zellepay.com", scope: "FEDERAL", popularityScore: 88, tags: ["payments", "p2p", "banking"] },
+  { name: "Cash App", slug: "cash-app", category: "FINANCIAL_FINTECH", description: "Peer-to-peer payments, banking, and investing", website: "https://cash.app", scope: "FEDERAL", popularityScore: 87, tags: ["payments", "p2p", "banking"] },
+  { name: "Apple Pay", slug: "apple-pay", category: "FINANCIAL_FINTECH", description: "Contactless payments from iPhone and Apple Watch", website: "https://www.apple.com/apple-pay", scope: "FEDERAL", popularityScore: 85, tags: ["payments", "contactless"] },
+  { name: "Google Pay", slug: "google-pay", category: "FINANCIAL_FINTECH", description: "Contactless payments from Android devices", website: "https://pay.google.com", scope: "FEDERAL", popularityScore: 78, tags: ["payments", "contactless"] },
+  { name: "Chime", slug: "chime", category: "FINANCIAL_FINTECH", description: "Fee-free mobile banking", website: "https://www.chime.com", phone: "1-844-244-6363", scope: "FEDERAL", popularityScore: 82, tags: ["banking", "fintech"] },
+  { name: "Wise", slug: "wise", category: "FINANCIAL_FINTECH", description: "International money transfers at real exchange rates", website: "https://wise.com", scope: "FEDERAL", popularityScore: 72, tags: ["payments", "international", "fintech"] },
+  { name: "Current", slug: "current", category: "FINANCIAL_FINTECH", description: "Mobile banking with early paycheck access", website: "https://current.com", scope: "FEDERAL", popularityScore: 62, tags: ["banking", "fintech"] },
+  { name: "Varo Bank", slug: "varo", category: "FINANCIAL_FINTECH", description: "All-mobile bank with no monthly fees", website: "https://www.varomoney.com", phone: "1-877-377-8276", scope: "FEDERAL", popularityScore: 65, tags: ["banking", "fintech"] },
+
+  // ── Telemedicine (HEALTHCARE_TELEMEDICINE) ──
+  { name: "MDLive", slug: "mdlive", category: "HEALTHCARE_TELEMEDICINE", description: "24/7 virtual doctor visits", website: "https://www.mdlive.com", phone: "1-888-632-2738", scope: "FEDERAL", popularityScore: 75, tags: ["telemedicine", "virtual", "health"] },
+  { name: "Amwell", slug: "amwell", category: "HEALTHCARE_TELEMEDICINE", description: "Online doctor visits via video", website: "https://amwell.com", phone: "1-844-733-3627", scope: "FEDERAL", popularityScore: 72, tags: ["telemedicine", "virtual", "health"] },
+  { name: "Doctor on Demand", slug: "doctor-on-demand", category: "HEALTHCARE_TELEMEDICINE", description: "Virtual urgent, primary, and mental health care", website: "https://doctorondemand.com", phone: "1-800-997-6196", scope: "FEDERAL", popularityScore: 70, tags: ["telemedicine", "virtual", "health"] },
+  { name: "K Health", slug: "k-health", category: "HEALTHCARE_TELEMEDICINE", description: "AI-assisted primary care via mobile", website: "https://khealth.com", scope: "FEDERAL", popularityScore: 62, tags: ["telemedicine", "virtual"] },
+  { name: "PlushCare", slug: "plushcare", category: "HEALTHCARE_TELEMEDICINE", description: "Online doctor visits and prescriptions", website: "https://plushcare.com", phone: "1-800-221-5140", scope: "FEDERAL", popularityScore: 60, tags: ["telemedicine", "virtual"] },
+  { name: "Hims", slug: "hims", category: "HEALTHCARE_TELEMEDICINE", description: "Men's telehealth for hair, skin, sexual health, mental health", website: "https://www.hims.com", scope: "FEDERAL", popularityScore: 72, tags: ["telemedicine", "mens-health"] },
+  { name: "Hers", slug: "hers", category: "HEALTHCARE_TELEMEDICINE", description: "Women's telehealth for skin, hair, mental health, sexual wellness", website: "https://www.forhers.com", scope: "FEDERAL", popularityScore: 70, tags: ["telemedicine", "womens-health"] },
+  { name: "Talkspace", slug: "talkspace", category: "HEALTHCARE_TELEMEDICINE", description: "Online therapy and psychiatry", website: "https://www.talkspace.com", scope: "FEDERAL", popularityScore: 75, tags: ["telemedicine", "therapy", "mental-health"] },
+  { name: "BetterHelp", slug: "betterhelp", category: "HEALTHCARE_TELEMEDICINE", description: "Online therapy with licensed therapists", website: "https://www.betterhelp.com", scope: "FEDERAL", popularityScore: 82, tags: ["telemedicine", "therapy", "mental-health"] },
+  { name: "Ro", slug: "ro", category: "HEALTHCARE_TELEMEDICINE", description: "Telehealth platform for primary, sexual, and weight care", website: "https://ro.co", scope: "FEDERAL", popularityScore: 65, tags: ["telemedicine", "virtual"] },
+
+  // ── Local Dining & Food Discovery (LOCAL_DINING) ──
+  { name: "Yelp", slug: "yelp", category: "LOCAL_DINING", description: "Find and review local restaurants and businesses", website: "https://www.yelp.com", scope: "FEDERAL", popularityScore: 88, tags: ["dining", "reviews", "local"] },
+  { name: "OpenTable", slug: "opentable", category: "LOCAL_DINING", description: "Restaurant reservations online", website: "https://www.opentable.com", scope: "FEDERAL", popularityScore: 85, tags: ["dining", "reservations"] },
+  { name: "Resy", slug: "resy", category: "LOCAL_DINING", description: "Restaurant discovery and reservations by Amex", website: "https://resy.com", scope: "FEDERAL", popularityScore: 75, tags: ["dining", "reservations"] },
+  { name: "Uber Eats", slug: "uber-eats", category: "LOCAL_DINING", description: "Food delivery from local restaurants", website: "https://www.ubereats.com", scope: "FEDERAL", popularityScore: 92, tags: ["dining", "delivery"] },
+  { name: "Seamless", slug: "seamless", category: "LOCAL_DINING", description: "Food delivery from local restaurants (Grubhub-owned)", website: "https://www.seamless.com", scope: "FEDERAL", popularityScore: 70, tags: ["dining", "delivery"] },
+  { name: "Postmates", slug: "postmates", category: "LOCAL_DINING", description: "On-demand food and grocery delivery (Uber-owned)", website: "https://postmates.com", scope: "FEDERAL", popularityScore: 70, tags: ["dining", "delivery"] },
+  { name: "Caviar", slug: "caviar", category: "LOCAL_DINING", description: "Upscale food delivery (part of DoorDash)", website: "https://www.trycaviar.com", scope: "FEDERAL", popularityScore: 60, tags: ["dining", "delivery"] },
+  { name: "ChowNow", slug: "chownow", category: "LOCAL_DINING", description: "Direct ordering platform for independent restaurants", website: "https://www.chownow.com", scope: "FEDERAL", popularityScore: 55, tags: ["dining", "delivery", "local"] },
+  { name: "Toast TakeOut", slug: "toast-takeout", category: "LOCAL_DINING", description: "Order from local restaurants commission-free", website: "https://pos.toasttab.com/products/toast-takeout-app", scope: "FEDERAL", popularityScore: 58, tags: ["dining", "pickup", "local"] },
+  { name: "Tock", slug: "tock", category: "LOCAL_DINING", description: "Reservations, ticketed events, and takeout for restaurants", website: "https://www.exploretock.com", scope: "FEDERAL", popularityScore: 58, tags: ["dining", "reservations"] },
+  { name: "TripAdvisor", slug: "tripadvisor", category: "LOCAL_DINING", description: "Restaurant and travel reviews worldwide", website: "https://www.tripadvisor.com", scope: "FEDERAL", popularityScore: 78, tags: ["dining", "reviews", "travel"] },
+
+  // ── Childcare / Daycare (KIDS_DAYCARE additions) ──
+  { name: "UrbanSitter", slug: "urbansitter", category: "KIDS_DAYCARE", description: "Parent-community based babysitter network", website: "https://www.urbansitter.com", scope: "FEDERAL", popularityScore: 62, tags: ["childcare", "kids", "babysitter"] },
+  { name: "La Petite Academy", slug: "la-petite-academy", category: "KIDS_DAYCARE", description: "Preschool and childcare for infants through school-age", website: "https://www.lapetite.com", scope: "FEDERAL", popularityScore: 70, tags: ["childcare", "daycare", "preschool"] },
+  { name: "Primrose Schools", slug: "primrose-schools", category: "KIDS_DAYCARE", description: "Premier early education and childcare", website: "https://www.primroseschools.com", scope: "FEDERAL", popularityScore: 72, tags: ["childcare", "daycare", "preschool"] },
+
+  // ── Parking (TRANSPORTATION_PARKING additions) ──
+  { name: "SpotHero", slug: "spothero", category: "TRANSPORTATION_PARKING", description: "Reserve parking spots in advance at lots and garages", website: "https://spothero.com", phone: "1-844-356-8054", scope: "FEDERAL", popularityScore: 80, tags: ["parking", "reservation"] },
+  { name: "ParkWhiz", slug: "parkwhiz", category: "TRANSPORTATION_PARKING", description: "Book parking in advance at thousands of locations", website: "https://www.parkwhiz.com", scope: "FEDERAL", popularityScore: 72, tags: ["parking", "reservation"] },
+  { name: "PayByPhone", slug: "paybyphone", category: "TRANSPORTATION_PARKING", description: "Mobile payments for municipal parking", website: "https://www.paybyphone.com", scope: "FEDERAL", popularityScore: 68, tags: ["parking", "meter"] },
+  { name: "Premier Parking", slug: "premier-parking", category: "TRANSPORTATION_PARKING", description: "Parking operator across 30+ US cities", website: "https://www.premierparking.com", scope: "FEDERAL", popularityScore: 58, tags: ["parking"] },
+
+  // ── Internet / Fiber additions (UTILITY_INTERNET) ──
+  { name: "T-Mobile Home Internet", slug: "tmobile-home-internet", category: "UTILITY_INTERNET", description: "5G home internet nationwide", website: "https://www.t-mobile.com/home-internet", phone: "1-844-275-9310", scope: "FEDERAL", popularityScore: 78, tags: ["internet", "5g", "wireless"] },
+  { name: "Verizon 5G Home Internet", slug: "verizon-5g-home", category: "UTILITY_INTERNET", description: "5G Ultra Wideband home internet", website: "https://www.verizon.com/home/5g-home-internet", phone: "1-800-922-0204", scope: "FEDERAL", popularityScore: 76, tags: ["internet", "5g", "wireless"] },
+  { name: "Astound Broadband", slug: "astound", category: "UTILITY_INTERNET", description: "Cable/fiber internet via RCN, Wave, Grande, enTouch", website: "https://www.astound.com", scope: "FEDERAL", popularityScore: 62, tags: ["internet", "cable"] },
+  { name: "WOW! Internet", slug: "wow-internet", category: "UTILITY_INTERNET", description: "Broadband cable service in select US markets", website: "https://www.wowway.com", phone: "1-866-496-9669", scope: "FEDERAL", popularityScore: 58, tags: ["internet", "cable"] },
 ];

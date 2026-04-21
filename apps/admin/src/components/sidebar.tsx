@@ -28,6 +28,7 @@ import {
   Database,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ThemeToggle } from "./theme-toggle";
 
 interface NavItem {
   name: string;
@@ -248,8 +249,9 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Logout */}
-      <div className="border-t border-border p-3">
+      {/* Theme toggle + Logout */}
+      <div className="border-t border-border p-3 space-y-1">
+        <ThemeToggle />
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"

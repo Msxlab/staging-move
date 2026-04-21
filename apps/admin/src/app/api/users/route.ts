@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
     const subStatus = searchParams.get("subStatus") || "";
     const hasReviews = searchParams.get("hasReviews");
     const hasMoving = searchParams.get("hasMoving");
-    const hasDocs = searchParams.get("hasDocs");
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
     const sortBy = searchParams.get("sortBy") || "createdAt";
@@ -33,9 +32,8 @@ export async function GET(request: NextRequest) {
     if (subStatus) {
       where.subscription = { ...where.subscription, status: subStatus };
     }
-    if (hasReviews === "true") where.reviews = { some: {} };
+    if (hasReviews === "true") where.providerReviews = { some: {} };
     if (hasMoving === "true") where.movingPlans = { some: {} };
-    if (hasDocs === "true") where.documents = { some: {} };
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
@@ -56,13 +54,12 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           subscription: { select: { plan: true, status: true, trialEndsAt: true } },
-          profile: { select: { familyStatus: true, hasChildren: true, lastActiveDate: true, totalPoints: true } },
+          profile: { select: { familyStatus: true, hasChildren: true } },
           _count: {
             select: {
               addresses: true,
               services: true,
-              reviews: true,
-              documents: true,
+              providerReviews: true,
               movingPlans: true,
             },
           },
@@ -105,9 +102,18 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await requirePermission("users", "canDelete", { minimumRole: "ADMIN" });
-    const { ids } = await request.json();
+    const { ids, confirmPassword } = await request.json();
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: "No user IDs provided" }, { status: 400 });
+    }
+
+    // Step-up auth: bulk user deletion is the highest-blast-radius admin action.
+    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true },
+        { status: 403 },
+      );
     }
 
     const users = await prisma.user.findMany({

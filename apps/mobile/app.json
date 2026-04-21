@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "locateflow",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -47,7 +47,6 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-iap",
       [
         "expo-notifications",
         {

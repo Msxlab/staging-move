@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendBillReminderEmail } from "@/lib/email-service";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 import {
   buildWebNotificationSettings,
   getDaysUntilDate,
@@ -16,10 +17,8 @@ import {
  * Protected by CRON_SECRET header.
  */
 export async function GET(req: Request) {
-  // SEC-003: Fail-closed — reject if CRON_SECRET is not configured or doesn't match
-  const cronSecret = process.env.CRON_SECRET;
-  const authHeader = req.headers.get("authorization");
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  // SEC-003: Fail-closed — reject if no matching cron secret configured.
+  if (!verifyInternalAuth(req.headers.get("authorization"), "cron")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

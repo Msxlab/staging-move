@@ -1,8 +1,25 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { ProvidersClient, type ProviderItem, type AddressOption } from "./providers-client";
 
+// Page is user-scoped (user's addresses drive the view) — dynamic is
+// required. But the provider catalog itself is global and changes rarely,
+// so we cache just that query under a `providers` tag. Admin mutations
+// already call revalidateTag("providers"), so this stays fresh without a
+// time-based refetch.
 export const dynamic = "force-dynamic";
+
+const getActiveProviders = unstable_cache(
+  async () =>
+    prisma.serviceProvider.findMany({
+      where: { isActive: true },
+      orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
+      take: 200,
+    }),
+  ["active-providers-top-200"],
+  { tags: ["providers"], revalidate: 300 },
+);
 
 type ProviderRow = {
   id: string;
@@ -41,11 +58,7 @@ export default async function ProvidersPage() {
       where: { userId, deletedAt: null },
       orderBy: [{ isPrimary: "desc" }, { createdAt: "desc" }],
     }),
-    prisma.serviceProvider.findMany({
-      where: { isActive: true },
-      orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
-      take: 200,
-    }) as unknown as Promise<ProviderRow[]>,
+    getActiveProviders() as unknown as Promise<ProviderRow[]>,
   ]);
 
   const addressOptions: AddressOption[] = addresses.map((a) => ({
@@ -84,6 +97,7 @@ export default async function ProvidersPage() {
       initialProviders={initialProviders}
       addresses={addressOptions}
       initialState={primaryAddress?.state ?? null}
+      initialZip={primaryAddress?.zip ?? null}
       initialAddressId={primaryAddress?.id ?? null}
     />
   );

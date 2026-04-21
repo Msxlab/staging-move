@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { createBackupArchive } from "@/lib/backup-archive";
 import { serializeBackupRecordMetadata, uploadBackupArchive } from "@/lib/backup-storage";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 const BACKUP_TABLES: Record<string, { model: string }> = {
   users: { model: "user" },
@@ -35,13 +36,7 @@ const BACKUP_TABLE_FETCHERS = {
 // Protected by CRON_SECRET. Call from Vercel Cron or external scheduler.
 export async function POST(request: NextRequest) {
   let backupId: string | null = null;
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    return NextResponse.json({ error: "CRON_SECRET not configured" }, { status: 503 });
-  }
-
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
+  if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

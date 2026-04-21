@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { notifyUserOfAdminChange } from "@/lib/user-notify";
 
 export async function GET(
   _request: NextRequest,
@@ -140,6 +141,17 @@ export async function PATCH(
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
+
+    // GDPR / transparency: notify the user about changes an admin made on
+    // their account. Debounced so a single PATCH with many fields still
+    // produces only one email within a 5-minute window.
+    if (Object.keys(changes).length > 0) {
+      await notifyUserOfAdminChange({
+        userId: id,
+        changes,
+        actorAdminId: session.adminId,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

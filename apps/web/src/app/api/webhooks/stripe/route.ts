@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlan } from "@/lib/billing";
+import { captureException, captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -193,11 +194,12 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled Stripe event: ${event.type}`);
+        captureMessage(`Unhandled Stripe event: ${event.type}`, "warning");
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
+    captureException(error, { route: "/api/webhooks/stripe" });
     console.error("Stripe webhook error:", error);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }

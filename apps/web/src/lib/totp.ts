@@ -97,7 +97,7 @@ export function verifyTOTP(base32Secret: string, code: string): boolean {
   const counter = getCurrentCounter();
 
   // Check current, previous, and next time steps
-  for (let offset = -1n; offset <= 1n; offset++) {
+  for (let offset = BigInt(-1); offset <= BigInt(1); offset++) {
     const expected = generateHOTP(secret, counter + offset);
     if (timingSafeEqual(expected, code)) return true;
   }

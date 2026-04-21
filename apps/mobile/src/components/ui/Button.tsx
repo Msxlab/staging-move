@@ -21,6 +21,7 @@ interface ButtonProps {
   disabled?: boolean;
   icon?: React.ReactNode;
   iconRight?: React.ReactNode;
+  rightIcon?: React.ReactNode;
   fullWidth?: boolean;
   accessibilityLabel?: string;
   accessibilityHint?: string;
@@ -37,12 +38,14 @@ export function Button({
   disabled = false,
   icon,
   iconRight,
+  rightIcon,
   fullWidth = false,
   accessibilityLabel,
   accessibilityHint,
   style,
   textStyle,
 }: ButtonProps) {
+  const trailingIcon = rightIcon || iconRight;
   const handlePress = () => {
     if (!loading && !disabled) {
       hapticLight();
@@ -76,7 +79,7 @@ export function Button({
     <>
       {icon}
       <Text style={textStyles}>{title}</Text>
-      {iconRight}
+      {trailingIcon}
     </>
   );
 

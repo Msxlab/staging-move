@@ -1,61 +1,80 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { normalizeProviderRecord, sanitizeProviderSeedRecords } from "@locateflow/shared";
 import { rebuildProviderCoverage } from "../src/provider-coverage";
 
 const prisma = new PrismaClient();
 
 async function upsertProvider(d: any) {
-  const existing = await prisma.serviceProvider.findUnique({ where: { slug: d.slug } });
+  const normalized = normalizeProviderRecord(d);
+  const existing = await prisma.serviceProvider.findUnique({ where: { slug: normalized.slug } });
   if (existing) return false;
-  const states = d.states || [];
-  const zipCodes = d.zipCodes || [];
-  const scope = d.scope;
+
+  const states = normalized.states;
+  const zipCodes = normalized.zipCodes;
+  const scope = normalized.scope;
+
   await prisma.$transaction(async (tx) => {
     const created = await tx.serviceProvider.create({
       data: {
-        name: d.name, slug: d.slug, category: d.category, subCategory: d.subCategory,
-        description: d.description, website: d.website, phone: d.phone,
-        scope, states: JSON.stringify(states),
-        zipCodes: JSON.stringify(zipCodes), tags: JSON.stringify(d.tags || []),
-        popularityScore: d.popularityScore || 50, isActive: true, displayOrder: 0,
+        name: normalized.name,
+        slug: normalized.slug,
+        category: normalized.category,
+        subCategory: normalized.subCategory,
+        description: normalized.description,
+        website: normalized.website,
+        phone: normalized.phone,
+        scope,
+        states: JSON.stringify(states),
+        zipCodes: JSON.stringify(zipCodes),
+        tags: JSON.stringify(normalized.tags),
+        popularityScore: normalized.popularityScore || 50,
+        isActive: normalized.isActive ?? true,
+        displayOrder: normalized.displayOrder || 0,
       },
     });
     await rebuildProviderCoverage(tx, { providerId: created.id, scope, states, zipCodes });
   });
+
   return true;
 }
 
-// Import data from separate files
-import { FEDERAL_NEW, STATE_DMVS, STATE_PROVIDERS } from "./seed-data/providers";
+import { FEDERAL_NEW, STATE_DMVS, STATE_PROVIDERS } from "./seed-data/provider-seed";
 import { STATE_RULES_ALL } from "./seed-data/state-rules";
 import { EMAIL_TEMPLATES_ALL } from "./seed-data/email-templates";
 import { HELP_ARTICLES_ALL, FAQS_ALL } from "./seed-data/help-center";
 
 async function main() {
-  console.log("🌱 Master Seed — Starting...\n");
+  console.log("Master seed starting...\n");
 
-  // P1: Federal Providers
-  console.log("📦 P1: Federal Providers...");
+  const federalProviders = sanitizeProviderSeedRecords(FEDERAL_NEW).providers;
+  const stateDmvs = sanitizeProviderSeedRecords(
+    STATE_DMVS.map((dmv) => ({ ...dmv, category: "GOVERNMENT_DMV", scope: "STATE" }))
+  ).providers;
+  const stateProviders = sanitizeProviderSeedRecords(STATE_PROVIDERS).providers;
+
+  console.log("P1: Federal Providers...");
   let created = 0;
-  for (const prov of FEDERAL_NEW) { if (await upsertProvider(prov)) created++; }
-  console.log(`   ✓ ${created} created (${FEDERAL_NEW.length} total)\n`);
-
-  // P1b: State DMVs
-  console.log("🪪 P1b: State DMVs...");
-  created = 0;
-  for (const dmv of STATE_DMVS) {
-    if (await upsertProvider({ ...dmv, category: "GOVERNMENT_DMV", scope: "STATE" })) created++;
+  for (const prov of federalProviders) {
+    if (await upsertProvider(prov)) created++;
   }
-  console.log(`   ✓ ${created} created (${STATE_DMVS.length} total)\n`);
+  console.log(`   created ${created} (${federalProviders.length} total)\n`);
 
-  // P1c: State Providers (utilities, transit, health, toll, ISP, grocery)
-  console.log("🏛️ P1c: State Providers...");
+  console.log("P1b: State DMVs...");
   created = 0;
-  for (const prov of STATE_PROVIDERS) { if (await upsertProvider(prov)) created++; }
-  console.log(`   ✓ ${created} created (${STATE_PROVIDERS.length} total)\n`);
+  for (const dmv of stateDmvs) {
+    if (await upsertProvider(dmv)) created++;
+  }
+  console.log(`   created ${created} (${stateDmvs.length} total)\n`);
 
-  // P2: State Rules
-  console.log("📋 P2: State Rules (all 50 + DC)...");
+  console.log("P1c: State Providers...");
+  created = 0;
+  for (const prov of stateProviders) {
+    if (await upsertProvider(prov)) created++;
+  }
+  console.log(`   created ${created} (${stateProviders.length} total)\n`);
+
+  console.log("P2: State Rules...");
   created = 0;
   for (const rule of STATE_RULES_ALL) {
     await prisma.stateRule.upsert({
@@ -65,10 +84,9 @@ async function main() {
     });
     created++;
   }
-  console.log(`   ✓ ${created} upserted\n`);
+  console.log(`   upserted ${created}\n`);
 
-  // P4: Email Templates
-  console.log("📧 P4: Email Templates...");
+  console.log("P4: Email Templates...");
   created = 0;
   for (const tpl of EMAIL_TEMPLATES_ALL) {
     const existing = await prisma.emailTemplate.findUnique({ where: { slug: tpl.slug } });
@@ -77,27 +95,30 @@ async function main() {
       created++;
     }
   }
-  console.log(`   ✓ ${created} created (${EMAIL_TEMPLATES_ALL.length} total)\n`);
+  console.log(`   created ${created} (${EMAIL_TEMPLATES_ALL.length} total)\n`);
 
-  // P5: Help Articles + FAQs
-  console.log("📖 P5: Help Articles...");
+  console.log("P5: Help Articles...");
   created = 0;
   for (const art of HELP_ARTICLES_ALL) {
     const existing = await prisma.helpArticle.findUnique({ where: { slug: art.slug } });
-    if (!existing) { await prisma.helpArticle.create({ data: art }); created++; }
+    if (!existing) {
+      await prisma.helpArticle.create({ data: art });
+      created++;
+    }
   }
-  console.log(`   ✓ ${created} articles created`);
+  console.log(`   created ${created} articles`);
 
-  console.log("❓ P5b: FAQs...");
+  console.log("P5b: FAQs...");
   const existingFaqs = await prisma.fAQ.count();
   if (existingFaqs === 0) {
-    for (const faq of FAQS_ALL) { await prisma.fAQ.create({ data: faq }); }
-    console.log(`   ✓ ${FAQS_ALL.length} FAQs created\n`);
+    for (const faq of FAQS_ALL) {
+      await prisma.fAQ.create({ data: faq });
+    }
+    console.log(`   created ${FAQS_ALL.length} FAQs\n`);
   } else {
-    console.log(`   → Skipped (${existingFaqs} already exist)\n`);
+    console.log(`   skipped (${existingFaqs} already exist)\n`);
   }
 
-  // Summary
   const counts = await Promise.all([
     prisma.serviceProvider.count(),
     prisma.stateRule.count(),
@@ -105,17 +126,19 @@ async function main() {
     prisma.helpArticle.count(),
     prisma.fAQ.count(),
   ]);
-  console.log("═══════════════════════════════════");
-  console.log("📊 FINAL COUNTS:");
-  console.log(`   Providers:      ${counts[0]}`);
-  console.log(`   State Rules:    ${counts[1]}`);
-  console.log(`   Email Templates:${counts[2]}`);
-  console.log(`   Help Articles:  ${counts[3]}`);
-  console.log(`   FAQs:           ${counts[4]}`);
-  console.log("═══════════════════════════════════");
+
+  console.log("FINAL COUNTS:");
+  console.log(`   Providers:       ${counts[0]}`);
+  console.log(`   State Rules:     ${counts[1]}`);
+  console.log(`   Email Templates: ${counts[2]}`);
+  console.log(`   Help Articles:   ${counts[3]}`);
+  console.log(`   FAQs:            ${counts[4]}`);
 }
 
 main()
-  .then(() => console.log("\n✅ Master seed complete!"))
-  .catch((e) => { console.error(e); process.exit(1); })
+  .then(() => console.log("\nMaster seed complete!"))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

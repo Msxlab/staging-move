@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { theme } from "@/lib/theme";
-import { createQueryClient } from "@/lib/query-client";
+import { createQueryClient, PERSISTER_OPTIONS } from "@/lib/query-client";
 import * as SplashScreen from "expo-splash-screen";
 import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
@@ -110,10 +110,18 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
+    // PersistQueryClientProvider rehydrates cached queries from
+    // AsyncStorage on boot (so users see their last dashboard even on
+    // airplane mode) and writes the cache back as mutations change it.
+    // The cache is versioned via PERSISTER_OPTIONS.buster — bump it on
+    // breaking API changes to force a clean refetch.
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={PERSISTER_OPTIONS}
+    >
       <AuthGuard>
         <RootNavigator />
       </AuthGuard>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

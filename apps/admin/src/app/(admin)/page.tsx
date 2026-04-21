@@ -11,13 +11,18 @@ import {
   Calendar,
   BarChart3,
   Activity,
+  DollarSign,
+  TrendingDown,
 } from "lucide-react";
+import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 import Link from "next/link";
 import { HealthCard } from "./health-card";
 
 async function getStats() {
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
   const [
     totalUsers,
@@ -30,6 +35,9 @@ async function getStats() {
     upcomingMoves,
     activeSessions,
     totalSessions,
+    paidSubsByPlan,
+    canceledLast30,
+    activeAt30DaysAgo,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
@@ -54,27 +62,76 @@ async function getStats() {
     }),
     prisma.userSession.count({ where: { isActive: true } }),
     prisma.userSession.count(),
+    // Revenue: active subs grouped by plan. Unit price comes from shared
+    // BILLING_PLAN_DEFINITIONS, so a price change in one place flows through.
+    prisma.subscription.groupBy({
+      by: ["plan"],
+      where: { status: "ACTIVE" },
+      _count: { id: true },
+    }),
+    // Churn numerator: subs that moved to CANCELED in the last 30 days.
+    prisma.subscription.count({
+      where: { status: "CANCELED", canceledAt: { gte: thirtyDaysAgo } },
+    }),
+    // Churn denominator: subs that were ACTIVE at the start of the window.
+    // Proxy: created before 30 days ago and not canceled before that point.
+    prisma.subscription.count({
+      where: {
+        createdAt: { lt: thirtyDaysAgo },
+        OR: [{ canceledAt: null }, { canceledAt: { gte: thirtyDaysAgo } }],
+      },
+    }),
   ]);
 
   const weeklyTrend = newUsersLastWeek > 0
     ? Math.round(((newUsersThisWeek - newUsersLastWeek) / newUsersLastWeek) * 100)
     : newUsersThisWeek > 0 ? 100 : 0;
 
+  const mrrUsd = paidSubsByPlan.reduce((sum: number, row: any) => {
+    const def = (BILLING_PLAN_DEFINITIONS as any)[row.plan];
+    if (!def?.isPaid) return sum;
+    // Treat every paid sub as monthly billing at the monthly price; yearly
+    // subs still contribute their amortized monthly revenue this way.
+    return sum + def.monthlyPriceUsd * row._count.id;
+  }, 0);
+
+  const paidSubCount = paidSubsByPlan.reduce(
+    (sum: number, row: any) =>
+      (BILLING_PLAN_DEFINITIONS as any)[row.plan]?.isPaid ? sum + row._count.id : sum,
+    0,
+  );
+  const arpuUsd = paidSubCount > 0 ? mrrUsd / paidSubCount : 0;
+  const churnPct =
+    activeAt30DaysAgo > 0
+      ? (canceledLast30 / activeAt30DaysAgo) * 100
+      : 0;
+  void sixtyDaysAgo; // reserved for future 12-month trend implementation
+
   return {
     totalUsers, activeSubscriptions, activeMovingPlans, totalProviders,
     recentUsers, newUsersThisWeek, weeklyTrend, upcomingMoves,
     activeSessions, totalSessions,
+    mrrUsd, arpuUsd, churnPct, paidSubCount,
   };
 }
 
 export default async function DashboardPage() {
   const stats = await getStats();
 
+  const fmtUsd = (n: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(n);
+
   const kpiCards = [
-    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "text-blue-500", bg: "bg-blue-500/10", href: "/users" },
-    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: CreditCard, color: "text-green-500", bg: "bg-green-500/10", href: "/subscriptions" },
-    { label: "Active Moves", value: stats.activeMovingPlans, icon: Truck, color: "text-purple-500", bg: "bg-purple-500/10", href: "/moving" },
-    { label: "Providers", value: stats.totalProviders, icon: Building2, color: "text-cyan-500", bg: "bg-cyan-500/10", href: "/providers" },
+    { label: "Total Users", value: stats.totalUsers.toLocaleString(), icon: Users, color: "text-blue-500", bg: "bg-blue-500/10", href: "/users" },
+    { label: "Active Subscriptions", value: stats.activeSubscriptions.toLocaleString(), icon: CreditCard, color: "text-green-500", bg: "bg-green-500/10", href: "/subscriptions" },
+    { label: "MRR", value: fmtUsd(stats.mrrUsd), icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10", href: "/subscriptions", sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid` },
+    { label: "Churn (30d)", value: `${stats.churnPct.toFixed(1)}%`, icon: TrendingDown, color: stats.churnPct > 5 ? "text-red-500" : "text-amber-500", bg: stats.churnPct > 5 ? "bg-red-500/10" : "bg-amber-500/10", href: "/subscriptions", sub: stats.churnPct > 5 ? "Above 5% target" : "Within target" },
+    { label: "Active Moves", value: stats.activeMovingPlans.toLocaleString(), icon: Truck, color: "text-purple-500", bg: "bg-purple-500/10", href: "/moving" },
+    { label: "Providers", value: stats.totalProviders.toLocaleString(), icon: Building2, color: "text-cyan-500", bg: "bg-cyan-500/10", href: "/providers" },
   ];
 
   return (
@@ -108,14 +165,17 @@ export default async function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpiCards.map((card) => (
           <Link key={card.label} href={card.href}
             className="rounded-xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-primary/20">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
-                <p className="mt-2 text-3xl font-bold text-foreground">{card.value.toLocaleString()}</p>
+                <p className="mt-2 text-2xl font-bold text-foreground truncate">{card.value}</p>
+                {card.sub ? (
+                  <p className="mt-1 text-[11px] text-muted-foreground truncate">{card.sub}</p>
+                ) : null}
               </div>
               <div className={`rounded-lg p-3 ${card.bg}`}>
                 <card.icon className={`h-6 w-6 ${card.color}`} />

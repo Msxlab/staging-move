@@ -4,10 +4,25 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, Eye, Trash2, Users, UserPlus,
-  CreditCard, TrendingUp, Filter, X, Download, ArrowUpDown,
-  ChevronDown, ChevronUp, Star, FileText, Truck, CheckSquare, Square,
+  CreditCard, Filter, X, Download, ArrowUpDown,
+  ChevronDown, ChevronUp, CheckSquare, Square,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useBulkSelection } from "@/hooks/use-bulk-selection";
+import { useColumnVisibility } from "@/hooks/use-column-visibility";
+import { ColumnSettingsMenu } from "@/components/column-settings-menu";
+
+const USER_COLUMNS = [
+  { key: "user", label: "User", alwaysOn: true },
+  { key: "plan", label: "Plan" },
+  { key: "status", label: "Status" },
+  { key: "addresses", label: "Addresses", defaultVisible: true },
+  { key: "services", label: "Services", defaultVisible: true },
+  { key: "reviews", label: "Reviews", defaultVisible: false },
+  { key: "moves", label: "Moves", defaultVisible: true },
+  { key: "joined", label: "Joined" },
+  { key: "actions", label: "Actions", alwaysOn: true },
+];
 
 interface User {
   id: string;
@@ -16,8 +31,8 @@ interface User {
   lastName: string | null;
   createdAt: string;
   subscription: { plan: string; status: string; trialEndsAt: string | null } | null;
-  profile: { lastActiveDate: string | null; totalPoints: number } | null;
-  _count: { addresses: number; services: number; reviews: number; documents: number; movingPlans: number };
+  profile: { familyStatus: string | null; hasChildren: boolean } | null;
+  _count: { addresses: number; services: number; providerReviews: number; movingPlans: number };
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -44,10 +59,15 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const bulk = useBulkSelection(users);
+  const cols = useColumnVisibility({
+    storageKey: "admin.users.cols",
+    version: 1,
+    columns: USER_COLUMNS,
+  });
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
-  const [filters, setFilters] = useState({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", hasDocs: "", dateFrom: "", dateTo: "" });
+  const [filters, setFilters] = useState({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", dateFrom: "", dateTo: "" });
   const perPage = 20;
 
   const fetchUsers = useCallback(async () => {
@@ -61,7 +81,6 @@ export default function UsersPage() {
       if (filters.subStatus) params.set("subStatus", filters.subStatus);
       if (filters.hasReviews) params.set("hasReviews", filters.hasReviews);
       if (filters.hasMoving) params.set("hasMoving", filters.hasMoving);
-      if (filters.hasDocs) params.set("hasDocs", filters.hasDocs);
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.set("dateTo", filters.dateTo);
 
@@ -89,47 +108,51 @@ export default function UsersPage() {
     return sortDir === "asc" ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />;
   }
 
-  function toggleSelect(id: string) {
-    setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  }
-  function toggleSelectAll() {
-    if (selected.size === users.length) setSelected(new Set());
-    else setSelected(new Set(users.map((u) => u.id)));
-  }
-
   async function handleDelete(userId: string, email: string) {
     if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
+    const confirmPassword = window.prompt(
+      "Enter your admin password to confirm this deletion:",
+    );
+    if (!confirmPassword) return;
     try {
-      const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error || "Failed to delete user"); return; }
       toast.success(data.message || "User deletion queued");
-      setSelected((prev) => { const n = new Set(prev); n.delete(userId); return n; });
+      bulk.clear();
       fetchUsers();
     } catch { toast.error("Failed to delete user"); }
   }
 
   async function handleBulkDelete() {
-    if (selected.size === 0) return;
-    if (!confirm(`Delete ${selected.size} users? This cannot be undone.`)) return;
+    if (bulk.count === 0) return;
+    if (!confirm(`Delete ${bulk.count} users? This cannot be undone.`)) return;
+    const confirmPassword = window.prompt(
+      "Enter your admin password to confirm this bulk deletion:",
+    );
+    if (!confirmPassword) return;
     try {
       const res = await fetch("/api/users", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selected) }),
+        body: JSON.stringify({ ids: bulk.selectedIds, confirmPassword }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error || "Bulk delete failed"); return; }
-      toast.success(data.message || `${selected.size} user deletion request(s) queued`);
-      setSelected(new Set());
+      toast.success(data.message || `${bulk.count} user deletion request(s) queued`);
+      bulk.clear();
       fetchUsers();
     } catch { toast.error("Bulk delete failed"); }
   }
 
   function exportCSV() {
-    const header = "ID,Email,First Name,Last Name,Plan,Status,Addresses,Services,Reviews,Documents,Moves,Joined";
-    const rows = users.filter((u) => selected.size === 0 || selected.has(u.id)).map((u) =>
-      `${u.id},${u.email},${u.firstName || ""},${u.lastName || ""},${u.subscription?.plan || "FREE_TRIAL"},${u.subscription?.status || ""},${u._count.addresses},${u._count.services},${u._count.reviews},${u._count.documents},${u._count.movingPlans},${new Date(u.createdAt).toISOString().split("T")[0]}`
+    const header = "ID,Email,First Name,Last Name,Plan,Status,Addresses,Services,Reviews,Moves,Joined";
+    const rows = users.filter((u) => bulk.count === 0 || bulk.isSelected(u.id)).map((u) =>
+      `${u.id},${u.email},${u.firstName || ""},${u.lastName || ""},${u.subscription?.plan || "FREE_TRIAL"},${u.subscription?.status || ""},${u._count.addresses},${u._count.services},${u._count.providerReviews},${u._count.movingPlans},${new Date(u.createdAt).toISOString().split("T")[0]}`
     );
     const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -139,7 +162,7 @@ export default function UsersPage() {
   }
 
   function clearFilters() {
-    setFilters({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", hasDocs: "", dateFrom: "", dateTo: "" });
+    setFilters({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", dateFrom: "", dateTo: "" });
     setPage(1);
   }
 
@@ -154,8 +177,14 @@ export default function UsersPage() {
           <p className="mt-1 text-muted-foreground">{total} user{total !== 1 ? "s" : ""} found</p>
         </div>
         <div className="flex items-center gap-2">
+          <ColumnSettingsMenu
+            columns={cols.columns}
+            onToggle={cols.toggle}
+            onReset={cols.reset}
+            hiddenCount={cols.hiddenCount}
+          />
           <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
-            <Download className="h-3.5 w-3.5" /> Export{selected.size > 0 ? ` (${selected.size})` : ""}
+            <Download className="h-3.5 w-3.5" /> Export{bulk.count > 0 ? ` (${bulk.count})` : ""}
           </button>
         </div>
       </div>
@@ -233,7 +262,7 @@ export default function UsersPage() {
       {/* Filter Panel */}
       {showFilters && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             <div>
               <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Plan</label>
               <select value={filters.plan} onChange={(e) => { setFilters({ ...filters, plan: e.target.value }); setPage(1); }} className={inputCls}>
@@ -267,13 +296,6 @@ export default function UsersPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Has Docs</label>
-              <select value={filters.hasDocs} onChange={(e) => { setFilters({ ...filters, hasDocs: e.target.value }); setPage(1); }} className={inputCls}>
-                <option value="">Any</option>
-                <option value="true">Yes</option>
-              </select>
-            </div>
-            <div>
               <label className="mb-1 block text-[11px] font-medium text-muted-foreground">From Date</label>
               <input type="date" value={filters.dateFrom} onChange={(e) => { setFilters({ ...filters, dateFrom: e.target.value }); setPage(1); }} className={inputCls} />
             </div>
@@ -286,9 +308,9 @@ export default function UsersPage() {
       )}
 
       {/* Bulk Actions */}
-      {selected.size > 0 && (
+      {bulk.count > 0 && (
         <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
-          <span className="text-sm font-medium text-primary">{selected.size} selected</span>
+          <span className="text-sm font-medium text-primary">{bulk.count} selected</span>
           <div className="h-4 w-px bg-border" />
           <button onClick={handleBulkDelete} className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20">
             <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -296,7 +318,7 @@ export default function UsersPage() {
           <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent">
             <Download className="h-3.5 w-3.5" /> Export
           </button>
-          <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
+          <button onClick={bulk.clear} className="ml-auto text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
 
@@ -306,37 +328,46 @@ export default function UsersPage() {
           <thead className="bg-muted/50">
             <tr>
               <th className="px-3 py-3 text-left">
-                <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-foreground">
-                  {selected.size === users.length && users.length > 0 ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+                <button onClick={bulk.toggleAll} className="text-muted-foreground hover:text-foreground">
+                  {bulk.allVisibleSelected ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
                 </button>
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground cursor-pointer" onClick={() => toggleSort("name")}>
                 User <SortIcon col="name" />
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Plan</th>
-              <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Status</th>
-              <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Addr</th>
-              <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Svc</th>
-              <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Rev</th>
-              <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Docs</th>
-              <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Moves</th>
-              <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground cursor-pointer" onClick={() => toggleSort("createdAt")}>
-                Joined <SortIcon col="createdAt" />
-              </th>
+              {cols.isVisible("plan") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Plan</th>}
+              {cols.isVisible("status") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Status</th>}
+              {cols.isVisible("addresses") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Addr</th>}
+              {cols.isVisible("services") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Svc</th>}
+              {cols.isVisible("reviews") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Rev</th>}
+              {cols.isVisible("moves") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Moves</th>}
+              {cols.isVisible("joined") && (
+                <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground cursor-pointer" onClick={() => toggleSort("createdAt")}>
+                  Joined <SortIcon col="createdAt" />
+                </th>
+              )}
               <th className="px-3 py-3 text-right text-xs font-medium uppercase text-muted-foreground">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {loading ? (
-              <tr><td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>
-            ) : users.length === 0 ? (
-              <tr><td colSpan={11} className="px-4 py-12 text-center text-muted-foreground">No users found</td></tr>
-            ) : (
+            {(() => {
+              // +1 for the bulk-select checkbox column which sits outside the
+              // user-configurable column set.
+              const visibleColCount = cols.columns.filter((c) => c.visible).length + 1;
+              if (loading) {
+                return <tr><td colSpan={visibleColCount} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>;
+              }
+              if (users.length === 0) {
+                return <tr><td colSpan={visibleColCount} className="px-4 py-12 text-center text-muted-foreground">No users found</td></tr>;
+              }
+              return null;
+            })()}
+            {!loading && users.length > 0 && (
               users.map((user) => (
-                <tr key={user.id} className={`bg-card transition-colors ${selected.has(user.id) ? "bg-primary/5" : "hover:bg-accent/50"}`}>
+                <tr key={user.id} className={`bg-card transition-colors ${bulk.isSelected(user.id) ? "bg-primary/5" : "hover:bg-accent/50"}`}>
                   <td className="px-3 py-3">
-                    <button onClick={() => toggleSelect(user.id)} className="text-muted-foreground hover:text-foreground">
-                      {selected.has(user.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
+                    <button onClick={() => bulk.toggle(user.id)} className="text-muted-foreground hover:text-foreground">
+                      {bulk.isSelected(user.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
                     </button>
                   </td>
                   <td className="px-3 py-3">
@@ -345,22 +376,25 @@ export default function UsersPage() {
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                   </td>
-                  <td className="px-3 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_COLORS[user.subscription?.plan || "FREE_TRIAL"] || "bg-muted text-muted-foreground"}`}>
-                      {user.subscription?.plan || "FREE_TRIAL"}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
-                      {user.subscription?.status || "—"}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.addresses}</td>
-                  <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.services}</td>
-                  <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.reviews}</td>
-                  <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.documents}</td>
-                  <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.movingPlans}</td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</td>
+                  {cols.isVisible("plan") && (
+                    <td className="px-3 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_COLORS[user.subscription?.plan || "FREE_TRIAL"] || "bg-muted text-muted-foreground"}`}>
+                        {user.subscription?.plan || "FREE_TRIAL"}
+                      </span>
+                    </td>
+                  )}
+                  {cols.isVisible("status") && (
+                    <td className="px-3 py-3">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
+                        {user.subscription?.status || "—"}
+                      </span>
+                    </td>
+                  )}
+                  {cols.isVisible("addresses") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.addresses}</td>}
+                  {cols.isVisible("services") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.services}</td>}
+                  {cols.isVisible("reviews") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.providerReviews}</td>}
+                  {cols.isVisible("moves") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.movingPlans}</td>}
+                  {cols.isVisible("joined") && <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</td>}
                   <td className="px-3 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => router.push(`/users/${user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">

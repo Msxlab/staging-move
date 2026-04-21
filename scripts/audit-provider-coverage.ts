@@ -1,15 +1,16 @@
 /**
- * Audits seed-data/providers.ts for state coverage gaps across critical utilities.
+ * Audits provider seed coverage for state gaps across critical utilities.
  *
- * For each state, verifies at least one active provider exists for:
+ * For each state, verifies at least one provider exists for:
  *   UTILITY_ELECTRIC, UTILITY_WATER, UTILITY_GAS, UTILITY_INTERNET
  *
  * FEDERAL-scope providers count as covering every state.
  * STATE-scope providers count only for states in their `states` array.
  *
- * Exit 1 on any gap — safe to wire into CI.
+ * Exit 1 on any gap.
  */
-import { FEDERAL_NEW, STATE_PROVIDERS } from "../packages/db/prisma/seed-data/providers";
+import { FEDERAL_NEW, STATE_PROVIDERS } from "../packages/db/prisma/seed-data/provider-seed";
+import { sanitizeProviderSeedRecords } from "../packages/shared/src/provider-integrity";
 
 const US_STATES = [
   "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI",
@@ -32,45 +33,56 @@ function collectCoverage(providers: Provider[]) {
   const coverage: Record<string, Set<string>> = {};
   for (const cat of CRITICAL_CATEGORIES) coverage[cat] = new Set();
 
-  for (const p of providers) {
-    if (!CRITICAL_CATEGORIES.includes(p.category as any)) continue;
-    const covered = p.scope === "FEDERAL" ? US_STATES : p.states ?? [];
-    for (const st of covered) coverage[p.category].add(st);
+  for (const provider of providers) {
+    if (!CRITICAL_CATEGORIES.includes(provider.category as (typeof CRITICAL_CATEGORIES)[number])) continue;
+    const coveredStates = provider.scope === "FEDERAL" ? US_STATES : provider.states ?? [];
+    for (const state of coveredStates) {
+      coverage[provider.category].add(state);
+    }
   }
+
   return coverage;
 }
 
 function main() {
-  const all: Provider[] = [...(FEDERAL_NEW as Provider[]), ...(STATE_PROVIDERS as Provider[])];
-  const coverage = collectCoverage(all);
+  const allProviders: Provider[] = sanitizeProviderSeedRecords([
+    ...(FEDERAL_NEW as Provider[]),
+    ...(STATE_PROVIDERS as Provider[]),
+  ]).providers;
+  const coverage = collectCoverage(allProviders);
 
   const gaps: Array<{ state: string; category: string }> = [];
-  for (const cat of CRITICAL_CATEGORIES) {
-    for (const st of US_STATES) {
-      if (!coverage[cat].has(st)) gaps.push({ state: st, category: cat });
+  for (const category of CRITICAL_CATEGORIES) {
+    for (const state of US_STATES) {
+      if (!coverage[category].has(state)) {
+        gaps.push({ state, category });
+      }
     }
   }
 
-  console.log("═══════════════════════════════════════");
-  console.log("  Provider Coverage Audit");
-  console.log("═══════════════════════════════════════");
-  console.log(`Total providers scanned: ${all.length}`);
-  console.log(`States checked: ${US_STATES.length} × ${CRITICAL_CATEGORIES.length} = ${US_STATES.length * CRITICAL_CATEGORIES.length} cells`);
+  console.log("Provider Coverage Audit");
+  console.log(`Total providers scanned: ${allProviders.length}`);
+  console.log(
+    `States checked: ${US_STATES.length} x ${CRITICAL_CATEGORIES.length} = ${US_STATES.length * CRITICAL_CATEGORIES.length} cells`
+  );
   console.log("");
 
   if (gaps.length === 0) {
-    console.log("✅ No coverage gaps — every state has ≥1 provider in every critical utility.");
+    console.log("No coverage gaps found.");
     process.exit(0);
   }
 
-  const byCat: Record<string, string[]> = {};
-  for (const g of gaps) (byCat[g.category] ??= []).push(g.state);
+  const byCategory: Record<string, string[]> = {};
+  for (const gap of gaps) {
+    (byCategory[gap.category] ??= []).push(gap.state);
+  }
 
-  console.log(`❌ ${gaps.length} coverage gaps found:\n`);
-  for (const [cat, states] of Object.entries(byCat)) {
-    console.log(`  ${cat}: missing in ${states.length} states`);
+  console.log(`${gaps.length} coverage gaps found:\n`);
+  for (const [category, states] of Object.entries(byCategory)) {
+    console.log(`  ${category}: missing in ${states.length} states`);
     console.log(`    ${states.join(", ")}`);
   }
+
   process.exit(1);
 }
 

@@ -68,6 +68,9 @@ export default function OnboardingPage() {
   }, [router]);
 
   // Step 0 – Profile
+  // `sensitiveOptIn` gates disability + immigration fields behind an explicit
+  // user checkbox. Default off = we never collect GDPR Art. 9 / CCPA sensitive
+  // categories without consent.
   const [profile, setProfile] = useState({
     firstName: "", lastName: "", ageRange: "", familyStatus: "SINGLE",
     hasChildren: false, childrenCount: 0, hasPets: false, petTypes: [] as string[],
@@ -77,6 +80,7 @@ export default function OnboardingPage() {
     isImmigrant: false, immigrationStatus: "" as string,
     isBusinessOwner: false, businessType: "" as string,
     isMilitary: false,
+    sensitiveOptIn: false,
   });
 
   // Step 1 – Address
@@ -471,12 +475,14 @@ export default function OnboardingPage() {
               </div>
             </div>
 
+            <p className="text-xs text-white/40 -mt-2">
+              Tap the ones that apply — all optional. We use these only to tailor your checklist.
+            </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { key: "hasChildren", label: "Children" },
                 { key: "hasPets", label: "Pets" },
                 { key: "hasSenior", label: "Senior" },
-                { key: "hasDisability", label: "Disability" },
                 { key: "needsStorage", label: "Storage" },
                 { key: "hasMotorcycle", label: "Motorcycle" },
                 { key: "hasBoatRV", label: "Boat / RV" },
@@ -491,6 +497,56 @@ export default function OnboardingPage() {
                   {label}
                 </label>
               ))}
+            </div>
+
+            {/* Sensitive-category opt-in (GDPR Art. 9 / CCPA sensitive PI).
+                Off by default; only unlocks the disability + immigration
+                questions when the user explicitly consents. */}
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className={checkboxCls}
+                  checked={profile.sensitiveOptIn ?? false}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    setProfile({
+                      ...profile,
+                      sensitiveOptIn: on,
+                      // Opting out wipes any previously collected sensitive
+                      // answers so we never retain data without consent.
+                      ...(on ? {} : { hasDisability: false, isImmigrant: false, immigrationStatus: "" }),
+                    });
+                  }}
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-white">
+                    Share accessibility and immigration details <span className="text-white/40 font-normal">(optional)</span>
+                  </p>
+                  <p className="mt-1 text-xs text-white/50 leading-relaxed">
+                    These fields are sensitive under US and EU privacy law. They&apos;re never required, never shared, and you can turn this off any time in Settings → Privacy.
+                  </p>
+                </div>
+              </label>
+
+              {profile.sensitiveOptIn ? (
+                <div className="space-y-3 pl-8">
+                  <label className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                    <input
+                      type="checkbox"
+                      className={checkboxCls}
+                      checked={profile.hasDisability}
+                      onChange={(e) => setProfile({ ...profile, hasDisability: e.target.checked })}
+                    />
+                    <div className="flex-1">
+                      <p>Someone at home has a disability</p>
+                      <p className="mt-0.5 text-[11px] text-white/40">
+                        Why we ask: so we can suggest accessibility-friendly movers and flag state-level DMV accommodations when you relocate.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              ) : null}
             </div>
 
             {profile.hasChildren && (
@@ -530,29 +586,39 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Immigration Status */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
-                <input
-                  type="checkbox"
-                  className={checkboxCls}
-                  checked={profile.isImmigrant}
-                  onChange={(e) => setProfile({ ...profile, isImmigrant: e.target.checked, immigrationStatus: e.target.checked ? profile.immigrationStatus : "" })}
-                />
-                🌍 Immigrant / Visa Holder
-              </label>
-              {profile.isImmigrant && (
-                <select className={selectCls} value={profile.immigrationStatus} onChange={(e) => setProfile({ ...profile, immigrationStatus: e.target.value })}>
-                  <option value="">Select status...</option>
-                  <option value="GREEN_CARD">Green Card</option>
-                  <option value="H1B">H-1B Visa</option>
-                  <option value="L1">L-1 Visa</option>
-                  <option value="F1">F-1 Student</option>
-                  <option value="O1">O-1 Visa</option>
-                  <option value="OTHER_VISA">Other Visa</option>
-                </select>
-              )}
-            </div>
+            {/* Immigration Status — only shown when sensitive opt-in is on. */}
+            {profile.sensitiveOptIn ? (
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                <div>
+                  <p className="text-sm font-semibold text-white">Immigration status <span className="text-white/40 font-normal">(optional)</span></p>
+                  <p className="mt-1 text-xs text-white/50 leading-relaxed">
+                    Why we ask: some states (CA, NY, WA) have different DMV document rules for new residents depending on visa status. Skip if it doesn&apos;t apply.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                    <input
+                      type="checkbox"
+                      className={checkboxCls}
+                      checked={profile.isImmigrant}
+                      onChange={(e) => setProfile({ ...profile, isImmigrant: e.target.checked, immigrationStatus: e.target.checked ? profile.immigrationStatus : "" })}
+                    />
+                    🌍 Immigrant / Visa Holder
+                  </label>
+                  {profile.isImmigrant && (
+                    <select className={selectCls} value={profile.immigrationStatus} onChange={(e) => setProfile({ ...profile, immigrationStatus: e.target.value })}>
+                      <option value="">Select status...</option>
+                      <option value="GREEN_CARD">Green Card</option>
+                      <option value="H1B">H-1B Visa</option>
+                      <option value="L1">L-1 Visa</option>
+                      <option value="F1">F-1 Student</option>
+                      <option value="O1">O-1 Visa</option>
+                      <option value="OTHER_VISA">Other Visa</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             {/* Business Owner */}
             {(profile.moveType === "BUSINESS" || profile.moveType === "PERSONAL") && (
@@ -878,8 +944,10 @@ export default function OnboardingPage() {
       {/* Step 3: Moving */}
       {step === 3 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Planning a Move?</h2>
-          <p className="text-white/40 text-sm mb-5">We&apos;ll create a personalized relocation checklist with tasks and deadlines</p>
+          <h2 className="text-lg font-semibold text-white mb-1">Do you have a move planned?</h2>
+          <p className="text-white/40 text-sm mb-5">
+            If yes, we&apos;ll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.
+          </p>
 
           {wantsToMove === null && (
             <div className="flex flex-col items-center gap-4">
@@ -889,12 +957,12 @@ export default function OnboardingPage() {
                   onClick={() => setWantsToMove(true)}
                   className="flex items-center gap-2 px-6 py-3 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition"
                 >
-                  <Truck className="h-4 w-4" /> Yes, Plan My Move
+                  <Truck className="h-4 w-4" /> Yes, plan my move
                 </button>
                 <button
                   onClick={() => { setWantsToMove(false); }}
                   className="px-5 py-3 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition"
-                >Not Right Now</button>
+                >Not right now</button>
               </div>
             </div>
           )}

@@ -15,14 +15,32 @@ export function createTrialEndsAt() {
   return new Date(Date.now() + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000);
 }
 
-export async function getStripePriceIdForPlan(_plan: Extract<BillingPlan, "INDIVIDUAL">) {
+export type BillingCycle = "monthly" | "yearly";
+
+/**
+ * Resolve the Stripe Price ID for a plan + billing cycle. Runtime config
+ * is the single source of truth so operators can rotate prices without a
+ * code deploy; we fall back to the monthly key if the yearly key isn't
+ * set yet (supports the pre-yearly-launch state).
+ */
+export async function getStripePriceIdForPlan(
+  _plan: Extract<BillingPlan, "INDIVIDUAL">,
+  cycle: BillingCycle = "monthly",
+) {
+  if (cycle === "yearly") {
+    const yearly = await getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY");
+    if (yearly) return yearly;
+  }
   return getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL");
 }
 
 export async function mapStripePriceIdToPlan(priceId: string | null | undefined): Promise<BillingPlan | null> {
   if (!priceId) return null;
-  const individualPriceId = await getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL");
-  if (priceId === individualPriceId) return "INDIVIDUAL";
+  const [monthly, yearly] = await Promise.all([
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL"),
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY"),
+  ]);
+  if (priceId === monthly || priceId === yearly) return "INDIVIDUAL";
   return null;
 }
 
