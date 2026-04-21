@@ -22,23 +22,26 @@ import {
   ChevronRight,
   Moon,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
   const initials =
     ((user?.firstName?.[0] || "") + (user?.lastName?.[0] || "")).toUpperCase() || "U";
 
   const items = [
-    { icon: User, label: "Edit Profile", route: "/settings/profile" },
-    { icon: Bell, label: "Notification Preferences", route: "/settings/notifications" },
-    { icon: Shield, label: "Privacy & Data", route: "/settings/privacy" },
-    { icon: CreditCard, label: "Subscription", route: "/settings/subscription" },
-    { icon: Download, label: "Export Data", route: "/settings/export" },
+    { icon: User, label: t("settings.profile"), route: "/settings/profile" },
+    { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
+    { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
+    { icon: CreditCard, label: t("settings.subscription"), route: "/settings/subscription" },
+    { icon: Download, label: t("settings.export"), route: "/settings/export" },
   ];
 
   return (
@@ -47,7 +50,7 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>{t("settings.title")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -60,7 +63,7 @@ export default function SettingsScreen() {
         >
           <Avatar initials={initials} size={56} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.profileName}>{user?.firstName || "User"} {user?.lastName || ""}</Text>
+            <Text style={styles.profileName}>{user?.firstName || ""} {user?.lastName || ""}</Text>
             <Text style={styles.profileEmail}>{user?.email || ""}</Text>
           </View>
           <ChevronRight size={18} color={theme.colors.textMuted} />
@@ -87,10 +90,15 @@ export default function SettingsScreen() {
           })}
         </Card>
 
+        {/* Language picker — persists per-device + syncs to DB for
+            logged-in users via /api/user/locale. */}
+        <View style={{ marginTop: 20 }}>
+          <LanguageSelector />
+        </View>
+
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>LocateFlow Mobile v1.0.0</Text>
-          <Text style={styles.appInfoText}>Built with Expo + React Native</Text>
+          <Text style={styles.appInfoText}>LocateFlow v1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

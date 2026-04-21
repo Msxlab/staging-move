@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Move Timeline · LocateFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .stage { padding: 72px 24px 48px; gap: 48px; }
+  .layout { display: flex; gap: 72px; align-items: center; }
+
+  .notes { max-width: 320px; color: var(--d-fg); }
+  .notes .kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  .notes .kicker::before { content: ""; width: 22px; height: 1px; background: var(--brass); }
+  .notes h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-weight: 400; font-size: 56px; line-height: 0.98; letter-spacing: -0.03em; margin: 0 0 22px; }
+  .notes h1 em { color: var(--terracotta); }
+  .notes p { font-family: var(--f-sans); font-size: 15px; line-height: 1.6; color: var(--d-fg-2); margin: 0 0 16px; max-width: 34ch; }
+  .notes .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+  .notes .chip { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 10px; border: 1px solid var(--d-line-2); border-radius: 3px; color: var(--d-fg-2); }
+
+  /* ===== Phone contents ===== */
+  .mt {
+    height: 100%; background: var(--d-bg); color: var(--d-fg);
+    overflow-y: auto;
+    padding: 62px 0 40px;
+  }
+  .mt-head { padding: 12px 24px 18px; }
+  .mt-kicker { font-family: var(--f-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .mt-kicker .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sage); box-shadow: 0 0 0 3px rgba(94,173,154,0.18); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .mt-title { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 40px; line-height: 1; letter-spacing: -0.025em; margin: 0; }
+  .mt-title em { color: var(--terracotta); }
+  .mt-sub { font-family: var(--f-mono); font-size: 12px; color: var(--d-fg-3); letter-spacing: 0.04em; margin-top: 8px; }
+  .mt-sub em { font-style: normal; color: var(--d-fg); }
+
+  /* Map */
+  .map {
+    margin: 16px 0 8px; position: relative; height: 200px;
+    background: linear-gradient(180deg, #15110B 0%, #1C1811 100%);
+    border-top: 1px solid var(--d-line); border-bottom: 1px solid var(--d-line);
+    overflow: hidden;
+  }
+  .map svg { width: 100%; height: 100%; display: block; }
+  .route { stroke: var(--terracotta); stroke-width: 2; fill: none; stroke-linecap: round; stroke-dasharray: 4 6; animation: dash 6s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -200; } }
+  .route-done { stroke: var(--terracotta); stroke-width: 2; fill: none; stroke-linecap: round; stroke-dasharray: 0; }
+  .route-future { stroke: rgba(245,241,234,0.2); stroke-width: 1.5; fill: none; stroke-dasharray: 2 4; stroke-linecap: round; }
+  .pin { fill: var(--terracotta); }
+  .pin-ring {
+    fill: none; stroke: var(--terracotta); stroke-width: 1.5;
+    transform-origin: center; transform-box: fill-box;
+    animation: ring 2s ease-out infinite;
+  }
+  @keyframes ring { 0% { transform: scale(0.6); opacity:1 } 100% { transform: scale(2.4); opacity:0 } }
+  .map-overlay {
+    position: absolute; bottom: 12px; left: 16px; right: 16px;
+    display: flex; justify-content: space-between; align-items: end;
+    font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--d-fg-2);
+  }
+  .map-overlay .city { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 17px; letter-spacing: -0.01em; text-transform: none; color: var(--d-fg); line-height: 1; }
+  .map-overlay .city em { font-style: italic; color: var(--brass); }
+  .map-overlay .sub { font-size: 10px; color: var(--d-fg-3); margin-top: 4px; }
+  .map-overlay .r { text-align: right; }
+
+  /* Timeline */
+  .tl { padding: 22px 24px 0; position: relative; }
+  .tl::before {
+    content: ""; position: absolute; left: 32px; top: 40px; bottom: 20px;
+    width: 1px; background: linear-gradient(180deg, var(--terracotta) 0%, var(--terracotta) 40%, rgba(245,241,234,0.15) 40%);
+  }
+  .tl-step { display: grid; grid-template-columns: 16px 1fr; gap: 16px; padding: 14px 0; position: relative; }
+  .tl-step .dot-col { display: flex; justify-content: center; padding-top: 4px; }
+  .tl-step .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--d-bg); border: 2px solid var(--terracotta);
+    box-shadow: 0 0 0 3px rgba(232,121,74,0.15);
+    position: relative; z-index: 2;
+  }
+  .tl-step.done .dot { background: var(--terracotta); }
+  .tl-step.future .dot { border-color: rgba(245,241,234,0.22); box-shadow: none; }
+  .tl-step.now .dot { animation: nowpulse 1.6s infinite; }
+  @keyframes nowpulse { 0%,100%{box-shadow:0 0 0 3px rgba(232,121,74,0.15)} 50%{box-shadow:0 0 0 7px rgba(232,121,74,0.05)} }
+
+  .tl-step .when { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--d-fg-3); margin-bottom: 4px; }
+  .tl-step.done .when { color: var(--d-fg-2); }
+  .tl-step .title { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 21px; letter-spacing: -0.015em; line-height: 1.1; }
+  .tl-step .title em { font-style: italic; color: var(--brass); }
+  .tl-step.now .title em { color: var(--terracotta); }
+  .tl-step .detail { font-family: var(--f-sans); font-size: 13px; color: var(--d-fg-2); margin-top: 6px; line-height: 1.5; max-width: 30ch; }
+  .tl-step.future .title, .tl-step.future .detail { color: var(--d-fg-3); }
+
+  .tl-step .actions { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tl-step .btn {
+    font-family: var(--f-sans); font-size: 12px; font-weight: 500;
+    padding: 7px 12px; border-radius: 999px; border: 1px solid var(--d-line-2);
+    color: var(--d-fg); background: transparent; cursor: pointer;
+  }
+  .tl-step .btn.primary { background: var(--terracotta); color: #1a0a02; border-color: transparent; }
+
+  .tl-step .progress {
+    margin-top: 10px; display: flex; align-items: center; gap: 10px;
+    font-family: var(--f-mono); font-size: 10.5px; color: var(--d-fg-2); letter-spacing: 0.06em;
+  }
+  .tl-step .progress .bar { flex: 1; height: 2px; background: rgba(245,241,234,0.08); border-radius: 2px; overflow: hidden; }
+  .tl-step .progress .bar i { display: block; height: 100%; background: var(--terracotta); width: 33%; border-radius: 2px; }
+
+  /* bottom "next" hint */
+  .next-hint {
+    margin: 28px 24px 0; padding: 14px 16px;
+    border-top: 1px solid var(--d-line);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .next-hint .l { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-style: italic; color: var(--brass); font-size: 16px; }
+  .next-hint .r { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--terracotta); }
+
+</style></head>
+<body>
+
+<div class="stage-hdr">
+  <div><span class="t">Move Timeline</span> · mobile showcase 01/07</div>
+  <div><a href="index.html">← back to gallery</a></div>
+</div>
+
+<div class="stage">
+ <div class="layout">
+  <div class="notes">
+    <div class="kicker">Concept no. 1</div>
+    <h1>The <em>journey</em>,<br>on one page.</h1>
+    <p>Relocation is the heart of this product, so the Current Move deserves its own ritualized screen — a living map and a vertical timeline that visibly advances as things resolve.</p>
+    <p>Route traces live, and each step opens inline actions: transfer Spectrum, confirm utilities, close out the old lease.</p>
+    <div class="chips">
+      <span class="chip">Animated route</span>
+      <span class="chip">Inline actions</span>
+      <span class="chip">Editorial typography</span>
+    </div>
+  </div>
+
+  <div class="phone dark">
+    <div class="island"></div>
+    <div class="sbar"><div>9:41</div><div class="r">
+      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="currentColor"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.5" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx="0.5" fill="currentColor"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="22" height="11" rx="2.5" fill="none" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="currentColor"/></svg>
+    </div></div>
+    <div class="home-ind"></div>
+
+    <div class="mt">
+      <div class="mt-head">
+        <div class="mt-kicker"><span class="dot"></span>In transit · day 13 of 21</div>
+        <h1 class="mt-title">Austin<br>to <em>Denver</em>.</h1>
+        <div class="mt-sub"><em>940 mi</em> · arrives <em>May 14</em> · 6 of 18 services transferred</div>
+      </div>
+
+      <div class="map">
+        <svg viewBox="0 0 390 200" preserveAspectRatio="xMidYMid slice">
+          <!-- stylized landmass -->
+          <path d="M0 140 Q 60 120 120 128 T 240 122 T 390 130 L390 200 L0 200 Z" fill="#1F1A12" opacity="0.9"/>
+          <path d="M0 160 Q 80 150 160 152 T 320 148 T 390 152 L390 200 L0 200 Z" fill="#221C13" opacity="0.6"/>
+          <!-- done part -->
+          <path class="route-done" d="M 60 110 C 120 80, 160 90, 210 85"/>
+          <!-- live dashed -->
+          <path class="route" d="M 210 85 C 240 82, 270 75, 310 70"/>
+          <!-- future dotted -->
+          <path class="route-future" d="M 310 70 L 340 62"/>
+
+          <!-- start pin -->
+          <circle cx="60" cy="110" r="4" class="pin"/>
+          <circle cx="60" cy="110" r="5" class="pin-ring"/>
+          <!-- current plane -->
+          <circle cx="260" cy="76" r="3.5" fill="#F2A65A"/>
+          <circle cx="260" cy="76" r="6" class="pin-ring" style="stroke:#F2A65A;"/>
+          <!-- end pin -->
+          <circle cx="340" cy="62" r="4" fill="#5EAD9A"/>
+        </svg>
+        <div class="map-overlay">
+          <div><div class="city"><em>Austin</em>, TX</div><div class="sub">Packed · Feb 11</div></div>
+          <div class="r"><div class="city"><em>Denver</em>, CO</div><div class="sub">Arrives May 14</div></div>
+        </div>
+      </div>
+
+      <div class="tl">
+        <div class="tl-step done">
+          <div class="dot-col"><div class="dot"></div></div>
+          <div>
+            <div class="when">Feb 11 · complete</div>
+            <div class="title">Lease at <em>1421 Rainey</em> closed out.</div>
+            <div class="detail">Final utilities settled. 4 services archived automatically.</div>
+          </div>
+        </div>
+
+        <div class="tl-step done">
+          <div class="dot-col"><div class="dot"></div></div>
+          <div>
+            <div class="when">Feb 18 · complete</div>
+            <div class="title">Movers <em>booked</em> with Bellhop.</div>
+            <div class="detail">Quote $2,180 · paid in full.</div>
+          </div>
+        </div>
+
+        <div class="tl-step now">
+          <div class="dot-col"><div class="dot"></div></div>
+          <div>
+            <div class="when">now · needs your attention</div>
+            <div class="title">Transfer <em>Spectrum Internet</em>.</div>
+            <div class="detail">Activate at 220 Larimer on May 14. We've pre-filled everything — one tap to confirm.</div>
+            <div class="actions">
+              <button class="btn primary">Confirm transfer</button>
+              <button class="btn">Change date</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="tl-step">
+          <div class="dot-col"><div class="dot"></div></div>
+          <div>
+            <div class="when">waiting · 5 of 18 started</div>
+            <div class="title">Set up <em>Denver</em> utilities.</div>
+            <div class="detail">Xcel Energy, Denver Water, trash pickup.</div>
+            <div class="progress">
+              <span>5/18</span>
+              <div class="bar"><i></i></div>
+              <span>33%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tl-step future">
+          <div class="dot-col"><div class="dot"></div></div>
+          <div>
+            <div class="when">May 14 · arrival</div>
+            <div class="title">Move-in day at <em>220 Larimer</em>.</div>
+            <div class="detail">Checklist unlocks the morning of.</div>
+          </div>
+        </div>
+
+        <div class="tl-step future">
+          <div class="dot-col"><div class="dot"></div></div>
+          <div>
+            <div class="when">May 21 · target</div>
+            <div class="title">All services <em>reconciled</em>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="next-hint">
+        <div class="l">what's next?</div>
+        <div class="r">3 services →</div>
+      </div>
+    </div>
+  </div>
+ </div>
+</div>
+
+</body></html>

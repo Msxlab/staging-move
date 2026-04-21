@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_tokens.css"/>
+<style>
+html,body{margin:0;font-family:var(--font-sans);height:100%;}
+.wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100%;position:relative;}
+.wrap::after{content:"";position:absolute;top:14px;bottom:14px;left:50%;width:1px;background:linear-gradient(180deg,transparent,rgba(128,128,128,0.2),transparent);}
+.pane{padding:22px 24px;box-sizing:border-box;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;gap:14px;}
+.kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+.btn{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-sans);font-weight:600;font-size:13px;padding:10px 18px;border-radius:999px;border:0;cursor:pointer;letter-spacing:-0.005em;transition:all .15s;}
+.btn.primary{background:var(--terracotta);color:var(--on-terracotta);}
+.btn.primary:hover{background:var(--terracotta-soft);}
+.btn.secondary{background:transparent;color:var(--fg);border:1px solid var(--line-2);}
+.btn.secondary:hover{background:var(--surface-2);}
+.btn.ghost{background:transparent;color:var(--terracotta);padding:10px 4px;}
+.btn.ghost:hover{text-decoration:underline;}
+.btn.editorial{background:var(--fg);color:var(--bg);font-family:var(--font-display);font-style:italic;font-weight:500;padding:12px 22px;font-size:15px;}
+.btn svg{width:14px;height:14px;}
+.btn.small{font-size:11px;padding:7px 14px;}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="ar" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+<symbol id="pl" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+</defs></svg>
+<div class="wrap">
+  <div class="pane lf-dark">
+    <div class="kicker">Buttons · Dark</div>
+    <div class="row">
+      <button class="btn primary"><svg><use href="#pl"/></svg>Add service</button>
+      <button class="btn secondary">Export CSV</button>
+      <button class="btn ghost">See all<svg><use href="#ar"/></svg></button>
+    </div>
+    <div class="row">
+      <button class="btn editorial">Begin <em>moving</em> plan<svg><use href="#ar"/></svg></button>
+      <button class="btn primary small">Confirm</button>
+      <button class="btn secondary small">Cancel</button>
+    </div>
+  </div>
+  <div class="pane lf-light">
+    <div class="kicker">Buttons · Light</div>
+    <div class="row">
+      <button class="btn primary"><svg><use href="#pl"/></svg>Add service</button>
+      <button class="btn secondary">Export CSV</button>
+      <button class="btn ghost">See all<svg><use href="#ar"/></svg></button>
+    </div>
+    <div class="row">
+      <button class="btn editorial">Begin <em>moving</em> plan<svg><use href="#ar"/></svg></button>
+      <button class="btn primary small">Confirm</button>
+      <button class="btn secondary small">Cancel</button>
+    </div>
+  </div>
+</div>
+</body></html>

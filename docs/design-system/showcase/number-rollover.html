@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Number Rollover · LocateFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .stage { padding: 72px 24px 48px; }
+  .layout { display: flex; gap: 72px; align-items: center; }
+  .notes { max-width: 320px; }
+  .notes .kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  .notes .kicker::before { content:""; width: 22px; height: 1px; background: var(--brass); }
+  .notes h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-weight: 400; font-size: 54px; line-height: 0.98; letter-spacing: -0.03em; margin: 0 0 22px; }
+  .notes h1 em { color: var(--terracotta); }
+  .notes p { font-size: 15px; line-height: 1.6; color: var(--d-fg-2); margin: 0 0 16px; max-width: 34ch; }
+  .notes .chip { display: inline-block; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 10px; border: 1px solid var(--d-line-2); border-radius: 3px; color: var(--d-fg-2); margin: 4px 6px 0 0; }
+
+  .nr { height: 100%; background: var(--d-bg); color: var(--d-fg); padding: 62px 0 0; display:flex; flex-direction:column; }
+  .nr-head { padding: 12px 24px 14px; }
+  .nr-k { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); }
+  .nr-h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 36px; line-height: 1; letter-spacing: -0.025em; margin: 8px 0 0; }
+  .nr-h1 em { color: var(--terracotta); font-style: italic; }
+
+  .total-wrap { padding: 16px 24px 18px; }
+  .total {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 74px; line-height: 0.95; letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums; display: flex; align-items: flex-start; gap: 2px;
+  }
+  .total .c { font-size: 22px; opacity: 0.5; margin-top: 4px; }
+  .digit {
+    display: inline-block; height: 72px; overflow: hidden; vertical-align: top;
+  }
+  .digit .track {
+    display: flex; flex-direction: column;
+    transition: transform 1.2s cubic-bezier(.22,.8,.36,1);
+  }
+  .digit .track span { height: 72px; line-height: 72px; }
+
+  .delta {
+    margin-top: 10px;
+    font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.04em;
+    color: var(--sage); display: flex; align-items: center; gap: 8px;
+  }
+  .delta .chip { padding: 3px 7px; border: 1px solid rgba(94,173,154,0.3); border-radius: 3px; }
+
+  .sec-hd { padding: 18px 24px 10px; font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 20px; letter-spacing: -0.01em; display:flex; justify-content: space-between; align-items: baseline; }
+  .sec-hd em { color: var(--brass); font-style: italic; }
+  .sec-hd .more { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--terracotta); }
+
+  .row { padding: 12px 24px; display:flex; align-items:center; gap: 14px; border-top: 1px solid var(--d-line); }
+  .row .logo { width: 36px; height: 36px; border-radius: 50%; background: var(--d-surface-2); border: 1px solid var(--d-line); display:flex; align-items:center; justify-content:center; color: var(--brass); }
+  .row .n { flex: 1; }
+  .row .n .t { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 17px; letter-spacing: -0.01em; }
+  .row .n .m { font-family: var(--f-mono); font-size: 11.5px; font-weight: 500; color: var(--d-fg-3); margin-top: 3px; letter-spacing: 0.02em; }
+  .row .amt { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 18px; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; }
+  .row .amt .per { font-family: var(--f-mono); font-size: 10.5px; color: var(--d-fg-3); letter-spacing: 0.04em; margin-left: 2px; font-weight: 500; }
+
+  .button-bar {
+    margin: 18px 24px 0; display: flex; gap: 8px;
+  }
+  .button-bar button {
+    flex: 1; font-family: var(--f-sans); font-size: 12.5px; font-weight: 500;
+    padding: 11px 12px; border-radius: 10px;
+    border: 1px solid var(--d-line-2); background: transparent; color: var(--d-fg); cursor: pointer;
+  }
+  .button-bar button.on { background: var(--terracotta); color: #1a0a02; border-color: transparent; }
+
+  /* Tab bar */
+  .tabs {
+    margin-top: auto;
+    padding: 12px 16px 28px;
+    border-top: 1px solid var(--d-line);
+    background: rgba(14,13,11,0.92);
+    backdrop-filter: blur(12px);
+    display: flex; justify-content: space-around;
+    position: relative;
+  }
+  .tab {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    font-family: var(--f-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-fg-3);
+    cursor: pointer; padding: 6px 0; position: relative; z-index: 2;
+    transition: color .3s;
+  }
+  .tab.active { color: var(--terracotta); }
+  .indicator {
+    position: absolute; top: 6px; width: 56px; height: 36px;
+    border-radius: 12px;
+    background: rgba(232,121,74,0.12);
+    border: 1px solid rgba(232,121,74,0.3);
+    transition: left .6s cubic-bezier(.68,-0.25,.27,1.35), width .5s cubic-bezier(.68,-0.25,.27,1.35);
+    z-index: 1;
+  }
+</style></head>
+<body>
+
+<div class="stage-hdr">
+  <div><span class="t">Number Rollover + Liquid Tabs</span> · mobile showcase 05/07</div>
+  <div><a href="index.html">← back to gallery</a></div>
+</div>
+
+<div class="stage">
+ <div class="layout">
+  <div class="notes">
+    <div class="kicker">Concept no. 5</div>
+    <h1>Small motions,<br><em>big</em> feelings.</h1>
+    <p>Two micro-interactions that make the app feel premium: currency totals that digit-roll when they change, and a tab-bar indicator that stretches between positions like a drop of liquid.</p>
+    <p>Together they're under a second of motion — but they're the difference between "functional" and "crafted".</p>
+    <div style="margin-top: 20px">
+      <span class="chip">Tap a filter ↗</span>
+      <span class="chip">Tap a tab ↗</span>
+      <span class="chip">Watch closely</span>
+    </div>
+  </div>
+
+  <div class="phone dark">
+    <div class="island"></div>
+    <div class="sbar"><div>9:41</div><div class="r">
+      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="currentColor"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.5" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx="0.5" fill="currentColor"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="22" height="11" rx="2.5" fill="none" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="currentColor"/></svg>
+    </div></div>
+    <div class="home-ind"></div>
+
+    <div class="nr">
+      <div class="nr-head">
+        <div class="nr-k">Monthly · across three addresses</div>
+        <div class="nr-h1">Your <em>total</em>.</div>
+      </div>
+
+      <div class="total-wrap">
+        <div class="total" id="total">
+          <span>$</span>
+          <span class="digit"><span class="track" data-d="1"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+          <span>,</span>
+          <span class="digit"><span class="track" data-d="2"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+          <span class="digit"><span class="track" data-d="8"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+          <span class="digit"><span class="track" data-d="4"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span>
+          <span class="c">.40</span>
+        </div>
+        <div class="delta"><span class="chip">↓ 4.2%</span>vs last month</div>
+      </div>
+
+      <div class="button-bar">
+        <button class="on" data-total="1284">All</button>
+        <button data-total="912">Austin</button>
+        <button data-total="412">Denver</button>
+        <button data-total="0">Archived</button>
+      </div>
+
+      <div class="sec-hd"><span>Top <em>providers</em></span><span class="more">See all →</span></div>
+
+      <div class="row">
+        <div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5.5 13.5H11l-1 7.5 7.5-10.5H12z"/></svg></div>
+        <div class="n"><div class="t">Austin Energy</div><div class="m">ELEC · 1421 Rainey · Mar 2</div></div>
+        <div class="amt">$128<span class="per">.40</span></div>
+      </div>
+      <div class="row">
+        <div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 9.5a14 14 0 0 1 18 0M6 13a10 10 0 0 1 12 0M9 16.5a5.5 5.5 0 0 1 6 0"/><circle cx="12" cy="20" r="1.1" fill="currentColor"/></svg></div>
+        <div class="n"><div class="t">Spectrum</div><div class="m">INET · Renews Mar 2</div></div>
+        <div class="amt">$79<span class="per">.99</span></div>
+      </div>
+      <div class="row">
+        <div class="logo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"/></svg></div>
+        <div class="n"><div class="t">State Farm</div><div class="m">INSR · Renews Jul 1</div></div>
+        <div class="amt">$426<span class="per">.00</span></div>
+      </div>
+
+      <div class="tabs" id="tabs">
+        <div class="indicator" id="ind"></div>
+        <div class="tab active" data-tab="0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9h-6v-6h-6v6H3z"/></svg>Home</div>
+        <div class="tab" data-tab="1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4.5-5.1-7-8.4-7-11.5a7 7 0 1 1 14 0c0 3.1-2.5 6.4-7 11.5z"/><circle cx="12" cy="9.5" r="2.4"/></svg>Places</div>
+        <div class="tab" data-tab="2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/></svg>Services</div>
+        <div class="tab" data-tab="3"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v10H2zM13 10h4l4 4v3h-8z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>Move</div>
+        <div class="tab" data-tab="4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="18" cy="12" r="1.4" fill="currentColor"/></svg>More</div>
+      </div>
+    </div>
+  </div>
+ </div>
+</div>
+
+<script>
+  // digit rollover
+  function setTotal(n) {
+    n = String(n).padStart(4, '0');
+    const digits = document.querySelectorAll('#total .track');
+    const arr = n.split('').slice(-4);
+    // map to [thousands, h, t, ones] — we have 4 tracks
+    digits.forEach((tr, i) => {
+      const d = parseInt(arr[i] || '0', 10);
+      tr.style.transform = `translateY(-${d*72}px)`;
+      tr.dataset.d = d;
+    });
+  }
+  // init
+  setTotal(1284);
+
+  document.querySelectorAll('.button-bar button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.button-bar button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      setTotal(b.dataset.total);
+    });
+  });
+
+  // tab indicator
+  function moveIndicator(el) {
+    const tabs = document.getElementById('tabs');
+    const ind = document.getElementById('ind');
+    const r = el.getBoundingClientRect();
+    const pr = tabs.getBoundingClientRect();
+    ind.style.left = (r.left - pr.left + (r.width - 56) / 2) + 'px';
+    ind.style.width = '56px';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  document.querySelectorAll('.tab').forEach(t => {
+    t.addEventListener('click', () => moveIndicator(t));
+  });
+  window.addEventListener('load', () => moveIndicator(document.querySelector('.tab.active')));
+  // subtle auto-demo
+  let demo = ['1284','912','412','1284'];
+  let i = 0;
+  setInterval(() => { i=(i+1)%demo.length; setTotal(demo[i]); }, 3200);
+</script>
+
+</body></html>

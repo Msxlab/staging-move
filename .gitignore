@@ -40,6 +40,10 @@ packages/db/*.db-journal
 # uploads
 apps/web/public/uploads/
 
+# design handoff staging (raw zip extractions land here, not committed;
+# canonical design system lives in docs/design-system/)
+.design-staging/
+
 # IDE
 .idea
 .vscode/*

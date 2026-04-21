@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>LocateFlow · V5 Logo System</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E0D0B;
+    --bg-deep: #050403;
+    --surface: #17150F;
+    --surface-2: #1E1B14;
+    --line: rgba(245,241,234,0.08);
+    --line-2: rgba(245,241,234,0.16);
+    --fg: #F5F1EA;
+    --fg-2: rgba(245,241,234,0.62);
+    --fg-3: rgba(245,241,234,0.38);
+    --terracotta: #E8794A;
+    --terracotta-deep: #C25A30;
+    --terracotta-soft: #F2A65A;
+    --brass: #D4A373;
+    --brass-deep: #B0844E;
+    --gold: #E3B956;
+    --sage: #5EAD9A;
+    --ink: #1A1713;
+    --cream: #FAF7F1;
+    --f-disp: 'Fraunces', Georgia, serif;
+    --f-sans: 'Inter', system-ui, sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  html, body { margin:0; padding:0; background: var(--bg-deep); color: var(--fg); font-family: var(--f-sans); -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 64px 40px 80px; }
+  .hdr { padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 14px; }
+  h1 { font-family: var(--f-disp); font-size: 68px; line-height: 0.98; letter-spacing: -0.03em; margin: 0; font-weight: 500; font-variation-settings: "SOFT" 30, "opsz" 96; max-width: 16ch; }
+  h1 em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+  .back { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--terracotta); text-decoration: none; }
+  .intro { font-size: 14.5px; line-height: 1.65; color: var(--fg-2); max-width: 68ch; margin: 0 0 48px; }
+  .intro b { color: var(--fg); font-weight: 500; }
+
+  .sec { margin-bottom: 64px; }
+  .sec-hdr { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+  .sec-hdr h2 { font-family: var(--f-disp); font-size: 28px; font-weight: 500; letter-spacing: -0.02em; margin: 0; font-variation-settings: "SOFT" 30, "opsz" 96; }
+  .sec-hdr h2 em { font-style: italic; color: var(--brass); font-weight: 400; }
+  .sec-hdr .n { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--fg-3); text-transform: uppercase; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .card .hd {
+    padding: 18px 22px 14px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--line);
+  }
+  .card .hd .t { font-family: var(--f-disp); font-weight: 500; font-size: 17px; letter-spacing: -0.01em; font-variation-settings: "SOFT" 30; }
+  .card .hd .t em { font-style: italic; color: var(--brass); font-weight: 400; }
+  .card .hd .n { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.16em; color: var(--fg-3); text-transform: uppercase; }
+  .card .body {
+    min-height: 200px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 36px 22px;
+    background: radial-gradient(ellipse at center, #1B1812 0%, #0B0906 100%);
+  }
+  .card.cream .body { background: var(--cream); }
+  .card.terracotta .body {
+    background:
+      radial-gradient(ellipse at 30% 30%, rgba(242,166,90,0.2), transparent 60%),
+      linear-gradient(140deg, var(--terracotta-soft) 0%, var(--terracotta) 55%, var(--terracotta-deep) 100%);
+  }
+  .card .ft {
+    padding: 14px 22px 18px;
+    font-family: var(--f-sans); font-size: 12.5px; color: var(--fg-2);
+    line-height: 1.5; border-top: 1px solid var(--line);
+  }
+
+  /* ============================================================================
+     CORE MARK — the flow ligature + pin, built from CSS vars for easy retheming
+     ============================================================================ */
+  /* Default mark SVG uses currentColor or CSS variables — all instances share this geometry. */
+
+  /* App icon scaffold */
+  .app-ico {
+    width: 88px; height: 88px; border-radius: 20px;
+    box-shadow: 0 14px 30px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    overflow: hidden;
+    position: relative;
+  }
+  .app-ico.small { width: 56px; height: 56px; border-radius: 13px; }
+  .app-ico.tiny { width: 32px; height: 32px; border-radius: 8px; }
+
+  .fav { width: 24px; height: 24px; border-radius: 5px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+  .fav-16 { width: 16px; height: 16px; border-radius: 3px; overflow: hidden; }
+
+  /* ANIMATIONS ========================================================= */
+
+  /* 1. The signature trace — path draws from home to pin, then pin pulses */
+  @keyframes traceFlow {
+    0% { stroke-dashoffset: 200; }
+    40% { stroke-dashoffset: 0; }
+    100% { stroke-dashoffset: 0; }
+  }
+  @keyframes fadeIn {
+    0%, 35% { opacity: 0; transform: scale(0.3); }
+    50% { opacity: 1; transform: scale(1.2); }
+    60% { transform: scale(1); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes homePulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+  @keyframes pinRing {
+    0% { r: 7; opacity: 1; }
+    70% { r: 14; opacity: 0; }
+    100% { r: 14; opacity: 0; }
+  }
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+  }
+  @keyframes spinOrbit {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes shimmer {
+    0% { stroke-dashoffset: 200; opacity: 0; }
+    15% { opacity: 1; }
+    60% { stroke-dashoffset: 0; opacity: 1; }
+    100% { stroke-dashoffset: 0; opacity: 0; }
+  }
+
+  /* Signature trace variant — used on the big hero */
+  .sig .path { stroke-dasharray: 200; stroke-dashoffset: 200; animation: traceFlow 3s ease-out infinite; }
+  .sig .pin-dot { transform-origin: 80px 40px; transform-box: fill-box; animation: fadeIn 3s ease-out infinite; }
+  .sig .pin-inner { animation: fadeIn 3s ease-out infinite; }
+  .sig .home-dot { animation: homePulse 3s ease-in-out infinite; }
+  .sig .pin-ring { transform-origin: 80px 40px; animation: pinRing 3s ease-out infinite; }
+
+  /* Inline variants for motion-strip cards (CSS needs direct children, not shadow DOM) */
+  .sig-inline .path-trace { stroke-dasharray: 200; stroke-dashoffset: 200; animation: traceFlow 3s ease-out infinite; }
+  .sig-inline .pin-trace { transform-origin: 80px 40px; transform-box: fill-box; animation: fadeIn 3s ease-out infinite; }
+  .sig-inline .home-trace { animation: homePulse 3s ease-in-out infinite; }
+
+  .live-inline .breathe-g { transform-origin: 50% 50%; animation: breathe 3s ease-in-out infinite; }
+
+  .shim-inline .path-shim { stroke-dasharray: 200; stroke-dashoffset: 200; animation: shimmer 2.5s ease-out infinite; }
+  .shim-inline .pin-shim { transform-origin: 80px 40px; transform-box: fill-box; animation: fadeIn 2.5s ease-out infinite; }
+  .shim-inline .home-shim { animation: homePulse 2.5s ease-in-out infinite; }
+
+  /* Live / breathing variant — used on loading + favicon */
+  .live .path { stroke-dasharray: 200; stroke-dashoffset: 0; }
+  .live .wrap-g { transform-origin: 50% 50%; animation: breathe 3s ease-in-out infinite; }
+
+  /* Spinner — use the path + rotating pin to make a loading spinner */
+  .spin { animation: spinOrbit 1.8s linear infinite; transform-origin: 50% 50%; }
+
+  /* Shimmer — the "just synced" micro moment */
+  .shim .path { stroke-dasharray: 200; stroke-dashoffset: 200; animation: shimmer 2.5s ease-out infinite; }
+
+  /* Hover play — CSS-only, pauses until hover */
+  .hover-play { cursor: pointer; }
+  .hover-play .path { stroke-dasharray: 200; stroke-dashoffset: 0; }
+  .hover-play:hover .path { animation: traceFlow 1.6s ease-out both; }
+  .hover-play:hover .pin-dot { animation: fadeIn 1.6s ease-out both; transform-origin: 80px 40px; transform-box: fill-box; }
+
+  /* Hero showcase ======================================================== */
+
+  .hero-main {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 40px;
+    align-items: center;
+    padding: 60px 48px;
+    border-radius: 20px;
+    background:
+      radial-gradient(ellipse at 15% 25%, rgba(232,121,74,0.09), transparent 55%),
+      radial-gradient(ellipse at 85% 75%, rgba(212,163,115,0.08), transparent 55%),
+      linear-gradient(180deg, #14110C 0%, #0B0907 100%);
+    border: 1px solid var(--line-2);
+    margin-bottom: 56px;
+  }
+  .hero-main .meta { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 18px; }
+  .hero-main h2 { font-family: var(--f-disp); font-size: 60px; line-height: 1; letter-spacing: -0.025em; margin: 0 0 16px; font-weight: 500; font-variation-settings: "SOFT" 30, "opsz" 96; }
+  .hero-main h2 em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+  .hero-main p { font-size: 14.5px; line-height: 1.65; color: var(--fg-2); margin: 0 0 14px; max-width: 46ch; }
+
+  .hero-stage {
+    aspect-ratio: 1;
+    border-radius: 18px;
+    background: radial-gradient(ellipse at center, #1B1812 0%, #050403 80%);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .hero-stage::before {
+    content: ""; position: absolute; inset: 28px;
+    border: 1px solid rgba(212,163,115,0.1); border-radius: 12px;
+  }
+  .hero-stage::after {
+    content: "LOCATEFLOW · EST. 2026"; position: absolute; bottom: 22px;
+    font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.32em; color: var(--fg-3);
+  }
+  .hero-stage .inner {
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+  .hero-stage svg { width: 240px; height: 240px; }
+
+  .word {
+    font-family: var(--f-disp); font-weight: 500; letter-spacing: -0.02em;
+    font-variation-settings: "SOFT" 30, "opsz" 96; line-height: 1;
+  }
+  .word em { font-style: italic; font-weight: 400; }
+
+  /* Wordmark inline row (mark + wordmark together) */
+  .lockup { display: flex; align-items: center; gap: 14px; }
+  .lockup svg { width: 42px; height: 42px; }
+  .lockup .word { font-size: 32px; color: var(--fg); }
+  .lockup.large svg { width: 68px; height: 68px; }
+  .lockup.large .word { font-size: 52px; }
+
+  /* Usage grid small tiles */
+  .tiles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+  .tile {
+    aspect-ratio: 1; border-radius: 12px; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .tile .cap {
+    position: absolute; bottom: 6px; left: 8px;
+    font-family: var(--f-mono); font-size: 8.5px; letter-spacing: 0.14em;
+    color: rgba(245,241,234,0.5); text-transform: uppercase;
+  }
+
+  /* Motion strip */
+  .motion-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+  .motion-strip .item {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 20px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .motion-strip .item .sq {
+    aspect-ratio: 1; border-radius: 10px;
+    background: radial-gradient(ellipse at center, #1B1812 0%, #0B0906 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .motion-strip .item .lbl { font-family: var(--f-disp); font-style: italic; color: var(--brass); font-size: 16px; font-weight: 500; }
+  .motion-strip .item .d { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--fg-3); line-height: 1.5; }
+
+  /* UI simulation row — app loading, nav, splash */
+  .sim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .sim {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    overflow: hidden;
+  }
+  .sim .hd { padding: 18px 22px 14px; border-bottom: 1px solid var(--line); }
+  .sim .hd .t { font-family: var(--f-disp); font-weight: 500; font-size: 17px; letter-spacing: -0.01em; }
+  .sim .hd .t em { font-style: italic; color: var(--brass); font-weight: 400; }
+  .sim .hd .n { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.16em; color: var(--fg-3); text-transform: uppercase; margin-top: 6px; }
+
+  /* phone splash */
+  .phone-frame {
+    margin: 20px auto; width: 190px; height: 340px;
+    border-radius: 28px; background: var(--bg); position: relative;
+    box-shadow: 0 0 0 6px var(--ink), 0 20px 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .phone-frame .splash {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    background: radial-gradient(ellipse at center, #1B1812 0%, #050403 80%);
+  }
+  .phone-frame .splash svg { width: 70px; height: 70px; }
+  .phone-frame .splash .word { font-size: 22px; color: var(--fg); }
+  .phone-frame .sw {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 2px; background: rgba(245,241,234,0.2); border-radius: 2px;
+    overflow: hidden;
+  }
+  .phone-frame .sw::after {
+    content: ""; position: absolute; inset: 0 70% 0 0;
+    background: var(--terracotta); border-radius: 2px;
+    animation: swipe 2s ease-in-out infinite;
+  }
+  @keyframes swipe { 0%,100% { inset: 0 70% 0 0; } 50% { inset: 0 0 0 70%; } }
+
+  /* browser mock */
+  .browser {
+    margin: 18px; height: 240px;
+    border-radius: 10px; background: var(--bg); overflow: hidden;
+    border: 1px solid var(--line);
+  }
+  .browser .tabs { height: 34px; background: #0B0906; border-bottom: 1px solid var(--line); display:flex; align-items:center; padding: 0 10px; gap: 6px; }
+  .browser .tabs .dot { width: 8px; height: 8px; border-radius: 50%; background: #2A2721; }
+  .browser .tabs .ltab {
+    margin-left: auto; display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 5px; background: rgba(245,241,234,0.04);
+    font-family: var(--f-mono); font-size: 9.5px; color: var(--fg-2);
+  }
+  .browser .tabs .ltab svg { width: 11px; height: 11px; }
+  .browser .content { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+  .browser .bnav { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .browser .bnav svg { width: 22px; height: 22px; }
+  .browser .bnav .n { font-family: var(--f-disp); font-weight: 500; font-size: 14px; font-variation-settings: "SOFT" 30; letter-spacing: -0.01em; color: var(--fg); }
+  .browser .bnav .n em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+  .browser .body { padding-left: 4px; }
+  .browser .body .h { font-family: var(--f-disp); font-weight: 500; font-size: 18px; letter-spacing: -0.02em; color: var(--fg); font-variation-settings: "SOFT" 30; line-height: 1.1; }
+  .browser .body .h em { font-style: italic; color: var(--brass); font-weight: 400; }
+  .browser .body .p { font-size: 10.5px; color: var(--fg-3); line-height: 1.55; margin-top: 6px; }
+
+  /* Terminal loading */
+  .term {
+    margin: 18px; padding: 20px;
+    background: #07060a; border-radius: 8px;
+    height: 240px; display: flex; flex-direction: column; gap: 10px;
+    font-family: var(--f-mono); font-size: 11px; color: var(--fg-3); line-height: 1.6;
+  }
+  .term .row { display: flex; align-items: center; gap: 10px; }
+  .term .row .dot { color: var(--sage); }
+  .term .row.active { color: var(--fg); }
+  .term .row.active .dot { color: var(--terracotta); }
+  .term .row svg { width: 12px; height: 12px; }
+  .term .sp { margin-left: auto; width: 14px; height: 14px; }
+  .term .sp svg { animation: spinOrbit 1s linear infinite; transform-origin: 50% 50%; }
+
+  .foot { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--fg-3); text-transform: uppercase; display: flex; justify-content: space-between; }
+  .foot em { font-family: var(--f-disp); font-style: italic; color: var(--brass); font-size: 14px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+</style></head>
+<body>
+
+<!-- ============================================================
+     SVG SYMBOLS — one source of truth for the mark
+     ============================================================ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Gradient definitions -->
+    <linearGradient id="grad-flow" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#D4A373"/>
+      <stop offset="60%" stop-color="#E8794A"/>
+      <stop offset="100%" stop-color="#C25A30"/>
+    </linearGradient>
+    <linearGradient id="grad-flow-cream" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FAF7F1"/>
+      <stop offset="100%" stop-color="#FAF7F1"/>
+    </linearGradient>
+    <linearGradient id="grad-flow-ink" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1A1713"/>
+      <stop offset="100%" stop-color="#1A1713"/>
+    </linearGradient>
+    <linearGradient id="grad-flow-gold" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E3B956"/>
+      <stop offset="100%" stop-color="#C8933F"/>
+    </linearGradient>
+    <radialGradient id="pin-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#E8794A" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#E8794A" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- === The canonical LocateFlow mark === -->
+    <symbol id="lf-mark" viewBox="0 0 100 100">
+      <g class="wrap-g">
+        <!-- Soft glow behind pin -->
+        <circle cx="80" cy="40" r="16" fill="url(#pin-glow)"/>
+        <!-- the "flow" path: from home to pin -->
+        <path class="path" d="M20 65 Q 30 32, 50 48 T 80 40"
+              stroke="url(#grad-flow)" stroke-width="3.5"
+              fill="none" stroke-linecap="round"/>
+        <!-- home dot (start) -->
+        <circle class="home-dot" cx="20" cy="65" r="4.5" fill="#D4A373"/>
+        <circle class="home-dot" cx="20" cy="65" r="1.5" fill="#0E0D0B"/>
+        <!-- pin (end) -->
+        <circle class="pin-ring" cx="80" cy="40" r="7" fill="none" stroke="#E8794A" stroke-width="2" opacity="0"/>
+        <circle class="pin-dot" cx="80" cy="40" r="7" fill="#E8794A"/>
+        <circle class="pin-inner" cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+      </g>
+    </symbol>
+
+    <!-- Mark on cream ground -->
+    <symbol id="lf-mark-cream" viewBox="0 0 100 100">
+      <g class="wrap-g">
+        <path class="path" d="M20 65 Q 30 32, 50 48 T 80 40"
+              stroke="#1A1713" stroke-width="3.5"
+              fill="none" stroke-linecap="round"/>
+        <circle class="home-dot" cx="20" cy="65" r="4.5" fill="#1A1713"/>
+        <circle class="pin-dot" cx="80" cy="40" r="7" fill="#E8794A"/>
+        <circle class="pin-inner" cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+      </g>
+    </symbol>
+
+    <!-- Mark on terracotta ground (app icon variant) -->
+    <symbol id="lf-mark-terracotta" viewBox="0 0 100 100">
+      <g class="wrap-g">
+        <path class="path" d="M20 65 Q 30 32, 50 48 T 80 40"
+              stroke="#FAF7F1" stroke-width="3.5"
+              fill="none" stroke-linecap="round"/>
+        <circle class="home-dot" cx="20" cy="65" r="4.5" fill="#FAF7F1"/>
+        <circle class="pin-dot" cx="80" cy="40" r="7" fill="#FAF7F1"/>
+        <circle class="pin-inner" cx="80" cy="40" r="2.5" fill="#E8794A"/>
+      </g>
+    </symbol>
+
+    <!-- Simplified for favicon / tiny -->
+    <symbol id="lf-mark-tiny" viewBox="0 0 100 100">
+      <path d="M20 65 Q 30 32, 50 48 T 80 40"
+            stroke="#E8794A" stroke-width="9"
+            fill="none" stroke-linecap="round"/>
+      <circle cx="80" cy="40" r="11" fill="#E8794A"/>
+      <circle cx="20" cy="65" r="6" fill="#D4A373"/>
+    </symbol>
+
+    <!-- Arrow icon for browser tab sim -->
+    <symbol id="tab-fav" viewBox="0 0 100 100">
+      <path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="#E8794A" stroke-width="12" fill="none" stroke-linecap="round"/>
+      <circle cx="80" cy="40" r="13" fill="#E8794A"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <div class="k">● V5 system · animated + applied</div>
+      <h1>A mark that <em>moves</em>.</h1>
+    </div>
+    <a class="back" href="logo-study.html">← back to 6-study</a>
+  </div>
+
+  <p class="intro">Taking V5 further. Every instance you see below renders from the <b>same SVG symbol</b> — the "flow" path from home to pin is the DNA, and every use swaps palette, animation, or scale. The signature mark traces itself on load; in product, it breathes. Hover any card that says <b>hover to play</b> to replay its animation.</p>
+
+  <!-- ============================================================
+       HERO
+       ============================================================ -->
+  <div class="hero-main">
+    <div>
+      <div class="meta">● The canonical signature</div>
+      <h2>Home to <em>somewhere</em> new.</h2>
+      <p>A warm brass dot for where you are, flowing through a soft arc into a terracotta pin for where you're going. The arc isn't decoration — it's the <b>single frame a user sees every time the app opens</b>, traced in ~1.2s over a quiet gradient. By the time the animation settles, it's also your favicon, your loading spinner, and the seal on any PDF export.</p>
+      <p><b style="color:var(--fg)">One mark, three moods:</b> traced (hero + splash), breathing (idle / nav), shimmering (sync success).</p>
+    </div>
+    <div class="hero-stage">
+      <div class="inner">
+        <svg viewBox="0 0 100 100" class="sig-inline" style="width:240px;height:240px;">
+          <circle cx="80" cy="40" r="16" fill="url(#pin-glow)"/>
+          <path class="path-trace" d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#grad-flow)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <circle class="home-trace" cx="20" cy="65" r="4.5" fill="#D4A373"/>
+          <circle class="home-trace" cx="20" cy="65" r="1.5" fill="#0E0D0B"/>
+          <circle class="pin-trace" cx="80" cy="40" r="7" fill="#E8794A"/>
+          <circle class="pin-trace" cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+        </svg>
+        <span class="word" style="font-size: 42px; color: var(--fg);">Locate<em style="color: var(--terracotta);">flow</em></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PALETTE SWAPS  — same mark, different ground
+       ============================================================ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <h2>Ground <em>variants</em></h2>
+      <span class="n">· four canonical grounds</span>
+    </div>
+    <div class="grid-4">
+
+      <div class="card">
+        <div class="hd"><span class="t">Dark <em>primary</em></span><span class="n">01</span></div>
+        <div class="body" style="min-height: 160px;">
+          <svg viewBox="0 0 100 100" class="live" style="width:110px;height:110px;"><use href="#lf-mark"/></svg>
+        </div>
+        <div class="ft">App, web, admin on dark — terracotta + brass on oiled background.</div>
+      </div>
+
+      <div class="card cream">
+        <div class="hd"><span class="t">Cream <em>editorial</em></span><span class="n">02</span></div>
+        <div class="body" style="min-height: 160px;">
+          <svg viewBox="0 0 100 100" class="live" style="width:110px;height:110px;"><use href="#lf-mark-cream"/></svg>
+        </div>
+        <div class="ft">PDF exports, printed receipts, light-mode mobile.</div>
+      </div>
+
+      <div class="card terracotta">
+        <div class="hd"><span class="t">Terracotta <em>icon</em></span><span class="n">03</span></div>
+        <div class="body" style="min-height: 160px;">
+          <svg viewBox="0 0 100 100" class="live" style="width:110px;height:110px;"><use href="#lf-mark-terracotta"/></svg>
+        </div>
+        <div class="ft">Home screen app icon — cream line on warm ground.</div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><span class="t">Monotone <em>stamp</em></span><span class="n">04</span></div>
+        <div class="body" style="min-height: 160px;">
+          <svg viewBox="0 0 100 100" class="live" style="width:110px;height:110px;">
+            <g>
+              <path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="#D4A373" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <circle cx="20" cy="65" r="4.5" fill="#D4A373"/>
+              <circle cx="80" cy="40" r="7" fill="#D4A373"/>
+              <circle cx="80" cy="40" r="2.5" fill="#0E0D0B"/>
+            </g>
+          </svg>
+        </div>
+        <div class="ft">Engraved / foil — letterhead, signatures, ownership seal.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       MOTION STATES
+       ============================================================ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <h2>Motion <em>language</em></h2>
+      <span class="n">· 4 animated states</span>
+    </div>
+    <div class="motion-strip">
+
+      <div class="item">
+        <div class="sq">
+          <svg viewBox="0 0 100 100" class="sig-inline" style="width:80%;height:80%;">
+            <circle cx="80" cy="40" r="16" fill="url(#pin-glow)"/>
+            <path class="path-trace" d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#grad-flow)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <circle class="home-trace" cx="20" cy="65" r="4.5" fill="#D4A373"/>
+            <circle class="home-trace" cx="20" cy="65" r="1.5" fill="#0E0D0B"/>
+            <circle class="pin-trace" cx="80" cy="40" r="7" fill="#E8794A"/>
+            <circle class="pin-trace" cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+          </svg>
+        </div>
+        <div>
+          <div class="lbl">signature trace</div>
+          <div class="d">1.2s path draw on app open, splash, marketing hero. Plays once, holds.</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="sq">
+          <svg viewBox="0 0 100 100" class="live-inline" style="width:80%;height:80%;">
+            <g class="breathe-g">
+              <circle cx="80" cy="40" r="16" fill="url(#pin-glow)"/>
+              <path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#grad-flow)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <circle cx="20" cy="65" r="4.5" fill="#D4A373"/>
+              <circle cx="20" cy="65" r="1.5" fill="#0E0D0B"/>
+              <circle cx="80" cy="40" r="7" fill="#E8794A"/>
+              <circle cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="lbl">idle breathing</div>
+          <div class="d">Subtle 4% scale at 3s cycles. For nav logo, any always-on placement.</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="sq">
+          <svg viewBox="0 0 100 100" class="shim-inline" style="width:80%;height:80%;">
+            <circle cx="80" cy="40" r="16" fill="url(#pin-glow)"/>
+            <path class="path-shim" d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#grad-flow)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <circle class="home-shim" cx="20" cy="65" r="4.5" fill="#D4A373"/>
+            <circle class="home-shim" cx="20" cy="65" r="1.5" fill="#0E0D0B"/>
+            <circle class="pin-shim" cx="80" cy="40" r="7" fill="#E8794A"/>
+            <circle class="pin-shim" cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+          </svg>
+        </div>
+        <div>
+          <div class="lbl">sync shimmer</div>
+          <div class="d">Path draws + fades. "Just updated" moments — after transfer, payment, sync.</div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="sq">
+          <svg viewBox="0 0 100 100" class="spin" style="width:70%;height:70%;">
+            <!-- circular spinner variant: only pin orbits around center -->
+            <circle cx="50" cy="50" r="32" stroke="rgba(212,163,115,0.15)" stroke-width="3" fill="none"/>
+            <path d="M50 18 A 32 32 0 0 1 82 50" stroke="#E8794A" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <circle cx="82" cy="50" r="5" fill="#E8794A"/>
+          </svg>
+        </div>
+        <div>
+          <div class="lbl">orbit spinner</div>
+          <div class="d">Pin orbits on brass track. Loading states. 1.8s per revolution.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       APP ICONS across platforms
+       ============================================================ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <h2>App <em>icons</em></h2>
+      <span class="n">· iOS, Android, macOS, Web</span>
+    </div>
+    <div class="tiles">
+
+      <div class="tile" style="background: linear-gradient(140deg, var(--terracotta-soft) 0%, var(--terracotta) 55%, var(--terracotta-deep) 100%); border-radius: 22%;">
+        <svg viewBox="0 0 100 100" style="width:62%;height:62%;"><use href="#lf-mark-terracotta"/></svg>
+        <div class="cap" style="color: rgba(250,247,241,0.7);">iOS</div>
+      </div>
+
+      <div class="tile" style="background: radial-gradient(ellipse at 30% 30%, #2A2118 0%, #0B0906 70%); border-radius: 50%;">
+        <svg viewBox="0 0 100 100" style="width:60%;height:60%;"><use href="#lf-mark"/></svg>
+        <div class="cap">Android</div>
+      </div>
+
+      <div class="tile" style="background: var(--cream); border-radius: 22%;">
+        <svg viewBox="0 0 100 100" style="width:62%;height:62%;"><use href="#lf-mark-cream"/></svg>
+        <div class="cap" style="color: rgba(26,23,19,0.5);">macOS</div>
+      </div>
+
+      <div class="tile" style="background: linear-gradient(180deg, #2A2118 0%, #0B0906 100%); border-radius: 10px; border: 1px solid var(--terracotta); box-shadow: 0 0 0 1px rgba(232,121,74,0.1), inset 0 0 24px rgba(232,121,74,0.08);">
+        <svg viewBox="0 0 100 100" style="width:60%;height:60%;"><use href="#lf-mark"/></svg>
+        <div class="cap">Web</div>
+      </div>
+
+      <div class="tile" style="background:
+        linear-gradient(140deg, #1A1713 0%, #0B0906 100%);
+        border-radius: 22%; position: relative; overflow: hidden;">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 70% 20%, rgba(232,121,74,0.15), transparent 50%);"></div>
+        <svg viewBox="0 0 100 100" style="width:58%;height:58%;position:relative;"><use href="#lf-mark"/></svg>
+        <div class="cap">Tinted</div>
+      </div>
+
+      <div class="tile" style="background: #FAF7F1; border-radius: 50%;">
+        <svg viewBox="0 0 100 100" style="width:50%;height:50%;"><use href="#lf-mark-cream"/></svg>
+        <div class="cap" style="color: rgba(26,23,19,0.5);">Watch</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SCALE / FAVICON
+       ============================================================ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <h2>Down to <em>16px</em></h2>
+      <span class="n">· how it holds at every size</span>
+    </div>
+    <div class="card" style="padding: 36px 32px;">
+      <div style="display:flex; align-items: flex-end; gap: 56px; justify-content: center; flex-wrap: wrap;">
+        <div style="text-align:center; display: flex; flex-direction:column; align-items: center; gap: 12px;">
+          <svg viewBox="0 0 100 100" style="width:120px;height:120px;"><use href="#lf-mark"/></svg>
+          <div style="font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--fg-3); text-transform: uppercase;">120 px</div>
+        </div>
+        <div style="text-align:center; display: flex; flex-direction:column; align-items: center; gap: 12px;">
+          <svg viewBox="0 0 100 100" style="width:64px;height:64px;"><use href="#lf-mark"/></svg>
+          <div style="font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--fg-3); text-transform: uppercase;">64 px</div>
+        </div>
+        <div style="text-align:center; display: flex; flex-direction:column; align-items: center; gap: 12px;">
+          <svg viewBox="0 0 100 100" style="width:32px;height:32px;"><use href="#lf-mark"/></svg>
+          <div style="font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--fg-3); text-transform: uppercase;">32 px</div>
+        </div>
+        <div style="text-align:center; display: flex; flex-direction:column; align-items: center; gap: 12px;">
+          <svg viewBox="0 0 100 100" style="width:24px;height:24px;"><use href="#lf-mark-tiny"/></svg>
+          <div style="font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--fg-3); text-transform: uppercase;">24 px <b style="color: var(--brass);">·</b> tiny</div>
+        </div>
+        <div style="text-align:center; display: flex; flex-direction:column; align-items: center; gap: 12px;">
+          <svg viewBox="0 0 100 100" style="width:16px;height:16px;"><use href="#lf-mark-tiny"/></svg>
+          <div style="font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.12em; color: var(--fg-3); text-transform: uppercase;">16 px <b style="color: var(--brass);">·</b> favicon</div>
+        </div>
+      </div>
+      <p style="font-size: 13px; color: var(--fg-2); text-align: center; max-width: 56ch; margin: 28px auto 0; line-height: 1.5;">Below 32px the mark switches to its <b style="color:var(--fg)">simplified form</b> — just the arc + two dots, no inner highlight. Small-size fidelity preserved.</p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       IN SITU — where it lives
+       ============================================================ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <h2>In <em>context</em></h2>
+      <span class="n">· how it lives in-product</span>
+    </div>
+    <div class="sim-grid">
+
+      <div class="sim">
+        <div class="hd">
+          <div class="t">App <em>splash</em></div>
+          <div class="n">Mobile launch</div>
+        </div>
+        <div class="phone-frame">
+          <div class="splash">
+            <svg viewBox="0 0 100 100" class="sig-inline" style="width:70px;height:70px;">
+              <circle cx="80" cy="40" r="16" fill="url(#pin-glow)"/>
+              <path class="path-trace" d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#grad-flow)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <circle class="home-trace" cx="20" cy="65" r="4.5" fill="#D4A373"/>
+              <circle class="home-trace" cx="20" cy="65" r="1.5" fill="#0E0D0B"/>
+              <circle class="pin-trace" cx="80" cy="40" r="7" fill="#E8794A"/>
+              <circle class="pin-trace" cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+            </svg>
+            <span class="word">Locate<em style="color: var(--terracotta);">flow</em></span>
+          </div>
+          <div class="sw"></div>
+        </div>
+      </div>
+
+      <div class="sim">
+        <div class="hd">
+          <div class="t">Browser <em>tab</em></div>
+          <div class="n">Web nav + favicon</div>
+        </div>
+        <div class="browser">
+          <div class="tabs">
+            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            <div class="ltab">
+              <svg viewBox="0 0 100 100"><use href="#tab-fav"/></svg>
+              LocateFlow
+            </div>
+          </div>
+          <div class="content">
+            <div class="bnav">
+              <svg viewBox="0 0 100 100" class="live"><use href="#lf-mark"/></svg>
+              <span class="n">Locate<em>flow</em></span>
+            </div>
+            <div class="body">
+              <div class="h">A quiet <em>Tuesday</em>.</div>
+              <div class="p">Your current move is on track. 3 services transferred, 2 remaining.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim">
+        <div class="hd">
+          <div class="t">Loading <em>state</em></div>
+          <div class="n">Provider sync</div>
+        </div>
+        <div class="term">
+          <div class="row"><span class="dot">✓</span> Connected to Austin Energy</div>
+          <div class="row"><span class="dot">✓</span> Statement parsed · $128.40</div>
+          <div class="row active">
+            <span class="dot">○</span> Transferring to Denver…
+            <span class="sp">
+              <svg viewBox="0 0 100 100" style="width:100%;height:100%;">
+                <circle cx="50" cy="50" r="32" stroke="rgba(212,163,115,0.2)" stroke-width="6" fill="none"/>
+                <path d="M50 18 A 32 32 0 0 1 82 50" stroke="#E8794A" stroke-width="7" fill="none" stroke-linecap="round"/>
+                <circle cx="82" cy="50" r="9" fill="#E8794A"/>
+              </svg>
+            </span>
+          </div>
+          <div class="row" style="opacity:0.4;"><span class="dot">·</span> Scheduling final bill</div>
+          <div class="row" style="opacity:0.3;"><span class="dot">·</span> Closing Austin account</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================
+       WORDMARK LOCKUP
+       ============================================================ -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <h2>Wordmark <em>lockups</em></h2>
+      <span class="n">· mark + word</span>
+    </div>
+    <div class="grid-2">
+
+      <div class="card hover-play">
+        <div class="hd">
+          <div class="t">Horizontal · <em>nav</em></div>
+          <div class="n">Hover to play</div>
+        </div>
+        <div class="body" style="min-height: 140px;">
+          <div class="lockup large">
+            <svg viewBox="0 0 100 100"><use href="#lf-mark"/></svg>
+            <span class="word" style="color: var(--fg);">Locate<em style="color: var(--terracotta);">flow</em></span>
+          </div>
+        </div>
+        <div class="ft">Primary lockup. Mark leads, italic "flow" in terracotta tightens the wordmark's rhythm.</div>
+      </div>
+
+      <div class="card">
+        <div class="hd">
+          <div class="t">Compact · <em>sidebar</em></div>
+          <div class="n">Dense apps</div>
+        </div>
+        <div class="body" style="min-height: 140px;">
+          <div class="lockup">
+            <svg viewBox="0 0 100 100" class="live"><use href="#lf-mark"/></svg>
+            <span class="word" style="color: var(--fg); font-size: 22px;">Locate<em style="color: var(--terracotta);">flow</em></span>
+          </div>
+        </div>
+        <div class="ft">Smaller scale for admin / web nav. Breathing animation loops quietly.</div>
+      </div>
+
+      <div class="card cream">
+        <div class="hd">
+          <div class="t">On cream · <em>letterhead</em></div>
+          <div class="n">Print / PDF</div>
+        </div>
+        <div class="body" style="min-height: 140px;">
+          <div class="lockup large">
+            <svg viewBox="0 0 100 100"><use href="#lf-mark-cream"/></svg>
+            <span class="word" style="color: var(--ink);">Locate<em style="color: var(--terracotta);">flow</em></span>
+          </div>
+        </div>
+        <div class="ft">Printed documents, receipts, legal agreements.</div>
+      </div>
+
+      <div class="card">
+        <div class="hd">
+          <div class="t">Stacked · <em>loading</em></div>
+          <div class="n">Splash / overlay</div>
+        </div>
+        <div class="body" style="min-height: 140px; flex-direction: column; gap: 14px;">
+          <svg viewBox="0 0 100 100" class="sig-inline" style="width: 80px; height: 80px;">
+            <circle cx="80" cy="40" r="16" fill="url(#pin-glow)"/>
+            <path class="path-trace" d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#grad-flow)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <circle class="home-trace" cx="20" cy="65" r="4.5" fill="#D4A373"/>
+            <circle class="home-trace" cx="20" cy="65" r="1.5" fill="#0E0D0B"/>
+            <circle class="pin-trace" cx="80" cy="40" r="7" fill="#E8794A"/>
+            <circle class="pin-trace" cx="80" cy="40" r="2.5" fill="#FAF7F1"/>
+          </svg>
+          <span class="word" style="color: var(--fg); font-size: 24px;">Locate<em style="color: var(--terracotta);">flow</em></span>
+        </div>
+        <div class="ft">App launch, full-screen moments. Mark traces itself above the word.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">
+    <div>V5 system · one SVG, every use</div>
+    <div><em>shall I apply it everywhere?</em></div>
+  </div>
+</div>
+
+</body></html>

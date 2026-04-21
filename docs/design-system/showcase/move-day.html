@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Move Day · LocateFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .stage { padding: 72px 24px 48px; }
+  .layout { display: flex; gap: 72px; align-items: center; }
+  .notes { max-width: 320px; color: var(--d-fg); }
+  .notes .kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  .notes .kicker::before { content: ""; width: 22px; height: 1px; background: var(--brass); }
+  .notes h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-weight: 400; font-size: 54px; line-height: 0.98; letter-spacing: -0.03em; margin: 0 0 22px; }
+  .notes h1 em { color: var(--terracotta); }
+  .notes p { font-size: 15px; line-height: 1.6; color: var(--d-fg-2); margin: 0 0 16px; max-width: 34ch; }
+  .notes .chip { display: inline-block; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 10px; border: 1px solid var(--d-line-2); border-radius: 3px; color: var(--d-fg-2); margin: 4px 6px 0 0; }
+
+  .md { height: 100%; background: #0B0A08; color: var(--d-fg); padding-top: 62px; overflow-y: auto; }
+  .md-banner {
+    margin: 10px 16px 18px; padding: 14px 16px;
+    border-radius: 14px; border: 1px solid rgba(232,121,74,0.3);
+    background: linear-gradient(135deg, rgba(232,121,74,0.12), rgba(242,166,90,0.05));
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .md-banner .l .k { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--terracotta); margin-bottom: 4px; }
+  .md-banner .l .t { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 18px; line-height: 1.1; letter-spacing: -0.01em; }
+  .md-banner .l .t em { color: var(--brass); }
+  .md-banner .r { text-align: right; font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; line-height: 1; }
+  .md-banner .r .n { font-size: 34px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .md-banner .r .l2 { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); margin-top: 4px; }
+
+  .md-hero { padding: 0 24px 10px; }
+  .md-hero .dt { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--d-fg-3); }
+  .md-hero h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 44px; line-height: 1; letter-spacing: -0.025em; margin: 8px 0 6px; }
+  .md-hero h1 em { color: var(--terracotta); }
+  .md-hero .sub { font-family: var(--f-mono); font-size: 12px; color: var(--d-fg-2); letter-spacing: 0.04em; }
+
+  .md-progress { padding: 18px 24px 22px; }
+  .md-progress .row { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--d-fg-2); margin-bottom: 8px; }
+  .md-progress .bar { height: 4px; background: rgba(245,241,234,0.08); border-radius: 4px; overflow:hidden; }
+  .md-progress .bar i { display:block; height:100%; width: 42%; background: linear-gradient(90deg, var(--terracotta), var(--terracotta-soft)); border-radius: 4px; }
+
+  .sec-lbl { padding: 8px 24px; font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--d-fg-3); display: flex; align-items: center; gap: 12px; }
+  .sec-lbl::after { content:""; flex:1; height:1px; background: var(--d-line); }
+
+  .task {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--d-line);
+    display: grid; grid-template-columns: 24px 1fr auto; gap: 14px; align-items: flex-start;
+  }
+  .check {
+    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid rgba(245,241,234,0.3); margin-top: 4px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .task.done .check { background: var(--terracotta); border-color: var(--terracotta); }
+  .task.done .check::after { content: ""; width: 5px; height: 9px; border: solid #1a0a02; border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px,-1px); }
+  .task.now .check { border-color: var(--terracotta); box-shadow: 0 0 0 3px rgba(232,121,74,0.12); animation: nowpulse 1.6s infinite; }
+  @keyframes nowpulse { 0%,100%{box-shadow:0 0 0 3px rgba(232,121,74,0.12)} 50%{box-shadow:0 0 0 7px rgba(232,121,74,0.04)} }
+
+  .task .ttl { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 19px; line-height: 1.2; letter-spacing: -0.01em; }
+  .task .ttl em { color: var(--brass); }
+  .task.done .ttl { color: var(--d-fg-3); text-decoration: line-through; text-decoration-color: rgba(245,241,234,0.3); }
+  .task .meta { font-family: var(--f-mono); font-size: 11.5px; color: var(--d-fg-2); letter-spacing: 0.04em; margin-top: 4px; font-weight: 500; }
+  .task.done .meta { color: var(--d-fg-3); }
+  .task .when { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.08em; color: var(--d-fg-3); padding-top: 4px; font-weight: 500; }
+  .task.now .when { color: var(--terracotta); }
+
+  .task .cta { margin-top: 10px; display: flex; gap: 8px; }
+  .task .cta button {
+    font-family: var(--f-sans); font-size: 12px; font-weight: 500;
+    padding: 7px 12px; border-radius: 8px; border: 1px solid var(--d-line-2);
+    background: transparent; color: var(--d-fg); cursor: pointer;
+  }
+  .task .cta button.p { background: var(--terracotta); color: #1a0a02; border-color: transparent; }
+
+  .coffee {
+    margin: 28px 24px 0; padding: 18px 20px;
+    border: 1px solid var(--d-line); border-radius: 16px;
+    background: var(--d-surface);
+  }
+  .coffee .k { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass); margin-bottom: 10px; }
+  .coffee .q { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-style: italic; font-size: 22px; line-height: 1.3; letter-spacing: -0.01em; color: var(--d-fg); }
+  .coffee .q::before { content: "\201C"; color: var(--terracotta); margin-right: 4px; }
+</style></head>
+<body>
+
+<div class="stage-hdr">
+  <div><span class="t">Move Day Mode</span> · mobile showcase 03/07</div>
+  <div><a href="index.html">← back to gallery</a></div>
+</div>
+
+<div class="stage">
+ <div class="layout">
+  <div class="notes">
+    <div class="kicker">Concept no. 3</div>
+    <h1>One <em>ritual</em>,<br>one screen.</h1>
+    <p>On moving day, the app drops everything else and becomes a single checklist — time-ordered, tactile, with the current task visibly waiting for you.</p>
+    <p>Push notifs nudge at the scheduled window. Completing a task feels physical — a soft terracotta stamp.</p>
+    <div style="margin-top:20px">
+      <span class="chip">Contextual UI</span>
+      <span class="chip">Time-anchored</span>
+      <span class="chip">Delightful check-off</span>
+    </div>
+  </div>
+
+  <div class="phone dark">
+    <div class="island"></div>
+    <div class="sbar"><div>7:02</div><div class="r">
+      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="currentColor"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.5" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx="0.5" fill="currentColor"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="22" height="11" rx="2.5" fill="none" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="currentColor"/></svg>
+    </div></div>
+    <div class="home-ind"></div>
+
+    <div class="md">
+      <div class="md-banner">
+        <div class="l">
+          <div class="k">● Move-day mode on</div>
+          <div class="t">Austin → <em>Denver</em>, today.</div>
+        </div>
+        <div class="r">
+          <div class="n">12</div>
+          <div class="l2">tasks</div>
+        </div>
+      </div>
+
+      <div class="md-hero">
+        <div class="dt">May 14 · Thursday · 7:02 am</div>
+        <h1>Good <em>luck</em>,<br>Sarah.</h1>
+        <div class="sub">Movers arrive in 58 min. Coffee's a good idea.</div>
+      </div>
+
+      <div class="md-progress">
+        <div class="row"><span>5 of 12 complete</span><span>on track</span></div>
+        <div class="bar"><i></i></div>
+      </div>
+
+      <div class="sec-lbl">Morning · before movers</div>
+
+      <div class="task done">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Strip beds, bag linens.</div>
+          <div class="meta">Done · 6:41 am</div>
+        </div>
+        <div class="when">6:30</div>
+      </div>
+      <div class="task done">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Unplug fridge, leave door open.</div>
+          <div class="meta">Done · 6:52 am</div>
+        </div>
+        <div class="when">6:45</div>
+      </div>
+      <div class="task done">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Final walkthrough <em>photos</em>.</div>
+          <div class="meta">Done · 23 photos uploaded</div>
+        </div>
+        <div class="when">7:00</div>
+      </div>
+
+      <div class="task now">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Hand off <em>keys</em> to landlord.</div>
+          <div class="meta">Maya · 512-555-0198 · 1421 Rainey</div>
+          <div class="cta">
+            <button class="p">Call Maya</button>
+            <button>Text arrival</button>
+          </div>
+        </div>
+        <div class="when">8:00</div>
+      </div>
+
+      <div class="task">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Meet <em>Bellhop</em> movers at door.</div>
+          <div class="meta">Team of 3 · 8:00 am window · Order #BH-2411</div>
+        </div>
+        <div class="when">8:00</div>
+      </div>
+
+      <div class="sec-lbl">On the road</div>
+
+      <div class="task">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Confirm <em>Xcel</em> turn-on at Larimer.</div>
+          <div class="meta">We'll remind you · 1-tap confirm</div>
+        </div>
+        <div class="when">11:00</div>
+      </div>
+      <div class="task">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Spectrum self-install kit pickup.</div>
+          <div class="meta">FedEx at 220 Larimer · tracking #7811</div>
+        </div>
+        <div class="when">14:00</div>
+      </div>
+
+      <div class="sec-lbl">Denver · arrival</div>
+      <div class="task">
+        <div class="check"></div>
+        <div>
+          <div class="ttl">Walk apartment with new landlord.</div>
+          <div class="meta">Record condition photos in-app</div>
+        </div>
+        <div class="when">16:30</div>
+      </div>
+
+      <div class="coffee">
+        <div class="k">A note from us</div>
+        <div class="q">Today we'll handle the paperwork. You just need to show up — and maybe eat something warm.</div>
+      </div>
+
+      <div style="height:40px"></div>
+    </div>
+  </div>
+ </div>
+</div>
+
+</body></html>

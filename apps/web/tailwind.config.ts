@@ -64,6 +64,48 @@ const config: Config = {
           DEFAULT: "#3b82f6",
           light: "#dbeafe",
         },
+        // Brand namespace — canonical tokens from packages/shared/src/design-tokens.ts.
+        // Use `bg-brand-orange` / `text-brand-amber` for brand moments; the
+        // shadcn `primary` variable continues to drive default UI.
+        brand: {
+          orange: "var(--brand-orange)",
+          "orange-light": "var(--brand-orange-light)",
+          "orange-dark": "var(--brand-orange-dark)",
+          amber: "var(--brand-amber)",
+        },
+        orange: {
+          50: "var(--orange-50)",
+          100: "var(--orange-100)",
+          200: "var(--orange-200)",
+          300: "var(--orange-300)",
+          400: "var(--orange-400)",
+          500: "var(--orange-500)",
+          600: "var(--orange-600)",
+          700: "var(--orange-700)",
+          800: "var(--orange-800)",
+          900: "var(--orange-900)",
+        },
+        // Tonal pairs — stat cards, category chips. Six tones, no substitutes.
+        tone: {
+          "orange-bg": "var(--tone-orange-bg)",
+          "orange-br": "var(--tone-orange-br)",
+          "orange-fg": "var(--tone-orange-fg)",
+          "emerald-bg": "var(--tone-emerald-bg)",
+          "emerald-br": "var(--tone-emerald-br)",
+          "emerald-fg": "var(--tone-emerald-fg)",
+          "amber-bg": "var(--tone-amber-bg)",
+          "amber-br": "var(--tone-amber-br)",
+          "amber-fg": "var(--tone-amber-fg)",
+          "rose-bg": "var(--tone-rose-bg)",
+          "rose-br": "var(--tone-rose-br)",
+          "rose-fg": "var(--tone-rose-fg)",
+          "sky-bg": "var(--tone-sky-bg)",
+          "sky-br": "var(--tone-sky-br)",
+          "sky-fg": "var(--tone-sky-fg)",
+          "cyan-bg": "var(--tone-cyan-bg)",
+          "cyan-br": "var(--tone-cyan-br)",
+          "cyan-fg": "var(--tone-cyan-fg)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -72,6 +114,24 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["JetBrains Mono", "Consolas", "Courier New", "monospace"],
+      },
+      fontSize: {
+        // Canonical type scale from docs/design-system/README.md.
+        // Shadows Tailwind defaults intentionally — authors can pick either.
+        "brand-xs": ["11px", { lineHeight: "16px" }],
+        "brand-sm": ["12px", { lineHeight: "18px" }],
+        "brand-base": ["14px", { lineHeight: "20px" }],
+        "brand-md": ["15px", { lineHeight: "22px" }],
+        "brand-lg": ["16px", { lineHeight: "24px" }],
+        "brand-xl": ["18px", { lineHeight: "28px" }],
+        "brand-2xl": ["22px", { lineHeight: "28px" }],
+        "brand-3xl": ["28px", { lineHeight: "32px" }],
+        "brand-display": ["40px", { lineHeight: "44px", letterSpacing: "-0.02em" }],
+        "brand-display-lg": ["60px", { lineHeight: "64px", letterSpacing: "-0.02em" }],
+      },
+      boxShadow: {
+        glow: "var(--shadow-glow)",
       },
       keyframes: {
         "accordion-down": {

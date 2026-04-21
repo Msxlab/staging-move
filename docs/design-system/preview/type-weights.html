@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500;1,6..96,600&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_tokens.css"/>
+<style>
+:root{--d-bw:400;--l-bw:500;}
+html,body{margin:0;background:#08070a;font-family:var(--font-sans);}
+.stage{padding:18px 22px;display:flex;flex-direction:column;gap:8px;background:var(--bg);color:var(--fg);}
+.hdr{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:4px;}
+.hdr .t{font-family:var(--font-display);font-weight:var(--display-weight);font-size:18px;letter-spacing:-0.015em;}
+.hdr .t em{font-style:italic;color:var(--brass);font-weight:var(--display-italic-weight);}
+.hdr .m{font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);}
+.row{display:grid;grid-template-columns:120px 1fr 40px;align-items:baseline;gap:14px;padding:3px 0;}
+.label{font-family:var(--font-display);font-size:26px;letter-spacing:-0.02em;line-height:1.15;}
+.spec{font-family:var(--font-display);font-size:16px;line-height:1.25;letter-spacing:-0.005em;}
+.spec em{font-style:italic;color:var(--terracotta);}
+.num{font-family:var(--font-mono);font-size:10px;color:var(--fg-3);text-align:right;letter-spacing:0.06em;}
+.w300{font-weight:300;} .w400{font-weight:400;} .w500{font-weight:500;} .w600{font-weight:600;} .w700{font-weight:700;}
+.w-i{font-style:italic;}
+</style></head>
+<body>
+<div class="stage lf-dark">
+  <div class="hdr"><div class="t">Bodoni <em>Moda</em></div><div class="m">Display · var opsz 96 · Dark</div></div>
+  <div class="row"><div class="label w400">Regular</div><div class="spec w400">Every address, <em>every service</em>, in one place.</div><div class="num">400</div></div>
+  <div class="row"><div class="label w400 w-i">Italic</div><div class="spec w400 w-i">Every address, <em>every service</em>, in one place.</div><div class="num">400i</div></div>
+  <div class="row"><div class="label w500">Medium</div><div class="spec w500">Every address, <em>every service</em>, in one place.</div><div class="num">500</div></div>
+  <div class="row"><div class="label w600">Semibold</div><div class="spec w600">Every address, <em>every service</em>, in one place.</div><div class="num">600</div></div>
+  <div class="row"><div class="label w700">Bold</div><div class="spec w700">Every address, <em>every service</em>, in one place.</div><div class="num">700</div></div>
+</div>
+</body></html>

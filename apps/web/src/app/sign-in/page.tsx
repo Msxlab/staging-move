@@ -4,25 +4,32 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
-
-const OAUTH_ERROR_MESSAGES: Record<string, string> = {
-  "google-not-configured": "Google sign-in is not available right now.",
-  "apple-not-configured": "Apple sign-in is not available right now.",
-  "missing-code": "Sign-in was cancelled.",
-  "state-mismatch": "Sign-in session expired. Please try again.",
-  "token-exchange-failed": "We couldn't finish the sign-in. Please try again.",
-  "invalid-token": "The identity provider returned an invalid token.",
-  "email-unverified": "Your Google account must have a verified email.",
-  "apple-no-email": "Apple did not share your email. Try a different sign-in method.",
-  "apple-bad-body": "Apple sign-in response was malformed. Please try again.",
-  "apple-missing-fields": "Apple sign-in is missing required fields.",
-};
+import { useTranslations } from "next-intl";
 
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
   const oauthErrorKey = searchParams.get("error");
+  const tAuth = useTranslations("auth");
+  const tCommon = useTranslations("common");
+  const tToast = useTranslations("toast");
+
+  // OAuth error codes are a fixed enum from the OAuth callback routes.
+  // We map each to an `auth.*` key so the user sees a localized message
+  // instead of the raw query string.
+  const OAUTH_ERROR_KEYS: Record<string, string> = {
+    "google-not-configured": "error_unavailable",
+    "apple-not-configured": "error_unavailable",
+    "missing-code": "error_generic",
+    "state-mismatch": "error_generic",
+    "token-exchange-failed": "error_generic",
+    "invalid-token": "error_invalid",
+    "email-unverified": "error_invalid",
+    "apple-no-email": "error_generic",
+    "apple-bad-body": "error_generic",
+    "apple-missing-fields": "error_generic",
+  };
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +37,9 @@ function SignInForm() {
   const [requiresMfa, setRequiresMfa] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(
-    oauthErrorKey ? OAUTH_ERROR_MESSAGES[oauthErrorKey] || "Sign-in failed. Please try again." : null,
+    oauthErrorKey
+      ? tAuth(OAUTH_ERROR_KEYS[oauthErrorKey] || "error_generic")
+      : null,
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,7 +65,7 @@ function SignInForm() {
         return;
       }
       if (!res.ok) {
-        setError(data.error || "Sign-in failed.");
+        setError(data.error || tAuth("error_generic"));
         setLoading(false);
         return;
       }
@@ -64,7 +73,7 @@ function SignInForm() {
       router.replace(redirectTo);
       router.refresh();
     } catch {
-      setError("Network error. Please try again.");
+      setError(tToast("networkError"));
       setLoading(false);
     }
   };
@@ -73,8 +82,8 @@ function SignInForm() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 space-y-6">
         <div className="text-center space-y-1.5">
-          <h1 className="text-2xl font-bold text-white">Sign in</h1>
-          <p className="text-sm text-white/50">Welcome back to LocateFlow</p>
+          <h1 className="text-2xl font-bold text-white">{tCommon("signIn")}</h1>
+          <p className="text-sm text-white/50">{tAuth("signIn_title")}</p>
         </div>
 
         {error && (
@@ -97,7 +106,7 @@ function SignInForm() {
                 <path fill="#4CAF50" d="M24 44c5.3 0 10-2 13.6-5.3l-6.3-5.3A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/>
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3A12 12 0 0 1 31.3 33.4l6.3 5.3C37.2 39.8 44 34.7 44 24c0-1.2-.1-2.4-.4-3.5z"/>
               </svg>
-              Continue with Google
+              {tAuth("continueWithGoogle")}
             </a>
             <a
               href={`/api/auth/oauth/apple?redirect=${encodeURIComponent(redirectTo)}`}
@@ -106,12 +115,12 @@ function SignInForm() {
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
               </svg>
-              Continue with Apple
+              {tAuth("continueWithApple")}
             </a>
 
             <div className="flex items-center gap-3 py-1">
               <div className="flex-1 h-px bg-white/10" />
-              <span className="text-[11px] uppercase tracking-wider text-white/30">or</span>
+              <span className="text-[11px] uppercase tracking-wider text-white/30">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
               <div className="flex-1 h-px bg-white/10" />
             </div>
           </div>
@@ -121,7 +130,7 @@ function SignInForm() {
           {!requiresMfa && (
             <>
               <div>
-                <label htmlFor="email" className="text-xs font-medium text-white/60 block mb-1">Email</label>
+                <label htmlFor="email" className="text-xs font-medium text-white/60 block mb-1">{tAuth("email")}</label>
                 <input
                   id="email" type="email" required autoComplete="email"
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
@@ -130,8 +139,8 @@ function SignInForm() {
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="password" className="text-xs font-medium text-white/60">Password</label>
-                  <Link href="/forgot-password" className="text-xs text-orange-400 hover:underline">Forgot?</Link>
+                  <label htmlFor="password" className="text-xs font-medium text-white/60">{tAuth("password")}</label>
+                  <Link href="/forgot-password" className="text-xs text-orange-400 hover:underline">{tAuth("forgotPassword")}</Link>
                 </div>
                 <input
                   id="password" type="password" required autoComplete="current-password"
@@ -145,7 +154,7 @@ function SignInForm() {
           {requiresMfa && (
             <div>
               <label htmlFor="mfaCode" className="text-xs font-medium text-white/60 block mb-1">
-                Authenticator code
+                {tAuth("mfaCode")}
               </label>
               <input
                 id="mfaCode" type="text" inputMode="numeric" maxLength={6} required autoComplete="one-time-code"
@@ -155,7 +164,7 @@ function SignInForm() {
                 autoFocus
               />
               <p className="text-[11px] text-white/40 mt-1.5">
-                Open your authenticator app and enter the 6-digit code.
+                {tAuth("mfaRequired_subtitle")}
               </p>
             </div>
           )}
@@ -165,14 +174,14 @@ function SignInForm() {
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {requiresMfa ? "Verify" : "Sign in"}
+            {requiresMfa ? tCommon("confirm") : tCommon("signIn")}
           </button>
         </form>
 
         {!requiresMfa && (
           <p className="text-center text-xs text-white/40">
-            Don't have an account?{" "}
-            <Link href="/sign-up" className="text-orange-400 hover:underline">Create one</Link>
+            {tAuth("noAccount")}{" "}
+            <Link href="/sign-up" className="text-orange-400 hover:underline">{tCommon("signUp")}</Link>
           </p>
         )}
       </div>

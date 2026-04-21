@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>LocateFlow · Display Font Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Instrument+Serif:ital@0;1&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Caslon+Text:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400&family=GT+Sectra:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E0D0B;
+    --surface: #17150F;
+    --surface-2: #1E1B14;
+    --line: rgba(245,241,234,0.10);
+    --line-2: rgba(245,241,234,0.18);
+    --fg: #F5F1EA;
+    --fg-2: rgba(245,241,234,0.62);
+    --fg-3: rgba(245,241,234,0.38);
+    --terracotta: #E8794A;
+    --terracotta-soft: #F2A65A;
+    --brass: #D4A373;
+    --sage: #5EAD9A;
+    --f-sans: 'Inter', system-ui, sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  html, body { margin:0; padding:0; background: #050403; color: var(--fg); font-family: var(--f-sans); -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 64px 40px 80px; }
+  .hdr { padding-bottom: 32px; border-bottom: 1px solid var(--line); margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 14px; }
+  h1 { font-family: 'Fraunces', serif; font-size: 68px; line-height: 0.98; letter-spacing: -0.025em; font-weight: 500; margin: 0; max-width: 14ch; }
+  h1 em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+  .back { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--terracotta); text-decoration: none; }
+
+  .intro { font-size: 15px; color: var(--fg-2); max-width: 68ch; line-height: 1.65; margin: 0 0 12px; }
+  .intro b { color: var(--fg); font-weight: 500; }
+  .legend { display: flex; gap: 24px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--fg-3); margin: 28px 0 40px; text-transform: uppercase; }
+  .legend b { color: var(--fg); }
+
+  /* Study grid */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .cell {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 28px 30px 30px;
+    position: relative;
+  }
+  .cell.current { border-color: rgba(232,121,74,0.35); }
+  .cell.current::after {
+    content: "current"; position: absolute; top: 18px; right: 18px;
+    font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--terracotta);
+    padding: 3px 7px; border: 1px solid rgba(232,121,74,0.4); border-radius: 2px;
+  }
+  .cell .cap { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 22px; }
+  .cell .num { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--fg-3); text-transform: uppercase; }
+  .cell .fname { font-family: var(--f-mono); font-size: 11px; color: var(--fg); letter-spacing: 0.06em; }
+  .cell .note { font-family: var(--f-sans); font-size: 12px; color: var(--fg-2); line-height: 1.5; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .cell .tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .cell .tag { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 7px; border: 1px solid var(--line-2); border-radius: 2px; color: var(--fg-2); }
+  .cell .tag.good { color: var(--sage); border-color: rgba(94,173,154,0.35); }
+
+  /* Sample block */
+  .sample { padding: 22px 0 4px; }
+  .sample .headline { font-size: 56px; line-height: 0.98; letter-spacing: -0.02em; margin: 0 0 16px; }
+  .sample .row-bill {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 14px 16px; background: var(--surface-2); border-radius: 10px; margin-bottom: 10px;
+  }
+  .sample .row-bill .name { font-size: 22px; }
+  .sample .row-bill .amt { font-size: 22px; }
+  .sample .row-bill .amt .dec { font-size: 12px; font-family: var(--f-mono); color: var(--brass); vertical-align: super; margin-left: 2px; letter-spacing: 0.04em; }
+  .sample .small { font-size: 13px; color: var(--fg-2); margin-top: 14px; line-height: 1.5; max-width: 38ch; }
+  .sample .stat { display: flex; align-items: baseline; gap: 10px; margin-top: 16px; }
+  .sample .stat .big { font-size: 44px; letter-spacing: -0.02em; }
+  .sample .stat .lbl { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fg-3); }
+
+  /* Font bindings */
+  .f-instrument .headline, .f-instrument .name, .f-instrument .amt, .f-instrument .big { font-family: 'Instrument Serif', serif; }
+  .f-instrument .headline em { font-style: italic; }
+
+  .f-fraunces .headline, .f-fraunces .name, .f-fraunces .amt, .f-fraunces .big { font-family: 'Fraunces', serif; font-weight: 500; font-variation-settings: "SOFT" 30, "WONK" 0; }
+  .f-fraunces .headline em { font-style: italic; font-weight: 400; }
+
+  .f-newsreader .headline, .f-newsreader .name, .f-newsreader .amt, .f-newsreader .big { font-family: 'Newsreader', serif; font-weight: 500; }
+  .f-newsreader .headline em { font-style: italic; font-weight: 400; }
+
+  .f-spectral .headline, .f-spectral .name, .f-spectral .amt, .f-spectral .big { font-family: 'Spectral', serif; font-weight: 500; }
+  .f-spectral .headline em { font-style: italic; font-weight: 400; }
+
+  .f-source .headline, .f-source .name, .f-source .amt, .f-source .big { font-family: 'Source Serif 4', serif; font-weight: 500; }
+  .f-source .headline em { font-style: italic; font-weight: 400; }
+
+  .f-libre .headline, .f-libre .name, .f-libre .amt, .f-libre .big { font-family: 'Libre Caslon Text', serif; font-weight: 400; }
+  .f-libre .headline em { font-style: italic; }
+
+  .f-cormorant .headline, .f-cormorant .name, .f-cormorant .amt, .f-cormorant .big { font-family: 'Cormorant Garamond', serif; font-weight: 500; }
+  .f-cormorant .headline em { font-style: italic; font-weight: 400; }
+
+  .f-playfair .headline, .f-playfair .name, .f-playfair .amt, .f-playfair .big { font-family: 'Playfair Display', serif; font-weight: 500; }
+  .f-playfair .headline em { font-style: italic; font-weight: 400; }
+
+  .rec {
+    margin-top: 48px; padding: 28px 32px;
+    background: linear-gradient(120deg, rgba(232,121,74,0.08), rgba(212,163,115,0.04));
+    border: 1px solid rgba(232,121,74,0.28); border-radius: 16px;
+  }
+  .rec h3 { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 500; margin: 0 0 12px; letter-spacing: -0.02em; }
+  .rec h3 em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+  .rec p { font-size: 14px; color: var(--fg-2); line-height: 1.6; margin: 0 0 6px; max-width: 72ch; }
+  .rec .actions { display: flex; gap: 10px; margin-top: 22px; }
+  .rec button {
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 10px 16px; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--line-2); background: transparent; color: var(--fg);
+    transition: all .2s;
+  }
+  .rec button:hover { border-color: var(--terracotta); color: var(--terracotta); }
+  .rec button.primary { background: var(--terracotta); color: #0E0D0B; border-color: var(--terracotta); }
+  .rec button.primary:hover { background: #F28A5B; }
+
+  .foot { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--fg-3); text-transform: uppercase; }
+</style></head>
+<body>
+
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <div class="k">● Display type study · 8 candidates</div>
+      <h1>A font that's <em>lux</em> <em>and</em> legible.</h1>
+    </div>
+    <a class="back" href="index.html">← back to showcase</a>
+  </div>
+
+  <p class="intro">The current display face — <b>Instrument Serif</b> — feels editorial, but on dark surfaces and at small sizes it gets fragile. The hairlines break, counters close up, and numerals like <b>$128.40</b> lose authority. Below, the same two elements (a provider row and a headline) rendered in eight candidate faces. Pick the one that feels most like LocateFlow — grown-up, warm, readable at a glance.</p>
+
+  <div class="legend">
+    <span><b>Test 1</b> — Provider row @ 22px (list usage)</span>
+    <span><b>Test 2</b> — Headline @ 56px (editorial usage)</span>
+  </div>
+
+  <div class="grid">
+
+    <div class="cell f-instrument current">
+      <div class="cap"><span class="num">01</span><span class="fname">Instrument Serif</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Elegant, editorial, but very high contrast. Hairlines vanish at small sizes on dark backgrounds — "Energy" reads almost ghosted.</div>
+      <div class="tags"><span class="tag">lux</span><span class="tag">fragile</span><span class="tag">thin</span></div>
+    </div>
+
+    <div class="cell f-fraunces">
+      <div class="cap"><span class="num">02</span><span class="fname">Fraunces (medium · soft)</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Warm editorial face with soft terminals and a wider axis. Robust numerals, beautiful italic, grown-up. Reads clearly at 22px even on dark.</div>
+      <div class="tags"><span class="tag good">lux</span><span class="tag good">legible</span><span class="tag good">variable</span><span class="tag good">warm</span></div>
+    </div>
+
+    <div class="cell f-newsreader">
+      <div class="cap"><span class="num">03</span><span class="fname">Newsreader (medium)</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Purpose-built for screen reading. Sturdier than Instrument, still has editorial italic charm. Optical sizing keeps small text solid.</div>
+      <div class="tags"><span class="tag good">legible</span><span class="tag good">screen-tuned</span><span class="tag">quieter</span></div>
+    </div>
+
+    <div class="cell f-spectral">
+      <div class="cap"><span class="num">04</span><span class="fname">Spectral (medium)</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Financial-times feel, tall x-height, excellent numerals. More "publication" than "editorial atelier" — corporate and trustworthy.</div>
+      <div class="tags"><span class="tag good">corporate</span><span class="tag good">numerals</span><span class="tag">formal</span></div>
+    </div>
+
+    <div class="cell f-source">
+      <div class="cap"><span class="num">05</span><span class="fname">Source Serif 4 (medium)</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Calm, neutral, sturdy. Great for interfaces. Less "editorial romance," more "quietly premium." Safe pick.</div>
+      <div class="tags"><span class="tag good">neutral</span><span class="tag good">sturdy</span><span class="tag">safe</span></div>
+    </div>
+
+    <div class="cell f-cormorant">
+      <div class="cap"><span class="num">06</span><span class="fname">Cormorant Garamond</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Very lux, almost couture. Same legibility risk as Instrument at small sizes — beautiful but thin. Best only in headlines.</div>
+      <div class="tags"><span class="tag">lux</span><span class="tag">fragile</span></div>
+    </div>
+
+    <div class="cell f-libre">
+      <div class="cap"><span class="num">07</span><span class="fname">Libre Caslon Text</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Historic, literary, book-like. Classy but can feel a touch old. Works beautifully in long-form.</div>
+      <div class="tags"><span class="tag">classic</span><span class="tag">literary</span></div>
+    </div>
+
+    <div class="cell f-playfair">
+      <div class="cap"><span class="num">08</span><span class="fname">Playfair Display</span></div>
+      <div class="sample">
+        <div class="headline">A <em>quiet</em> Tuesday.</div>
+        <div class="row-bill"><span class="name">Austin Energy</span><span class="amt">$128<span class="dec">.40</span></span></div>
+        <div class="row-bill"><span class="name">Spectrum Internet</span><span class="amt">$89<span class="dec">.99</span></span></div>
+        <div class="stat"><span class="big">$1,284</span><span class="lbl">this month</span></div>
+      </div>
+      <div class="note">Widely used "luxury wedding site" Didone. Recognizable, sometimes overused. High contrast; skip on dark for small text.</div>
+      <div class="tags"><span class="tag">overused</span><span class="tag">high-contrast</span></div>
+    </div>
+
+  </div>
+
+  <div class="rec">
+    <h3>My recommendation · <em>Fraunces</em></h3>
+    <p>Fraunces sits at the intersection of lux and corporate: it has the softness and italic charm of Instrument Serif, but a sturdier weight axis (400–700), optical sizing, and robust numerals that hold up at 14px on dark backgrounds. It's variable, so we get one file for the whole system — headlines, bill amounts, and statistics all use the same family with different weights.</p>
+    <p style="margin-top:10px"><b style="color:var(--fg)">Runner-up:</b> Newsreader — if you want something quieter and more utilitarian. <b style="color:var(--fg)">If you want maximum corporate gravitas:</b> Spectral.</p>
+    <div class="actions">
+      <button class="primary" onclick="applyFont('Fraunces')">Apply Fraunces everywhere</button>
+      <button onclick="applyFont('Newsreader')">Try Newsreader</button>
+      <button onclick="applyFont('Spectral')">Try Spectral</button>
+      <button onclick="applyFont('Source Serif 4')">Try Source Serif</button>
+    </div>
+    <p id="applied" style="margin-top:18px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-3);">—</p>
+  </div>
+
+  <div class="foot">Pick one and I'll swap it across all 7 showcase pages + the mobile/web/admin UI kits.</div>
+</div>
+
+<script>
+function applyFont(name) {
+  document.getElementById('applied').innerHTML =
+    '<span style="color:var(--terracotta)">✓</span> Noted: <span style="color:var(--fg)">' + name + '</span> — tell me to apply, I\'ll swap it everywhere.';
+}
+</script>
+
+</body></html>

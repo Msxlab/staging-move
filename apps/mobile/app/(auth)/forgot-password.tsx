@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail, ArrowRight, CheckCircle2 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,6 +15,7 @@ import { api } from "@/lib/api";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,28 +56,27 @@ export default function ForgotPasswordScreen() {
         {sent ? (
           <View style={styles.sentBox}>
             <CheckCircle2 size={48} color={theme.colors.primary} />
-            <Text style={styles.title}>Check your email</Text>
+            <Text style={styles.title}>{t("auth.checkEmail", "Check your email")}</Text>
             <Text style={styles.subtitle}>
-              If an account exists for {email.trim()}, a password reset link has been sent.
-              Follow the link to set a new password.
+              {t("auth.forgotPassword_sentDescription", { email: email.trim(), defaultValue: "A reset link has been sent." })}
             </Text>
             <Button
-              title="Back to sign in"
+              title={t("auth.signIn")}
               onPress={() => router.replace("/(auth)/sign-in")}
               style={{ marginTop: 16 }}
             />
           </View>
         ) : (
           <>
-            <Text style={styles.title}>Forgot password?</Text>
+            <Text style={styles.title}>{t("auth.forgotPassword")}</Text>
             <Text style={styles.subtitle}>
-              Enter your account email and we'll send you a link to reset it.
+              {t("auth.forgotPassword_subtitle", "Enter your account email.")}
             </Text>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Input
-              placeholder="Email"
+              placeholder={t("auth.email")}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -85,7 +86,7 @@ export default function ForgotPasswordScreen() {
             />
 
             <Button
-              title={loading ? "Sending…" : "Send reset link"}
+              title={loading ? t("common.loading") : t("auth.forgotPassword_submit", "Send reset link")}
               onPress={handleSubmit}
               disabled={loading || !email}
               rightIcon={<ArrowRight size={16} color="#fff" />}
@@ -97,7 +98,7 @@ export default function ForgotPasswordScreen() {
               style={styles.linkRow}
             >
               <Text style={styles.linkText}>
-                Remembered it? <Text style={styles.linkEmphasis}>Sign in</Text>
+                <Text style={styles.linkEmphasis}>{t("auth.signIn")}</Text>
               </Text>
             </TouchableOpacity>
           </>

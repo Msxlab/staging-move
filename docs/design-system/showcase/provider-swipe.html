@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Provider Swipe Stack · LocateFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .stage { padding: 72px 24px 48px; }
+  .layout { display: flex; gap: 72px; align-items: center; }
+  .notes { max-width: 320px; color: var(--d-fg); }
+  .notes .kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  .notes .kicker::before { content: ""; width: 22px; height: 1px; background: var(--brass); }
+  .notes h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-weight: 400; font-size: 54px; line-height: 0.98; letter-spacing: -0.03em; margin: 0 0 22px; }
+  .notes h1 em { color: var(--terracotta); }
+  .notes p { font-size: 15px; line-height: 1.6; color: var(--d-fg-2); margin: 0 0 16px; max-width: 34ch; }
+  .notes .chip { display: inline-block; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 10px; border: 1px solid var(--d-line-2); border-radius: 3px; color: var(--d-fg-2); margin: 4px 6px 0 0; }
+  .legend { margin-top: 28px; display: flex; flex-direction: column; gap: 10px; }
+  .legend .row { display:flex; align-items:center; gap: 12px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--d-fg-2); }
+  .legend .ar { width: 36px; display: flex; align-items: center; justify-content: center; color: var(--terracotta); font-size: 16px; }
+
+  /* Phone */
+  .ps { height: 100%; background: var(--d-bg); color: var(--d-fg); padding-top: 62px; display:flex; flex-direction:column; }
+  .ps-head { padding: 12px 24px 14px; }
+  .ps-kicker { font-family: var(--f-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); margin-bottom: 10px; }
+  .ps-title { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 38px; line-height: 1; letter-spacing: -0.025em; margin: 0; }
+  .ps-title em { color: var(--terracotta); }
+  .ps-sub { font-family: var(--f-mono); font-size: 11.5px; color: var(--d-fg-3); letter-spacing: 0.04em; margin-top: 8px; }
+
+  /* swipe hint labels on sides */
+  .side-hints { display: flex; justify-content: space-between; padding: 12px 24px; font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--d-fg-3); }
+  .side-hints .left { color: var(--sage); }
+  .side-hints .right { color: var(--terracotta-soft); }
+
+  /* stack area */
+  .stack-wrap { flex: 1; position: relative; padding: 6px 24px 10px; }
+  .stack { position: relative; width: 100%; height: 420px; }
+  .card {
+    position: absolute; inset: 0;
+    background: var(--d-surface);
+    border: 1px solid var(--d-line);
+    border-radius: 24px;
+    padding: 22px 22px 20px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    transition: transform .5s cubic-bezier(.22,.8,.36,1), opacity .4s;
+  }
+  .card[data-pos="0"] { transform: translateY(0) rotate(-1.5deg); z-index: 3; }
+  .card[data-pos="1"] { transform: translateY(14px) scale(0.96) rotate(1.2deg); z-index: 2; opacity: 0.88; }
+  .card[data-pos="2"] { transform: translateY(26px) scale(0.92) rotate(-0.6deg); z-index: 1; opacity: 0.6; }
+
+  .card .logo {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--d-surface-2); border: 1px solid var(--d-line-2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--brass); margin-bottom: 14px;
+  }
+  .card .cat { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); margin-bottom: 6px; }
+  .card .name { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 34px; line-height: 1; letter-spacing: -0.025em; }
+  .card .name em { color: var(--brass); }
+  .card .addr { font-family: var(--f-mono); font-size: 12px; color: var(--d-fg-2); letter-spacing: 0.02em; margin-top: 10px; }
+  .card .stats { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--d-line); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .card .stat .l { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--d-fg-3); }
+  .card .stat .v { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 22px; line-height: 1.1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; margin-top: 4px; }
+  .card .stat .v em { color: var(--terracotta); }
+  .card .stat .v .per { font-family: var(--f-mono); font-size: 10px; color: var(--d-fg-3); letter-spacing: 0.04em; margin-left: 2px; }
+
+  /* overlay color hints when "swiped" */
+  .card.swipe-left { transform: translateX(-30%) rotate(-14deg) !important; opacity: 0.2; }
+  .card.swipe-right { transform: translateX(30%) rotate(14deg) !important; opacity: 0.2; }
+  .card .overlay { position: absolute; inset: 0; border-radius: 24px; pointer-events: none; opacity: 0; transition: opacity .3s; }
+  .card .overlay.L { background: linear-gradient(90deg, rgba(94,173,154,0.25), transparent 50%); border: 2px solid var(--sage); }
+  .card .overlay.R { background: linear-gradient(-90deg, rgba(232,121,74,0.25), transparent 50%); border: 2px solid var(--terracotta); }
+  .card .stamp { position:absolute; top: 22px; font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 28px; font-style: italic; opacity: 0; transform: rotate(-16deg); transition: opacity .2s; }
+  .card .stamp.L { left: 22px; color: var(--sage); }
+  .card .stamp.R { right: 22px; color: var(--terracotta); transform: rotate(16deg); }
+  .card.hint-left .overlay.L, .card.hint-left .stamp.L { opacity: 1; }
+  .card.hint-right .overlay.R, .card.hint-right .stamp.R { opacity: 1; }
+
+  /* actions row */
+  .acts { display:flex; justify-content:center; gap: 16px; padding: 12px 24px 22px; }
+  .acts button {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: var(--d-surface); border: 1px solid var(--d-line-2); color: var(--d-fg);
+    display:flex; align-items:center; justify-content:center; cursor: pointer;
+  }
+  .acts .big { width: 64px; height: 64px; }
+  .acts .pay { color: var(--sage); border-color: rgba(94,173,154,0.4); }
+  .acts .skip { color: var(--terracotta); border-color: rgba(232,121,74,0.4); }
+
+  .counter { padding: 0 24px; font-family: var(--f-mono); font-size: 11px; color: var(--d-fg-3); letter-spacing: 0.08em; display: flex; justify-content: space-between; }
+  .counter em { color: var(--d-fg); font-style: normal; }
+</style></head>
+<body>
+
+<div class="stage-hdr">
+  <div><span class="t">Provider Swipe Stack</span> · mobile showcase 02/07</div>
+  <div><a href="index.html">← back to gallery</a></div>
+</div>
+
+<div class="stage">
+ <div class="layout">
+  <div class="notes">
+    <div class="kicker">Concept no. 2</div>
+    <h1>A <em>deck</em> of<br>every bill.</h1>
+    <p>Instead of a passive list, every provider you have is a card. Swipe to decide: transfer, mark paid, or archive — one by one, almost game-like.</p>
+    <p>Feels delightful, and moves through 18 services in under a minute on move week.</p>
+    <div class="legend">
+      <div class="row"><div class="ar" style="color:var(--sage);">←</div>Transfer to new address</div>
+      <div class="row"><div class="ar" style="color:var(--terracotta);">→</div>Archive / cancel</div>
+      <div class="row"><div class="ar" style="color:var(--brass);">↓</div>Later · snooze 7 days</div>
+    </div>
+    <div style="margin-top:24px">
+      <span class="chip">Haptic feedback</span>
+      <span class="chip">Editorial stamps</span>
+      <span class="chip">Glanceable decisions</span>
+    </div>
+  </div>
+
+  <div class="phone dark">
+    <div class="island"></div>
+    <div class="sbar"><div>9:41</div><div class="r">
+      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="currentColor"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.5" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx="0.5" fill="currentColor"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="22" height="11" rx="2.5" fill="none" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="currentColor"/></svg>
+    </div></div>
+    <div class="home-ind"></div>
+
+    <div class="ps">
+      <div class="ps-head">
+        <div class="ps-kicker">Move review · 6 of 18</div>
+        <h1 class="ps-title">Where's<br><em>Spectrum</em> going?</h1>
+        <div class="ps-sub">Swipe to decide · hold for details</div>
+      </div>
+
+      <div class="side-hints"><span class="left">← transfer</span><span class="right">archive →</span></div>
+
+      <div class="stack-wrap">
+        <div class="stack">
+          <div class="card" data-pos="2">
+            <div class="overlay L"></div><div class="overlay R"></div>
+            <div class="stamp L">transfer</div><div class="stamp R">archive</div>
+            <div class="logo">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"/></svg>
+            </div>
+            <div class="cat">Insurance</div>
+            <div class="name">State <em>Farm</em></div>
+            <div class="addr">Renews Jul 1 · auto-pay on</div>
+            <div class="stats">
+              <div class="stat"><div class="l">Monthly</div><div class="v">$48</div></div>
+              <div class="stat"><div class="l">Since</div><div class="v">'22</div></div>
+              <div class="stat"><div class="l">Plan</div><div class="v">Home</div></div>
+            </div>
+          </div>
+
+          <div class="card" data-pos="1">
+            <div class="overlay L"></div><div class="overlay R"></div>
+            <div class="stamp L">transfer</div><div class="stamp R">archive</div>
+            <div class="logo">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5.5 13.5H11l-1 7.5 7.5-10.5H12z"/></svg>
+            </div>
+            <div class="cat">Electricity</div>
+            <div class="name">Austin <em>Energy</em></div>
+            <div class="addr">1421 Rainey St · next bill Mar 2</div>
+            <div class="stats">
+              <div class="stat"><div class="l">Monthly</div><div class="v">$128<span class="per">/mo</span></div></div>
+              <div class="stat"><div class="l">YTD</div><div class="v">$1.4k</div></div>
+              <div class="stat"><div class="l">Plan</div><div class="v">Fixed</div></div>
+            </div>
+          </div>
+
+          <div class="card hint-left" data-pos="0">
+            <div class="overlay L"></div><div class="overlay R"></div>
+            <div class="stamp L">transfer</div><div class="stamp R">archive</div>
+            <div class="logo">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 9.5a14 14 0 0 1 18 0M6 13a10 10 0 0 1 12 0M9 16.5a5.5 5.5 0 0 1 6 0"/><circle cx="12" cy="20" r="1.1" fill="currentColor"/></svg>
+            </div>
+            <div class="cat">Internet</div>
+            <div class="name"><em>Spectrum</em></div>
+            <div class="addr">1421 Rainey St · renews Mar 2</div>
+            <div class="stats">
+              <div class="stat"><div class="l">Monthly</div><div class="v">$<em>79</em><span class="per">.99</span></div></div>
+              <div class="stat"><div class="l">Speed</div><div class="v">500<span class="per">mb</span></div></div>
+              <div class="stat"><div class="l">Modem</div><div class="v">Rented</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acts">
+        <button title="Snooze">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </button>
+        <button class="big pay" title="Transfer">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="big skip" title="Archive">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+        <button title="Details">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>
+        </button>
+      </div>
+
+      <div class="counter"><span>Card <em>6</em> / 18</span><span>1 archived · 5 transferred</span></div>
+    </div>
+  </div>
+ </div>
+</div>
+
+</body></html>

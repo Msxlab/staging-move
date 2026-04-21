@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
-import { rebuildProviderCoverage } from "@locateflow/db";
+import {
+  rebuildProviderCoverage,
+  updateWithVersion,
+  isOptimisticLockError,
+} from "@locateflow/db";
 import { findProviderConflicts, normalizeProviderRecord } from "@locateflow/shared";
 
 function getConflictMessage(conflictType: string, name: string, slug: string) {
@@ -132,11 +136,20 @@ export async function PATCH(
     if (body.zipCodes !== undefined) updateData.zipCodes = JSON.stringify(normalized.zipCodes);
     if (body.tags !== undefined) updateData.tags = JSON.stringify(normalized.tags);
 
+    // Optimistic concurrency: admins editing the same provider in two
+    // tabs at the same time must NOT silently last-write-wins. The
+    // client passes `version` (the integer it read); we compare-and-swap
+    // and throw OptimisticLockError on mismatch. Clients surface that as
+    // a 409 and prompt the operator to re-read and re-apply.
+    const expectedVersion =
+      typeof body.version === "number" ? body.version : existing.version;
+
     const provider = await prisma.$transaction(async (tx) => {
-      const updatedProvider = await tx.serviceProvider.update({
-        where: { id },
-        data: updateData,
-      });
+      await updateWithVersion(
+        tx.serviceProvider,
+        { id, version: expectedVersion },
+        updateData,
+      );
       if (coverageChanged) {
         await rebuildProviderCoverage(tx, {
           providerId: id,
@@ -145,7 +158,7 @@ export async function PATCH(
           zipCodes: normalized.zipCodes,
         });
       }
-      return updatedProvider;
+      return tx.serviceProvider.findUnique({ where: { id } });
     });
 
     await prisma.adminAuditLog.create({
@@ -168,6 +181,16 @@ export async function PATCH(
     }
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (isOptimisticLockError(error)) {
+      return NextResponse.json(
+        {
+          error:
+            "This provider was modified by another admin while you were editing. Refresh to load the latest version and re-apply your changes.",
+          code: "OPTIMISTIC_LOCK_CONFLICT",
+        },
+        { status: 409 },
+      );
     }
     return NextResponse.json({ error: "Failed to update provider" }, { status: 500 });
   }

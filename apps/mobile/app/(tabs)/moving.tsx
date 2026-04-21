@@ -18,6 +18,7 @@ import {
   ArrowRight,
   MapPin,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -34,6 +35,7 @@ const statusVariant: Record<string, "primary" | "success" | "warning" | "error" 
 
 export default function MovingScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -63,8 +65,8 @@ export default function MovingScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Moving Plans</Text>
-          <Text style={styles.subtitle}>{plans.length} plan{plans.length !== 1 ? "s" : ""}</Text>
+          <Text style={styles.title}>{t("moving.title")}</Text>
+          <Text style={styles.subtitle}>{plans.length}</Text>
         </View>
         <TouchableOpacity
           style={styles.addButton}
@@ -83,9 +85,9 @@ export default function MovingScreen() {
         {plans.length === 0 ? (
           <EmptyState
             icon={<Truck size={32} color={theme.colors.primary} />}
-            title="No moving plans"
-            description="Create a moving plan to organize your relocation tasks and timeline."
-            actionLabel="Plan a Move"
+            title={t("moving.checklistEmpty")}
+            description={t("moving.subtitle")}
+            actionLabel={t("moving.newPlan")}
             onAction={() => router.push("/moving/new" as any)}
           />
         ) : (
@@ -109,10 +111,10 @@ export default function MovingScreen() {
                       <View style={styles.planMeta}>
                         <Calendar size={12} color={theme.colors.textMuted} />
                         <Text style={styles.planDate}>
-                          {new Date(plan.moveDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          {new Date(plan.moveDate).toLocaleDateString(i18n.language || "en", { month: "short", day: "numeric", year: "numeric" })}
                         </Text>
                         {daysUntil > 0 && (
-                          <Text style={styles.daysLeft}>{daysUntil} days left</Text>
+                          <Text style={styles.daysLeft}>{daysUntil} {t("tasks.dueDate").toLowerCase()}</Text>
                         )}
                       </View>
                     </View>
@@ -132,14 +134,14 @@ export default function MovingScreen() {
                     <View style={styles.addressItem}>
                       <MapPin size={12} color={theme.colors.textMuted} />
                       <Text style={styles.addressText} numberOfLines={1}>
-                        {plan.fromAddress?.street || "Origin"}, {plan.fromAddress?.state || ""}
+                        {plan.fromAddress?.street || t("moving.fromAddress")}, {plan.fromAddress?.state || ""}
                       </Text>
                     </View>
                     <ArrowRight size={12} color={theme.colors.textMuted} />
                     <View style={styles.addressItem}>
                       <MapPin size={12} color={theme.colors.emerald.text} />
                       <Text style={styles.addressText} numberOfLines={1}>
-                        {plan.toAddress?.street || "Destination"}, {plan.toAddress?.state || ""}
+                        {plan.toAddress?.street || t("moving.toAddress")}, {plan.toAddress?.state || ""}
                       </Text>
                     </View>
                   </View>

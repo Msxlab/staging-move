@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Magic Paste · LocateFlow</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .stage { padding: 72px 24px 48px; }
+  .layout { display: flex; gap: 72px; align-items: center; }
+  .notes { max-width: 320px; color: var(--d-fg); }
+  .notes .kicker { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 18px; display: flex; align-items: center; gap: 10px; }
+  .notes .kicker::before { content:""; width: 22px; height: 1px; background: var(--brass); }
+  .notes h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-weight: 400; font-size: 54px; line-height: 0.98; letter-spacing: -0.03em; margin: 0 0 22px; }
+  .notes h1 em { color: var(--terracotta); }
+  .notes p { font-size: 15px; line-height: 1.6; color: var(--d-fg-2); margin: 0 0 16px; max-width: 34ch; }
+  .notes .chip { display: inline-block; font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 10px; border: 1px solid var(--d-line-2); border-radius: 3px; color: var(--d-fg-2); margin: 4px 6px 0 0; }
+
+  .mp { height: 100%; background: var(--d-bg); color: var(--d-fg); padding: 62px 0 24px; }
+  .mp-head { padding: 16px 24px 18px; }
+  .mp-head .k { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); margin-bottom: 10px; }
+  .mp-head h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 44px; line-height: 0.98; letter-spacing: -0.025em; margin: 0; }
+  .mp-head h1 em { color: var(--terracotta); }
+  .mp-head p { font-family: var(--f-sans); font-size: 14px; color: var(--d-fg-2); margin: 14px 0 0; line-height: 1.5; }
+
+  .drop {
+    margin: 20px 24px;
+    height: 220px; border-radius: 22px;
+    border: 2px dashed rgba(232,121,74,0.45);
+    background: linear-gradient(180deg, rgba(232,121,74,0.06), rgba(232,121,74,0.02));
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    position: relative; overflow: hidden;
+  }
+  .drop::before {
+    content: ""; position: absolute; inset: -40%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(232,121,74,0.12) 40deg, transparent 80deg);
+    animation: sweep 6s linear infinite;
+  }
+  @keyframes sweep { to { transform: rotate(360deg); } }
+  .drop .ico {
+    width: 54px; height: 54px; border-radius: 50%;
+    background: rgba(232,121,74,0.15); color: var(--terracotta);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 2;
+  }
+  .drop .t { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 22px; letter-spacing: -0.01em; z-index: 2; position: relative; }
+  .drop .t em { color: var(--terracotta); }
+  .drop .s { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--d-fg-2); z-index: 2; position: relative; }
+
+  .result {
+    margin: 22px 24px 0;
+    border: 1px solid rgba(94,173,154,0.25);
+    background: linear-gradient(135deg, rgba(94,173,154,0.08), rgba(94,173,154,0.02));
+    border-radius: 18px; padding: 16px 18px;
+  }
+  .result .k { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .result .k::before { content:""; width: 6px; height: 6px; background: var(--sage); border-radius: 50%; box-shadow: 0 0 0 3px rgba(94,173,154,0.18); }
+  .result .rows { display: flex; flex-direction: column; gap: 12px; }
+  .row-k {
+    display: grid; grid-template-columns: 90px 1fr; gap: 10px; align-items: baseline;
+    padding-bottom: 10px; border-bottom: 1px dashed rgba(245,241,234,0.08);
+  }
+  .row-k:last-child { border: 0; padding-bottom: 0; }
+  .row-k .lbl { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--d-fg-3); }
+  .row-k .val { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 18px; line-height: 1.1; letter-spacing: -0.01em; }
+  .row-k .val em { color: var(--brass); }
+  .row-k .mono { font-family: var(--f-mono); font-size: 13px; letter-spacing: 0.02em; color: var(--d-fg); }
+
+  .confirm { margin: 16px 24px 0; display:flex; gap: 10px; }
+  .confirm button {
+    flex: 1; font-family: var(--f-sans); font-size: 13px; font-weight: 500;
+    padding: 14px 16px; border-radius: 12px; border: 1px solid var(--d-line-2);
+    background: transparent; color: var(--d-fg); cursor: pointer;
+  }
+  .confirm .p { background: var(--terracotta); color: #1a0a02; border-color: transparent; }
+
+  .how { margin: 32px 24px 0; padding-top: 20px; border-top: 1px solid var(--d-line); }
+  .how .k { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--d-fg-3); margin-bottom: 14px; }
+  .how .item { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 8px 0; font-size: 13px; color: var(--d-fg-2); line-height: 1.5; }
+  .how .item .n { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-style: italic; color: var(--terracotta); font-size: 18px; line-height: 1; }
+</style></head>
+<body>
+
+<div class="stage-hdr">
+  <div><span class="t">Magic Paste</span> · mobile showcase 04/07</div>
+  <div><a href="index.html">← back to gallery</a></div>
+</div>
+
+<div class="stage">
+ <div class="layout">
+  <div class="notes">
+    <div class="kicker">Concept no. 4</div>
+    <h1>Drop a <em>bill</em>,<br>get a service.</h1>
+    <p>The fastest way to set up LocateFlow: drag a PDF invoice or a photo of a bill onto the screen. We detect the provider, account number, amount, and due date — and queue a confirmation.</p>
+    <p>It removes the painful "tell us every account" step entirely. Share a receipt, become a user.</p>
+    <div style="margin-top:20px">
+      <span class="chip">OCR + provider match</span>
+      <span class="chip">Share sheet friendly</span>
+      <span class="chip">Onboarding killer</span>
+    </div>
+  </div>
+
+  <div class="phone dark">
+    <div class="island"></div>
+    <div class="sbar"><div>9:41</div><div class="r">
+      <svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="currentColor"/><rect x="9" y="2.5" width="3" height="8.5" rx="0.5" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx="0.5" fill="currentColor"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="22" height="11" rx="2.5" fill="none" stroke="currentColor" opacity="0.4"/><rect x="2" y="2" width="17" height="8" rx="1.5" fill="currentColor"/></svg>
+    </div></div>
+    <div class="home-ind"></div>
+
+    <div class="mp">
+      <div class="mp-head">
+        <div class="k">Add a service · step 1 of 3</div>
+        <h1>Share a <em>bill</em>,<br>we'll read it.</h1>
+        <p>PDF, photo, or email forward — any provider, any format.</p>
+      </div>
+
+      <div class="drop">
+        <div class="ico">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 9l6-6 6 6M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        </div>
+        <div class="t">Drop a <em>bill</em> anywhere.</div>
+        <div class="s">or tap · PDF, JPG, HEIC up to 20mb</div>
+      </div>
+
+      <div class="result">
+        <div class="k">We found this</div>
+        <div class="rows">
+          <div class="row-k"><div class="lbl">Provider</div><div class="val">Austin <em>Energy</em></div></div>
+          <div class="row-k"><div class="lbl">Category</div><div class="val">Electricity</div></div>
+          <div class="row-k"><div class="lbl">Account</div><div class="mono">#4411-0923-88</div></div>
+          <div class="row-k"><div class="lbl">Due</div><div class="val">Mar 2 · <em>$128.40</em></div></div>
+        </div>
+      </div>
+
+      <div class="confirm">
+        <button>Edit</button>
+        <button class="p">Looks right — add</button>
+      </div>
+
+      <div class="how">
+        <div class="k">How this works</div>
+        <div class="item"><div class="n">1.</div><div>We match the provider from the billing logo + format.</div></div>
+        <div class="item"><div class="n">2.</div><div>OCR pulls amount, due date, account number.</div></div>
+        <div class="item"><div class="n">3.</div><div>You confirm. We never store the original file after extraction.</div></div>
+      </div>
+
+      <div style="height:28px"></div>
+    </div>
+  </div>
+ </div>
+</div>
+
+</body></html>

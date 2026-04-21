@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Command Palette · Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--d-bg); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 40px 40px 80px; position: relative; min-height: 100vh; }
+
+  /* Underlayer — dimmed admin scene */
+  .under { opacity: 0.3; filter: blur(2px); pointer-events: none; }
+  .under .hdr { display:flex; justify-content: space-between; padding-bottom: 24px; border-bottom: 1px solid var(--d-line); margin-bottom: 28px; }
+  .under h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 64px; letter-spacing: -0.03em; margin: 0; }
+  .under h1 em { color: var(--terracotta); font-style: italic; }
+  .under .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); margin-bottom: 12px; }
+  .under table { width: 100%; border-collapse: collapse; margin-top: 14px; font-family: var(--f-mono); font-size: 12px; color: var(--d-fg-2); }
+  .under table td { padding: 10px 6px; border-bottom: 1px solid var(--d-line); }
+
+  /* Backdrop */
+  .backdrop {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, rgba(14,13,11,0.8) 0%, rgba(5,4,3,0.92) 70%);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 140px;
+  }
+
+  /* Palette */
+  .pal {
+    width: 720px; border-radius: 16px;
+    background: var(--d-surface);
+    border: 1px solid var(--d-line-2);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,121,74,0.1);
+    overflow: hidden;
+  }
+  .pal-search {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--d-line);
+  }
+  .pal-search svg { color: var(--d-fg-3); flex-shrink: 0; }
+  .pal-search input {
+    flex: 1; background: transparent; border: 0; outline: 0;
+    color: var(--d-fg); font-family: var(--f-sans); font-size: 18px; font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .pal-search input::placeholder { color: var(--d-fg-3); }
+  .pal-search .caret { width: 2px; height: 20px; background: var(--terracotta); animation: blink2 1s step-end infinite; }
+  @keyframes blink2 { 50% { opacity: 0; } }
+
+  .pal-context {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 20px; border-bottom: 1px solid var(--d-line);
+    background: rgba(232,121,74,0.04);
+  }
+  .pal-context .tag {
+    font-family: var(--f-mono); font-size: 10px; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 7px; border: 1px solid rgba(232,121,74,0.3);
+    color: var(--terracotta); border-radius: 3px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .pal-context .tag .x { opacity: 0.6; cursor: pointer; }
+  .pal-context .hint { font-family: var(--f-mono); font-size: 10.5px; color: var(--d-fg-3); letter-spacing: 0.04em; margin-left: auto; }
+
+  .pal-section {
+    padding: 10px 20px 4px;
+    font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--d-fg-3);
+  }
+
+  .pal-item {
+    display: grid; grid-template-columns: 28px 1fr auto; gap: 14px;
+    padding: 11px 20px; align-items: center;
+    cursor: pointer; border-left: 2px solid transparent;
+  }
+  .pal-item .ico { color: var(--d-fg-3); display:flex; align-items: center; justify-content: center; }
+  .pal-item .body .t { font-family: var(--f-sans); font-size: 14px; color: var(--d-fg); font-weight: 400; letter-spacing: -0.005em; }
+  .pal-item .body .t em { color: var(--brass); font-style: italic; font-weight: 500; }
+  .pal-item .body .t .q { color: var(--terracotta); }
+  .pal-item .body .s { font-family: var(--f-mono); font-size: 11px; color: var(--d-fg-3); margin-top: 3px; letter-spacing: 0.02em; }
+  .pal-item .kbd { display: flex; gap: 4px; }
+  .pal-item .kbd span {
+    font-family: var(--f-mono); font-size: 10px; font-weight: 500;
+    padding: 2px 6px; border: 1px solid var(--d-line-2); border-radius: 3px; color: var(--d-fg-2);
+    min-width: 20px; text-align: center;
+  }
+  .pal-item.sel {
+    background: rgba(232,121,74,0.08);
+    border-left-color: var(--terracotta);
+  }
+  .pal-item.sel .ico, .pal-item.sel .body .t { color: var(--terracotta); }
+  .pal-item.sel .body .t em { color: var(--terracotta-soft); }
+  .pal-item:hover { background: rgba(245,241,234,0.03); }
+
+  .pal-danger { background: rgba(208,100,73,0.04); border-top: 1px solid rgba(208,100,73,0.15); }
+  .pal-danger .t { color: var(--danger) !important; }
+  .pal-danger .ico { color: var(--danger); }
+
+  .pal-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 18px;
+    border-top: 1px solid var(--d-line);
+    font-family: var(--f-mono); font-size: 10.5px; color: var(--d-fg-3); letter-spacing: 0.06em;
+  }
+  .pal-foot .l { display: flex; gap: 14px; align-items: center; }
+  .pal-foot .l span { display: flex; align-items: center; gap: 4px; }
+  .pal-foot .l b { font-family: var(--f-mono); font-weight: 500; padding: 1px 5px; border: 1px solid var(--d-line-2); border-radius: 2px; color: var(--d-fg-2); }
+  .pal-foot .r { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-style: italic; color: var(--brass); font-size: 13px; letter-spacing: 0; }
+
+  /* Notes */
+  .note {
+    position: absolute; top: 120px; right: 40px; max-width: 280px;
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 30px; font-style: italic; color: var(--brass);
+    line-height: 1.2; letter-spacing: -0.015em;
+    z-index: 2;
+  }
+  .note-sub {
+    position: absolute; top: 220px; right: 40px; max-width: 260px;
+    font-family: var(--f-sans); font-size: 14px; color: var(--d-fg-2); line-height: 1.55;
+  }
+  .k-top {
+    position: absolute; top: 60px; left: 40px;
+    font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--terracotta);
+  }
+</style></head>
+<body>
+
+<div class="stage-hdr" style="position:static;padding:20px 40px 0;">
+  <div><span class="t">Admin Command Palette</span> · showcase 07/07</div>
+  <div><a href="index.html">← back to gallery</a></div>
+</div>
+
+<div class="wrap">
+  <div class="k-top">Concept no. 7 · ⌘K operator terminal</div>
+  <div class="note">A <em style="color:var(--terracotta);">terminal</em> for operators.</div>
+  <div class="note-sub">Every admin action — billing, moves, moderation, system — reachable in two keystrokes. Typed, scoped, and explainable in plain English.</div>
+
+  <div class="under">
+    <div class="hdr">
+      <div>
+        <div class="k">● Live · Feb 23, 2026</div>
+        <h1>A quiet<br><em>Tuesday</em>.</h1>
+      </div>
+    </div>
+    <div class="k">Users · 12,487</div>
+    <table>
+      <tr><td>0001 · Sarah Montgomery</td><td>Austin → Denver</td><td>$12/mo</td></tr>
+      <tr><td>0002 · James Kettering</td><td>Tacoma, WA</td><td>$12/mo</td></tr>
+      <tr><td>0003 · Priya Ramesh</td><td>Chicago, IL</td><td>Trial</td></tr>
+      <tr><td>0004 · Daniel Ozaki</td><td>Pro pilot</td><td>$89/mo</td></tr>
+      <tr><td>0005 · Elena Vasquez</td><td>Denver, CO</td><td>Past due</td></tr>
+    </table>
+  </div>
+
+  <div class="backdrop">
+    <div class="pal">
+      <div class="pal-search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+        <input value="transfer spectrum from" placeholder="Type a command, a user, an action…" />
+        <div class="caret"></div>
+      </div>
+
+      <div class="pal-context">
+        <span class="tag">user: sarah montgomery <span class="x">✕</span></span>
+        <span class="tag">scope: billing <span class="x">✕</span></span>
+        <span class="hint">Tab to add · Esc to clear</span>
+      </div>
+
+      <div class="pal-section">Matched actions</div>
+
+      <div class="pal-item sel">
+        <div class="ico">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+        <div class="body">
+          <div class="t"><span class="q">Transfer</span> <em>Spectrum Internet</em> from 1421 Rainey <span style="opacity:0.5">to…</span></div>
+          <div class="s">Will prompt for destination address · Sarah Montgomery · service #SPE-4112</div>
+        </div>
+        <div class="kbd"><span>↵</span></div>
+      </div>
+
+      <div class="pal-item">
+        <div class="ico">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6" stroke-linecap="round"/></svg>
+        </div>
+        <div class="body">
+          <div class="t"><span class="q">Transfer all</span> services from <em>1421 Rainey</em> to <em>220 Larimer</em></div>
+          <div class="s">18 services · scheduled for May 14</div>
+        </div>
+        <div class="kbd"><span>⌘</span><span>↵</span></div>
+      </div>
+
+      <div class="pal-item">
+        <div class="ico">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v4H4zM4 12h10v8H4zM18 12v4"/></svg>
+        </div>
+        <div class="body">
+          <div class="t">Open <em>Sarah Montgomery</em>'s billing history</div>
+          <div class="s">14 months · $168 paid · 0 disputes</div>
+        </div>
+        <div class="kbd"><span>⌘</span><span>B</span></div>
+      </div>
+
+      <div class="pal-section">Users matching "sarah"</div>
+
+      <div class="pal-item">
+        <div class="ico">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>
+        </div>
+        <div class="body">
+          <div class="t">Sarah <em>Montgomery</em> · sarah@montgomery.co</div>
+          <div class="s">Individual · 14mo · Austin → Denver in flight</div>
+        </div>
+        <div class="kbd"><span>→</span></div>
+      </div>
+
+      <div class="pal-item">
+        <div class="ico">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>
+        </div>
+        <div class="body">
+          <div class="t">Sarah <em>Thompson</em> · s.thompson@me.com</div>
+          <div class="s">Trial · d3 · Portland, OR</div>
+        </div>
+        <div class="kbd"><span>→</span></div>
+      </div>
+
+      <div class="pal-item pal-danger">
+        <div class="ico">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 2.4 17.5A1.4 1.4 0 0 0 3.6 19.5h16.8a1.4 1.4 0 0 0 1.2-2L13.7 3.9a1.4 1.4 0 0 0-2.4 0zM12 9v4M12 17v.5"/></svg>
+        </div>
+        <div class="body">
+          <div class="t">Freeze billing for <em>sarah@montgomery.co</em></div>
+          <div class="s">Irreversible within 24h · requires L3 confirmation</div>
+        </div>
+        <div class="kbd"><span>⌘</span><span>⇧</span><span>F</span></div>
+      </div>
+
+      <div class="pal-foot">
+        <div class="l">
+          <span><b>↑</b><b>↓</b> navigate</span>
+          <span><b>↵</b> run</span>
+          <span><b>⇥</b> add filter</span>
+          <span><b>esc</b> close</span>
+        </div>
+        <div class="r">every action, two keystrokes away.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body></html>

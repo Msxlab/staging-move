@@ -31,6 +31,13 @@ model User {
   // UI preferences (dashboard widget visibility + order, etc.)
   dashboardWidgetPrefs Json?
 
+  // Preferred UI locale. When set, it wins over the `NEXT_LOCALE`
+  // cookie and the `Accept-Language` header so the preference follows
+  // the user across devices. Null until the user picks a language
+  // explicitly — initial visits auto-detect from their browser. See
+  // apps/web/src/app/api/user/locale/route.ts.
+  preferredLocale String? @db.VarChar(10)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

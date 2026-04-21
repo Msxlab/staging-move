@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>LocateFlow Admin — UI Kit</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:        #0E0D0B;
+    --surface:   #17150F;
+    --surface-2: #1E1B14;
+    --surface-3: #251F17;
+    --line:      rgba(245,241,234,0.08);
+    --line-2:    rgba(245,241,234,0.14);
+    --fg:        #F5F1EA;
+    --fg-2:      rgba(245,241,234,0.62);
+    --fg-3:      rgba(245,241,234,0.38);
+    --fg-4:      rgba(245,241,234,0.22);
+    --terracotta:       #E8794A;
+    --terracotta-soft:  #F2A65A;
+    --brass:     #D4A373;
+    --sage:      #5EAD9A;
+    --warn:      #E3B04B;
+    --danger:    #D06449;
+
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-sans:    'Geist', 'Inter', system-ui, sans-serif;
+    --font-mono:    'Geist Mono', ui-monospace, Menlo, monospace;
+  }
+
+  html,body{margin:0;padding:0;background:#050403;color:var(--fg);font-family:var(--font-sans);font-weight:400;}
+  body{min-height:100vh;}
+  *{box-sizing:border-box;}
+
+  /* === App shell ===================================================== */
+  .app{
+    display:grid;
+    grid-template-columns:240px 1fr;
+    min-height:100vh;
+    background:var(--bg);
+  }
+
+  /* === Sidebar (slightly darker / admin-flavored) ===================== */
+  aside{
+    padding:24px 20px 22px;
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;gap:2px;
+    background:linear-gradient(180deg, #0a0806 0%, var(--bg) 60%);
+  }
+  .brand{
+    display:flex;align-items:center;gap:10px;
+    padding:4px 8px 10px;
+  }
+  .brand-mark{
+    width:28px;height:28px;border-radius:7px;
+    background:var(--terracotta);
+    display:flex;align-items:center;justify-content:center;
+    color:#1a0a02;
+    font-family:var(--font-display);font-weight:600;font-size:16px;font-style:italic;line-height:1;
+  }
+  .brand-word{
+    font-family:var(--font-display);font-weight:500;
+    font-size:18px;letter-spacing:-0.015em;
+    font-variation-settings:"opsz" 96, "SOFT" 30, "SOFT" 30;
+  }
+  .brand-word em{font-style:italic;color:var(--terracotta-soft);font-weight:500;}
+
+  .ops-badge{
+    margin:6px 8px 20px;
+    font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+    color:var(--brass);
+    display:inline-flex;align-items:center;gap:6px;
+    padding:3px 8px;
+    border:1px solid rgba(212,163,115,0.25);
+    background:rgba(212,163,115,0.06);
+    border-radius:2px;
+    align-self:flex-start;
+  }
+  .ops-badge .pulse{
+    width:5px;height:5px;border-radius:50%;background:var(--sage);
+    box-shadow:0 0 0 2px rgba(94,173,154,0.2);
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+  .nav-sec{
+    font-family:var(--font-mono);
+    font-size:9px;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--fg-3);
+    padding:16px 10px 8px;
+  }
+  .nav{display:flex;flex-direction:column;gap:1px;}
+  .nav a{
+    display:flex;align-items:center;gap:12px;
+    padding:8px 10px;border-radius:8px;
+    color:var(--fg-2);
+    font-size:13px;font-weight:400;text-decoration:none;
+    position:relative;
+  }
+  .nav a svg{width:15px;height:15px;flex-shrink:0;}
+  .nav a:hover{background:rgba(245,241,234,0.035);color:var(--fg);}
+  .nav a.active{color:var(--fg);background:rgba(232,121,74,0.07);}
+  .nav a.active::before{
+    content:"";position:absolute;left:-20px;top:7px;bottom:7px;width:2px;background:var(--terracotta);
+  }
+  .nav a .count{
+    margin-left:auto;
+    font-family:var(--font-mono);font-size:10px;
+    color:var(--fg-3);letter-spacing:0.04em;
+    font-variant-numeric:tabular-nums;
+  }
+  .nav a .count.hot{color:var(--terracotta-soft);}
+  .nav a.active .count{color:var(--terracotta-soft);}
+
+  .side-foot{
+    margin-top:auto;
+    padding-top:18px;border-top:1px solid var(--line);
+  }
+  .user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;}
+  .user .av{
+    width:32px;height:32px;border-radius:50%;
+    background:var(--surface-2);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:500;font-size:13px;color:var(--brass);
+  }
+  .user .n{font-size:12.5px;font-weight:500;color:var(--fg);}
+  .user .e{font-size:10.5px;color:var(--fg-3);font-family:var(--font-mono);letter-spacing:0.02em;}
+
+  /* === Top bar ======================================================= */
+  main{display:flex;flex-direction:column;min-width:0;}
+  .topbar{
+    height:60px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 32px;
+    background:rgba(14,13,11,0.75);
+    backdrop-filter:blur(14px);
+    position:sticky;top:0;z-index:5;
+  }
+  .crumb{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--fg-3);display:flex;align-items:center;gap:10px;
+  }
+  .crumb em{font-style:normal;color:var(--fg);letter-spacing:0.08em;}
+  .crumb .sep{color:var(--fg-4);}
+
+  .env-chip{
+    font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+    padding:3px 8px;border:1px solid rgba(224,176,75,0.3);
+    color:var(--warn);background:rgba(227,176,75,0.06);
+    border-radius:2px;
+  }
+
+  .topbar-actions{display:flex;align-items:center;gap:10px;}
+  .search{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 14px;border-radius:8px;
+    background:rgba(245,241,234,0.03);
+    border:1px solid var(--line);
+    min-width:340px;
+  }
+  .search input{flex:1;background:transparent;border:0;outline:0;color:var(--fg);font-family:var(--font-sans);font-size:13px;}
+  .search input::placeholder{color:var(--fg-3);}
+  .search kbd{
+    font-family:var(--font-mono);font-size:10px;color:var(--fg-3);
+    padding:2px 6px;border:1px solid var(--line);border-radius:4px;
+  }
+  .icn-btn{
+    width:36px;height:36px;border-radius:8px;
+    background:transparent;border:1px solid var(--line);color:var(--fg-2);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;position:relative;
+  }
+  .icn-btn:hover{background:rgba(245,241,234,0.04);color:var(--fg);}
+  .icn-btn .pip{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;background:var(--terracotta);}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:9px 14px;border-radius:8px;
+    font-family:var(--font-sans);font-size:13px;font-weight:500;
+    border:0;cursor:pointer;letter-spacing:-0.005em;
+  }
+  .btn.primary{background:var(--terracotta);color:#1a0a02;}
+  .btn.primary:hover{background:var(--terracotta-soft);}
+  .btn.ghost{background:transparent;color:var(--fg-2);border:1px solid var(--line);}
+  .btn.ghost:hover{color:var(--fg);background:rgba(245,241,234,0.03);}
+
+  /* === Content ======================================================== */
+  .content{padding:36px 40px 60px;max-width:1400px;margin:0 auto;width:100%;}
+
+  /* Editorial header */
+  .edi-hdr{
+    display:grid;grid-template-columns:1fr auto;gap:40px;align-items:flex-end;
+    padding-bottom:28px;border-bottom:1px solid var(--line);margin-bottom:32px;
+  }
+  .kicker{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--fg-3);
+    display:flex;align-items:center;gap:10px;margin-bottom:16px;
+  }
+  .kicker .bullet{width:5px;height:5px;border-radius:50%;background:var(--sage);box-shadow:0 0 0 3px rgba(94,173,154,0.12);}
+  h1.edi-title{
+    font-family:var(--font-display);font-variation-settings:"opsz" 96, "SOFT" 30, "SOFT" 30;
+    font-weight:400;font-size:54px;line-height:0.95;letter-spacing:-0.035em;margin:0;
+  }
+  h1.edi-title em{font-style:italic;color:var(--terracotta);font-weight:500;}
+  .edi-meta{
+    text-align:right;
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+    color:var(--fg-3);line-height:1.7;
+  }
+  .edi-meta strong{color:var(--fg);font-weight:500;}
+  .edi-meta .live{color:var(--sage);}
+
+  /* === Ops metrics strip ============================================== */
+  .metrics{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    margin-bottom:36px;
+  }
+  .m-cell{
+    padding:22px 26px;
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;gap:8px;
+    position:relative;
+  }
+  .m-cell:last-child{border-right:0;}
+  .m-cell .lbl{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);}
+  .m-cell .val{
+    font-family:var(--font-display);font-variation-settings:"opsz" 96, "SOFT" 30, "SOFT" 30;
+    font-weight:400;font-size:40px;line-height:0.95;letter-spacing:-0.035em;
+    font-variant-numeric:tabular-nums;
+  }
+  .m-cell .val em{font-style:italic;color:var(--terracotta);}
+  .m-cell .val .cents{font-size:18px;opacity:0.45;margin-left:2px;vertical-align:top;}
+  .m-cell .delta{font-family:var(--font-mono);font-size:10px;letter-spacing:0.04em;color:var(--fg-2);}
+  .m-cell .delta.up{color:var(--sage);}
+  .m-cell .delta.down{color:var(--terracotta-soft);}
+  /* spark */
+  .m-cell .spark{
+    height:22px;margin-top:4px;opacity:0.6;
+  }
+  .m-cell .spark path{fill:none;stroke:var(--brass);stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round;}
+
+  /* === Two-col layout ================================================= */
+  .col-2{display:grid;grid-template-columns:1.5fr 1fr;gap:32px;}
+
+  .sec-hdr{
+    display:flex;justify-content:space-between;align-items:baseline;
+    padding:0 0 14px;border-bottom:1px solid var(--line);margin-bottom:0;
+  }
+  .sec-hdr h2{
+    font-family:var(--font-display);font-variation-settings:"opsz" 96, "SOFT" 30, "SOFT" 30;
+    font-weight:500;font-size:22px;letter-spacing:-0.015em;margin:0;
+  }
+  .sec-hdr h2 em{font-style:italic;font-weight:500;color:var(--brass);}
+  .sec-hdr .actions{display:flex;gap:8px;align-items:center;}
+  .sec-hdr .filter-chip{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+    padding:5px 10px;border:1px solid var(--line);border-radius:3px;color:var(--fg-2);cursor:pointer;
+  }
+  .sec-hdr .filter-chip.on{border-color:var(--terracotta);color:var(--terracotta-soft);background:rgba(232,121,74,0.05);}
+  .sec-hdr .more{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--terracotta);text-decoration:none;
+  }
+
+  /* === User table (editorial density) ================================= */
+  .table{}
+  .tr{
+    display:grid;
+    grid-template-columns:36px 1.8fr 1.2fr 1fr 1.2fr 100px 120px;
+    align-items:center;gap:16px;
+    padding:14px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  .tr.head{
+    padding:10px 8px;
+    border-top:1px solid var(--line);
+    font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;
+    color:var(--fg-3);
+  }
+  .tr:not(.head):hover{background:rgba(245,241,234,0.02);}
+  .tr .idx{font-family:var(--font-mono);font-size:10px;color:var(--fg-3);letter-spacing:0.06em;font-variant-numeric:tabular-nums;}
+  .tr .u{display:flex;align-items:center;gap:12px;}
+  .tr .u .av{
+    width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-size:12px;color:var(--brass);font-weight:500;flex-shrink:0;
+  }
+  .tr .u .name{font-family:var(--font-display);font-variation-settings:"opsz" 96, "SOFT" 30, "SOFT" 30;font-weight:500;font-size:16px;letter-spacing:-0.01em;line-height:1.1;}
+  .tr .u .name em{font-style:italic;color:var(--brass);font-weight:500;}
+  .tr .u .mail{font-family:var(--font-mono);font-size:10px;color:var(--fg-3);letter-spacing:0.02em;margin-top:3px;}
+  .tr .plan{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:0.04em;color:var(--fg-2);
+  }
+  .tr .plan em{font-style:normal;color:var(--fg);}
+  .tr .spend{
+    font-family:var(--font-display);font-variation-settings:"opsz" 96, "SOFT" 30, "SOFT" 30;font-weight:400;
+    font-size:20px;letter-spacing:-0.015em;font-variant-numeric:tabular-nums;
+  }
+  .tr .spend .per{font-size:10px;font-family:var(--font-mono);color:var(--fg-3);letter-spacing:0.04em;margin-left:3px;}
+  .tr .addr{font-family:var(--font-mono);font-size:11px;color:var(--fg-2);letter-spacing:0.02em;line-height:1.4;}
+  .tr .addr em{font-style:normal;color:var(--fg);}
+  .tag{
+    display:inline-block;
+    font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;
+    padding:4px 8px;border:1px solid var(--line);border-radius:0;color:var(--fg-2);
+  }
+  .tag.ok{border-color:var(--sage);color:var(--sage);background:rgba(94,173,154,0.05);}
+  .tag.trial{border-color:var(--terracotta);color:var(--terracotta-soft);background:rgba(232,121,74,0.05);}
+  .tag.risk{border-color:var(--warn);color:var(--warn);background:rgba(227,176,75,0.05);}
+  .tag.past{border-color:var(--danger);color:var(--danger);background:rgba(208,100,73,0.05);}
+  .tr .act{display:flex;justify-content:flex-end;gap:6px;}
+  .tr .icn-sm{
+    width:26px;height:26px;border-radius:6px;
+    border:1px solid var(--line);background:transparent;color:var(--fg-3);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .tr .icn-sm:hover{color:var(--fg);background:rgba(245,241,234,0.03);}
+
+  /* === Activity feed (right column) =================================== */
+  .feed{display:flex;flex-direction:column;}
+  .feed-item{
+    display:grid;grid-template-columns:60px 1fr;gap:14px;
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+    align-items:flex-start;
+  }
+  .feed-time{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.06em;
+    color:var(--fg-3);padding-top:2px;
+    font-variant-numeric:tabular-nums;
+  }
+  .feed-body .t{
+    font-family:var(--font-display);font-weight:500;font-size:15px;letter-spacing:-0.005em;line-height:1.3;
+  }
+  .feed-body .t em{font-style:italic;color:var(--brass);font-weight:500;}
+  .feed-body .t .u{color:var(--terracotta-soft);font-style:italic;}
+  .feed-body .meta{
+    font-family:var(--font-mono);font-size:10px;color:var(--fg-3);letter-spacing:0.04em;
+    margin-top:6px;display:flex;gap:12px;align-items:center;
+  }
+  .feed-body .meta .dot{width:3px;height:3px;border-radius:50%;background:var(--fg-4);}
+
+  /* === Provider catalogue strip ======================================= */
+  .catalogue{
+    margin-top:48px;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(6,1fr);
+  }
+  .prov{
+    padding:22px 20px;
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;gap:10px;
+    position:relative;
+  }
+  .prov:last-child{border-right:0;}
+  .prov:hover{background:rgba(245,241,234,0.02);}
+  .prov .logo{
+    width:32px;height:32px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);
+  }
+  .prov .cat-lbl{font-family:var(--font-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--fg-3);}
+  .prov .name{
+    font-family:var(--font-display);font-weight:500;font-size:17px;letter-spacing:-0.01em;line-height:1.1;
+  }
+  .prov .name em{font-style:italic;font-weight:500;}
+  .prov .users{
+    font-family:var(--font-mono);font-size:10px;color:var(--fg-2);letter-spacing:0.02em;
+    display:flex;align-items:baseline;gap:4px;
+    margin-top:auto;
+  }
+  .prov .users .n{
+    font-family:var(--font-display);font-weight:400;font-size:20px;letter-spacing:-0.02em;color:var(--fg);
+    font-variant-numeric:tabular-nums;
+  }
+  .prov.a .logo{color:var(--terracotta);}
+  .prov.b .logo{color:var(--sage);}
+  .prov.c .logo{color:var(--brass);}
+  .prov.d .logo{color:var(--terracotta-soft);}
+
+  .rule-word{
+    margin:48px 0 20px;
+    display:flex;align-items:center;gap:16px;
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+    color:var(--fg-3);
+  }
+  .rule-word::before,.rule-word::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  /* Pagination foot */
+  .page-foot{
+    margin-top:18px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:var(--font-mono);font-size:11px;color:var(--fg-3);letter-spacing:0.06em;
+  }
+  .page-foot .nav-arrows{display:flex;gap:6px;}
+  .page-foot .nav-arrows button{
+    width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:transparent;color:var(--fg-2);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .page-foot .nav-arrows button:hover{color:var(--fg);background:rgba(245,241,234,0.03);}
+</style></head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M3 11 12 4l9 7v9h-6v-6h-6v6H3z"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 20v-2a4 4 0 0 0-3-3.9M15 4a4 4 0 0 1 0 8M9 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-5.1-7-8.4-7-11.5a7 7 0 1 1 14 0c0 3.1-2.5 6.4-7 11.5z"/><circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M13 3 5.5 13.5H11l-1 7.5 7.5-10.5H12z"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M3 9.5a14 14 0 0 1 18 0M6 13a10 10 0 0 1 12 0M9 16.5a5.5 5.5 0 0 1 6 0"/><circle cx="12" cy="20" r="1.1" fill="currentColor"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m9 12 2.2 2.2L15 10.5"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 9.5 15 12l-4 2.5z" fill="currentColor"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 7h11v10H2zM13 10h4l4 4v3h-8zM7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="m16.5 16.5 4 4"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 21V4M5 4h12l-2 4 2 4H5"/></symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-arrow-l" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="18" cy="12" r="1.4" fill="currentColor"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m3 7 9 7 9-7"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside>
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div class="brand-word">Locate<em>flow</em></div>
+    </div>
+    <div class="ops-badge"><span class="pulse"></span>Operations console</div>
+
+    <div class="nav-sec">Overview</div>
+    <div class="nav">
+      <a class="active"><svg><use href="#i-chart"/></svg>Dashboard<span class="count">—</span></a>
+      <a><svg><use href="#i-flag"/></svg>Incidents<span class="count hot">2</span></a>
+    </div>
+
+    <div class="nav-sec">Customers</div>
+    <div class="nav">
+      <a><svg><use href="#i-users"/></svg>Users<span class="count">12.4k</span></a>
+      <a><svg><use href="#i-pin"/></svg>Addresses<span class="count">38.2k</span></a>
+      <a><svg><use href="#i-truck"/></svg>Active moves<span class="count">214</span></a>
+      <a><svg><use href="#i-mail"/></svg>Support inbox<span class="count hot">19</span></a>
+    </div>
+
+    <div class="nav-sec">Catalogue</div>
+    <div class="nav">
+      <a><svg><use href="#i-grid"/></svg>Providers<span class="count">2,147</span></a>
+      <a><svg><use href="#i-bolt"/></svg>Categories<span class="count">14</span></a>
+      <a><svg><use href="#i-flag"/></svg>Moderation<span class="count hot">6</span></a>
+    </div>
+
+    <div class="nav-sec">System</div>
+    <div class="nav">
+      <a><svg><use href="#i-shield"/></svg>Permissions</a>
+      <a><svg><use href="#i-gear"/></svg>Settings</a>
+    </div>
+
+    <div class="side-foot">
+      <div class="user">
+        <div class="av">AK</div>
+        <div style="flex:1;min-width:0">
+          <div class="n">Alex Kim</div>
+          <div class="e">Ops · Admin · L3</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <div class="topbar">
+      <div class="crumb">
+        <em>Operations</em><span class="sep">/</span><span>Overview</span><span class="env-chip">Prod · US-East</span>
+      </div>
+      <div class="topbar-actions">
+        <div class="search">
+          <svg width="14" height="14" style="color:var(--fg-3)"><use href="#i-search"/></svg>
+          <input placeholder="Find user, address, provider, event…" />
+          <kbd>⌘K</kbd>
+        </div>
+        <button class="icn-btn"><svg width="16" height="16"><use href="#i-bell"/></svg><span class="pip"></span></button>
+        <button class="btn ghost"><svg width="12" height="12"><use href="#i-mail"/></svg>Incident report</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- Editorial header -->
+      <div class="edi-hdr">
+        <div>
+          <div class="kicker"><span class="bullet"></span>Tuesday · Feb 23, 2026 · 14:26 UTC</div>
+          <h1 class="edi-title">Everything's <em>quiet</em>,<br>with a few things to watch.</h1>
+        </div>
+        <div class="edi-meta">
+          Signal<br>
+          <strong class="live">● Healthy</strong><br><br>
+          Acting as<br>
+          <strong>Alex Kim · L3</strong>
+        </div>
+      </div>
+
+      <!-- Ops metric strip -->
+      <div class="metrics">
+        <div class="m-cell">
+          <div class="lbl">Active users · 30d</div>
+          <div class="val">12,487</div>
+          <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 16 L10 14 L20 15 L30 12 L40 13 L50 9 L60 10 L70 7 L80 8 L90 5 L100 6 L110 4 L120 3"/></svg>
+          <div class="delta up">↑ 8.4% vs last month</div>
+        </div>
+        <div class="m-cell">
+          <div class="lbl">MRR</div>
+          <div class="val">$84,216</div>
+          <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 14 L15 12 L30 13 L45 10 L60 11 L75 8 L90 6 L105 7 L120 4"/></svg>
+          <div class="delta up">↑ 11.2%</div>
+        </div>
+        <div class="m-cell">
+          <div class="lbl">Active moves</div>
+          <div class="val"><em>214</em></div>
+          <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 10 L20 12 L40 8 L60 10 L80 6 L100 8 L120 5"/></svg>
+          <div class="delta">18 this week</div>
+        </div>
+        <div class="m-cell">
+          <div class="lbl">Open tickets</div>
+          <div class="val">19</div>
+          <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 8 L20 10 L40 12 L60 9 L80 11 L100 14 L120 16"/></svg>
+          <div class="delta down">↑ 4 overnight</div>
+        </div>
+        <div class="m-cell">
+          <div class="lbl">API p95 · latency</div>
+          <div class="val">218<span class="cents">ms</span></div>
+          <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 12 L20 10 L40 11 L60 10 L80 9 L100 10 L120 11"/></svg>
+          <div class="delta up">Within SLO</div>
+        </div>
+      </div>
+
+      <!-- Two column -->
+      <div class="col-2">
+
+        <!-- USERS TABLE -->
+        <div>
+          <div class="sec-hdr">
+            <h2>Recent <em>sign-ups</em></h2>
+            <div class="actions">
+              <span class="filter-chip on">All</span>
+              <span class="filter-chip">Trial</span>
+              <span class="filter-chip">Paid</span>
+              <span class="filter-chip">At risk</span>
+              <a href="#" class="more" style="margin-left:8px;">Full list →</a>
+            </div>
+          </div>
+
+          <div class="table">
+            <div class="tr head">
+              <div>#</div>
+              <div>User</div>
+              <div>Primary address</div>
+              <div>Plan</div>
+              <div>Monthly</div>
+              <div>Status</div>
+              <div style="text-align:right;">Actions</div>
+            </div>
+
+            <div class="tr">
+              <div class="idx">0001</div>
+              <div class="u">
+                <div class="av">SM</div>
+                <div>
+                  <div class="name">Sarah <em>Montgomery</em></div>
+                  <div class="mail">sarah@montgomery.co</div>
+                </div>
+              </div>
+              <div class="addr"><em>1421 Rainey</em><br>Austin, TX</div>
+              <div class="plan"><em>Individual</em> · 11d trial</div>
+              <div class="spend">$12<span class="per">/mo</span></div>
+              <div><span class="tag trial">● Trial</span></div>
+              <div class="act">
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-eye"/></svg></button>
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-more"/></svg></button>
+              </div>
+            </div>
+
+            <div class="tr">
+              <div class="idx">0002</div>
+              <div class="u">
+                <div class="av">JK</div>
+                <div>
+                  <div class="name">James <em>Kettering</em></div>
+                  <div class="mail">j.kettering@gmail.com</div>
+                </div>
+              </div>
+              <div class="addr"><em>77 Fort Lewis</em><br>Tacoma, WA</div>
+              <div class="plan"><em>Individual</em> · 3 mo</div>
+              <div class="spend">$12<span class="per">/mo</span></div>
+              <div><span class="tag ok">● Active</span></div>
+              <div class="act">
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-eye"/></svg></button>
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-more"/></svg></button>
+              </div>
+            </div>
+
+            <div class="tr">
+              <div class="idx">0003</div>
+              <div class="u">
+                <div class="av">PR</div>
+                <div>
+                  <div class="name">Priya <em>Ramesh</em></div>
+                  <div class="mail">priya.ramesh@outlook.com</div>
+                </div>
+              </div>
+              <div class="addr"><em>Family plan waitlist</em><br>Chicago, IL</div>
+              <div class="plan"><em>Free trial</em> · d2</div>
+              <div class="spend" style="color:var(--fg-3);">—</div>
+              <div><span class="tag risk">◐ Low engagement</span></div>
+              <div class="act">
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-mail"/></svg></button>
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-more"/></svg></button>
+              </div>
+            </div>
+
+            <div class="tr">
+              <div class="idx">0004</div>
+              <div class="u">
+                <div class="av">DO</div>
+                <div>
+                  <div class="name">Daniel <em>Ozaki</em></div>
+                  <div class="mail">d.ozaki@relocate.team</div>
+                </div>
+              </div>
+              <div class="addr"><em>4 addresses</em><br>Pro pilot</div>
+              <div class="plan"><em>Pro</em> · pilot</div>
+              <div class="spend">$89<span class="per">/mo</span></div>
+              <div><span class="tag ok">● Active</span></div>
+              <div class="act">
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-eye"/></svg></button>
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-more"/></svg></button>
+              </div>
+            </div>
+
+            <div class="tr">
+              <div class="idx">0005</div>
+              <div class="u">
+                <div class="av">EV</div>
+                <div>
+                  <div class="name">Elena <em>Vasquez</em></div>
+                  <div class="mail">elena@vasquez.family</div>
+                </div>
+              </div>
+              <div class="addr"><em>220 Larimer</em><br>Denver, CO</div>
+              <div class="plan"><em>Individual</em> · 14 mo</div>
+              <div class="spend">$12<span class="per">/mo</span></div>
+              <div><span class="tag past">● Past due</span></div>
+              <div class="act">
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-mail"/></svg></button>
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-more"/></svg></button>
+              </div>
+            </div>
+
+            <div class="tr">
+              <div class="idx">0006</div>
+              <div class="u">
+                <div class="av">NB</div>
+                <div>
+                  <div class="name">Noah <em>Bergmann</em></div>
+                  <div class="mail">noah.bergmann@me.com</div>
+                </div>
+              </div>
+              <div class="addr"><em>5 addresses</em><br>Military family</div>
+              <div class="plan"><em>Individual</em> · 22 mo</div>
+              <div class="spend">$12<span class="per">/mo</span></div>
+              <div><span class="tag ok">● Active</span></div>
+              <div class="act">
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-eye"/></svg></button>
+                <button class="icn-sm"><svg width="12" height="12"><use href="#i-more"/></svg></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="page-foot">
+            <div>Showing 1–6 of <span style="color:var(--fg);">12,487</span> · sorted by sign-up ↓</div>
+            <div class="nav-arrows">
+              <button><svg width="12" height="12"><use href="#i-arrow-l"/></svg></button>
+              <button><svg width="12" height="12"><use href="#i-arrow-r"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIVITY FEED -->
+        <div>
+          <div class="sec-hdr">
+            <h2>Live <em>activity</em></h2>
+            <a href="#" class="more">Full log →</a>
+          </div>
+          <div class="feed">
+            <div class="feed-item">
+              <div class="feed-time">14:22</div>
+              <div class="feed-body">
+                <div class="t"><span class="u">Sarah Montgomery</span> transferred <em>Spectrum Internet</em> from Austin to Denver.</div>
+                <div class="meta"><span>Moving plan</span><span class="dot"></span><span>AUT-1421 → DEN-220</span></div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-time">14:15</div>
+              <div class="feed-body">
+                <div class="t">A new provider — <em>Xcel Energy CO</em> — was submitted for review.</div>
+                <div class="meta"><span>Moderation</span><span class="dot"></span><span>Category · ELEC</span></div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-time">13:58</div>
+              <div class="feed-body">
+                <div class="t"><span class="u">Daniel Ozaki</span> opened a <em>Pro pilot</em> feedback ticket.</div>
+                <div class="meta"><span>Support · L2</span><span class="dot"></span><span>#2141</span></div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-time">13:41</div>
+              <div class="feed-body">
+                <div class="t"><span class="u">Elena Vasquez</span> had a <em>payment failure</em> on her Individual plan.</div>
+                <div class="meta"><span>Billing</span><span class="dot"></span><span>Stripe · 3DS required</span></div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-time">13:22</div>
+              <div class="feed-body">
+                <div class="t">Daily provider sync finished — <em>2,147 records</em>, 3 additions, 1 flagged.</div>
+                <div class="meta"><span>System</span><span class="dot"></span><span>sync-job-092</span></div>
+              </div>
+            </div>
+            <div class="feed-item">
+              <div class="feed-time">12:54</div>
+              <div class="feed-body">
+                <div class="t"><span class="u">Noah Bergmann</span> archived <em>88 Main Street</em> after his PCS move.</div>
+                <div class="meta"><span>Address</span><span class="dot"></span><span>VT → deactivated</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rule-word">— Top providers, last 30 days —</div>
+
+      <div class="catalogue">
+        <div class="prov a">
+          <div class="logo"><svg width="16" height="16"><use href="#i-bolt"/></svg></div>
+          <div class="cat-lbl">Electricity</div>
+          <div class="name">Austin <em>Energy</em></div>
+          <div class="users"><span class="n">1,248</span>users · TX</div>
+        </div>
+        <div class="prov b">
+          <div class="logo"><svg width="16" height="16"><use href="#i-wifi"/></svg></div>
+          <div class="cat-lbl">Internet</div>
+          <div class="name">Spectrum</div>
+          <div class="users"><span class="n">984</span>users · multi-state</div>
+        </div>
+        <div class="prov c">
+          <div class="logo"><svg width="16" height="16"><use href="#i-shield"/></svg></div>
+          <div class="cat-lbl">Insurance</div>
+          <div class="name">State <em>Farm</em></div>
+          <div class="users"><span class="n">812</span>policies</div>
+        </div>
+        <div class="prov d">
+          <div class="logo"><svg width="16" height="16"><use href="#i-play"/></svg></div>
+          <div class="cat-lbl">Streaming</div>
+          <div class="name">Netflix</div>
+          <div class="users"><span class="n">664</span>subs</div>
+        </div>
+        <div class="prov a">
+          <div class="logo"><svg width="16" height="16"><use href="#i-bolt"/></svg></div>
+          <div class="cat-lbl">Gas</div>
+          <div class="name">PG<em>&amp;E</em></div>
+          <div class="users"><span class="n">541</span>users · CA</div>
+        </div>
+        <div class="prov c">
+          <div class="logo"><svg width="16" height="16"><use href="#i-shield"/></svg></div>
+          <div class="cat-lbl">Home insurance</div>
+          <div class="name">Allstate</div>
+          <div class="users"><span class="n">429</span>policies</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body></html>

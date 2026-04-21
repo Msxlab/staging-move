@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg-1); font-family: var(--font-sans); }
+  .card { padding: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .tile { height: 70px; border-radius: 16px; background: #1a1a25; }
+  .lbl { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); margin-top: 8px; text-align: center; }
+  .sm { box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+  .md { box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+  .lg { box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .glow { box-shadow: 0 0 24px rgba(249,115,22,0.4); border: 1px solid rgba(249,115,22,0.3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div><div class="tile sm"></div><div class="lbl">shadow · sm</div></div>
+  <div><div class="tile md"></div><div class="lbl">shadow · md</div></div>
+  <div><div class="tile lg"></div><div class="lbl">shadow · lg</div></div>
+  <div><div class="tile glow"></div><div class="lbl">shadow · glow (premium)</div></div>
+</div>
+</body>
+</html>

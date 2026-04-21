@@ -16,24 +16,30 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-
-const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Addresses", href: "/addresses", icon: MapPin },
-  { name: "Services", href: "/services", icon: Zap },
-  { name: "Providers", href: "/providers", icon: Building2 },
-  { name: "Budget", href: "/budget", icon: DollarSign },
-  { name: "Moving", href: "/moving", icon: Truck },
-];
-
-const bottomNav = [
-  { name: "Help", href: "/help", icon: HelpCircle },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
+import { useTranslations } from "next-intl";
 
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const t = useTranslations("nav");
+
+  // Keys map to `nav.*` in messages/en.json and messages/es.json. Do
+  // NOT hardcode user-visible strings here — every label must be a
+  // translation key so adding a third locale (pt, fr…) is a messages
+  // change, not a sidebar change.
+  const navigation = [
+    { key: "dashboard", href: "/dashboard", icon: Home },
+    { key: "addresses", href: "/addresses", icon: MapPin },
+    { key: "services", href: "/services", icon: Zap },
+    { key: "providers", href: "/providers", icon: Building2 },
+    { key: "budget", href: "/budget", icon: DollarSign },
+    { key: "moving", href: "/moving", icon: Truck },
+  ] as const;
+
+  const bottomNav = [
+    { key: "help", href: "/help", icon: HelpCircle },
+    { key: "settings", href: "/settings", icon: Settings },
+  ] as const;
 
   return (
     <aside
@@ -60,9 +66,10 @@ export function Sidebar() {
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = pathname.startsWith(item.href);
+          const label = t(item.key);
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
@@ -70,10 +77,10 @@ export function Sidebar() {
                   ? "bg-orange-500/15 text-orange-300"
                   : "text-white/40 hover:text-white/70 hover:bg-white/5"
               )}
-              title={collapsed ? item.name : undefined}
+              title={collapsed ? label : undefined}
             >
               <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-orange-400")} />
-              {!collapsed && <span>{item.name}</span>}
+              {!collapsed && <span>{label}</span>}
             </Link>
           );
         })}
@@ -83,9 +90,10 @@ export function Sidebar() {
       <div className="border-t border-white/5 py-3 px-2 space-y-0.5 shrink-0">
         {bottomNav.map((item) => {
           const isActive = pathname.startsWith(item.href);
+          const label = t(item.key);
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
@@ -93,10 +101,10 @@ export function Sidebar() {
                   ? "bg-orange-500/15 text-orange-300"
                   : "text-white/40 hover:text-white/70 hover:bg-white/5"
               )}
-              title={collapsed ? item.name : undefined}
+              title={collapsed ? label : undefined}
             >
               <item.icon className="h-[18px] w-[18px] shrink-0" />
-              {!collapsed && <span>{item.name}</span>}
+              {!collapsed && <span>{label}</span>}
             </Link>
           );
         })}

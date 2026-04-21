@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg-1); font-family: var(--font-sans); }
+  .card { padding: 20px 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .swatch { display: flex; flex-direction: column; gap: 4px; }
+  .chip { height: 48px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-weight: 600; color: #fff; font-size: 13px; }
+  .light { height: 16px; border-radius: 4px; margin-top: 2px; }
+  .chip-name { font-size: 11px; color: var(--fg-1); font-weight: 600; margin-top: 4px; }
+  .chip-code { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="swatch"><div class="chip" style="background:#10b981;">Success</div><div class="light" style="background:#d1fae5;"></div><div class="chip-name">Success</div><div class="chip-code">#10b981 · #d1fae5</div></div>
+  <div class="swatch"><div class="chip" style="background:#f59e0b;">Warning</div><div class="light" style="background:#fef3c7;"></div><div class="chip-name">Warning</div><div class="chip-code">#f59e0b · #fef3c7</div></div>
+  <div class="swatch"><div class="chip" style="background:#ef4444;">Danger</div><div class="light" style="background:#fee2e2;"></div><div class="chip-name">Danger</div><div class="chip-code">#ef4444 · #fee2e2</div></div>
+  <div class="swatch"><div class="chip" style="background:#3b82f6;">Info</div><div class="light" style="background:#dbeafe;"></div><div class="chip-name">Info</div><div class="chip-code">#3b82f6 · #dbeafe</div></div>
+</div>
+</body>
+</html>

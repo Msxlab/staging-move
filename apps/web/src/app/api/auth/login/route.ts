@@ -8,6 +8,11 @@ import {
   generateMobileFingerprint,
 } from "@/lib/user-auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import {
+  isLoginLocked,
+  recordLoginFailure,
+  clearLoginFailures,
+} from "@/lib/login-lockout";
 import { decrypt } from "@/lib/shared-encryption";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 
@@ -39,14 +44,40 @@ function parseUA(ua: string) {
 }
 
 export async function POST(request: NextRequest) {
-  // IP-based login rate limit (stricter than general API limit):
-  // 10 attempts / 15 min / IP — shared with register endpoint bucket.
+  // General per-IP rate limit for the register/login cluster — absorbs
+  // bursty clients without punishing individual accounts.
   const ipKey = getRateLimitKey(request, "auth:login:ip");
   const ipRl = await rateLimit(ipKey, { limit: 10, windowSeconds: 15 * 60 });
   if (!ipRl.success) {
     return NextResponse.json(
       { error: "Too many login attempts. Please wait and try again." },
       { status: 429, headers: { "Retry-After": String(Math.ceil((ipRl.resetAt - Date.now()) / 1000)) } },
+    );
+  }
+
+  // Stricter per-IP lockout for password brute force: 5 *failed* attempts
+  // within 15 min triggers a 30-min ban. Distinct from the bursty
+  // rate-limit above — a legitimate user typing the wrong password once
+  // on a NATed network won't lock out their neighbors because the
+  // counter is reset on successful login (see clearLoginFailures).
+  const forwardedFor = request.headers.get("x-forwarded-for") || "";
+  const ip =
+    forwardedFor.split(",")[0].trim() ||
+    request.headers.get("x-real-ip") ||
+    "unknown";
+
+  const lockState = await isLoginLocked(ip);
+  if (lockState.locked) {
+    return NextResponse.json(
+      {
+        error: lockState.unavailable
+          ? "Login temporarily unavailable. Please try again later."
+          : "Too many failed attempts. Please wait and try again.",
+      },
+      {
+        status: lockState.unavailable ? 503 : 429,
+        headers: { "Retry-After": String(lockState.retryAfterSec) },
+      },
     );
   }
 
@@ -64,18 +95,32 @@ export async function POST(request: NextRequest) {
 
   const { email, password, mfaCode, backupCode } = parsed.data;
   const ua = request.headers.get("user-agent") || "";
-  const forwardedFor = request.headers.get("x-forwarded-for") || "";
-  const ip = forwardedFor.split(",")[0].trim() || request.headers.get("x-real-ip") || "unknown";
 
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // SEC: single generic error — no user enumeration.
+  // SEC: single generic error — no user enumeration. A missing account
+  // still consumes a lockout slot so an attacker cannot probe email
+  // existence cheaply.
   if (!user || !user.passwordHash) {
+    const nextState = await recordLoginFailure(ip);
+    if (nextState.locked) {
+      return NextResponse.json(
+        { error: "Too many failed attempts. Please wait and try again." },
+        { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
+      );
+    }
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
   const passwordOk = await verifyPassword(password, user.passwordHash);
   if (!passwordOk) {
+    const nextState = await recordLoginFailure(ip);
+    if (nextState.locked) {
+      return NextResponse.json(
+        { error: "Too many failed attempts. Please wait and try again." },
+        { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
+      );
+    }
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
   }
 
@@ -110,9 +155,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (!mfaValid) {
+      const nextState = await recordLoginFailure(ip);
+      if (nextState.locked) {
+        return NextResponse.json(
+          { error: "Too many failed attempts. Please wait and try again." },
+          { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
+        );
+      }
       return NextResponse.json({ error: "Invalid MFA code." }, { status: 401 });
     }
   }
+
+  // Successful auth — reset the failure counter for this IP so legitimate
+  // retries after a typo don't accumulate against future sessions.
+  await clearLoginFailures(ip).catch(() => null);
 
   const parsedUA = parseUA(ua);
   // Mobile clients can signal their client type explicitly; otherwise fall

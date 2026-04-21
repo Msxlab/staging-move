@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { buildDefaultPermissionMatrix } from "@/lib/admin-permissions";
 
 export async function GET() {
   try {
@@ -67,27 +68,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create default permissions based on role
-    const allResources = [
-      "users", "subscriptions", "reviews", "providers",
-      "state_rules", "badges", "documents", "moving_plans",
-      "audit_logs", "admin_users", "settings",
-    ];
-
-    for (const resource of allResources) {
-      let canRead = true, canCreate = false, canUpdate = false, canDelete = false;
-
-      if (body.role === "ADMIN") {
-        canCreate = canUpdate = canDelete = resource !== "admin_users";
-      } else if (body.role === "MODERATOR") {
-        canCreate = canUpdate = resource === "reviews";
-      }
-      // VIEWER: canRead only (defaults)
-
-      await prisma.adminPermission.create({
-        data: { adminUserId: admin.id, resource, canRead, canCreate, canUpdate, canDelete },
-      });
-    }
+    // Persist the role's default permission matrix. Shared helper is
+    // the single source of truth — see apps/admin/src/lib/admin-permissions.ts.
+    const matrix = buildDefaultPermissionMatrix(admin.role);
+    await prisma.adminPermission.createMany({
+      data: matrix.map((row) => ({
+        adminUserId: admin.id,
+        resource: row.resource,
+        canRead: row.canRead,
+        canCreate: row.canCreate,
+        canUpdate: row.canUpdate,
+        canDelete: row.canDelete,
+      })),
+    });
 
     await prisma.adminAuditLog.create({
       data: {

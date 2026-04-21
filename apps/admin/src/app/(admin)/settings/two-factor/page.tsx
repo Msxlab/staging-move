@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   ShieldCheck, ShieldOff, Copy, Download, Loader2, KeyRound,
-  CheckCircle2, AlertTriangle, ArrowLeft, Eye, EyeOff,
+  CheckCircle2, AlertTriangle, ArrowLeft, Eye, EyeOff, Lock,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -14,6 +15,11 @@ type SetupStep = "idle" | "confirming" | "scanning" | "verifying" | "done";
 const inputCls = "w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export default function TwoFactorPage() {
+  const searchParams = useSearchParams();
+  // Middleware redirects SUPER_ADMIN here with `?required=1` when their
+  // JWT lacks `mfaEnabled`. The banner explains why the rest of the panel
+  // is gated and the Back link is hidden until setup completes.
+  const enrollmentRequired = searchParams.get("required") === "1";
   const [status, setStatus] = useState<MfaStatus>("loading");
   const [setupStep, setSetupStep] = useState<SetupStep>("idle");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -141,12 +147,16 @@ export default function TwoFactorPage() {
     );
   }
 
+  const showEnrollmentBanner = enrollmentRequired && status === "disabled";
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center gap-3">
-        <Link href="/settings" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
+        {!showEnrollmentBanner && (
+          <Link href="/settings" className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+        )}
         <div>
           <h1 className="text-2xl font-bold text-foreground">Two-Factor Authentication</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -154,6 +164,27 @@ export default function TwoFactorPage() {
           </p>
         </div>
       </div>
+
+      {showEnrollmentBanner && (
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-start gap-3"
+        >
+          <div className="rounded-lg bg-amber-500/20 p-2 mt-0.5">
+            <Lock className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">
+              Two-factor enrollment is required for your role
+            </p>
+            <p className="text-sm text-muted-foreground">
+              SUPER_ADMIN accounts must enroll MFA before accessing the rest
+              of the admin panel. Complete the steps below — the rest of the
+              navigation will unlock automatically once MFA is verified.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Current Status */}
       <div className={`rounded-xl border p-6 ${status === "enabled" ? "border-green-500/30 bg-green-500/5" : "border-border bg-card"}`}>

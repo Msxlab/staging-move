@@ -4,9 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function LoginPage() {
   const router = useRouter();
+  const tLogin = useTranslations("login");
+  const tCommon = useTranslations("common");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,7 +56,7 @@ export default function LoginPage() {
       }
 
       if (!res.ok) {
-        toast.error(data.error || "Login failed");
+        toast.error(data.error || tLogin("invalid"));
         if (mfaRequired) {
           setMfaCode("");
           setBackupCode("");
@@ -62,11 +65,11 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success("Welcome back, " + data.admin.firstName);
+      toast.success(`${tLogin("title")} — ${data.admin.firstName}`);
       router.push("/");
       router.refresh();
     } catch {
-      toast.error("Something went wrong");
+      toast.error(tLogin("invalid"));
     } finally {
       setLoading(false);
     }
@@ -88,12 +91,10 @@ export default function LoginPage() {
             )}
           </div>
           <h1 className="text-2xl font-bold text-foreground">
-            {mfaRequired ? "Two-Factor Authentication" : "LocateFlow Admin"}
+            {mfaRequired ? tCommon("confirm") : tLogin("title")}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {mfaRequired
-              ? "Enter the 6-digit code from your authenticator app"
-              : "Sign in to the administration panel"}
+            {mfaRequired ? tLogin("mfaRequired") : tLogin("subtitle")}
           </p>
         </div>
 
@@ -101,19 +102,19 @@ export default function LoginPage() {
           {!mfaRequired ? (
             <>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-foreground">Email</label>
-                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} placeholder="admin@locateflow.com" />
+                <label htmlFor="email" className="block text-sm font-medium text-foreground">{tLogin("email")}</label>
+                <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className={inputCls} placeholder="admin@locateflow.com" autoComplete="email" />
               </div>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-foreground">Password</label>
-                <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputCls} placeholder="••••••••" />
+                <label htmlFor="password" className="block text-sm font-medium text-foreground">{tLogin("password")}</label>
+                <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputCls} placeholder="••••••••" autoComplete="current-password" />
               </div>
             </>
           ) : (
             <>
               {!useBackupCode ? (
                 <div>
-                  <label htmlFor="mfaCode" className="block text-sm font-medium text-foreground">Authentication Code</label>
+                  <label htmlFor="mfaCode" className="block text-sm font-medium text-foreground">{tLogin("mfaCode")}</label>
                   <input
                     ref={mfaInputRef}
                     id="mfaCode"
@@ -130,7 +131,7 @@ export default function LoginPage() {
                 </div>
               ) : (
                 <div>
-                  <label htmlFor="backupCode" className="block text-sm font-medium text-foreground">Backup Code</label>
+                  <label htmlFor="backupCode" className="block text-sm font-medium text-foreground">{tLogin("backupCode")}</label>
                   <input
                     ref={mfaInputRef}
                     id="backupCode"
@@ -148,11 +149,11 @@ export default function LoginPage() {
               <div className="flex items-center justify-between text-xs">
                 <button type="button" onClick={() => { setUseBackupCode(!useBackupCode); setMfaCode(""); setBackupCode(""); }}
                   className="text-primary hover:underline">
-                  {useBackupCode ? "Use authenticator app" : "Use a backup code"}
+                  {tLogin("useBackupCode")}
                 </button>
                 <button type="button" onClick={() => { setMfaRequired(false); setMfaCode(""); setBackupCode(""); setUseBackupCode(false); }}
                   className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
-                  <ArrowLeft className="h-3 w-3" /> Back to login
+                  <ArrowLeft className="h-3 w-3" /> {tCommon("back")}
                 </button>
               </div>
             </>
@@ -163,7 +164,7 @@ export default function LoginPage() {
             disabled={loading || (mfaRequired && !useBackupCode && mfaCode.length !== 6) || (mfaRequired && useBackupCode && backupCode.length < 6)}
             className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
-            {loading ? "Verifying..." : mfaRequired ? "Verify" : "Sign In"}
+            {loading ? tCommon("loading") : mfaRequired ? tCommon("confirm") : tLogin("submit")}
           </button>
         </form>
       </div>

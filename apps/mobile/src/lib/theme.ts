@@ -1,62 +1,87 @@
 import { useColorScheme } from "react-native";
+import {
+  brandColors,
+  semanticColors,
+  surfaceDark,
+  surfaceLight,
+  textDark,
+  textLight,
+  borderDark,
+  borderLight,
+  tonesDark,
+  tonesLight,
+  gradients,
+  spacing as tokenSpacing,
+  radii as tokenRadii,
+  shadowsMobile,
+} from "@locateflow/shared";
 
 // ──────────────────────────────────────────────────────────────────────
 // Dual-palette theming.
 //
-// Backward compatibility note: `theme` (default export used everywhere
-// today) continues to be the dark palette. Screens opt into theme-aware
-// rendering by switching to `useAppTheme()`. This avoids a cross-app
-// codemod and lets us flip the global toggle (app.json
-// userInterfaceStyle: "automatic") without breaking the existing UI.
+// Token source of truth: packages/shared/src/design-tokens.ts. The
+// palette objects below consume those tokens directly — changing a
+// brand color in shared/design-tokens.ts flows through to every screen
+// without a codemod.
+//
+// Backward compatibility: `theme` (default export) stays dark so the
+// legacy `theme.colors.background` call sites continue to resolve to
+// the dark palette. Screens that opt into light-aware rendering switch
+// to `useAppTheme()`.
 // ──────────────────────────────────────────────────────────────────────
 
 const darkColors = {
-  primary: "#F97316",
-  primaryLight: "#FB923C",
-  primaryDark: "#EA580C",
+  primary: brandColors.orange,
+  primaryLight: brandColors.orangeLight,
+  primaryDark: brandColors.orangeDark,
   primaryFaded: "rgba(249, 115, 22, 0.15)",
-  accent: "#FBBF24",
-  success: "#10b981",
+  accent: brandColors.amber,
+
+  success: semanticColors.success,
   successFaded: "rgba(16, 185, 129, 0.15)",
-  warning: "#f59e0b",
+  warning: semanticColors.warning,
   warningFaded: "rgba(245, 158, 11, 0.15)",
-  error: "#ef4444",
+  error: semanticColors.danger,
   errorFaded: "rgba(239, 68, 68, 0.15)",
-  info: "#3b82f6",
+  info: semanticColors.info,
   infoFaded: "rgba(59, 130, 246, 0.15)",
 
-  background: "#0a0a0f",
-  surface: "#12121a",
-  card: "#1a1a25",
-  cardHover: "#22222f",
-  elevated: "#252530",
+  background: surfaceDark.background,
+  surface: surfaceDark.surface,
+  card: surfaceDark.card,
+  cardHover: surfaceDark.cardHover,
+  elevated: surfaceDark.elevated,
 
-  border: "rgba(255, 255, 255, 0.08)",
-  borderLight: "rgba(255, 255, 255, 0.12)",
-  borderFocus: "rgba(249, 115, 22, 0.5)",
+  border: borderDark.default,
+  borderLight: borderDark.strong,
+  borderFocus: borderDark.focus,
 
+  // Mobile glass uses slightly richer alpha than shared glassDark
+  // (keeps legacy visual weight for sheets & sticky chrome).
   glass: {
     bg: "rgba(255, 255, 255, 0.06)",
     border: "rgba(255, 255, 255, 0.12)",
     highlight: "rgba(255, 255, 255, 0.08)",
   },
 
+  // Mobile historically used hex white + 0.4 tertiary; keep those exact
+  // values for pixel parity with existing screens.
   text: "#ffffff",
-  textSecondary: "rgba(255, 255, 255, 0.7)",
+  textSecondary: textDark.secondary,
   textTertiary: "rgba(255, 255, 255, 0.4)",
-  textMuted: "rgba(255, 255, 255, 0.2)",
+  textMuted: textDark.muted,
 
-  orange: { bg: "rgba(249, 115, 22, 0.1)", border: "rgba(249, 115, 22, 0.2)", text: "#FB923C" },
-  emerald: { bg: "rgba(16, 185, 129, 0.1)", border: "rgba(16, 185, 129, 0.2)", text: "#6ee7b7" },
-  amber: { bg: "rgba(245, 158, 11, 0.1)", border: "rgba(245, 158, 11, 0.2)", text: "#fcd34d" },
-  rose: { bg: "rgba(244, 63, 94, 0.1)", border: "rgba(244, 63, 94, 0.2)", text: "#fda4af" },
-  sky: { bg: "rgba(14, 165, 233, 0.1)", border: "rgba(14, 165, 233, 0.2)", text: "#7dd3fc" },
-  cyan: { bg: "rgba(6, 182, 212, 0.1)", border: "rgba(6, 182, 212, 0.2)", text: "#67e8f9" },
+  orange: tonesDark.orange,
+  emerald: tonesDark.emerald,
+  amber: tonesDark.amber,
+  rose: tonesDark.rose,
+  sky: tonesDark.sky,
+  cyan: tonesDark.cyan,
 
   gradient: {
-    primary: ["#F97316", "#FBBF24"] as readonly [string, string],
-    warm: ["#EA580C", "#F97316"] as readonly [string, string],
-    glow: ["rgba(249, 115, 22, 0.4)", "rgba(251, 191, 36, 0.1)"] as readonly [string, string],
+    primary: gradients.primary as readonly [string, string],
+    warm: gradients.warm as readonly [string, string],
+    glow: gradients.glow as readonly [string, string],
   },
 } as const;
 
@@ -67,15 +92,15 @@ const lightColors = {
 
   primaryFaded: "rgba(249, 115, 22, 0.10)",
 
-  background: "#ffffff",
-  surface: "#f8fafc",
-  card: "#ffffff",
-  cardHover: "#f1f5f9",
-  elevated: "#f8fafc",
+  background: surfaceLight.background,
+  surface: surfaceLight.surface,
+  card: surfaceLight.card,
+  cardHover: surfaceLight.cardHover,
+  elevated: surfaceLight.elevated,
 
-  border: "rgba(15, 23, 42, 0.08)",
-  borderLight: "rgba(15, 23, 42, 0.12)",
-  borderFocus: "rgba(234, 88, 12, 0.5)",
+  border: borderLight.default,
+  borderLight: borderLight.strong,
+  borderFocus: borderLight.focus,
 
   glass: {
     bg: "rgba(15, 23, 42, 0.04)",
@@ -84,68 +109,23 @@ const lightColors = {
   },
 
   text: "#0f172a",
-  textSecondary: "rgba(15, 23, 42, 0.75)",
-  textTertiary: "rgba(15, 23, 42, 0.5)",
-  textMuted: "rgba(15, 23, 42, 0.3)",
+  textSecondary: textLight.secondary,
+  textTertiary: textLight.tertiary,
+  textMuted: textLight.muted,
 
-  orange: { bg: "rgba(249, 115, 22, 0.08)", border: "rgba(249, 115, 22, 0.25)", text: "#C2410C" },
-  emerald: { bg: "rgba(16, 185, 129, 0.08)", border: "rgba(16, 185, 129, 0.25)", text: "#047857" },
-  amber: { bg: "rgba(245, 158, 11, 0.08)", border: "rgba(245, 158, 11, 0.25)", text: "#B45309" },
-  rose: { bg: "rgba(244, 63, 94, 0.08)", border: "rgba(244, 63, 94, 0.25)", text: "#BE123C" },
-  sky: { bg: "rgba(14, 165, 233, 0.08)", border: "rgba(14, 165, 233, 0.25)", text: "#0369A1" },
-  cyan: { bg: "rgba(6, 182, 212, 0.08)", border: "rgba(6, 182, 212, 0.25)", text: "#0E7490" },
+  orange: tonesLight.orange,
+  emerald: tonesLight.emerald,
+  amber: tonesLight.amber,
+  rose: tonesLight.rose,
+  sky: tonesLight.sky,
+  cyan: tonesLight.cyan,
 } as const;
 
 export const theme = {
   colors: darkColors,
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    "2xl": 24,
-    "3xl": 32,
-    "4xl": 40,
-  },
-  radius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    "2xl": 24,
-    full: 9999,
-  },
-  shadow: {
-    sm: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 2,
-      elevation: 2,
-    },
-    md: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 4,
-    },
-    lg: {
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
-    },
-    glow: {
-      shadowColor: "#F97316",
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 6,
-    },
-  },
+  spacing: tokenSpacing,
+  radius: tokenRadii,
+  shadow: shadowsMobile,
 } as const;
 
 export type Theme = typeof theme;

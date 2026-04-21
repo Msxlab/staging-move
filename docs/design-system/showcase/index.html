@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>LocateFlow · Design Showcase</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: #050403; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 72px 40px 80px; }
+  .hdr { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 32px; border-bottom: 1px solid var(--d-line); margin-bottom: 40px; }
+  .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 16px; }
+  h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 76px; line-height: 0.95; letter-spacing: -0.03em; margin: 0; max-width: 16ch; }
+  h1 em { color: var(--terracotta); }
+  .meta { text-align: right; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--d-fg-3); line-height: 1.7; }
+  .meta strong { color: var(--d-fg); }
+
+  .intro { font-family: var(--f-sans); font-size: 16px; line-height: 1.6; color: var(--d-fg-2); max-width: 60ch; margin: 0 0 48px; }
+  .intro em { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-style: italic; color: var(--brass); font-size: 18px; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .card {
+    background: var(--d-surface);
+    border: 1px solid var(--d-line);
+    border-radius: 18px;
+    padding: 28px 26px 24px;
+    display: flex; flex-direction: column; gap: 14px;
+    text-decoration: none; color: inherit;
+    transition: transform .3s cubic-bezier(.22,.8,.36,1), border-color .3s;
+    position: relative; overflow: hidden;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--d-line-2); }
+  .card::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--terracotta), transparent);
+    opacity: 0; transition: opacity .3s;
+  }
+  .card:hover::before { opacity: 1; }
+
+  .card .idx { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--d-fg-3); text-transform: uppercase; display: flex; justify-content: space-between; }
+  .card .idx .scope { color: var(--terracotta-soft); }
+  .card h2 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 30px; line-height: 1.02; letter-spacing: -0.02em; margin: 2px 0 0; }
+  .card h2 em { color: var(--brass); }
+  .card p { font-family: var(--f-sans); font-size: 13.5px; color: var(--d-fg-2); line-height: 1.55; margin: 0; }
+  .card .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 16px; }
+  .card .tag { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--d-line-2); border-radius: 2px; color: var(--d-fg-2); }
+  .card .open { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--terracotta); margin-top: 8px; }
+
+  .foot { margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--d-line); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--d-fg-3); display: flex; justify-content: space-between; }
+  .foot em { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-style: italic; color: var(--brass); font-size: 14px; letter-spacing: 0; text-transform: none; }
+</style></head>
+<body>
+
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <div class="k">● Design showcase · 7 concepts</div>
+      <h1>Seven small<br>ways to <em>delight</em>.</h1>
+    </div>
+    <div class="meta">
+      Brand<br><strong>LocateFlow</strong><br><br>
+      Medium<br><strong>Editorial · motion</strong>
+    </div>
+  </div>
+
+  <p class="intro">A studio of interaction concepts across mobile, web, and admin — each one a small answer to the question: <em>what could make this feel crafted?</em> Open any card to see it live.</p>
+
+  <div class="grid">
+    <a class="card" href="move-timeline.html">
+      <div class="idx"><span>01</span><span class="scope">Mobile</span></div>
+      <h2>The <em>journey</em>, on one page.</h2>
+      <p>An animated route map and vertical timeline that advances as a move resolves — inline actions for each step.</p>
+      <div class="tags"><span class="tag">Route animation</span><span class="tag">Inline actions</span></div>
+      <div class="open">Open concept →</div>
+    </a>
+
+    <a class="card" href="provider-swipe.html">
+      <div class="idx"><span>02</span><span class="scope">Mobile</span></div>
+      <h2>A <em>deck</em> of every bill.</h2>
+      <p>Swipe-to-decide stack: transfer, archive, or snooze each provider — haptic, fast, almost game-like.</p>
+      <div class="tags"><span class="tag">Swipe stack</span><span class="tag">Editorial stamps</span></div>
+      <div class="open">Open concept →</div>
+    </a>
+
+    <a class="card" href="move-day.html">
+      <div class="idx"><span>03</span><span class="scope">Mobile</span></div>
+      <h2>One <em>ritual</em>, one screen.</h2>
+      <p>On moving day, the app drops everything else and becomes a single tactile checklist, time-anchored with soft nudges.</p>
+      <div class="tags"><span class="tag">Contextual UI</span><span class="tag">Checklist</span></div>
+      <div class="open">Open concept →</div>
+    </a>
+
+    <a class="card" href="magic-paste.html">
+      <div class="idx"><span>04</span><span class="scope">Mobile</span></div>
+      <h2>Drop a <em>bill</em>, get a service.</h2>
+      <p>Drag a PDF or photo of a bill — OCR + provider match fills in the rest. Onboarding in one gesture.</p>
+      <div class="tags"><span class="tag">OCR</span><span class="tag">Onboarding</span></div>
+      <div class="open">Open concept →</div>
+    </a>
+
+    <a class="card" href="number-rollover.html">
+      <div class="idx"><span>05</span><span class="scope">Mobile · micro</span></div>
+      <h2>Small motions, <em>big</em> feelings.</h2>
+      <p>Digit-rolling totals and a liquid tab-bar indicator — the difference between functional and crafted.</p>
+      <div class="tags"><span class="tag">Micro-interactions</span><span class="tag">Liquid tabs</span></div>
+      <div class="open">Open concept →</div>
+    </a>
+
+    <a class="card" href="admin-now.html">
+      <div class="idx"><span>06</span><span class="scope">Admin</span></div>
+      <h2>A <em>quiet</em> Tuesday afternoon.</h2>
+      <p>A live-stream ops console: editorial headline, pulse strip, rolling event feed, system health. Always open on one screen.</p>
+      <div class="tags"><span class="tag">Live stream</span><span class="tag">Ops pulse</span></div>
+      <div class="open">Open concept →</div>
+    </a>
+
+    <a class="card" href="admin-command.html" style="grid-column: span 2;">
+      <div class="idx"><span>07</span><span class="scope">Admin</span></div>
+      <h2>A <em>terminal</em> for operators.</h2>
+      <p>Every admin action — transfer, freeze, refund, moderate — reachable in two keystrokes through ⌘K. Scoped, explainable, fast.</p>
+      <div class="tags"><span class="tag">Command palette</span><span class="tag">Scoped actions</span><span class="tag">Keyboard-first</span></div>
+      <div class="open">Open concept →</div>
+    </a>
+  </div>
+
+  <div class="foot">
+    <div>7 showcase concepts · built on the LocateFlow editorial system</div>
+    <div><em>made with care</em></div>
+  </div>
+</div>
+
+</body></html>

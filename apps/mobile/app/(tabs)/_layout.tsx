@@ -10,6 +10,7 @@ import {
   Zap,
   Menu,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 
 function GlassTabBarBackground() {
@@ -34,6 +35,7 @@ function GlassTabBarBackground() {
 }
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -49,7 +51,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("tabs.dashboard"),
           tabBarIcon: ({ color, size }) => (
             <LayoutDashboard size={size - 2} color={color} />
           ),
@@ -58,7 +60,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="addresses"
         options={{
-          title: "Addresses",
+          title: t("tabs.addresses"),
           tabBarIcon: ({ color, size }) => (
             <MapPin size={size - 2} color={color} />
           ),
@@ -67,7 +69,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="moving"
         options={{
-          title: "Moving",
+          title: t("tabs.moving"),
           tabBarIcon: ({ color, size }) => (
             <Truck size={size - 2} color={color} />
           ),
@@ -76,7 +78,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="services"
         options={{
-          title: "Services",
+          title: t("tabs.services"),
           tabBarIcon: ({ color, size }) => (
             <Zap size={size - 2} color={color} />
           ),
@@ -85,7 +87,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="more"
         options={{
-          title: "More",
+          title: t("tabs.more"),
           tabBarIcon: ({ color, size }) => (
             <Menu size={size - 2} color={color} />
           ),

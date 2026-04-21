@@ -4,10 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function VerifyEmailPage() {
   const params = useParams<{ token: string }>();
   const token = decodeURIComponent(params.token);
+  const tAuth = useTranslations("auth");
+  const tCommon = useTranslations("common");
+  const tToast = useTranslations("toast");
 
   const [state, setState] = useState<"verifying" | "ok" | "error">("verifying");
   const [error, setError] = useState<string | null>(null);
@@ -24,13 +28,12 @@ export default function VerifyEmailPage() {
         const data = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (res.ok) setState("ok");
-        else { setError(data.error || "Verification failed."); setState("error"); }
+        else { setError(data.error || tAuth("verificationFailed")); setState("error"); }
       } catch {
-        if (!cancelled) { setError("Network error."); setState("error"); }
+        if (!cancelled) { setError(tToast("networkError")); setState("error"); }
       }
     })();
-    return () => { cancelled = true; };
-  }, [token]);
+  }, [token, tAuth, tToast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
@@ -38,33 +41,32 @@ export default function VerifyEmailPage() {
         {state === "verifying" && (
           <>
             <Loader2 className="h-10 w-10 text-orange-400 mx-auto animate-spin" />
-            <h1 className="text-2xl font-bold text-white">Verifying…</h1>
-            <p className="text-sm text-white/60">Confirming your email.</p>
+            <h1 className="text-2xl font-bold text-white">{tAuth("verifying")}</h1>
           </>
         )}
         {state === "ok" && (
           <>
             <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto" />
-            <h1 className="text-2xl font-bold text-white">Email verified</h1>
-            <p className="text-sm text-white/60">You can now sign in.</p>
+            <h1 className="text-2xl font-bold text-white">{tAuth("verified")}</h1>
+            <p className="text-sm text-white/60">{tAuth("verifiedDescription")}</p>
             <Link
               href="/sign-in"
               className="inline-block rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition"
             >
-              Sign in
+              {tCommon("signIn")}
             </Link>
           </>
         )}
         {state === "error" && (
           <>
             <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
-            <h1 className="text-2xl font-bold text-white">Verification failed</h1>
-            <p className="text-sm text-white/60">{error}</p>
+            <h1 className="text-2xl font-bold text-white">{tAuth("verificationFailed")}</h1>
+            <p className="text-sm text-white/60">{error || tAuth("verificationFailedDescription")}</p>
             <Link
               href="/sign-in"
               className="inline-block rounded-xl border border-white/10 hover:bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition"
             >
-              Back to sign in
+              {tCommon("signIn")}
             </Link>
           </>
         )}

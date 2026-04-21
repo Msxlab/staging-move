@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_tokens.css"/>
+<style>
+html,body{margin:0;font-family:var(--font-sans);height:100%;}
+.wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100%;position:relative;}
+.wrap::after{content:"";position:absolute;top:14px;bottom:14px;left:50%;width:1px;background:linear-gradient(180deg,transparent,rgba(128,128,128,0.2),transparent);}
+.pane{padding:18px 22px;box-sizing:border-box;background:var(--bg);color:var(--fg);}
+.kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);margin-bottom:14px;}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+.cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--fg-2);}
+.cell svg{width:22px;height:22px;}
+.cell.warm{color:var(--terracotta);}
+.cell.cool{color:var(--sage);}
+.cell.brass{color:var(--brass);}
+.cap{font-family:var(--font-mono);font-size:9px;letter-spacing:0.1em;color:var(--fg-3);text-align:center;margin-top:6px;text-transform:uppercase;}
+.note{margin-top:14px;font-family:var(--font-display);font-style:italic;font-size:13px;color:var(--fg-2);line-height:1.4;}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="pin" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-5.1-7-8.4-7-11.5a7 7 0 1 1 14 0c0 3.1-2.5 6.4-7 11.5z"/><circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="bolt" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M13 3 5.5 13.5H11l-1 7.5 7.5-10.5H12z"/></symbol>
+<symbol id="wifi" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M3 9.5a14 14 0 0 1 18 0M6 13a10 10 0 0 1 12 0M9 16.5a5.5 5.5 0 0 1 6 0"/><circle cx="12" cy="20" r="1.1" fill="currentColor"/></symbol>
+<symbol id="shield" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"/><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m9 12 2.2 2.2L15 10.5"/></symbol>
+<symbol id="play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 9.5 15 12l-4 2.5z" fill="currentColor"/></symbol>
+<symbol id="bank" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M3 10 12 4l9 6M5 10v9M9 10v9M15 10v9M19 10v9M3 20h18"/></symbol>
+<symbol id="truck" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 7h11v10H2zM13 10h4l4 4v3h-8zM7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol>
+<symbol id="droplet" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></symbol>
+<symbol id="flame" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3s4 4 4 8a4 4 0 0 1-8 0 5 5 0 0 1 1-3c0 0 0 3 2 3 0-3 1-5 1-8z"/></symbol>
+<symbol id="doc" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/></symbol>
+<symbol id="bell" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"/></symbol>
+<symbol id="star" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></symbol>
+</defs></svg>
+<div class="wrap">
+  <div class="pane lf-dark">
+    <div class="kicker">Iconography · hand-drawn · 1.6 stroke</div>
+    <div class="grid">
+      <div class="cell warm"><svg><use href="#pin"/></svg></div>
+      <div class="cell warm"><svg><use href="#bolt"/></svg></div>
+      <div class="cell cool"><svg><use href="#wifi"/></svg></div>
+      <div class="cell cool"><svg><use href="#shield"/></svg></div>
+      <div class="cell brass"><svg><use href="#play"/></svg></div>
+      <div class="cell brass"><svg><use href="#bank"/></svg></div>
+      <div class="cell"><svg><use href="#truck"/></svg></div>
+      <div class="cell cool"><svg><use href="#droplet"/></svg></div>
+      <div class="cell warm"><svg><use href="#flame"/></svg></div>
+      <div class="cell"><svg><use href="#doc"/></svg></div>
+      <div class="cell"><svg><use href="#bell"/></svg></div>
+      <div class="cell brass"><svg><use href="#star"/></svg></div>
+    </div>
+    <div class="note">Custom set — no CDN. Uniform 24px viewbox, 1.6 stroke, rounded joins.</div>
+  </div>
+  <div class="pane lf-light">
+    <div class="kicker">Same set · Light</div>
+    <div class="grid">
+      <div class="cell warm"><svg><use href="#pin"/></svg></div>
+      <div class="cell warm"><svg><use href="#bolt"/></svg></div>
+      <div class="cell cool"><svg><use href="#wifi"/></svg></div>
+      <div class="cell cool"><svg><use href="#shield"/></svg></div>
+      <div class="cell brass"><svg><use href="#play"/></svg></div>
+      <div class="cell brass"><svg><use href="#bank"/></svg></div>
+      <div class="cell"><svg><use href="#truck"/></svg></div>
+      <div class="cell cool"><svg><use href="#droplet"/></svg></div>
+      <div class="cell warm"><svg><use href="#flame"/></svg></div>
+      <div class="cell"><svg><use href="#doc"/></svg></div>
+      <div class="cell"><svg><use href="#bell"/></svg></div>
+      <div class="cell brass"><svg><use href="#star"/></svg></div>
+    </div>
+    <div class="note">Recolor — terracotta, sage, brass — never grayscale.</div>
+  </div>
+</div>
+</body></html>

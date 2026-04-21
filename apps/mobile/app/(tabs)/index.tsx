@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   Clock,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -40,6 +41,7 @@ import {
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -171,29 +173,35 @@ export default function DashboardScreen() {
   const statCards = [
     {
       icon: MapPin,
-      label: "Addresses",
+      label: t("dashboard.stat_addresses"),
       value: String(stats?.addressCount || 0),
       color: theme.colors.orange,
       route: "/(tabs)/addresses",
     },
     {
       icon: Zap,
-      label: "Services",
+      label: t("dashboard.stat_services"),
       value: String(stats?.serviceCount || 0),
       color: theme.colors.cyan,
       route: "/(tabs)/services",
     },
     {
       icon: CheckSquare,
-      label: "Tasks",
+      label: t("dashboard.stat_tasks"),
       value: String(stats?.pendingTasks || 0),
       color: theme.colors.amber,
       route: "/(tabs)/moving",
     },
     {
       icon: DollarSign,
-      label: "Monthly",
-      value: `$${(stats?.monthlyExpenses || 0).toLocaleString()}`,
+      label: t("dashboard.stat_monthly"),
+      // Locale-aware currency formatting — USD values render with local
+      // grouping (e.g. "$1,234.56" en-US vs "US$1.234,56" es).
+      value: new Intl.NumberFormat(i18n.language || "en", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(stats?.monthlyExpenses || 0),
       color: theme.colors.emerald,
       route: "/(tabs)/services",
     },
@@ -204,9 +212,9 @@ export default function DashboardScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Welcome back</Text>
+          <Text style={styles.greeting}>{t("dashboard.welcome")}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={styles.title}>Dashboard</Text>
+            <Text style={styles.title}>{t("tabs.dashboard")}</Text>
             {isPremium && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(245,158,11,0.12)", borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" }}>
                 <Text style={{ fontSize: 10, color: "#fbbf24" }}>{"\u2726"}</Text>
@@ -276,7 +284,7 @@ export default function DashboardScreen() {
                 </Text>
                 <Text style={styles.planDate}>
                   {new Date(stats.activePlan.moveDate).toLocaleDateString(
-                    "en-US",
+                    i18n.language || "en",
                     { month: "short", day: "numeric", year: "numeric" }
                   )}
                 </Text>
@@ -310,7 +318,7 @@ export default function DashboardScreen() {
               </View>
               <Text style={styles.progressText}>
                 {stats.activePlan.completedTasks}/{stats.activePlan.totalTasks}{" "}
-                tasks
+                {t("tasks.title").toLowerCase()}
               </Text>
             </View>
           </Card>
@@ -325,9 +333,9 @@ export default function DashboardScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <CategoryIcon emoji={phaseInfo?.icon || ""} size={18} color={theme.colors.primary} />
                   <View>
-                    <Text style={{ fontSize: 13, fontWeight: "700", color: theme.colors.text }}>Relocation Checklist</Text>
+                    <Text style={{ fontSize: 13, fontWeight: "700", color: theme.colors.text }}>{t("moving.checklist")}</Text>
                     <Text style={{ fontSize: 11, color: theme.colors.textTertiary }}>
-                      Phase {checklist.currentPhase + 1}: {phaseInfo?.label || ""}
+                      {checklist.currentPhase + 1}: {phaseInfo?.label || ""}
                     </Text>
                   </View>
                 </View>
@@ -382,7 +390,7 @@ export default function DashboardScreen() {
               <Text style={styles.streakValue}>
                 {stats?.currentStreak || 0}
               </Text>
-              <Text style={styles.streakLabel}>Day Streak</Text>
+              <Text style={styles.streakLabel}>{t("common.more")}</Text>
             </View>
           </Card>
           <Card variant="default" style={{ flex: 1 }}>
@@ -391,7 +399,7 @@ export default function DashboardScreen() {
               <Text style={styles.streakValue}>
                 {stats?.totalPoints || 0}
               </Text>
-              <Text style={styles.streakLabel}>Points</Text>
+              <Text style={styles.streakLabel}>{t("tasks.completed")}</Text>
             </View>
           </Card>
           <Card variant="default" style={{ flex: 1 }}>
@@ -400,18 +408,18 @@ export default function DashboardScreen() {
               <Text style={styles.streakValue}>
                 {stats?.longestStreak || 0}
               </Text>
-              <Text style={styles.streakLabel}>Best Streak</Text>
+              <Text style={styles.streakLabel}>★</Text>
             </View>
           </Card>
         </View>
 
         {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
         <View style={styles.quickActions}>
           {[
-            { label: "Add Address", icon: MapPin, route: "/addresses/new" },
-            { label: "New Service", icon: Zap, route: "/services/new" },
-            { label: "Plan Move", icon: Truck, route: "/moving/new" },
+            { label: t("addresses.newTitle"), icon: MapPin, route: "/addresses/new" },
+            { label: t("services.newTitle"), icon: Zap, route: "/services/new" },
+            { label: t("moving.newPlan"), icon: Truck, route: "/moving/new" },
           ].map((action) => {
             const Icon = action.icon;
             return (

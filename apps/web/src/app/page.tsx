@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { getUserSession } from "@/lib/user-auth";
 import {
   MapPin,
@@ -65,6 +66,11 @@ export default async function LandingPage() {
   const userId = session?.userId ?? null;
   const primaryHref = userId ? "/dashboard" : "/sign-up";
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
+  // Server-side translation — getTranslations resolves the locale from
+  // the request config and returns a synchronous `t()`. The landing is
+  // a server component so we never ship translations to the client.
+  const t = await getTranslations("landing");
+  const tCommon = await getTranslations("common");
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -101,13 +107,13 @@ export default async function LandingPage() {
           <Wordmark />
           <nav className="hidden md:flex items-center gap-6">
             <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Features
+              {t("section_features_title").split("—")[0].trim() || "Features"}
             </Link>
             <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Pricing
+              {(await getTranslations("pricing"))("title").split(".")[0]}
             </Link>
             <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              How It Works
+              {t("section_how_title")}
             </Link>
           </nav>
           <div className="flex items-center gap-1 md:gap-2">
@@ -115,19 +121,19 @@ export default async function LandingPage() {
             {userId ? (
               <>
                 <Link href="/dashboard" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">Dashboard</Button>
+                  <Button variant="ghost" size="sm">{(await getTranslations("nav"))("dashboard")}</Button>
                 </Link>
                 <Link href="/dashboard">
-                  <Button size="sm">Open App</Button>
+                  <Button size="sm">{(await getTranslations("nav"))("dashboard")}</Button>
                 </Link>
               </>
             ) : (
               <>
                 <Link href="/sign-in" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">Sign In</Button>
+                  <Button variant="ghost" size="sm">{tCommon("signIn")}</Button>
                 </Link>
                 <Link href="/sign-up">
-                  <Button size="sm">Start Free Trial</Button>
+                  <Button size="sm">{t("heroCta")}</Button>
                 </Link>
               </>
             )}
@@ -140,34 +146,31 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-3xl text-center space-y-8">
           <div className="inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm text-muted-foreground">
             <Zap className="h-3.5 w-3.5 text-primary" />
-            Know every company that has your address
+            {t("section_features_subtitle")}
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-            Every Address.{" "}
-            <span className="text-primary">Every Service.</span>{" "}
-            One Place.
+            {t("heroPrefix")}{" "}
+            <span className="text-primary">{t("heroAccent")}</span>{" "}
+            {t("heroSuffix")}
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-            LocateFlow keeps a living list of every utility, bank, insurance,
-            and subscription tied to each home you live in. Move out, move in,
-            or just tidy up — you&apos;ll always know who has your address and
-            what to do about it.
+            {t("heroDescription")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href={primaryHref}>
               <Button size="lg" className="w-full sm:w-auto text-base px-8">
-                {userId ? "Go to Dashboard" : "Start Free Trial"}
+                {userId ? (await getTranslations("errors"))("goToDashboard") : t("heroCta")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
             <Link href="#how-it-works">
               <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
-                See How It Works
+                {t("heroSecondary")}
               </Button>
             </Link>
           </div>
           <p className="text-sm text-muted-foreground">
-            Free {TRIAL_DURATION_DAYS}-day trial · No credit card required · Cancel anytime
+            {t("trust_retention", { days: TRIAL_DURATION_DAYS })} · {t("noCreditCard")} · {t("cancelAnytime")}
           </p>
         </div>
 
@@ -197,53 +200,29 @@ export default async function LandingPage() {
       {/* Features Grid */}
       <section id="features" className="container py-20 border-t">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Everything connected to your address — in one place</h2>
+          <h2 className="text-3xl font-bold mb-4">{t("section_features_title")}</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            From the utility bill on your counter to the streaming sub you forgot about, LocateFlow keeps the full list current.
+            {t("section_features_subtitle")}
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
-            {
-              icon: MapPin,
-              title: "Address Hub",
-              description: "One dashboard per home. Every service, every contract, every note lives alongside the address it belongs to.",
-            },
-            {
-              icon: Zap,
-              title: "Service Directory",
-              description: "Utilities, banks, insurance, streaming, gym, HOA — track who has your address, account numbers, and renewal dates.",
-            },
-            {
-              icon: Bell,
-              title: "Renewal & Bill Reminders",
-              description: "Smart alerts before a bill is due or a contract auto-renews. Stop paying for things you forgot about.",
-            },
-            {
-              icon: DollarSign,
-              title: "Budget Overview",
-              description: "See monthly spend across every provider tied to each address. Compare costs between homes at a glance.",
-            },
-            {
-              icon: FileText,
-              title: "Document Vault",
-              description: "Upload contracts, bills, and leases. OCR-indexed so you can find a clause in seconds — not an inbox search.",
-            },
-            {
-              icon: Truck,
-              title: "Moving Companion",
-              description: "When you relocate, we turn your service list into a checklist: transfer, cancel, or reconnect with one click.",
-            },
-          ].map((feature) => (
+            { icon: MapPin, titleKey: "feature_services_title", bodyKey: "feature_services_body" },
+            { icon: Zap, titleKey: "feature_services_title", bodyKey: "feature_services_body" },
+            { icon: Bell, titleKey: "feature_moving_title", bodyKey: "feature_moving_body" },
+            { icon: DollarSign, titleKey: "feature_budget_title", bodyKey: "feature_budget_body" },
+            { icon: FileText, titleKey: "feature_budget_title", bodyKey: "feature_budget_body" },
+            { icon: Truck, titleKey: "feature_moving_title", bodyKey: "feature_moving_body" },
+          ].map((feature, idx) => (
             <div
-              key={feature.title}
+              key={idx}
               className="group p-6 rounded-xl border bg-card hover:shadow-lg transition-all duration-200"
             >
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                 <feature.icon className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-              <p className="text-muted-foreground text-sm">{feature.description}</p>
+              <h3 className="text-lg font-semibold mb-2">{t(feature.titleKey as any)}</h3>
+              <p className="text-muted-foreground text-sm">{t(feature.bodyKey as any)}</p>
             </div>
           ))}
         </div>
@@ -253,33 +232,20 @@ export default async function LandingPage() {
       <section id="how-it-works" className="bg-muted/50 py-20">
         <div className="container">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-            <p className="text-muted-foreground text-lg">Three simple steps to take control of your service footprint</p>
+            <h2 className="text-3xl font-bold mb-4">{t("section_how_title")}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
-              {
-                step: "1",
-                title: "Add Your Addresses",
-                description: "Tell us where you live. State and ZIP are enough — we auto-suggest the providers people in your area typically use.",
-              },
-              {
-                step: "2",
-                title: "Link Every Service",
-                description: "Utilities, banks, insurance, streaming, anything else. Add them in seconds and we remember the account number, renewal date, and monthly cost.",
-              },
-              {
-                step: "3",
-                title: "Stay Ahead of Change",
-                description: "Moving? Cancelling? Shopping around? Filter, transfer, or unsubscribe from one place — we even generate the to-do list for you.",
-              },
+              { step: "1", titleKey: "step_1_title", bodyKey: "step_1_body" },
+              { step: "2", titleKey: "step_2_title", bodyKey: "step_2_body" },
+              { step: "3", titleKey: "step_3_title", bodyKey: "step_3_body" },
             ].map((item) => (
               <div key={item.step} className="text-center space-y-4">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground text-xl font-bold">
                   {item.step}
                 </div>
-                <h3 className="text-lg font-semibold">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.description}</p>
+                <h3 className="text-lg font-semibold">{t(item.titleKey as any)}</h3>
+                <p className="text-sm text-muted-foreground">{t(item.bodyKey as any)}</p>
               </div>
             ))}
           </div>
@@ -317,32 +283,37 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="bg-muted/50 py-20">
-        <div className="container max-w-3xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
-          </div>
-          <div className="space-y-3">
-            {[
-              { q: "Is there really a free trial?", a: `Yes. You get ${TRIAL_DURATION_DAYS} days free with no credit card required. Upgrade to Individual when you're ready — or not, and we'll export your data for you.` },
-              { q: "What happens to my data if I cancel?", a: "Your data stays available for 30 days after cancellation. You can export everything as CSV or PDF before that. You can also request full deletion at any time (GDPR / CCPA compliant)." },
-              { q: "Can I share with my family?", a: `Family plans are coming soon — they'll support up to 5 household members with shared addresses, per-person task assignments, and a unified budget. In the meantime, ${UPCOMING_BILLING_PLAN_DEFINITIONS.FAMILY.displayName} interest can be registered on the contact page so we notify you at launch.` },
-              { q: "Do you have a plan for realtors or relocation teams?", a: "Pro is on the roadmap. It will include unlimited addresses, team seats, white-label reports, and API access. Drop us a line via the contact page if you'd like early access." },
-              { q: "Which states are supported?", a: "LocateFlow supports all 50 US states with state-specific DMV rules, voter registration info, utility providers, and tax requirements." },
-              { q: "Is my data secure?", a: "Yes. Sensitive fields are encrypted at rest, sessions are fingerprint-bound, and we never sell data. Full GDPR and CCPA rights are honored." },
-            ].map((faq) => (
-              <details key={faq.q} className="group rounded-xl border bg-card">
-                <summary className="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium">
-                  {faq.q}
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
-                </summary>
-                <div className="px-6 pb-4 text-sm text-muted-foreground">{faq.a}</div>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* FAQ — pulls directly from the pricing FAQ keys so the landing and
+          pricing pages stay in sync when the copy is edited. */}
+      {await (async () => {
+        const tPricing = await getTranslations("pricing");
+        const faqs = [
+          { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
+          { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
+          { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
+          { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
+        ];
+        return (
+          <section id="faq" className="bg-muted/50 py-20">
+            <div className="container max-w-3xl">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold mb-4">{tPricing("faq_title")}</h2>
+              </div>
+              <div className="space-y-3">
+                {faqs.map((faq) => (
+                  <details key={faq.q} className="group rounded-xl border bg-card">
+                    <summary className="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium">
+                      {faq.q}
+                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div className="px-6 pb-4 text-sm text-muted-foreground">{faq.a}</div>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Mobile App CTA */}
       <section className="container py-20 border-t">
@@ -372,13 +343,13 @@ export default async function LandingPage() {
       <section className="bg-primary text-primary-foreground py-20">
         <div className="container text-center space-y-6">
           <Shield className="h-12 w-12 mx-auto opacity-80" />
-          <h2 className="text-3xl font-bold">Ready to Take Control of Your Address Footprint?</h2>
+          <h2 className="text-3xl font-bold">{t("section_trust_title")}</h2>
           <p className="text-lg opacity-80 max-w-xl mx-auto">
-            Start a free {TRIAL_DURATION_DAYS}-day trial. No credit card, no lock-in, and your data is always exportable.
+            {t("trust_retention")} · {t("noCreditCard")}
           </p>
           <Link href={primaryHref}>
             <Button size="lg" variant="secondary" className="text-base px-8">
-              {userId ? "Open Dashboard" : "Start Free Trial"}
+              {userId ? (await getTranslations("errors"))("goToDashboard") : t("heroCta")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
@@ -394,40 +365,40 @@ export default async function LandingPage() {
                 <LogoMark size={24} />
                 <span className="font-semibold">LocateFlow</span>
               </div>
-              <p className="text-sm text-muted-foreground">Every provider with your address — tracked, tidy, and under your control.</p>
+              <p className="text-sm text-muted-foreground">{tCommon("tagline")}</p>
             </div>
             <div>
-              <h4 className="text-sm font-semibold mb-3">Product</h4>
+              <h4 className="text-sm font-semibold mb-3">{t("section_features_title").split(" ")[0]}</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="#features" className="block hover:text-foreground transition">Features</Link>
-                <Link href="#pricing" className="block hover:text-foreground transition">Pricing</Link>
-                <Link href="#how-it-works" className="block hover:text-foreground transition">How It Works</Link>
+                <Link href="#features" className="block hover:text-foreground transition">{t("section_features_title")}</Link>
+                <Link href="#pricing" className="block hover:text-foreground transition">{(await getTranslations("pricing"))("title")}</Link>
+                <Link href="#how-it-works" className="block hover:text-foreground transition">{t("section_how_title")}</Link>
                 <Link href="#faq" className="block hover:text-foreground transition">FAQ</Link>
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-semibold mb-3">Legal</h4>
+              <h4 className="text-sm font-semibold mb-3">{tCommon("privacy")} / {tCommon("terms")}</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="/privacy" className="block hover:text-foreground transition">Privacy Policy</Link>
-                <Link href="/terms" className="block hover:text-foreground transition">Terms of Service</Link>
-                <Link href="/cookie-policy" className="block hover:text-foreground transition">Cookie Policy</Link>
-                <Link href="/disclaimer" className="block hover:text-foreground transition">Disclaimer</Link>
+                <Link href="/privacy" className="block hover:text-foreground transition">{(await getTranslations("legal"))("privacy_title")}</Link>
+                <Link href="/terms" className="block hover:text-foreground transition">{(await getTranslations("legal"))("terms_title")}</Link>
+                <Link href="/cookie-policy" className="block hover:text-foreground transition">{(await getTranslations("legal"))("cookie_title")}</Link>
+                <Link href="/disclaimer" className="block hover:text-foreground transition">{(await getTranslations("legal"))("disclaimer_title")}</Link>
               </div>
             </div>
             <div>
-              <h4 className="text-sm font-semibold mb-3">Support</h4>
+              <h4 className="text-sm font-semibold mb-3">{tCommon("help")}</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="/help" className="block hover:text-foreground transition">Help Center</Link>
+                <Link href="/help" className="block hover:text-foreground transition">{(await getTranslations("help"))("title")}</Link>
                 <Link href="#faq" className="block hover:text-foreground transition">FAQ</Link>
-                <Link href="/contact" className="block hover:text-foreground transition">Contact Us</Link>
+                <Link href="/contact" className="block hover:text-foreground transition">{tCommon("contact")}</Link>
               </div>
             </div>
           </div>
           <div className="border-t pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} LocateFlow. All rights reserved.
+              &copy; {new Date().getFullYear()} LocateFlow. {tCommon("privacy")}.
             </p>
-            <p className="text-xs text-muted-foreground">Made with care for movers everywhere</p>
+            <p className="text-xs text-muted-foreground">{t("footer_tagline")}</p>
           </div>
         </div>
       </footer>

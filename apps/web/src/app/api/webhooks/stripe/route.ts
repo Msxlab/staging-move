@@ -39,11 +39,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    // Replay protection — reject events older than 5 minutes
+    // Replay protection — reject events older than 72 hours.
+    //
+    // Stripe retries failed webhooks for up to 3 days with exponential
+    // backoff. A 5-minute window (the earlier value) silently dropped
+    // every legitimate retry after a short outage — effectively making
+    // Stripe's retry guarantee a no-op. 72h covers Stripe's full retry
+    // horizon while still bounding the window for true replay attacks.
+    // Idempotency via ProcessedWebhookEvent (below) guards against
+    // duplicate application of the same event within that window.
     const eventAge = Date.now() / 1000 - event.created;
-    const MAX_EVENT_AGE_SEC = 300; // 5 minutes
+    const MAX_EVENT_AGE_SEC = 72 * 60 * 60; // 72 hours — matches Stripe retry horizon
     if (eventAge > MAX_EVENT_AGE_SEC) {
-      console.warn(`[WEBHOOK] Rejecting stale Stripe event ${event.id} (age: ${Math.round(eventAge)}s)`);
+      console.warn(`[WEBHOOK] Rejecting stale Stripe event ${event.id} (age: ${Math.round(eventAge)}s, max: ${MAX_EVENT_AGE_SEC}s)`);
       return NextResponse.json({ received: true, stale: true });
     }
 

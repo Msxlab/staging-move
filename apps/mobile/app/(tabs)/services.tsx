@@ -24,6 +24,7 @@ import {
   MapPin,
   Wallet,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import {
@@ -86,6 +87,7 @@ function getServiceCategoryIcon(category: string): string {
 }
 
 export default function ServicesScreen() {
+  const { t, i18n } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ addressId?: string | string[] }>();
   const [services, setServices] = useState<any[]>([]);
@@ -105,14 +107,14 @@ export default function ServicesScreen() {
   const handleSaveCost = async (serviceId: string) => {
     const parsed = parseFloat(costValue);
     if (isNaN(parsed) || parsed < 0) {
-      Alert.alert("Invalid", "Please enter a valid cost.");
+      Alert.alert(t("common.retry"), t("validation.invalidNumber"));
       return;
     }
     setSavingCost(true);
     const res = await api.patch<any>(`/api/services/${serviceId}`, { monthlyCost: parsed });
     setSavingCost(false);
     if (res.error) {
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.retry"), res.error);
     } else {
       setEditingCost(null);
       setCostValue("");
@@ -207,7 +209,7 @@ export default function ServicesScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Services</Text>
+          <Text style={styles.title}>{t("services.title")}</Text>
           <Text style={styles.subtitle}>
             {selectedAddress ? `${selectedAddress.nickname || selectedAddress.city} · ` : ""}
             {filtered.length} service{filtered.length !== 1 ? "s" : ""} · ${totalMonthly.toLocaleString()}/mo
@@ -230,7 +232,7 @@ export default function ServicesScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.summaryLabel}>Viewing address</Text>
               <Text style={styles.summaryValue} numberOfLines={1}>
-                {selectedAddress ? (selectedAddress.nickname || `${selectedAddress.city}, ${selectedAddress.state}`) : "All addresses"}
+                {selectedAddress ? (selectedAddress.nickname || `${selectedAddress.city}, ${selectedAddress.state}`) : t("common.all")}
               </Text>
             </View>
           </View>
@@ -244,7 +246,7 @@ export default function ServicesScreen() {
         </View>
         {uncostedCount > 0 ? (
           <Text style={styles.summaryHint}>
-            {uncostedCount} service{uncostedCount !== 1 ? "s" : ""} still missing cost. Add monthly amounts to track your real budget.
+            {uncostedCount} {t("services.title").toLowerCase()} — {t("services.monthlyCost")}
           </Text>
         ) : (
           <Text style={styles.summaryHint}>

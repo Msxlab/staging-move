@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>LocateFlow · Logo Study</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E0D0B;
+    --bg-deep: #050403;
+    --surface: #17150F;
+    --line: rgba(245,241,234,0.08);
+    --line-2: rgba(245,241,234,0.16);
+    --fg: #F5F1EA;
+    --fg-2: rgba(245,241,234,0.62);
+    --fg-3: rgba(245,241,234,0.38);
+    --terracotta: #E8794A;
+    --terracotta-deep: #C25A30;
+    --terracotta-soft: #F2A65A;
+    --brass: #D4A373;
+    --brass-deep: #B0844E;
+    --gold: #E3B956;
+    --sage: #5EAD9A;
+    --ink: #1A1713;
+    --cream: #FAF7F1;
+    --cream-2: #F2EDE3;
+    --f-disp: 'Fraunces', Georgia, serif;
+    --f-sans: 'Inter', system-ui, sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  html, body { margin:0; padding:0; background: var(--bg-deep); color: var(--fg); font-family: var(--f-sans); -webkit-font-smoothing: antialiased; }
+  * { box-sizing: border-box; }
+
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 64px 40px 80px; }
+  .hdr { padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin-bottom: 14px; }
+  h1 { font-family: var(--f-disp); font-size: 64px; line-height: 0.98; letter-spacing: -0.03em; margin: 0; font-weight: 500; font-variation-settings: "SOFT" 30, "opsz" 96; max-width: 16ch; }
+  h1 em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+  .back { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--terracotta); text-decoration: none; }
+  .intro { font-size: 14.5px; line-height: 1.65; color: var(--fg-2); max-width: 68ch; margin: 0 0 48px; }
+  .intro b { color: var(--fg); font-weight: 500; }
+
+  /* Layout */
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  .cell {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .cell.featured { border-color: rgba(232,121,74,0.32); }
+  .cell.featured::after {
+    content: "my pick"; position: absolute; top: 16px; right: 16px;
+    font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--terracotta);
+    padding: 3px 7px; border: 1px solid rgba(232,121,74,0.4); border-radius: 2px;
+    z-index: 10;
+  }
+  .head {
+    padding: 24px 28px 22px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--line);
+  }
+  .head .num { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; color: var(--fg-3); text-transform: uppercase; }
+  .head .title { font-family: var(--f-disp); font-weight: 500; font-size: 20px; letter-spacing: -0.015em; font-variation-settings: "SOFT" 30; }
+  .head .title em { font-style: italic; color: var(--brass); font-weight: 400; }
+
+  /* Showcase strips — alternating grounds */
+  .strip { padding: 44px 28px; display: flex; align-items: center; justify-content: center; gap: 32px; min-height: 180px; }
+  .strip.dark { background: radial-gradient(ellipse at center, #1B1812 0%, #0B0A07 100%); }
+  .strip.cream { background: var(--cream); }
+  .strip.ink { background: var(--ink); }
+  .strip.brass {
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(227,185,86,0.14), transparent 50%),
+      radial-gradient(ellipse at 80% 70%, rgba(232,121,74,0.1), transparent 50%),
+      #120E08;
+  }
+
+  .mini {
+    padding: 18px 28px 22px;
+    display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    border-top: 1px solid var(--line);
+    background: rgba(245,241,234,0.015);
+  }
+  .mini .l { display: flex; align-items: center; gap: 16px; }
+  .mini .note { font-family: var(--f-sans); font-size: 12.5px; color: var(--fg-2); line-height: 1.5; max-width: 42ch; }
+  .mini .tag { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 7px; border: 1px solid var(--line-2); border-radius: 2px; color: var(--fg-2); }
+
+  /* Individual logo marks ====================================================== */
+
+  /* Wordmark container shared */
+  .word {
+    font-family: var(--f-disp);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    font-variation-settings: "SOFT" 30, "opsz" 96;
+    line-height: 1;
+  }
+  .word em { font-style: italic; font-weight: 400; }
+
+  /* --- V1 Serif Monogram: Didone "L" in brass on ink ------------------------- */
+  .m1 {
+    width: 84px; height: 84px; border-radius: 50%;
+    background: radial-gradient(ellipse at 30% 30%, #2A2118 0%, #0B0906 70%);
+    border: 1px solid rgba(212,163,115,0.35);
+    box-shadow: 0 0 0 1px rgba(212,163,115,0.1), inset 0 0 30px rgba(212,163,115,0.04);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .m1 svg { width: 56px; height: 56px; }
+
+  /* --- V2 Terracotta chip with italic L and flow stroke ---------------------- */
+  .m2 {
+    width: 84px; height: 84px; border-radius: 18px;
+    background: linear-gradient(140deg, var(--terracotta-soft) 0%, var(--terracotta) 55%, var(--terracotta-deep) 100%);
+    display: flex; align-items: center; justify-content: center; position: relative;
+    box-shadow: 0 14px 32px -12px rgba(232,121,74,0.45), inset 0 1px 0 rgba(255,220,196,0.5);
+  }
+  .m2 svg { width: 64px; height: 64px; }
+
+  /* --- V3 Brass seal / crest ------------------------------------------------- */
+  .m3 {
+    width: 84px; height: 84px; border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, #E6C58A 0%, #B0844E 55%, #7E5A2F 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 12px 26px -10px rgba(176,132,78,0.45), inset 0 2px 0 rgba(255,240,210,0.3), inset 0 -2px 4px rgba(0,0,0,0.25);
+    position: relative;
+  }
+  .m3::before {
+    content: ""; position: absolute; inset: 6px;
+    border-radius: 50%; border: 1px solid rgba(255,240,210,0.3);
+  }
+  .m3 svg { width: 58px; height: 58px; position: relative; z-index: 2; }
+
+  /* --- V4 Oval cameo / editorial plate -------------------------------------- */
+  .m4 {
+    width: 110px; height: 80px; border-radius: 50%;
+    background: var(--cream);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 10px 24px -8px rgba(0,0,0,0.4);
+  }
+  .m4::before {
+    content: ""; position: absolute; inset: 4px;
+    border-radius: 50%; border: 1px solid rgba(26,23,19,0.2);
+  }
+  .m4 svg { width: 70px; height: 50px; position: relative; z-index: 2; }
+
+  /* --- V5 Thread mark : ligature with pin --------------------------------- */
+  .m5 {
+    width: 84px; height: 84px; border-radius: 20px;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(212,163,115,0.2);
+    position: relative;
+  }
+  .m5 svg { width: 58px; height: 58px; }
+
+  /* --- V6 Gold leaf circle with serif L ------------------------------------ */
+  .m6 {
+    width: 84px; height: 84px; border-radius: 50%;
+    background:
+      conic-gradient(from 220deg at 50% 50%, #C8933F 0deg, #F0D27A 90deg, #E3B956 180deg, #A47A34 270deg, #C8933F 360deg);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 14px 30px -10px rgba(200,147,63,0.5), inset 0 0 0 1px rgba(255,240,210,0.3);
+  }
+  .m6::before {
+    content: ""; position: absolute; inset: 5px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #2A1F12 0%, #0B0906 80%);
+  }
+  .m6 svg { position: relative; z-index: 2; width: 48px; height: 48px; }
+
+  /* Application mini — app icon, wordmark, favicon ------------------------- */
+  .app-ico { width: 56px; height: 56px; border-radius: 14px; box-shadow: 0 8px 20px -6px rgba(0,0,0,0.5); overflow: hidden; }
+  .fav { width: 24px; height: 24px; border-radius: 5px; overflow: hidden; }
+  .word-strip { display: flex; align-items: center; gap: 14px; font-size: 18px; }
+
+  /* Hero variation (single big bold showcase of picked) */
+  .hero {
+    margin-top: 60px; padding: 60px 48px; border-radius: 20px;
+    background:
+      radial-gradient(ellipse at 15% 20%, rgba(232,121,74,0.08), transparent 55%),
+      radial-gradient(ellipse at 85% 80%, rgba(212,163,115,0.08), transparent 55%),
+      linear-gradient(180deg, #14110C 0%, #0B0907 100%);
+    border: 1px solid var(--line-2);
+    display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center;
+  }
+  .hero h2 { font-family: var(--f-disp); font-size: 64px; line-height: 0.98; letter-spacing: -0.025em; margin: 0 0 16px; font-weight: 500; font-variation-settings: "SOFT" 30, "opsz" 96; }
+  .hero h2 em { font-style: italic; color: var(--terracotta); font-weight: 400; }
+  .hero p { font-size: 14.5px; line-height: 1.65; color: var(--fg-2); margin: 0 0 18px; max-width: 44ch; }
+  .hero .meta { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--brass); margin-bottom: 16px; }
+  .hero .spec { font-family: var(--f-mono); font-size: 11px; color: var(--fg-3); line-height: 1.8; margin-top: 22px; }
+  .hero .spec b { color: var(--fg); font-weight: 500; }
+
+  .hero-stage {
+    aspect-ratio: 1; border-radius: 16px;
+    background: radial-gradient(ellipse at center, #1B1812 0%, #050403 80%);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+    position: relative;
+  }
+  .hero-stage::before {
+    content: ""; position: absolute; inset: 24px;
+    border: 1px solid rgba(212,163,115,0.1); border-radius: 12px;
+  }
+  .hero-stage::after {
+    content: "LOCATEFLOW · EST. 2026"; position: absolute; bottom: 18px;
+    font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.32em; color: var(--fg-3);
+  }
+
+  .foot { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--fg-3); text-transform: uppercase; }
+</style></head>
+<body>
+
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <div class="k">● Logo study · 6 directions</div>
+      <h1>A mark that earns its <em>frame</em>.</h1>
+    </div>
+    <a class="back" href="../showcase/index.html">← back to showcase</a>
+  </div>
+
+  <p class="intro">Six premium takes on the LocateFlow mark. Each one pairs the <b>Fraunces</b> wordmark with a different sensibility — editorial monogram, warm terracotta chip, engraved brass seal, cameo plate, threaded ligature, and gold-leaf medallion. Shown on dark, cream, ink, and brass grounds so we can judge how each behaves in-context. My favorite is <b>V2 — Terracotta chip with italic L.</b></p>
+
+  <div class="grid">
+
+    <!-- ========= V1 Serif Monogram ========= -->
+    <div class="cell">
+      <div class="head">
+        <span class="num">V1 · Ink & brass monogram</span>
+        <span class="title"><em>editorial</em>, restrained</span>
+      </div>
+      <div class="strip dark">
+        <div class="m1">
+          <svg viewBox="0 0 100 100" fill="none">
+            <!-- Serif L in brass -->
+            <text x="50" y="76" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="78" font-weight="400" fill="url(#brass-grad)" style="font-style: italic;">L</text>
+            <defs>
+              <linearGradient id="brass-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#E6C58A"/>
+                <stop offset="100%" stop-color="#B0844E"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="word-strip" style="color: var(--fg);">
+          <span class="word" style="font-size: 28px;">Locate<em style="color: var(--brass);">flow</em></span>
+        </div>
+      </div>
+      <div class="mini">
+        <div class="l">
+          <div class="app-ico" style="background: radial-gradient(ellipse at 30% 30%, #2A2118 0%, #0B0906 70%); display:flex; align-items:center; justify-content:center;">
+            <span style="font-family: var(--f-disp); font-style: italic; font-weight: 500; font-size: 30px; color: var(--brass); font-variation-settings: 'opsz' 96;">L</span>
+          </div>
+          <div class="fav" style="background: radial-gradient(ellipse at 30% 30%, #2A2118 0%, #0B0906 70%); display:flex; align-items:center; justify-content:center;">
+            <span style="font-family: var(--f-disp); font-style: italic; font-weight: 500; font-size: 13px; color: var(--brass);">L</span>
+          </div>
+        </div>
+        <div class="note">Pure editorial. An italic brass serif on oiled ink — feels like a publisher's monogram. Whisper-quiet, authoritative.</div>
+      </div>
+    </div>
+
+    <!-- ========= V2 Terracotta chip ========= -->
+    <div class="cell featured">
+      <div class="head">
+        <span class="num">V2 · Terracotta chip</span>
+        <span class="title">warm, <em>signature</em></span>
+      </div>
+      <div class="strip dark">
+        <div class="m2">
+          <svg viewBox="0 0 100 100" fill="none">
+            <!-- Italic L with flow tail -->
+            <text x="42" y="72" font-family="Fraunces, Georgia, serif" font-size="72" font-weight="500" fill="#FAF7F1" style="font-style: italic;" font-variation-settings="'opsz' 96">L</text>
+            <!-- pin dot above L tail as "locate" hint -->
+            <circle cx="70" cy="30" r="5" fill="#FAF7F1"/>
+            <circle cx="70" cy="30" r="2" fill="#E8794A"/>
+          </svg>
+        </div>
+        <div class="word-strip" style="color: var(--fg);">
+          <span class="word" style="font-size: 28px;">Locate<em style="color: var(--terracotta);">flow</em></span>
+        </div>
+      </div>
+      <div class="strip cream" style="min-height: 120px; padding: 24px 28px;">
+        <div class="m2" style="width: 52px; height: 52px; border-radius: 12px;">
+          <svg viewBox="0 0 100 100" fill="none" style="width: 38px; height: 38px;">
+            <text x="42" y="72" font-family="Fraunces, Georgia, serif" font-size="72" font-weight="500" fill="#FAF7F1" style="font-style: italic;">L</text>
+            <circle cx="70" cy="30" r="5" fill="#FAF7F1"/>
+            <circle cx="70" cy="30" r="2" fill="#E8794A"/>
+          </svg>
+        </div>
+        <span class="word" style="font-size: 24px; color: var(--ink);">Locate<em style="color: var(--terracotta);">flow</em></span>
+      </div>
+      <div class="mini">
+        <div class="l">
+          <div class="app-ico" style="background: linear-gradient(140deg, var(--terracotta-soft) 0%, var(--terracotta) 55%, var(--terracotta-deep) 100%); display:flex; align-items:center; justify-content:center; position: relative;">
+            <span style="font-family: var(--f-disp); font-style: italic; font-weight: 500; font-size: 34px; color: #FAF7F1; font-variation-settings: 'opsz' 96; position:relative; left:-4px;">L</span>
+            <span style="position:absolute; top: 12px; right: 14px; width: 6px; height: 6px; border-radius: 50%; background: #FAF7F1; box-shadow: 0 0 0 2px rgba(232,121,74,0.4);"></span>
+          </div>
+          <div class="fav" style="background: linear-gradient(140deg, var(--terracotta-soft), var(--terracotta)); display:flex; align-items:center; justify-content:center;">
+            <span style="font-family: var(--f-disp); font-style: italic; font-weight: 500; font-size: 14px; color: #FAF7F1;">L</span>
+          </div>
+        </div>
+        <div class="note">Italic Fraunces L over a warm terracotta gradient chip. The small dot above = the "locate" pin — subtle meaning, big personality. Works cleanly on dark and cream.</div>
+      </div>
+    </div>
+
+    <!-- ========= V3 Brass seal ========= -->
+    <div class="cell">
+      <div class="head">
+        <span class="num">V3 · Engraved brass seal</span>
+        <span class="title">heirloom, <em>weighty</em></span>
+      </div>
+      <div class="strip dark">
+        <div class="m3">
+          <svg viewBox="0 0 100 100" fill="none">
+            <text x="50" y="64" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="52" font-weight="600" fill="#2A1F12" style="font-style: italic;">Lf</text>
+            <text x="50" y="80" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="8" font-weight="500" fill="#2A1F12" letter-spacing="0.3em" style="font-style: italic;">—EST 2026—</text>
+          </svg>
+        </div>
+        <div class="word-strip" style="color: var(--fg);">
+          <span class="word" style="font-size: 28px;">Locate<em style="color: var(--brass);">flow</em></span>
+        </div>
+      </div>
+      <div class="mini">
+        <div class="l">
+          <div class="app-ico" style="background: radial-gradient(circle at 30% 30%, #E6C58A 0%, #B0844E 55%, #7E5A2F 100%); display:flex; align-items:center; justify-content:center;">
+            <span style="font-family: var(--f-disp); font-style: italic; font-weight: 600; font-size: 28px; color: #2A1F12;">Lf</span>
+          </div>
+          <div class="fav" style="background: radial-gradient(circle at 30% 30%, #E6C58A, #B0844E); display:flex; align-items:center; justify-content:center;">
+            <span style="font-family: var(--f-disp); font-style: italic; font-weight: 600; font-size: 12px; color: #2A1F12;">Lf</span>
+          </div>
+        </div>
+        <div class="note">An imagined antique house seal. Heavy, heirloom, says "trust me with your deed." Tips slightly formal — may read old.</div>
+      </div>
+    </div>
+
+    <!-- ========= V4 Cameo ========= -->
+    <div class="cell">
+      <div class="head">
+        <span class="num">V4 · Cream cameo plate</span>
+        <span class="title">editorial <em>masthead</em></span>
+      </div>
+      <div class="strip ink">
+        <div class="m4">
+          <svg viewBox="0 0 140 80" fill="none">
+            <text x="70" y="58" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="38" font-weight="500" fill="#1A1713" font-variation-settings="'opsz' 96, 'SOFT' 30" letter-spacing="-0.02em">Lf<tspan style="font-style: italic;" fill="#E8794A" dx="-2">.</tspan></text>
+          </svg>
+        </div>
+        <div class="word-strip" style="color: var(--fg);">
+          <span class="word" style="font-size: 28px;">Locate<em style="color: var(--terracotta-soft);">flow</em></span>
+        </div>
+      </div>
+      <div class="mini">
+        <div class="l">
+          <div class="app-ico" style="background: var(--cream); display:flex; align-items:center; justify-content:center;">
+            <span style="font-family: var(--f-disp); font-weight: 500; font-size: 26px; color: var(--ink); letter-spacing: -0.03em;">Lf<span style="color: var(--terracotta); font-style: italic;">.</span></span>
+          </div>
+          <div class="fav" style="background: var(--cream); display:flex; align-items:center; justify-content:center;">
+            <span style="font-family: var(--f-disp); font-weight: 500; font-size: 13px; color: var(--ink);">Lf<span style="color: var(--terracotta); font-style: italic;">.</span></span>
+          </div>
+        </div>
+        <div class="note">Magazine masthead energy — cream oval, ink glyph, single terracotta dot for rhythm. Very editorial, reads as "publication" not "app."</div>
+      </div>
+    </div>
+
+    <!-- ========= V5 Thread mark ========= -->
+    <div class="cell">
+      <div class="head">
+        <span class="num">V5 · Flow ligature + pin</span>
+        <span class="title">mark <em>with meaning</em></span>
+      </div>
+      <div class="strip dark">
+        <div class="m5">
+          <svg viewBox="0 0 100 100" fill="none">
+            <!-- flowing stroke path -->
+            <path d="M20 65 Q 30 35, 50 50 T 80 40" stroke="url(#tg)" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <!-- pin at end -->
+            <circle cx="80" cy="40" r="7" fill="#E8794A"/>
+            <circle cx="80" cy="40" r="2.5" fill="#17150F"/>
+            <!-- home dot at start -->
+            <circle cx="20" cy="65" r="4" fill="#D4A373"/>
+            <defs>
+              <linearGradient id="tg" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0%" stop-color="#D4A373"/>
+                <stop offset="100%" stop-color="#E8794A"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="word-strip" style="color: var(--fg);">
+          <span class="word" style="font-size: 28px;">Locate<em style="color: var(--terracotta);">flow</em></span>
+        </div>
+      </div>
+      <div class="mini">
+        <div class="l">
+          <div class="app-ico" style="background: var(--ink); display:flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 100 100" fill="none" style="width: 44px; height: 44px;">
+              <path d="M20 65 Q 30 35, 50 50 T 80 40" stroke="url(#tg2)" stroke-width="5" fill="none" stroke-linecap="round"/>
+              <circle cx="80" cy="40" r="7" fill="#E8794A"/>
+              <circle cx="20" cy="65" r="4" fill="#D4A373"/>
+              <defs>
+                <linearGradient id="tg2" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#D4A373"/>
+                  <stop offset="100%" stop-color="#E8794A"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="fav" style="background: var(--ink); display:flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 100 100" fill="none" style="width: 18px; height: 18px;">
+              <path d="M20 65 Q 30 35, 50 50 T 80 40" stroke="#E8794A" stroke-width="8" fill="none" stroke-linecap="round"/>
+              <circle cx="80" cy="40" r="9" fill="#E8794A"/>
+            </svg>
+          </div>
+        </div>
+        <div class="note">Literal: a thread from home (brass dot) that flows to a new location (terracotta pin). Narrative but can read "fintech generic" without care.</div>
+      </div>
+    </div>
+
+    <!-- ========= V6 Gold leaf ========= -->
+    <div class="cell">
+      <div class="head">
+        <span class="num">V6 · Gold-leaf medallion</span>
+        <span class="title">most <em>luxe</em></span>
+      </div>
+      <div class="strip brass">
+        <div class="m6">
+          <svg viewBox="0 0 100 100" fill="none">
+            <text x="50" y="70" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="64" font-weight="500" fill="url(#goldg)" style="font-style: italic;" font-variation-settings="'opsz' 96">L</text>
+            <defs>
+              <linearGradient id="goldg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#F0D27A"/>
+                <stop offset="100%" stop-color="#C8933F"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="word-strip" style="color: var(--fg);">
+          <span class="word" style="font-size: 28px;">Locate<em style="color: var(--gold);">flow</em></span>
+        </div>
+      </div>
+      <div class="mini">
+        <div class="l">
+          <div class="app-ico" style="background: conic-gradient(from 220deg at 50% 50%, #C8933F, #F0D27A, #E3B956, #A47A34, #C8933F); display:flex; align-items:center; justify-content:center; position: relative;">
+            <div style="position:absolute; inset:3px; border-radius: 11px; background: radial-gradient(circle at 35% 30%, #2A1F12, #0B0906); display: flex; align-items: center; justify-content: center;">
+              <span style="font-family: var(--f-disp); font-style: italic; font-weight: 500; font-size: 26px; background: linear-gradient(180deg, #F0D27A, #C8933F); -webkit-background-clip: text; background-clip: text; color: transparent;">L</span>
+            </div>
+          </div>
+          <div class="fav" style="background: radial-gradient(circle, #2A1F12, #0B0906); display:flex; align-items:center; justify-content:center; border: 1px solid #C8933F;">
+            <span style="font-family: var(--f-disp); font-style: italic; font-weight: 500; font-size: 12px; color: #E3B956;">L</span>
+          </div>
+        </div>
+        <div class="note">Maximum lux. Gold medallion with italic L. Reads premium — but also "boutique hotel," which may be richer than the product warrants.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Hero: featured pick -->
+  <div class="hero">
+    <div>
+      <div class="meta">● My recommendation · V2</div>
+      <h2>Italic L,<br>warm <em>terracotta</em>.</h2>
+      <p>A rounded chip in the brand's signature terracotta gradient, holding an italic Fraunces <b>L</b> in cream — with a single cream dot above, quietly referencing the "locate" pin. One mark, six uses: app icon, favicon, chip in the nav, seal on receipts, watermark on shared plans, monogram on onboarding.</p>
+      <p style="margin-top:10px">It reads <b style="color:var(--fg)">premium</b> (Fraunces italic + gradient fill), <b style="color:var(--fg)">corporate</b> (bounded chip, consistent grid), and <b style="color:var(--fg)">warm</b> (terracotta + cream instead of black + white). Pairs naturally with the Fraunces wordmark.</p>
+      <div class="spec">
+        <b>Palette</b> — Terracotta #E8794A → #C25A30 · Cream #FAF7F1<br>
+        <b>Font</b> — Fraunces italic, weight 500, opsz 96<br>
+        <b>Geometry</b> — 18px corner, dot at ¾ upper-right
+      </div>
+    </div>
+    <div class="hero-stage">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 22px;">
+        <div class="m2" style="width: 160px; height: 160px; border-radius: 34px;">
+          <svg viewBox="0 0 100 100" fill="none" style="width: 124px; height: 124px;">
+            <text x="42" y="72" font-family="Fraunces, Georgia, serif" font-size="72" font-weight="500" fill="#FAF7F1" style="font-style: italic;" font-variation-settings="'opsz' 96">L</text>
+            <circle cx="70" cy="30" r="5" fill="#FAF7F1"/>
+            <circle cx="70" cy="30" r="2" fill="#E8794A"/>
+          </svg>
+        </div>
+        <span class="word" style="font-size: 40px; color: var(--fg);">Locate<em style="color: var(--terracotta);">flow</em></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Tell me which one to apply · I'll roll it out across mobile, web, admin, showcase, and regenerate the SVG assets.</div>
+</div>
+
+</body></html>

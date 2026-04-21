@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Lock, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   BILLING_PLAN_DEFINITIONS,
@@ -29,6 +30,11 @@ const YEARLY_SAVINGS_PCT = Math.round(
 
 export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProps) {
   const [cycle, setCycle] = useState<Cycle>("yearly");
+  const tPricing = useTranslations("pricing");
+  const tBilling = useTranslations("billing");
+  const tLanding = useTranslations("landing");
+  const tErrors = useTranslations("errors");
+  const tCommon = useTranslations("common");
 
   const individual = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
 
@@ -43,10 +49,9 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
   return (
     <section id="pricing" className="container py-20">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold mb-4">Simple, Transparent Pricing</h2>
+        <h2 className="text-3xl font-bold mb-4">{tPricing("title")}</h2>
         <p className="text-muted-foreground text-lg">
-          Start free, upgrade when you need more. No credit card for the{" "}
-          {TRIAL_DURATION_DAYS}-day trial.
+          {tPricing("subtitle")} {tLanding("noCreditCard")}.
         </p>
       </div>
 
@@ -67,7 +72,7 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Monthly
+            {tBilling("cycle_monthly")}
           </button>
           <button
             role="tab"
@@ -79,9 +84,9 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Yearly
+            {tBilling("cycle_yearly")}
             <span className="ml-2 inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-semibold text-success">
-              Save {YEARLY_SAVINGS_PCT}%
+              -{YEARLY_SAVINGS_PCT}%
             </span>
           </button>
         </div>
@@ -91,7 +96,7 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
         {/* Individual — the only live paid plan */}
         <div className="rounded-xl border-2 border-primary p-8 space-y-6 relative bg-card shadow-lg md:scale-[1.02]">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-            Available now
+            {tPricing("cta_current")}
           </div>
           <div>
             <h3 className="text-xl font-semibold">{individual.displayName}</h3>
@@ -129,11 +134,11 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
             className="block"
           >
             <Button className="w-full">
-              {ctaLabelLoggedIn ? "Go to Dashboard" : "Start Free Trial"}
+              {ctaLabelLoggedIn ? tErrors("goToDashboard") : tPricing("cta_trial")}
             </Button>
           </Link>
           <p className="text-[11px] text-center text-muted-foreground">
-            Free {TRIAL_DURATION_DAYS}-day trial · No credit card required
+            {tLanding("noCreditCard")} · {tLanding("cancelAnytime")}
           </p>
         </div>
 
@@ -152,7 +157,7 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
               aria-disabled="true"
             >
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3" /> Coming soon
+                <Sparkles className="h-3 w-3" /> {tPricing("cta_upgrade")}
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-foreground/80">
@@ -184,22 +189,17 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
                 ))}
               </ul>
               <Button variant="outline" className="w-full" disabled>
-                <Lock className="h-3.5 w-3.5 mr-2" /> Coming soon
+                <Lock className="h-3.5 w-3.5 mr-2" /> {tPricing("cta_upgrade")}
               </Button>
               <p className="text-[11px] text-center">
-                Want early access?{" "}
                 <Link href="/contact" className="underline hover:text-foreground">
-                  Let us know
+                  {tCommon("contact")}
                 </Link>
               </p>
             </div>
           );
         })}
       </div>
-
-      <p className="text-center text-xs text-muted-foreground mt-8">
-        Prices in USD. Taxes may apply based on your region.
-      </p>
     </section>
   );
 }

@@ -271,6 +271,8 @@ export async function getSecurityReadinessSnapshot(): Promise<SecurityReadinessS
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
     "CRON_SECRET",
+    "INTERNAL_WEBHOOK_SECRET",
+    "IMPERSONATION_HANDOFF_SECRET",
     "ALERT_EMAIL_TO",
     "SLACK_WEBHOOK_URL",
     "NEXT_PUBLIC_SENTRY_DSN",
@@ -315,8 +317,22 @@ export async function getSecurityReadinessSnapshot(): Promise<SecurityReadinessS
       catalogMap.get("CRON_SECRET"),
       "cron_secret",
       "Cron secret",
-      "Cron secret is configured for internal and scheduled routes",
+      "Cron secret is configured for scheduled routes",
       "Cron secret is not configured"
+    ),
+    buildConfigCheck(
+      catalogMap.get("INTERNAL_WEBHOOK_SECRET"),
+      "internal_webhook_secret",
+      "Internal webhook secret",
+      "Internal webhook secret is configured independently of CRON_SECRET",
+      "Internal webhook secret is not configured — falling back to CRON_SECRET (rotate it independently for stronger isolation)"
+    ),
+    buildConfigCheck(
+      catalogMap.get("IMPERSONATION_HANDOFF_SECRET"),
+      "impersonation_handoff_secret",
+      "Impersonation handoff secret",
+      "Impersonation handoff secret is configured independently of CRON_SECRET",
+      "Impersonation handoff secret is not configured — falling back to CRON_SECRET (rotate it independently for stronger isolation)"
     ),
     detectDatabaseTransportCheck(process.env.DATABASE_URL),
     buildDatabaseAtRestCheck(),

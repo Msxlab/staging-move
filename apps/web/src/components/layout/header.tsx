@@ -1,22 +1,25 @@
 "use client";
 
-import { User, Menu, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { User, Menu, Settings, LogOut } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { NotificationCenter } from "@/components/layout/notification-center";
 import { GlobalSearch } from "@/components/layout/global-search";
-import { useTheme } from "@/components/theme-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageSelector } from "@/components/language-selector";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { useTranslations } from "next-intl";
 
 interface HeaderProps {
   onMenuClick?: () => void;
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useCurrentUser();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const tNav = useTranslations("nav");
+  const tCommon = useTranslations("common");
 
   const userName = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "";
   const userEmail = user?.email ?? "";
@@ -41,7 +44,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         <button
           className="md:hidden p-2 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition"
           onClick={onMenuClick}
-          aria-label="Toggle menu"
+          aria-label={tNav("menu")}
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -55,13 +58,15 @@ export function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-1">
           <NotificationCenter />
 
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl text-white/40 hover:text-white hover:bg-white/5 transition"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
+          {/* Three-state theme toggle: system → light → dark → system.
+              Default `preference="system"` means a new visitor inherits
+              their OS setting without interaction. */}
+          <ThemeToggle variant="icon" />
+
+          {/* Language selector — mirrors choice into NEXT_LOCALE cookie +
+              User.preferredLocale (via /api/user/locale). Page reloads
+              after change so server components re-render in new locale. */}
+          <LanguageSelector variant="icon" />
 
           <div className="relative" ref={menuRef}>
             <button
@@ -69,7 +74,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               aria-expanded={userMenuOpen}
               aria-haspopup="true"
-              aria-label="User menu"
+              aria-label={tNav("userMenu")}
             >
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500/30 to-cyan-500/30 border border-white/10 flex items-center justify-center">
                 {userName ? (
@@ -87,10 +92,10 @@ export function Header({ onMenuClick }: HeaderProps) {
                 className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 backdrop-blur-xl shadow-2xl py-1 z-50"
                 style={{ background: "color-mix(in srgb, var(--surface-secondary) 95%, transparent)" }}
                 role="menu"
-                aria-label="User menu"
+                aria-label={tNav("userMenu")}
               >
                 <div className="px-3 py-2.5 border-b border-white/5">
-                  <p className="text-sm font-medium text-white">{userName || "User"}</p>
+                  <p className="text-sm font-medium text-white">{userName || tCommon("unknown")}</p>
                   <p className="text-xs text-white/40 truncate">{userEmail}</p>
                 </div>
                 <Link
@@ -100,7 +105,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   role="menuitem"
                 >
                   <Settings className="h-4 w-4" aria-hidden="true" />
-                  Settings
+                  {tNav("settings")}
                 </Link>
                 <Link
                   href="/onboarding"
@@ -109,7 +114,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   role="menuitem"
                 >
                   <User className="h-4 w-4" aria-hidden="true" />
-                  Edit Profile
+                  {tNav("editProfile")}
                 </Link>
                 <div className="border-t border-white/5 my-1" />
                 <button
@@ -121,7 +126,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   }}
                 >
                   <LogOut className="h-4 w-4" aria-hidden="true" />
-                  Sign Out
+                  {tCommon("signOut")}
                 </button>
               </div>
             )}

@@ -24,6 +24,7 @@ import {
   Package,
   Clock,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -44,6 +45,7 @@ const typeIcons: Record<string, any> = {
 
 export default function AddressesScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -75,12 +77,12 @@ export default function AddressesScreen() {
     (id: string, nickname: string) => {
       hapticWarning();
       Alert.alert(
-        "Delete Address",
-        `Are you sure you want to delete "${nickname || "this address"}"? This cannot be undone.`,
+        t("addresses.delete"),
+        t("addresses.deleteConfirm", { defaultValue: `Delete "${nickname || "this"}"?` }),
         [
-          { text: "Cancel", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Delete",
+            text: t("common.delete"),
             style: "destructive",
             onPress: async () => {
               const res = await api.delete(`/api/addresses/${id}`);
@@ -89,14 +91,14 @@ export default function AddressesScreen() {
                 setAddresses((prev) => prev.filter((a) => a.id !== id));
               } else {
                 hapticError();
-                Alert.alert("Error", "Failed to delete address.");
+                Alert.alert(t("common.retry"), t("common.retry"));
               }
             },
           },
         ]
       );
     },
-    []
+    [t]
   );
 
   if (loading) return <LoadingScreen />;
@@ -116,10 +118,15 @@ export default function AddressesScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Addresses</Text>
+          <Text style={styles.title}>{t("addresses.title")}</Text>
           <Text style={styles.subtitle}>
-            {addresses.length} address{addresses.length !== 1 ? "es" : ""} ·{" "}
-            {totalServices} services · ${totalMonthly.toLocaleString()}/mo
+            {addresses.length} · {totalServices} {t("services.title").toLowerCase()} · {
+              new Intl.NumberFormat(i18n.language || "en", {
+                style: "currency",
+                currency: "USD",
+                maximumFractionDigits: 0,
+              }).format(totalMonthly)
+            }
           </Text>
         </View>
         <TouchableOpacity
@@ -145,9 +152,9 @@ export default function AddressesScreen() {
         {addresses.length === 0 ? (
           <EmptyState
             icon={<MapPin size={32} color={theme.colors.primary} />}
-            title="No addresses yet"
-            description="Add your first address to start tracking services and expenses."
-            actionLabel="Add Address"
+            title={t("addresses.empty")}
+            description={t("addresses.emptyDescription")}
+            actionLabel={t("addresses.newTitle")}
             onAction={() => router.push("/addresses/new" as any)}
           />
         ) : (
@@ -178,7 +185,7 @@ export default function AddressesScreen() {
                       <View style={{ flex: 1 }}>
                         <View style={styles.nameRow}>
                           <Text style={styles.cardTitle} numberOfLines={1}>
-                            {address.nickname || "Address"}
+                            {address.nickname || t("addresses.title")}
                           </Text>
                           {address.isPrimary && (
                             <Star
@@ -196,7 +203,9 @@ export default function AddressesScreen() {
                     </View>
                     <UiBadge
                       label={
-                        address.ownership === "OWNER" ? "Owner" : "Renter"
+                        address.ownership === "OWNER"
+                          ? t("addresses.nickname")
+                          : t("addresses.title")
                       }
                       variant={
                         address.ownership === "OWNER" ? "success" : "info"
@@ -208,27 +217,30 @@ export default function AddressesScreen() {
                   <View style={styles.cardStats}>
                     <Text style={styles.statText}>
                       <Text style={styles.statBold}>{servicesCount}</Text>{" "}
-                      services
+                      {t("services.title").toLowerCase()}
                     </Text>
                     <Text style={styles.statText}>
                       <Text style={styles.statGreen}>
-                        ${monthlyCost.toLocaleString()}
+                        {new Intl.NumberFormat(i18n.language || "en", {
+                          style: "currency",
+                          currency: "USD",
+                          maximumFractionDigits: 0,
+                        }).format(monthlyCost)}
                       </Text>
-                      /mo
                     </Text>
                   </View>
 
                   <View style={styles.cardInsights}>
                     <Text style={styles.insightText} numberOfLines={1}>
                       {servicesCount > 0
-                        ? `${servicesCount} tracked service${servicesCount !== 1 ? "s" : ""} for this address`
-                        : "No services tracked yet for this address"}
+                        ? `${servicesCount} ${t("services.title").toLowerCase()}`
+                        : t("services.empty")}
                     </Text>
                     <TouchableOpacity
                       style={styles.viewServicesBtn}
                       onPress={() => router.push(({ pathname: "/(tabs)/services", params: { addressId: address.id } } as any))}
                     >
-                      <Text style={styles.viewServicesText}>View services</Text>
+                      <Text style={styles.viewServicesText}>{t("common.view")}</Text>
                       <ChevronRight size={14} color={theme.colors.primary} />
                     </TouchableOpacity>
                   </View>
@@ -242,7 +254,7 @@ export default function AddressesScreen() {
                       }
                     >
                       <Edit size={14} color={theme.colors.textTertiary} />
-                      <Text style={styles.actionText}>Edit</Text>
+                      <Text style={styles.actionText}>{t("common.edit")}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.actionBtn}
@@ -251,7 +263,7 @@ export default function AddressesScreen() {
                       }
                     >
                       <Zap size={14} color={theme.colors.textTertiary} />
-                      <Text style={styles.actionText}>Add Service</Text>
+                      <Text style={styles.actionText}>{t("services.newTitle")}</Text>
                     </TouchableOpacity>
                     <View style={{ flex: 1 }} />
                     <TouchableOpacity

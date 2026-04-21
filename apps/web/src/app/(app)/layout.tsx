@@ -48,10 +48,26 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <div className="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-blue-600/10 blur-[120px]" />
         <div className="absolute -bottom-40 right-1/3 w-[350px] h-[350px] rounded-full bg-cyan-500/8 blur-[120px]" />
       </div>
+      {/* Skip link — keyboard users tab past 30+ sidebar links on every
+          page load. The link becomes visible on focus and jumps focus
+          straight to <main>. Tailwind's `sr-only` + `focus:not-sr-only`
+          pattern keeps it invisible to sighted users. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-md focus:bg-brand-orange focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Skip to main content
+      </a>
       <Sidebar />
       <div className="flex-1 flex flex-col min-h-screen relative z-10">
         <Header />
-        <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">{children}</main>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 p-4 md:p-6 pb-20 md:pb-6 focus:outline-none"
+        >
+          {children}
+        </main>
         <MobileNav />
       </div>
       <InstallPrompt />

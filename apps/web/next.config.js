@@ -87,4 +87,9 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 });
 
-module.exports = withBundleAnalyzer(nextConfig);
+// next-intl plugin — points at the per-request config in src/i18n/request.ts.
+// Cookie-based locale selection; no URL rewriting.
+const createNextIntlPlugin = require("next-intl/plugin");
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+module.exports = withNextIntl(withBundleAnalyzer(nextConfig));

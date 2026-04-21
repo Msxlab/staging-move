@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>A Quiet Tuesday · Admin Now</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { background: var(--d-bg); }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 40px 40px 80px; }
+
+  .hdr { display:flex; justify-content: space-between; align-items: flex-end; padding-bottom: 24px; border-bottom: 1px solid var(--d-line); margin-bottom: 28px; }
+  .k { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--d-fg-3); display: flex; align-items:center; gap: 10px; margin-bottom: 14px; }
+  .k .live { width: 8px; height: 8px; border-radius: 50%; background: var(--sage); box-shadow: 0 0 0 3px rgba(94,173,154,0.15); animation: blink 2s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  h1 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 72px; line-height: 0.95; letter-spacing: -0.03em; margin: 0; max-width: 18ch; }
+  h1 em { color: var(--terracotta); }
+  .meta { text-align: right; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--d-fg-3); line-height: 1.7; }
+  .meta strong { color: var(--d-fg); font-weight: 500; }
+
+  /* pulse strip */
+  .pulse {
+    display: grid; grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid var(--d-line); border-bottom: 1px solid var(--d-line); margin-bottom: 32px;
+  }
+  .pulse .c { padding: 22px 24px; border-right: 1px solid var(--d-line); display:flex; flex-direction:column; gap: 8px; position: relative; }
+  .pulse .c:last-child { border-right: 0; }
+  .pulse .lbl { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--d-fg-3); }
+  .pulse .val { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 44px; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1; }
+  .pulse .val em { color: var(--terracotta); }
+  .pulse .val .u { font-size: 16px; opacity: 0.5; margin-left: 2px; }
+  .pulse svg { height: 22px; width: 100%; opacity: 0.7; }
+  .pulse .d { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.04em; color: var(--sage); }
+  .pulse .d.warn { color: var(--warn); }
+
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 36px; }
+
+  /* live stream */
+  .stream-hd { display:flex; justify-content: space-between; align-items: baseline; padding-bottom: 14px; border-bottom: 1px solid var(--d-line); }
+  .stream-hd h2 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 28px; letter-spacing: -0.02em; margin: 0; }
+  .stream-hd h2 em { color: var(--brass); }
+  .stream-hd .f { font-family: var(--f-mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--d-fg-3); display: flex; gap: 10px; }
+  .stream-hd .f span.on { color: var(--terracotta); }
+
+  .ev {
+    display: grid; grid-template-columns: 74px 1fr auto; gap: 16px;
+    padding: 14px 0; border-bottom: 1px solid var(--d-line);
+    align-items: center;
+    animation: slideIn .6s ease-out;
+  }
+  @keyframes slideIn { from { transform: translateY(-6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .ev .t { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--d-fg-3); font-variant-numeric: tabular-nums; }
+  .ev .body .msg { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 17px; letter-spacing: -0.01em; line-height: 1.3; }
+  .ev .body .msg em { color: var(--brass); }
+  .ev .body .msg .u { color: var(--terracotta-soft); font-style: italic; }
+  .ev .body .tags { font-family: var(--f-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.08em; color: var(--d-fg-3); margin-top: 4px; display:flex; gap: 12px; }
+  .ev .tier { font-family: var(--f-mono); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; padding: 3px 8px; border: 1px solid var(--d-line-2); color: var(--d-fg-2); border-radius: 2px; }
+  .ev.hot .tier { color: var(--terracotta); border-color: rgba(232,121,74,0.4); background: rgba(232,121,74,0.05); }
+  .ev.warn .tier { color: var(--warn); border-color: rgba(227,176,75,0.4); background: rgba(227,176,75,0.05); }
+  .ev.new .body { position: relative; }
+  .ev.new .body::before {
+    content: ""; position: absolute; left: -8px; top: 0; bottom: 0; width: 2px;
+    background: var(--terracotta); animation: fadeBar 2s forwards;
+  }
+  @keyframes fadeBar { to { opacity: 0; } }
+
+  /* System column */
+  .card { border: 1px solid var(--d-line); border-radius: 14px; padding: 20px; background: var(--d-surface); margin-bottom: 18px; }
+  .card h3 { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 20px; margin: 0 0 14px; letter-spacing: -0.015em; }
+  .card h3 em { color: var(--brass); }
+  .health { display: flex; flex-direction: column; gap: 12px; }
+  .health .row { display:grid; grid-template-columns: 90px 1fr 80px; align-items: center; gap: 10px; font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.04em; }
+  .health .name { color: var(--d-fg-2); text-transform: uppercase; letter-spacing: 0.1em; font-size: 10.5px; }
+  .health .bar { height: 3px; background: rgba(245,241,234,0.08); border-radius: 3px; overflow:hidden; position: relative; }
+  .health .bar i { position:absolute; top:0; left:0; bottom:0; background: var(--sage); border-radius: 3px; animation: breathe 3s infinite ease-in-out; }
+  .health .bar.w i { background: var(--warn); }
+  .health .v { text-align: right; color: var(--d-fg); font-variant-numeric: tabular-nums; }
+  @keyframes breathe { 0%,100%{opacity:1} 50%{opacity:0.65} }
+
+  .tickets { display: flex; flex-direction: column; }
+  .tickets .t {
+    display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--d-line);
+  }
+  .tickets .t:last-child { border: 0; }
+  .tickets .t .ttl { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 15px; letter-spacing: -0.005em; line-height: 1.2; }
+  .tickets .t .ttl em { color: var(--brass); }
+  .tickets .t .u { font-family: var(--f-mono); font-size: 10.5px; color: var(--d-fg-3); margin-top: 3px; letter-spacing: 0.02em; }
+  .tickets .t .age { font-family: var(--f-mono); font-size: 10.5px; color: var(--d-fg-3); letter-spacing: 0.04em; }
+  .tickets .t .pri { font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; padding: 3px 7px; border-radius: 2px; }
+  .tickets .t .pri.p1 { color: var(--danger); border: 1px solid rgba(208,100,73,0.35); }
+  .tickets .t .pri.p2 { color: var(--warn); border: 1px solid rgba(227,176,75,0.35); }
+  .tickets .t .pri.p3 { color: var(--d-fg-2); border: 1px solid var(--d-line-2); }
+
+  .weather {
+    background: linear-gradient(135deg, rgba(94,173,154,0.08), rgba(94,173,154,0.02));
+    border: 1px solid rgba(94,173,154,0.2);
+  }
+  .weather .q { font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-style: italic; font-size: 20px; line-height: 1.3; letter-spacing: -0.01em; color: var(--d-fg); }
+  .weather .q::before { content: "\201C"; color: var(--sage); margin-right: 4px; }
+  .weather .sig { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sage); margin-top: 10px; }
+</style></head>
+<body>
+
+<div class="stage-hdr" style="position:static;padding:20px 40px 0;">
+  <div><span class="t">Admin · A Quiet Tuesday</span> · showcase 06/07</div>
+  <div><a href="index.html">← back to gallery</a></div>
+</div>
+
+<div class="wrap">
+  <div class="hdr">
+    <div>
+      <div class="k"><span class="live"></span>Live · Feb 23, 2026 · 14:26 UTC</div>
+      <h1>A <em>quiet</em><br>Tuesday afternoon.</h1>
+    </div>
+    <div class="meta">
+      All systems<br><strong style="color:var(--sage);">● Healthy</strong><br><br>
+      Acting as<br><strong>Alex Kim · L3</strong>
+    </div>
+  </div>
+
+  <div class="pulse">
+    <div class="c">
+      <div class="lbl">Users online</div>
+      <div class="val">1,284</div>
+      <svg viewBox="0 0 120 22" preserveAspectRatio="none"><path fill="none" stroke="var(--sage)" stroke-width="1.3" d="M0 14 L10 13 L20 12 L30 10 L40 11 L50 8 L60 9 L70 6 L80 8 L90 5 L100 7 L110 4 L120 5"/></svg>
+      <div class="d">↑ steady for 38 min</div>
+    </div>
+    <div class="c">
+      <div class="lbl">API p95</div>
+      <div class="val">218<span class="u">ms</span></div>
+      <svg viewBox="0 0 120 22" preserveAspectRatio="none"><path fill="none" stroke="var(--sage)" stroke-width="1.3" d="M0 12 L20 10 L40 11 L60 10 L80 9 L100 10 L120 11"/></svg>
+      <div class="d">within SLO</div>
+    </div>
+    <div class="c">
+      <div class="lbl">Queue</div>
+      <div class="val"><em>4</em></div>
+      <svg viewBox="0 0 120 22" preserveAspectRatio="none"><path fill="none" stroke="var(--brass)" stroke-width="1.3" d="M0 14 L20 13 L40 12 L60 14 L80 13 L100 12 L120 13"/></svg>
+      <div class="d">drained in 12s avg</div>
+    </div>
+    <div class="c">
+      <div class="lbl">Open tickets</div>
+      <div class="val">19</div>
+      <svg viewBox="0 0 120 22" preserveAspectRatio="none"><path fill="none" stroke="var(--warn)" stroke-width="1.3" d="M0 8 L20 10 L40 12 L60 9 L80 11 L100 14 L120 16"/></svg>
+      <div class="d warn">↑ 4 since midnight</div>
+    </div>
+    <div class="c">
+      <div class="lbl">Providers sync'd</div>
+      <div class="val">2,147</div>
+      <svg viewBox="0 0 120 22" preserveAspectRatio="none"><path fill="none" stroke="var(--sage)" stroke-width="1.3" d="M0 16 L30 14 L60 12 L90 10 L120 9"/></svg>
+      <div class="d">+3 today</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="stream-hd">
+        <h2>Live <em>events</em></h2>
+        <div class="f"><span class="on">All</span><span>Billing</span><span>Moves</span><span>Moderation</span><span>System</span></div>
+      </div>
+      <div class="ev new hot">
+        <div class="t">14:26:04</div>
+        <div class="body">
+          <div class="msg">Billing retry succeeded for <span class="u">Elena Vasquez</span>. Auto-cleared "past due".</div>
+          <div class="tags"><span>BILLING · 3DS</span><span>→ active</span></div>
+        </div>
+        <div class="tier">Ops</div>
+      </div>
+      <div class="ev new">
+        <div class="t">14:25:41</div>
+        <div class="body">
+          <div class="msg"><span class="u">Sarah Montgomery</span> transferred <em>Spectrum Internet</em> from Austin to Denver.</div>
+          <div class="tags"><span>MOVE</span><span>AUT-1421 → DEN-220</span></div>
+        </div>
+        <div class="tier">Move</div>
+      </div>
+      <div class="ev warn">
+        <div class="t">14:22:17</div>
+        <div class="body">
+          <div class="msg">New provider <em>Xcel Energy CO</em> submitted for review.</div>
+          <div class="tags"><span>MODERATION · L2</span><span>cat · ELEC</span></div>
+        </div>
+        <div class="tier">Review</div>
+      </div>
+      <div class="ev">
+        <div class="t">14:18:02</div>
+        <div class="body">
+          <div class="msg"><span class="u">Daniel Ozaki</span> opened a Pro pilot feedback ticket — <em>"shared bills polish"</em>.</div>
+          <div class="tags"><span>SUPPORT · #2141</span></div>
+        </div>
+        <div class="tier">Ops</div>
+      </div>
+      <div class="ev">
+        <div class="t">14:12:44</div>
+        <div class="body">
+          <div class="msg">Daily provider sync finished — 2,147 records, 3 additions.</div>
+          <div class="tags"><span>SYSTEM</span><span>job-092 · 418ms</span></div>
+        </div>
+        <div class="tier">Sys</div>
+      </div>
+      <div class="ev">
+        <div class="t">14:04:09</div>
+        <div class="body">
+          <div class="msg"><span class="u">Noah Bergmann</span> archived <em>88 Main Street</em> after PCS.</div>
+          <div class="tags"><span>ADDRESS</span><span>VT → deactivated</span></div>
+        </div>
+        <div class="tier">User</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>System <em>health</em></h3>
+        <div class="health">
+          <div class="row"><div class="name">API</div><div class="bar"><i style="width:42%"></i></div><div class="v">218 ms</div></div>
+          <div class="row"><div class="name">Auth</div><div class="bar"><i style="width:28%"></i></div><div class="v">94 ms</div></div>
+          <div class="row"><div class="name">Billing</div><div class="bar w"><i style="width:71%"></i></div><div class="v">612 ms</div></div>
+          <div class="row"><div class="name">Search</div><div class="bar"><i style="width:19%"></i></div><div class="v">61 ms</div></div>
+          <div class="row"><div class="name">OCR</div><div class="bar"><i style="width:55%"></i></div><div class="v">1.2 s</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Oldest open <em>tickets</em></h3>
+        <div class="tickets">
+          <div class="t">
+            <div><div class="ttl">Can't transfer Xfinity to new address</div><div class="u">#2088 · chris@kettering.dev</div></div>
+            <div class="age">2d 14h</div>
+            <div class="pri p1">P1</div>
+          </div>
+          <div class="t">
+            <div><div class="ttl">Duplicate State Farm policies listed</div><div class="u">#2104 · priya.ramesh@outlook.com</div></div>
+            <div class="age">1d 08h</div>
+            <div class="pri p2">P2</div>
+          </div>
+          <div class="t">
+            <div><div class="ttl"><em>Pro pilot</em> — want bulk archive</div><div class="u">#2141 · d.ozaki@relocate.team</div></div>
+            <div class="age">06h 22m</div>
+            <div class="pri p3">P3</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card weather">
+        <div class="q">No incidents, no P0s, no overnight surprises. Good day for the feature backlog.</div>
+        <div class="sig">— the monitor, 14:26 UTC</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body></html>

@@ -20,10 +20,12 @@ import {
   Bell,
   LogOut,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/lib/auth-store";
 import { theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { hapticLight, hapticWarning } from "@/lib/haptics";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
 
 interface MenuItem {
   icon: any;
@@ -35,6 +37,7 @@ interface MenuItem {
 
 export default function MoreScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
 
@@ -44,10 +47,10 @@ export default function MoreScreen() {
 
   const handleSignOut = () => {
     hapticWarning();
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("common.signOut"), t("common.signOut") + "?", [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Sign Out",
+        text: t("common.signOut"),
         style: "destructive",
         onPress: async () => {
           await clearSession();
@@ -59,20 +62,20 @@ export default function MoreScreen() {
 
   const sections: { title: string; items: MenuItem[] }[] = [
     {
-      title: "Account",
+      title: t("settings.title"),
       items: [
-        { icon: User, label: "Profile", route: "/settings/profile" },
-        { icon: Bell, label: "Notifications", route: "/settings/notifications" },
-        { icon: Shield, label: "Privacy & Security", route: "/settings/privacy" },
-        { icon: Settings, label: "Settings", route: "/settings" },
+        { icon: User, label: t("settings.profile"), route: "/settings/profile" },
+        { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
+        { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
+        { icon: Settings, label: t("settings.title"), route: "/settings" },
       ],
     },
     {
-      title: "Features",
+      title: t("tabs.more"),
       items: [
-        { icon: DollarSign, label: "Budget", route: "/budget" },
-        { icon: Search, label: "Find Providers", route: "/providers" },
-        { icon: HelpCircle, label: "Help Center", route: "/help" },
+        { icon: DollarSign, label: t("budget.title"), route: "/budget" },
+        { icon: Search, label: t("providers.title"), route: "/providers" },
+        { icon: HelpCircle, label: t("settings.help"), route: "/help" },
       ],
     },
   ];
@@ -80,7 +83,7 @@ export default function MoreScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <Text style={styles.title}>More</Text>
+        <Text style={styles.title}>{t("tabs.more")}</Text>
       </View>
 
       <ScrollView
@@ -96,7 +99,7 @@ export default function MoreScreen() {
           <Avatar initials={initials} size={48} />
           <View style={{ flex: 1 }}>
             <Text style={styles.profileName}>
-              {user?.firstName || "User"} {user?.lastName || ""}
+              {user?.firstName || t("common.unknown", { defaultValue: "User" })} {user?.lastName || ""}
             </Text>
             <Text style={styles.profileEmail}>
               {user?.email || ""}
@@ -141,10 +144,16 @@ export default function MoreScreen() {
           </View>
         ))}
 
+        {/* Language selector — mirrored to User.preferredLocale via
+            /api/user/locale so the choice follows the user. */}
+        <View style={{ marginBottom: 16 }}>
+          <LanguageSelector />
+        </View>
+
         {/* Sign Out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
           <LogOut size={18} color={theme.colors.error} />
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.signOutText}>{t("common.signOut")}</Text>
         </TouchableOpacity>
 
         <Text style={styles.version}>LocateFlow v1.0.0</Text>

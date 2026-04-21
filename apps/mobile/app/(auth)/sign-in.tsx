@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail, Lock, ArrowRight } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -17,6 +18,7 @@ import { registerForPushNotifications } from "@/lib/push";
 export default function SignInScreen() {
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +48,7 @@ export default function SignInScreen() {
     }
 
     if (res.error || !res.data?.token || !res.data.user) {
-      setError(res.error || "Sign-in failed.");
+      setError(res.error || t("auth.invalid"));
       hapticError();
       setLoading(false);
       return;
@@ -78,21 +80,21 @@ export default function SignInScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <LogoBrand />
-        <Text style={styles.title}>Sign in</Text>
-        <Text style={styles.subtitle}>Welcome back to LocateFlow</Text>
+        <Text style={styles.title}>{t("auth.signIn")}</Text>
+        <Text style={styles.subtitle}>{t("auth.signIn_title")}</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {!requiresMfa && (
           <>
             <Button
-              title="Continue with Google"
+              title={t("auth.continueWithGoogle")}
               variant="outline"
               onPress={() => openOAuth("google")}
               style={styles.oauthBtn}
             />
             <Button
-              title="Continue with Apple"
+              title={t("auth.continueWithApple")}
               variant="primary"
               onPress={() => openOAuth("apple")}
               style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
@@ -100,12 +102,12 @@ export default function SignInScreen() {
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
+              <Text style={styles.dividerText}>{t("auth.or").toUpperCase()}</Text>
               <View style={styles.dividerLine} />
             </View>
 
             <Input
-              placeholder="Email"
+              placeholder={t("auth.email")}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -114,7 +116,7 @@ export default function SignInScreen() {
               leftIcon={<Mail size={16} color={theme.colors.textMuted} />}
             />
             <Input
-              placeholder="Password"
+              placeholder={t("auth.password")}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -126,7 +128,7 @@ export default function SignInScreen() {
 
         {requiresMfa && (
           <Input
-            placeholder="6-digit authenticator code"
+            placeholder={t("auth.mfaCode")}
             value={mfaCode}
             onChangeText={(v) => setMfaCode(v.replace(/\D/g, "").slice(0, 6))}
             keyboardType="number-pad"
@@ -136,7 +138,13 @@ export default function SignInScreen() {
         )}
 
         <Button
-          title={loading ? "Signing in…" : requiresMfa ? "Verify" : "Sign in"}
+          title={
+            loading
+              ? t("common.loading")
+              : requiresMfa
+              ? t("common.submit")
+              : t("auth.signIn")
+          }
           onPress={handleSubmit}
           disabled={loading || !email || !password || (requiresMfa && mfaCode.length !== 6)}
           rightIcon={<ArrowRight size={16} color="#fff" />}
@@ -149,14 +157,15 @@ export default function SignInScreen() {
               onPress={() => router.push("/(auth)/forgot-password")}
               style={styles.linkRow}
             >
-              <Text style={styles.linkText}>Forgot password?</Text>
+              <Text style={styles.linkText}>{t("auth.forgotPassword")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/(auth)/sign-up")}
               style={styles.linkRow}
             >
               <Text style={styles.linkText}>
-                Don't have an account? <Text style={styles.linkEmphasis}>Create one</Text>
+                {t("auth.noAccount")}{" "}
+                <Text style={styles.linkEmphasis}>{t("auth.signUp")}</Text>
               </Text>
             </TouchableOpacity>
           </>

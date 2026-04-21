@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg-1); font-family: var(--font-sans); }
+  .card { padding: 20px 24px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .input { height: 40px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--fg-1); padding: 0 12px; font-size: 14px; font-family: var(--font-sans); outline: none; }
+  .input:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.2); }
+  .input::placeholder { color: var(--fg-3); }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .label { font-size: 12px; font-weight: 600; color: var(--fg-2); }
+  .help { font-size: 11px; color: var(--fg-3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="field"><label class="label">Email</label><input class="input" value="you@example.com" /></div>
+  <div class="field"><label class="label">Address nickname</label><input class="input" placeholder="Our Austin place" /></div>
+  <div class="field"><label class="label">Search providers</label><input class="input" placeholder="Comcast, Duke Energy…" /></div>
+  <div class="field"><label class="label">Monthly cost</label><input class="input" placeholder="$0.00" /><span class="help">Leave blank if variable</span></div>
+</div>
+</body>
+</html>

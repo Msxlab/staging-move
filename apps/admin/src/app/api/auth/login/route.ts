@@ -300,7 +300,16 @@ export async function POST(request: NextRequest) {
 
     // Session fingerprinting — bind JWT to IP + User-Agent
     const fp = await generateFingerprint(ip, ua);
-    const token = await createSession(admin.id, admin.email, admin.role, fp);
+    // Embed `mfaEnabled` in the JWT so the Edge-Runtime middleware can gate
+    // access without a DB call. SUPER_ADMINs without MFA are steered to the
+    // setup page (see admin middleware `applyMfaSetupGate`).
+    const token = await createSession(
+      admin.id,
+      admin.email,
+      admin.role,
+      fp,
+      Boolean((admin as any).mfaEnabled),
+    );
 
     // Create DB-tracked admin session
     const tokenH = await hashSessionToken(token);

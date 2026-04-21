@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg-1); font-family: var(--font-sans); }
+  .card { padding: 20px 24px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .tone { border-radius: 12px; border: 1px solid; padding: 12px; display:flex; flex-direction:column; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .tone-name { font-size: 12px; font-weight: 700; }
+  .tone-label { font-size: 10px; opacity: 0.6; font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="tone" style="background:rgba(249,115,22,0.10);border-color:rgba(249,115,22,0.20);color:#fb923c;"><div class="dot" style="background:#fb923c;"></div><div class="tone-name">Orange</div><div class="tone-label">addresses</div></div>
+  <div class="tone" style="background:rgba(16,185,129,0.10);border-color:rgba(16,185,129,0.20);color:#6ee7b7;"><div class="dot" style="background:#6ee7b7;"></div><div class="tone-name">Emerald</div><div class="tone-label">budget</div></div>
+  <div class="tone" style="background:rgba(245,158,11,0.10);border-color:rgba(245,158,11,0.20);color:#fcd34d;"><div class="dot" style="background:#fcd34d;"></div><div class="tone-name">Amber</div><div class="tone-label">tasks</div></div>
+  <div class="tone" style="background:rgba(244,63,94,0.10);border-color:rgba(244,63,94,0.20);color:#fda4af;"><div class="dot" style="background:#fda4af;"></div><div class="tone-name">Rose</div><div class="tone-label">overdue</div></div>
+  <div class="tone" style="background:rgba(14,165,233,0.10);border-color:rgba(14,165,233,0.20);color:#7dd3fc;"><div class="dot" style="background:#7dd3fc;"></div><div class="tone-name">Sky</div><div class="tone-label">info</div></div>
+  <div class="tone" style="background:rgba(6,182,212,0.10);border-color:rgba(6,182,212,0.20);color:#67e8f9;"><div class="dot" style="background:#67e8f9;"></div><div class="tone-name">Cyan</div><div class="tone-label">services</div></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+/* LocateFlow v2 design tokens — Terracotta/Brass/Sage/Ink
+   Dual-theme. Use via .dark or .light root class. */
+
+:root {
+  --font-display: 'Bodoni Moda', 'Didot', Georgia, serif;
+  --font-sans: 'Geist', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+/* Dark emphasizes ultra-thin editorial contrast */
+.lf-dark { --display-weight: 400; --display-italic-weight: 500; }
+/* Light leans heavier for print-like presence */
+.lf-light { --display-weight: 500; --display-italic-weight: 600; }
+
+/* DARK */
+.lf-dark {
+  --bg: #0E0D0B;
+  --surface: #17150F;
+  --surface-2: #1E1B14;
+  --line: rgba(245,241,234,0.08);
+  --line-2: rgba(245,241,234,0.14);
+  --fg: #F5F1EA;
+  --fg-2: rgba(245,241,234,0.62);
+  --fg-3: rgba(245,241,234,0.38);
+  --terracotta: #E8794A;
+  --terracotta-soft: #F2A65A;
+  --brass: #D4A373;
+  --sage: #5EAD9A;
+  --on-terracotta: #1a0a02;
+}
+
+/* LIGHT */
+.lf-light {
+  --bg: #F6F3EC;
+  --surface: #FFFDF7;
+  --surface-2: #EFEADD;
+  --line: rgba(26,23,19,0.08);
+  --line-2: rgba(26,23,19,0.14);
+  --fg: #1A1713;
+  --fg-2: rgba(26,23,19,0.62);
+  --fg-3: rgba(26,23,19,0.42);
+  --terracotta: #B65325;
+  --terracotta-soft: #934218;
+  --brass: #8A6A3E;
+  --sage: #2D7A68;
+  --on-terracotta: #fff;
+}

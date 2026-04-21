@@ -28,62 +28,75 @@ import {
   Database,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { ThemeToggle } from "./theme-toggle";
+import { LanguageSelector } from "./language-selector";
 
 interface NavItem {
   name: string;
+  nameKey: string; // key in messages.nav.*
   href: string;
   icon: React.ElementType;
 }
 
 interface NavGroup {
   label: string;
+  labelKey: string; // key in messages.nav.*
   items: NavItem[];
 }
 
+// `name` (English) is the source of truth for search filtering — users
+// can type "Subscriptions" regardless of the active locale. `nameKey`
+// drives the visible label via useTranslations("nav.*"). To add a new
+// route: append here + add EN/ES string under messages/{locale}.json.
 const navGroups: NavGroup[] = [
   {
     label: "Core",
+    labelKey: "core",
     items: [
-      { name: "Dashboard", href: "/", icon: LayoutDashboard },
-      { name: "Users", href: "/users", icon: Users },
-      { name: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-      { name: "Billing", href: "/billing", icon: DollarSign },
+      { name: "Dashboard", nameKey: "dashboard", href: "/", icon: LayoutDashboard },
+      { name: "Users", nameKey: "users", href: "/users", icon: Users },
+      { name: "Subscriptions", nameKey: "subscriptions", href: "/subscriptions", icon: CreditCard },
+      { name: "Billing", nameKey: "billing", href: "/billing", icon: DollarSign },
     ],
   },
   {
     label: "Content",
+    labelKey: "content",
     items: [
-      { name: "Providers", href: "/providers", icon: Building2 },
-      { name: "State Rules", href: "/state-rules", icon: MapPin },
-      { name: "Moving Plans", href: "/moving", icon: Truck },
+      { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2 },
+      { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin },
+      { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck },
     ],
   },
   {
     label: "Communication",
+    labelKey: "communication",
     items: [
-      { name: "Notifications", href: "/notifications", icon: Bell },
-      { name: "Email Templates", href: "/email-templates", icon: Mail },
-      { name: "Help Center", href: "/help-center", icon: HelpCircle },
+      { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell },
+      { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail },
+      { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },
     ],
   },
   {
     label: "Analytics",
+    labelKey: "analytics",
     items: [
-      { name: "Analytics", href: "/analytics", icon: BarChart3 },
-      { name: "Reports", href: "/reports", icon: PieChart },
+      { name: "Analytics", nameKey: "analyticsPage", href: "/analytics", icon: BarChart3 },
+      { name: "Reports", nameKey: "reports", href: "/reports", icon: PieChart },
     ],
   },
   {
     label: "System",
+    labelKey: "system",
     items: [
-      { name: "Feature Flags", href: "/feature-flags", icon: Flag },
-      { name: "Security", href: "/security", icon: Lock },
-      { name: "Runtime Config", href: "/runtime-config", icon: Lock },
-      { name: "Backups", href: "/backups", icon: Database },
-      { name: "Audit Logs", href: "/logs", icon: ScrollText },
-      { name: "Admin Team", href: "/team", icon: Shield },
-      { name: "Settings", href: "/settings", icon: Settings },
+      { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag },
+      { name: "Security", nameKey: "security", href: "/security", icon: Lock },
+      { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Lock },
+      { name: "Backups", nameKey: "backups", href: "/backups", icon: Database },
+      { name: "Audit Logs", nameKey: "tickets", href: "/logs", icon: ScrollText },
+      { name: "Admin Team", nameKey: "users", href: "/team", icon: Shield },
+      { name: "Settings", nameKey: "settings", href: "/settings", icon: Settings },
     ],
   },
 ];
@@ -108,6 +121,8 @@ export function Sidebar() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(pathname));
+  const tNav = useTranslations("nav");
+  const tCommon = useTranslations("common");
 
   // Auto-expand group when navigating
   useEffect(() => {
@@ -127,14 +142,26 @@ export function Sidebar() {
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
-    toast.success("Logged out");
+    toast.success(tCommon("signOut"));
     router.push("/login");
     router.refresh();
   }
 
   const isSearching = search.trim().length > 0;
+  // Match against BOTH the English name AND the translated label so a
+  // Spanish-speaking operator can type "provider" OR "proveedor" and
+  // still find the Providers route.
+  const matchesSearch = (item: NavItem, q: string) => {
+    const lower = q.toLowerCase();
+    if (item.name.toLowerCase().includes(lower)) return true;
+    try {
+      return tNav(item.nameKey).toLowerCase().includes(lower);
+    } catch {
+      return false;
+    }
+  };
   const filteredItems = isSearching
-    ? allItems.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+    ? allItems.filter((item) => matchesSearch(item, search))
     : null;
 
   return (
@@ -156,7 +183,7 @@ export function Sidebar() {
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search menu..."
+            placeholder={tCommon("search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-border bg-background pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
@@ -185,12 +212,12 @@ export function Sidebar() {
                     )}
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
-                    {item.name}
+                    {tNav(item.nameKey)}
                   </Link>
                 );
               })
             ) : (
-              <p className="px-3 py-4 text-xs text-muted-foreground text-center">No results</p>
+              <p className="px-3 py-4 text-xs text-muted-foreground text-center">{tCommon("no")}</p>
             )}
           </div>
         ) : (
@@ -212,7 +239,7 @@ export function Sidebar() {
                         : "text-muted-foreground/60 hover:text-muted-foreground"
                     )}
                   >
-                    {group.label}
+                    {tNav(group.labelKey)}
                     <ChevronDown
                       className={cn(
                         "h-3 w-3 transition-transform duration-200",
@@ -236,7 +263,7 @@ export function Sidebar() {
                             )}
                           >
                             <item.icon className="h-4 w-4 flex-shrink-0" />
-                            {item.name}
+                            {tNav(item.nameKey)}
                           </Link>
                         );
                       })}
@@ -249,15 +276,16 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* Theme toggle + Logout */}
+      {/* Theme + language + logout */}
       <div className="border-t border-border p-3 space-y-1">
         <ThemeToggle />
+        <LanguageSelector />
         <button
           onClick={handleLogout}
           className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="h-4 w-4" />
-          Sign Out
+          {tCommon("signOut")}
         </button>
       </div>
     </aside>

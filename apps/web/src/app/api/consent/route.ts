@@ -7,11 +7,19 @@ export const runtime = "nodejs";
 
 // Consent categories are closed set. Adding a category here is a schema-level
 // decision that requires updating the banner copy + the DataConsent reader.
+//
+// DO_NOT_SELL is the CCPA / CPRA right-of-opt-out. `granted: true` on this
+// category means the user has opted OUT of data sale/sharing (i.e. the
+// toggle is "on" in the Do Not Sell settings UI). It flows through the
+// same append-only audit trail as the other categories, and a dedicated
+// shortcut endpoint lives at /api/consent/ccpa for the mandatory
+// "Do Not Sell or Share My Personal Information" link.
 const CATEGORIES = [
   "ANALYTICS",
   "MARKETING",
   "SENSITIVE",
   "FUNCTIONAL",
+  "DO_NOT_SELL",
 ] as const;
 type Category = (typeof CATEGORIES)[number];
 
@@ -48,6 +56,9 @@ export async function GET() {
       MARKETING: { granted: false, at: null },
       SENSITIVE: { granted: false, at: null },
       FUNCTIONAL: { granted: true, at: null },
+      // CCPA default: sale/sharing is allowed until the user opts out.
+      // Business logic treats `granted: true` as "opted out, don't sell".
+      DO_NOT_SELL: { granted: false, at: null },
     };
 
     for (const row of rows) {

@@ -46,14 +46,24 @@ async function main() {
 
   console.log(`  ✓ Super Admin ensured: ${admin.email}`);
 
-  // Create default permissions for SUPER_ADMIN
-  const resources = [
+  // Persist the SUPER_ADMIN default permission matrix. The runtime
+  // `checkPermission` helper in apps/admin/src/lib/auth.ts short-
+  // circuits SUPER_ADMIN to allow-all, but we still write rows so the
+  // team UI shows a populated matrix and so demotion to a lower role
+  // leaves no "missing rows" footgun.
+  //
+  // The resource list and matrix live in
+  // apps/admin/src/lib/admin-permissions.ts. We inline them here
+  // because the Prisma seed runs in a separate process without the
+  // Next.js app's path aliases — keeping them in sync with that module
+  // is a known maintenance cost. If the list grows, update both.
+  const adminResources = [
     "users", "subscriptions", "reviews", "providers",
     "state_rules", "badges", "documents", "moving_plans",
     "audit_logs", "admin_users", "settings",
   ];
 
-  for (const resource of resources) {
+  for (const resource of adminResources) {
     await prisma.adminPermission.upsert({
       where: {
         adminUserId_resource: {
@@ -73,7 +83,7 @@ async function main() {
     });
   }
 
-  console.log(`  ✓ ${resources.length} permissions assigned`);
+  console.log(`  ✓ ${adminResources.length} permissions assigned`);
   console.log("✅ Admin seed complete!");
 }
 

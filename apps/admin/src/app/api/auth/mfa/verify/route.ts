@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, refreshSessionCookie } from "@/lib/auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
 
@@ -56,6 +56,10 @@ export async function POST(request: NextRequest) {
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
+
+    // Re-issue the session JWT with `mfaEnabled: true` so the middleware
+    // MFA-setup gate lifts immediately — no logout/login round trip.
+    await refreshSessionCookie(session, { mfaEnabled: true }).catch(() => null);
 
     return NextResponse.json({ success: true, message: "MFA has been enabled successfully." });
   } catch (error: any) {

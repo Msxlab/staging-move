@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, ArrowLeft, X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -44,6 +45,7 @@ type RecommendationsResponse = {
 
 export default function ProvidersScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [recommended, setRecommended] = useState<RecommendedRowItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -176,8 +178,8 @@ export default function ProvidersScreen() {
       return (
         <EmptyState
           icon={<Search size={32} color={theme.colors.primary} />}
-          title="No matches found"
-          description={`No providers found for "${search}". Try a different term or clear the search.`}
+          title={t("empty.providers")}
+          description={t("empty.providersDescription")}
           actionLabel="Clear search"
           onAction={clearSearch}
         />
@@ -190,8 +192,8 @@ export default function ProvidersScreen() {
           title="Nothing in this category"
           description={
             primaryAddress?.state
-              ? `No ${selectedLabel} providers cover ${primaryAddress.state} yet. Try another category.`
-              : `No ${selectedLabel} providers yet. Try another category.`
+              ? `${t("empty.providers")} — ${selectedLabel} / ${primaryAddress.state}`
+              : `${t("empty.providers")} — ${selectedLabel}`
           }
           actionLabel="Show all"
           onAction={() => setSelectedCat(null)}
@@ -201,7 +203,7 @@ export default function ProvidersScreen() {
     return (
       <EmptyState
         icon={<Search size={32} color={theme.colors.primary} />}
-        title="No providers available"
+        title={t("empty.providers")}
         description="Pull to refresh or check your connection."
       />
     );
@@ -228,7 +230,7 @@ export default function ProvidersScreen() {
           <Search size={16} color={theme.colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search name, description, tags..."
+            placeholder={t("providers.searchPlaceholder")}
             placeholderTextColor={theme.colors.textMuted}
             value={searchInput}
             onChangeText={setSearchInput}

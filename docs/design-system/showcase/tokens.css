@@ -1,0 +1,95 @@
+/* LocateFlow showcase — shared tokens */
+:root {
+  /* Dark */
+  --d-bg: #0E0D0B;
+  --d-surface: #17150F;
+  --d-surface-2: #1E1B14;
+  --d-line: rgba(245,241,234,0.08);
+  --d-line-2: rgba(245,241,234,0.14);
+  --d-fg: #F5F1EA;
+  --d-fg-2: rgba(245,241,234,0.62);
+  --d-fg-3: rgba(245,241,234,0.38);
+  --d-fg-4: rgba(245,241,234,0.22);
+
+  /* Light */
+  --l-bg: #FAF7F1;
+  --l-surface: #FFFDF8;
+  --l-surface-2: #F2EDE3;
+  --l-line: rgba(26,23,19,0.08);
+  --l-fg: #1A1713;
+  --l-fg-2: rgba(26,23,19,0.62);
+  --l-fg-3: rgba(26,23,19,0.38);
+
+  /* Brand */
+  --terracotta: #E8794A;
+  --terracotta-soft: #F2A65A;
+  --brass: #D4A373;
+  --sage: #5EAD9A;
+  --warn: #E3B04B;
+  --danger: #D06449;
+
+  --f-display: 'Fraunces', Georgia, serif;
+  --f-sans: 'Inter', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+
+html, body { margin: 0; padding: 0; font-family: var(--f-sans); background: #050403; color: var(--d-fg); }
+* { box-sizing: border-box; }
+
+.stage {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center top, #141210 0%, #050403 70%);
+  padding: 48px 24px;
+}
+.stage-hdr {
+  position: fixed; top: 20px; left: 28px; right: 28px;
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--f-mono); font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(245,241,234,0.38); z-index: 100;
+}
+.stage-hdr .t { font-family: var(--f-display); font-style: italic; font-size: 18px; color: var(--brass); letter-spacing: 0; text-transform: none; }
+.stage-hdr a { color: var(--terracotta); text-decoration: none; }
+
+.phone {
+  width: 390px; height: 844px;
+  border-radius: 52px; overflow: hidden;
+  position: relative;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 11px #1a1713, 0 0 0 12px rgba(245,241,234,0.08);
+  font-family: var(--f-sans);
+  -webkit-font-smoothing: antialiased;
+}
+.phone .island {
+  position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 34px; border-radius: 22px; background: #000; z-index: 50;
+}
+.phone .sbar {
+  position: absolute; top: 18px; left: 0; right: 0; z-index: 40;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 32px; font-size: 15px; font-weight: 600;
+}
+.phone .sbar .r { display: flex; gap: 6px; align-items: center; }
+.phone.dark { background: var(--d-bg); color: var(--d-fg); }
+.phone.dark .sbar { color: var(--d-fg); }
+.phone.light { background: var(--l-bg); color: var(--l-fg); }
+.phone.light .sbar { color: var(--l-fg); }
+.phone .home-ind {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  width: 134px; height: 5px; border-radius: 3px; z-index: 60;
+}
+.phone.dark .home-ind { background: rgba(245,241,234,0.5); }
+.phone.light .home-ind { background: rgba(26,23,19,0.25); }
+
+
+/* Fraunces defaults — apply wherever --f-display is used */
+.notes h1,
+h1, h2, h3,
+[class*="title"], [class*="headline"],
+[class*="h1"], [class*="h2"] {
+  /* Fraunces variable axis tuning */
+}
+:where(h1,h2,h3) { font-synthesis: none; }
+
+/* Any element whose font-family resolves to Fraunces via the CSS var inherits medium */
+body { font-variation-settings: "SOFT" 30, "WONK" 0; }

@@ -10,8 +10,17 @@ import * as SplashScreen from "expo-splash-screen";
 import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
 import { SessionTracker } from "@/components/SessionTracker";
+import { initI18n } from "@/i18n/config";
 
 SplashScreen.preventAutoHideAsync();
+
+// Kick off i18n resolution before the first render. Resolves:
+//   1. Stored preference (AsyncStorage) — set by the LanguageSelector.
+//   2. Device locale via expo-localization.
+//   3. Default "en".
+// initI18n returns a promise that the splash screen masks, so the
+// first painted screen already renders in the right locale.
+const i18nReady = initI18n().catch(() => undefined);
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -99,13 +108,18 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true);
+  const [i18nHydrated, setI18nHydrated] = useState(false);
   const [queryClient] = useState(() => createQueryClient());
 
   useEffect(() => {
     SplashScreen.hideAsync();
+    void i18nReady.then(() => setI18nHydrated(true));
   }, []);
 
-  if (showSplash) {
+  // Hold the splash until i18n is ready AND the animated splash finishes.
+  // Both guards must pass; otherwise the first frame flashes EN copy
+  // before the user's ES preference applies.
+  if (showSplash || !i18nHydrated) {
     return <AnimatedSplash onFinish={() => setShowSplash(false)} />;
   }
 

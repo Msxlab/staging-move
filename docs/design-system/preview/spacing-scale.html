@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg-1); font-family: var(--font-sans); }
+  .card { padding: 20px 24px; display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; align-items: center; gap: 14px; }
+  .bar { background: #f97316; height: 14px; border-radius: 3px; }
+  .key { font-family: var(--font-mono); font-size: 11px; color: var(--fg-2); width: 74px; }
+  .px { font-family: var(--font-mono); font-size: 10px; color: var(--fg-3); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="row"><span class="key">xs</span><div class="bar" style="width:4px;"></div><span class="px">4px</span></div>
+  <div class="row"><span class="key">sm</span><div class="bar" style="width:8px;"></div><span class="px">8px</span></div>
+  <div class="row"><span class="key">md</span><div class="bar" style="width:12px;"></div><span class="px">12px</span></div>
+  <div class="row"><span class="key">lg</span><div class="bar" style="width:16px;"></div><span class="px">16px</span></div>
+  <div class="row"><span class="key">xl</span><div class="bar" style="width:20px;"></div><span class="px">20px</span></div>
+  <div class="row"><span class="key">2xl</span><div class="bar" style="width:24px;"></div><span class="px">24px</span></div>
+  <div class="row"><span class="key">3xl</span><div class="bar" style="width:32px;"></div><span class="px">32px</span></div>
+  <div class="row"><span class="key">4xl</span><div class="bar" style="width:40px;"></div><span class="px">40px</span></div>
+</div>
+</body>
+</html>

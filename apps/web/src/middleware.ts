@@ -225,6 +225,37 @@ async function hasValidSession(request: NextRequest): Promise<boolean> {
   }
 }
 
+// ── Locale auto-detect ─────────────────────────────────────────
+// On first visit (no NEXT_LOCALE cookie) we pick a locale from the
+// Accept-Language header and set the cookie on the response. The
+// user-facing LanguageSelector and /api/user/locale endpoint both
+// overwrite this cookie when a logged-in user makes an explicit choice.
+const SUPPORTED_LOCALES = ["en", "es"] as const;
+const DEFAULT_LOCALE = "en";
+
+function detectLocale(acceptLanguage: string | null): string {
+  if (!acceptLanguage) return DEFAULT_LOCALE;
+  for (const entry of acceptLanguage.split(",")) {
+    const code = entry.split(";")[0].trim().toLowerCase().split("-")[0];
+    if ((SUPPORTED_LOCALES as readonly string[]).includes(code)) return code;
+  }
+  return DEFAULT_LOCALE;
+}
+
+function applyLocaleCookie(
+  request: NextRequest,
+  response: NextResponse,
+): NextResponse {
+  if (request.cookies.get("NEXT_LOCALE")) return response;
+  const detected = detectLocale(request.headers.get("accept-language"));
+  response.cookies.set("NEXT_LOCALE", detected, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  return response;
+}
+
 // ── Main middleware ────────────────────────────────────────────
 export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl?.pathname || "";
@@ -266,12 +297,16 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Page routes.
-  if (isPublicPath(pathname)) return NextResponse.next();
-  if (await hasValidSession(request)) return NextResponse.next();
+  if (isPublicPath(pathname)) {
+    return applyLocaleCookie(request, NextResponse.next());
+  }
+  if (await hasValidSession(request)) {
+    return applyLocaleCookie(request, NextResponse.next());
+  }
 
   const signInUrl = new URL("/sign-in", request.url);
   signInUrl.searchParams.set("redirect", pathname);
-  return NextResponse.redirect(signInUrl);
+  return applyLocaleCookie(request, NextResponse.redirect(signInUrl));
 }
 
 export const config = {

@@ -1,0 +1,651 @@
+<!DOCTYPE html><html lang="en"><head>
+
+
+
+
+<meta charset="UTF-8">
+<title>LocateFlow Mobile — UI Kit</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Dark tokens */
+    --d-bg: #0E0D0B;
+    --d-surface: #17150F;
+    --d-surface-2: #1E1B14;
+    --d-line: rgba(245,241,234,0.08);
+    --d-fg: #F5F1EA;
+    --d-fg-2: rgba(245,241,234,0.62);
+    --d-fg-3: rgba(245,241,234,0.38);
+    --d-terracotta: #E8794A;
+    --d-terracotta-soft: #F2A65A;
+    --d-brass: #D4A373;
+    --d-sage: #5EAD9A;
+
+    /* Light tokens */
+    --l-bg: #F6F3EC;
+    --l-surface: #FFFDF7;
+    --l-surface-2: #EFEADD;
+    --l-line: rgba(26,23,19,0.08);
+    --l-fg: #1A1713;
+    --l-fg-2: rgba(26,23,19,0.62);
+    --l-fg-3: rgba(26,23,19,0.42);
+    --l-terracotta: #B65325;
+    --l-terracotta-soft: #934218;
+    --l-brass: #8A6A3E;
+    --l-sage: #2D7A68;
+  }
+  html, body { margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; background:#0a0908; }
+  :root {
+    --f-display: 'Fraunces', Georgia, serif;
+    --f-sans: 'Inter', system-ui, sans-serif;
+    --f-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  body { min-height:100vh; }
+
+  .board {
+    display: flex; gap: 40px; padding: 48px; justify-content: center; align-items: flex-start;
+    background: radial-gradient(ellipse at top, #1a1713 0%, #0a0908 60%);
+  }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .col-label {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30; font-size: 18px; font-weight: 500;
+    letter-spacing: -0.01em;
+    color: #f5f1ea; opacity: 0.8;
+  }
+  .col-label em { font-style: italic; color: #d4a373; }
+
+  .phone {
+    width: 380px; height: 820px;
+    border-radius: 46px; padding: 10px;
+    background: #0a0908;
+    box-shadow: 0 0 0 1.5px rgba(245,241,234,0.1), 0 50px 80px rgba(0,0,0,0.6);
+    position: relative;
+  }
+  .phone .screen {
+    width: 100%; height: 100%;
+    border-radius: 38px;
+    overflow: hidden;
+    position: relative;
+    display: flex; flex-direction: column;
+  }
+  .phone.dark  .screen { background: var(--d-bg); color: var(--d-fg); }
+  .phone.light .screen { background: var(--l-bg); color: var(--l-fg); }
+
+  .notch { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; background: #000; border-radius: 16px; z-index: 5; }
+  .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 28px 0;
+    font-size: 13px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .phone.dark  .statusbar { color: var(--d-fg); }
+  .phone.light .statusbar { color: var(--l-fg); }
+  .sb-icons { display:flex; gap:6px; align-items:center; }
+
+  /* Scrollable body */
+  .body { flex: 1; overflow: hidden; padding: 8px 24px 0; }
+
+  /* Editorial header */
+  .edi-head { padding: 18px 0 10px; display:flex; justify-content: space-between; align-items: flex-start; }
+  .kicker {
+    font-family: var(--f-mono); font-weight: 500;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .phone.dark  .kicker { color: rgba(245,241,234,0.55); }
+  .phone.light .kicker { color: rgba(26,23,19,0.55); }
+  .headline {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-weight: 500;
+    font-size: 36px;
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+  .headline em {
+    font-style: italic;
+    font-weight: 500;
+  }
+  .phone.dark  .headline em { color: var(--d-terracotta); }
+  .phone.light .headline em { color: var(--l-terracotta); }
+
+  .avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-weight: 600; font-size: 15px; letter-spacing: 0.02em;
+  }
+  .phone.dark  .avatar { background: var(--d-surface-2); color: var(--d-brass); border: 1px solid var(--d-line); }
+  .phone.light .avatar { background: var(--l-surface-2); color: var(--l-brass); border: 1px solid var(--l-line); }
+
+  /* Money strip — bold editorial */
+  .money {
+    margin-top: 14px;
+    padding: 20px 0 22px;
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+  .phone.dark  .money { border-color: var(--d-line); }
+  .phone.light .money { border-color: var(--l-line); }
+  .money-val {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-weight: 400;
+    font-size: 56px;
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    font-variant-numeric: tabular-nums;
+  }
+  .money-val .cents { font-size: 24px; opacity: 0.45; vertical-align: top; margin-left: 2px; }
+  .money-sub {
+    font-family: var(--f-mono); font-weight: 500;
+    font-size: 12px;
+    line-height: 1.45;
+    letter-spacing: 0.02em;
+    text-align: right;
+  }
+  .phone.dark  .money-sub { color: rgba(245,241,234,0.7); }
+  .phone.light .money-sub { color: rgba(26,23,19,0.7); }
+  .money-sub .delta { font-weight: 600; }
+  .phone.dark  .money-sub .delta { color: var(--d-sage); }
+  .phone.light .money-sub .delta { color: var(--l-sage); }
+
+  /* Section heads */
+  .sec {
+    margin-top: 26px; margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .sec h3 {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-size: 20px; font-weight: 500;
+    margin: 0;
+    letter-spacing: -0.018em;
+    line-height: 1;
+  }
+  .sec .more {
+    font-family: var(--f-mono); font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .phone.dark  .sec .more { color: var(--d-terracotta); }
+  .phone.light .sec .more { color: var(--l-terracotta); }
+
+  /* Plan card */
+  .plan {
+    border-radius: 20px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .phone.dark  .plan { background: var(--d-surface); border: 1px solid var(--d-line); }
+  .phone.light .plan { background: var(--l-surface); border: 1px solid var(--l-line); }
+  .plan-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  }
+  .plan-route {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .plan-route em { font-style: italic; font-weight: 500; }
+  .phone.dark  .plan-route em { color: var(--d-brass); }
+  .phone.light .plan-route em { color: var(--l-brass); }
+  .plan-meta { font-family: var(--f-mono); font-weight: 500; font-size: 11.5px; letter-spacing: 0.04em; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .phone.dark  .plan-meta { color: var(--d-fg-3); }
+  .phone.light .plan-meta { color: var(--l-fg-3); }
+
+  .days {
+    text-align: right;
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    line-height: 1;
+  }
+  .days .n {
+    font-size: 30px; font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+  .days .l {
+    font-size: 11px; font-weight: 500;
+    font-family: var(--f-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .phone.dark  .days .l { color: var(--d-fg-3); }
+  .phone.light .days .l { color: var(--l-fg-3); }
+
+  .progress {
+    margin-top: 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .bar { flex: 1; height: 2px; border-radius: 1px; position: relative; overflow: hidden; }
+  .phone.dark  .bar { background: var(--d-line); }
+  .phone.light .bar { background: var(--l-line); }
+  .bar .fill { position: absolute; inset: 0 38% 0 0; border-radius: 1px; }
+  .phone.dark  .bar .fill { background: var(--d-terracotta); }
+  .phone.light .bar .fill { background: var(--l-terracotta); }
+  .progress-txt {
+    font-family: var(--f-mono);
+    font-size: 12px; font-weight: 600;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .phone.dark  .progress-txt { color: var(--d-fg-2); }
+  .phone.light .progress-txt { color: var(--l-fg-2); }
+
+  /* Service list */
+  .svc {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0;
+    border-bottom: 1px solid;
+  }
+  .phone.dark  .svc { border-color: var(--d-line); }
+  .phone.light .svc { border-color: var(--l-line); }
+  .svc:last-child { border-bottom: 0; }
+
+  .svc-ico {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+  .phone.dark  .svc-ico { background: var(--d-surface-2); border-color: var(--d-line); }
+  .phone.light .svc-ico { background: var(--l-surface-2); border-color: var(--l-line); }
+
+  .svc-body { flex: 1; min-width: 0; }
+  .svc .n {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-size: 17px; font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .svc .m {
+    font-size: 12.5px; font-weight: 500;
+    margin-top: 4px;
+    font-family: var(--f-mono);
+    letter-spacing: 0.02em;
+  }
+  .phone.dark  .svc .m { color: rgba(245,241,234,0.55); }
+  .phone.light .svc .m { color: rgba(26,23,19,0.55); }
+
+  .svc .amt {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-size: 18px; font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.012em;
+  }
+  .svc .amt .per { font-size: 11px; opacity: 0.6; font-family: var(--f-mono); font-weight: 500; letter-spacing: 0.04em; margin-left: 2px; }
+
+  /* Tab bar */
+  .tabbar {
+    display: flex; justify-content: space-around;
+    padding: 12px 0 26px;
+    border-top: 1px solid;
+    backdrop-filter: blur(20px);
+  }
+  .phone.dark  .tabbar { background: rgba(14,13,11,0.92); border-color: var(--d-line); }
+  .phone.light .tabbar { background: rgba(246,243,236,0.92); border-color: var(--l-line); }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 4px 12px;
+    font-size: 10.5px;
+    font-family: var(--f-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .phone.dark  .tab { color: var(--d-fg-3); }
+  .phone.light .tab { color: var(--l-fg-3); }
+  .phone.dark  .tab.on { color: var(--d-terracotta); }
+  .phone.light .tab.on { color: var(--l-terracotta); }
+  .tab svg { width: 22px; height: 22px; }
+
+  /* Custom-drawn iconography — uniform 1.6 stroke, rounded */
+  .ico { display: inline-block; }
+
+  /* Chips */
+  .chiprow { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+  .chip {
+    padding: 7px 13px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 500;
+    font-family: var(--f-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+  .phone.dark  .chip { color: var(--d-fg-2); border-color: var(--d-line); }
+  .phone.light .chip { color: var(--l-fg-2); border-color: var(--l-line); }
+  .phone.dark  .chip.on { background: var(--d-terracotta); color: #1a0a02; border-color: var(--d-terracotta); }
+  .phone.light .chip.on { background: var(--l-terracotta); color: #fff; border-color: var(--l-terracotta); }
+
+  /* Section — Places */
+  .places { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .place {
+    border-radius: 18px; padding: 16px;
+    aspect-ratio: 1 / 1;
+    display: flex; flex-direction: column; justify-content: space-between;
+    border: 1px solid;
+    position: relative;
+    overflow: hidden;
+  }
+  .phone.dark  .place { background: var(--d-surface); border-color: var(--d-line); }
+  .phone.light .place { background: var(--l-surface); border-color: var(--l-line); }
+  .phone.dark  .place.primary { background: linear-gradient(160deg, #2A1810 0%, #1a0f06 100%); border-color: rgba(232,121,74,0.25); }
+  .phone.light .place.primary { background: linear-gradient(160deg, #F7E7D4 0%, #f0dcc3 100%); border-color: rgba(182,83,37,0.2); }
+  .place .city {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-weight: 500; font-size: 22px;
+    letter-spacing: -0.02em; line-height: 1;
+  }
+  .place .city em { font-style: italic; }
+  .phone.dark  .place.primary .city em { color: var(--d-terracotta); }
+  .phone.light .place.primary .city em { color: var(--l-terracotta); }
+  .place .meta {
+    font-size: 10.5px; font-weight: 500;
+    font-family: var(--f-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    line-height: 1.4;
+  }
+  .phone.dark  .place .meta { color: rgba(245,241,234,0.58); }
+  .phone.light .place .meta { color: rgba(26,23,19,0.58); }
+  .place .spend {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-weight: 400;
+    font-size: 26px;
+    letter-spacing: -0.025em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Decorative corner */
+  .place .dot {
+    position: absolute; top: 12px; right: 12px;
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .phone.dark  .place .dot { background: var(--d-terracotta); box-shadow: 0 0 0 4px rgba(232,121,74,0.15); }
+  .phone.light .place .dot { background: var(--l-terracotta); box-shadow: 0 0 0 4px rgba(182,83,37,0.12); }
+
+  /* Empty place icon */
+  .place-plus {
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px dashed;
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    align-self: center;
+  }
+  .phone.dark  .place-plus { border-color: var(--d-fg-3); color: var(--d-fg-2); }
+  .phone.light .place-plus { border-color: var(--l-fg-3); color: var(--l-fg-2); }
+  .place.add { align-items: center; justify-content: center; gap: 10px; border-style: dashed; }
+  .place.add .label {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-size: 15px; font-style: italic; font-weight: 500;
+  }
+  .phone.dark  .place.add .label { color: var(--d-fg-2); }
+  .phone.light .place.add .label { color: var(--l-fg-2); }
+
+  .brand-mark { display: flex; align-items: center; gap: 8px; }
+  .brand-mark .wm {
+    font-family: var(--f-display); font-weight: 500; font-variation-settings: "SOFT" 30;
+    font-weight: 500; font-size: 14px;
+    letter-spacing: -0.01em;
+  }
+  .brand-mark .wm em { font-style: italic; font-weight: 500; }
+  .phone.dark  .brand-mark .wm em { color: var(--d-terracotta); }
+  .phone.light .brand-mark .wm em { color: var(--l-terracotta); }
+
+</style>
+</head>
+<body style="font-family: Verdana; cursor: crosshair; font-size: 15px;" data-cc-id="cc-1">
+
+<!-- Reusable icon sprite — uniform stroke weight 1.6, rounded caps -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-pin" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-5.1-7-8.4-7-11.5a7 7 0 1 1 14 0c0 3.1-2.5 6.4-7 11.5z"></path>
+      <circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+    </symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M13 3 5.5 13.5H11l-1 7.5 7.5-10.5H12z"></path>
+    </symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M3 9.5a14 14 0 0 1 18 0M6 13a10 10 0 0 1 12 0M9 16.5a5.5 5.5 0 0 1 6 0"></path>
+      <circle cx="12" cy="20" r="1.1" fill="currentColor"></circle>
+    </symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z"></path>
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m9 12 2.2 2.2L15 10.5"></path>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
+      <path d="M11 9.5 15 12l-4 2.5z" fill="currentColor"></path>
+    </symbol>
+    <symbol id="i-bank" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M3 10 12 4l9 6M5 10v9M9 10v9M15 10v9M19 10v9M3 20h18"></path>
+    </symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 7h11v10H2zM13 10h4l4 4v3h-8zM7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"></path>
+    </symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20a2 2 0 0 0 4 0"></path>
+    </symbol>
+    <symbol id="i-home" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M3 11 12 4l9 7v9h-6v-6h-6v6H3z"></path>
+    </symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24">
+      <rect x="4" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
+      <rect x="13" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
+      <rect x="4" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
+      <rect x="13" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
+    </symbol>
+    <symbol id="i-more" viewBox="0 0 24 24">
+      <circle cx="6" cy="12" r="1.5" fill="currentColor"></circle>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+      <circle cx="18" cy="12" r="1.5" fill="currentColor"></circle>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M12 5v14M5 12h14"></path>
+    </symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"></path>
+    </symbol>
+    <symbol id="i-signal" viewBox="0 0 24 24">
+      <rect x="3" y="16" width="3" height="5" rx="0.8" fill="currentColor"></rect>
+      <rect x="8" y="12" width="3" height="9" rx="0.8" fill="currentColor"></rect>
+      <rect x="13" y="8" width="3" height="13" rx="0.8" fill="currentColor"></rect>
+      <rect x="18" y="4" width="3" height="17" rx="0.8" fill="currentColor"></rect>
+    </symbol>
+    <symbol id="i-battery" viewBox="0 0 24 24">
+      <rect x="2" y="7" width="18" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"></rect>
+      <rect x="4" y="9" width="13" height="6" rx="1" fill="currentColor"></rect>
+      <rect x="21" y="10" width="1.6" height="4" rx="0.5" fill="currentColor"></rect>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="board">
+
+  <!-- DARK phone -->
+  <div class="col">
+    <div class="col-label">Dark · <em>dashboard</em></div>
+    <div class="phone dark">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="sb-icons">
+            <svg class="ico" width="14" height="14"><use href="#i-signal"></use></svg>
+            <span style="font-size:10px;letter-spacing:0.06em;">5G</span>
+            <svg class="ico" width="20" height="12"><use href="#i-battery"></use></svg>
+          </span>
+        </div>
+        <div class="body">
+          <div class="edi-head">
+            <div>
+              <div class="kicker">Tuesday · Feb 23</div>
+              <h1 class="headline">Good <em>afternoon</em>,<br>Sarah.</h1>
+            </div>
+            <div class="avatar">SM</div>
+          </div>
+
+          <div class="money">
+            <div>
+              <div class="money-val">$1,284<span class="cents">.40</span></div>
+              <div class="kicker" style="margin-top:8px;">Across three addresses</div>
+            </div>
+            <div class="money-sub">
+              monthly<br><span class="delta">↓ 4.2%</span>
+            </div>
+          </div>
+
+          <div class="sec"><h3>Current move</h3><span class="more">→</span></div>
+
+          <div class="plan">
+            <div class="plan-head">
+              <div>
+                <div class="plan-route">Austin <em>→</em> Denver</div>
+                <div class="plan-meta">Moving day · May 14, 2026</div>
+              </div>
+              <div class="days"><div class="n">23</div><div class="l">Days</div></div>
+            </div>
+            <div class="progress">
+              <span class="progress-txt">13/21</span>
+              <div class="bar"><div class="fill"></div></div>
+              <span class="progress-txt">62%</span>
+            </div>
+          </div>
+
+          <div class="sec"><h3>Recent charges</h3><span class="more">All</span></div>
+
+          <div class="svc">
+            <div class="svc-ico" style="color:var(--d-terracotta);"><svg class="ico" width="18" height="18"><use href="#i-bolt"></use></svg></div>
+            <div class="svc-body"><div class="n">Austin Energy</div><div class="m">ELEC · 1421 Rainey · Mar 2</div></div>
+            <div class="amt">$128<span class="per">.40</span></div>
+          </div>
+          <div class="svc">
+            <div class="svc-ico" style="color:var(--d-sage);"><svg class="ico" width="18" height="18"><use href="#i-wifi"></use></svg></div>
+            <div class="svc-body"><div class="n">Spectrum</div><div class="m">INET · Renews Mar 2</div></div>
+            <div class="amt">$79<span class="per">.99</span></div>
+          </div>
+          <div class="svc">
+            <div class="svc-ico" style="color:var(--d-brass);"><svg class="ico" width="18" height="18"><use href="#i-shield"></use></svg></div>
+            <div class="svc-body"><div class="n">State Farm</div><div class="m">INSR · Renews Jul 1</div></div>
+            <div class="amt">$426<span class="per">.00</span></div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="tab on"><svg><use href="#i-home"></use></svg>Home</div>
+          <div class="tab"><svg><use href="#i-pin"></use></svg>Places</div>
+          <div class="tab"><svg><use href="#i-grid"></use></svg>Services</div>
+          <div class="tab"><svg><use href="#i-truck"></use></svg>Move</div>
+          <div class="tab"><svg><use href="#i-more"></use></svg>More</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT phone -->
+  <div class="col">
+    <div class="col-label">Light · <em>places</em></div>
+    <div class="phone light">
+      <div class="notch"></div>
+      <div class="screen">
+        <div class="statusbar">
+          <span>9:41</span>
+          <span class="sb-icons">
+            <svg class="ico" width="14" height="14"><use href="#i-signal"></use></svg>
+            <span style="font-size:10px;letter-spacing:0.06em;">5G</span>
+            <svg class="ico" width="20" height="12"><use href="#i-battery"></use></svg>
+          </span>
+        </div>
+        <div class="body">
+          <div class="edi-head">
+            <div>
+              <div class="kicker">Three homes</div>
+              <h1 class="headline">Your <em>places</em></h1>
+            </div>
+            <div class="avatar">SM</div>
+          </div>
+
+          <div class="chiprow">
+            <span class="chip on">All</span>
+            <span class="chip">Current</span>
+            <span class="chip">Moving</span>
+            <span class="chip">Archived</span>
+          </div>
+
+          <div class="places" style="margin-top:18px;">
+            <div class="place primary">
+              <div class="dot"></div>
+              <div class="brand-mark">
+                <svg width="18" height="18" style="color:var(--l-terracotta);"><use href="#i-pin"></use></svg>
+                <span class="meta">Current</span>
+              </div>
+              <div>
+                <div class="city">1421 <em>Rainey</em></div>
+                <div class="meta" style="margin-top:6px;">Austin, TX · 18 services</div>
+              </div>
+              <div class="spend">$784<span style="font-size:12px;opacity:0.6;font-family:var(--f-mono);font-weight:500;letter-spacing:0.04em;margin-left:2px;">/mo</span></div>
+            </div>
+
+            <div class="place">
+              <div class="brand-mark">
+                <svg width="18" height="18" style="color:var(--l-brass);"><use href="#i-truck"></use></svg>
+                <span class="meta">Moving in</span>
+              </div>
+              <div>
+                <div class="city">220 <em>Larimer</em></div>
+                <div class="meta" style="margin-top:6px;">Denver, CO · 9 queued</div>
+              </div>
+              <div class="spend" style="color:var(--l-brass);">$412<span style="font-size:12px;opacity:0.6;font-family:var(--f-mono);font-weight:500;letter-spacing:0.04em;margin-left:2px;">est</span></div>
+            </div>
+
+            <div class="place">
+              <div class="brand-mark">
+                <svg width="18" height="18" style="color:var(--l-fg-3);"><use href="#i-home"></use></svg>
+                <span class="meta">Archived</span>
+              </div>
+              <div>
+                <div class="city" style="opacity:0.7;">88 <em style="color:var(--l-fg-2);">Main</em></div>
+                <div class="meta" style="margin-top:6px;">Burlington, VT</div>
+              </div>
+              <div class="spend" style="color:var(--l-fg-3);">—</div>
+            </div>
+
+            <div class="place add">
+              <div class="place-plus"><svg width="18" height="18"><use href="#i-plus"></use></svg></div>
+              <div class="label">Add a place</div>
+            </div>
+          </div>
+
+          <div class="sec" style="margin-top:18px;"><h3>Across every address</h3></div>
+
+          <div class="svc">
+            <div class="svc-ico" style="color:var(--l-terracotta);"><svg class="ico" width="18" height="18"><use href="#i-bolt"></use></svg></div>
+            <div class="svc-body"><div class="n">Utilities</div><div class="m">ELEC · GAS · WATER · 11 providers</div></div>
+            <div class="amt">$412<span class="per">/mo</span></div>
+          </div>
+          <div class="svc">
+            <div class="svc-ico" style="color:var(--l-brass);"><svg class="ico" width="18" height="18"><use href="#i-play"></use></svg></div>
+            <div class="svc-body"><div class="n">Subscriptions</div><div class="m">14 services · 3 renew this month</div></div>
+            <div class="amt">$186<span class="per">/mo</span></div>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <div class="tab"><svg><use href="#i-home"></use></svg>Home</div>
+          <div class="tab on"><svg><use href="#i-pin"></use></svg>Places</div>
+          <div class="tab"><svg><use href="#i-grid"></use></svg>Services</div>
+          <div class="tab"><svg><use href="#i-truck"></use></svg>Move</div>
+          <div class="tab"><svg><use href="#i-more"></use></svg>More</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+
+</body></html>

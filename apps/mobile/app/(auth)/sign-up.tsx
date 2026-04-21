@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail, Lock, User, CheckCircle2 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -14,6 +15,7 @@ import { api, API_URL } from "@/lib/api";
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const webBase = API_URL.replace(/\/api\/?$/, "");
 
   const [firstName, setFirstName] = useState("");
@@ -35,7 +37,7 @@ export default function SignUpScreen() {
     });
 
     if (res.error || !res.data?.success) {
-      setError(res.error || "Sign-up failed.");
+      setError(res.error || t("auth.invalid"));
       hapticError();
       setLoading(false);
       return;
@@ -54,12 +56,12 @@ export default function SignUpScreen() {
     return (
       <ScrollView contentContainerStyle={styles.scroll}>
         <CheckCircle2 size={48} color="#34d399" style={{ alignSelf: "center" }} />
-        <Text style={styles.title}>Check your email</Text>
+        <Text style={styles.title}>{t("auth.checkEmail" as any, "Check your email")}</Text>
         <Text style={styles.subtitle}>
-          We sent a verification link to {email}. Click it to confirm your address, then sign in.
+          {(t as any)("auth.checkEmailDescription", { email, defaultValue: `We sent a verification link to ${email}.` })}
         </Text>
         <Button
-          title="Back to sign in"
+          title={t("auth.signIn")}
           onPress={() => router.replace("/(auth)/sign-in")}
           style={{ marginTop: 16 }}
         />
@@ -71,19 +73,19 @@ export default function SignUpScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <LogoBrand />
-        <Text style={styles.title}>Create your account</Text>
-        <Text style={styles.subtitle}>Free 7-day trial, no card required</Text>
+        <Text style={styles.title}>{t("auth.signUp_title")}</Text>
+        <Text style={styles.subtitle}>{t("auth.signUp")}</Text>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Button
-          title="Sign up with Google"
+          title={t("auth.continueWithGoogle")}
           variant="outline"
           onPress={() => openOAuth("google")}
           style={styles.oauthBtn}
         />
         <Button
-          title="Sign up with Apple"
+          title={t("auth.continueWithApple")}
           variant="primary"
           onPress={() => openOAuth("apple")}
           style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
@@ -91,36 +93,33 @@ export default function SignUpScreen() {
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
+          <Text style={styles.dividerText}>{t("auth.or").toUpperCase()}</Text>
           <View style={styles.dividerLine} />
         </View>
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Input placeholder="First name" value={firstName} onChangeText={setFirstName}
+            <Input placeholder={t("auth.firstName")} value={firstName} onChangeText={setFirstName}
               leftIcon={<User size={16} color={theme.colors.textMuted} />} />
           </View>
           <View style={{ flex: 1 }}>
-            <Input placeholder="Last name" value={lastName} onChangeText={setLastName} />
+            <Input placeholder={t("auth.lastName")} value={lastName} onChangeText={setLastName} />
           </View>
         </View>
 
         <Input
-          placeholder="Email" value={email} onChangeText={setEmail}
+          placeholder={t("auth.email")} value={email} onChangeText={setEmail}
           keyboardType="email-address" autoCapitalize="none" autoComplete="email"
           leftIcon={<Mail size={16} color={theme.colors.textMuted} />}
         />
         <Input
-          placeholder="Password (12+ chars)" value={password} onChangeText={setPassword}
+          placeholder={t("auth.password")} value={password} onChangeText={setPassword}
           secureTextEntry autoComplete="password-new"
           leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
         />
-        <Text style={styles.hint}>
-          At least 12 characters with upper, lower, digit, and special.
-        </Text>
 
         <Button
-          title={loading ? "Creating…" : "Create account"}
+          title={loading ? t("common.loading") : t("auth.signUp")}
           onPress={handleSubmit}
           disabled={loading || !email || !password}
           style={{ marginTop: 12 }}
@@ -131,7 +130,7 @@ export default function SignUpScreen() {
           style={{ alignItems: "center", marginTop: 12 }}
         >
           <Text style={styles.linkText}>
-            Already have an account? <Text style={styles.linkEmphasis}>Sign in</Text>
+            {t("auth.haveAccount")} <Text style={styles.linkEmphasis}>{t("auth.signIn")}</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>

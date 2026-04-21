@@ -16,6 +16,7 @@ import {
   TrendingDown,
   Plus,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -24,7 +25,16 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function BudgetScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [budgets, setBudgets] = useState<any[]>([]);
+
+  // Locale-aware currency formatter — reused in every card.
+  const fmt = (n: number) =>
+    new Intl.NumberFormat(i18n.language || "en", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(n);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -58,7 +68,7 @@ export default function BudgetScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Budget</Text>
+        <Text style={styles.title}>{t("budget.title")}</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/budget/new" as any)}>
           <Plus size={20} color="#fff" />
         </TouchableOpacity>
@@ -68,18 +78,18 @@ export default function BudgetScreen() {
       <View style={styles.summaryRow}>
         <View style={[styles.summaryCard, { backgroundColor: theme.colors.emerald.bg, borderColor: theme.colors.emerald.border }]}>
           <TrendingUp size={16} color={theme.colors.emerald.text} />
-          <Text style={[styles.summaryValue, { color: theme.colors.emerald.text }]}>${totalIncome.toLocaleString()}</Text>
-          <Text style={styles.summaryLabel}>Income</Text>
+          <Text style={[styles.summaryValue, { color: theme.colors.emerald.text }]}>{fmt(totalIncome)}</Text>
+          <Text style={styles.summaryLabel}>{t("budget.actualIncome")}</Text>
         </View>
         <View style={[styles.summaryCard, { backgroundColor: theme.colors.rose.bg, borderColor: theme.colors.rose.border }]}>
           <TrendingDown size={16} color={theme.colors.rose.text} />
-          <Text style={[styles.summaryValue, { color: theme.colors.rose.text }]}>${totalExpenses.toLocaleString()}</Text>
-          <Text style={styles.summaryLabel}>Expenses</Text>
+          <Text style={[styles.summaryValue, { color: theme.colors.rose.text }]}>{fmt(totalExpenses)}</Text>
+          <Text style={styles.summaryLabel}>{t("budget.actualExpenses")}</Text>
         </View>
         <View style={[styles.summaryCard, { backgroundColor: theme.colors.orange.bg, borderColor: theme.colors.orange.border }]}>
           <DollarSign size={16} color={theme.colors.orange.text} />
-          <Text style={[styles.summaryValue, { color: theme.colors.orange.text }]}>${(totalIncome - totalExpenses).toLocaleString()}</Text>
-          <Text style={styles.summaryLabel}>Balance</Text>
+          <Text style={[styles.summaryValue, { color: theme.colors.orange.text }]}>{fmt(totalIncome - totalExpenses)}</Text>
+          <Text style={styles.summaryLabel}>{t("budget.variance")}</Text>
         </View>
       </View>
 
@@ -91,9 +101,9 @@ export default function BudgetScreen() {
         {budgets.length === 0 ? (
           <EmptyState
             icon={<DollarSign size={32} color={theme.colors.primary} />}
-            title="No budget entries"
-            description="Start tracking your monthly income and expenses."
-            actionLabel="Add Budget"
+            title={t("empty.budgets")}
+            description={t("empty.budgetsDescription")}
+            actionLabel={t("empty.addBudget")}
             onAction={() => router.push("/budget/new" as any)}
           />
         ) : (
@@ -103,21 +113,21 @@ export default function BudgetScreen() {
                 <View style={styles.budgetHeader}>
                   <Text style={styles.budgetMonth}>{budget.month} {budget.year}</Text>
                   <Text style={[styles.budgetBalance, { color: (budget.actualIncome || 0) - (budget.actualExpenses || 0) >= 0 ? theme.colors.emerald.text : theme.colors.rose.text }]}>
-                    ${((budget.actualIncome || 0) - (budget.actualExpenses || 0)).toLocaleString()}
+                    {fmt((budget.actualIncome || 0) - (budget.actualExpenses || 0))}
                   </Text>
                 </View>
                 <View style={styles.budgetStats}>
                   <View style={styles.budgetStat}>
-                    <Text style={styles.budgetStatLabel}>Income</Text>
-                    <Text style={[styles.budgetStatValue, { color: theme.colors.emerald.text }]}>${(budget.actualIncome || 0).toLocaleString()}</Text>
+                    <Text style={styles.budgetStatLabel}>{t("budget.actualIncome")}</Text>
+                    <Text style={[styles.budgetStatValue, { color: theme.colors.emerald.text }]}>{fmt(budget.actualIncome || 0)}</Text>
                   </View>
                   <View style={styles.budgetStat}>
-                    <Text style={styles.budgetStatLabel}>Expenses</Text>
-                    <Text style={[styles.budgetStatValue, { color: theme.colors.rose.text }]}>${(budget.actualExpenses || 0).toLocaleString()}</Text>
+                    <Text style={styles.budgetStatLabel}>{t("budget.actualExpenses")}</Text>
+                    <Text style={[styles.budgetStatValue, { color: theme.colors.rose.text }]}>{fmt(budget.actualExpenses || 0)}</Text>
                   </View>
                   <View style={styles.budgetStat}>
-                    <Text style={styles.budgetStatLabel}>Planned</Text>
-                    <Text style={styles.budgetStatValue}>${(budget.plannedExpenses || 0).toLocaleString()}</Text>
+                    <Text style={styles.budgetStatLabel}>{t("budget.plannedExpenses")}</Text>
+                    <Text style={styles.budgetStatValue}>{fmt(budget.plannedExpenses || 0)}</Text>
                   </View>
                 </View>
                 {budget.notes && <Text style={styles.budgetNotes} numberOfLines={2}>{budget.notes}</Text>}

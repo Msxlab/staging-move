@@ -26,6 +26,13 @@ export interface AdminSession {
   role: string;
   fingerprint?: string;
   sessionId?: string;
+  /**
+   * MFA-enabled flag from the JWT claim. Used by middleware to gate
+   * access for roles that must complete MFA setup before using the app.
+   * Null/undefined means the token was issued before this claim existed
+   * (legacy session) — treat as "unknown" and fall back to DB lookup.
+   */
+  mfaEnabled?: boolean;
 }
 
 /**
@@ -52,10 +59,14 @@ export async function createSession(
   adminId: string,
   email: string,
   role: string,
-  fingerprint?: string
+  fingerprint?: string,
+  mfaEnabled?: boolean
 ): Promise<string> {
   const claims: Record<string, unknown> = { adminId, email, role };
   if (fingerprint) claims.fp = fingerprint;
+  // Embed the MFA-enabled flag so middleware (Edge Runtime, no DB) can
+  // gate access for roles that require MFA without an extra round trip.
+  if (typeof mfaEnabled === "boolean") claims.mfaEnabled = mfaEnabled;
 
   const token = await new SignJWT(claims)
     .setProtectedHeader({ alg: "HS256" })
@@ -73,6 +84,55 @@ export async function createSession(
   });
 
   return token;
+}
+
+/**
+ * Re-issue the current session JWT with a fresh claim set. Used after
+ * privileged state changes that affect middleware gating — e.g., the
+ * admin just completed MFA setup and we need the JWT to reflect
+ * `mfaEnabled: true` without forcing them to log out and back in.
+ */
+export async function refreshSessionCookie(
+  session: AdminSession,
+  overrides: { mfaEnabled?: boolean } = {}
+): Promise<string> {
+  const cookieStore = await cookies();
+  const existing = cookieStore.get(COOKIE_NAME)?.value;
+  // Invalidate the old DB-tracked row so its tokenHash cannot be reused.
+  if (existing) {
+    const oldHash = await hashSessionToken(existing).catch(() => null);
+    if (oldHash) {
+      await prisma.adminSession.updateMany({
+        where: { tokenHash: oldHash, isActive: true },
+        data: { isActive: false },
+      }).catch(() => null);
+    }
+  }
+
+  const mfaEnabled =
+    typeof overrides.mfaEnabled === "boolean"
+      ? overrides.mfaEnabled
+      : session.mfaEnabled;
+
+  const newToken = await createSession(
+    session.adminId,
+    session.email,
+    session.role,
+    session.fingerprint,
+    mfaEnabled
+  );
+
+  // Mirror the new row into AdminSession so getSession() finds it.
+  const newHash = await hashSessionToken(newToken);
+  await prisma.adminSession.create({
+    data: {
+      adminUserId: session.adminId,
+      tokenHash: newHash,
+      expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000),
+    },
+  }).catch(() => null);
+
+  return newToken;
 }
 
 export async function getSession(): Promise<AdminSession | null> {
@@ -122,6 +182,10 @@ export async function getSession(): Promise<AdminSession | null> {
       role: payload.role as string,
       fingerprint: (payload.fp as string) || undefined,
       sessionId: sessionRecord.id,
+      mfaEnabled:
+        typeof payload.mfaEnabled === "boolean"
+          ? (payload.mfaEnabled as boolean)
+          : undefined,
     };
   } catch {
     if (tokenHash) {
@@ -296,36 +360,27 @@ export async function requirePermission(
   throw new Error("FORBIDDEN");
 }
 
-function getLegacyRolePermission(role: string, resource: string) {
-  if (role === "SUPER_ADMIN") {
-    return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
-  }
-
-  if (role === "ADMIN") {
-    return {
-      canRead: true,
-      canCreate: resource !== "admin_users",
-      canUpdate: resource !== "admin_users",
-      canDelete: resource !== "admin_users",
-    };
-  }
-
-  if (role === "MODERATOR") {
-    return {
-      canRead: true,
-      canCreate: resource === "reviews",
-      canUpdate: resource === "reviews",
-      canDelete: false,
-    };
-  }
-
-  if (role === "VIEWER") {
-    return { canRead: true, canCreate: false, canUpdate: false, canDelete: false };
-  }
-
-  return null;
-}
-
+/**
+ * Runtime authorization check.
+ *
+ * Fails CLOSED: any admin without a persisted row for `resource` is
+ * denied regardless of role. This is a deliberate departure from the
+ * old "legacy fallback" behavior, which silently granted role-default
+ * access when rows were missing — a least-privilege violation that
+ * created a gap between seed/create paths and enforcement.
+ *
+ * The one exception is SUPER_ADMIN: it short-circuits to allow so a
+ * root operator can't lock themselves out even if their permission
+ * rows are somehow corrupted or deleted. Demoting a SUPER_ADMIN to a
+ * lower role still revokes access because the check reads the current
+ * role, not the JWT claim.
+ *
+ * If an existing admin ends up with zero rows (pre-migration data,
+ * manual DB surgery, etc.) they will receive a 403 on any gated
+ * endpoint. Re-create or re-invite them through the team UI, or run
+ * `buildDefaultPermissionMatrix(admin.role)` from
+ * `./admin-permissions.ts` against their ID to backfill.
+ */
 export async function checkPermission(
   adminId: string,
   resource: string,
@@ -338,19 +393,11 @@ export async function checkPermission(
 
   if (!admin || !admin.isActive) return false;
 
-  // SUPER_ADMIN has all permissions
+  // SUPER_ADMIN short-circuit — root operator always retains access.
   if (admin.role === "SUPER_ADMIN") return true;
 
-  // Check specific permission
+  // Every other role needs an explicit row for the resource.
   const permission = admin.permissions.find((p: any) => p.resource === resource);
-  if (permission) {
-    return permission[action];
-  }
-
-  if (admin.permissions.length === 0) {
-    const legacyPermission = getLegacyRolePermission(admin.role, resource);
-    return legacyPermission ? legacyPermission[action] : false;
-  }
-
-  return false;
+  if (!permission) return false;
+  return permission[action];
 }

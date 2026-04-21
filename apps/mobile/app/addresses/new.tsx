@@ -16,27 +16,12 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, MapPin, Check, Calendar } from "lucide-react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useTranslation } from "react-i18next";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
-
-const ADDRESS_TYPES = [
-  { value: "HOME", label: "Home" },
-  { value: "WORK", label: "Work" },
-  { value: "VACATION", label: "Vacation" },
-  { value: "TEMPORARY", label: "Temporary" },
-  { value: "STORAGE", label: "Storage" },
-  { value: "OTHER", label: "Other" },
-];
-
-const OWNERSHIP_TYPES = [
-  { value: "OWNER", label: "Owner" },
-  { value: "RENTER", label: "Renter" },
-  { value: "FAMILY", label: "Family" },
-  { value: "OTHER", label: "Other" },
-];
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -48,7 +33,26 @@ const US_STATES = [
 
 export default function NewAddressScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(false);
+
+  // Address type + ownership option labels — built inside the component
+  // so they re-compute when the user switches language mid-session.
+  const ADDRESS_TYPES = [
+    { value: "HOME", label: t("addresses.type_primary") },
+    { value: "WORK", label: t("addresses.type_secondary") },
+    { value: "VACATION", label: t("addresses.type_other") },
+    { value: "TEMPORARY", label: t("addresses.type_rental") },
+    { value: "STORAGE", label: t("addresses.type_other") },
+    { value: "OTHER", label: t("addresses.type_other") },
+  ];
+
+  const OWNERSHIP_TYPES = [
+    { value: "OWNER", label: t("addresses.ownership_owner") },
+    { value: "RENTER", label: t("addresses.ownership_renter") },
+    { value: "FAMILY", label: t("addresses.ownership_family") },
+    { value: "OTHER", label: t("addresses.type_other") },
+  ];
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedStartDate, setSelectedStartDate] = useState<Date>(new Date());
   const [form, setForm] = useState({
@@ -100,7 +104,7 @@ export default function NewAddressScreen() {
     setLoading(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.retry"), res.error);
     } else {
       hapticSuccess();
       router.back();
@@ -113,7 +117,7 @@ export default function NewAddressScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Add Address</Text>
+        <Text style={styles.title}>{t("addresses.newTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -128,7 +132,7 @@ export default function NewAddressScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Type Selector */}
-        <Text style={styles.sectionLabel}>Type</Text>
+        <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
         <View style={styles.chipRow}>
           {ADDRESS_TYPES.map((t) => (
             <TouchableOpacity
@@ -144,10 +148,10 @@ export default function NewAddressScreen() {
         </View>
 
         {/* Nickname */}
-        <Text style={styles.label}>Nickname</Text>
+        <Text style={styles.label}>{t("addresses.nickname")}</Text>
         <TextInput
           style={styles.input}
-          placeholder='e.g., "Main Residence"'
+          placeholder={t("addresses.nicknameHint")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.nickname}
           onChangeText={(v) => update("nickname", v)}
@@ -155,7 +159,7 @@ export default function NewAddressScreen() {
 
         {/* Street */}
         <AddressAutocompleteField
-          label="Street Address *"
+          label={t("addresses.street") + " *"}
           value={form.street}
           placeholder="123 Main Street"
           onValueChange={(value) => update("street", value)}
@@ -163,17 +167,17 @@ export default function NewAddressScreen() {
         />
 
         {/* Street 2 */}
-        <Text style={styles.label}>Apt / Suite</Text>
+        <Text style={styles.label}>{t("addresses.street2")}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Apt 4B"
+          placeholder={t("addresses.street2")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.street2}
           onChangeText={(v) => update("street2", v)}
         />
 
         {/* City */}
-        <Text style={styles.label}>City *</Text>
+        <Text style={styles.label}>{t("addresses.city")} *</Text>
         <TextInput
           style={styles.input}
           placeholder="New York"
@@ -185,7 +189,7 @@ export default function NewAddressScreen() {
         {/* State + ZIP row */}
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>State *</Text>
+            <Text style={styles.label}>{t("addresses.state")} *</Text>
             <TextInput
               style={styles.input}
               placeholder="NY"
@@ -197,7 +201,7 @@ export default function NewAddressScreen() {
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>ZIP *</Text>
+            <Text style={styles.label}>{t("addresses.zip")} *</Text>
             <TextInput
               style={styles.input}
               placeholder="10001"
@@ -211,7 +215,7 @@ export default function NewAddressScreen() {
         </View>
 
         {/* Ownership */}
-        <Text style={styles.sectionLabel}>Ownership</Text>
+        <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
         <View style={styles.chipRow}>
           {OWNERSHIP_TYPES.map((o) => (
             <TouchableOpacity
@@ -227,7 +231,7 @@ export default function NewAddressScreen() {
         </View>
 
         {/* Move-in Date */}
-        <Text style={styles.label}>Move-in Date</Text>
+        <Text style={styles.label}>{t("addresses.startDate")}</Text>
         <TouchableOpacity
           style={styles.dateButton}
           onPress={() => setShowDatePicker(true)}
@@ -235,7 +239,7 @@ export default function NewAddressScreen() {
         >
           <Calendar size={16} color={theme.colors.primary} />
           <Text style={[styles.dateButtonText, { color: theme.colors.text }]}>
-            {selectedStartDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+            {selectedStartDate.toLocaleDateString(i18n.language || "en", { month: "long", day: "numeric", year: "numeric" })}
           </Text>
         </TouchableOpacity>
         {showDatePicker && (
@@ -258,13 +262,13 @@ export default function NewAddressScreen() {
             style={{ alignSelf: "flex-end", marginTop: 4 }}
             onPress={() => setShowDatePicker(false)}
           >
-            <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>Done</Text>
+            <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>{t("common.done")}</Text>
           </TouchableOpacity>
         )}
 
         {/* Primary Toggle */}
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Primary Address</Text>
+          <Text style={styles.switchLabel}>{t("addresses.title")}</Text>
           <Switch
             value={form.isPrimary}
             onValueChange={(v) => update("isPrimary", v)}
@@ -285,7 +289,7 @@ export default function NewAddressScreen() {
           ) : (
             <>
               <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>Save Address</Text>
+              <Text style={styles.saveBtnText}>{t("addresses.save")}</Text>
             </>
           )}
         </TouchableOpacity>

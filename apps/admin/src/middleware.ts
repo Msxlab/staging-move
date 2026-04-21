@@ -75,6 +75,53 @@ function getAllowedOrigins(req: NextRequest) {
   return new Set(originCandidates.map((candidate) => normalizeOrigin(candidate)).filter(Boolean));
 }
 
+// ── CSP nonce ───────────────────────────────────────────────
+// Per-request base64url nonce. Injected into the response CSP header
+// and echoed back on `x-nonce` so server components (Next.js App Router
+// RSC) can read it via `headers().get("x-nonce")` and stamp their own
+// inline <script> / <style> tags with it. This removes the need for
+// `'unsafe-inline'` on script-src in production while keeping Radix's
+// occasional inline styles working via CSP3's nonce-priority behavior.
+const NONCE_BYTES = 16; // 128 bits — well above NIST SP 800-63B minimum
+
+function generateCspNonce(): string {
+  const bytes = new Uint8Array(NONCE_BYTES);
+  crypto.getRandomValues(bytes);
+  // base64url without padding — matches the encoding Next.js expects
+  // when it auto-attaches the nonce to its generated <Script> tags.
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary)
+    .replace(/=+$/, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+
+function buildCspHeader(nonce: string, isDev: boolean): string {
+  // Dev needs `'unsafe-eval'` for HMR + Fast Refresh + React DevTools.
+  // Prod drops it entirely — all runtime `eval` usage is a policy violation.
+  const scriptSrc = isDev
+    ? `'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic'`
+    : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+  // style-src nonce + `'unsafe-inline'` as CSP2 fallback only. CSP3
+  // browsers IGNORE `'unsafe-inline'` when a nonce is present, so the
+  // effective directive in modern browsers is nonce-only — which is
+  // exactly the hardening we want. Google Fonts is allowed explicitly.
+  const styleSrc = `'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`;
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    `style-src ${styleSrc}`,
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob:",
+    `connect-src 'self'${isDev ? " ws: http: https:" : ""}`,
+    "frame-src 'none'",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
 // Request body size limit (5MB for backup imports, 1MB for regular JSON)
 const MAX_JSON_BODY = 1 * 1024 * 1024; // 1MB
 const MAX_BACKUP_BODY = 50 * 1024 * 1024; // 50MB (backups can be large)
@@ -160,6 +207,31 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   return null;
 }
 
+// Locale auto-detect: set NEXT_LOCALE cookie from Accept-Language on first
+// visit. Admin's LanguageSelector overwrites this cookie on explicit choice.
+const ADMIN_SUPPORTED_LOCALES = ["en", "es"] as const;
+const ADMIN_DEFAULT_LOCALE = "en";
+
+function detectAdminLocale(acceptLanguage: string | null): string {
+  if (!acceptLanguage) return ADMIN_DEFAULT_LOCALE;
+  for (const entry of acceptLanguage.split(",")) {
+    const code = entry.split(";")[0].trim().toLowerCase().split("-")[0];
+    if ((ADMIN_SUPPORTED_LOCALES as readonly string[]).includes(code)) return code;
+  }
+  return ADMIN_DEFAULT_LOCALE;
+}
+
+function seedLocaleCookie(request: NextRequest, response: NextResponse): NextResponse {
+  if (request.cookies.get("NEXT_LOCALE")) return response;
+  const detected = detectAdminLocale(request.headers.get("accept-language"));
+  response.cookies.set("NEXT_LOCALE", detected, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -187,7 +259,7 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    return seedLocaleCookie(request, NextResponse.next());
   }
 
   // Body size limit check
@@ -214,6 +286,40 @@ export async function middleware(request: NextRequest) {
     // JWT verification only — no DB calls in Edge Runtime
     // isActive check is enforced by requireAdmin() in every API route
     const { payload } = await jwtVerify(token, JWT_SECRET);
+
+    // ── MFA setup gate ────────────────────────────────────────
+    // Roles that handle the most sensitive operations must have MFA
+    // enrolled. If the JWT says MFA is not yet enabled for a
+    // SUPER_ADMIN, restrict them to the MFA setup surface only. After
+    // setup succeeds the /api/auth/mfa/verify route reissues the JWT
+    // with `mfaEnabled: true` (see refreshSessionCookie).
+    const role = typeof payload.role === "string" ? payload.role : "";
+    const mfaEnabled = payload.mfaEnabled === true;
+    const requiresMfaSetup = role === "SUPER_ADMIN" && !mfaEnabled;
+    if (requiresMfaSetup) {
+      const allowedDuringSetup =
+        pathname === "/settings/two-factor" ||
+        pathname.startsWith("/settings/two-factor/") ||
+        pathname === "/api/auth/mfa/setup" ||
+        pathname === "/api/auth/mfa/verify" ||
+        pathname === "/api/auth/me" ||
+        pathname === "/api/auth/logout" ||
+        pathname === "/api/auth/sessions";
+      if (!allowedDuringSetup) {
+        if (isApiRoute) {
+          return NextResponse.json(
+            {
+              error: "MFA enrollment required before this action is allowed.",
+              mfaSetupRequired: true,
+            },
+            { status: 403 },
+          );
+        }
+        const setupUrl = new URL("/settings/two-factor", request.url);
+        setupUrl.searchParams.set("required", "1");
+        return NextResponse.redirect(setupUrl);
+      }
+    }
 
     // Session fingerprint validation — prevent session hijacking
     const fp = payload.fp as string | undefined;
@@ -244,7 +350,22 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    return NextResponse.next();
+    // Happy path: attach nonce + CSP. Radix/shadcn inline styles
+    // continue to work under CSP3 nonce-priority; prod gets a strict
+    // no-'unsafe-inline' script-src.
+    const nonce = generateCspNonce();
+    const isDev = process.env.NODE_ENV !== "production";
+    const csp = buildCspHeader(nonce, isDev);
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-nonce", nonce);
+
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    response.headers.set("Content-Security-Policy", csp);
+    response.headers.set("x-nonce", nonce);
+    return response;
   } catch {
     // Token invalid or expired — clear cookie
     if (isApiRoute) {

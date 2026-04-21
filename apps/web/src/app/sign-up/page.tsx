@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -12,6 +13,10 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const tAuth = useTranslations("auth");
+  const tCommon = useTranslations("common");
+  const tToast = useTranslations("toast");
+  const tLanding = useTranslations("landing");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,14 +35,14 @@ export default function SignUpPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error || "Sign-up failed.");
+        setError(data.error || tAuth("error_generic"));
         setLoading(false);
         return;
       }
       setDone(true);
       setLoading(false);
     } catch {
-      setError("Network error. Please try again.");
+      setError(tToast("networkError"));
       setLoading(false);
     }
   };
@@ -47,15 +52,15 @@ export default function SignUpPage() {
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 space-y-4 text-center">
           <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto" />
-          <h1 className="text-2xl font-bold text-white">Check your email</h1>
+          <h1 className="text-2xl font-bold text-white">{tAuth("checkEmail")}</h1>
           <p className="text-sm text-white/60">
-            We sent a verification link to <strong className="text-white">{email}</strong>. Click the link to confirm your address, then sign in.
+            {tAuth("checkEmailDescription", { email })}
           </p>
           <Link
             href="/sign-in"
             className="inline-block rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition"
           >
-            Go to sign in
+            {tAuth("signInCta")}
           </Link>
         </div>
       </div>
@@ -66,8 +71,8 @@ export default function SignUpPage() {
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 space-y-6">
         <div className="text-center space-y-1.5">
-          <h1 className="text-2xl font-bold text-white">Create your account</h1>
-          <p className="text-sm text-white/50">Free 7-day trial, no card required</p>
+          <h1 className="text-2xl font-bold text-white">{tAuth("signUp_title")}</h1>
+          <p className="text-sm text-white/50">{tLanding("noCreditCard")}</p>
         </div>
 
         {error && (
@@ -88,7 +93,7 @@ export default function SignUpPage() {
               <path fill="#4CAF50" d="M24 44c5.3 0 10-2 13.6-5.3l-6.3-5.3A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/>
               <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3A12 12 0 0 1 31.3 33.4l6.3 5.3C37.2 39.8 44 34.7 44 24c0-1.2-.1-2.4-.4-3.5z"/>
             </svg>
-            Sign up with Google
+            {tAuth("continueWithGoogle")}
           </a>
           <a
             href="/api/auth/oauth/apple"
@@ -97,12 +102,12 @@ export default function SignUpPage() {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
             </svg>
-            Sign up with Apple
+            {tAuth("continueWithApple")}
           </a>
 
           <div className="flex items-center gap-3 py-1">
             <div className="flex-1 h-px bg-white/10" />
-            <span className="text-[11px] uppercase tracking-wider text-white/30">or</span>
+            <span className="text-[11px] uppercase tracking-wider text-white/30">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
             <div className="flex-1 h-px bg-white/10" />
           </div>
         </div>
@@ -110,7 +115,7 @@ export default function SignUpPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label htmlFor="firstName" className="text-xs font-medium text-white/60 block mb-1">First name</label>
+              <label htmlFor="firstName" className="text-xs font-medium text-white/60 block mb-1">{tAuth("firstName")}</label>
               <input
                 id="firstName" type="text" autoComplete="given-name"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
@@ -118,7 +123,7 @@ export default function SignUpPage() {
               />
             </div>
             <div>
-              <label htmlFor="lastName" className="text-xs font-medium text-white/60 block mb-1">Last name</label>
+              <label htmlFor="lastName" className="text-xs font-medium text-white/60 block mb-1">{tAuth("lastName")}</label>
               <input
                 id="lastName" type="text" autoComplete="family-name"
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
@@ -127,7 +132,7 @@ export default function SignUpPage() {
             </div>
           </div>
           <div>
-            <label htmlFor="email" className="text-xs font-medium text-white/60 block mb-1">Email</label>
+            <label htmlFor="email" className="text-xs font-medium text-white/60 block mb-1">{tAuth("email")}</label>
             <input
               id="email" type="email" required autoComplete="email"
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
@@ -135,14 +140,15 @@ export default function SignUpPage() {
             />
           </div>
           <div>
-            <label htmlFor="password" className="text-xs font-medium text-white/60 block mb-1">Password</label>
+            <label htmlFor="password" className="text-xs font-medium text-white/60 block mb-1">{tAuth("password")}</label>
             <input
               id="password" type="password" required autoComplete="new-password" minLength={12}
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
               value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder={tAuth("passwordPlaceholder")}
             />
             <p className="text-[11px] text-white/40 mt-1.5">
-              At least 12 characters with upper, lower, digit, and special.
+              {tAuth("resetPassword_subtitle")}
             </p>
           </div>
 
@@ -151,19 +157,38 @@ export default function SignUpPage() {
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Create account
+            {tAuth("signUpCta")}
           </button>
         </form>
 
         <p className="text-center text-xs text-white/40">
-          Already have an account?{" "}
-          <Link href="/sign-in" className="text-orange-400 hover:underline">Sign in</Link>
+          {tAuth("haveAccount")}{" "}
+          <Link href="/sign-in" className="text-orange-400 hover:underline">{tCommon("signIn")}</Link>
         </p>
 
         <p className="text-[10px] text-white/30 text-center">
-          By signing up you agree to our{" "}
-          <Link href="/terms" className="underline">Terms</Link> and{" "}
-          <Link href="/privacy" className="underline">Privacy Policy</Link>.
+          {tAuth("agreeToTerms", {
+            terms: "__TERMS__",
+            privacy: "__PRIVACY__",
+          }).split("__TERMS__").map((seg, i, arr) => {
+            if (i === arr.length - 1) {
+              return <span key={i}>{seg}</span>;
+            }
+            return (
+              <span key={i}>
+                {seg}
+                <Link href="/terms" className="underline">{tCommon("terms")}</Link>
+                {i === 0 && ""}
+              </span>
+            );
+          })}
+          {/* The agreeToTerms string is: "I agree to the {terms} and {privacy}." — we
+              stitch the terms + privacy links back in with proper Link components. */}
+        </p>
+        <p className="text-[10px] text-white/30 text-center">
+          <Link href="/terms" className="underline">{tCommon("terms")}</Link>
+          {" · "}
+          <Link href="/privacy" className="underline">{tCommon("privacy")}</Link>
         </p>
       </div>
     </div>

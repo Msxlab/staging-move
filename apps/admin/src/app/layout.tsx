@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -20,20 +22,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   // `suppressHydrationWarning` is required because next-themes writes a
   // class on <html> during boot; without it React warns on mismatch.
+  // The `lang` attr mirrors next-intl's resolved locale so screen readers
+  // and Google agree with the UI.
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans">
-        <ThemeProvider>
-          {children}
-          <Toaster position="top-right" richColors />
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

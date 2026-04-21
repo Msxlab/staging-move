@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_tokens.css"/>
+<style>
+html,body{margin:0;font-family:var(--font-sans);height:100%;}
+.wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100%;position:relative;}
+.wrap::after{content:"";position:absolute;top:14px;bottom:14px;left:50%;width:1px;background:linear-gradient(180deg,transparent,rgba(128,128,128,0.2),transparent);}
+.pane{padding:22px;box-sizing:border-box;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;gap:12px;}
+.kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 20px;position:relative;overflow:hidden;}
+.plan::before{content:"";position:absolute;right:-30px;top:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,var(--terracotta) 0%,transparent 60%);opacity:.12;}
+.head{display:flex;justify-content:space-between;align-items:flex-start;position:relative;}
+.route{font-family:var(--font-display);font-variation-settings:"opsz" 144;font-weight:500;font-size:26px;line-height:1.05;letter-spacing:-0.02em;}
+.route em{font-style:italic;color:var(--brass);font-weight:500;}
+.meta{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--fg-3);margin-top:6px;}
+.days{text-align:right;font-family:var(--font-display);line-height:1;}
+.days .n{font-size:32px;font-weight:400;font-variation-settings:"opsz" 144;letter-spacing:-0.025em;color:var(--terracotta);}
+.days .l{font-family:var(--font-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);margin-top:4px;}
+.prog{margin-top:18px;display:flex;align-items:center;gap:10px;}
+.bar{flex:1;height:2px;background:var(--line-2);border-radius:1px;overflow:hidden;position:relative;}
+.bar .fill{position:absolute;inset:0 38% 0 0;background:var(--terracotta);border-radius:1px;}
+.pt{font-family:var(--font-mono);font-size:10px;font-weight:600;color:var(--fg-2);font-variant-numeric:tabular-nums;}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="pane lf-dark"><div class="kicker">Active plan · Dark</div>
+    <div class="plan"><div class="head">
+      <div><div class="route">Austin <em>→</em> Denver</div><div class="meta">Moving day · May 14</div></div>
+      <div class="days"><div class="n">23</div><div class="l">Days</div></div>
+    </div><div class="prog"><span class="pt">13/21</span><div class="bar"><div class="fill"></div></div><span class="pt">62%</span></div></div>
+  </div>
+  <div class="pane lf-light"><div class="kicker">Active plan · Light</div>
+    <div class="plan"><div class="head">
+      <div><div class="route">Austin <em>→</em> Denver</div><div class="meta">Moving day · May 14</div></div>
+      <div class="days"><div class="n">23</div><div class="l">Days</div></div>
+    </div><div class="prog"><span class="pt">13/21</span><div class="bar"><div class="fill"></div></div><span class="pt">62%</span></div></div>
+  </div>
+</div>
+</body></html>

@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { prisma } from "@/lib/db";
+import { prisma, rawPrisma } from "@/lib/db";
 import { destroyAllUserSessions } from "@/lib/user-auth";
 
 export interface AccountDeletionRequestData {
@@ -151,8 +151,14 @@ export async function processAccountDeletionRequest(requestId: string) {
     try {
       // Invalidate any live sessions first so the user can't keep making requests
       // mid-deletion. Cascade deletes the rest (sessions, oauth, profile, etc.).
+      //
+      // GDPR Article 17 ("right to erasure") requires a physical delete — use
+      // `rawPrisma` to bypass the global soft-delete extension, which would
+      // otherwise rewrite this into a `deletedAt` update and leave the row
+      // recoverable. Cascade FKs in the schema physically remove related
+      // addresses, services, budgets, sessions, OAuth links, etc.
       await destroyAllUserSessions(request.userId);
-      await prisma.user.delete({ where: { id: request.userId } });
+      await rawPrisma.user.delete({ where: { id: request.userId } });
       userDeleted = true;
     } catch (error) {
       if (!lastError) {

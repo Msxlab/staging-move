@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "@/styles/globals.css";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -67,32 +69,40 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  // next-intl reads the locale from the cookie / Accept-Language in
+  // `src/i18n/request.ts`. The `<html lang>` attr mirrors it so
+  // screen readers and Google's language detection agree with the UI.
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#7c3aed" />
+        <meta name="theme-color" content="#F97316" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LocateFlow" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" type="image/svg+xml" href="/logo-mark.svg" />
-        <link rel="mask-icon" href="/logo-mark.svg" color="#7c3aed" />
+        <link rel="mask-icon" href="/logo-mark.svg" color="#F97316" />
       </head>
       <body className={inter.className}>
-        <QueryProvider>
-          <ThemeProvider>
-            <SessionTracker />
-            {children}
-            <Toaster position="top-right" richColors />
-            <CookieConsent />
-          </ThemeProvider>
-        </QueryProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <QueryProvider>
+            <ThemeProvider>
+              <SessionTracker />
+              {children}
+              <Toaster position="top-right" richColors />
+              <CookieConsent />
+            </ThemeProvider>
+          </QueryProvider>
+        </NextIntlClientProvider>
         <script src="/register-sw.js" defer />
       </body>
     </html>

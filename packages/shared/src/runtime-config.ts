@@ -292,11 +292,33 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "CRON_SECRET",
     label: "Cron Secret",
-    description: "Bearer secret protecting scheduled jobs.",
+    description: "Bearer secret protecting scheduled cron jobs (/api/cron/*).",
     scope: "GLOBAL",
     category: "CRON",
     isSecret: true,
     requiredInProduction: true,
+    maskStrategy: "secret",
+  },
+  {
+    key: "INTERNAL_WEBHOOK_SECRET",
+    label: "Internal Webhook Secret",
+    description:
+      "Bearer secret for server-to-server internal webhooks (IP rule cache refresh, rate-limit log fan-out, security events). Falls back to CRON_SECRET when unset — set this in production to rotate independently.",
+    scope: "GLOBAL",
+    category: "CRON",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+  },
+  {
+    key: "IMPERSONATION_HANDOFF_SECRET",
+    label: "Impersonation Handoff Secret",
+    description:
+      "Bearer secret guarding the admin→web impersonation handoff endpoint. Falls back to CRON_SECRET when unset — set this in production to isolate impersonation auth from other internal secrets.",
+    scope: "GLOBAL",
+    category: "SECURITY",
+    isSecret: true,
+    requiredInProduction: false,
     maskStrategy: "secret",
   },
   {

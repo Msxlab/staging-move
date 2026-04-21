@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500;1,6..96,600&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_tokens.css"/>
+<style>
+html,body{margin:0;font-family:var(--font-sans);height:100%;}
+.wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100%;position:relative;}
+.wrap::after{content:"";position:absolute;top:14px;bottom:14px;left:50%;width:1px;background:linear-gradient(180deg,transparent,rgba(128,128,128,0.2),transparent);}
+.pane{padding:22px 26px;box-sizing:border-box;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;gap:10px;}
+.kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);}
+.h1{font-family:var(--font-display);font-variation-settings:"opsz" 96;font-weight:var(--display-weight);font-size:68px;line-height:0.92;letter-spacing:-0.045em;margin:0;}
+.h1 em{font-style:italic;color:var(--terracotta);font-weight:var(--display-italic-weight);}
+.sub{font-family:var(--font-sans);font-weight:300;margin-top:10px;font-size:13px;color:var(--fg-2);line-height:1.5;letter-spacing:-0.005em;}
+.stamp{font-family:var(--font-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--fg-3);margin-top:auto;}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="pane lf-dark">
+    <div class="kicker">Dark · Bodoni Moda 400</div>
+    <h1 class="h1">Every <em>address.</em><br/>Every service.</h1>
+    <p class="sub">Ultra-contrast editorial display · Geist body sans.</p>
+    <div class="stamp">Bodoni 68/0.92 — opsz 96</div>
+  </div>
+  <div class="pane lf-light">
+    <div class="kicker">Light · Bodoni Moda 500</div>
+    <h1 class="h1">Every <em>address.</em><br/>Every service.</h1>
+    <p class="sub">Heavier compositional weight for print-like presence on warm off-white.</p>
+    <div class="stamp">Bodoni 68/0.92 — opsz 96</div>
+  </div>
+</div>
+</body></html>

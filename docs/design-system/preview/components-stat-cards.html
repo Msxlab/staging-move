@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_tokens.css"/>
+<style>
+html,body{margin:0;font-family:var(--font-sans);height:100%;}
+.wrap{display:grid;grid-template-columns:1fr 1fr;min-height:100%;position:relative;}
+.wrap::after{content:"";position:absolute;top:14px;bottom:14px;left:50%;width:1px;background:linear-gradient(180deg,transparent,rgba(128,128,128,0.2),transparent);}
+.pane{padding:20px 22px;box-sizing:border-box;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;gap:10px;}
+.kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--fg-3);}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.stat{padding:14px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:4px;}
+.stat .l{font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--fg-3);}
+.stat .v{font-family:var(--font-display);font-variation-settings:"opsz" 144;font-size:28px;font-weight:400;letter-spacing:-0.025em;line-height:1;font-variant-numeric:tabular-nums;}
+.stat .d{font-family:var(--font-mono);font-size:10px;color:var(--sage);font-weight:600;}
+.stat.warm .v{color:var(--terracotta);}
+.stat svg{width:14px;height:14px;}
+.stat .head{display:flex;justify-content:space-between;align-items:center;color:var(--fg-3);}
+</style></head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="pin" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 21c-4.5-5.1-7-8.4-7-11.5a7 7 0 1 1 14 0c0 3.1-2.5 6.4-7 11.5z"/><circle cx="12" cy="9.5" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="gr" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+<symbol id="dl" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M12 3v18M16 7.5A3 3 0 0 0 13 5h-2a3 3 0 0 0 0 6h2a3 3 0 0 1 0 6h-2a3 3 0 0 1-3-2.5"/></symbol>
+<symbol id="ck" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5 10 17 19 7"/></symbol>
+</defs></svg>
+<div class="wrap">
+  <div class="pane lf-dark">
+    <div class="kicker">Stat cards · Dark</div>
+    <div class="row">
+      <div class="stat warm"><div class="head"><span class="l">Addresses</span><svg><use href="#pin"/></svg></div><div class="v">3</div><div class="d">↑ 1 this year</div></div>
+      <div class="stat"><div class="head"><span class="l">Services</span><svg><use href="#gr"/></svg></div><div class="v">47</div><div class="d">↑ 3 this month</div></div>
+      <div class="stat"><div class="head"><span class="l">Monthly</span><svg><use href="#dl"/></svg></div><div class="v">$1,284</div><div class="d" style="color:var(--terracotta);">↑ 4%</div></div>
+      <div class="stat"><div class="head"><span class="l">Tasks</span><svg><use href="#ck"/></svg></div><div class="v">12</div><div class="d" style="color:var(--brass);">3 due</div></div>
+    </div>
+  </div>
+  <div class="pane lf-light">
+    <div class="kicker">Stat cards · Light</div>
+    <div class="row">
+      <div class="stat warm"><div class="head"><span class="l">Addresses</span><svg><use href="#pin"/></svg></div><div class="v">3</div><div class="d">↑ 1 this year</div></div>
+      <div class="stat"><div class="head"><span class="l">Services</span><svg><use href="#gr"/></svg></div><div class="v">47</div><div class="d">↑ 3 this month</div></div>
+      <div class="stat"><div class="head"><span class="l">Monthly</span><svg><use href="#dl"/></svg></div><div class="v">$1,284</div><div class="d" style="color:var(--terracotta);">↑ 4%</div></div>
+      <div class="stat"><div class="head"><span class="l">Tasks</span><svg><use href="#ck"/></svg></div><div class="v">12</div><div class="d" style="color:var(--brass);">3 due</div></div>
+    </div>
+  </div>
+</div>
+</body></html>

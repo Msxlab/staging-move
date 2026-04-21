@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8" />
+<link rel="stylesheet" href="../colors_and_type.css" />
+<style>
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg-1); font-family: var(--font-sans); }
+  .card { padding: 20px 24px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+  .swatch { display: flex; flex-direction: column; gap: 6px; }
+  .chip { height: 56px; border-radius: 10px; border: 1px solid var(--border); display:flex; align-items:flex-end; padding: 6px 8px; }
+  .tag { font-family: var(--font-mono); font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.4); color: #fff; }
+  .chip-name { font-size: 11px; color: var(--fg-1); font-weight: 600; }
+  .chip-code { font-size: 10px; color: var(--fg-3); font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="swatch"><div class="chip" style="background:#0a0a0f;"><span class="tag">bg</span></div><div class="chip-name">Background</div><div class="chip-code">#0a0a0f</div></div>
+  <div class="swatch"><div class="chip" style="background:#12121a;"><span class="tag">surface</span></div><div class="chip-name">Surface</div><div class="chip-code">#12121a</div></div>
+  <div class="swatch"><div class="chip" style="background:#1a1a25;"><span class="tag">card</span></div><div class="chip-name">Card</div><div class="chip-code">#1a1a25</div></div>
+  <div class="swatch"><div class="chip" style="background:#22222f;"><span class="tag">hover</span></div><div class="chip-name">Card Hover</div><div class="chip-code">#22222f</div></div>
+  <div class="swatch"><div class="chip" style="background:#252530;"><span class="tag">elevated</span></div><div class="chip-name">Elevated</div><div class="chip-code">#252530</div></div>
+</div>
+</body>
+</html>

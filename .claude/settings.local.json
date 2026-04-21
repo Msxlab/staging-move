@@ -40,7 +40,10 @@
       "Bash(docker compose *)",
       "Bash(docker --version)",
       "Bash(pnpm view *)",
-      "Bash(pnpm --filter @locateflow/admin test)"
+      "Bash(pnpm --filter @locateflow/admin test)",
+      "Bash(mkdir -p .design-staging)",
+      "Bash(unzip -q -o \"LocateFlow Design System-handoff.zip\" -d .design-staging)",
+      "Bash(pnpm add *)"
     ]
   }
 }
