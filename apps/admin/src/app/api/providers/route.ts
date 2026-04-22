@@ -232,7 +232,7 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    if (created > 0) revalidateTag("providers");
+    if (created > 0) revalidateTag("providers", "default");
 
     return NextResponse.json({ created, skipped, errors: errors.slice(0, 10), total: rows.length });
   } catch (error: any) {
@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    revalidateTag("providers");
+    revalidateTag("providers", "default");
 
     return NextResponse.json({ provider }, { status: 201 });
   } catch (error: any) {

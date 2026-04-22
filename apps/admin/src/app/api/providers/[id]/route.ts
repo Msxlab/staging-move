@@ -172,7 +172,7 @@ export async function PATCH(
       },
     });
 
-    revalidateTag("providers");
+    revalidateTag("providers", "default");
 
     return NextResponse.json({ provider });
   } catch (error: any) {
@@ -238,7 +238,7 @@ export async function DELETE(
       },
     });
 
-    revalidateTag("providers");
+    revalidateTag("providers", "default");
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
