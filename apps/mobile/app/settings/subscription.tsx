@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -24,6 +25,13 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
+import {
+  closeConnection,
+  fetchSubscriptionProducts,
+  openNativeSubscriptionSettings,
+  purchaseSubscription,
+  restorePurchases,
+} from "@/lib/iap";
 
 const PLANS = [
   {
@@ -54,10 +62,19 @@ const PLANS = [
 type SubscriptionRecord = {
   plan?: string | null;
   status?: string | null;
+  provider?: string | null;
+  platform?: string | null;
   stripeCustomerId?: string | null;
   stripeCurrentPeriodEnd?: string | null;
+  currentPeriodEndsAt?: string | null;
   trialEndsAt?: string | null;
   premiumUntil?: string | null;
+  billingProductId?: string | null;
+};
+
+type IapProductsResponse = {
+  ios: { available: boolean; plans: { INDIVIDUAL: string | null } };
+  android: { available: boolean; plans: { INDIVIDUAL: string | null } };
 };
 
 function formatDateLabel(value?: string | null) {
@@ -73,6 +90,8 @@ function LegacySubscriptionScreen() {
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const [iapProducts, setIapProducts] = useState<IapProductsResponse | null>(null);
+  const [localizedPrice, setLocalizedPrice] = useState<string | null>(null);
 
   const fetchSubscription = useCallback(async () => {
     const res = await api.get<any>("/api/profile");
@@ -81,11 +100,51 @@ function LegacySubscriptionScreen() {
     }
   }, []);
 
+  const fetchIapProducts = useCallback(async () => {
+    const res = await api.get<IapProductsResponse>("/api/mobile/iap/products");
+    if (res.data) setIapProducts(res.data);
+  }, []);
+
+  const storeSku = useMemo(() => {
+    if (!iapProducts) return null;
+    return Platform.OS === "ios"
+      ? iapProducts.ios.plans.INDIVIDUAL
+      : iapProducts.android.plans.INDIVIDUAL;
+  }, [iapProducts]);
+
+  const iapAvailable = Boolean(
+    storeSku &&
+      (Platform.OS === "ios" ? iapProducts?.ios.available : iapProducts?.android.available)
+  );
+
+  // Pull the localized price from StoreKit/Play once the SKU is known.
+  useEffect(() => {
+    if (!iapAvailable || !storeSku) {
+      setLocalizedPrice(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const products = await fetchSubscriptionProducts([storeSku]);
+      if (cancelled) return;
+      const match = products.find((p) => p.id === storeSku) || products[0];
+      if (match) setLocalizedPrice(match.displayPrice || null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [iapAvailable, storeSku]);
+
+  useEffect(() => () => {
+    // Release StoreKit connection on unmount.
+    void closeConnection();
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchSubscription();
+    await Promise.all([fetchSubscription(), fetchIapProducts()]);
     setLoading(false);
-  }, [fetchSubscription]);
+  }, [fetchSubscription, fetchIapProducts]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -95,13 +154,17 @@ function LegacySubscriptionScreen() {
 
   const currentPlanKey = subscription?.plan || "FREE_TRIAL";
   const currentStatus = subscription?.status || "TRIALING";
+  const currentProvider = subscription?.provider || null;
   const currentPlan = useMemo(
     () => PLANS.find((plan) => plan.key === currentPlanKey) || PLANS[0],
     [currentPlanKey]
   );
-  const periodEndLabel = formatDateLabel(subscription?.stripeCurrentPeriodEnd || subscription?.premiumUntil);
+  const periodEndLabel = formatDateLabel(
+    subscription?.currentPeriodEndsAt || subscription?.stripeCurrentPeriodEnd || subscription?.premiumUntil
+  );
   const trialEndLabel = formatDateLabel(subscription?.trialEndsAt);
-  const canManageBilling = !!subscription?.stripeCustomerId;
+  const isStoreManaged = currentProvider === "APP_STORE" || currentProvider === "PLAY_STORE";
+  const canManageBilling = !!subscription?.stripeCustomerId && !isStoreManaged;
 
   const openExternalUrl = useCallback(async (url: string) => {
     const canOpen = await Linking.canOpenURL(url);
@@ -116,6 +179,25 @@ function LegacySubscriptionScreen() {
 
   const handleUpgrade = useCallback(async (planKey: "INDIVIDUAL") => {
     setProcessingPlan(planKey);
+
+    // Native IAP path — preferred on iOS/Android (required by store policy).
+    if (iapAvailable && storeSku) {
+      const result = await purchaseSubscription({ productId: storeSku });
+      setProcessingPlan(null);
+
+      if (result.status === "cancelled") return;
+      if (result.status === "error") {
+        hapticError();
+        Alert.alert(t("common.retry"), result.message || t("toast.networkError"));
+        return;
+      }
+      hapticSuccess();
+      await fetchSubscription();
+      return;
+    }
+
+    // Fallback: open Stripe checkout in the system browser if the operator
+    // hasn't wired up IAP yet.
     const res = await api.post<any>("/api/stripe/checkout", { plan: planKey });
     setProcessingPlan(null);
 
@@ -127,10 +209,18 @@ function LegacySubscriptionScreen() {
 
     hapticSuccess();
     await openExternalUrl(res.data.url);
-  }, [openExternalUrl]);
+  }, [openExternalUrl, iapAvailable, storeSku, fetchSubscription, t]);
 
   const handleManageBilling = useCallback(async () => {
     setProcessingPlan("MANAGE");
+
+    // Store-managed subscriptions: send the user to the native management page.
+    if (isStoreManaged) {
+      setProcessingPlan(null);
+      await openNativeSubscriptionSettings(subscription?.billingProductId || storeSku || undefined);
+      return;
+    }
+
     const res = await api.post<any>("/api/stripe/portal", {});
     setProcessingPlan(null);
 
@@ -142,7 +232,23 @@ function LegacySubscriptionScreen() {
 
     hapticSuccess();
     await openExternalUrl(res.data.url);
-  }, [openExternalUrl]);
+  }, [openExternalUrl, isStoreManaged, subscription?.billingProductId, storeSku]);
+
+  const handleRestore = useCallback(async () => {
+    if (!iapAvailable) return;
+    setProcessingPlan("RESTORE");
+    const results = await restorePurchases();
+    setProcessingPlan(null);
+    const hit = results.find((r) => r.status === "ok");
+    if (hit) {
+      hapticSuccess();
+      Alert.alert("Restored", "Your active subscription was restored.");
+      await fetchSubscription();
+    } else {
+      hapticError();
+      Alert.alert("Nothing to restore", "No active subscription was found for this store account.");
+    }
+  }, [iapAvailable, fetchSubscription]);
 
   if (loading) {
     return (
@@ -222,7 +328,7 @@ function LegacySubscriptionScreen() {
                   {plan.key === currentPlanKey && <UiBadge label={t("pricing.cta_current")} variant="success" />}
                 </View>
                 <Text style={styles.planPrice}>
-                  {plan.price}
+                  {plan.key === "INDIVIDUAL" && localizedPrice ? localizedPrice : plan.price}
                   <Text style={styles.planPeriod}> {plan.period}</Text>
                 </Text>
               </View>
@@ -287,6 +393,25 @@ function LegacySubscriptionScreen() {
             )}
           </Card>
         ))}
+
+        {iapAvailable && (
+          <TouchableOpacity
+            style={styles.restoreBtn}
+            activeOpacity={0.7}
+            onPress={handleRestore}
+            disabled={processingPlan === "RESTORE"}
+            accessibilityRole="button"
+            accessibilityLabel="Restore purchases"
+            accessibilityHint="Syncs an existing subscription from your store account"
+            accessibilityState={{ disabled: processingPlan === "RESTORE" }}
+          >
+            {processingPlan === "RESTORE" ? (
+              <ActivityIndicator color={theme.colors.primary} />
+            ) : (
+              <Text style={styles.restoreBtnText}>Restore purchases</Text>
+            )}
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.footer}>
           {t("settings.subscription_manage")}
@@ -371,6 +496,14 @@ const styles = StyleSheet.create({
   },
   currentBtnText: { fontSize: 15, fontWeight: "700", color: theme.colors.textMuted },
   upgradeBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  restoreBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    paddingVertical: 12,
+    marginTop: 16,
+  },
+  restoreBtnText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
   footer: {
     textAlign: "center", fontSize: 12, color: theme.colors.textMuted, marginTop: 24,
   },

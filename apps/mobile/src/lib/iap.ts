@@ -1,0 +1,271 @@
+/**
+ * Mobile IAP (In-App Purchase) bridge for StoreKit2 (iOS) + Play Billing (Android).
+ *
+ * Uses `expo-iap`. This module:
+ *   - Opens a connection on first call, shares it across the session.
+ *   - Exposes `fetchSubscriptionProducts` so the UI can render real prices.
+ *   - Exposes `purchaseSubscription` which requests purchase AND waits for
+ *     the resulting transaction, then posts it to /api/mobile/iap/verify for
+ *     backend verification (the server is the single source of truth).
+ *
+ * NOTE: expo-iap is a native module — it requires a dev client build. It will
+ * NOT work inside Expo Go.
+ */
+
+import { Platform } from "react-native";
+import * as IAP from "expo-iap";
+import { api } from "@/lib/api";
+
+type SubscriptionProduct = {
+  id: string;
+  title: string;
+  description: string;
+  displayPrice: string;
+  price?: number;
+  currency?: string;
+};
+
+type VerifyResponse = {
+  success?: boolean;
+  entitlement?: unknown;
+  subscription?: unknown;
+  error?: string;
+};
+
+let connectionReady = false;
+let connecting: Promise<boolean> | null = null;
+
+async function ensureConnection(): Promise<boolean> {
+  if (connectionReady) return true;
+  if (connecting) return connecting;
+  connecting = (async () => {
+    try {
+      await IAP.initConnection();
+      connectionReady = true;
+      return true;
+    } catch (err) {
+      console.warn("[IAP] initConnection failed:", err);
+      return false;
+    } finally {
+      connecting = null;
+    }
+  })();
+  return connecting;
+}
+
+export async function closeConnection() {
+  if (!connectionReady) return;
+  try {
+    await IAP.endConnection();
+  } catch {
+    /* noop */
+  }
+  connectionReady = false;
+}
+
+export async function fetchSubscriptionProducts(skus: string[]): Promise<SubscriptionProduct[]> {
+  if (skus.length === 0) return [];
+  const ok = await ensureConnection();
+  if (!ok) return [];
+
+  try {
+    const products = await IAP.fetchProducts({ skus, type: "subs" });
+    return (products || []).map((p: any) => ({
+      id: String(p.id ?? p.productId ?? ""),
+      title: String(p.title ?? p.name ?? ""),
+      description: String(p.description ?? ""),
+      displayPrice: String(p.displayPrice ?? p.localizedPrice ?? p.price ?? ""),
+      price: typeof p.price === "number" ? p.price : undefined,
+      currency: typeof p.currency === "string" ? p.currency : typeof p.currencyCode === "string" ? p.currencyCode : undefined,
+    }));
+  } catch (err) {
+    console.warn("[IAP] fetchProducts failed:", err);
+    return [];
+  }
+}
+
+export type PurchaseResult =
+  | { status: "ok"; subscription: unknown; entitlement: unknown }
+  | { status: "cancelled" }
+  | { status: "duplicate" }
+  | { status: "error"; message: string };
+
+/**
+ * Kick off a subscription purchase and wait for backend verification.
+ *
+ * The flow:
+ *   1. Register a single-fire purchase listener (resolves the waiter).
+ *   2. Call requestPurchase — user sees the native sheet.
+ *   3. When the transaction fires, send the proof to /api/mobile/iap/verify.
+ *   4. Only after the server confirms, call finishTransaction.
+ */
+export async function purchaseSubscription(opts: {
+  productId: string;
+}): Promise<PurchaseResult> {
+  const ok = await ensureConnection();
+  if (!ok) return { status: "error", message: "Store unavailable" };
+
+  return new Promise<PurchaseResult>((resolve) => {
+    let settled = false;
+    const finish = (value: PurchaseResult) => {
+      if (settled) return;
+      settled = true;
+      try {
+        updateSub.remove();
+      } catch {}
+      try {
+        errorSub.remove();
+      } catch {}
+      resolve(value);
+    };
+
+    const updateSub = IAP.purchaseUpdatedListener(async (purchase: any) => {
+      try {
+        const verifyBody: Record<string, unknown> =
+          Platform.OS === "ios"
+            ? {
+                platform: "ios",
+                // Prefer the JWS representation — it's self-authenticating.
+                signedTransaction:
+                  purchase?.jwsRepresentation ||
+                  purchase?.jwsRepresentationIos ||
+                  purchase?.transactionReceipt ||
+                  undefined,
+                transactionId: purchase?.transactionId || purchase?.originalTransactionIdentifierIOS,
+              }
+            : {
+                platform: "android",
+                purchaseToken: purchase?.purchaseToken,
+                productId: purchase?.productId || opts.productId,
+              };
+
+        const res = await api.post<VerifyResponse>("/api/mobile/iap/verify", verifyBody);
+
+        if (res.error || !res.data?.success) {
+          // Don't finishTransaction — StoreKit/Play will retry next session.
+          finish({
+            status: "error",
+            message: res.error || res.data?.error || "Verification failed",
+          });
+          return;
+        }
+
+        // Only ack once the server has the entitlement.
+        try {
+          await IAP.finishTransaction({ purchase, isConsumable: false });
+        } catch (err) {
+          console.warn("[IAP] finishTransaction failed:", err);
+        }
+
+        finish({
+          status: "ok",
+          subscription: res.data.subscription,
+          entitlement: res.data.entitlement,
+        });
+      } catch (err: any) {
+        finish({
+          status: "error",
+          message: err?.message || "Verification error",
+        });
+      }
+    });
+
+    const errorSub = IAP.purchaseErrorListener((err: any) => {
+      if (IAP.isUserCancelledError(err)) {
+        finish({ status: "cancelled" });
+        return;
+      }
+      finish({
+        status: "error",
+        message: IAP.getUserFriendlyErrorMessage(err) || err?.message || "Purchase failed",
+      });
+    });
+
+    (async () => {
+      try {
+        if (Platform.OS === "ios") {
+          await IAP.requestPurchase({ request: { sku: opts.productId } });
+        } else {
+          await IAP.requestPurchase({
+            request: { skus: [opts.productId] },
+            type: "subs",
+          });
+        }
+      } catch (err: any) {
+        if (IAP.isUserCancelledError(err)) {
+          finish({ status: "cancelled" });
+        } else {
+          finish({
+            status: "error",
+            message: IAP.getUserFriendlyErrorMessage(err) || err?.message || "Purchase failed",
+          });
+        }
+      }
+    })();
+  });
+}
+
+/**
+ * Ask the store what's currently owned, then push each transaction to the
+ * backend verify endpoint. Useful on "Restore purchases" and on app launch
+ * to recover a subscription after reinstall.
+ */
+export async function restorePurchases(): Promise<PurchaseResult[]> {
+  const ok = await ensureConnection();
+  if (!ok) return [];
+
+  let items: any[] = [];
+  try {
+    items = (await IAP.getAvailablePurchases()) || [];
+  } catch (err) {
+    console.warn("[IAP] getAvailablePurchases failed:", err);
+    return [];
+  }
+
+  const results: PurchaseResult[] = [];
+  for (const purchase of items) {
+    const body: Record<string, unknown> =
+      Platform.OS === "ios"
+        ? {
+            platform: "ios",
+            signedTransaction:
+              purchase?.jwsRepresentation ||
+              purchase?.jwsRepresentationIos ||
+              undefined,
+            transactionId:
+              purchase?.transactionId || purchase?.originalTransactionIdentifierIOS,
+          }
+        : {
+            platform: "android",
+            purchaseToken: purchase?.purchaseToken,
+            productId: purchase?.productId,
+          };
+
+    try {
+      const res = await api.post<VerifyResponse>("/api/mobile/iap/verify", body);
+      if (res.error || !res.data?.success) {
+        results.push({
+          status: "error",
+          message: res.error || res.data?.error || "Restore failed",
+        });
+        continue;
+      }
+      results.push({
+        status: "ok",
+        subscription: res.data.subscription,
+        entitlement: res.data.entitlement,
+      });
+    } catch (err: any) {
+      results.push({ status: "error", message: err?.message || "Restore error" });
+    }
+  }
+  return results;
+}
+
+export async function openNativeSubscriptionSettings(productId?: string) {
+  try {
+    await IAP.deepLinkToSubscriptions(productId ? { sku: productId } : undefined);
+  } catch (err) {
+    console.warn("[IAP] deepLinkToSubscriptions failed:", err);
+  }
+}

@@ -1,0 +1,209 @@
+/**
+ * POST /api/webhooks/playstore
+ *
+ * Google Play Real-time Developer Notifications (RTDN), delivered via
+ * Cloud Pub/Sub push.
+ *
+ * Pub/Sub wraps the RTDN payload like:
+ *   {
+ *     "message": {
+ *       "data": "<base64-encoded JSON>",   // the RTDN
+ *       "messageId": "12345",
+ *       "publishTime": "...",
+ *       "attributes": { ... }
+ *     },
+ *     "subscription": "projects/.../subscriptions/..."
+ *   }
+ *
+ * Authentication is done via OIDC: Pub/Sub includes a bearer JWT in the
+ * `Authorization` header signed by Google, with `aud = <webhook URL>` and
+ * `email = <push-auth service account>`. We verify this against Google's JWKS.
+ *
+ * Reference:
+ * https://developer.android.com/google/play/billing/rtdn-reference
+ * https://cloud.google.com/pubsub/docs/authenticate-push-subscriptions
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { captureException, captureMessage } from "@/lib/sentry";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { verifyPubsubOidcToken } from "@/lib/iap-google";
+import {
+  applyIapStateToUser,
+  findUserByIapIdentifier,
+  refreshGoogleSubscriptionFor,
+} from "@/lib/iap-common";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+interface RtdnSubscriptionNotification {
+  version: string;
+  notificationType: number; // 1..13
+  purchaseToken: string;
+  subscriptionId: string;
+}
+
+interface RtdnOneTimePurchaseNotification {
+  version: string;
+  notificationType: number;
+  purchaseToken: string;
+  sku: string;
+}
+
+interface RtdnPayload {
+  version: string;
+  packageName: string;
+  eventTimeMillis: string;
+  subscriptionNotification?: RtdnSubscriptionNotification;
+  oneTimeProductNotification?: RtdnOneTimePurchaseNotification;
+  voidedPurchaseNotification?: {
+    purchaseToken: string;
+    orderId: string;
+    productType: number;
+    refundType: number;
+  };
+  testNotification?: { version: string };
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // ── 1. Verify OIDC token from Pub/Sub (authenticity + audience). ──
+    const authHeader = request.headers.get("authorization") || "";
+    const oidcToken = authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+
+    const expectedAudience = await getRuntimeConfigValue("GOOGLE_PLAY_RTDN_AUDIENCE");
+
+    if (expectedAudience) {
+      if (!oidcToken) {
+        return NextResponse.json({ error: "Missing OIDC token" }, { status: 401 });
+      }
+      try {
+        await verifyPubsubOidcToken(oidcToken, expectedAudience);
+      } catch (err) {
+        console.warn("[PLAYSTORE WEBHOOK] OIDC verify failed:", (err as Error).message);
+        return NextResponse.json({ error: "Invalid OIDC token" }, { status: 401 });
+      }
+    } else {
+      // No audience configured — log a warning but accept. This is a development
+      // escape hatch; production MUST set GOOGLE_PLAY_RTDN_AUDIENCE.
+      console.warn("[PLAYSTORE WEBHOOK] GOOGLE_PLAY_RTDN_AUDIENCE unset — skipping OIDC verification");
+    }
+
+    // ── 2. Parse Pub/Sub envelope + extract RTDN. ──
+    const envelope = await request.json().catch(() => null);
+    const messageId = envelope?.message?.messageId as string | undefined;
+    const dataB64 = envelope?.message?.data as string | undefined;
+
+    if (!messageId || !dataB64) {
+      // Empty payload — Pub/Sub sometimes sends these to verify the endpoint.
+      return NextResponse.json({ received: true, empty: true });
+    }
+
+    let rtdn: RtdnPayload;
+    try {
+      rtdn = JSON.parse(Buffer.from(dataB64, "base64").toString("utf8")) as RtdnPayload;
+    } catch (err) {
+      captureException(err, { route: "/api/webhooks/playstore", messageId });
+      return NextResponse.json({ error: "Invalid RTDN JSON" }, { status: 400 });
+    }
+
+    // ── 3. Idempotency (Pub/Sub may deliver the same messageId multiple times). ──
+    try {
+      await prisma.processedWebhookEvent.create({
+        data: { id: `playstore:${messageId}`, source: "playstore" },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      throw err;
+    }
+
+    // ── 4. Validate package name matches our app (defense in depth). ──
+    const expectedPackage = await getRuntimeConfigValue("GOOGLE_PLAY_PACKAGE_NAME");
+    if (expectedPackage && rtdn.packageName && rtdn.packageName !== expectedPackage) {
+      captureMessage(
+        `[PLAYSTORE WEBHOOK] package mismatch: ${rtdn.packageName} vs expected ${expectedPackage}`,
+        "warning",
+      );
+      return NextResponse.json({ received: true, skipped: "package_mismatch" });
+    }
+
+    if (rtdn.testNotification) {
+      console.info("[PLAYSTORE WEBHOOK] received TEST notification");
+      return NextResponse.json({ received: true, test: true });
+    }
+
+    // ── 5. Only subscription events drive our Subscription rows today. ──
+    const subNotif = rtdn.subscriptionNotification;
+    const voidNotif = rtdn.voidedPurchaseNotification;
+
+    if (voidNotif?.purchaseToken) {
+      const owner = await findUserByIapIdentifier({ purchaseToken: voidNotif.purchaseToken });
+      if (owner) {
+        await prisma.subscription.updateMany({
+          where: { userId: owner.userId, purchaseToken: voidNotif.purchaseToken },
+          data: {
+            status: "CANCELED",
+            canceledAt: new Date(),
+            lastSyncedAt: new Date(),
+          },
+        });
+      }
+      return NextResponse.json({ received: true, type: "voided" });
+    }
+
+    if (!subNotif?.purchaseToken) {
+      return NextResponse.json({ received: true, skipped: "no_subscription" });
+    }
+
+    const owner = await findUserByIapIdentifier({ purchaseToken: subNotif.purchaseToken });
+    if (!owner) {
+      // No row yet — the client's /verify call will create one when it lands.
+      console.warn(
+        `[PLAYSTORE WEBHOOK] no owner for purchaseToken=${subNotif.purchaseToken.slice(0, 16)}... (${subNotif.notificationType})`,
+      );
+      return NextResponse.json({ received: true, unowned: true });
+    }
+
+    const refreshed = await refreshGoogleSubscriptionFor(subNotif.purchaseToken);
+    if (!refreshed) {
+      // Purchase revoked server-side — mark canceled.
+      await prisma.subscription.updateMany({
+        where: { userId: owner.userId, purchaseToken: subNotif.purchaseToken },
+        data: {
+          status: "CANCELED",
+          canceledAt: new Date(),
+          lastSyncedAt: new Date(),
+        },
+      });
+      return NextResponse.json({ received: true, revoked: true });
+    }
+
+    try {
+      await applyIapStateToUser({ userId: owner.userId, state: refreshed });
+    } catch (err: any) {
+      if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
+        captureMessage(
+          `[PLAYSTORE WEBHOOK] owner conflict for ${subNotif.purchaseToken.slice(0, 16)}...`,
+          "warning",
+        );
+        return NextResponse.json({ received: true, conflict: true });
+      }
+      throw err;
+    }
+
+    return NextResponse.json({
+      received: true,
+      type: subNotif.notificationType,
+    });
+  } catch (error) {
+    captureException(error, { route: "/api/webhooks/playstore" });
+    console.error("[PLAYSTORE WEBHOOK] error:", error);
+    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+  }
+}
