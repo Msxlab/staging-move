@@ -45,7 +45,12 @@
       "Bash(unzip -q -o \"LocateFlow Design System-handoff.zip\" -d .design-staging)",
       "Bash(pnpm add *)",
       "Bash(git -C /c/Users/Windows/Documents/move-main/move-main diff --name-only HEAD)",
-      "Bash(git -C /c/Users/Windows/Documents/move-main/move-main status --short)"
+      "Bash(git -C /c/Users/Windows/Documents/move-main/move-main status --short)",
+      "Bash(node -e \"const j=require\\('./apps/web/src/i18n/messages/en.json'\\); console.log\\(JSON.stringify\\(j.addresses, null, 2\\)\\)\")",
+      "Bash(pnpm build *)",
+      "Bash(node -e \"const j=require\\('./apps/web/src/i18n/messages/en.json'\\); const addr=j.addresses; Object.keys\\(addr\\).filter\\(k=>k.includes\\('owner'\\) || k.includes\\('rent'\\) || k.includes\\('family'\\) || k.includes\\('type_'\\)\\).forEach\\(k=>console.log\\(k, ':', addr[k]\\)\\)\")",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Fix i18n: Replace hardcoded English strings with translation keys *)"
     ]
   }
 }

@@ -81,7 +81,7 @@ export default async function MovingPage() {
                     </span>
                   </div>
                   {plan.status === "IN_PROGRESS" && daysUntil > 0 && (
-                    <p className="text-xs text-orange-400 font-medium">{daysUntil} days until move</p>
+                    <p className="text-xs text-orange-400 font-medium">{t("daysUntilMove", { days: daysUntil })}</p>
                   )}
                 </div>
               </Link>

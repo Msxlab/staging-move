@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   MapPin, Zap, DollarSign, Truck, ArrowRight,
   Home, Briefcase, Palmtree, TrendingUp, Edit, Plus,
@@ -114,6 +115,7 @@ function SortableItem({ id, label, enabled, onToggle }: { id: string; label: str
 }
 
 export default function DashboardClient({ initialPrefs }: { initialPrefs: DashboardWidgetPrefs | null }) {
+  const t = useTranslations("services");
   const [stats, setStats] = useState<DashboardStats>({
     addressCount: 0, serviceCount: 0, monthlyExpenses: 0, activePlan: null,
   });
@@ -575,7 +577,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                         </div>
                         <Link href="/services">
                           <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition whitespace-nowrap">
-                            Do it <ArrowRight className="h-3 w-3" />
+                            {t("doIt")} <ArrowRight className="h-3 w-3" />
                           </button>
                         </Link>
                       </div>

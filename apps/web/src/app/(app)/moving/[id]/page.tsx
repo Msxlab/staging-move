@@ -2,16 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Truck, Trash2, MapPin, Clock, Loader2, Repeat, ArrowRightLeft, PlusCircle, XCircle, Shield, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
 
-const statusBadge: Record<string, { label: string; cls: string }> = {
-  PLANNING: { label: "Planning", cls: "bg-white/5 text-white/40 border-white/10" },
-  IN_PROGRESS: { label: "In Progress", cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
-  COMPLETED: { label: "Completed", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-  CANCELED: { label: "Canceled", cls: "bg-red-500/10 text-red-400 border-red-500/20" },
+const STATUS_BADGE_CLASSES: Record<string, { cls: string }> = {
+  PLANNING: { cls: "bg-white/5 text-white/40 border-white/10" },
+  IN_PROGRESS: { cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
+  COMPLETED: { cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+  CANCELED: { cls: "bg-red-500/10 text-red-400 border-red-500/20" },
 };
 
 interface PlanDetail {
@@ -25,6 +26,7 @@ interface PlanDetail {
 export default function MovingPlanDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations("moving");
   const id = params.id as string;
   const [plan, setPlan] = useState<PlanDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,15 +110,16 @@ export default function MovingPlanDetailPage() {
   if (loading || !plan) return <LoadingSpinner />;
 
   const daysUntilMove = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  const status = statusBadge[plan.status] || statusBadge.PLANNING;
+  const statusClasses = STATUS_BADGE_CLASSES[plan.status] || STATUS_BADGE_CLASSES.PLANNING;
+  const statusLabel = t(`status_${plan.status.toLowerCase()}` as any);
   const isInterstateMove = plan.fromAddress.state !== plan.toAddress.state;
-  const moveScopeLabel = isInterstateMove ? "Interstate move" : "Intrastate move";
+  const moveScopeLabel = isInterstateMove ? t("interstateMove") : t("intrastateMove");
   const focusLabel = isInterstateMove
-    ? "Prioritize DMV, voter registration, taxes, and provider switches across state lines."
-    : "Focus on utilities, local provider transfers, and address updates within the same state.";
+    ? t("interstateMoveFocus")
+    : t("intrastateMoveFocus");
   const migrationSummaryLabel = migration
     ? `${migration.summary.transfers} transfer · ${migration.summary.switches} switch · ${migration.summary.newNeeded} new`
-    : "Migration guidance appears after we analyze services on your origin address.";
+    : t("migrationGuidanceEmpty");
 
   return (
     <div className="space-y-6 pb-8">
@@ -134,13 +137,13 @@ export default function MovingPlanDetailPage() {
             </h1>
             <p className="text-sm text-white/40 flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" />
-              {daysUntilMove > 0 ? `${daysUntilMove} days until move` : "Move date passed"}
+              {daysUntilMove > 0 ? t("daysUntilMove", { days: daysUntilMove }) : t("moveDatePassed")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${status.cls}`}>
-            {status.label}
+          <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${statusClasses.cls}`}>
+            {statusLabel}
           </span>
           {plan.status === "PLANNING" && (
             <button onClick={() => handleStatusChange("IN_PROGRESS")} className="px-3 py-1.5 rounded-xl bg-cyan-500 text-white text-xs font-medium hover:bg-cyan-600 transition">

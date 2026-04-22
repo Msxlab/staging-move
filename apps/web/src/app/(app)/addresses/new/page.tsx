@@ -20,9 +20,33 @@ const US_STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY","DC",
 ];
 
+// Address types and ownership options
+const ADDRESS_TYPES = ["HOME", "WORK", "VACATION"];
+const OWNERSHIP_OPTIONS = ["OWNER", "RENTER", "FAMILY"];
+
 export default function NewAddressPage() {
   const router = useRouter();
+  const t = useTranslations("addresses");
+  const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
+
+  // Build address types with translated labels
+  const addressTypes = ADDRESS_TYPES.map((type) => {
+    const typeKey = `type_${type.toLowerCase()}`;
+    return {
+      value: type,
+      label: t(typeKey as any),
+    };
+  });
+
+  // Build ownership options with translated labels
+  const ownershipTypes = OWNERSHIP_OPTIONS.map((own) => {
+    const ownershipKey = `ownership_${own.toLowerCase()}`;
+    return {
+      value: own,
+      label: t(ownershipKey as any),
+    };
+  });
   const [form, setForm] = useState({
     type: "HOME",
     nickname: "",
@@ -87,8 +111,8 @@ export default function NewAddressPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Add New Address</h1>
-          <p className="text-muted-foreground">Enter the details of your address</p>
+          <h1 className="text-2xl font-bold">{t("newTitle")}</h1>
+          <p className="text-muted-foreground">{t("formSubtitle")}</p>
         </div>
       </div>
 
@@ -102,8 +126,8 @@ export default function NewAddressPage() {
         {/* Type & Nickname */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Basic Info</CardTitle>
-            <CardDescription>What kind of address is this?</CardDescription>
+            <CardTitle className="text-lg">{t("basicInfoTitle")}</CardTitle>
+            <CardDescription>{t("basicInfoDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -123,10 +147,10 @@ export default function NewAddressPage() {
               ))}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nickname">Nickname</Label>
+              <Label htmlFor="nickname">{t("nickname")}</Label>
               <Input
                 id="nickname"
-                placeholder='e.g., "Main Residence", "Beach House"'
+                placeholder={t("nicknamePlaceholder")}
                 value={form.nickname}
                 onChange={(e) => updateField("nickname", e.target.value)}
               />
@@ -137,20 +161,20 @@ export default function NewAddressPage() {
         {/* Address */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Address Details</CardTitle>
+            <CardTitle className="text-lg">{t("detailsTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <AddressAutocompleteInput
               id="street"
-              label="Street Address *"
+              label={t("streetRequired")}
               value={form.street}
-              placeholder="123 Main Street"
+              placeholder={t("streetPlaceholder")}
               required
               onValueChange={(value) => updateField("street", value)}
               onSelect={handleAutocompleteSelect}
             />
             <div className="space-y-2">
-              <Label htmlFor="street2">Apt / Suite / Unit</Label>
+              <Label htmlFor="street2">{t("apt")}</Label>
               <Input
                 id="street2"
                 placeholder="Apt 4B"
@@ -160,17 +184,17 @@ export default function NewAddressPage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="col-span-2 space-y-2">
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="city">{t("cityRequired")}</Label>
                 <Input
                   id="city"
-                  placeholder="Austin"
+                  placeholder={t("cityPlaceholder")}
                   value={form.city}
                   onChange={(e) => updateField("city", e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="state">State *</Label>
+                <Label htmlFor="state">{t("stateRequired")}</Label>
                 <select
                   id="state"
                   value={form.state}
@@ -178,14 +202,14 @@ export default function NewAddressPage() {
                   required
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">Select</option>
+                  <option value="">{t("select")}</option>
                   {US_STATES.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zip">ZIP *</Label>
+                <Label htmlFor="zip">{t("zipRequired")}</Label>
                 <Input
                   id="zip"
                   placeholder="78701"
@@ -202,7 +226,7 @@ export default function NewAddressPage() {
         {/* Ownership & Dates */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Ownership & Dates</CardTitle>
+            <CardTitle className="text-lg">{t("ownershipTitle")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -223,7 +247,7 @@ export default function NewAddressPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startDate">Move-in Date *</Label>
+                <Label htmlFor="startDate">{t("moveInDateRequired")}</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -240,7 +264,7 @@ export default function NewAddressPage() {
                     onChange={(e) => updateField("isPrimary", e.target.checked)}
                     className="h-4 w-4 rounded border-input"
                   />
-                  <span className="text-sm font-medium">Set as primary address</span>
+                  <span className="text-sm font-medium">{t("setPrimaryAddress")}</span>
                 </label>
               </div>
             </div>
@@ -250,10 +274,10 @@ export default function NewAddressPage() {
         {/* Submit */}
         <div className="flex gap-3 justify-end">
           <Link href="/addresses">
-            <Button variant="outline" type="button">Cancel</Button>
+            <Button variant="outline" type="button">{tCommon("cancel")}</Button>
           </Link>
           <Button type="submit" disabled={loading}>
-            {loading ? "Saving..." : "Save Address"}
+            {loading ? tCommon("saving") : t("saveAddress")}
           </Button>
         </div>
       </form>

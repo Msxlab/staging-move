@@ -18,23 +18,31 @@ import {
 } from "@/lib/shared-relocation";
 import { getMergedDisplayCategoryIcon, getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
 
-const filterGroups = [
-  { label: "All", value: "", icon: "📋" },
-  { label: "Government", value: "GOVERNMENT", icon: "🏛️" },
-  { label: "Utilities", value: "UTILITY", icon: "⚡" },
-  { label: "Financial", value: "FINANCIAL", icon: "💳" },
-  { label: "Housing", value: "HOUSING", icon: "🏠" },
-  { label: "Healthcare", value: "HEALTHCARE", icon: "🏥" },
-  { label: "Transport", value: "TRANSPORTATION", icon: "🚗" },
-  { label: "Kids", value: "KIDS", icon: "👶" },
-  { label: "Fitness", value: "FITNESS", icon: "💪" },
-  { label: "Shopping", value: "SHOPPING", icon: "🛒" },
+// filterGroups mapping — labels are keys to be translated
+// Use getFilterGroups(t) to get translated version in the component
+const FILTER_GROUPS_KEYS = [
+  { label: "filterGroups.all", value: "", icon: "📋" },
+  { label: "filterGroups.government", value: "GOVERNMENT", icon: "🏛️" },
+  { label: "filterGroups.utilities", value: "UTILITY", icon: "⚡" },
+  { label: "filterGroups.financial", value: "FINANCIAL", icon: "💳" },
+  { label: "filterGroups.housing", value: "HOUSING", icon: "🏠" },
+  { label: "filterGroups.healthcare", value: "HEALTHCARE", icon: "🏥" },
+  { label: "filterGroups.transport", value: "TRANSPORTATION", icon: "🚗" },
+  { label: "filterGroups.kids", value: "KIDS", icon: "👶" },
+  { label: "filterGroups.fitness", value: "FITNESS", icon: "💪" },
+  { label: "filterGroups.shopping", value: "SHOPPING", icon: "🛒" },
 ];
 
-const groupLabels: Record<string, string> = {
-  GOVERNMENT: "Government & Official", UTILITY: "Utilities", FINANCIAL: "Financial",
-  HOUSING: "Housing", HEALTHCARE: "Healthcare", TRANSPORTATION: "Transportation",
-  KIDS: "Kids & Education", FITNESS: "Fitness", SHOPPING: "Shopping & Other",
+const GROUP_LABELS_KEYS: Record<string, string> = {
+  GOVERNMENT: "groupLabels.government",
+  UTILITY: "groupLabels.utilities",
+  FINANCIAL: "groupLabels.financial",
+  HOUSING: "groupLabels.housing",
+  HEALTHCARE: "groupLabels.healthcare",
+  TRANSPORTATION: "groupLabels.transport",
+  KIDS: "groupLabels.kids",
+  FITNESS: "groupLabels.fitness",
+  SHOPPING: "groupLabels.shopping",
 };
 const groupIcons: Record<string, string> = {
   GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
@@ -74,6 +82,18 @@ export function ServicesClient({
   const [sortBy, setSortBy] = useState<"name" | "cost-desc" | "cost-asc" | "newest" | "oldest">("name");
   const [showInactive, setShowInactive] = useState(true);
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
+
+  // Build filter groups with translated labels
+  const filterGroups = FILTER_GROUPS_KEYS.map((g) => ({
+    label: t(g.label as any),
+    value: g.value,
+    icon: g.icon,
+  }));
+
+  // Build group labels record with translated values
+  const groupLabels: Record<string, string> = Object.fromEntries(
+    Object.entries(GROUP_LABELS_KEYS).map(([key, translationKey]) => [key, t(translationKey as any)])
+  );
 
   useEffect(() => {
     (async () => {
@@ -165,7 +185,7 @@ export function ServicesClient({
             <div className="flex items-center gap-3">
               <span className="text-xl">{currentPhaseInfo?.icon || ""}</span>
               <div>
-                <h2 className="text-sm font-bold text-white">Your Relocation Checklist</h2>
+                <h2 className="text-sm font-bold text-white">{t("checklist.heading")}</h2>
                 <p className="text-xs text-white/40">
                   {checklist.fromState} → {checklist.toState} · Phase {checklist.currentPhase + 1}: {currentPhaseInfo?.label || ""}
                 </p>
@@ -173,7 +193,7 @@ export function ServicesClient({
             </div>
             <div className="text-right">
               <p className="text-lg font-bold text-white">{checklist.progressPercent}%</p>
-              <p className="text-[10px] text-white/30">{checklist.completedItems}/{checklist.totalItems} done</p>
+              <p className="text-[10px] text-white/30">{t("checklist.progressDone", { percent: checklist.progressPercent })}</p>
             </div>
           </div>
 
@@ -185,7 +205,7 @@ export function ServicesClient({
             <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
               <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold text-red-400">Overdue ({checklist.overdueItems.length})</p>
+                <p className="text-xs font-semibold text-red-400">{t("checklist.overdue", { count: checklist.overdueItems.length })}</p>
                 <p className="text-xs text-red-300/70 mt-0.5">
                   {checklist.overdueItems.slice(0, 3).map((i) => i.title).join(" · ")}
                   {checklist.overdueItems.length > 3 && ` +${checklist.overdueItems.length - 3} more`}
@@ -198,7 +218,7 @@ export function ServicesClient({
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
               <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold text-amber-400">Deadline Soon</p>
+                <p className="text-xs font-semibold text-amber-400">{t("checklist.deadlineSoon")}</p>
                 <p className="text-xs text-amber-300/70 mt-0.5">
                   {checklist.urgentItems.filter((i) => !i.isOverdue).slice(0, 3).map((i) => {
                     const dl = i.daysUntilDeadline !== null ? ` (${i.daysUntilDeadline}d)` : "";
@@ -224,7 +244,7 @@ export function ServicesClient({
               </div>
               <Link href="/services/new">
                 <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition whitespace-nowrap">
-                  Do it <ArrowRight className="h-3 w-3" />
+                  {t("doIt")} <ArrowRight className="h-3 w-3" />
                 </button>
               </Link>
             </div>
@@ -347,9 +367,9 @@ export function ServicesClient({
       {filtered.length === 0 ? (
         <EmptyState
           icon={Zap}
-          title={services.length === 0 ? "No services yet" : "No matching services"}
-          description={services.length === 0 ? "Add your first service to start tracking." : "Try a different search or filter."}
-          actionLabel={services.length === 0 ? "Add Service" : undefined}
+          title={services.length === 0 ? t("emptyStates.noServices") : t("emptyStates.noMatchingServices")}
+          description={services.length === 0 ? t("emptyStates.addFirstService") : t("emptyStates.tryDifferentFilter")}
+          actionLabel={services.length === 0 ? t("emptyStates.addService") : undefined}
           actionHref={services.length === 0 ? "/services/new" : undefined}
         />
       ) : (
