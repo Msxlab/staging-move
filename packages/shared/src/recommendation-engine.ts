@@ -54,8 +54,6 @@ export interface Provider {
   tags: string[];
   popularityScore: number;
   displayOrder?: number;
-  avgRating?: number | null;
-  reviewCount?: number;
   userCount?: number;
   coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address";
   coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address";

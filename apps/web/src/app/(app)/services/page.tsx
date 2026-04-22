@@ -31,6 +31,7 @@ export default async function ServicesPage() {
     billingDay: s.billingDay ?? null,
     isActive: s.isActive,
     addressId: s.addressId,
+    createdAt: s.createdAt instanceof Date ? s.createdAt.toISOString() : s.createdAt,
     address: s.address ? {
       nickname: s.address.nickname ?? undefined,
       city: s.address.city,

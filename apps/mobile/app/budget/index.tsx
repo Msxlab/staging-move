@@ -109,7 +109,8 @@ export default function BudgetScreen() {
         ) : (
           <View style={styles.list}>
             {budgets.map((budget: any) => (
-              <Card key={budget.id} variant="default">
+              <TouchableOpacity key={budget.id} activeOpacity={0.7} onPress={() => router.push(`/budget/${budget.id}` as any)}>
+              <Card variant="default">
                 <View style={styles.budgetHeader}>
                   <Text style={styles.budgetMonth}>{budget.month} {budget.year}</Text>
                   <Text style={[styles.budgetBalance, { color: (budget.actualIncome || 0) - (budget.actualExpenses || 0) >= 0 ? theme.colors.emerald.text : theme.colors.rose.text }]}>
@@ -132,6 +133,7 @@ export default function BudgetScreen() {
                 </View>
                 {budget.notes && <Text style={styles.budgetNotes} numberOfLines={2}>{budget.notes}</Text>}
               </Card>
+              </TouchableOpacity>
             ))}
           </View>
         )}

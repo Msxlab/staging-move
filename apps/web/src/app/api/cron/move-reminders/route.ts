@@ -52,8 +52,6 @@ async function handleCron(request: NextRequest) {
           toCity: `${plan.toAddress.city}, ${plan.toAddress.state}`,
           moveDate: plan.moveDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
           daysRemaining: days,
-          completedTasks: plan.completedTasks,
-          totalTasks: plan.totalTasks,
           dedupeKey: `cron:move-reminder:${plan.id}:${plan.moveDate.toISOString().slice(0, 10)}:${days}`,
           metadata: {
             userId: plan.userId,

@@ -4,7 +4,6 @@ export const BACKUP_TABLES = {
   providers: { model: "serviceProvider", label: "Service Providers" },
   addresses: { model: "address", label: "Addresses" },
   movingPlans: { model: "movingPlan", label: "Moving Plans" },
-  tasks: { model: "task", label: "Tasks" },
   services: { model: "service", label: "Services" },
   budgets: { model: "budget", label: "Budgets" },
   subscriptions: { model: "subscription", label: "Subscriptions" },
@@ -20,7 +19,6 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "providers",
   "addresses",
   "movingPlans",
-  "tasks",
   "services",
   "budgets",
   "subscriptions",
@@ -34,7 +32,6 @@ const BACKUP_TABLE_DEPENDENCIES: Partial<
   profiles: ["users"],
   addresses: ["users"],
   movingPlans: ["users", "addresses"],
-  tasks: ["users"],
   services: ["users", "addresses"],
   budgets: ["users"],
   subscriptions: ["users"],
@@ -49,14 +46,12 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
     "profiles",
     "addresses",
     "movingPlans",
-    "tasks",
     "services",
     "budgets",
     "subscriptions",
     "notifications",
   ],
   addresses: ["movingPlans", "services", "budgets"],
-  movingPlans: ["tasks"],
 };
 
 export function isSupportedBackupTable(

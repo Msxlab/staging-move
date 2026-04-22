@@ -26,6 +26,7 @@ import {
   ChevronDown,
   Search,
   Database,
+  LifeBuoy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -73,6 +74,7 @@ const navGroups: NavGroup[] = [
     label: "Communication",
     labelKey: "communication",
     items: [
+      { name: "Support", nameKey: "support", href: "/support", icon: LifeBuoy },
       { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell },
       { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail },
       { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },

@@ -21,10 +21,14 @@ export async function GET(
           include: {
             fromAddress: { select: { city: true, state: true } },
             toAddress: { select: { city: true, state: true } },
-            tasks: { select: { id: true, completed: true } },
           },
         },
         budgets: { orderBy: { month: "desc" }, take: 6 },
+        supportTickets: {
+          include: { messages: { orderBy: { createdAt: "desc" }, take: 1 } },
+          orderBy: { updatedAt: "desc" },
+          take: 5,
+        },
       },
     });
 

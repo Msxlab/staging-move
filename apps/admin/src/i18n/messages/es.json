@@ -54,7 +54,8 @@
     "runtimeConfig": "Configuración de ejecución",
     "settings": "Configuración",
     "backups": "Respaldos",
-    "tickets": "Tickets"
+    "tickets": "Tickets",
+    "support": "Soporte"
   },
   "login": {
     "title": "Inicio de sesión de admin",

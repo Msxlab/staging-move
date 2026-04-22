@@ -122,6 +122,7 @@
     "export": "Export data",
     "delete": "Delete account",
     "help": "Help",
+    "support": "Support Tickets",
     "signOut": "Sign Out",
     "language_title": "Language",
     "language_description": "Choose your language. The app will use this everywhere."

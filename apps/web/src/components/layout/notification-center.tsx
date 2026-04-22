@@ -178,10 +178,15 @@ export function NotificationCenter() {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-white/5 px-4 py-2.5">
+          <div className="border-t border-white/5 px-4 py-2.5 flex items-center justify-between gap-2">
+            <Link href="/notifications" onClick={() => setOpen(false)}>
+              <button className="text-[11px] text-white/40 hover:text-white transition">
+                View all
+              </button>
+            </Link>
             <Link href="/settings/notifications" onClick={() => setOpen(false)}>
-              <button className="w-full text-center text-[11px] text-white/30 hover:text-white transition">
-                Notification Settings
+              <button className="text-[11px] text-white/30 hover:text-white transition">
+                Settings
               </button>
             </Link>
           </div>

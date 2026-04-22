@@ -52,6 +52,7 @@ export interface ServicesItem {
   monthlyCost: number; billingDay?: number | null; isActive?: boolean;
   addressId: string;
   address?: { nickname?: string; city?: string; state?: string };
+  createdAt?: string;
 }
 
 export function ServicesClient({
@@ -133,8 +134,8 @@ export function ServicesClient({
       switch (sortBy) {
         case "cost-desc": return (b.monthlyCost || 0) - (a.monthlyCost || 0);
         case "cost-asc": return (a.monthlyCost || 0) - (b.monthlyCost || 0);
-        case "newest": return -1;
-        case "oldest": return 1;
+        case "newest": return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        case "oldest": return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
         default: return a.providerName.localeCompare(b.providerName);
       }
     });

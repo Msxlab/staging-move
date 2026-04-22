@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 // POST /api/cron/provider-stats
-// Daily cron: recalculate userCount, reviewCount, avgRating for all providers
+// Daily cron: recalculate userCount for all providers
 export async function POST(request: NextRequest) {
   try {
     if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {

@@ -46,13 +46,21 @@ export async function GET(req: NextRequest) {
         _count: true,
       });
 
-      const topStates = await prisma.address.groupBy({
-        by: ["state"],
-        where: { createdAt: { gte: start, lte: end } },
-        _count: true,
-        orderBy: { _count: { state: "desc" } },
-        take: 10,
-      });
+      const [topStates, topProviders] = await Promise.all([
+        prisma.address.groupBy({
+          by: ["state"],
+          where: { createdAt: { gte: start, lte: end } },
+          _count: true,
+          orderBy: { _count: { state: "desc" } },
+          take: 10,
+        }),
+        prisma.serviceProvider.findMany({
+          where: { isActive: true },
+          orderBy: { popularityScore: "desc" },
+          take: 10,
+          select: { name: true, popularityScore: true },
+        }),
+      ]);
 
       return NextResponse.json({
         dateRange: { start: start.toISOString(), end: end.toISOString() },
@@ -64,6 +72,7 @@ export async function GET(req: NextRequest) {
         ],
         dailyUsers,
         movingByStatus: movingByStatus.map((m) => ({ status: m.status, count: m._count })),
+        topProviders: topProviders.map((p) => ({ name: p.name, popularityScore: p.popularityScore })),
         topStates: topStates.map((s) => ({ state: s.state, count: s._count })),
       });
     }

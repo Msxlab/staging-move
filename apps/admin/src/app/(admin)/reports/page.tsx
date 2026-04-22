@@ -8,7 +8,6 @@ import {
   Calendar,
   Download,
   Users,
-  MessageSquare,
   Truck,
   FileText,
   CreditCard,
@@ -26,10 +25,8 @@ interface ReportData {
   dateRange: { start: string; end: string };
   metrics: Metric[];
   dailyUsers: Record<string, number>;
-  dailyReviews: Record<string, number>;
-  reviewsByStatus: { status: string; count: number }[];
   movingByStatus: { status: string; count: number }[];
-  topProviders: { name: string; reviews: number; avgRating: number | null }[];
+  topProviders: { name: string; popularityScore: number }[];
   topStates: { state: string; count: number }[];
 }
 
@@ -106,13 +103,9 @@ export default function ReportsPage() {
       ]),
     );
     rows.push([]);
-    rows.push(["Top Providers", "Reviews", "Avg Rating"]);
+    rows.push(["Top Providers", "Popularity Score"]);
     data.topProviders.forEach((p) =>
-      rows.push([
-        p.name,
-        p.reviews.toString(),
-        p.avgRating?.toString() || "N/A",
-      ]),
+      rows.push([p.name, p.popularityScore.toString()]),
     );
     rows.push([]);
     rows.push(["Top States", "Count"]);
@@ -131,7 +124,6 @@ export default function ReportsPage() {
   const metricIcons: Record<string, any> = {
     "New Users": Users,
     "New Subscriptions": CreditCard,
-    Reviews: MessageSquare,
     "Moving Plans": Truck,
     Documents: FileText,
     "Active Providers": Building2,
@@ -276,32 +268,27 @@ export default function ReportsPage() {
             </div>
 
             <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-4">
-                Daily Reviews
+              <h2 className="text-sm font-semibold text-foreground mb-3">
+                Moving Plans by Status
               </h2>
-              <div className="flex items-end gap-0.5 h-32">
-                {Object.entries(data.dailyReviews).length === 0 ? (
-                  <p className="w-full text-center text-sm text-muted-foreground py-8">
-                    No data
-                  </p>
+              <div className="space-y-2">
+                {data.movingByStatus.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">No data</p>
                 ) : (
-                  Object.entries(data.dailyReviews).map(([date, count]) => {
-                    const max = Math.max(
-                      ...Object.values(data.dailyReviews),
-                      1,
-                    );
+                  data.movingByStatus.map((m) => {
+                    const colors: Record<string, string> = {
+                      PLANNING: "bg-blue-500", IN_PROGRESS: "bg-amber-500",
+                      COMPLETED: "bg-green-500", CANCELLED: "bg-red-500",
+                    };
+                    const total = data.movingByStatus.reduce((s, x) => s + x.count, 0) || 1;
                     return (
-                      <div key={date} className="flex-1 group relative">
-                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-popover border border-border rounded px-1.5 py-0.5 text-[9px] text-foreground whitespace-nowrap z-10">
-                          {date}: {count}
-                        </div>
-                        <div
-                          className="w-full bg-purple-500/60 rounded-t hover:bg-purple-500"
-                          style={{
-                            height: `${(count / max) * 100}%`,
-                            minHeight: "2px",
-                          }}
-                        />
+                      <div key={m.status} className="flex items-center gap-2">
+                        <div className={`h-2 w-2 rounded-full ${colors[m.status] || "bg-gray-500"}`} />
+                        <span className="text-sm text-foreground flex-1">{m.status}</span>
+                        <span className="text-sm font-medium text-foreground">{m.count}</span>
+                        <span className="text-xs text-muted-foreground w-10 text-right">
+                          {Math.round((m.count / total) * 100)}%
+                        </span>
                       </div>
                     );
                   })
@@ -310,68 +297,21 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="text-sm font-semibold text-foreground mb-3">
-                Reviews by Status
-              </h2>
-              <div className="space-y-2">
-                {data.reviewsByStatus.map((r) => {
-                  const colors: Record<string, string> = {
-                    APPROVED: "bg-green-500",
-                    PENDING: "bg-yellow-500",
-                    REJECTED: "bg-red-500",
-                    AI_FLAGGED: "bg-orange-500",
-                  };
-                  const total =
-                    data.reviewsByStatus.reduce((s, x) => s + x.count, 0) || 1;
-                  return (
-                    <div key={r.status} className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${colors[r.status] || "bg-gray-500"}`}
-                      />
-                      <span className="text-sm text-foreground flex-1">
-                        {r.status}
-                      </span>
-                      <span className="text-sm font-medium text-foreground">
-                        {r.count}
-                      </span>
-                      <span className="text-xs text-muted-foreground w-10 text-right">
-                        {Math.round((r.count / total) * 100)}%
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-sm font-semibold text-foreground mb-3">
-                Top Providers
+                Top Providers by Popularity
               </h2>
               <div className="space-y-2">
                 {data.topProviders.slice(0, 7).map((p, i) => (
                   <div key={p.name} className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground w-4">
-                      {i + 1}
-                    </span>
-                    <span className="text-sm text-foreground flex-1 truncate">
-                      {p.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {p.reviews} reviews
-                    </span>
-                    {p.avgRating && (
-                      <span className="text-xs text-yellow-500">
-                        ★{p.avgRating}
-                      </span>
-                    )}
+                    <span className="text-xs text-muted-foreground w-4">{i + 1}</span>
+                    <span className="text-sm text-foreground flex-1 truncate">{p.name}</span>
+                    <span className="text-xs text-muted-foreground">score: {p.popularityScore}</span>
                   </div>
                 ))}
                 {data.topProviders.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">
-                    No data
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center py-2">No data</p>
                 )}
               </div>
             </div>

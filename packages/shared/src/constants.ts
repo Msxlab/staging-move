@@ -38,22 +38,6 @@ export const BILLING_CYCLES = [
   { value: "ONE_TIME", label: "One Time" },
 ] as const;
 
-// ==================== TASK ====================
-
-export const TASK_PRIORITIES = [
-  { value: "LOW", label: "Low", color: "#6b7280" },
-  { value: "MEDIUM", label: "Medium", color: "#3b82f6" },
-  { value: "HIGH", label: "High", color: "#f59e0b" },
-  { value: "URGENT", label: "Urgent", color: "#ef4444" },
-] as const;
-
-export const TASK_STATUSES = [
-  { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "CANCELLED", label: "Cancelled" },
-] as const;
-
 // ==================== MOVING PLAN ====================
 
 export const MOVING_STATUSES = [
@@ -77,16 +61,6 @@ export const DOCUMENT_CATEGORIES = [
   { value: "SCHOOL_RECORD", label: "School Record" },
   { value: "ID_DOCUMENT", label: "ID Document" },
   { value: "OTHER", label: "Other" },
-] as const;
-
-// ==================== BADGE RARITIES ====================
-
-export const BADGE_RARITIES = [
-  { value: "COMMON", label: "Common", color: "#6b7280" },
-  { value: "UNCOMMON", label: "Uncommon", color: "#10b981" },
-  { value: "RARE", label: "Rare", color: "#3b82f6" },
-  { value: "EPIC", label: "Epic", color: "#a855f7" },
-  { value: "LEGENDARY", label: "Legendary", color: "#f59e0b" },
 ] as const;
 
 // ==================== FAMILY STATUS ====================

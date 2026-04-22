@@ -37,9 +37,6 @@ export interface User {
   onboardingComplete: boolean;
   subscriptionPlan: string;
   subscriptionStatus: string;
-  totalPoints: number;
-  currentStreak: number;
-  longestStreak: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -200,8 +197,6 @@ export interface ServiceProvider {
   tags: string[];
   score: number;
   isActive: boolean;
-  reviewCount: number;
-  avgRating: number;
 }
 
 // ==================== BADGE ====================
@@ -243,18 +238,12 @@ export interface Notification {
 export interface DashboardStats {
   addressCount: number;
   serviceCount: number;
-  pendingTasks: number;
   monthlyExpenses: number;
-  currentStreak: number;
-  longestStreak: number;
-  totalPoints: number;
   activePlan: {
     id: string;
     fromCity: string;
     toCity: string;
     moveDate: string;
-    totalTasks: number;
-    completedTasks: number;
     status: string;
   } | null;
 }

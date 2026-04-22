@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Pencil, Trash2, Globe, MapPin, Phone, ExternalLink,
-  Star, Users, MessageSquare, Building2, Tag, Clock,
+  Users, Building2, Tag, Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
@@ -14,7 +14,7 @@ interface Provider {
   description: string | null; website: string | null; phone: string | null; logoUrl: string | null;
   scope: string; states: string; zipCodes: string; tags: string;
   popularityScore: number; isActive: boolean; displayOrder: number;
-  reviewCount: number; avgRating: number | null; userCount: number;
+  userCount: number;
   createdAt: string; updatedAt: string;
 }
 
@@ -92,25 +92,7 @@ export default function ProviderDetailPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-yellow-500/10 p-2.5"><Star className="h-5 w-5 text-yellow-500" /></div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{provider.avgRating ? provider.avgRating.toFixed(1) : "—"}</p>
-              <p className="text-xs text-muted-foreground">Avg Rating</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-500/10 p-2.5"><MessageSquare className="h-5 w-5 text-blue-500" /></div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{provider.reviewCount}</p>
-              <p className="text-xs text-muted-foreground">Reviews</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4">
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-purple-500/10 p-2.5"><Users className="h-5 w-5 text-purple-500" /></div>

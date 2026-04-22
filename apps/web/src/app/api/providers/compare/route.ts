@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
   let providers = await prisma.serviceProvider.findMany({
     where,
-    orderBy: sortBy === "avgRating" ? { avgRating: "desc" } : sortBy === "reviewCount" ? { reviewCount: "desc" } : { popularityScore: "desc" },
+    orderBy: { popularityScore: "desc" },
   });
 
   if (state) {
@@ -48,10 +48,6 @@ export async function GET(req: NextRequest) {
         return states.includes(state);
       } catch { return false; }
     });
-  }
-
-  if (minRating > 0) {
-    providers = providers.filter((p) => (p.avgRating || 0) >= minRating);
   }
 
   if (tags) {

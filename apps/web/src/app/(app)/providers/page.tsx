@@ -36,8 +36,6 @@ type ProviderRow = {
   tags: string;
   popularityScore: number;
   displayOrder: number;
-  avgRating?: number | null;
-  reviewCount?: number;
   userCount?: number;
 };
 
@@ -85,8 +83,6 @@ export default async function ProvidersPage() {
     tags: parseJsonArray(p.tags),
     popularityScore: p.popularityScore || 0,
     displayOrder: p.displayOrder || 0,
-    avgRating: p.avgRating ?? null,
-    reviewCount: p.reviewCount || 0,
     userCount: p.userCount || 0,
   }));
 

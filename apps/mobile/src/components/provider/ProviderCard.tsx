@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
-import { Star, ChevronRight, MapPin, Users } from "lucide-react-native";
+import { ChevronRight, MapPin, Users } from "lucide-react-native";
 import { theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
@@ -18,8 +18,6 @@ export type ProviderCardData = {
   scope?: "FEDERAL" | "STATE" | string | null;
   states?: string[] | null;
   tags?: string[] | null;
-  avgRating?: number | null;
-  reviewCount?: number | null;
   userCount?: number | null;
   popularityScore?: number | null;
 };
@@ -87,19 +85,12 @@ export function ProviderCard({
         ) : null}
 
         <View style={compactStyles.metaRow}>
-          {provider.avgRating && provider.avgRating > 0 ? (
-            <View style={compactStyles.rating}>
-              <Star size={11} color={theme.colors.amber.text} fill={theme.colors.amber.text} />
-              <Text style={compactStyles.ratingText}>{provider.avgRating.toFixed(1)}</Text>
-            </View>
-          ) : (
-            <View style={compactStyles.scopePill}>
-              <MapPin size={10} color={theme.colors.textTertiary} />
-              <Text style={compactStyles.scopeText} numberOfLines={1}>
-                {scopeLabel}
-              </Text>
-            </View>
-          )}
+          <View style={compactStyles.scopePill}>
+            <MapPin size={10} color={theme.colors.textTertiary} />
+            <Text style={compactStyles.scopeText} numberOfLines={1}>
+              {scopeLabel}
+            </Text>
+          </View>
           {provider.userCount && provider.userCount > 0 ? (
             <View style={compactStyles.users}>
               <Users size={10} color={theme.colors.textTertiary} />
@@ -148,15 +139,6 @@ export function ProviderCard({
       ) : null}
 
       <View style={fullStyles.metaRow}>
-        {provider.avgRating && provider.avgRating > 0 ? (
-          <View style={fullStyles.rating}>
-            <Star size={12} color={theme.colors.amber.text} fill={theme.colors.amber.text} />
-            <Text style={fullStyles.ratingText}>{provider.avgRating.toFixed(1)}</Text>
-            {provider.reviewCount ? (
-              <Text style={fullStyles.reviewCount}>({provider.reviewCount})</Text>
-            ) : null}
-          </View>
-        ) : null}
         <UiBadge label={scopeLabel} variant="info" />
         {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
         {provider.userCount && provider.userCount > 0 ? (
@@ -228,16 +210,6 @@ const compactStyles = StyleSheet.create({
     gap: 8,
     marginTop: 2,
   },
-  rating: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: theme.colors.amber.text,
-  },
   scopePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -306,20 +278,6 @@ const fullStyles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
     flexWrap: "wrap",
-  },
-  rating: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  ratingText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: theme.colors.amber.text,
-  },
-  reviewCount: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
   },
   users: {
     flexDirection: "row",

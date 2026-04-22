@@ -20,6 +20,7 @@ import {
   ChevronUp,
   MessageSquare,
   ExternalLink,
+  Ticket,
 } from "lucide-react-native";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -163,6 +164,10 @@ export default function HelpScreen() {
           <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={handleContactUs}>
             <ExternalLink size={20} color={theme.colors.accent} />
             <Text style={styles.quickLabel}>Contact Us</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={() => router.push("/help/tickets" as any)}>
+            <Ticket size={20} color={theme.colors.primary} />
+            <Text style={styles.quickLabel}>My Tickets</Text>
           </TouchableOpacity>
         </View>
 

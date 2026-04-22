@@ -27,8 +27,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         fromAddress: true,
         toAddress: true,
-        tasks: { orderBy: { dueDate: "asc" } },
-        boxes: { orderBy: { boxNumber: "asc" } },
       },
     });
 

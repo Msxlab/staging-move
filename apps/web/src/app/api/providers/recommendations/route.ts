@@ -122,8 +122,6 @@ export async function GET(request: NextRequest) {
       tags: safeJsonArray(p.tags),
       popularityScore: p.popularityScore || 0,
       displayOrder: p.displayOrder || 0,
-      avgRating: p.avgRating,
-      reviewCount: p.reviewCount || 0,
       userCount: p.userCount || 0,
       coverageModel: p.coverageModel || "state",
       coverageMatchLevel: getProviderMatchLevelFromDb(p, {

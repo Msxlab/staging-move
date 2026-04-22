@@ -16,15 +16,15 @@ import {
   MapPin,
   Calendar,
   ArrowRight,
-  CheckCircle2,
-  Circle,
-  Clock,
   Trash2,
   ArrowRightLeft,
   Repeat,
   PlusCircle,
   XCircle,
   Shield,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react-native";
 import { theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
@@ -41,16 +41,6 @@ const statusVariant: Record<string, "primary" | "success" | "warning" | "error" 
   CANCELLED: "error",
 };
 
-const taskStatusIcon: Record<string, any> = {
-  COMPLETED: CheckCircle2,
-  IN_PROGRESS: Clock,
-  PENDING: Circle,
-};
-
-function getTaskDisplayStatus(task: any) {
-  return task.completed ? "COMPLETED" : "PENDING";
-}
-
 export default function MovingDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -59,6 +49,8 @@ export default function MovingDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [migration, setMigration] = useState<any>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [stateRules, setStateRules] = useState<any>(null);
+  const [stateGuideOpen, setStateGuideOpen] = useState(false);
 
   const fetchMigration = useCallback(async (planId: string) => {
     const mRes = await api.get<any>("/api/moving/migration", { planId });
@@ -72,6 +64,10 @@ export default function MovingDetailScreen() {
       setPlan(p);
       if (p && (p.status === "PLANNING" || p.status === "IN_PROGRESS")) {
         await fetchMigration(p.id);
+      }
+      if (p?.toAddress?.state) {
+        const srRes = await api.get<any>(`/api/state-rules?state=${encodeURIComponent(p.toAddress.state)}`);
+        if (srRes.data?.rules?.length) setStateRules(srRes.data.rules[0]);
       }
     }
   }, [id, fetchMigration]);
@@ -126,7 +122,7 @@ export default function MovingDetailScreen() {
 
   const handleDelete = () => {
     hapticWarning();
-    Alert.alert("Delete Plan", "Are you sure? This will delete the plan and all its tasks.", [
+    Alert.alert("Delete Plan", "Are you sure? This will permanently delete this plan.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
@@ -143,17 +139,6 @@ export default function MovingDetailScreen() {
         },
       },
     ]);
-  };
-
-  const toggleTask = async (taskId: string, isCompleted: boolean) => {
-    const res = await api.patch(`/api/tasks/${taskId}`, { completed: !isCompleted });
-    if (!res.error) {
-      hapticSuccess();
-      await fetch_();
-    } else {
-      hapticError();
-      Alert.alert("Error", res.error || "Failed to update task.");
-    }
   };
 
   if (loading) return <LoadingScreen />;
@@ -174,20 +159,12 @@ export default function MovingDetailScreen() {
     );
   }
 
-  const tasks = plan.tasks || [];
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((t: any) => t.completed === true).length;
-  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const isInterstateMove = plan.fromAddress?.state !== plan.toAddress?.state;
   const moveScopeLabel = isInterstateMove ? "Interstate Move" : "Intrastate Move";
   const scopeDetail = isInterstateMove
     ? "Expect DMV, voter registration, tax, and provider switching tasks across states."
     : "Expect utility transfers, local updates, and scheduling tasks within the same state.";
-  const upcomingTasks = tasks.filter((task: any) => {
-    if (task.completed || !task.dueDate) return false;
-    return new Date(task.dueDate).getTime() <= Date.now() + (14 * 24 * 60 * 60 * 1000);
-  }).length;
   const migrationSummaryLabel = migration
     ? `${migration.summary.switches} switch · ${migration.summary.newNeeded} new · ${migration.summary.keeps} keep`
     : "Migration guidance appears automatically after your origin services are analyzed.";
@@ -257,17 +234,6 @@ export default function MovingDetailScreen() {
           </Card>
         </View>
 
-        {/* Progress */}
-        <Card variant="default" style={{ marginTop: 16 }}>
-          <Text style={styles.progressTitle}>Progress</Text>
-          <View style={styles.progressRow}>
-            <View style={styles.progressBg}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
-            </View>
-            <Text style={styles.progressText}>{completedTasks}/{totalTasks}</Text>
-          </View>
-        </Card>
-
         {/* Move Scope */}
         <Text style={styles.sectionTitle}>Move Scope</Text>
         <Card variant="default">
@@ -276,7 +242,6 @@ export default function MovingDetailScreen() {
               <Text style={styles.scopeTitle}>{moveScopeLabel}</Text>
               <Text style={styles.scopeSubtitle}>{plan.fromAddress?.state} → {plan.toAddress?.state}</Text>
             </View>
-            <UiBadge label={`${upcomingTasks} due soon`} variant={upcomingTasks > 0 ? "warning" : "neutral"} />
           </View>
           <Text style={styles.scopeBody}>{scopeDetail}</Text>
           <View style={styles.scopeGrid}>
@@ -478,62 +443,57 @@ export default function MovingDetailScreen() {
           </View>
         )}
 
-        {/* Tasks */}
-        <Text style={styles.sectionTitle}>Tasks ({totalTasks})</Text>
-        {tasks.length === 0 ? (
-          <Card variant="default">
-            <Text style={{ color: theme.colors.textTertiary, textAlign: "center", paddingVertical: 16 }}>
-              No tasks yet. Tasks will appear here once added.
-            </Text>
-          </Card>
-        ) : (
-          <View style={{ gap: 8 }}>
-            {tasks.map((task: any) => {
-              const taskStatus = getTaskDisplayStatus(task);
-              const StatusIcon = taskStatusIcon[taskStatus] || Circle;
-              const isDone = task.completed === true;
-              const tid = task.templateId || "";
-              const migType = tid.startsWith("MIG_KEEP_") ? { label: "Keep", color: "#10b981", bg: "rgba(16,185,129,0.12)" }
-                : tid.startsWith("MIG_TRANSFER_") ? { label: "Transfer", color: "#06b6d4", bg: "rgba(6,182,212,0.12)" }
-                : tid.startsWith("MIG_SWITCH_") ? { label: "Switch", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" }
-                : tid.startsWith("MIG_CANCEL_") ? { label: "Cancel", color: "#ef4444", bg: "rgba(239,68,68,0.12)" }
-                : null;
-              return (
-                <TouchableOpacity
-                  key={task.id}
-                  style={styles.taskRow}
-                  onPress={() => toggleTask(task.id, isDone)}
-                  activeOpacity={0.6}
-                >
-                  <StatusIcon
-                    size={20}
-                    color={isDone ? theme.colors.emerald.text : theme.colors.textMuted}
-                    fill={isDone ? theme.colors.emerald.text : "transparent"}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                      <Text style={[styles.taskTitle, isDone && styles.taskDone, { flexShrink: 1 }]} numberOfLines={2}>
-                        {task.title}
-                      </Text>
-                      {migType && (
-                        <View style={{ paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: migType.bg }}>
-                          <Text style={{ fontSize: 9, fontWeight: "700", color: migType.color, letterSpacing: 0.3 }}>{migType.label}</Text>
-                        </View>
-                      )}
-                    </View>
-                    {task.dueDate && (
-                      <Text style={styles.taskDue}>
-                        Due: {new Date(task.dueDate).toLocaleDateString()}
-                      </Text>
-                    )}
+        {/* State Guide */}
+        {stateRules && (
+          <View style={styles.stateGuideCard}>
+            <TouchableOpacity
+              style={styles.stateGuideHeader}
+              activeOpacity={0.7}
+              onPress={() => setStateGuideOpen(!stateGuideOpen)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <BookOpen size={16} color={theme.colors.primary} />
+                <Text style={styles.stateGuideTitle}>State Guide — {plan.toAddress?.state}</Text>
+              </View>
+              {stateGuideOpen
+                ? <ChevronUp size={16} color={theme.colors.textMuted} />
+                : <ChevronDown size={16} color={theme.colors.textMuted} />
+              }
+            </TouchableOpacity>
+            {stateGuideOpen && (
+              <View style={styles.stateGuideBody}>
+                {stateRules.dmvRules && (
+                  <View style={styles.stateGuideSection}>
+                    <Text style={styles.stateGuideSectionLabel}>DMV / Vehicle</Text>
+                    <Text style={styles.stateGuideSectionText}>{stateRules.dmvRules}</Text>
                   </View>
-                  <UiBadge
-                    label={task.priority || "MEDIUM"}
-                    variant={task.priority === "HIGH" || task.priority === "URGENT" ? "error" : "neutral"}
-                  />
-                </TouchableOpacity>
-              );
-            })}
+                )}
+                {stateRules.voterRegistration && (
+                  <View style={styles.stateGuideSection}>
+                    <Text style={styles.stateGuideSectionLabel}>Voter Registration</Text>
+                    <Text style={styles.stateGuideSectionText}>{stateRules.voterRegistration}</Text>
+                  </View>
+                )}
+                {stateRules.taxInfo && (
+                  <View style={styles.stateGuideSection}>
+                    <Text style={styles.stateGuideSectionLabel}>State Tax</Text>
+                    <Text style={styles.stateGuideSectionText}>{stateRules.taxInfo}</Text>
+                  </View>
+                )}
+                {stateRules.utilityInfo && (
+                  <View style={styles.stateGuideSection}>
+                    <Text style={styles.stateGuideSectionLabel}>Utilities</Text>
+                    <Text style={styles.stateGuideSectionText}>{stateRules.utilityInfo}</Text>
+                  </View>
+                )}
+                {stateRules.insuranceRules && (
+                  <View style={styles.stateGuideSection}>
+                    <Text style={styles.stateGuideSectionLabel}>Insurance</Text>
+                    <Text style={styles.stateGuideSectionText}>{stateRules.insuranceRules}</Text>
+                  </View>
+                )}
+              </View>
+            )}
           </View>
         )}
 
@@ -572,11 +532,6 @@ const styles = StyleSheet.create({
   addressCards: { flexDirection: "row", gap: 12, marginTop: 16 },
   addrLabel: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 6, textTransform: "uppercase", letterSpacing: 0.5 },
   addrValue: { fontSize: 13, fontWeight: "600", color: theme.colors.text, marginTop: 4 },
-  progressTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.textSecondary, marginBottom: 10 },
-  progressRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  progressBg: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.05)" },
-  progressFill: { height: "100%", borderRadius: 4, backgroundColor: theme.colors.primary },
-  progressText: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
   sectionTitle: { fontSize: 18, fontWeight: "700", color: theme.colors.text, marginTop: 24, marginBottom: 12 },
   scopeHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
   scopeTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
@@ -592,14 +547,6 @@ const styles = StyleSheet.create({
   },
   scopeCardLabel: { fontSize: 10, fontWeight: "700", color: theme.colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6 },
   scopeCardValue: { fontSize: 13, color: theme.colors.text, lineHeight: 19 },
-  taskRow: {
-    flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 14, paddingHorizontal: 16,
-    backgroundColor: theme.colors.card, borderRadius: theme.radius.lg,
-    borderWidth: 1, borderColor: theme.colors.border,
-  },
-  taskTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
-  taskDone: { textDecorationLine: "line-through", color: theme.colors.textMuted },
-  taskDue: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 2 },
   deleteBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     marginTop: 32, paddingVertical: 14, borderRadius: theme.radius.lg,
@@ -626,4 +573,21 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   migBtnPrimaryText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  stateGuideCard: {
+    marginTop: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.radius.xl,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
+  },
+  stateGuideHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  stateGuideTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  stateGuideBody: { paddingHorizontal: 16, paddingBottom: 16, borderTopWidth: 1, borderTopColor: theme.colors.border },
+  stateGuideSection: { marginTop: 12 },
+  stateGuideSectionLabel: { fontSize: 10, fontWeight: "700", color: theme.colors.textMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
+  stateGuideSectionText: { fontSize: 13, color: theme.colors.textTertiary, lineHeight: 20 },
 });

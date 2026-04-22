@@ -42,8 +42,6 @@ export interface ProviderForMigration {
   scope: string;
   states: string[];
   popularityScore: number;
-  avgRating?: number | null;
-  reviewCount?: number;
 }
 
 export interface MigrationItem {
@@ -178,12 +176,11 @@ function findBestProvider(
 
   if (candidates.length === 0) return null;
 
-  // Sort by: state-specific first, then by popularity, then by rating
+  // Sort by: state-specific first, then by popularity score
   candidates.sort((a, b) => {
     const aLocal = a.scope === "STATE" && a.states.includes(toState) ? 1 : 0;
     const bLocal = b.scope === "STATE" && b.states.includes(toState) ? 1 : 0;
     if (bLocal !== aLocal) return bLocal - aLocal;
-    if ((b.avgRating || 0) !== (a.avgRating || 0)) return (b.avgRating || 0) - (a.avgRating || 0);
     return (b.popularityScore || 0) - (a.popularityScore || 0);
   });
 

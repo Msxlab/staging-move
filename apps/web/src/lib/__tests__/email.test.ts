@@ -66,8 +66,6 @@ describe("weeklyDigestHtml", () => {
       { name: "Electric", amount: 100, dueDate: "Mar 10" },
       { name: "Internet", amount: 59.99, dueDate: "Mar 12" },
     ],
-    pendingTasks: 5,
-    completedTasks: 3,
     totalExpenses: 450.0,
     newServices: 2,
   };
@@ -83,10 +81,10 @@ describe("weeklyDigestHtml", () => {
     expect(html).toContain("Mar 7");
   });
 
-  it("should contain task counts", () => {
+  it("should contain monthly expenses", () => {
     const html = weeklyDigestHtml(data);
-    expect(html).toContain(">3<"); // completedTasks
-    expect(html).toContain(">5<"); // pendingTasks
+    expect(html).toContain("450");
+    expect(html).toContain(">2<"); // newServices
   });
 
   it("should contain upcoming bills table", () => {

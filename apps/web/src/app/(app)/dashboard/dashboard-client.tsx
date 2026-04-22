@@ -2,13 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
-  MapPin, Zap, CheckSquare, DollarSign, Truck, ArrowRight,
-  Home, Briefcase, Palmtree, TrendingUp, Eye, Edit, Plus,
-  ExternalLink, Calendar, Receipt, PieChart, Loader2, SlidersHorizontal, X, GripVertical,
+  MapPin, Zap, DollarSign, Truck, ArrowRight,
+  Home, Briefcase, Palmtree, TrendingUp, Edit, Plus,
+  Calendar, PieChart, Loader2, SlidersHorizontal, X, GripVertical,
   AlertTriangle, Clock, Sparkles, Star,
 } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
-import { UpcomingTasks } from "@/components/dashboard/upcoming-tasks";
 import { UpcomingBills } from "@/components/dashboard/upcoming-bills";
 import { formatCurrency } from "@/lib/utils";
 import { DashboardSkeleton } from "@/components/shared/loading-state";
@@ -43,15 +42,14 @@ interface AddressInfo {
 }
 
 interface DashboardStats {
-  addressCount: number; serviceCount: number; pendingTasks: number; monthlyExpenses: number;
-  activePlan: { id: string; fromCity: string; toCity: string; moveDate: string; totalTasks: number; completedTasks: number; status: string } | null;
+  addressCount: number; serviceCount: number; monthlyExpenses: number;
+  activePlan: { id: string; fromCity: string; toCity: string; moveDate: string; status: string } | null;
 }
 
 const WIDGET_KEYS = [
   { key: "stats", label: "Stats Overview", default: true },
   { key: "nextCritical", label: "Next Critical Actions", default: true },
   { key: "spending", label: "Spending by Address", default: true },
-  { key: "tasks", label: "Upcoming Tasks", default: true },
   { key: "moving", label: "Moving Progress", default: true },
   { key: "recent", label: "Recent Services", default: true },
   { key: "bills", label: "Upcoming Bills", default: true },
@@ -117,7 +115,7 @@ function SortableItem({ id, label, enabled, onToggle }: { id: string; label: str
 
 export default function DashboardClient({ initialPrefs }: { initialPrefs: DashboardWidgetPrefs | null }) {
   const [stats, setStats] = useState<DashboardStats>({
-    addressCount: 0, serviceCount: 0, pendingTasks: 0, monthlyExpenses: 0, activePlan: null,
+    addressCount: 0, serviceCount: 0, monthlyExpenses: 0, activePlan: null,
   });
   const [addresses, setAddresses] = useState<AddressInfo[]>([]);
   const [allServices, setAllServices] = useState<any[]>([]);
@@ -175,7 +173,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
   const w = (key: WidgetKey) => widgets[key] !== false;
 
   // Which column each widget belongs to
-  const leftWidgets: WidgetKey[] = ["nextCritical", "spending", "tasks", "moving", "recent"];
+  const leftWidgets: WidgetKey[] = ["nextCritical", "spending", "moving", "recent"];
   const rightWidgets: WidgetKey[] = ["bills", "categories", "topSpending"];
   const orderedLeft = widgetOrder.filter((k) => leftWidgets.includes(k));
   const orderedRight = widgetOrder.filter((k) => rightWidgets.includes(k));
@@ -207,18 +205,14 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
         const monthlyExpenses = services.reduce((sum: number, s: any) => sum + (s.monthlyCost || 0), 0);
 
-        let pendingTasks = 0;
         let activePlan: DashboardStats["activePlan"] = null;
 
         const inProgressPlan = plans.find((p: any) => p.status === "IN_PROGRESS") || plans[0];
         if (inProgressPlan) {
-          const tasks = inProgressPlan.tasks || [];
-          const completedTasks = tasks.filter((t: any) => t.completed).length;
-          pendingTasks = tasks.length - completedTasks;
           activePlan = {
             id: inProgressPlan.id, fromCity: inProgressPlan.fromAddress?.city || "Origin",
             toCity: inProgressPlan.toAddress?.city || "Destination", moveDate: inProgressPlan.moveDate,
-            totalTasks: tasks.length, completedTasks, status: inProgressPlan.status,
+            status: inProgressPlan.status,
           };
         }
 
@@ -228,7 +222,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
         setIsPremium(!!hasPremium);
         setPremiumPlan(sub.plan || "");
         setStats({
-          addressCount: addrs.length, serviceCount: services.length, pendingTasks, monthlyExpenses,
+          addressCount: addrs.length, serviceCount: services.length, monthlyExpenses,
           activePlan,
         });
 
@@ -250,9 +244,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               moveType: profile.moveType || "PERSONAL",
             };
             const completedCats: Set<string> = new Set(services.map((s: any) => s.category as string));
-            const completedTemplates: Set<string> = new Set(
-              (inProgressPlan.tasks || []).filter((t: any) => t.completed && t.templateId).map((t: any) => t.templateId as string)
-            );
+            const completedTemplates: Set<string> = new Set<string>();
             const toState = (inProgressPlan as any).toAddress?.state || "";
             let stateRule: ChecklistStateRuleContext | null = null;
             if (toState) {
@@ -300,8 +292,8 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       .catch(() => {});
   }, [widgets.nextCritical]);
 
-  const progress = stats.activePlan && stats.activePlan.totalTasks > 0
-    ? Math.round((stats.activePlan.completedTasks / stats.activePlan.totalTasks) * 100) : 0;
+  const progress = checklist && checklist.totalItems > 0
+    ? Math.round((checklist.completedItems / checklist.totalItems) * 100) : 0;
 
   // Compute spending by category
   const catBreakdown: Record<string, number> = {};
@@ -408,10 +400,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       )}
 
       {/* Stats Grid */}
-      {w("stats") && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {w("stats") && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <StatsCard title="Addresses" value={stats.addressCount} icon={MapPin} description={stats.addressCount > 0 ? `${addresses.filter(a => a.isPrimary).length} primary` : undefined} />
         <StatsCard title="Active Services" value={stats.serviceCount} description={stats.monthlyExpenses > 0 ? `${formatCurrency(stats.monthlyExpenses)}/mo total` : "Across all addresses"} icon={Zap} />
-        <StatsCard title="Pending Tasks" value={stats.pendingTasks} icon={CheckSquare} description={stats.activePlan ? `${stats.activePlan.fromCity} → ${stats.activePlan.toCity}` : undefined} />
         <Link href="/expenses"><StatsCard title="Monthly Expenses" value={formatCurrency(stats.monthlyExpenses)} icon={DollarSign} description={sortedCats.length > 0 ? `${sortedCats.length} categories` : undefined} /></Link>
       </div>}
 
@@ -508,8 +499,6 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     </div>
                   </div>
                 ) : null;
-              case "tasks":
-                return <UpcomingTasks key={key} />;
               case "moving": {
                 const phaseInfo = checklist ? RELOCATION_PHASES.find((ph: any) => ph.phase === checklist.currentPhase) : null;
                 return stats.activePlan ? (
@@ -528,7 +517,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                       <div className="text-right">
                         <p className="text-lg font-bold text-white">{checklist ? `${checklist.progressPercent}%` : `${progress}%`}</p>
                         <p className="text-[10px] text-white/30">
-                          {checklist ? `${checklist.completedItems}/${checklist.totalItems}` : `${stats.activePlan.completedTasks}/${stats.activePlan.totalTasks}`} done
+                          {checklist ? `${checklist.completedItems}/${checklist.totalItems}` : `${progress}%`} done
                         </p>
                       </div>
                     </div>

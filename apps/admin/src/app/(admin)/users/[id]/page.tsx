@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 
 async function readAdminApiError(response: Response, fallback: string) {
@@ -33,6 +34,7 @@ export default function UserDetailPage() {
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [eventCounts, setEventCounts] = useState<any[]>([]);
   const [pushDevices, setPushDevices] = useState<any[]>([]);
+  const [supportTickets, setSupportTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -56,6 +58,7 @@ export default function UserDetailPage() {
         setRecentEvents(data.recentEvents || []);
         setEventCounts(data.eventCounts || []);
         setPushDevices(data.pushDevices || []);
+        setSupportTickets(data.user?.supportTickets || []);
         if (data.user) {
           setEditForm({
             firstName: data.user.firstName || "",
@@ -710,7 +713,7 @@ export default function UserDetailPage() {
                     {plan.fromAddress?.city}, {plan.fromAddress?.state} → {plan.toAddress?.city}, {plan.toAddress?.state}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {plan.tasks?.filter((t: any) => t.completed).length}/{plan.tasks?.length} tasks completed
+                    Move date: {plan.moveDate ? new Date(plan.moveDate).toLocaleDateString() : "—"}
                   </p>
                 </div>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -718,6 +721,47 @@ export default function UserDetailPage() {
                 }`}>{plan.status}</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Support Tickets */}
+      {supportTickets.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-foreground">
+              <LifeBuoy className="mr-2 inline h-5 w-5" /> Recent Support Tickets ({supportTickets.length})
+            </h2>
+            <Link href="/support" className="text-xs text-primary hover:underline">View all tickets</Link>
+          </div>
+          <div className="space-y-2">
+            {supportTickets.map((ticket: any) => {
+              const lastMsg = ticket.messages?.[0];
+              const statusColor =
+                ticket.status === "OPEN" ? "bg-blue-500/10 text-blue-500" :
+                ticket.status === "IN_PROGRESS" ? "bg-amber-500/10 text-amber-500" :
+                ticket.status === "WAITING_USER" ? "bg-orange-500/10 text-orange-500" :
+                "bg-muted text-muted-foreground";
+              return (
+                <Link key={ticket.id} href={`/support/${ticket.id}`}>
+                  <div className="flex items-start justify-between gap-3 rounded-lg bg-muted/50 p-3 text-sm hover:bg-muted/70 transition cursor-pointer">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor}`}>{ticket.status.replace("_", " ")}</span>
+                        <span className="text-xs text-muted-foreground">{ticket.category}</span>
+                      </div>
+                      <p className="font-medium text-foreground truncate">{ticket.subject}</p>
+                      {lastMsg && (
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {lastMsg.senderType === "ADMIN" ? "Support: " : "User: "}{lastMsg.content}
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-[10px] text-muted-foreground">{new Date(ticket.updatedAt).toLocaleDateString()}</span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

@@ -93,8 +93,6 @@ export async function GET(request: NextRequest) {
         scope: p.scope,
         states: safeParseJSON(p.states, []),
         popularityScore: p.popularityScore || 0,
-        avgRating: p.avgRating,
-        reviewCount: p.reviewCount || 0,
       }))
       .filter((p: ProviderForMigration) => {
         if (p.scope === "FEDERAL") return true;

@@ -13,6 +13,8 @@ import {
   HelpCircle,
   DollarSign,
   Building2,
+  Bell,
+  LifeBuoy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -34,6 +36,8 @@ export function Sidebar() {
     { key: "providers", href: "/providers", icon: Building2 },
     { key: "budget", href: "/budget", icon: DollarSign },
     { key: "moving", href: "/moving", icon: Truck },
+    { key: "notifications", href: "/notifications", icon: Bell },
+    { key: "support", href: "/support", icon: LifeBuoy },
   ] as const;
 
   const bottomNav = [

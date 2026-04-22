@@ -54,7 +54,8 @@
     "runtimeConfig": "Runtime Config",
     "settings": "Settings",
     "backups": "Backups",
-    "tickets": "Tickets"
+    "tickets": "Tickets",
+    "support": "Support"
   },
   "login": {
     "title": "Admin Sign In",

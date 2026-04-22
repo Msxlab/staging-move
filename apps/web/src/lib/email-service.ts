@@ -292,8 +292,6 @@ export async function sendWeeklyDigestEmail(opts: {
   weekStart: string;
   weekEnd: string;
   upcomingBills: { name: string; amount: number; dueDate: string }[];
-  pendingTasks: number;
-  completedTasks: number;
   totalExpenses: number;
   newServices: number;
   dedupeKey?: string;
@@ -307,8 +305,6 @@ export async function sendWeeklyDigestEmail(opts: {
       weekStart: opts.weekStart,
       weekEnd: opts.weekEnd,
       upcomingBills: opts.upcomingBills,
-      pendingTasks: opts.pendingTasks,
-      completedTasks: opts.completedTasks,
       totalExpenses: opts.totalExpenses,
       newServices: opts.newServices,
     }),
@@ -394,8 +390,6 @@ export async function sendMoveReminderEmail(opts: {
   toCity: string;
   moveDate: string;
   daysRemaining: number;
-  completedTasks: number;
-  totalTasks: number;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
@@ -414,7 +408,6 @@ export async function sendMoveReminderEmail(opts: {
       fromCity: opts.fromCity,
       toCity: opts.toCity,
       moveDate: opts.moveDate,
-      pendingTasks: String(opts.totalTasks - opts.completedTasks),
       appUrl,
     },
   });

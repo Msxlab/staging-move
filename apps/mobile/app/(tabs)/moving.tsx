@@ -13,8 +13,6 @@ import {
   Truck,
   Plus,
   Calendar,
-  CheckCircle2,
-  Clock,
   ArrowRight,
   MapPin,
 } from "lucide-react-native";
@@ -93,9 +91,6 @@ export default function MovingScreen() {
         ) : (
           <View style={styles.list}>
             {plans.map((plan: any) => {
-              const totalTasks = plan.tasks?.length || 0;
-              const completedTasks = plan.tasks?.filter((t: any) => t.completed === true).length || 0;
-              const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
               const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
               return (
@@ -114,19 +109,11 @@ export default function MovingScreen() {
                           {new Date(plan.moveDate).toLocaleDateString(i18n.language || "en", { month: "short", day: "numeric", year: "numeric" })}
                         </Text>
                         {daysUntil > 0 && (
-                          <Text style={styles.daysLeft}>{daysUntil} {t("tasks.dueDate").toLowerCase()}</Text>
+                          <Text style={styles.daysLeft}>{daysUntil}d</Text>
                         )}
                       </View>
                     </View>
                     <UiBadge label={plan.status.replace("_", " ")} variant={statusVariant[plan.status] || "neutral"} />
-                  </View>
-
-                  {/* Progress */}
-                  <View style={styles.progressRow}>
-                    <View style={styles.progressBg}>
-                      <View style={[styles.progressFill, { width: `${progress}%` }]} />
-                    </View>
-                    <Text style={styles.progressText}>{completedTasks}/{totalTasks}</Text>
                   </View>
 
                   {/* Addresses */}
@@ -169,10 +156,6 @@ const styles = StyleSheet.create({
   planMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   planDate: { fontSize: 12, color: theme.colors.textTertiary },
   daysLeft: { fontSize: 11, color: theme.colors.amber.text, fontWeight: "600", marginLeft: 6 },
-  progressRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.colors.border },
-  progressBg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: "rgba(255,255,255,0.05)" },
-  progressFill: { height: "100%", borderRadius: 3, backgroundColor: theme.colors.primary },
-  progressText: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: "500" },
   addressRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
   addressItem: { flexDirection: "row", alignItems: "center", gap: 4, flex: 1 },
   addressText: { fontSize: 11, color: theme.colors.textTertiary },

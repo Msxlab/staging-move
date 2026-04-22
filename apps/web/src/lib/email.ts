@@ -155,8 +155,6 @@ export function weeklyDigestHtml(data: {
   weekStart: string;
   weekEnd: string;
   upcomingBills: { name: string; amount: number; dueDate: string }[];
-  pendingTasks: number;
-  completedTasks: number;
   totalExpenses: number;
   newServices: number;
 }): string {
@@ -185,16 +183,12 @@ export function weeklyDigestHtml(data: {
       <!-- Stats -->
       <div style="display:flex;gap:12px;margin-bottom:20px;">
         <div style="flex:1;background:#f1f5f9;border-radius:12px;padding:16px;text-align:center;">
-          <p style="margin:0;font-size:24px;font-weight:700;color:#7c3aed;">${data.completedTasks}</p>
-          <p style="margin:4px 0 0;font-size:11px;color:#64748b;">Tasks Done</p>
-        </div>
-        <div style="flex:1;background:#f1f5f9;border-radius:12px;padding:16px;text-align:center;">
-          <p style="margin:0;font-size:24px;font-weight:700;color:#7c3aed;">${data.pendingTasks}</p>
-          <p style="margin:4px 0 0;font-size:11px;color:#64748b;">Pending</p>
-        </div>
-        <div style="flex:1;background:#f1f5f9;border-radius:12px;padding:16px;text-align:center;">
           <p style="margin:0;font-size:24px;font-weight:700;color:#7c3aed;">$${data.totalExpenses.toFixed(0)}</p>
           <p style="margin:4px 0 0;font-size:11px;color:#64748b;">Monthly Cost</p>
+        </div>
+        <div style="flex:1;background:#f1f5f9;border-radius:12px;padding:16px;text-align:center;">
+          <p style="margin:0;font-size:24px;font-weight:700;color:#7c3aed;">${data.newServices}</p>
+          <p style="margin:4px 0 0;font-size:11px;color:#64748b;">New Services</p>
         </div>
       </div>
 

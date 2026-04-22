@@ -5,8 +5,8 @@ import { db, withSoftDelete } from "../../../../packages/db/src/index";
  *
  * Applies the `withSoftDelete` extension globally so read queries
  * (`findMany`, `findUnique`, `findFirst`, `count`) on the models listed
- * in `SOFT_DELETE_MODELS` — User, Address, Service, MovingPlan, Task,
- * Budget, ServiceProvider, ProviderReview — automatically exclude rows
+ * in `SOFT_DELETE_MODELS` — User, Address, Service, MovingPlan,
+ * Budget, ServiceProvider — automatically exclude rows
  * with `deletedAt != null`. Write-path `delete` / `deleteMany` calls on
  * those models are rewritten into `update`s that stamp `deletedAt`.
  *

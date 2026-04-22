@@ -17,8 +17,6 @@ type ProviderRow = {
   tags: string;
   popularityScore: number;
   displayOrder: number;
-  avgRating?: number | null;
-  reviewCount?: number;
   userCount?: number;
 };
 
@@ -88,8 +86,6 @@ function shape(p: ProviderRow) {
     tags: safeJsonParse(p.tags, []) as string[],
     popularityScore: p.popularityScore,
     displayOrder: p.displayOrder,
-    avgRating: p.avgRating ?? null,
-    reviewCount: p.reviewCount || 0,
     userCount: p.userCount || 0,
   };
 }

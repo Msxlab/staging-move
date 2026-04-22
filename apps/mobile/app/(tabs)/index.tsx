@@ -12,16 +12,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   MapPin,
   Zap,
-  CheckSquare,
   DollarSign,
   Truck,
-  Trophy,
   ArrowRight,
   Bell,
-  TrendingUp,
-  Star,
   AlertTriangle,
-  Clock,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
@@ -49,18 +44,18 @@ export default function DashboardScreen() {
   const [isPremium, setIsPremium] = useState(false);
 
   const fetchDashboard = useCallback(async () => {
-    const res = await api.get<any>("/api/profile");
+    const [res, addrRes, movingRes] = await Promise.all([
+      api.get<any>("/api/profile"),
+      api.get<any>("/api/addresses"),
+      api.get<any>("/api/moving"),
+    ]);
     if (res.data) {
       const profileData = res.data.profile || res.data;
       const sub = res.data.subscription || {};
       const hasPremium = sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
       setIsPremium(!!hasPremium);
-      const addrRes = await api.get<any>("/api/addresses");
-      const taskRes = await api.get<any>("/api/tasks");
-      const movingRes = await api.get<any>("/api/moving");
 
       const addresses = addrRes.data?.addresses || [];
-      const tasks = taskRes.data?.tasks || [];
       const plans = movingRes.data?.plans || [];
       const totalServices = addresses.reduce(
         (sum: number, a: any) => sum + (a.services?.length || 0),
@@ -75,7 +70,6 @@ export default function DashboardScreen() {
           ) || 0),
         0
       );
-      const pendingTasks = tasks.filter((t: any) => t.completed !== true).length;
       const activePlan = plans.find(
         (p: any) => p.status === "PLANNING" || p.status === "IN_PROGRESS"
       );
@@ -83,22 +77,13 @@ export default function DashboardScreen() {
       setStats({
         addressCount: addresses.length,
         serviceCount: totalServices,
-        pendingTasks,
         monthlyExpenses,
-        currentStreak: profileData.currentStreak || 0,
-        longestStreak: profileData.longestStreak || 0,
-        totalPoints: profileData.totalPoints || 0,
         activePlan: activePlan
           ? {
               id: activePlan.id,
               fromCity: activePlan.fromAddress?.city || "—",
               toCity: activePlan.toAddress?.city || "—",
               moveDate: activePlan.moveDate,
-              totalTasks: activePlan.tasks?.length || 0,
-              completedTasks:
-                activePlan.tasks?.filter(
-                  (t: any) => t.completed === true
-                ).length || 0,
               status: activePlan.status,
             }
           : null,
@@ -124,9 +109,6 @@ export default function DashboardScreen() {
             moveType: profileData.moveType || "PERSONAL",
           };
           const completedCats = new Set<string>(svcs.map((s: any) => s.category as string));
-          const completedTemplates = new Set<string>(
-            (activePlan.tasks || []).filter((t: any) => t.completed && t.templateId).map((t: any) => t.templateId as string)
-          );
           const toState = activePlan.toAddress?.state || "";
           let stateRule: ChecklistStateRuleContext | null = null;
           if (toState) {
@@ -143,7 +125,7 @@ export default function DashboardScreen() {
             activePlan.fromAddress?.state || "",
             toState,
             completedCats,
-            completedTemplates,
+            new Set<string>(),
             stateRule,
           );
           setChecklist(cl);
@@ -186,17 +168,8 @@ export default function DashboardScreen() {
       route: "/(tabs)/services",
     },
     {
-      icon: CheckSquare,
-      label: t("dashboard.stat_tasks"),
-      value: String(stats?.pendingTasks || 0),
-      color: theme.colors.amber,
-      route: "/(tabs)/moving",
-    },
-    {
       icon: DollarSign,
       label: t("dashboard.stat_monthly"),
-      // Locale-aware currency formatting — USD values render with local
-      // grouping (e.g. "$1,234.56" en-US vs "US$1.234,56" es).
       value: new Intl.NumberFormat(i18n.language || "en", {
         style: "currency",
         currency: "USD",
@@ -217,13 +190,13 @@ export default function DashboardScreen() {
             <Text style={styles.title}>{t("tabs.dashboard")}</Text>
             {isPremium && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(245,158,11,0.12)", borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" }}>
-                <Text style={{ fontSize: 10, color: "#fbbf24" }}>{"\u2726"}</Text>
+                <Text style={{ fontSize: 10, color: "#fbbf24" }}>{"✦"}</Text>
                 <Text style={{ fontSize: 10, fontWeight: "700", color: "#fbbf24", letterSpacing: 0.3 }}>Premium</Text>
               </View>
             )}
           </View>
         </View>
-        <TouchableOpacity style={styles.notifButton}>
+        <TouchableOpacity style={styles.notifButton} onPress={() => router.push("/notifications" as any)}>
           <Bell size={22} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -298,29 +271,6 @@ export default function DashboardScreen() {
                 }
               />
             </View>
-            {/* Progress bar */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBg}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${
-                        stats.activePlan.totalTasks > 0
-                          ? (stats.activePlan.completedTasks /
-                              stats.activePlan.totalTasks) *
-                            100
-                          : 0
-                      }%`,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressText}>
-                {stats.activePlan.completedTasks}/{stats.activePlan.totalTasks}{" "}
-                {t("tasks.title").toLowerCase()}
-              </Text>
-            </View>
           </Card>
         )}
 
@@ -381,37 +331,6 @@ export default function DashboardScreen() {
             </Card>
           );
         })()}
-
-        {/* Streak & Points */}
-        <View style={styles.streakRow}>
-          <Card variant="default" style={{ flex: 1 }}>
-            <View style={styles.streakContent}>
-              <TrendingUp size={18} color={theme.colors.emerald.text} />
-              <Text style={styles.streakValue}>
-                {stats?.currentStreak || 0}
-              </Text>
-              <Text style={styles.streakLabel}>{t("common.more")}</Text>
-            </View>
-          </Card>
-          <Card variant="default" style={{ flex: 1 }}>
-            <View style={styles.streakContent}>
-              <Trophy size={18} color={theme.colors.amber.text} />
-              <Text style={styles.streakValue}>
-                {stats?.totalPoints || 0}
-              </Text>
-              <Text style={styles.streakLabel}>{t("tasks.completed")}</Text>
-            </View>
-          </Card>
-          <Card variant="default" style={{ flex: 1 }}>
-            <View style={styles.streakContent}>
-              <Star size={18} color={theme.colors.orange.text} />
-              <Text style={styles.streakValue}>
-                {stats?.longestStreak || 0}
-              </Text>
-              <Text style={styles.streakLabel}>★</Text>
-            </View>
-          </Card>
-        </View>
 
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
@@ -487,23 +406,6 @@ const styles = StyleSheet.create({
   },
   planTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
   planDate: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
-  progressContainer: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 14 },
-  progressBg: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 3,
-    backgroundColor: theme.colors.primary,
-  },
-  progressText: { fontSize: 12, color: theme.colors.textTertiary, fontWeight: "500" },
-  streakRow: { flexDirection: "row", gap: 10, marginTop: 20 },
-  streakContent: { alignItems: "center", gap: 6 },
-  streakValue: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
-  streakLabel: { fontSize: 11, color: theme.colors.textTertiary },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",

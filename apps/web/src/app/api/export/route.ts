@@ -113,25 +113,6 @@ export async function GET(request: NextRequest) {
         include: {
           fromAddress: { select: { city: true, state: true } },
           toAddress: { select: { city: true, state: true } },
-          tasks: {
-            select: {
-              title: true,
-              category: true,
-              priority: true,
-              completed: true,
-              dueDate: true,
-            },
-          },
-          boxes: {
-            select: {
-              boxNumber: true,
-              label: true,
-              room: true,
-              contents: true,
-              isPacked: true,
-              isFragile: true,
-            },
-          },
         },
       });
     }

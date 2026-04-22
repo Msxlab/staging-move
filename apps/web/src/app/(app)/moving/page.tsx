@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Truck, Calendar, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Plus, Truck, Calendar, ArrowRight } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
@@ -21,8 +21,6 @@ export default async function MovingPage() {
     include: {
       fromAddress: { select: { street: true, city: true, state: true, zip: true } },
       toAddress: { select: { street: true, city: true, state: true, zip: true } },
-      tasks: { select: { id: true, completed: true } },
-      boxes: { select: { id: true, isPacked: true } },
     },
     orderBy: { moveDate: "desc" },
   });
@@ -53,22 +51,18 @@ export default async function MovingPage() {
         <div className="space-y-4">
           {plans.map((plan: any) => {
             const status = statusBadge[plan.status] || statusBadge.PLANNING;
-            const totalTasks = plan.tasks?.length || 0;
-            const completedTasks = plan.tasks?.filter((t: any) => t.completed).length || 0;
-            const taskProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-            const boxesCount = plan.boxes?.length || 0;
-            const packedBoxes = plan.boxes?.filter((b: any) => b.isPacked).length || 0;
             const fromLabel = plan.fromAddress ? plan.fromAddress.street.split(",")[0] : "Origin";
             const toLabel = plan.toAddress ? plan.toAddress.street.split(",")[0] : "Destination";
+            const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
             return (
               <Link key={plan.id} href={`/moving/${plan.id}`}>
-                <div className="glass-card p-5 hover:bg-white/[0.07] transition-all cursor-pointer mb-4 space-y-4">
+                <div className="glass-card p-5 hover:bg-white/[0.07] transition-all cursor-pointer mb-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-sm text-white/40">
                         <Calendar className="h-4 w-4" />
-                        Move Date: {new Date(plan.moveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                        {new Date(plan.moveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                       </div>
                       <h3 className="text-lg font-semibold text-white flex items-center gap-2 flex-wrap">
                         <span className="truncate max-w-[200px]">{fromLabel}</span>
@@ -80,34 +74,9 @@ export default async function MovingPage() {
                       {status.label}
                     </span>
                   </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-1.5 text-white/50">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                        Tasks
-                      </span>
-                      <span className="font-medium text-white/70">{completedTasks} / {totalTasks}</span>
-                    </div>
-                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-orange-500 to-cyan-500 rounded-full transition-all"
-                        style={{ width: `${taskProgress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm text-white/40">
-                    <span className="flex items-center gap-1.5">
-                      <Truck className="h-4 w-4" />
-                      Boxes: {packedBoxes}/{boxesCount} packed
-                    </span>
-                    {plan.status === "IN_PROGRESS" && (
-                      <span className="text-xs text-orange-400 font-medium">
-                        {Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days until move
-                      </span>
-                    )}
-                  </div>
+                  {plan.status === "IN_PROGRESS" && daysUntil > 0 && (
+                    <p className="text-xs text-orange-400 font-medium">{daysUntil} days until move</p>
+                  )}
                 </div>
               </Link>
             );

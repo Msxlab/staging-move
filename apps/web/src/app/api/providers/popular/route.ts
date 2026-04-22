@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
           { scope: "FEDERAL" },
         ],
       },
-      select: { id: true, slug: true, avgRating: true, reviewCount: true, userCount: true },
+      select: { id: true, slug: true, userCount: true },
     });
 
     // Build popularity map: providerId/slug → score (0-20, normalized)

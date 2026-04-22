@@ -4,37 +4,49 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
+import { prisma } from "@/lib/db";
+import { requireDbUserId } from "@/lib/auth";
 
-const mockBudget = {
-  month: "2026-02",
-  year: 2026,
-  plannedIncome: 6500,
-  actualIncome: 6500,
-  plannedExpenses: 4200,
-  actualExpenses: 4350,
-  categoryBreakdown: {
-    "Rent/Mortgage": 1500,
-    "Utilities": 310,
-    "Insurance": 420,
-    "Groceries": 650,
-    "Transportation": 280,
-    "Healthcare": 150,
-    "Subscriptions": 85,
-    "Entertainment": 200,
-    "Dining Out": 320,
-    "Shopping": 180,
-    "Savings": 255,
-  },
-};
+export default async function BudgetMonthPage({ params }: { params: Promise<{ month: string }> }) {
+  let userId: string;
+  try {
+    userId = await requireDbUserId();
+  } catch {
+    return notFound();
+  }
 
-export default function BudgetMonthPage() {
-  const budget = mockBudget;
-  const monthName = new Date(budget.month + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const overBudget = budget.actualExpenses > (budget.plannedExpenses || 0);
-  const savings = budget.actualIncome! - budget.actualExpenses;
+  const { month } = await params;
+  const start = new Date(month + "-01");
+  if (isNaN(start.getTime())) return notFound();
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
+
+  const budget = await prisma.budget.findFirst({
+    where: { userId, month: { gte: start, lt: end } },
+  });
+
+  if (!budget) return notFound();
+
+  const monthName = start.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const overBudget = (budget.actualExpenses || 0) > (budget.plannedExpenses || 0);
+  const savings = (budget.actualIncome || 0) - (budget.actualExpenses || 0);
   const savingsRate = budget.actualIncome ? ((savings / budget.actualIncome) * 100).toFixed(1) : "0";
-  const sortedCategories = Object.entries(budget.categoryBreakdown).sort(([, a], [, b]) => b - a);
+
+  let categoryBreakdown: Record<string, number> = {};
+  if (budget.categoryBreakdown) {
+    try {
+      const raw = typeof budget.categoryBreakdown === "string"
+        ? JSON.parse(budget.categoryBreakdown)
+        : budget.categoryBreakdown;
+      if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+        categoryBreakdown = raw as Record<string, number>;
+      }
+    } catch {}
+  }
+
+  const sortedCategories = Object.entries(categoryBreakdown).sort(([, a], [, b]) => b - a);
 
   return (
     <div className="space-y-6">
@@ -57,7 +69,7 @@ export default function BudgetMonthPage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
               <TrendingUp className="h-4 w-4 text-success" /> Income
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(budget.actualIncome!)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(budget.actualIncome || 0)}</p>
             {budget.plannedIncome && (
               <p className="text-xs text-muted-foreground">Planned: {formatCurrency(budget.plannedIncome)}</p>
             )}
@@ -68,10 +80,10 @@ export default function BudgetMonthPage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
               <TrendingDown className="h-4 w-4 text-destructive" /> Expenses
             </div>
-            <p className="text-2xl font-bold">{formatCurrency(budget.actualExpenses)}</p>
+            <p className="text-2xl font-bold">{formatCurrency(budget.actualExpenses || 0)}</p>
             {budget.plannedExpenses && (
               <p className={`text-xs ${overBudget ? "text-destructive" : "text-muted-foreground"}`}>
-                Planned: {formatCurrency(budget.plannedExpenses)} ({overBudget ? "+" : ""}{formatCurrency(budget.actualExpenses - budget.plannedExpenses)})
+                Planned: {formatCurrency(budget.plannedExpenses)} ({overBudget ? "+" : ""}{formatCurrency((budget.actualExpenses || 0) - budget.plannedExpenses)})
               </p>
             )}
           </CardContent>
@@ -90,36 +102,47 @@ export default function BudgetMonthPage() {
       </div>
 
       {/* Category Breakdown */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Spending by Category</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {sortedCategories.map(([category, amount], i) => {
-            const pct = budget.actualExpenses > 0 ? (amount / budget.actualExpenses) * 100 : 0;
-            return (
-              <div key={category}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">{category}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">{pct.toFixed(1)}%</span>
-                    <span className="text-sm font-medium w-20 text-right">{formatCurrency(amount)}</span>
+      {sortedCategories.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Spending by Category</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {sortedCategories.map(([category, amount], i) => {
+              const pct = (budget.actualExpenses || 0) > 0 ? (amount / (budget.actualExpenses || 1)) * 100 : 0;
+              return (
+                <div key={category}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium">{category}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{pct.toFixed(1)}%</span>
+                      <span className="text-sm font-medium w-20 text-right">{formatCurrency(amount)}</span>
+                    </div>
                   </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                  {i < sortedCategories.length - 1 && <div className="mt-3" />}
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
-                </div>
-                {i < sortedCategories.length - 1 && <div className="mt-3" />}
-              </div>
-            );
-          })}
-          <Separator className="my-2" />
-          <div className="flex items-center justify-between font-bold">
-            <span>Total</span>
-            <span>{formatCurrency(budget.actualExpenses)}</span>
-          </div>
-        </CardContent>
-      </Card>
+              );
+            })}
+            <Separator className="my-2" />
+            <div className="flex items-center justify-between font-bold">
+              <span>Total</span>
+              <span>{formatCurrency(budget.actualExpenses || 0)}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {budget.notes && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Notes</p>
+            <p className="text-sm text-foreground">{budget.notes}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

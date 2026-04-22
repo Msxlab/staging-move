@@ -64,25 +64,11 @@ export async function GET(req: Request) {
     }
     const eligibleUserIds = eligibleUsers.map((u) => u.id);
 
-    // ── STEP 3: Bulk-fetch all per-user data in parallel (4 queries total) ──
-    const [allServices, pendingTaskGroups, completedTaskGroups, newServiceGroups] = await Promise.all([
+    // ── STEP 3: Bulk-fetch all per-user data in parallel ──
+    const [allServices, newServiceGroups] = await Promise.all([
       prisma.service.findMany({
         where: { userId: { in: eligibleUserIds }, isActive: true },
         select: { userId: true, providerName: true, monthlyCost: true, billingDay: true },
-      }),
-      prisma.task.groupBy({
-        by: ["userId"],
-        where: { userId: { in: eligibleUserIds }, completed: false },
-        _count: { _all: true },
-      }),
-      prisma.task.groupBy({
-        by: ["userId"],
-        where: {
-          userId: { in: eligibleUserIds },
-          completed: true,
-          completedAt: { gte: weekAgo },
-        },
-        _count: { _all: true },
       }),
       prisma.service.groupBy({
         by: ["userId"],
@@ -98,8 +84,6 @@ export async function GET(req: Request) {
       list.push(svc);
       servicesByUser.set(svc.userId, list);
     }
-    const pendingByUser = new Map(pendingTaskGroups.map((g) => [g.userId, g._count._all]));
-    const completedByUser = new Map(completedTaskGroups.map((g) => [g.userId, g._count._all]));
     const newServicesByUser = new Map(newServiceGroups.map((g) => [g.userId, g._count._all]));
 
     // ── STEP 5: Send emails (I/O-bound, parallelized in batches) ──
@@ -136,8 +120,6 @@ export async function GET(req: Request) {
             weekStart,
             weekEnd,
             upcomingBills,
-            pendingTasks: pendingByUser.get(user.id) || 0,
-            completedTasks: completedByUser.get(user.id) || 0,
             totalExpenses,
             newServices: newServicesByUser.get(user.id) || 0,
             dedupeKey: `cron:weekly-digest:${user.id}:${weekStart}:${weekEnd}`,

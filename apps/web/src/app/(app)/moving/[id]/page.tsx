@@ -2,17 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Circle, Package, Truck, Trash2, MapPin, Clock, AlertTriangle, Plus, Loader2, X, Repeat, ArrowRightLeft, PlusCircle, XCircle, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Truck, Trash2, MapPin, Clock, Loader2, Repeat, ArrowRightLeft, PlusCircle, XCircle, Shield, BookOpen, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
-
-const priorityColors: Record<string, string> = {
-  URGENT: "text-red-400",
-  HIGH: "text-amber-400",
-  MEDIUM: "text-cyan-400",
-  LOW: "text-white/30",
-};
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
   PLANNING: { label: "Planning", cls: "bg-white/5 text-white/40 border-white/10" },
@@ -27,8 +20,6 @@ interface PlanDetail {
   status: string;
   fromAddress: { street: string; city: string; state: string; zip: string };
   toAddress: { street: string; city: string; state: string; zip: string };
-  tasks: { id: string; title: string; category: string; dueDate: string; priority: string; completed: boolean; templateId?: string }[];
-  boxes: { id: string; boxNumber: number; label: string; room: string; isPacked: boolean; isFragile?: boolean; contents?: string }[];
 }
 
 export default function MovingPlanDetailPage() {
@@ -39,13 +30,11 @@ export default function MovingPlanDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [toggling, setToggling] = useState<string | null>(null);
-  const [showAddTask, setShowAddTask] = useState(false);
-  const [addingTask, setAddingTask] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", category: "General", priority: "MEDIUM", dueDate: "" });
   const [migration, setMigration] = useState<any>(null);
   const [migrationLoading, setMigrationLoading] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [stateRules, setStateRules] = useState<any>(null);
+  const [stateGuideOpen, setStateGuideOpen] = useState(false);
 
   const fetchMigration = async (planId: string) => {
     setMigrationLoading(true);
@@ -65,6 +54,12 @@ export default function MovingPlanDetailPage() {
         setPlan(data.plan);
         if (data.plan && (data.plan.status === "PLANNING" || data.plan.status === "IN_PROGRESS")) {
           void fetchMigration(data.plan.id);
+        }
+        if (data.plan?.toAddress?.state) {
+          fetch(`/api/state-rules?state=${encodeURIComponent(data.plan.toAddress.state)}`)
+            .then((r) => r.ok ? r.json() : null)
+            .then((d) => { if (d?.rules?.length) setStateRules(d.rules[0]); })
+            .catch(() => {});
         }
       })
       .catch(() => router.push("/moving"))
@@ -110,62 +105,18 @@ export default function MovingPlanDetailPage() {
     } catch {}
   };
 
-  const toggleTask = async (taskId: string, completed: boolean) => {
-    setToggling(taskId);
-    try {
-      const res = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: !completed }),
-      });
-      if (res.ok) {
-        setPlan((prev) => prev ? {
-          ...prev,
-          tasks: prev.tasks.map((t) => t.id === taskId ? { ...t, completed: !completed } : t),
-        } : prev);
-      }
-    } catch {}
-    setToggling(null);
-  };
-
   if (loading || !plan) return <LoadingSpinner />;
 
-  const completedTasks = plan.tasks.filter((t) => t.completed).length;
-  const packedBoxes = plan.boxes.filter((b) => b.isPacked).length;
   const daysUntilMove = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  const taskPct = plan.tasks.length > 0 ? (completedTasks / plan.tasks.length) * 100 : 0;
-  const boxPct = plan.boxes.length > 0 ? (packedBoxes / plan.boxes.length) * 100 : 0;
   const status = statusBadge[plan.status] || statusBadge.PLANNING;
   const isInterstateMove = plan.fromAddress.state !== plan.toAddress.state;
   const moveScopeLabel = isInterstateMove ? "Interstate move" : "Intrastate move";
   const focusLabel = isInterstateMove
     ? "Prioritize DMV, voter registration, taxes, and provider switches across state lines."
     : "Focus on utilities, local provider transfers, and address updates within the same state.";
-  const upcomingTasks = plan.tasks.filter((task) => {
-    if (task.completed || !task.dueDate) return false;
-    const dueAt = new Date(task.dueDate).getTime();
-    return dueAt <= Date.now() + (14 * 24 * 60 * 60 * 1000);
-  }).length;
   const migrationSummaryLabel = migration
     ? `${migration.summary.transfers} transfer · ${migration.summary.switches} switch · ${migration.summary.newNeeded} new`
     : "Migration guidance appears after we analyze services on your origin address.";
-
-  // Group boxes by room
-  const boxesByRoom: Record<string, typeof plan.boxes> = {};
-  plan.boxes.forEach((b) => {
-    const room = b.room || "Unassigned";
-    if (!boxesByRoom[room]) boxesByRoom[room] = [];
-    boxesByRoom[room].push(b);
-  });
-  const rooms = Object.entries(boxesByRoom).sort(([a], [b]) => a.localeCompare(b));
-
-  // Group tasks by category
-  const tasksByCat: Record<string, typeof plan.tasks> = {};
-  plan.tasks.forEach((t) => {
-    const cat = t.category || "General";
-    if (!tasksByCat[cat]) tasksByCat[cat] = [];
-    tasksByCat[cat].push(t);
-  });
 
   return (
     <div className="space-y-6 pb-8">
@@ -221,53 +172,26 @@ export default function MovingPlanDetailPage() {
         ))}
       </div>
 
-      {/* Progress Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 text-center">
-          <Calendar className="h-6 w-6 mx-auto text-orange-400 mb-1" />
-          <p className="text-2xl font-bold text-white">{new Date(plan.moveDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+      {/* Move Date */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 flex items-center gap-4">
+        <Calendar className="h-6 w-6 text-orange-400 shrink-0" />
+        <div>
+          <p className="text-2xl font-bold text-white">{new Date(plan.moveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
           <p className="text-[11px] text-white/40">Move Date</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-white/40 flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />Tasks</span>
-            <span className="text-sm font-bold text-white">{completedTasks}/{plan.tasks.length}</span>
-          </div>
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-orange-500 to-emerald-500 rounded-full transition-all" style={{ width: `${taskPct}%` }} />
-          </div>
-          <p className="text-[10px] text-white/25 mt-1 text-right">{Math.round(taskPct)}%</p>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-white/40 flex items-center gap-1"><Package className="h-3.5 w-3.5 text-amber-400" />Boxes</span>
-            <span className="text-sm font-bold text-white">{packedBoxes}/{plan.boxes.length}</span>
-          </div>
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 rounded-full transition-all" style={{ width: `${boxPct}%` }} />
-          </div>
-          <p className="text-[10px] text-white/25 mt-1 text-right">{Math.round(boxPct)}%</p>
         </div>
       </div>
 
       {/* Move Scope Summary */}
       <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-wider text-white/30 mb-1">Move scope</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-semibold text-white">{moveScopeLabel}</h3>
-              <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${isInterstateMove ? "bg-amber-500/10 text-amber-300 border-amber-500/20" : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"}`}>
-                {plan.fromAddress.state} → {plan.toAddress.state}
-              </span>
-            </div>
-            <p className="text-sm text-white/40 mt-2 max-w-2xl">{focusLabel}</p>
+        <div>
+          <p className="text-[11px] uppercase tracking-wider text-white/30 mb-1">Move scope</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-base font-semibold text-white">{moveScopeLabel}</h3>
+            <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${isInterstateMove ? "bg-amber-500/10 text-amber-300 border-amber-500/20" : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"}`}>
+              {plan.fromAddress.state} → {plan.toAddress.state}
+            </span>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 min-w-[180px]">
-            <p className="text-[10px] uppercase tracking-wider text-white/25">Upcoming focus</p>
-            <p className="text-xl font-semibold text-white mt-1">{upcomingTasks}</p>
-            <p className="text-xs text-white/35">task{upcomingTasks === 1 ? "" : "s"} due in the next 14 days</p>
-          </div>
+          <p className="text-sm text-white/40 mt-2 max-w-2xl">{focusLabel}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
@@ -517,209 +441,59 @@ export default function MovingPlanDetailPage() {
         </div>
       )}
 
-      {/* Tasks — grouped by category */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
-        <div className="flex items-center justify-between p-5 pb-3">
-          <h3 className="text-sm font-semibold text-white">Checklist</h3>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowAddTask(!showAddTask)}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition ${showAddTask ? "bg-orange-500/20 text-orange-400" : "text-white/40 hover:text-white hover:bg-white/5"}`}
-            >
-              {showAddTask ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
-              {showAddTask ? "Cancel" : "Add Task"}
-            </button>
-            <Link href={`/moving/${plan.id}/tasks`}>
-              <button className="text-xs text-orange-400 hover:text-orange-300 transition">View All</button>
-            </Link>
-          </div>
-        </div>
-
-        {/* Inline Add Task Form */}
-        {showAddTask && (
-          <div className="mx-5 mb-4 rounded-xl border border-orange-500/20 bg-orange-500/5 p-4 space-y-3">
-            <input
-              placeholder="Task title..."
-              value={newTask.title}
-              onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newTask.title.trim()) {
-                  (async () => {
-                    setAddingTask(true);
-                    try {
-                      const res = await fetch("/api/tasks", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ ...newTask, movingPlanId: plan.id }),
-                      });
-                      if (res.ok) {
-                        const data = await res.json();
-                        setPlan((prev) => prev ? { ...prev, tasks: [...prev.tasks, { ...data.task, completed: false }] } : prev);
-                        setNewTask({ title: "", category: "General", priority: "MEDIUM", dueDate: "" });
-                        toast.success("Task added");
-                      } else { toast.error("Failed to add task"); }
-                    } catch { toast.error("Failed to add task"); }
-                    setAddingTask(false);
-                  })();
-                }
-              }}
-            />
-            <div className="flex gap-2 flex-wrap">
-              <select
-                value={newTask.category}
-                onChange={(e) => setNewTask({ ...newTask, category: e.target.value })}
-                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white/60 focus:outline-none"
-              >
-                {["General", "Documents", "Utilities", "Government", "Packing", "Cleaning", "Financial", "Healthcare", "Kids"].map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <select
-                value={newTask.priority}
-                onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white/60 focus:outline-none"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="URGENT">Urgent</option>
-              </select>
-              <input
-                type="date"
-                value={newTask.dueDate}
-                onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-xs text-white/60 focus:outline-none"
-              />
-              <button
-                onClick={async () => {
-                  if (!newTask.title.trim()) return;
-                  setAddingTask(true);
-                  try {
-                    const res = await fetch("/api/tasks", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ ...newTask, movingPlanId: plan.id }),
-                    });
-                    if (res.ok) {
-                      const data = await res.json();
-                      setPlan((prev) => prev ? { ...prev, tasks: [...prev.tasks, { ...data.task, completed: false }] } : prev);
-                      setNewTask({ title: "", category: "General", priority: "MEDIUM", dueDate: "" });
-                      toast.success("Task added");
-                    } else { toast.error("Failed to add task"); }
-                  } catch { toast.error("Failed to add task"); }
-                  setAddingTask(false);
-                }}
-                disabled={addingTask || !newTask.title.trim()}
-                className="px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50 ml-auto"
-              >
-                {addingTask ? <Loader2 className="h-3 w-3 animate-spin" /> : "Add"}
-              </button>
+      {/* State Guide */}
+      {stateRules && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <button
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition"
+            onClick={() => setStateGuideOpen(!stateGuideOpen)}
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-cyan-400" />
+              <span className="text-sm font-semibold text-white">State Guide — {plan.toAddress.state}</span>
             </div>
-          </div>
-        )}
-
-        <div className="px-5 pb-5 space-y-4">
-          {plan.tasks.length === 0 && !showAddTask ? (
-            <p className="text-xs text-white/30 text-center py-4">No tasks yet — click Add Task to get started</p>
-          ) : plan.tasks.length === 0 ? null : (
-            Object.entries(tasksByCat).map(([cat, tasks]) => (
-              <div key={cat}>
-                <p className="text-[11px] font-medium text-white/30 uppercase tracking-wider mb-2">{cat}</p>
-                <div className="space-y-1">
-                  {tasks.map((task) => {
-                    const tid = task.templateId || "";
-                    const migBadge = tid.startsWith("MIG_KEEP_") ? { label: "Keep", cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20" }
-                      : tid.startsWith("MIG_TRANSFER_") ? { label: "Transfer", cls: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20" }
-                      : tid.startsWith("MIG_SWITCH_") ? { label: "Switch", cls: "bg-amber-500/15 text-amber-400 border-amber-500/20" }
-                      : tid.startsWith("MIG_CANCEL_") ? { label: "Cancel", cls: "bg-red-500/15 text-red-400 border-red-500/20" }
-                      : null;
-                    return (
-                    <button
-                      key={task.id}
-                      onClick={() => toggleTask(task.id, task.completed)}
-                      disabled={toggling === task.id}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/5 transition text-left group"
-                    >
-                      {task.completed ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                      ) : (
-                        <Circle className={`h-4 w-4 shrink-0 ${priorityColors[task.priority]}`} />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className={`text-sm ${task.completed ? "line-through text-white/25" : "text-white/80"}`}>{task.title}</p>
-                          {migBadge && (
-                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${migBadge.cls}`}>{migBadge.label}</span>
-                          )}
-                        </div>
-                        {task.dueDate && (
-                          <p className="text-[10px] text-white/20">Due {new Date(task.dueDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
-                        )}
-                      </div>
-                      {task.priority === "URGENT" && !task.completed && (
-                        <AlertTriangle className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                      )}
-                    </button>
-                    );
-                  })}
+            {stateGuideOpen ? (
+              <ChevronUp className="h-4 w-4 text-white/30" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-white/30" />
+            )}
+          </button>
+          {stateGuideOpen && (
+            <div className="px-5 pb-5 space-y-4 border-t border-white/5 pt-4">
+              {stateRules.dmvRules && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">DMV / Vehicle</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.dmvRules}</p>
                 </div>
-              </div>
-            ))
+              )}
+              {stateRules.voterRegistration && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Voter Registration</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.voterRegistration}</p>
+                </div>
+              )}
+              {stateRules.taxInfo && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">State Tax</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.taxInfo}</p>
+                </div>
+              )}
+              {stateRules.utilityInfo && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Utilities</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.utilityInfo}</p>
+                </div>
+              )}
+              {stateRules.insuranceRules && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Insurance</p>
+                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.insuranceRules}</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Boxes — grouped by room */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
-        <div className="flex items-center justify-between p-5 pb-3">
-          <h3 className="text-sm font-semibold text-white">Boxes by Room</h3>
-          <Link href={`/moving/${plan.id}/boxes`}>
-            <button className="text-xs text-orange-400 hover:text-orange-300 transition">Manage Boxes</button>
-          </Link>
-        </div>
-        <div className="px-5 pb-5 space-y-4">
-          {plan.boxes.length === 0 ? (
-            <p className="text-xs text-white/30 text-center py-4">No boxes yet</p>
-          ) : (
-            rooms.map(([room, boxes]) => {
-              const roomPacked = boxes.filter((b) => b.isPacked).length;
-              return (
-                <div key={room}>
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-[11px] font-medium text-white/30 uppercase tracking-wider">{room}</p>
-                    <span className="text-[10px] text-white/20">{roomPacked}/{boxes.length} packed</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {boxes.map((box) => (
-                      <div key={box.id} className={`p-3 rounded-xl border text-center transition ${
-                        box.isPacked
-                          ? "border-emerald-500/20 bg-emerald-500/5"
-                          : "border-white/10 bg-white/[0.02]"
-                      }`}>
-                        <p className="font-bold text-sm text-white">#{box.boxNumber}</p>
-                        <p className="text-[11px] font-medium truncate text-white/60">{box.label}</p>
-                        <div className="flex items-center justify-center gap-1 mt-1.5">
-                          {box.isFragile && (
-                            <span className="text-[8px] px-1 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20">Fragile</span>
-                          )}
-                          <span className={`text-[8px] px-1 py-0.5 rounded border ${
-                            box.isPacked
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                              : "bg-white/5 text-white/30 border-white/10"
-                          }`}>
-                            {box.isPacked ? "Packed" : "Open"}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Delete */}
       <div className="flex justify-end">

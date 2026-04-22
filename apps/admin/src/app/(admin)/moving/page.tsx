@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Package,
   ArrowRight,
   User,
   Eye,
@@ -27,8 +26,6 @@ interface Plan {
   moveDate: string;
   isTemporary: boolean;
   estimatedDuration: number | null;
-  totalTasks: number;
-  completedTasks: number;
   createdAt: string;
   user: {
     id: string;
@@ -38,24 +35,6 @@ interface Plan {
   };
   fromAddress: { street: string; city: string; state: string; zip: string };
   toAddress: { street: string; city: string; state: string; zip: string };
-  tasks: { id: string; templateId: string | null; completed: boolean }[];
-  _count: { tasks: number; boxes: number };
-}
-
-function getMigrationStats(tasks: Plan["tasks"]) {
-  let keep = 0,
-    transfer = 0,
-    switchCount = 0,
-    cancel = 0;
-  for (const t of tasks) {
-    const tid = t.templateId || "";
-    if (tid.startsWith("MIG_KEEP_")) keep++;
-    else if (tid.startsWith("MIG_TRANSFER_")) transfer++;
-    else if (tid.startsWith("MIG_SWITCH_")) switchCount++;
-    else if (tid.startsWith("MIG_CANCEL_")) cancel++;
-  }
-  const total = keep + transfer + switchCount + cancel;
-  return { keep, transfer, switch: switchCount, cancel, total };
 }
 
 interface Stats {
@@ -198,12 +177,6 @@ export default function MovingPage() {
     setToState("");
     setDateFrom("");
     setDateTo("");
-  }
-
-  function progressPercent(plan: Plan) {
-    return plan.totalTasks > 0
-      ? Math.round((plan.completedTasks / plan.totalTasks) * 100)
-      : 0;
   }
 
   function daysUntilMove(plan: Plan) {
@@ -424,7 +397,6 @@ export default function MovingPage() {
       ) : (
         <div className="space-y-3">
           {plans.map((plan) => {
-            const pct = progressPercent(plan);
             const days = daysUntilMove(plan);
             const isExpanded = expandedPlan === plan.id;
             const StatusIcon = STATUS_ICONS[plan.status] || Clock;
@@ -464,33 +436,6 @@ export default function MovingPage() {
                         {plan.user.email}
                       </span>
                     </div>
-                  </div>
-
-                  {/* Progress */}
-                  <div className="w-32 flex-shrink-0">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium text-foreground">
-                        {pct}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${pct >= 100 ? "bg-green-500" : pct >= 50 ? "bg-blue-500" : "bg-yellow-500"}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Tasks & Boxes */}
-                  <div className="flex items-center gap-3 flex-shrink-0 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle2 className="h-3.5 w-3.5" />{" "}
-                      {plan.completedTasks}/{plan.totalTasks}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Package className="h-3.5 w-3.5" /> {plan._count.boxes}
-                    </span>
                   </div>
 
                   {/* Date */}
@@ -574,50 +519,6 @@ export default function MovingPage() {
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Tasks</span>
-                          <span className="text-foreground">
-                            {plan.completedTasks} / {plan.totalTasks} completed
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Boxes</span>
-                          <span className="text-foreground">
-                            {plan._count.boxes} total
-                          </span>
-                        </div>
-                        {(() => {
-                          const mig = getMigrationStats(plan.tasks);
-                          return mig.total > 0 ? (
-                            <div className="mt-2 pt-2 border-t border-border">
-                              <p className="text-xs font-medium text-muted-foreground mb-1">
-                                Migration Tasks
-                              </p>
-                              <div className="flex gap-2 flex-wrap">
-                                {mig.keep > 0 && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/20">
-                                    {mig.keep} keep
-                                  </span>
-                                )}
-                                {mig.transfer > 0 && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
-                                    {mig.transfer} transfer
-                                  </span>
-                                )}
-                                {mig.switch > 0 && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 border border-yellow-500/20">
-                                    {mig.switch} switch
-                                  </span>
-                                )}
-                                {mig.cancel > 0 && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
-                                    {mig.cancel} cancel
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          ) : null;
-                        })()}
                       </div>
                     </div>
                     <div className="mt-4 flex gap-2">

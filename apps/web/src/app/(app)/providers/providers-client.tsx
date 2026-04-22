@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Search,
   Sparkles,
-  Star,
   ExternalLink,
   Phone,
   Building2,
@@ -48,8 +47,6 @@ export interface ProviderItem {
   tags: string[];
   popularityScore: number;
   displayOrder: number;
-  avgRating?: number | null;
-  reviewCount?: number;
   userCount?: number;
 }
 
@@ -375,13 +372,6 @@ export function ProvidersClient({
                   <p className="text-xs text-white/50 mt-1.5 line-clamp-2">{p.description}</p>
                 )}
                 <div className="flex items-center gap-3 mt-2 text-[11px] text-white/40">
-                  {p.avgRating ? (
-                    <span className="flex items-center gap-1">
-                      <Star className="h-3 w-3 text-amber-400 fill-amber-400" />
-                      <span className="text-white/70">{p.avgRating.toFixed(1)}</span>
-                      <span>({p.reviewCount})</span>
-                    </span>
-                  ) : null}
                   {p.userCount && p.userCount > 0 ? (
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" /> {formatCount(p.userCount)} users
