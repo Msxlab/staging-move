@@ -18,6 +18,7 @@ import {
   Crown,
   Zap,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -63,11 +64,12 @@ function formatDateLabel(value?: string | null) {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 }
 
 function LegacySubscriptionScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
@@ -119,7 +121,7 @@ function LegacySubscriptionScreen() {
 
     if (res.error || !res.data?.url) {
       hapticError();
-      Alert.alert("Upgrade unavailable", res.error || "Failed to start checkout.");
+      Alert.alert(t("common.retry"), res.error || t("toast.networkError"));
       return;
     }
 
@@ -149,12 +151,12 @@ function LegacySubscriptionScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back" accessibilityHint="Returns to settings">
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Subscription</Text>
+          <Text style={styles.title}>{t("settings.subscription")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading subscription...</Text>
+          <Text style={styles.loadingText}>{t("common.loading")}</Text>
         </View>
       </SafeAreaView>
     );
@@ -172,7 +174,7 @@ function LegacySubscriptionScreen() {
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Subscription</Text>
+        <Text style={styles.title}>{t("settings.subscription")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -186,10 +188,10 @@ function LegacySubscriptionScreen() {
               <Text style={styles.currentPlanTitle}>{currentPlan.name}</Text>
               <Text style={styles.currentPlanMeta}>
                 {periodEndLabel
-                  ? `Next billing: ${periodEndLabel}`
+                  ? t("settings.subscription_renews", { date: periodEndLabel })
                   : trialEndLabel
-                    ? `Trial ends: ${trialEndLabel}`
-                    : "Manage your plan and billing"}
+                    ? t("settings.subscription_renews", { date: trialEndLabel })
+                    : t("settings.subscription_manage")}
               </Text>
             </View>
           </View>
@@ -201,9 +203,9 @@ function LegacySubscriptionScreen() {
 
         <View style={styles.heroBox}>
           <Crown size={32} color={theme.colors.amber.text} />
-          <Text style={styles.heroTitle}>Choose Your Plan</Text>
+          <Text style={styles.heroTitle}>{t("pricing.title")}</Text>
           <Text style={styles.heroDesc}>
-            Upgrade to unlock all features and make your move seamless.
+            {t("pricing.subtitle")}
           </Text>
         </View>
 
@@ -217,7 +219,7 @@ function LegacySubscriptionScreen() {
               <View>
                 <View style={styles.planNameRow}>
                   <Text style={styles.planName}>{plan.name}</Text>
-                  {plan.key === currentPlanKey && <UiBadge label="Current" variant="success" />}
+                  {plan.key === currentPlanKey && <UiBadge label={t("pricing.cta_current")} variant="success" />}
                 </View>
                 <Text style={styles.planPrice}>
                   {plan.price}
@@ -250,17 +252,17 @@ function LegacySubscriptionScreen() {
                   {processingPlan === "MANAGE" ? (
                     <ActivityIndicator color={theme.colors.primary} />
                   ) : (
-                    <Text style={styles.manageBtnText}>Manage Billing</Text>
+                    <Text style={styles.manageBtnText}>{t("settings.subscription_manage")}</Text>
                   )}
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel="Current plan" accessibilityState={{ disabled: true }}>
-                  <Text style={styles.currentBtnText}>Current Plan</Text>
+                  <Text style={styles.currentBtnText}>{t("pricing.cta_current")}</Text>
                 </TouchableOpacity>
               )
             ) : plan.key === "FREE_TRIAL" ? (
               <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel="Free trial plan information" accessibilityState={{ disabled: true }}>
-                <Text style={styles.currentBtnText}>Available by default</Text>
+                <Text style={styles.currentBtnText}>{t("pricing.cta_trial")}</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -278,7 +280,7 @@ function LegacySubscriptionScreen() {
                 ) : (
                   <>
                     <Zap size={16} color="#fff" />
-                    <Text style={styles.upgradeBtnText}>Upgrade to {plan.name}</Text>
+                    <Text style={styles.upgradeBtnText}>{t("pricing.cta_upgrade")}</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -287,7 +289,7 @@ function LegacySubscriptionScreen() {
         ))}
 
         <Text style={styles.footer}>
-          Billing opens in your browser through Stripe checkout and portal.
+          {t("settings.subscription_manage")}
         </Text>
       </ScrollView>
     </SafeAreaView>

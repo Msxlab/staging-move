@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus, MapPin, Home, Briefcase, Palmtree, Star, Edit, Trash2, Zap, Eye, Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 
 const typeIcons: Record<string, React.ElementType> = {
   HOME: Home,
@@ -29,6 +30,12 @@ export interface AddressItem {
 
 export function AddressesClient({ initial }: { initial: AddressItem[] }) {
   const router = useRouter();
+  const t = useTranslations("addresses");
+  const tCommon = useTranslations("common");
+  const tEmpty = useTranslations("empty");
+  const tToast = useTranslations("toast");
+  const tServices = useTranslations("services");
+  const locale = useLocale();
   const [addresses, setAddresses] = useState<AddressItem[]>(initial);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -45,12 +52,12 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
       const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
       if (res.ok) {
         setAddresses((prev) => prev.filter((a) => a.id !== id));
-        toast.success("Address deleted");
+        toast.success(tToast("deleted"));
       } else {
-        toast.error("Failed to delete address");
+        toast.error(tToast("deleteFailed"));
       }
     } catch {
-      toast.error("Failed to delete address");
+      toast.error(tToast("deleteFailed"));
     }
     setDeletingId(null);
     setDeleteConfirm(null);
@@ -72,14 +79,20 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">Addresses</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">{t("title")}</h1>
           <p className="text-white/40 mt-1">
-            {addresses.length} address{addresses.length !== 1 ? "es" : ""} · {totalServices} services · ${totalMonthly.toLocaleString()}/mo
+            {addresses.length} · {totalServices} · {
+              new Intl.NumberFormat(locale, {
+                style: "currency",
+                currency: "USD",
+                maximumFractionDigits: 0,
+              }).format(totalMonthly)
+            }
           </p>
         </div>
         <Link href="/addresses/new">
           <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
-            <Plus className="h-4 w-4" /> Add Address
+            <Plus className="h-4 w-4" /> {t("newTitle")}
           </button>
         </Link>
       </div>
@@ -87,9 +100,9 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
       {addresses.length === 0 ? (
         <EmptyState
           icon={MapPin}
-          title="No addresses yet"
-          description="Add your first address to start tracking services and expenses."
-          actionLabel="Add Address"
+          title={tEmpty("addresses")}
+          description={tEmpty("addressesDescription")}
+          actionLabel={tEmpty("addAddress")}
           actionHref="/addresses/new"
         />
       ) : (
@@ -114,7 +127,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-white flex items-center gap-2">
-                        {address.nickname || "Address"}
+                        {address.nickname || t("title")}
                         {address.isPrimary && <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
                       </h3>
                       <p className="text-sm text-white/35">
@@ -129,21 +142,23 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                         : "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
                     }`}
                   >
-                    {address.ownership === "OWNER" ? "Owner" : "Renter"}
+                    {address.ownership === "OWNER" ? t("ownership_owner") : t("ownership_renter")}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm border-t border-white/5 pt-3 mb-3">
                   <div className="flex items-center gap-4">
                     <span className="text-white/40">
-                      <span className="font-medium text-white/70">{servicesCount}</span> services
+                      <span className="font-medium text-white/70">{servicesCount}</span>
                     </span>
                     <span className="text-white/40">
-                      <span className="font-semibold text-emerald-400">${monthlyCost.toLocaleString()}</span>/mo
+                      <span className="font-semibold text-emerald-400">
+                        {new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(monthlyCost)}
+                      </span>
                     </span>
                   </div>
                   <span className="text-xs text-white/25">
-                    Since {new Date(address.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                    {new Date(address.startDate).toLocaleDateString(locale, { month: "short", year: "numeric" })}
                   </span>
                 </div>
 
@@ -152,19 +167,19 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                     onClick={() => router.push(`/addresses/${address.id}`)}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-white hover:bg-white/5 transition"
                   >
-                    <Eye className="h-3 w-3" />Details
+                    <Eye className="h-3 w-3" />{tCommon("details")}
                   </button>
                   <button
                     onClick={() => router.push(`/addresses/${address.id}/edit`)}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-orange-400 hover:bg-orange-500/10 transition"
                   >
-                    <Edit className="h-3 w-3" />Edit
+                    <Edit className="h-3 w-3" />{tCommon("edit")}
                   </button>
                   <button
                     onClick={() => router.push(`/services/new`)}
                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 transition"
                   >
-                    <Zap className="h-3 w-3" />Add Service
+                    <Zap className="h-3 w-3" />{tServices("newTitle")}
                   </button>
 
                   <div className="flex-1" />
@@ -173,7 +188,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                     <button
                       onClick={(e) => handleDelete(address.id, e)}
                       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/20 hover:text-red-400 hover:bg-red-500/10 transition"
-                      aria-label="Delete address"
+                      aria-label={t("deleteAddress")}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -185,13 +200,13 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                         className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50"
                       >
                         {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                        Confirm
+                        {tCommon("confirm")}
                       </button>
                       <button
                         onClick={cancelDelete}
                         className="px-2 py-1 rounded-lg text-[11px] text-white/40 hover:text-white hover:bg-white/5 transition"
                       >
-                        Cancel
+                        {tCommon("cancel")}
                       </button>
                     </div>
                   )}

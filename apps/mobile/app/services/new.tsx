@@ -27,6 +27,7 @@ import {
   Briefcase,
   Globe,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
@@ -41,12 +42,9 @@ import {
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 
-const BILLING_CYCLES = [
-  { value: "MONTHLY", label: "Monthly" },
-  { value: "QUARTERLY", label: "Quarterly" },
-  { value: "YEARLY", label: "Yearly" },
-  { value: "ONE_TIME", label: "One-time" },
-];
+// Billing cycle option labels are resolved at render time via t() —
+// see `billingCycles` below inside the component.
+const BILLING_CYCLE_VALUES = ["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"] as const;
 
 const MANUAL_CATEGORY_PREFIXES = [
   "GOVERNMENT_",
@@ -82,6 +80,13 @@ interface AddressOption {
 
 export default function NewServiceScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+  const billingCycles = [
+    { value: "MONTHLY", label: t("services.billingCycle_monthly") },
+    { value: "QUARTERLY", label: t("services.billingCycle_quarterly") },
+    { value: "YEARLY", label: t("services.billingCycle_yearly") },
+    { value: "ONE_TIME", label: t("common.yes") },
+  ];
   const params = useLocalSearchParams<{
     addressId?: string | string[];
     fromServiceId?: string | string[];
@@ -202,8 +207,8 @@ export default function NewServiceScreen() {
 
   // Save all selected providers as services (batch)
   const handleSaveAll = async () => {
-    if (!selectedAddress) { Alert.alert("Error", "Please select an address."); return; }
-    if (selectedProviders.size === 0) { Alert.alert("Error", "Please select at least one provider."); return; }
+    if (!selectedAddress) { Alert.alert(t("common.retry"), t("validation.required")); return; }
+    if (selectedProviders.size === 0) { Alert.alert(t("common.retry"), t("validation.required")); return; }
     setSaving(true);
     let success = 0;
     let failed = 0;
@@ -231,19 +236,19 @@ export default function NewServiceScreen() {
     setSaving(false);
     if (success > 0) {
       hapticSuccess();
-      Alert.alert("Success", `${success} service${success > 1 ? "s" : ""} added!`);
+      Alert.alert(t("common.done"), `${success} ${t("services.title").toLowerCase()}`);
       router.back();
     }
     if (failed > 0) {
       hapticError();
-      Alert.alert("Warning", `${failed} service${failed > 1 ? "s" : ""} failed to save.`);
+      Alert.alert(t("common.retry"), `${failed} ${t("services.title").toLowerCase()}`);
     }
   };
 
   // Save manual form
   const handleSaveManual = async () => {
     if (!selectedAddress || !manualForm.category || !manualForm.providerName) {
-      Alert.alert("Missing Fields", "Please select an address, category, and enter a provider name.");
+      Alert.alert(t("common.retry"), t("validation.required"));
       return;
     }
     setSaving(true);
@@ -272,7 +277,7 @@ export default function NewServiceScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.retry"), res.error);
     } else {
       hapticSuccess();
       router.back();
@@ -395,7 +400,7 @@ export default function NewServiceScreen() {
               <Search size={16} color={theme.colors.textMuted} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search providers..."
+                placeholder={t("providers.searchPlaceholder")}
                 placeholderTextColor={theme.colors.textMuted}
                 value={providerSearch}
                 onChangeText={setProviderSearch}
@@ -572,7 +577,7 @@ export default function NewServiceScreen() {
             <Text style={styles.label}>Provider Name *</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., AT&T, Con Edison"
+              placeholder={t("services.providerNamePlaceholder")}
               placeholderTextColor={theme.colors.textMuted}
               value={manualForm.providerName}
               onChangeText={(v) => updateManual("providerName", v)}
@@ -635,7 +640,7 @@ export default function NewServiceScreen() {
             <Text style={styles.label}>Notes</Text>
             <TextInput
               style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]}
-              placeholder="Any additional notes..."
+              placeholder={t("services.notesHint")}
               placeholderTextColor={theme.colors.textMuted}
               value={manualForm.notes}
               onChangeText={(v) => updateManual("notes", v)}

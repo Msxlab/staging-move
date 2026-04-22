@@ -33,6 +33,7 @@ import {
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
@@ -117,6 +118,7 @@ const IMMIGRATION_STATUSES = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -979,9 +981,9 @@ export default function OnboardingScreen() {
                     onChangeText={(v: string) => updateMoving("moveDate", v)} containerStyle={{ width: "100%" }} />
                   <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
                     <View style={{ flex: 1 }}>
-                      <Button title={saving ? "Creating..." : "Create Plan & Go"} onPress={handleComplete} loading={saving} fullWidth size="lg" />
+                      <Button title={saving ? t("common.loading") : t("moving.newPlan")} onPress={handleComplete} loading={saving} fullWidth size="lg" />
                     </View>
-                    <Button title="Cancel" onPress={() => { setWantsToMove(null); }} variant="ghost" />
+                    <Button title={t("common.cancel")} onPress={() => { setWantsToMove(null); }} variant="ghost" />
                   </View>
                 </View>
               )}
@@ -993,15 +995,15 @@ export default function OnboardingScreen() {
         {step < 3 && (
           <View style={styles.bottomBar}>
             {step > 0 ? (
-              <Button title="Back" onPress={back} variant="ghost"
+              <Button title={t("common.back")} onPress={back} variant="ghost"
                 icon={<ArrowLeft size={16} color={theme.colors.textSecondary} />} />
             ) : <View />}
             <View style={styles.bottomRight}>
               {step === 2 && (
-                <Button title="Skip" onPress={() => { setStep(3); setError(""); }} variant="ghost" />
+                <Button title={t("common.more")} onPress={() => { setStep(3); setError(""); }} variant="ghost" />
               )}
               <Button
-                title={saving ? "Saving..." : "Continue"}
+                title={saving ? t("common.loading") : t("common.continue")}
                 onPress={next} loading={saving}
                 disabled={step === 0 && (!profile.firstName || !profile.lastName)}
                 iconRight={<ArrowRight size={16} color="#fff" />}

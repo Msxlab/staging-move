@@ -22,6 +22,7 @@ import {
   ExternalLink,
   Ticket,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -44,6 +45,7 @@ interface HelpArticle {
 
 export default function HelpScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [articles, setArticles] = useState<HelpArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,7 +106,7 @@ export default function HelpScreen() {
           <TouchableOpacity onPress={() => setSelectedArticle(null)} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Article</Text>
+          <Text style={styles.title}>{t("help.title")}</Text>
           <View style={{ width: 44 }} />
         </View>
 
@@ -114,16 +116,13 @@ export default function HelpScreen() {
             <Text style={styles.articleDetailTitle}>{selectedArticle.title}</Text>
             {!!selectedArticle.excerpt && <Text style={styles.articleDetailExcerpt}>{selectedArticle.excerpt}</Text>}
             <Text style={styles.articleDetailBody}>
-              {selectedArticle.content || "This article does not have additional details yet."}
+              {selectedArticle.content || ""}
             </Text>
           </Card>
 
           <Card variant="default" style={{ marginTop: 12 }}>
-            <Text style={styles.supportCardTitle}>Still need help?</Text>
-            <Text style={styles.supportCardText}>
-              If this guide does not answer your question, you can open the support page for the fastest next step.
-            </Text>
-            <Button title="Contact Support" onPress={handleContactUs} style={{ marginTop: 12 }} />
+            <Text style={styles.supportCardTitle}>{t("help.contact")}</Text>
+            <Button title={t("help.contact")} onPress={handleContactUs} style={{ marginTop: 12 }} />
           </Card>
         </ScrollView>
       </SafeAreaView>
@@ -136,7 +135,7 @@ export default function HelpScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Help Center</Text>
+        <Text style={styles.title}>{t("help.title")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -146,7 +145,7 @@ export default function HelpScreen() {
           <Search size={16} color={theme.colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search help topics..."
+            placeholder={t("help.searchPlaceholder")}
             placeholderTextColor={theme.colors.textMuted}
             value={search}
             onChangeText={setSearch}
@@ -163,18 +162,18 @@ export default function HelpScreen() {
         <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={handleContactUs}>
             <ExternalLink size={20} color={theme.colors.accent} />
-            <Text style={styles.quickLabel}>Contact Us</Text>
+            <Text style={styles.quickLabel}>{t("help.contact")}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={() => router.push("/help/tickets" as any)}>
             <Ticket size={20} color={theme.colors.primary} />
-            <Text style={styles.quickLabel}>My Tickets</Text>
+            <Text style={styles.quickLabel}>{t("common.details")}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Articles */}
         {filteredArticles.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Articles</Text>
+            <Text style={styles.sectionTitle}>{t("help.title")}</Text>
             <View style={styles.list}>
               {filteredArticles.slice(0, 5).map((article) => (
                 <TouchableOpacity key={article.id} style={styles.articleItem} activeOpacity={0.6} onPress={() => setSelectedArticle(article)}>
@@ -191,11 +190,11 @@ export default function HelpScreen() {
         )}
 
         {/* FAQs */}
-        <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+        <Text style={styles.sectionTitle}>FAQ</Text>
         {filteredFaqs.length === 0 ? (
           <Card variant="default">
             <Text style={styles.emptyText}>
-              {search ? "No FAQs match your search." : "No FAQs available yet."}
+              {t("common.none")}
             </Text>
             {search ? (
               <Text style={styles.emptyHint}>Try a broader search, or open Contact Us if you need direct help.</Text>

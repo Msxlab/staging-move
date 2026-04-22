@@ -23,18 +23,11 @@ import {
   DollarSign,
   Truck,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import * as FileSystem from "expo-file-system/legacy";
-
-const EXPORT_OPTIONS = [
-  { type: "addresses", title: "Addresses", desc: "Export all addresses with details", icon: MapPin, formats: ["CSV", "JSON"] },
-  { type: "services", title: "Services", desc: "Export all services and billing info", icon: Zap, formats: ["CSV", "JSON"] },
-  { type: "budget", title: "Budget History", desc: "Export monthly budget data", icon: DollarSign, formats: ["CSV", "JSON"] },
-  { type: "moving", title: "Moving Plans", desc: "Export plans with tasks and boxes", icon: Truck, formats: ["JSON"] },
-  { type: "full", title: "Full Data Export", desc: "Export all your data (GDPR compliant)", icon: Database, formats: ["JSON"] },
-];
 
 function buildExportFileName(type: string, format: string) {
   return `locateflow-${type}-export.${format.toLowerCase()}`;
@@ -42,7 +35,18 @@ function buildExportFileName(type: string, format: string) {
 
 export default function ExportScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [exporting, setExporting] = useState<string | null>(null);
+
+  // Export option labels resolve at render — users switching language
+  // mid-session see the new titles without a reload.
+  const EXPORT_OPTIONS = [
+    { type: "addresses", title: t("addresses.title"), desc: "", icon: MapPin, formats: ["CSV", "JSON"] },
+    { type: "services", title: t("services.title"), desc: "", icon: Zap, formats: ["CSV", "JSON"] },
+    { type: "budget", title: t("budget.title"), desc: "", icon: DollarSign, formats: ["CSV", "JSON"] },
+    { type: "moving", title: t("moving.title"), desc: "", icon: Truck, formats: ["JSON"] },
+    { type: "full", title: t("settings.export"), desc: "", icon: Database, formats: ["JSON"] },
+  ];
 
   const handleExport = async (type: string, format: string) => {
     setExporting(`${type}-${format}`);
@@ -50,7 +54,7 @@ export default function ExportScreen() {
       const res = await api.get<any>(`/api/export`, { type, format: format.toLowerCase() });
       if (res.error) {
         hapticError();
-        Alert.alert("Error", res.error);
+        Alert.alert(t("common.retry"), res.error);
       } else {
         hapticSuccess();
         const dataStr = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
@@ -79,7 +83,7 @@ export default function ExportScreen() {
       }
     } catch (e: any) {
       hapticError();
-      Alert.alert("Error", e.message || "Export failed");
+      Alert.alert(t("common.retry"), e.message || t("toast.networkError"));
     } finally {
       setExporting(null);
     }
@@ -91,18 +95,18 @@ export default function ExportScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Export Data</Text>
+        <Text style={styles.title}>{t("settings.export")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.subtitle}>
-          Download your data in various formats. Sensitive service credentials are masked for safer sharing.
+          {t("settings.export_description")}
         </Text>
 
         <View style={styles.noticeBox}>
           <Text style={styles.noticeText}>
-            Export files may contain personal information. Store and share them only with people you trust.
+            {t("settings.privacy_description")}
           </Text>
         </View>
 

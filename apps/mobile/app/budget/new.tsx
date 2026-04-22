@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
@@ -24,6 +25,7 @@ function getCurrentMonthValue() {
 
 export default function NewBudgetScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     month: getCurrentMonthValue(),
@@ -41,7 +43,7 @@ export default function NewBudgetScreen() {
 
   const handleSave = async () => {
     if (!form.month.trim() || !form.year.trim() || !form.actualExpenses.trim()) {
-      Alert.alert("Missing Fields", "Month, year, and actual expenses are required.");
+      Alert.alert(t("common.retry"), t("validation.required"));
       return;
     }
 
@@ -49,7 +51,7 @@ export default function NewBudgetScreen() {
     const parsedActualExpenses = Number.parseFloat(form.actualExpenses);
 
     if (Number.isNaN(parsedYear) || Number.isNaN(parsedActualExpenses)) {
-      Alert.alert("Invalid Values", "Year and actual expenses must be valid numbers.");
+      Alert.alert(t("common.retry"), t("validation.invalidNumber"));
       return;
     }
 
@@ -70,7 +72,7 @@ export default function NewBudgetScreen() {
 
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.retry"), res.error);
       return;
     }
 
@@ -84,12 +86,12 @@ export default function NewBudgetScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Add Budget</Text>
+        <Text style={styles.title}>{t("budget.newBudget")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Month *</Text>
+        <Text style={styles.label}>{t("budget.month")} *</Text>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-01"
@@ -99,7 +101,7 @@ export default function NewBudgetScreen() {
           autoCapitalize="none"
         />
 
-        <Text style={styles.label}>Year *</Text>
+        <Text style={styles.label}>{t("budget.year")} *</Text>
         <TextInput
           style={styles.input}
           placeholder="2026"
@@ -110,10 +112,10 @@ export default function NewBudgetScreen() {
           maxLength={4}
         />
 
-        <Text style={styles.sectionLabel}>Income</Text>
+        <Text style={styles.sectionLabel}>{t("budget.actualIncome")}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Planned income"
+          placeholder={t("budget.plannedIncome")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.plannedIncome}
           onChangeText={(value) => update("plannedIncome", value.replace(/[^0-9.]/g, ""))}
@@ -121,17 +123,17 @@ export default function NewBudgetScreen() {
         />
         <TextInput
           style={[styles.input, styles.inputSpacing]}
-          placeholder="Actual income"
+          placeholder={t("budget.actualIncome")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.actualIncome}
           onChangeText={(value) => update("actualIncome", value.replace(/[^0-9.]/g, ""))}
           keyboardType="decimal-pad"
         />
 
-        <Text style={styles.sectionLabel}>Expenses</Text>
+        <Text style={styles.sectionLabel}>{t("budget.actualExpenses")}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Planned expenses"
+          placeholder={t("budget.plannedExpenses")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.plannedExpenses}
           onChangeText={(value) => update("plannedExpenses", value.replace(/[^0-9.]/g, ""))}
@@ -139,17 +141,17 @@ export default function NewBudgetScreen() {
         />
         <TextInput
           style={[styles.input, styles.inputSpacing]}
-          placeholder="Actual expenses *"
+          placeholder={`${t("budget.actualExpenses")} *`}
           placeholderTextColor={theme.colors.textMuted}
           value={form.actualExpenses}
           onChangeText={(value) => update("actualExpenses", value.replace(/[^0-9.]/g, ""))}
           keyboardType="decimal-pad"
         />
 
-        <Text style={styles.sectionLabel}>Notes</Text>
+        <Text style={styles.sectionLabel}>{t("budget.notes")}</Text>
         <TextInput
           style={[styles.input, styles.notesInput]}
-          placeholder="Optional notes about this budget entry"
+          placeholder={t("budget.notes")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.notes}
           onChangeText={(value) => update("notes", value)}
@@ -167,7 +169,7 @@ export default function NewBudgetScreen() {
           ) : (
             <>
               <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>Save Budget</Text>
+              <Text style={styles.saveBtnText}>{t("common.save")}</Text>
             </>
           )}
         </TouchableOpacity>

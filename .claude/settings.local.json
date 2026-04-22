@@ -43,7 +43,9 @@
       "Bash(pnpm --filter @locateflow/admin test)",
       "Bash(mkdir -p .design-staging)",
       "Bash(unzip -q -o \"LocateFlow Design System-handoff.zip\" -d .design-staging)",
-      "Bash(pnpm add *)"
+      "Bash(pnpm add *)",
+      "Bash(git -C /c/Users/Windows/Documents/move-main/move-main diff --name-only HEAD)",
+      "Bash(git -C /c/Users/Windows/Documents/move-main/move-main status --short)"
     ]
   }
 }

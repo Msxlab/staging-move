@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -37,6 +38,7 @@ const DEFAULT_PREFS: Prefs = {
 
 export default function NotificationSettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
@@ -60,7 +62,7 @@ export default function NotificationSettingsScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.retry"), res.error);
     } else {
       if (res.data?.preferences) {
         setPrefs({ ...DEFAULT_PREFS, ...res.data.preferences });
@@ -74,19 +76,19 @@ export default function NotificationSettingsScreen() {
 
   const sections = [
     {
-      title: "Email Notifications",
+      title: t("notifications.type_billReminder"),
       items: [
-        { key: "emailTaskReminders" as keyof Prefs, label: "Task Reminders", desc: "Get reminded about upcoming tasks" },
-        { key: "emailWeeklyDigest" as keyof Prefs, label: "Weekly Digest", desc: "Weekly summary of your progress" },
-        { key: "emailMoveAlerts" as keyof Prefs, label: "Move Alerts", desc: "Important moving plan updates" },
+        { key: "emailTaskReminders" as keyof Prefs, label: t("notifications.type_billReminder"), desc: "" },
+        { key: "emailWeeklyDigest" as keyof Prefs, label: t("notifications.type_system"), desc: "" },
+        { key: "emailMoveAlerts" as keyof Prefs, label: t("notifications.type_moveReminder"), desc: "" },
       ],
     },
     {
-      title: "Push Notifications",
+      title: t("notifications.title"),
       items: [
-        { key: "pushTaskReminders" as keyof Prefs, label: "Task Reminders", desc: "Push alerts for due tasks" },
-        { key: "pushMoveAlerts" as keyof Prefs, label: "Move Alerts", desc: "Real-time moving updates" },
-        { key: "pushStreakReminders" as keyof Prefs, label: "Streak Reminders", desc: "Don't break your streak!" },
+        { key: "pushTaskReminders" as keyof Prefs, label: t("notifications.type_billReminder"), desc: "" },
+        { key: "pushMoveAlerts" as keyof Prefs, label: t("notifications.type_moveReminder"), desc: "" },
+        { key: "pushStreakReminders" as keyof Prefs, label: t("notifications.type_contractEnding"), desc: "" },
       ],
     },
   ];
@@ -97,7 +99,7 @@ export default function NotificationSettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
+        <Text style={styles.title}>{t("notifications.title")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -138,7 +140,7 @@ export default function NotificationSettingsScreen() {
           ) : (
             <>
               <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>Save Preferences</Text>
+              <Text style={styles.saveBtnText}>{t("common.save")}</Text>
             </>
           )}
         </TouchableOpacity>

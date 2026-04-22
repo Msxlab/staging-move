@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/shared/empty-state";
+import { useTranslations } from "next-intl";
 import {
   generateChecklist,
   RELOCATION_PHASES,
@@ -62,6 +63,9 @@ export function ServicesClient({
   initialServices: ServicesItem[];
   initialAddresses: ServicesAddress[];
 }) {
+  const t = useTranslations("services");
+  const tAddr = useTranslations("addresses");
+  const tCommon = useTranslations("common");
   const [services] = useState<ServicesItem[]>(initialServices);
   const [addresses] = useState<ServicesAddress[]>(initialAddresses);
   const [search, setSearch] = useState("");
@@ -230,10 +234,10 @@ export function ServicesClient({
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">Services</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">{t("title")}</h1>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-white/40 text-sm">
-              {filtered.length} service{filtered.length !== 1 ? "s" : ""}
+              {filtered.length}
             </span>
             {totalMonthlyCost > 0 && (
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium">
@@ -244,21 +248,21 @@ export function ServicesClient({
         </div>
         <Link href="/services/new">
           <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
-            <Plus className="h-4 w-4" />Add Service
+            <Plus className="h-4 w-4" />{t("newTitle")}
           </button>
         </Link>
       </div>
 
       {addresses.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-medium text-white/30 uppercase tracking-wider">Filter by Address</h3>
+          <h3 className="text-xs font-medium text-white/30 uppercase tracking-wider">{tCommon("filter")}</h3>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setAddressFilter("")}
               className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 !addressFilter ? "bg-orange-500 text-white shadow-sm" : "bg-white/5 text-white/40 border border-white/[0.06] hover:bg-white/10"
               }`}
-            >All Addresses</button>
+            >{tCommon("all")}</button>
             {addresses.map((addr) => {
               const TypeIcon = typeIcons[addr.type] || MapPin;
               const isActive = addressFilter === addr.id;
@@ -287,24 +291,24 @@ export function ServicesClient({
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
             <input
-              aria-label="Search services"
-              placeholder="Search services..."
+              aria-label={tCommon("search")}
+              placeholder={tCommon("search")}
               className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <select
-            aria-label="Sort services"
+            aria-label={t("sortBy")}
             className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white/60 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition min-w-[140px]"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
-            <option value="name">Sort: Name</option>
-            <option value="cost-desc">Sort: Cost (High)</option>
-            <option value="cost-asc">Sort: Cost (Low)</option>
-            <option value="newest">Sort: Newest</option>
-            <option value="oldest">Sort: Oldest</option>
+            <option value="name">{t("sort_name")}</option>
+            <option value="cost-desc">{t("sort_costHigh")}</option>
+            <option value="cost-asc">{t("sort_costLow")}</option>
+            <option value="newest">{t("sort_newest")}</option>
+            <option value="oldest">{t("sort_oldest")}</option>
           </select>
           <button
             onClick={() => setShowInactive(!showInactive)}
@@ -314,7 +318,7 @@ export function ServicesClient({
                 : "border-orange-500/30 bg-orange-500/10 text-orange-400"
             }`}
           >
-            {showInactive ? "Show All" : "Active Only"}
+            {showInactive ? tCommon("all") : tCommon("active")}
           </button>
         </div>
         <div className="flex flex-wrap gap-1.5">

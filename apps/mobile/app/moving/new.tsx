@@ -18,6 +18,7 @@ import { ArrowLeft, Check, MapPin, ArrowRight, Calendar } from "lucide-react-nat
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
@@ -36,6 +37,7 @@ type AddressOption = {
 
 export default function NewMovingPlanScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [saving, setSaving] = useState(false);
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -269,7 +271,7 @@ export default function NewMovingPlanScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Plan a Move</Text>
+        <Text style={styles.title}>{t("moving.newPlan")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -286,20 +288,19 @@ export default function NewMovingPlanScreen() {
           {addresses.length === 0 ? (
             <View style={styles.warningBox}>
               <Text style={styles.warningText}>
-                Add your current address first. We&apos;ll use it as the origin and let you create the destination in this flow.
+                {t("addresses.emptyDescription")}
               </Text>
               <TouchableOpacity
                 style={styles.warningBtn}
                 onPress={() => router.push("/addresses/new" as any)}
               >
-                <Text style={styles.warningBtnText}>Add Current Address</Text>
+                <Text style={styles.warningBtnText}>{t("addresses.newTitle")}</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <>
               {/* From Address */}
-              <Text style={styles.sectionLabel}>From (Origin) *</Text>
-              <Text style={styles.helperText}>Your primary or most recent address is selected automatically when available.</Text>
+              <Text style={styles.sectionLabel}>{t("moving.fromAddress")} *</Text>
               <View style={styles.chipRow}>
                 {addresses.map((a) => (
                   <TouchableOpacity
@@ -325,24 +326,24 @@ export default function NewMovingPlanScreen() {
               ) : null}
 
               {/* To Address */}
-              <Text style={styles.sectionLabel}>To (Destination) *</Text>
+              <Text style={styles.sectionLabel}>{t("moving.toAddress")} *</Text>
               {availableDestinationAddresses.length > 0 ? (
                 <View style={styles.modeRow}>
                   <TouchableOpacity
                     style={[styles.modeButton, form.destinationMode === "existing" && styles.modeButtonActive]}
                     onPress={() => update("destinationMode", "existing")}
                   >
-                    <Text style={[styles.modeButtonText, form.destinationMode === "existing" && styles.modeButtonTextActive]}>Use Saved Address</Text>
+                    <Text style={[styles.modeButtonText, form.destinationMode === "existing" && styles.modeButtonTextActive]}>{t("addresses.title")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.modeButton, form.destinationMode === "new" && styles.modeButtonActive]}
                     onPress={() => update("destinationMode", "new")}
                   >
-                    <Text style={[styles.modeButtonText, form.destinationMode === "new" && styles.modeButtonTextActive]}>Enter New Destination</Text>
+                    <Text style={[styles.modeButtonText, form.destinationMode === "new" && styles.modeButtonTextActive]}>{t("addresses.newTitle")}</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <Text style={styles.helperText}>No second saved address found, so we&apos;ll create your destination inside this moving plan.</Text>
+                <Text style={styles.helperText}>{t("addresses.newTitle")}</Text>
               )}
 
               {form.destinationMode === "existing" && availableDestinationAddresses.length > 0 ? (
@@ -362,27 +363,27 @@ export default function NewMovingPlanScreen() {
                 </View>
               ) : (
                 <View style={styles.inlineDestinationCard}>
-                  <Text style={styles.label}>Destination Nickname</Text>
+                  <Text style={styles.label}>{t("addresses.nickname")}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="New home, Austin apartment, etc."
+                    placeholder={t("addresses.nicknameHint")}
                     placeholderTextColor={theme.colors.textMuted}
                     value={form.destinationNickname}
                     onChangeText={(v) => update("destinationNickname", v)}
                   />
 
                   <AddressAutocompleteField
-                    label="Street Address"
+                    label={t("addresses.street")}
                     value={form.destinationStreet}
-                    placeholder="123 New St (optional)"
+                    placeholder={t("addresses.street")}
                     onValueChange={(value) => update("destinationStreet", value)}
                     onSelect={handleDestinationAutocompleteSelect}
                   />
 
-                  <Text style={styles.label}>City *</Text>
+                  <Text style={styles.label}>{t("addresses.city")} *</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Austin"
+                    placeholder={t("addresses.city")}
                     placeholderTextColor={theme.colors.textMuted}
                     value={form.destinationCity}
                     onChangeText={(v) => update("destinationCity", v)}
@@ -390,10 +391,10 @@ export default function NewMovingPlanScreen() {
 
                   <View style={styles.rowFields}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.label}>State *</Text>
+                      <Text style={styles.label}>{t("addresses.state")} *</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder="TX"
+                        placeholder={t("addresses.state")}
                         placeholderTextColor={theme.colors.textMuted}
                         value={form.destinationState}
                         onChangeText={(v) => update("destinationState", v.toUpperCase().slice(0, 2))}
@@ -401,10 +402,10 @@ export default function NewMovingPlanScreen() {
                       />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.label}>ZIP *</Text>
+                      <Text style={styles.label}>{t("addresses.zip")} *</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder="78701"
+                        placeholder={t("addresses.zip")}
                         placeholderTextColor={theme.colors.textMuted}
                         value={form.destinationZip}
                         onChangeText={(v) => update("destinationZip", v)}

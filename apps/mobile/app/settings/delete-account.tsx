@@ -12,6 +12,7 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Trash2, AlertTriangle } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -19,13 +20,17 @@ import { hapticWarning, hapticSuccess, hapticError } from "@/lib/haptics";
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const clearSession = useAuthStore((s) => s.clearSession);
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  // The confirmation phrase has to match ONE of the localized strings so
+  // Spanish users can type ELIMINAR and English users can type DELETE.
+  const confirmPhrases = [t("settings.delete_confirmInput"), "DELETE"];
 
   const handleDelete = async () => {
-    if (confirmText !== "DELETE") {
-      Alert.alert("Confirmation Required", 'Type "DELETE" exactly to continue.');
+    if (!confirmPhrases.includes(confirmText)) {
+      Alert.alert(t("settings.delete_confirmTitle"), t("settings.delete_confirmDescription"));
       return;
     }
 
@@ -36,7 +41,7 @@ export default function DeleteAccountScreen() {
 
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error || "Failed to delete account.");
+      Alert.alert(t("common.retry"), res.error || t("toast.networkError"));
       return;
     }
 
@@ -57,7 +62,7 @@ export default function DeleteAccountScreen() {
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Delete Account</Text>
+        <Text style={styles.title}>{t("settings.deleteAccount")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -67,21 +72,21 @@ export default function DeleteAccountScreen() {
             <AlertTriangle size={18} color={theme.colors.error} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.warningTitle}>This action is permanent</Text>
+            <Text style={styles.warningTitle}>{t("settings.delete_confirmTitle")}</Text>
             <Text style={styles.warningText}>
-              Deleting your account removes your profile, addresses, services, moving plans, documents, and related data.
+              {t("settings.delete_description")}
             </Text>
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Confirm deletion</Text>
+        <Text style={styles.sectionTitle}>{t("common.confirm")}</Text>
         <Text style={styles.bodyText}>
-          Type <Text style={styles.strong}>DELETE</Text> below to confirm that you want to permanently remove your account.
+          {t("settings.delete_confirmDescription")} <Text style={styles.strong}>{t("settings.delete_confirmInput")}</Text>
         </Text>
 
         <TextInput
           style={styles.input}
-          placeholder='Type "DELETE"'
+          placeholder={t("settings.delete_confirmInput")}
           placeholderTextColor={theme.colors.textMuted}
           value={confirmText}
           onChangeText={setConfirmText}
@@ -92,21 +97,21 @@ export default function DeleteAccountScreen() {
         />
 
         <TouchableOpacity
-          style={[styles.deleteBtn, (confirmText !== "DELETE" || deleting) && { opacity: 0.6 }]}
+          style={[styles.deleteBtn, (!confirmPhrases.includes(confirmText) || deleting) && { opacity: 0.6 }]}
           onPress={handleDelete}
-          disabled={confirmText !== "DELETE" || deleting}
+          disabled={!confirmPhrases.includes(confirmText) || deleting}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Permanently delete account"
           accessibilityHint="Deletes your account and all associated data"
-          accessibilityState={{ disabled: confirmText !== "DELETE" || deleting }}
+          accessibilityState={{ disabled: !confirmPhrases.includes(confirmText) || deleting }}
         >
           {deleting ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>
               <Trash2 size={18} color="#fff" />
-              <Text style={styles.deleteBtnText}>Permanently Delete Account</Text>
+              <Text style={styles.deleteBtnText}>{t("settings.delete_button")}</Text>
             </>
           )}
         </TouchableOpacity>

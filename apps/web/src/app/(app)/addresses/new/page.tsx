@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AddressAutocompleteInput } from "@/components/address/address-autocomplete-input";
@@ -10,22 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata } from "@/lib/shared-address-autocomplete";
-
-const addressTypes = [
-  { value: "HOME", label: "Home" },
-  { value: "WORK", label: "Work" },
-  { value: "VACATION", label: "Vacation" },
-  { value: "TEMPORARY", label: "Temporary" },
-  { value: "STORAGE", label: "Storage" },
-  { value: "OTHER", label: "Other" },
-];
-
-const ownershipTypes = [
-  { value: "OWNER", label: "Owner" },
-  { value: "RENTER", label: "Renter" },
-  { value: "FAMILY", label: "Family" },
-  { value: "OTHER", label: "Other" },
-];
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",

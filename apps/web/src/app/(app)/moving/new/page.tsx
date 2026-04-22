@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, Calendar, MapPin, Truck } from "lucide-react";
 import { AddressAutocompleteInput } from "@/components/address/address-autocomplete-input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ type DestinationMode = "existing" | "new";
 
 export default function NewMovingPlanPage() {
   const router = useRouter();
+  const t = useTranslations("moving");
+  const tCommon = useTranslations("common");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
@@ -172,24 +175,24 @@ export default function NewMovingPlanPage() {
     e.preventDefault();
 
     if (!form.fromAddressId) {
-      setError("Select an origin address to start your moving plan.");
+      setError(t("errorSelectOrigin"));
       return;
     }
     if (!form.moveDate) {
-      setError("Select your move date.");
+      setError(t("errorSelectDate"));
       return;
     }
     if (form.destinationMode === "existing" && !form.toAddressId) {
-      setError("Select a destination address or switch to entering a new one.");
+      setError(t("errorSelectDestination"));
       return;
     }
     if (form.destinationMode === "new") {
       if (!form.destinationCity.trim() || !form.destinationState.trim() || !form.destinationZip.trim()) {
-        setError("Enter destination city, state, and ZIP code.");
+        setError(t("errorDestinationFields"));
         return;
       }
       if (form.destinationState.trim().length !== 2) {
-        setError("Destination state must be a 2-letter code.");
+        setError(t("errorStateLength"));
         return;
       }
     }
@@ -234,17 +237,17 @@ export default function NewMovingPlanPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.error || "Failed to create moving plan");
+        throw new Error(data.error || t("errorCreateFailed"));
       }
 
       const planId = data?.plan?.id;
       if (!planId) {
-        throw new Error("Moving plan could not be created.");
+        throw new Error(t("errorPlanNotCreated"));
       }
 
       router.push(`/moving/${planId}`);
     } catch (err: any) {
-      setError(err.message || "Failed to create moving plan");
+      setError(err.message || t("errorCreateFailed"));
     } finally {
       setLoading(false);
     }
@@ -256,10 +259,10 @@ export default function NewMovingPlanPage() {
         <Link href="/moving">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+            {tCommon("back")}
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">New Moving Plan</h1>
+        <h1 className="text-2xl font-bold">{t("newPlanTitle")}</h1>
       </div>
 
       {error && (
@@ -272,13 +275,13 @@ export default function NewMovingPlanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <MapPin className="h-5 w-5" /> Add your current address first
+              <MapPin className="h-5 w-5" /> {t("addCurrentAddressFirst")}
             </CardTitle>
-            <CardDescription>Your current address is used as the move origin before we can build a moving plan.</CardDescription>
+            <CardDescription>{t("addCurrentAddressFirstDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">Create your current address once, then you can plan moves to saved or brand-new destinations.</p>
-            <Link href="/addresses/new"><Button>Add Current Address</Button></Link>
+            <p className="text-sm text-muted-foreground">{t("addCurrentAddressFirstHelp")}</p>
+            <Link href="/addresses/new"><Button>{t("addCurrentAddressButton")}</Button></Link>
           </CardContent>
         </Card>
       ) : (
@@ -286,27 +289,27 @@ export default function NewMovingPlanPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Truck className="h-5 w-5" /> Addresses
+                <Truck className="h-5 w-5" /> {t("addressesSection")}
               </CardTitle>
-              <CardDescription>We&apos;ll auto-select your current address as the origin and create the destination in the same flow.</CardDescription>
+              <CardDescription>{t("addressesSectionDescription")}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="fromAddress">Moving From *</Label>
+                <Label htmlFor="fromAddress">{t("originRequired")}</Label>
                 <Select id="fromAddress" value={form.fromAddressId} onChange={(e) => update("fromAddressId", e.target.value)} required>
-                  <option value="">Select origin address</option>
+                  <option value="">{t("selectOrigin")}</option>
                   {addresses.map((addr) => (
                     <option key={addr.id} value={addr.id}>{getAddressLabel(addr)}</option>
                   ))}
                 </Select>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" />
-                  Your primary or most recent address is selected automatically when available.
+                  {t("originHint")}
                 </p>
               </div>
 
               <div className="space-y-3">
-                <Label>Moving To *</Label>
+                <Label>{t("destinationRequired")}</Label>
 
                 {availableDestinationAddresses.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
@@ -319,7 +322,7 @@ export default function NewMovingPlanPage() {
                           : "border-border bg-background text-muted-foreground hover:bg-accent"
                       }`}
                     >
-                      Use saved address
+                      {t("useSavedAddress")}
                     </button>
                     <button
                       type="button"
@@ -330,16 +333,16 @@ export default function NewMovingPlanPage() {
                           : "border-border bg-background text-muted-foreground hover:bg-accent"
                       }`}
                     >
-                      Enter new destination
+                      {t("enterNewDestination")}
                     </button>
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">You don&apos;t have a second saved address yet, so we&apos;ll create the destination as part of this plan.</p>
+                  <p className="text-xs text-muted-foreground">{t("noSecondAddress")}</p>
                 )}
 
                 {form.destinationMode === "existing" && availableDestinationAddresses.length > 0 ? (
                   <Select id="toAddress" value={form.toAddressId} onChange={(e) => update("toAddressId", e.target.value)} required>
-                    <option value="">Select destination address</option>
+                    <option value="">{t("selectDestination")}</option>
                     {availableDestinationAddresses.map((addr) => (
                       <option key={addr.id} value={addr.id}>{getAddressLabel(addr)}</option>
                     ))}
@@ -347,29 +350,29 @@ export default function NewMovingPlanPage() {
                 ) : (
                   <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
                     <div className="space-y-2">
-                      <Label htmlFor="destinationNickname">Destination Nickname</Label>
-                      <Input id="destinationNickname" value={form.destinationNickname} onChange={(e) => update("destinationNickname", e.target.value)} placeholder="New home, Austin apartment, etc." />
+                      <Label htmlFor="destinationNickname">{t("destinationNickname")}</Label>
+                      <Input id="destinationNickname" value={form.destinationNickname} onChange={(e) => update("destinationNickname", e.target.value)} placeholder={t("destinationNicknamePlaceholder")} />
                     </div>
                     <AddressAutocompleteInput
                       id="destinationStreet"
-                      label="Street Address"
+                      label={t("streetAddress")}
                       value={form.destinationStreet}
-                      placeholder="123 New St (optional)"
+                      placeholder={t("streetPlaceholder")}
                       onValueChange={(value) => update("destinationStreet", value)}
                       onSelect={handleDestinationAutocompleteSelect}
                     />
                     <div className="grid gap-3 sm:grid-cols-3">
                       <div className="space-y-2 sm:col-span-1">
-                        <Label htmlFor="destinationCity">City *</Label>
-                        <Input id="destinationCity" value={form.destinationCity} onChange={(e) => update("destinationCity", e.target.value)} placeholder="Austin" />
+                        <Label htmlFor="destinationCity">{t("cityRequired")}</Label>
+                        <Input id="destinationCity" value={form.destinationCity} onChange={(e) => update("destinationCity", e.target.value)} placeholder={t("cityPlaceholder")} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="destinationState">State *</Label>
-                        <Input id="destinationState" value={form.destinationState} maxLength={2} onChange={(e) => update("destinationState", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
+                        <Label htmlFor="destinationState">{t("stateRequired")}</Label>
+                        <Input id="destinationState" value={form.destinationState} maxLength={2} onChange={(e) => update("destinationState", e.target.value.toUpperCase().slice(0, 2))} placeholder={t("statePlaceholder")} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="destinationZip">ZIP *</Label>
-                        <Input id="destinationZip" value={form.destinationZip} onChange={(e) => update("destinationZip", e.target.value)} placeholder="78701" />
+                        <Label htmlFor="destinationZip">{t("zipRequired")}</Label>
+                        <Input id="destinationZip" value={form.destinationZip} onChange={(e) => update("destinationZip", e.target.value)} placeholder={t("zipPlaceholder")} />
                       </div>
                     </div>
                   </div>
@@ -381,22 +384,22 @@ export default function NewMovingPlanPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5" /> Schedule
+                <Calendar className="h-5 w-5" /> {t("scheduleSection")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="moveDate">Move Date *</Label>
+                <Label htmlFor="moveDate">{t("moveDateRequired")}</Label>
                 <Input id="moveDate" type="date" value={form.moveDate} onChange={(e) => update("moveDate", e.target.value)} required min={new Date().toISOString().slice(0, 10)} />
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="isTemporary" checked={form.isTemporary} onChange={(e) => update("isTemporary", e.target.checked)} className="rounded" />
-                <Label htmlFor="isTemporary">This is a temporary move</Label>
+                <Label htmlFor="isTemporary">{t("isTemporaryMove")}</Label>
               </div>
               {form.isTemporary && (
                 <div className="space-y-2">
-                  <Label htmlFor="estimatedDuration">Estimated Duration (days)</Label>
-                  <Input id="estimatedDuration" type="number" min="1" placeholder="e.g. 90" value={form.estimatedDuration} onChange={(e) => update("estimatedDuration", e.target.value)} />
+                  <Label htmlFor="estimatedDuration">{t("estimatedDuration")}</Label>
+                  <Input id="estimatedDuration" type="number" min="1" placeholder={t("estimatedDurationPlaceholder")} value={form.estimatedDuration} onChange={(e) => update("estimatedDuration", e.target.value)} />
                 </div>
               )}
             </CardContent>
@@ -404,16 +407,14 @@ export default function NewMovingPlanPage() {
 
           <Card className="border-primary/30 bg-primary/5">
             <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground">
-                <strong>After creating your plan</strong>, we&apos;ll open it immediately with auto-generated checklist tasks, service migration guidance, and state-aware next steps.
-              </p>
+              <p className="text-sm text-muted-foreground">{t("afterCreate")}</p>
             </CardContent>
           </Card>
 
           <div className="flex justify-end gap-3">
-            <Link href="/moving"><Button variant="outline">Cancel</Button></Link>
+            <Link href="/moving"><Button variant="outline">{tCommon("cancel")}</Button></Link>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Moving Plan"}
+              {loading ? t("creating") : t("createPlan")}
             </Button>
           </div>
         </form>

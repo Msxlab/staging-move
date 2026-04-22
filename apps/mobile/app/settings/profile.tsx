@@ -13,22 +13,26 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
-const FAMILY_STATUSES = [
-  { value: "SINGLE", label: "Single" },
-  { value: "COUPLE", label: "Couple" },
-  { value: "FAMILY", label: "Family" },
-  { value: "ROOMMATES", label: "Roommates" },
-];
+const FAMILY_STATUS_VALUES = ["SINGLE", "COUPLE", "FAMILY", "ROOMMATES"] as const;
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [pageLoading, setPageLoading] = useState(true);
+  // Family-status labels re-compute when the user flips language mid-session.
+  const FAMILY_STATUSES: Array<{ value: (typeof FAMILY_STATUS_VALUES)[number]; label: string }> = [
+    { value: "SINGLE", label: t("common.unknown", { defaultValue: "Single" }) },
+    { value: "COUPLE", label: t("common.yes") },
+    { value: "FAMILY", label: t("onboarding.goal_organize").split(" ")[0] },
+    { value: "ROOMMATES", label: t("common.more") },
+  ];
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     firstName: "",
@@ -99,7 +103,7 @@ export default function ProfileSettingsScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.label}>First Name *</Text>
+        <Text style={styles.label}>{t("auth.firstName")} *</Text>
         <TextInput
           style={styles.input}
           placeholder="John"
@@ -108,7 +112,7 @@ export default function ProfileSettingsScreen() {
           onChangeText={(v) => update("firstName", v)}
         />
 
-        <Text style={styles.label}>Last Name</Text>
+        <Text style={styles.label}>{t("auth.lastName")}</Text>
         <TextInput
           style={styles.input}
           placeholder="Doe"
@@ -117,7 +121,7 @@ export default function ProfileSettingsScreen() {
           onChangeText={(v) => update("lastName", v)}
         />
 
-        <Text style={styles.sectionLabel}>Age Range</Text>
+        <Text style={styles.sectionLabel}>{t("common.details")}</Text>
         <View style={styles.chipRow}>
           {AGE_RANGES.map((r) => (
             <TouchableOpacity
@@ -130,7 +134,7 @@ export default function ProfileSettingsScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionLabel}>Family Status</Text>
+        <Text style={styles.sectionLabel}>{t("settings.profile")}</Text>
         <View style={styles.chipRow}>
           {FAMILY_STATUSES.map((f) => (
             <TouchableOpacity
@@ -200,7 +204,7 @@ export default function ProfileSettingsScreen() {
           ) : (
             <>
               <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>Save Profile</Text>
+              <Text style={styles.saveBtnText}>{t("settings.profile_save", { defaultValue: "Save" })}</Text>
             </>
           )}
         </TouchableOpacity>

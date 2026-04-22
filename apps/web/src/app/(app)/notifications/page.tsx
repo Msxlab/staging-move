@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Bell, Loader2, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useTranslations, useLocale } from "next-intl";
 
 interface FeedNotification {
   id: string;
@@ -17,6 +18,10 @@ interface FeedNotification {
 }
 
 export default function NotificationsPage() {
+  const t = useTranslations("notifications");
+  const tEmpty = useTranslations("empty");
+  const tNav = useTranslations("nav");
+  const locale = useLocale();
   const [notifications, setNotifications] = useState<FeedNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -48,7 +53,7 @@ export default function NotificationsPage() {
       if (res.ok) {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
-        toast.success("All notifications marked as read.");
+        toast.success(t("markAllRead"));
       }
     } finally {
       setMarkingAll(false);
@@ -59,9 +64,9 @@ export default function NotificationsPage() {
     <div className="space-y-6 pb-8 max-w-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Notifications</h1>
+          <h1 className="text-2xl font-bold text-white">{t("title")}</h1>
           {unreadCount > 0 && (
-            <p className="text-sm text-white/40 mt-1">{unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}</p>
+            <p className="text-sm text-white/40 mt-1">{unreadCount}</p>
           )}
         </div>
         {unreadCount > 0 && (
@@ -71,7 +76,7 @@ export default function NotificationsPage() {
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 text-white/40 text-xs hover:text-white hover:border-white/20 transition"
           >
             {markingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
-            Mark all read
+            {t("markAllRead")}
           </button>
         )}
       </div>
@@ -83,8 +88,8 @@ export default function NotificationsPage() {
       ) : notifications.length === 0 ? (
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-12 text-center">
           <Bell className="h-10 w-10 text-white/10 mx-auto mb-3" />
-          <p className="text-white/40 text-sm">No notifications yet</p>
-          <p className="text-white/20 text-xs mt-1">You'll see important updates here</p>
+          <p className="text-white/40 text-sm">{tEmpty("notifications")}</p>
+          <p className="text-white/20 text-xs mt-1">{tEmpty("notificationsDescription")}</p>
         </div>
       ) : (
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden divide-y divide-white/[0.04]">
@@ -99,9 +104,9 @@ export default function NotificationsPage() {
                   <p className={`text-sm font-medium ${notif.read ? "text-white/50" : "text-white"}`}>{notif.title}</p>
                   {notif.body && <p className="text-xs text-white/30 mt-0.5">{notif.body}</p>}
                   <p className="text-[10px] text-white/20 mt-1.5">
-                    {new Date(notif.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    {new Date(notif.createdAt).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })}
                     {" · "}
-                    {new Date(notif.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(notif.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
               </div>
@@ -120,7 +125,7 @@ export default function NotificationsPage() {
 
       <div className="text-center">
         <Link href="/settings/notifications" className="text-xs text-white/25 hover:text-white/50 transition">
-          Manage notification preferences →
+          {tNav("notifications")} →
         </Link>
       </div>
     </div>

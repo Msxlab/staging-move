@@ -17,21 +17,23 @@ import {
   Eye,
   Lock,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { hapticWarning } from "@/lib/haptics";
 
 export default function PrivacySettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleExportData = async () => {
     Alert.alert(
-      "Export Data",
-      "Choose the data and format you want to export on the next screen.",
+      t("settings.export"),
+      t("settings.export_description"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Continue",
+          text: t("common.continue"),
           onPress: () => {
             router.push("/settings/export" as any);
           },
@@ -43,12 +45,12 @@ export default function PrivacySettingsScreen() {
   const handleDeleteAccount = () => {
     hapticWarning();
     Alert.alert(
-      "Delete Account",
-      "This will take you to a final confirmation screen before anything is deleted.",
+      t("settings.deleteAccount"),
+      t("settings.delete_description"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Continue",
+          text: t("common.continue"),
           style: "destructive",
           onPress: () => {
             router.push("/settings/delete-account" as any);
@@ -61,18 +63,18 @@ export default function PrivacySettingsScreen() {
   const infoItems = [
     {
       icon: Eye,
-      title: "Data We Collect",
-      description: "We collect your addresses, services, moving plans, and profile information to provide the LocateFlow service.",
+      title: t("settings.privacy_title"),
+      description: t("settings.privacy_description"),
     },
     {
       icon: Lock,
-      title: "Data Security",
-      description: "Your data is encrypted in transit and at rest. We use industry-standard security practices.",
+      title: t("settings.security"),
+      description: t("settings.twoFactor_enabledDescription"),
     },
     {
       icon: Shield,
-      title: "Your Rights",
-      description: "You can export or delete your data at any time. We never sell your personal information.",
+      title: t("settings.privacy"),
+      description: t("settings.privacy_doNotSell_description"),
     },
   ];
 
@@ -82,7 +84,7 @@ export default function PrivacySettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Privacy & Data</Text>
+        <Text style={styles.title}>{t("settings.privacy")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -106,21 +108,21 @@ export default function PrivacySettingsScreen() {
         })}
 
         {/* Actions */}
-        <Text style={styles.sectionTitle}>Actions</Text>
+        <Text style={styles.sectionTitle}>{t("common.more")}</Text>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleExportData} activeOpacity={0.6}>
           <Download size={18} color={theme.colors.primary} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.actionLabel}>Export My Data</Text>
-            <Text style={styles.actionDesc}>Download all your data as a file</Text>
+            <Text style={styles.actionLabel}>{t("settings.export")}</Text>
+            <Text style={styles.actionDesc}>{t("settings.export_description")}</Text>
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.dangerBtn} onPress={handleDeleteAccount} activeOpacity={0.6}>
           <Trash2 size={18} color={theme.colors.error} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.dangerLabel}>Delete My Account</Text>
-            <Text style={styles.dangerDesc}>Permanently remove all your data</Text>
+            <Text style={styles.dangerLabel}>{t("settings.deleteAccount")}</Text>
+            <Text style={styles.dangerDesc}>{t("settings.delete_description")}</Text>
           </View>
         </TouchableOpacity>
       </ScrollView>
