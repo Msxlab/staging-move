@@ -910,7 +910,7 @@ export default function OnboardingScreen() {
                                     <TouchableOpacity
                                       key={cycle}
                                       onPress={() => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: prev[provider.id]?.monthlyCost || "", billingCycle: cycle } }))}
-                                      style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primaryFaded : theme.colors.surface, borderWidth: 1, borderColor: (bd?.billingCycle || "MONTHLY") === cycle ? "rgba(249,115,22,0.4)" : theme.colors.border }}>
+                                      style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primaryFaded : theme.colors.surface, borderWidth: 1, borderColor: (bd?.billingCycle || "MONTHLY") === cycle ? "rgba(212, 132, 106,0.4)" : theme.colors.border }}>
                                       <Text style={{ fontSize: 10, fontWeight: "600", color: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primary : theme.colors.textMuted }}>
                                         {cycle === "MONTHLY" ? "Mo" : "Yr"}
                                       </Text>
@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
   stepIcon: {
     width: 64, height: 64, borderRadius: 20,
     backgroundColor: theme.colors.primaryFaded, borderWidth: 1,
-    borderColor: "rgba(249,115,22,0.3)", alignItems: "center",
+    borderColor: "rgba(212, 132, 106,0.3)", alignItems: "center",
     justifyContent: "center", marginBottom: 20,
   },
   stepTitle: { fontSize: 24, fontWeight: "800", color: theme.colors.text, textAlign: "center", letterSpacing: -0.3 },
@@ -1038,14 +1038,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 24, marginTop: 8, padding: 12, borderRadius: theme.radius.lg,
     backgroundColor: "rgba(239,68,68,0.1)", borderWidth: 1, borderColor: "rgba(239,68,68,0.3)",
   },
-  errorText: { fontSize: 13, color: "#ef4444", textAlign: "center" },
+  errorText: { fontSize: 13, color: "#C85A3E", textAlign: "center" },
   row: { flexDirection: "row", gap: 12, width: "100%" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: "100%" },
   chip: {
     paddingHorizontal: 16, paddingVertical: 10, borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
-  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.4)" },
+  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.4)" },
   chipText: { fontSize: 14, color: theme.colors.textTertiary, fontWeight: "500" },
   chipTextActive: { color: theme.colors.primary },
   toggleGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: "100%" },
@@ -1054,7 +1054,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10, borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
-  toggleChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.4)" },
+  toggleChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.4)" },
   toggleChipText: { fontSize: 13, color: theme.colors.textTertiary, fontWeight: "500" },
   toggleChipTextActive: { color: theme.colors.primary },
   counterRow: {
@@ -1078,14 +1078,14 @@ const styles = StyleSheet.create({
   catTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.text, flex: 1 },
   catRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   catCount: { fontSize: 11, color: theme.colors.textMuted },
-  catBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, backgroundColor: "rgba(249,115,22,0.2)" },
+  catBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10, backgroundColor: "rgba(212, 132, 106,0.2)" },
   catBadgeText: { fontSize: 10, fontWeight: "600", color: theme.colors.primary },
   providerItem: {
     flexDirection: "row", alignItems: "center", gap: 12,
     paddingHorizontal: 14, paddingVertical: 10,
     borderTopWidth: 1, borderTopColor: theme.colors.border,
   },
-  providerItemActive: { backgroundColor: "rgba(249,115,22,0.08)" },
+  providerItemActive: { backgroundColor: "rgba(212, 132, 106,0.08)" },
   providerAvatar: {
     width: 36, height: 36, borderRadius: 10, backgroundColor: "rgba(255,255,255,0.05)",
     alignItems: "center", justifyContent: "center",
@@ -1113,7 +1113,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: theme.colors.border, backgroundColor: "rgba(255,255,255,0.02)",
     marginBottom: 6,
   },
-  recoCardActive: { borderColor: "rgba(249,115,22,0.4)", backgroundColor: theme.colors.primaryFaded },
+  recoCardActive: { borderColor: "rgba(212, 132, 106,0.4)", backgroundColor: theme.colors.primaryFaded },
   recoReason: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
   bottomBar: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",

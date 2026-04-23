@@ -2,6 +2,25 @@ import React, { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { useFonts } from "expo-font";
+import {
+  Fraunces_300Light,
+  Fraunces_400Regular,
+  Fraunces_500Medium,
+  Fraunces_300Light_Italic,
+  Fraunces_400Regular_Italic,
+} from "@expo-google-fonts/fraunces";
+import {
+  Geist_300Light,
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+} from "@expo-google-fonts/geist";
+import {
+  GeistMono_400Regular,
+  GeistMono_500Medium,
+} from "@expo-google-fonts/geist-mono";
 import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { theme } from "@/lib/theme";
@@ -111,15 +130,33 @@ export default function RootLayout() {
   const [i18nHydrated, setI18nHydrated] = useState(false);
   const [queryClient] = useState(() => createQueryClient());
 
+  // Edition VI · Champagne & Rose — Fraunces (display, italic + light) + Geist
+  // (UI sans) + Geist Mono (meta, numerals). Names here are the fontFamily
+  // strings used in stylesheets and NativeWind's tailwind.config.ts.
+  const [fontsLoaded] = useFonts({
+    Fraunces: Fraunces_400Regular,
+    "Fraunces-Light": Fraunces_300Light,
+    "Fraunces-Medium": Fraunces_500Medium,
+    "Fraunces-Italic": Fraunces_400Regular_Italic,
+    "Fraunces-LightItalic": Fraunces_300Light_Italic,
+    Geist: Geist_400Regular,
+    "Geist-Light": Geist_300Light,
+    "Geist-Medium": Geist_500Medium,
+    "Geist-SemiBold": Geist_600SemiBold,
+    "Geist-Bold": Geist_700Bold,
+    GeistMono: GeistMono_400Regular,
+    "GeistMono-Medium": GeistMono_500Medium,
+  });
+
   useEffect(() => {
     SplashScreen.hideAsync();
     void i18nReady.then(() => setI18nHydrated(true));
   }, []);
 
-  // Hold the splash until i18n is ready AND the animated splash finishes.
-  // Both guards must pass; otherwise the first frame flashes EN copy
-  // before the user's ES preference applies.
-  if (showSplash || !i18nHydrated) {
+  // Hold the splash until i18n is ready, fonts are loaded, AND the animated
+  // splash finishes. All three guards must pass; otherwise the first frame
+  // flashes system-font copy before Fraunces joins, or the wrong locale.
+  if (showSplash || !i18nHydrated || !fontsLoaded) {
     return <AnimatedSplash onFinish={() => setShowSplash(false)} />;
   }
 

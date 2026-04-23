@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   editBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     marginTop: 24, paddingVertical: 14, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)",
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(212, 132, 106,0.2)",
   },
   editText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
   deleteBtn: {

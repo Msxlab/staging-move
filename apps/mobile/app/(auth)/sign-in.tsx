@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
   title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
-  error: { color: "#f87171", fontSize: 13, marginBottom: 8 },
+  error: { color: "#DC8470", fontSize: 13, marginBottom: 8 },
   oauthBtn: { marginBottom: 6 },
   divider: { flexDirection: "row", alignItems: "center", marginVertical: 12, gap: 8 },
   dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },

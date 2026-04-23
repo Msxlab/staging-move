@@ -48,31 +48,59 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Edition VI semantic palette — sage/honey/warm-red/slate, no tailwind defaults.
         success: {
-          DEFAULT: "#10b981",
-          light: "#d1fae5",
+          DEFAULT: "#5EAD9A",
+          light: "#D5EDE6",
         },
         warning: {
-          DEFAULT: "#f59e0b",
-          light: "#fef3c7",
+          DEFAULT: "#E3B04B",
+          light: "#F8E5BA",
         },
         danger: {
-          DEFAULT: "#ef4444",
-          light: "#fee2e2",
+          DEFAULT: "#C85A3E",
+          light: "#F0CFC4",
         },
         info: {
-          DEFAULT: "#3b82f6",
-          light: "#dbeafe",
+          DEFAULT: "#8AA9C0",
+          light: "#D8E3EC",
         },
-        // Brand namespace — canonical tokens from packages/shared/src/design-tokens.ts.
-        // Use `bg-brand-orange` / `text-brand-amber` for brand moments; the
-        // shadcn `primary` variable continues to drive default UI.
+        // Brand namespace — Edition VI · Champagne & Rose.
+        // Legacy `brand-orange` / `brand-amber` aliases remain so existing
+        // call sites keep rendering; values now resolve to rose / foil.
         brand: {
           orange: "var(--brand-orange)",
           "orange-light": "var(--brand-orange-light)",
           "orange-dark": "var(--brand-orange-dark)",
           amber: "var(--brand-amber)",
+          rose: "var(--rose)",
+          "rose-light": "var(--rose-light)",
+          "rose-deep": "var(--rose-deep)",
+          foil: "var(--foil)",
+          "foil-a": "var(--foil-a)",
+          "foil-b": "var(--foil-b)",
+          "foil-c": "var(--foil-c)",
+          "foil-ink": "var(--foil-ink)",
+          sage: "var(--sage)",
         },
+        // Direct semantic shorthands — `bg-rose`, `text-foil`, `bg-sage`.
+        rose: {
+          DEFAULT: "var(--rose)",
+          light: "var(--rose-light)",
+          deep: "var(--rose-deep)",
+        },
+        foil: {
+          DEFAULT: "var(--foil)",
+          a: "var(--foil-a)",
+          b: "var(--foil-b)",
+          c: "var(--foil-c)",
+          ink: "var(--foil-ink)",
+        },
+        sage: {
+          DEFAULT: "var(--sage)",
+        },
+        // Orange scale — preserved for legacy `bg-orange-500` usage.
+        // Values now point at the rose scale via CSS custom properties.
         orange: {
           50: "var(--orange-50)",
           100: "var(--orange-100)",
@@ -85,8 +113,28 @@ const config: Config = {
           800: "var(--orange-800)",
           900: "var(--orange-900)",
         },
-        // Tonal pairs — stat cards, category chips. Six tones, no substitutes.
+        // Tonal pairs — six canonical tones (rose / foil / sage / honey /
+        // umber / slate). Legacy keys kept as aliases.
         tone: {
+          "rose-bg": "var(--tone-rose-bg)",
+          "rose-br": "var(--tone-rose-br)",
+          "rose-fg": "var(--tone-rose-fg)",
+          "foil-bg": "var(--tone-foil-bg)",
+          "foil-br": "var(--tone-foil-br)",
+          "foil-fg": "var(--tone-foil-fg)",
+          "sage-bg": "var(--tone-sage-bg)",
+          "sage-br": "var(--tone-sage-br)",
+          "sage-fg": "var(--tone-sage-fg)",
+          "honey-bg": "var(--tone-honey-bg)",
+          "honey-br": "var(--tone-honey-br)",
+          "honey-fg": "var(--tone-honey-fg)",
+          "umber-bg": "var(--tone-umber-bg)",
+          "umber-br": "var(--tone-umber-br)",
+          "umber-fg": "var(--tone-umber-fg)",
+          "slate-bg": "var(--tone-slate-bg)",
+          "slate-br": "var(--tone-slate-br)",
+          "slate-fg": "var(--tone-slate-fg)",
+          // Legacy aliases (orange→rose, emerald→sage, amber→honey, sky/cyan→slate)
           "orange-bg": "var(--tone-orange-bg)",
           "orange-br": "var(--tone-orange-br)",
           "orange-fg": "var(--tone-orange-fg)",
@@ -96,9 +144,6 @@ const config: Config = {
           "amber-bg": "var(--tone-amber-bg)",
           "amber-br": "var(--tone-amber-br)",
           "amber-fg": "var(--tone-amber-fg)",
-          "rose-bg": "var(--tone-rose-bg)",
-          "rose-br": "var(--tone-rose-br)",
-          "rose-fg": "var(--tone-rose-fg)",
           "sky-bg": "var(--tone-sky-bg)",
           "sky-br": "var(--tone-sky-br)",
           "sky-fg": "var(--tone-sky-fg)",
@@ -111,14 +156,18 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "20px",
+        "2xl": "28px",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
-        mono: ["JetBrains Mono", "Consolas", "Courier New", "monospace"],
+        // Edition VI · Geist for UI, Fraunces for display, Geist Mono for meta.
+        sans: ["Geist", "Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        display: ["Fraunces", "Didot", "Georgia", "serif"],
+        serif: ["Fraunces", "Didot", "Georgia", "serif"],
+        mono: ["Geist Mono", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
       },
       fontSize: {
-        // Canonical type scale from docs/design-system/README.md.
-        // Shadows Tailwind defaults intentionally — authors can pick either.
+        // Canonical type scale — Edition VI (px values match colors_and_type.css).
         "brand-xs": ["11px", { lineHeight: "16px" }],
         "brand-sm": ["12px", { lineHeight: "18px" }],
         "brand-base": ["14px", { lineHeight: "20px" }],
@@ -127,11 +176,19 @@ const config: Config = {
         "brand-xl": ["18px", { lineHeight: "28px" }],
         "brand-2xl": ["22px", { lineHeight: "28px" }],
         "brand-3xl": ["28px", { lineHeight: "32px" }],
-        "brand-display": ["40px", { lineHeight: "44px", letterSpacing: "-0.02em" }],
-        "brand-display-lg": ["60px", { lineHeight: "64px", letterSpacing: "-0.02em" }],
+        "brand-4xl": ["36px", { lineHeight: "40px", letterSpacing: "-0.02em" }],
+        "brand-display": ["48px", { lineHeight: "52px", letterSpacing: "-0.02em" }],
+        "brand-display-lg": ["72px", { lineHeight: "76px", letterSpacing: "-0.025em" }],
+        "brand-display-xl": ["96px", { lineHeight: "100px", letterSpacing: "-0.03em" }],
       },
       boxShadow: {
         glow: "var(--shadow-glow)",
+        rose: "var(--shadow-rose)",
+        foil: "var(--shadow-foil)",
+      },
+      backgroundImage: {
+        foil: "linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%)",
+        "rose-gradient": "linear-gradient(135deg, var(--rose-light) 0%, var(--rose-deep) 100%)",
       },
       keyframes: {
         "accordion-down": {

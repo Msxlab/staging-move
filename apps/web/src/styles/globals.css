@@ -1,257 +1,420 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* =========================================================================
-   LocateFlow canonical brand tokens.
-   Source of truth: packages/shared/src/design-tokens.ts + docs/design-system.
-   These variables live alongside the shadcn HSL tokens below (which continue
-   to drive every `bg-primary`, `text-foreground`, `border-border` utility).
-   Use the canonical layer for brand moments, non-Tailwind contexts (MDX,
-   email templates, raw CSS), and multi-tone components (stat cards).
+   LocateFlow — Edition VI · Champagne & Rose
+   Source of truth: packages/shared/src/design-tokens.ts +
+   docs/design-system/colors_and_type.css.
+   The legacy `--brand-orange` and `--orange-*` names are intentionally
+   preserved — every Tailwind utility (`bg-orange-500`, `text-amber-400`,
+   `border-orange-300`, …) resolves to the new rose / foil values, so the
+   palette flips without touching component code.
    ========================================================================= */
 :root,
 .dark {
-  /* Brand palette */
-  --brand-orange: #f97316;
-  --brand-orange-light: #fb923c;
-  --brand-orange-dark: #ea580c;
-  --brand-amber: #fbbf24;
+  /* ─────────────── Brand core (Champagne & Rose) ─────────────── */
+  --rose:          #D4846A;
+  --rose-light:    #EDB99D;
+  --rose-deep:     #A85A42;
+  --rose-dark:     #6A2E1C;
 
-  /* Orange scale */
-  --orange-50: #fff7ed;
-  --orange-100: #ffedd5;
-  --orange-200: #fed7aa;
-  --orange-300: #fdba74;
-  --orange-400: #fb923c;
-  --orange-500: #f97316;
-  --orange-600: #ea580c;
-  --orange-700: #c2410c;
-  --orange-800: #9a3412;
-  --orange-900: #7c2d12;
+  --foil-a:        #F4E4D0;
+  --foil-b:        #E5C9A8;
+  --foil-c:        #B8936C;
+  --foil:          #E5C9A8;
+  --foil-ink:      #8E6D4A;
 
-  /* Foreground alpha layers (use alongside shadcn --foreground) */
-  --fg-1: rgba(255, 255, 255, 1);
-  --fg-2: rgba(255, 255, 255, 0.70);
-  --fg-3: rgba(255, 255, 255, 0.45);
-  --fg-muted: rgba(255, 255, 255, 0.20);
+  --nude:          #E5C9A8;
+  --nude-deep:     #B8936C;
 
-  /* Border alpha layers */
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-focus: rgba(249, 115, 22, 0.50);
+  --sage:          #5EAD9A;
+  --sage-soft:     #8FC9B7;
 
-  /* Tonal pairs — {bg, border, text} for stat cards and category chips.
-     Never invent new tones; pick from orange/emerald/amber/rose/sky/cyan. */
-  --tone-orange-bg: rgba(249, 115, 22, 0.10);
-  --tone-orange-br: rgba(249, 115, 22, 0.20);
-  --tone-orange-fg: #fb923c;
-  --tone-emerald-bg: rgba(16, 185, 129, 0.10);
-  --tone-emerald-br: rgba(16, 185, 129, 0.20);
-  --tone-emerald-fg: #6ee7b7;
-  --tone-amber-bg: rgba(245, 158, 11, 0.10);
-  --tone-amber-br: rgba(245, 158, 11, 0.20);
-  --tone-amber-fg: #fcd34d;
-  --tone-rose-bg: rgba(244, 63, 94, 0.10);
-  --tone-rose-br: rgba(244, 63, 94, 0.20);
-  --tone-rose-fg: #fda4af;
-  --tone-sky-bg: rgba(14, 165, 233, 0.10);
-  --tone-sky-br: rgba(14, 165, 233, 0.20);
-  --tone-sky-fg: #7dd3fc;
-  --tone-cyan-bg: rgba(6, 182, 212, 0.10);
-  --tone-cyan-br: rgba(6, 182, 212, 0.20);
-  --tone-cyan-fg: #67e8f9;
+  /* Legacy brand aliases — flipped to rose / foil */
+  --brand-orange:        #D4846A;
+  --brand-orange-light:  #EDB99D;
+  --brand-orange-dark:   #A85A42;
+  --brand-amber:         #E5C9A8;
 
-  /* Radii — shadcn --radius continues to drive `rounded-*`; these are for
-     bespoke contexts that need a pixel value. */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  /* "orange" scale — now the rose scale (kept for `bg-orange-500` etc.) */
+  --orange-50:  #FBF1ED;
+  --orange-100: #F6E0D6;
+  --orange-200: #EDC0AC;
+  --orange-300: #E5A287;
+  --orange-400: #DC8B6F;
+  --orange-500: #D4846A;
+  --orange-600: #BC6C53;
+  --orange-700: #A85A42;
+  --orange-800: #8A4630;
+  --orange-900: #6A2E1C;
 
-  /* Spacing rhythm */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 20px;
+  /* ─────────────── Surfaces (umber-near-black, slightly warm) ─────────── */
+  --bg:            #0E0A07;
+  --bg-deep:       #070504;
+  --surface:       #13100B;
+  --surface-2:     #181410;
+  --surface-3:     #1F1A14;
+  --elevated:      #261F17;
+
+  /* ─────────────── Foreground ─────────────── */
+  --fg:            #F5F1EA;
+  --fg-1:          rgba(245, 241, 234, 1);
+  --fg-2:          rgba(245, 241, 234, 0.62);
+  --fg-3:          rgba(245, 241, 234, 0.38);
+  --fg-4:          rgba(245, 241, 234, 0.22);
+  --fg-muted:      rgba(245, 241, 234, 0.20);
+
+  /* ─────────────── Borders ─────────────── */
+  --line:          rgba(245, 241, 234, 0.08);
+  --line-2:        rgba(245, 241, 234, 0.14);
+  --line-foil:     rgba(229, 201, 168, 0.22);
+  --line-rose:     rgba(212, 132, 106, 0.30);
+  --border-strong: rgba(245, 241, 234, 0.14);
+  --border-focus:  rgba(212, 132, 106, 0.55);
+
+  /* ─────────────── Glass ─────────────── */
+  --glass-bg:      rgba(245, 241, 234, 0.04);
+  --glass-border:  rgba(245, 241, 234, 0.08);
+  --glass-hover:   rgba(245, 241, 234, 0.07);
+
+  /* ─────────────── Semantic ─────────────── */
+  --success:       #5EAD9A;
+  --success-soft:  rgba(94, 173, 154, 0.12);
+  --warning:       #E3B04B;
+  --warning-soft:  rgba(227, 176, 75, 0.14);
+  --danger:        #C85A3E;
+  --danger-soft:   rgba(200, 90, 62, 0.14);
+  --info:          #8AA9C0;
+  --info-soft:     rgba(138, 169, 192, 0.12);
+
+  /* ─────────────── Tonal pairs — six tones ─────────────── */
+  --tone-rose-bg:    rgba(212, 132, 106, 0.10);
+  --tone-rose-br:    rgba(212, 132, 106, 0.22);
+  --tone-rose-fg:    #EDB99D;
+
+  --tone-foil-bg:    rgba(229, 201, 168, 0.09);
+  --tone-foil-br:    rgba(229, 201, 168, 0.22);
+  --tone-foil-fg:    #F4E4D0;
+
+  --tone-sage-bg:    rgba(94, 173, 154, 0.09);
+  --tone-sage-br:    rgba(94, 173, 154, 0.22);
+  --tone-sage-fg:    #8FC9B7;
+
+  --tone-honey-bg:   rgba(227, 176, 75, 0.09);
+  --tone-honey-br:   rgba(227, 176, 75, 0.22);
+  --tone-honey-fg:   #EFC878;
+
+  --tone-umber-bg:   rgba(184, 147, 108, 0.09);
+  --tone-umber-br:   rgba(184, 147, 108, 0.22);
+  --tone-umber-fg:   #D4B68F;
+
+  --tone-slate-bg:   rgba(138, 169, 192, 0.09);
+  --tone-slate-br:   rgba(138, 169, 192, 0.22);
+  --tone-slate-fg:   #B5CDDD;
+
+  /* Legacy tone aliases — orange→rose, emerald→sage, amber→honey, sky/cyan→slate */
+  --tone-orange-bg:  rgba(212, 132, 106, 0.10);
+  --tone-orange-br:  rgba(212, 132, 106, 0.22);
+  --tone-orange-fg:  #EDB99D;
+  --tone-emerald-bg: rgba(94, 173, 154, 0.09);
+  --tone-emerald-br: rgba(94, 173, 154, 0.22);
+  --tone-emerald-fg: #8FC9B7;
+  --tone-amber-bg:   rgba(227, 176, 75, 0.09);
+  --tone-amber-br:   rgba(227, 176, 75, 0.22);
+  --tone-amber-fg:   #EFC878;
+  --tone-sky-bg:     rgba(138, 169, 192, 0.09);
+  --tone-sky-br:     rgba(138, 169, 192, 0.22);
+  --tone-sky-fg:     #B5CDDD;
+  --tone-cyan-bg:    rgba(138, 169, 192, 0.09);
+  --tone-cyan-br:    rgba(138, 169, 192, 0.22);
+  --tone-cyan-fg:    #B5CDDD;
+
+  /* ─────────────── Radii ─────────────── */
+  --radius-sm:   6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* ─────────────── Spacing ─────────────── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:  12px;
+  --space-lg:  16px;
+  --space-xl:  20px;
   --space-2xl: 24px;
   --space-3xl: 32px;
   --space-4xl: 40px;
+  --space-5xl: 56px;
+  --space-6xl: 80px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.25);
-  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 12px rgba(249, 115, 22, 0.30);
+  /* ─────────────── Shadows ─────────────── */
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm:   0 2px 6px rgba(0, 0, 0, 0.28);
+  --shadow-md:   0 6px 18px rgba(0, 0, 0, 0.40);
+  --shadow-lg:   0 20px 50px rgba(0, 0, 0, 0.55);
+  --shadow-xl:   0 40px 80px rgba(0, 0, 0, 0.60);
+  --shadow-rose: 0 0 20px rgba(212, 132, 106, 0.28);
+  --shadow-foil: 0 0 30px rgba(229, 201, 168, 0.16);
+  --shadow-glow: 0 0 20px rgba(212, 132, 106, 0.28);
 
-  /* Typography */
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+  /* ─────────────── Typography ─────────────── */
+  --font-display: "Fraunces", "Didot", Georgia, serif;
+  --font-sans:    "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
 
-  --fs-xs: 11px;
-  --fs-sm: 12px;
+  --fs-xs:   11px;
+  --fs-sm:   12px;
   --fs-base: 14px;
-  --fs-md: 15px;
-  --fs-lg: 16px;
-  --fs-xl: 18px;
-  --fs-2xl: 22px;
-  --fs-3xl: 28px;
-  --fs-display: 40px;
-  --fs-display-lg: 60px;
+  --fs-md:   15px;
+  --fs-lg:   16px;
+  --fs-xl:   18px;
+  --fs-2xl:  22px;
+  --fs-3xl:  28px;
+  --fs-4xl:  36px;
+  --fs-display:    48px;
+  --fs-display-lg: 72px;
+  --fs-display-xl: 96px;
 
-  --fw-regular: 400;
-  --fw-medium: 500;
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;
   --fw-semibold: 600;
-  --fw-bold: 700;
-  --fw-black: 800;
+  --fw-bold:     700;
+  --fw-black:    800;
 
-  --lh-tight: 1.1;
-  --lh-snug: 1.25;
-  --lh-normal: 1.5;
-  --lh-relaxed: 1.65;
+  --lh-tight:   1.0;
+  --lh-snug:    1.15;
+  --lh-normal:  1.45;
+  --lh-relaxed: 1.7;
 
-  --tracking-tight: -0.02em;
-  --tracking-normal: 0;
-  --tracking-wide: 0.02em;
+  --tracking-tightest: -0.035em;
+  --tracking-tight:    -0.02em;
+  --tracking-normal:   0;
+  --tracking-wide:     0.04em;
+  --tracking-mono:     0.14em;
+
+  /* Fraunces variable axis presets */
+  --fv-display-hero: "opsz" 144, "SOFT" 50;
+  --fv-display-h2:   "opsz"  96, "SOFT" 40;
+  --fv-display-h3:   "opsz"  48, "SOFT" 30;
+  --fv-display-sm:   "opsz"  36, "SOFT" 20;
 }
 
+/* ─────────────── Light mode (ivory paper) ─────────────── */
 .light {
-  /* Light-mode overrides — foreground/border alpha inverts to slate-900 base;
-     brand orange stays the same hue for visual continuity. */
-  --fg-1: rgba(15, 23, 42, 1);
-  --fg-2: rgba(15, 23, 42, 0.75);
-  --fg-3: rgba(15, 23, 42, 0.50);
-  --fg-muted: rgba(15, 23, 42, 0.30);
+  --bg:            #FBF7EC;
+  --bg-deep:       #F7EEE3;
+  --surface:       #FFFFFF;
+  --surface-2:     #F7EEE3;
+  --surface-3:     #F0E4D2;
+  --elevated:      #FFFFFF;
 
-  --border-strong: rgba(15, 23, 42, 0.12);
-  --border-focus: rgba(234, 88, 12, 0.50);
+  --fg:            #2A1F18;
+  --fg-1:          #2A1F18;
+  --fg-2:          rgba(42, 31, 24, 0.72);
+  --fg-3:          rgba(42, 31, 24, 0.50);
+  --fg-4:          rgba(42, 31, 24, 0.30);
+  --fg-muted:      rgba(42, 31, 24, 0.30);
 
-  --tone-orange-fg: #c2410c;
-  --tone-emerald-fg: #047857;
-  --tone-amber-fg: #b45309;
-  --tone-rose-fg: #be123c;
-  --tone-sky-fg: #0369a1;
-  --tone-cyan-fg: #0e7490;
+  --line:          rgba(42, 31, 24, 0.08);
+  --line-2:        rgba(42, 31, 24, 0.14);
+  --line-foil:     rgba(184, 147, 108, 0.30);
+  --border-strong: rgba(42, 31, 24, 0.14);
+  --border-focus:  rgba(184, 90, 66, 0.55);
+
+  --glass-bg:      rgba(255, 255, 255, 0.70);
+  --glass-border:  rgba(42, 31, 24, 0.08);
+  --glass-hover:   rgba(42, 31, 24, 0.04);
+
+  /* Accents shift slightly on paper */
+  --rose:          #B85A42;
+  --rose-light:    #D4846A;
+  --rose-deep:     #8B3E28;
+  --foil-ink:      #8E6D4A;
+
+  --tone-rose-fg:    #8B3E28;
+  --tone-foil-fg:    #8E6D4A;
+  --tone-sage-fg:    #2F6F5F;
+  --tone-honey-fg:   #8B6A1F;
+  --tone-umber-fg:   #6A4F30;
+  --tone-slate-fg:   #456180;
+  --tone-orange-fg:  #8B3E28;
+  --tone-emerald-fg: #2F6F5F;
+  --tone-amber-fg:   #8B6A1F;
+  --tone-sky-fg:     #456180;
+  --tone-cyan-fg:    #456180;
+
+  --orange-50:  #FBF1ED;
+  --orange-100: #F6E0D6;
+  --orange-200: #EDC0AC;
+  --orange-300: #E5A287;
+  --orange-400: #C76E50;
+  --orange-500: #B85A42;
+  --orange-600: #9F4733;
+  --orange-700: #8B3E28;
+  --orange-800: #6A2E1C;
+  --orange-900: #4A1F12;
+
+  --brand-orange:       #B85A42;
+  --brand-orange-light: #D4846A;
+  --brand-orange-dark:  #8B3E28;
 }
 
 /* =========================================================================
-   Semantic helpers — callable from any component via `.stat-number`, `.glass`
+   shadcn HSL tokens — drive every `bg-primary`, `text-foreground`,
+   `border-border` utility. HSL of #D4846A ≈ 17 56% 62%. Backgrounds
+   match the umber canvas above (HSL of #0E0A07 ≈ 24 27% 4%).
    ========================================================================= */
-.stat-number {
-  font-size: var(--fs-3xl);
-  font-weight: var(--fw-black);
-  letter-spacing: var(--tracking-tight);
-}
-
 @layer base {
   :root,
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 96%;
+    --background: 24 27% 4%;
+    --foreground: 36 27% 94%;
 
-    --card: 222 47% 8%;
-    --card-foreground: 210 40% 96%;
+    --card: 27 24% 6%;
+    --card-foreground: 36 27% 94%;
 
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 96%;
+    --popover: 30 25% 12%;
+    --popover-foreground: 36 27% 94%;
 
-    --primary: 24 94% 53%;
+    --primary: 17 56% 62%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 43 96% 56%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 35 53% 78%;
+    --secondary-foreground: 30 30% 12%;
 
-    --muted: 222 30% 14%;
-    --muted-foreground: 215 20% 55%;
+    --muted: 30 20% 14%;
+    --muted-foreground: 35 17% 60%;
 
-    --accent: 222 30% 14%;
-    --accent-foreground: 210 40% 96%;
+    --accent: 35 53% 78%;
+    --accent-foreground: 30 30% 12%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 11 56% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --success: 142 76% 36%;
-    --info: 199 89% 48%;
+    --warning: 41 73% 59%;
+    --success: 167 30% 52%;
+    --info: 207 26% 65%;
 
-    --border: 222 20% 16%;
-    --input: 222 20% 16%;
-    --ring: 24 94% 53%;
+    --border: 36 27% 12%;
+    --input: 36 27% 14%;
+    --ring: 17 56% 62%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem; /* 10px */
 
-    --surface: #0f172a;
-    --surface-secondary: #1e293b;
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --glass-hover: rgba(255, 255, 255, 0.1);
-    --text-primary: rgba(255, 255, 255, 1);
-    --text-secondary: rgba(255, 255, 255, 0.6);
-    --text-tertiary: rgba(255, 255, 255, 0.45);
+    --surface: #13100B;
+    --surface-secondary: #181410;
+    --text-primary: rgba(245, 241, 234, 1);
+    --text-secondary: rgba(245, 241, 234, 0.62);
+    --text-tertiary: rgba(245, 241, 234, 0.38);
   }
 
   .light {
-    --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
+    --background: 35 60% 95%;
+    --foreground: 27 30% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 27 30% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 27 30% 13%;
 
-    --primary: 24 94% 50%;
+    --primary: 13 47% 49%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 43 96% 56%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 35 53% 75%;
+    --secondary-foreground: 30 30% 12%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 35 30% 90%;
+    --muted-foreground: 30 15% 35%;
 
-    --accent: 220 14% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 35 53% 78%;
+    --accent-foreground: 30 30% 12%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 11 56% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --success: 142 76% 36%;
-    --info: 199 89% 48%;
+    --warning: 41 73% 50%;
+    --success: 167 30% 42%;
+    --info: 207 26% 50%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 24 94% 50%;
+    --border: 30 30% 88%;
+    --input: 30 30% 88%;
+    --ring: 13 47% 49%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    --surface: #f8fafc;
-    --surface-secondary: #ffffff;
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(0, 0, 0, 0.08);
-    --glass-hover: rgba(0, 0, 0, 0.04);
-    --text-primary: rgba(15, 23, 42, 1);
-    --text-secondary: rgba(15, 23, 42, 0.6);
-    --text-tertiary: rgba(15, 23, 42, 0.45);
+    --surface: #FBF7EC;
+    --surface-secondary: #FFFFFF;
+    --text-primary: rgba(42, 31, 24, 1);
+    --text-secondary: rgba(42, 31, 24, 0.72);
+    --text-tertiary: rgba(42, 31, 24, 0.50);
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-  body {
+  * { @apply border-border; }
+  html, body {
     @apply bg-background text-foreground;
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    line-height: var(--lh-normal);
+    -webkit-font-smoothing: antialiased;
+    font-weight: var(--fw-regular);
   }
-  /* Accessible focus-visible styles for all interactive elements */
+  /* Display headings — Fraunces variable, light + italic for personality */
+  h1, .h1 {
+    font-family: var(--font-display);
+    font-weight: var(--fw-light);
+    font-size: clamp(40px, 6vw, var(--fs-display-lg));
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--lh-tight);
+    font-variation-settings: var(--fv-display-hero);
+  }
+  h1 em, .h1 em {
+    font-style: italic;
+    font-weight: var(--fw-regular);
+    background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  h2, .h2 {
+    font-family: var(--font-display);
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-4xl);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--lh-snug);
+    font-variation-settings: var(--fv-display-h2);
+  }
+  h2 em, .h2 em {
+    font-style: italic;
+    font-weight: var(--fw-light);
+    color: var(--foil-b);
+  }
+  h3, .h3 {
+    font-family: var(--font-display);
+    font-weight: var(--fw-regular);
+    font-size: var(--fs-2xl);
+    letter-spacing: -0.015em;
+    line-height: var(--lh-snug);
+    font-variation-settings: var(--fv-display-h3);
+  }
+  /* Accessible focus ring — rose at 55% alpha */
   :focus-visible {
-    @apply outline-none ring-2 ring-orange-500 ring-offset-2 ring-offset-background;
+    @apply outline-none;
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--border-focus);
   }
 }
 
+/* =========================================================================
+   Brand helpers — callable from any component
+   ========================================================================= */
 @layer utilities {
   .glass {
     background: var(--glass-bg);
@@ -263,96 +426,133 @@
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
   }
-  .glass-hover {
-    @apply transition-all;
+  .glass-hover { @apply transition-all; }
+  .glass-hover:hover { background: var(--glass-hover); }
+
+  /* Foil gradient text — italic wordmarks, hero accents */
+  .foil-text {
+    background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
-  .glass-hover:hover {
-    background: var(--glass-hover);
+  .foil-bg {
+    background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
+  }
+  .rose-bg {
+    background: linear-gradient(135deg, var(--rose-light) 0%, var(--rose-deep) 100%);
+  }
+
+  /* Hairline — double-border luxury chrome on hero stages */
+  .hairline { position: relative; }
+  .hairline::before {
+    content: ""; position: absolute; inset: 14px;
+    border: 1px solid var(--line-foil);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  /* Stat number — tight display numerals */
+  .stat-number {
+    font-family: var(--font-display);
+    font-weight: var(--fw-light);
+    font-size: var(--fs-3xl);
+    letter-spacing: var(--tracking-tight);
+    line-height: 1;
+    font-variation-settings: var(--fv-display-h2);
+  }
+
+  .lede {
+    font-family: var(--font-display);
+    font-weight: var(--fw-light);
+    font-style: italic;
+    font-size: var(--fs-xl);
+    line-height: var(--lh-normal);
+    font-variation-settings: var(--fv-display-sm);
+    color: var(--fg-2);
+  }
+
+  .kicker, .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    letter-spacing: var(--tracking-mono);
+    text-transform: uppercase;
+    color: var(--foil-b);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    letter-spacing: 0;
   }
 }
 
-/* Hide gradient blobs in light mode */
-.light .dark-only-blobs {
-  opacity: 0;
-}
+/* Hide gradient blobs in light mode (kept from previous direction). */
+.light .dark-only-blobs { opacity: 0; }
 
-/* =========================================
-   LIGHT MODE — comprehensive overrides
-   Converts dark-first Tailwind utilities to
-   light equivalents via CSS class selectors.
-   ========================================= */
+/* =========================================================================
+   LIGHT MODE — comprehensive overrides for utilities authored in dark-first
+   Tailwind. Inverts white/* alphas to slate-on-paper alphas.
+   ========================================================================= */
+.light .text-white { color: rgba(42, 31, 24, 1); }
+.light .text-white\/90 { color: rgba(42, 31, 24, 0.9); }
+.light .text-white\/80 { color: rgba(42, 31, 24, 0.8); }
+.light .text-white\/70 { color: rgba(42, 31, 24, 0.7); }
+.light .text-white\/60 { color: rgba(42, 31, 24, 0.6); }
+.light .text-white\/50 { color: rgba(42, 31, 24, 0.5); }
+.light .text-white\/40 { color: rgba(42, 31, 24, 0.4); }
+.light .text-white\/30 { color: rgba(42, 31, 24, 0.3); }
+.light .text-white\/25 { color: rgba(42, 31, 24, 0.25); }
+.light .text-white\/20 { color: rgba(42, 31, 24, 0.2); }
+.light .text-white\/15 { color: rgba(42, 31, 24, 0.15); }
+.light .text-white\/10 { color: rgba(42, 31, 24, 0.1); }
 
-/* --- Text colors: white → slate-900 --- */
-.light .text-white { color: rgba(15, 23, 42, 1); }
-.light .text-white\/90 { color: rgba(15, 23, 42, 0.9); }
-.light .text-white\/80 { color: rgba(15, 23, 42, 0.8); }
-.light .text-white\/70 { color: rgba(15, 23, 42, 0.7); }
-.light .text-white\/60 { color: rgba(15, 23, 42, 0.6); }
-.light .text-white\/50 { color: rgba(15, 23, 42, 0.5); }
-.light .text-white\/40 { color: rgba(15, 23, 42, 0.4); }
-.light .text-white\/30 { color: rgba(15, 23, 42, 0.3); }
-.light .text-white\/25 { color: rgba(15, 23, 42, 0.25); }
-.light .text-white\/20 { color: rgba(15, 23, 42, 0.2); }
-.light .text-white\/15 { color: rgba(15, 23, 42, 0.15); }
-.light .text-white\/10 { color: rgba(15, 23, 42, 0.1); }
+.light .hover\:text-white:hover { color: rgba(42, 31, 24, 1); }
+.light .hover\:text-white\/70:hover { color: rgba(42, 31, 24, 0.7); }
+.light .hover\:text-white\/40:hover { color: rgba(42, 31, 24, 0.4); }
+.light .group:hover .group-hover\:text-white { color: rgba(42, 31, 24, 1); }
 
-/* Hover text */
-.light .hover\:text-white:hover { color: rgba(15, 23, 42, 1); }
-.light .hover\:text-white\/70:hover { color: rgba(15, 23, 42, 0.7); }
-.light .hover\:text-white\/40:hover { color: rgba(15, 23, 42, 0.4); }
-.light .group:hover .group-hover\:text-white { color: rgba(15, 23, 42, 1); }
+.light .placeholder\:text-white\/30::placeholder { color: rgba(42, 31, 24, 0.3); }
 
-/* Placeholder text */
-.light .placeholder\:text-white\/30::placeholder { color: rgba(15, 23, 42, 0.3); }
+.light .bg-white\/5 { background-color: rgba(42, 31, 24, 0.03); }
+.light .bg-white\/10 { background-color: rgba(42, 31, 24, 0.05); }
+.light .bg-white\/\[0\.02\] { background-color: rgba(42, 31, 24, 0.015); }
+.light .bg-white\/\[0\.03\] { background-color: rgba(42, 31, 24, 0.02); }
+.light .bg-white\/\[0\.05\] { background-color: rgba(42, 31, 24, 0.03); }
+.light .bg-white\/\[0\.07\] { background-color: rgba(42, 31, 24, 0.04); }
 
-/* --- Background colors: white/alpha → black/alpha --- */
-.light .bg-white\/5 { background-color: rgba(0, 0, 0, 0.03); }
-.light .bg-white\/10 { background-color: rgba(0, 0, 0, 0.05); }
-.light .bg-white\/\[0\.02\] { background-color: rgba(0, 0, 0, 0.015); }
-.light .bg-white\/\[0\.03\] { background-color: rgba(0, 0, 0, 0.02); }
-.light .bg-white\/\[0\.05\] { background-color: rgba(0, 0, 0, 0.03); }
-.light .bg-white\/\[0\.07\] { background-color: rgba(0, 0, 0, 0.04); }
+.light .hover\:bg-white\/5:hover { background-color: rgba(42, 31, 24, 0.04); }
+.light .hover\:bg-white\/10:hover { background-color: rgba(42, 31, 24, 0.06); }
+.light .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(42, 31, 24, 0.03); }
+.light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(42, 31, 24, 0.04); }
+.light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(42, 31, 24, 0.05); }
 
-/* Hover backgrounds */
-.light .hover\:bg-white\/5:hover { background-color: rgba(0, 0, 0, 0.04); }
-.light .hover\:bg-white\/10:hover { background-color: rgba(0, 0, 0, 0.06); }
-.light .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(0, 0, 0, 0.03); }
-.light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(0, 0, 0, 0.04); }
-.light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(0, 0, 0, 0.05); }
+.light .group:hover .group-hover\:bg-orange-500 { background-color: var(--rose); }
 
-/* Group hover backgrounds */
-.light .group:hover .group-hover\:bg-orange-500 { background-color: rgb(249 115 22); }
+.light .border-white\/5 { border-color: rgba(42, 31, 24, 0.05); }
+.light .border-white\/10 { border-color: rgba(42, 31, 24, 0.08); }
+.light .border-white\/\[0\.03\] { border-color: rgba(42, 31, 24, 0.04); }
+.light .border-white\/\[0\.05\] { border-color: rgba(42, 31, 24, 0.06); }
 
-/* --- Border colors: white/alpha → black/alpha --- */
-.light .border-white\/5 { border-color: rgba(0, 0, 0, 0.05); }
-.light .border-white\/10 { border-color: rgba(0, 0, 0, 0.08); }
-.light .border-white\/\[0\.03\] { border-color: rgba(0, 0, 0, 0.04); }
-.light .border-white\/\[0\.05\] { border-color: rgba(0, 0, 0, 0.06); }
+.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(42, 31, 24, 0.05); }
 
-/* --- Divide colors --- */
-.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(0, 0, 0, 0.05); }
+.light .focus\:ring-orange-500\/50:focus { --tw-ring-color: rgba(184, 90, 66, 0.30); }
 
-/* --- Ring colors --- */
-.light .focus\:ring-orange-500\/50:focus { --tw-ring-color: rgba(249, 115, 22, 0.3); }
-
-/* --- Black overlay in light mode: soften --- */
 .light .bg-black\/50 { background-color: rgba(0, 0, 0, 0.3); }
 .light .bg-black\/60 { background-color: rgba(0, 0, 0, 0.35); }
 
-/* --- Specific input overrides --- */
 .light input,
 .light select,
 .light textarea {
-  color: rgba(15, 23, 42, 0.9);
+  color: rgba(42, 31, 24, 0.9);
 }
 .light input::placeholder,
 .light textarea::placeholder {
-  color: rgba(15, 23, 42, 0.35);
+  color: rgba(42, 31, 24, 0.35);
 }
 
-/* --- Sidebar: keep dark in light mode for contrast --- */
+/* Sidebar stays dark in light mode for contrast (per design doc rule). */
 .light aside {
-  background: #1e293b;
+  background: var(--surface);
 }
 .light aside .text-white,
 .light aside .text-white\/80,
@@ -364,7 +564,7 @@
   color: inherit;
 }
 
-/* --- Preserve white text on colored backgrounds --- */
+/* Preserve white text on filled rose/foil/semantic backgrounds. */
 .light .bg-orange-500 .text-white,
 .light .bg-orange-600 .text-white,
 .light .bg-red-500 .text-white,
@@ -380,7 +580,6 @@
   color: rgb(255, 255, 255);
 }
 
-/* Buttons with colored bg should keep white text */
 .light button.bg-orange-500,
 .light button.bg-red-500,
 .light button.bg-amber-500,
@@ -389,13 +588,6 @@
   color: rgb(255, 255, 255);
 }
 
-/* Badges on orange bg */
-.light .bg-orange-500 {
-  color: rgb(255, 255, 255);
-}
-
-/* Keep notification badge white on orange */
+.light .bg-orange-500 { color: rgb(255, 255, 255); }
 .light .bg-orange-500.text-white,
-.light span.bg-orange-500 {
-  color: rgb(255, 255, 255);
-}
+.light span.bg-orange-500 { color: rgb(255, 255, 255); }

@@ -1,16 +1,35 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import { Toaster } from "sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const inter = Inter({
+// Edition VI · Geist drives admin chrome, Fraunces is reserved for h1/h2/h3.
+const geistSans = Geist({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-sans",
   fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono",
+  fallback: ["JetBrains Mono", "Consolas", "monospace"],
+});
+
+// Fraunces variable font — `weight` omitted because `axes` is set
+// (Next.js requires one or the other, not both).
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-display",
+  axes: ["opsz", "SOFT"],
+  style: ["normal", "italic"],
+  fallback: ["Didot", "Georgia", "serif"],
 });
 
 export const metadata: Metadata = {
@@ -27,15 +46,15 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // `suppressHydrationWarning` is required because next-themes writes a
-  // class on <html> during boot; without it React warns on mismatch.
-  // The `lang` attr mirrors next-intl's resolved locale so screen readers
-  // and Google agree with the UI.
   const locale = await getLocale();
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={inter.variable} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen bg-background font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>

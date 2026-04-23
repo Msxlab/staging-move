@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   input: { backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: theme.colors.text },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border },
-  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.4)" },
+  chipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.4)" },
   chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
   chipTextActive: { color: theme.colors.primary },
   saveBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg, paddingVertical: 16, marginTop: 28, ...theme.shadow.glow },

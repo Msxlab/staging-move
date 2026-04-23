@@ -58,7 +58,21 @@
       "Bash(scp pnpm-lock.yaml root@159.203.134.149:/opt/locateflow/pnpm-lock.yaml)",
       "Bash(scp apps/admin/package.json root@159.203.134.149:/opt/locateflow/apps/admin/package.json)",
       "Bash(scp apps/admin/src/app/api/auth/mfa/setup/route.ts root@159.203.134.149:/opt/locateflow/apps/admin/src/app/api/auth/mfa/setup/route.ts)",
-      "Bash(scp \"apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx\" \"root@159.203.134.149:/opt/locateflow/apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx\")"
+      "Bash(scp \"apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx\" \"root@159.203.134.149:/opt/locateflow/apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx\")",
+      "Bash(ssh root@159.203.134.149:*)",
+      "Bash(ssh -o * root@159.203.134.149:*)",
+      "Bash(ssh -o * -o * root@159.203.134.149:*)",
+      "Bash(ssh -o * -o * -o * root@159.203.134.149:*)",
+      "Bash(scp * root@159.203.134.149:*)",
+      "Bash(scp -r * root@159.203.134.149:*)",
+      "Bash(scp root@159.203.134.149:*)",
+      "Bash(scp -r root@159.203.134.149:*)",
+      "Bash(rsync * root@159.203.134.149:*)",
+      "Bash(rsync root@159.203.134.149:*)",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new root@159.203.134.149 \"cd /opt/locateflow && docker compose*\")",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new root@159.203.134.149 \"cd /opt/locateflow && nohup*\")",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new root@159.203.134.149 \"cd /opt/locateflow && tail*\")",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new root@159.203.134.149 \"cd /opt/locateflow && cat /tmp/design-deploy.log*\")"
     ]
   }
 }

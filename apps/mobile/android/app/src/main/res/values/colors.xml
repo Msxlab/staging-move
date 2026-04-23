@@ -1,7 +1,8 @@
 <resources>
-  <color name="splashscreen_background">#0a0a0f</color>
-  <color name="iconBackground">#0a0a0f</color>
-  <color name="colorPrimary">#023c69</color>
-  <color name="colorPrimaryDark">#0a0a0f</color>
-  <color name="notification_icon_color">#F97316</color>
+  <!-- Edition VI · Champagne & Rose. Mirrors apps/mobile/app.json + design tokens. -->
+  <color name="splashscreen_background">#0E0A07</color>
+  <color name="iconBackground">#0E0A07</color>
+  <color name="colorPrimary">#D4846A</color>
+  <color name="colorPrimaryDark">#0E0A07</color>
+  <color name="notification_icon_color">#D4846A</color>
 </resources>

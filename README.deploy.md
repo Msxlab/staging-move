@@ -57,6 +57,10 @@ docker compose \
 The override disables the local `mysql` service and points `migrate`, `web`,
 and `admin` directly at the managed database.
 
+For the current LocateFlow production server (`locateflow-prod-nyc3`), always
+use the DigitalOcean override. Running `docker-compose.prod.yml` by itself will
+start a fresh local MySQL container and will not use the managed production DB.
+
 ## Generating secrets
 
 ```bash
@@ -96,25 +100,34 @@ Internet ──▶ Caddy (:443) ──┬─▶ web:3000      (Next.js standalon
 ## Common operations
 
 ```bash
+# On locateflow-prod-nyc3, define this helper first:
+dc() {
+  docker compose \
+    --env-file .env.production \
+    -f docker-compose.prod.yml \
+    -f docker-compose.digitalocean.yml \
+    "$@"
+}
+
 # Tail logs for a single service
-docker compose -f docker-compose.prod.yml logs -f web
+dc logs -f web
 
 # Re-run migrations after a schema change (code is already deployed)
-docker compose -f docker-compose.prod.yml run --rm migrate
+dc up --force-recreate migrate
 
 # Open a shell inside the web container
-docker compose -f docker-compose.prod.yml exec web sh
+dc exec web sh
 
 # Full rebuild after pulling new code
 git pull
-docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+dc up -d --build
 
 # Manually trigger a cron job
-docker compose -f docker-compose.prod.yml exec web \
+dc exec web \
   wget -qO- --header="Authorization: Bearer $CRON_SECRET" \
     http://localhost:3000/api/cron/weekly-digest
 
-# Database backup
+# Database backup when using the bundled local mysql service
 docker compose -f docker-compose.prod.yml exec -T mysql \
   mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" \
   > "backup-$(date +%F).sql"
@@ -127,7 +140,9 @@ docker compose -f docker-compose.prod.yml exec -T mysql \
 3. If the PR touches `prisma/schema.prisma`, a new migration file lives
    under `packages/db/prisma/migrations/`. No manual step — the `migrate`
    service applies it before web/admin restart.
-4. `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build`
+4. On `locateflow-prod-nyc3`, use the `dc` helper above and run
+   `dc up -d --build`. On single-VPS local MySQL installs, run
+   `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build`.
 
 ## Security checklist
 
@@ -226,7 +241,7 @@ For a suspected admin compromise:
    `CRON_SECRET`, `INTERNAL_WEBHOOK_SECRET`, and
    `IMPERSONATION_HANDOFF_SECRET` as appropriate.
 3. Rebuild and restart web/admin:
-   `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build web admin`.
+   `dc up -d --build web admin` on `locateflow-prod-nyc3`.
 4. Check `AdminAuditLog`, `AdminLoginLog`, GlitchTip, and Caddy logs for the
    compromise window.
 

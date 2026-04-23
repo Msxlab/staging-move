@@ -67,7 +67,7 @@ async function sendEmailAlert(payload: AlertPayload): Promise<void> {
       subject,
       html: `
         <div style="font-family: sans-serif; max-width: 600px;">
-          <h2 style="color: ${payload.severity === "CRITICAL" ? "#dc2626" : "#f59e0b"};">
+          <h2 style="color: ${payload.severity === "CRITICAL" ? "#C85A3E" : "#E3B04B"};">
             ${severityEmoji} ${payload.severity} Security Alert
           </h2>
           <table style="width: 100%; border-collapse: collapse;">
@@ -97,7 +97,7 @@ async function sendSlackAlert(payload: AlertPayload): Promise<void> {
 
   try {
     const severityEmoji = payload.severity === "CRITICAL" ? ":rotating_light:" : ":warning:";
-    const color = payload.severity === "CRITICAL" ? "#dc2626" : "#f59e0b";
+    const color = payload.severity === "CRITICAL" ? "#C85A3E" : "#E3B04B";
 
     await fetch(webhookUrl, {
       method: "POST",

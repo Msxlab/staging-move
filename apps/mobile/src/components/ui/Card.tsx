@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   glow: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: "rgba(249, 115, 22, 0.2)",
+    borderColor: "rgba(212, 132, 106, 0.2)",
     ...theme.shadow.glow,
   },
   glass: {

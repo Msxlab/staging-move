@@ -48,10 +48,21 @@ import {
   type ChecklistStateRuleContext,
 } from "@locateflow/shared";
 
+// Edition VI · Champagne & Rose — service category tone map.
+// The design system bans grayscale category colors and caps the palette
+// at six tones (rose, foil, sage, honey, umber, slate). Each category
+// picks from that palette; some reuse a tone where meaning aligns.
 const catColors: Record<string, string> = {
-  GOVERNMENT: "#ef4444", UTILITY: "#f59e0b", FINANCIAL: "#10b981",
-  HOUSING: "#0ea5e9", HEALTHCARE: "#f43f5e", TRANSPORTATION: "#3b82f6",
-  KIDS: "#a855f7", FITNESS: "#f97316", SHOPPING: "#ec4899", OTHER: "#6b7280",
+  GOVERNMENT: "#A85A42",     // rose-deep — civic / formal
+  UTILITY: "#E3B04B",        // honey — energy
+  FINANCIAL: "#5EAD9A",      // sage — money / success
+  HOUSING: "#B8936C",        // foil-c — home / warmth
+  HEALTHCARE: "#D4846A",     // rose — care
+  TRANSPORTATION: "#8AA9C0", // slate — movement / cool
+  KIDS: "#EDB99D",           // rose-light — soft
+  FITNESS: "#E5C9A8",        // foil — active / gold
+  SHOPPING: "#8E6D4A",       // foil-ink — retail
+  OTHER: "#D4B68F",          // umber — neutral
 };
 
 const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
@@ -313,7 +324,7 @@ export default function ServicesScreen() {
           const currentItems = checklist.phases.find((p) => p.phase === checklist.currentPhase);
           const pending = currentItems?.items.filter((i) => !i.isCompleted).slice(0, 3) || [];
           return (
-            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)", backgroundColor: "rgba(249,115,22,0.04)", padding: 14 }}>
+            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(212, 132, 106,0.2)", backgroundColor: "rgba(212, 132, 106,0.04)", padding: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <CategoryIcon emoji={phase?.icon || ""} size={16} color={theme.colors.primary} />
@@ -332,8 +343,8 @@ export default function ServicesScreen() {
 
               {checklist.overdueItems.length > 0 && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, padding: 8, borderRadius: 8, backgroundColor: "rgba(239,68,68,0.08)" }}>
-                  <AlertTriangle size={12} color="#ef4444" />
-                  <Text style={{ fontSize: 11, color: "#f87171", flex: 1 }} numberOfLines={1}>
+                  <AlertTriangle size={12} color="#C85A3E" />
+                  <Text style={{ fontSize: 11, color: "#DC8470", flex: 1 }} numberOfLines={1}>
                     {checklist.overdueItems.length} overdue: {checklist.overdueItems[0]?.title}
                   </Text>
                 </View>
@@ -345,7 +356,7 @@ export default function ServicesScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 12, color: theme.colors.textSecondary }} numberOfLines={1}>{item.title}</Text>
                     {item.stateNote ? (
-                      <Text style={{ fontSize: 10, color: "#fbbf24" }} numberOfLines={2}>{item.stateNote}</Text>
+                      <Text style={{ fontSize: 10, color: "#EFC878" }} numberOfLines={2}>{item.stateNote}</Text>
                     ) : null}
                   </View>
                   {item.estimatedMinutes ? (
@@ -407,9 +418,9 @@ export default function ServicesScreen() {
                     {service.monthlyCost > 0 ? (
                       <Text style={styles.cost}>${service.monthlyCost.toLocaleString()}<Text style={styles.costPer}>/mo</Text></Text>
                     ) : (
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(245,158,11,0.1)", borderWidth: 1, borderColor: "rgba(245,158,11,0.25)" }}>
-                        <DollarSign size={10} color="#fbbf24" />
-                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#fbbf24" }}>Add cost</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(227, 176, 75,0.1)", borderWidth: 1, borderColor: "rgba(227, 176, 75,0.25)" }}>
+                        <DollarSign size={10} color="#EFC878" />
+                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#EFC878" }}>Add cost</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -517,7 +528,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.32)" },
+  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.32)" },
   addressChipText: { fontSize: 13, fontWeight: "700", color: theme.colors.textSecondary, textAlign: "center" },
   addressChipTextActive: { color: theme.colors.orange.text },
   filterRow: { marginBottom: 10 },
@@ -536,7 +547,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.3)" },
+  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.3)" },
   filterDot: { width: 8, height: 8, borderRadius: 4 },
   filterText: { flexShrink: 1, fontSize: 13, color: theme.colors.textSecondary, fontWeight: "700" },
   filterTextActive: { color: theme.colors.orange.text },
