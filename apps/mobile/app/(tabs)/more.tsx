@@ -27,6 +27,8 @@ import { theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { hapticLight, hapticWarning } from "@/lib/haptics";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { api } from "@/lib/api";
+import { unregisterPushNotifications } from "@/lib/push";
 
 interface MenuItem {
   icon: any;
@@ -54,6 +56,8 @@ export default function MoreScreen() {
         text: t("common.signOut"),
         style: "destructive",
         onPress: async () => {
+          await unregisterPushNotifications().catch(() => {});
+          await api.post("/api/auth/logout").catch(() => {});
           await clearSession();
           router.replace("/(auth)/sign-in");
         },

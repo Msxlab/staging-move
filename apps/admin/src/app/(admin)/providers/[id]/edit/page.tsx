@@ -39,6 +39,7 @@ export default function EditProviderPage() {
   const params = useParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [providerVersion, setProviderVersion] = useState<number | null>(null);
   const [form, setForm] = useState<ProviderFormState>({
     name: "", slug: "", category: DEFAULT_CATEGORY, subCategory: "",
     description: "", website: "", phone: "", logoUrl: "",
@@ -59,6 +60,7 @@ export default function EditProviderPage() {
         try { states = JSON.parse(p.states || "[]"); } catch {}
         try { zipCodes = JSON.parse(p.zipCodes || "[]"); } catch {}
         try { tags = JSON.parse(p.tags || "[]"); } catch {}
+        setProviderVersion(typeof p.version === "number" ? p.version : null);
         setForm({
           name: p.name || "", slug: p.slug || "", category: p.category || DEFAULT_CATEGORY,
           subCategory: p.subCategory || "", description: p.description || "",
@@ -84,6 +86,7 @@ export default function EditProviderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          version: providerVersion,
           tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
           states: form.scope === "FEDERAL" ? [] : form.states,
           zipCodes: form.scope === "FEDERAL"
@@ -91,7 +94,15 @@ export default function EditProviderPage() {
             : form.zipCodes.split(",").map((zip) => zip.trim()).filter(Boolean),
         }),
       });
-      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Failed"); return; }
+      if (!res.ok) {
+        const d = await res.json();
+        toast.error(
+          d.code === "OPTIMISTIC_LOCK_CONFLICT"
+            ? d.error
+            : d.error || "Failed to update provider",
+        );
+        return;
+      }
       toast.success("Provider updated");
       router.push("/providers");
     } catch { toast.error("Failed to update provider"); }

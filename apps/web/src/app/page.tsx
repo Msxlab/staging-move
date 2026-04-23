@@ -112,8 +112,11 @@ export default async function LandingPage() {
             <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {(await getTranslations("pricing"))("title").split(".")[0]}
             </Link>
-            <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               {t("section_how_title")}
+            </Link>
+            <Link href="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              FAQ
             </Link>
           </nav>
           <div className="flex items-center gap-1 md:gap-2">
@@ -163,7 +166,7 @@ export default async function LandingPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
-            <Link href="#how-it-works">
+            <Link href="/how-it-works">
               <Button variant="outline" size="lg" className="w-full sm:w-auto text-base px-8">
                 {t("heroSecondary")}
               </Button>
@@ -208,10 +211,10 @@ export default async function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[
             { icon: MapPin, titleKey: "feature_services_title", bodyKey: "feature_services_body" },
-            { icon: Zap, titleKey: "feature_services_title", bodyKey: "feature_services_body" },
-            { icon: Bell, titleKey: "feature_moving_title", bodyKey: "feature_moving_body" },
+            { icon: Zap, titleKey: "feature_community_title", bodyKey: "feature_community_body" },
+            { icon: Bell, titleKey: "feature_reminders_title", bodyKey: "feature_reminders_body" },
             { icon: DollarSign, titleKey: "feature_budget_title", bodyKey: "feature_budget_body" },
-            { icon: FileText, titleKey: "feature_budget_title", bodyKey: "feature_budget_body" },
+            { icon: FileText, titleKey: "feature_documents_title", bodyKey: "feature_documents_body" },
             { icon: Truck, titleKey: "feature_moving_title", bodyKey: "feature_moving_body" },
           ].map((feature, idx) => (
             <div
@@ -372,8 +375,8 @@ export default async function LandingPage() {
               <div className="space-y-2 text-sm text-muted-foreground">
                 <Link href="#features" className="block hover:text-foreground transition">{t("section_features_title")}</Link>
                 <Link href="#pricing" className="block hover:text-foreground transition">{(await getTranslations("pricing"))("title")}</Link>
-                <Link href="#how-it-works" className="block hover:text-foreground transition">{t("section_how_title")}</Link>
-                <Link href="#faq" className="block hover:text-foreground transition">FAQ</Link>
+                <Link href="/how-it-works" className="block hover:text-foreground transition">{t("section_how_title")}</Link>
+                <Link href="/faq" className="block hover:text-foreground transition">FAQ</Link>
               </div>
             </div>
             <div>
@@ -383,13 +386,18 @@ export default async function LandingPage() {
                 <Link href="/terms" className="block hover:text-foreground transition">{(await getTranslations("legal"))("terms_title")}</Link>
                 <Link href="/cookie-policy" className="block hover:text-foreground transition">{(await getTranslations("legal"))("cookie_title")}</Link>
                 <Link href="/disclaimer" className="block hover:text-foreground transition">{(await getTranslations("legal"))("disclaimer_title")}</Link>
+                <Link href="/refund" className="block hover:text-foreground transition">Refund policy</Link>
+                <Link href="/acceptable-use" className="block hover:text-foreground transition">Acceptable use</Link>
+                <Link href="/dpa" className="block hover:text-foreground transition">DPA</Link>
+                <Link href="/security" className="block hover:text-foreground transition">Security</Link>
+                <Link href="/ccpa-privacy-notice" className="block hover:text-foreground transition">California privacy</Link>
               </div>
             </div>
             <div>
               <h4 className="text-sm font-semibold mb-3">{tCommon("help")}</h4>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <Link href="/help" className="block hover:text-foreground transition">{(await getTranslations("help"))("title")}</Link>
-                <Link href="#faq" className="block hover:text-foreground transition">FAQ</Link>
+                <Link href="/faq" className="block hover:text-foreground transition">FAQ</Link>
                 <Link href="/contact" className="block hover:text-foreground transition">{tCommon("contact")}</Link>
               </div>
             </div>

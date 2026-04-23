@@ -122,6 +122,22 @@ function detectDatabaseTransportCheck(databaseUrl: string | undefined): Security
     };
   }
 
+  const skipsCertificateValidation =
+    normalized.includes("sslaccept=accept_invalid_certs") ||
+    normalized.includes("sslaccept=accept_invalid_hostnames") ||
+    normalized.includes("sslmode=disable") ||
+    normalized.includes("tls=false");
+
+  if (skipsCertificateValidation) {
+    return {
+      key: "database_transport",
+      label: "Database transport security",
+      status: "warn",
+      detail: "DATABASE_URL appears to allow TLS/SSL without strict certificate validation. Require verified certificates for production database traffic.",
+      source: "DERIVED",
+    };
+  }
+
   const hasExplicitTls =
     normalized.includes("sslmode=require") ||
     normalized.includes("sslaccept=strict") ||

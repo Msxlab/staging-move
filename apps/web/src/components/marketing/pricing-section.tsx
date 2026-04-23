@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, Lock, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { WaitlistForm } from "./waitlist-form";
 import {
   BILLING_PLAN_DEFINITIONS,
   UPCOMING_BILLING_PLAN_DEFINITIONS,
@@ -191,11 +192,17 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
               <Button variant="outline" className="w-full" disabled>
                 <Lock className="h-3.5 w-3.5 mr-2" /> {tPricing("cta_upgrade")}
               </Button>
-              <p className="text-[11px] text-center">
-                <Link href="/contact" className="underline hover:text-foreground">
-                  {tCommon("contact")}
-                </Link>
-              </p>
+              <div className="pt-2">
+                <WaitlistForm
+                  target={plan.id === "FAMILY" ? "PLAN_FAMILY" : "PLAN_PRO"}
+                  source={`pricing-${plan.id.toLowerCase()}`}
+                  submitLabel="Notify me at launch"
+                  helper="We'll email you the moment this plan opens. No marketing."
+                  successMessage={`You're on the list for ${plan.displayName}. We'll email you at launch.`}
+                  withNote={plan.id === "PRO"}
+                  compact
+                />
+              </div>
             </div>
           );
         })}

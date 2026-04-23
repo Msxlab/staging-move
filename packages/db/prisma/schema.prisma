@@ -1107,3 +1107,37 @@ model TicketMessage {
   @@index([ticketId, createdAt])
   @@index([senderId])
 }
+
+// Waitlist signups — captured from marketing pages for things that aren't
+// live yet (mobile apps, Family plan, Pro plan, API access).
+// Kept in a single table with a `target` discriminator so admin can pull
+// per-segment counts without scanning separate tables.
+model WaitlistSignup {
+  id        String @id @default(cuid()) @db.VarChar(30)
+  email     String @db.VarChar(255)
+  target    String @db.VarChar(30) // MOBILE_IOS, MOBILE_ANDROID, MOBILE_ANY, PLAN_FAMILY, PLAN_PRO, API_ACCESS
+  source    String? @db.VarChar(60) // landing-hero, pricing-family, pricing-pro, contact-form, ...
+
+  // Optional free-form note from the user ("I manage 40 rentals", etc.)
+  // Useful for prioritizing Pro / API outreach.
+  note      String? @db.Text
+
+  // Basic context captured at signup — helps admin triage and dedupe.
+  ipHash    String? @db.VarChar(64) // SHA-256 of request IP (privacy-friendly)
+  userAgent String? @db.VarChar(500)
+  locale    String? @db.VarChar(10)
+
+  // If the signup happens while the user is logged in, tie it back so admin
+  // can reach out through the existing account path.
+  userId    String? @db.VarChar(30)
+
+  // Outreach tracking — admin marks when a waitlist entry is contacted.
+  notifiedAt DateTime?
+  convertedAt DateTime? // User eventually subscribed / downloaded the app
+
+  createdAt DateTime @default(now())
+
+  @@unique([email, target])
+  @@index([target, createdAt])
+  @@index([userId])
+}

@@ -591,3 +591,59 @@
 .light .bg-orange-500 { color: rgb(255, 255, 255); }
 .light .bg-orange-500.text-white,
 .light span.bg-orange-500 { color: rgb(255, 255, 255); }
+
+/* =========================================================================
+   Brand mark animations (LocateFlow logo)
+   Ripple/float/sweep motion for the pin — mirrors design-system preview.
+   Disabled under prefers-reduced-motion.
+   ========================================================================= */
+.lf-ripple {
+  transform-origin: 80px 40px;
+  transform-box: fill-box;
+  animation: lf-ripple 2.4s cubic-bezier(.3,.7,.4,1) infinite;
+}
+.lf-ripple-2 { animation-delay: .8s; }
+@keyframes lf-ripple {
+  0%   { transform: scale(.35); opacity: 0; }
+  15%  { opacity: .9; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.lf-pin-float {
+  transform-origin: 80px 40px;
+  transform-box: fill-box;
+  animation: lf-float 3.8s ease-in-out infinite;
+}
+@keyframes lf-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
+.lf-pin-dot {
+  transform-origin: 80px 40px;
+  transform-box: fill-box;
+  animation: lf-dot 2.4s ease-in-out infinite;
+}
+@keyframes lf-dot {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(.7); }
+}
+
+.lf-sweep {
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  animation: lf-sweep 3.2s cubic-bezier(.4,.0,.2,1) infinite;
+}
+@keyframes lf-sweep {
+  0%   { stroke-dashoffset: 120; }
+  55%  { stroke-dashoffset: 0;   }
+  100% { stroke-dashoffset: -120;}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lf-ripple, .lf-pin-float, .lf-pin-dot, .lf-sweep {
+    animation: none;
+  }
+  .lf-sweep { stroke-dashoffset: 0; }
+  .lf-ripple { opacity: 0; }
+}

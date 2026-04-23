@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
   TouchableOpacity, Linking,
@@ -15,6 +15,12 @@ import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { registerForPushNotifications } from "@/lib/push";
 
+interface OAuthProviderStatus {
+  configured: boolean;
+  label: string;
+  message: string;
+}
+
 export default function SignInScreen() {
   const router = useRouter();
   const setSession = useAuthStore((s) => s.setSession);
@@ -26,8 +32,20 @@ export default function SignInScreen() {
   const [requiresMfa, setRequiresMfa] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
 
   const webBase = API_URL.replace(/\/api\/?$/, "");
+
+  useEffect(() => {
+    api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
+      .then((res) => setOauthProviders(res.data?.providers || null))
+      .catch(() => setOauthProviders(null));
+  }, []);
+
+  const googleReady = oauthProviders?.google?.configured ?? true;
+  const appleReady = oauthProviders?.apple?.configured ?? true;
+  const showOAuthReadinessNote =
+    Boolean(oauthProviders) && (!googleReady || !appleReady);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -88,17 +106,25 @@ export default function SignInScreen() {
         {!requiresMfa && (
           <>
             <Button
-              title={t("auth.continueWithGoogle")}
+              title={googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
               variant="outline"
               onPress={() => openOAuth("google")}
+              disabled={!googleReady}
               style={styles.oauthBtn}
             />
             <Button
-              title={t("auth.continueWithApple")}
+              title={appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
               variant="primary"
               onPress={() => openOAuth("apple")}
+              disabled={!appleReady}
               style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
             />
+
+            {showOAuthReadinessNote ? (
+              <Text style={styles.oauthNote}>
+                Password sign-in is available now. Social sign-in will turn on after admin OAuth credentials are added.
+              </Text>
+            ) : null}
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
@@ -179,11 +205,23 @@ const styles = StyleSheet.create({
   scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
   title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
-  error: { color: "#DC8470", fontSize: 13, marginBottom: 8 },
+  error: { color: "#f87171", fontSize: 13, marginBottom: 8 },
   oauthBtn: { marginBottom: 6 },
   divider: { flexDirection: "row", alignItems: "center", marginVertical: 12, gap: 8 },
   dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
   dividerText: { color: theme.colors.textMuted, fontSize: 10, letterSpacing: 1.5 },
+  oauthNote: {
+    color: "#fde68a",
+    fontSize: 12,
+    lineHeight: 18,
+    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.2)",
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
   linkRow: { alignItems: "center", marginTop: 10 },
   linkText: { color: theme.colors.textMuted, fontSize: 13 },
   linkEmphasis: { color: theme.colors.primary, fontWeight: "600" },

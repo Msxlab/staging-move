@@ -31,31 +31,20 @@ import {
 // ──────────────────────────────────────────────────────────────────────
 
 const darkColors = {
-  primary: brandColors.rose,
-  primaryLight: brandColors.roseLight,
-  primaryDark: brandColors.roseDeep,
-  primaryFaded: "rgba(212, 132, 106, 0.15)",
-  accent: brandColors.foil,
-  accentDeep: brandColors.foilShadow,
-
-  // Edition VI · canonical Champagne & Rose names exposed alongside
-  // the legacy `primary/accent` keys so new screens can read them direct.
-  rosePrimary: brandColors.rose,
-  roseLight: brandColors.roseLight,
-  roseDeep: brandColors.roseDeep,
-  foilA: brandColors.foilHighlight,
-  foilB: brandColors.foil,
-  foilC: brandColors.foilShadow,
-  sage: brandColors.sage,
+  primary: brandColors.orange,
+  primaryLight: brandColors.orangeLight,
+  primaryDark: brandColors.orangeDark,
+  primaryFaded: "rgba(249, 115, 22, 0.15)",
+  accent: brandColors.amber,
 
   success: semanticColors.success,
-  successFaded: "rgba(94, 173, 154, 0.15)",
+  successFaded: "rgba(16, 185, 129, 0.15)",
   warning: semanticColors.warning,
-  warningFaded: "rgba(227, 176, 75, 0.15)",
+  warningFaded: "rgba(245, 158, 11, 0.15)",
   error: semanticColors.danger,
-  errorFaded: "rgba(200, 90, 62, 0.15)",
+  errorFaded: "rgba(239, 68, 68, 0.15)",
   info: semanticColors.info,
-  infoFaded: "rgba(138, 169, 192, 0.15)",
+  infoFaded: "rgba(59, 130, 246, 0.15)",
 
   background: surfaceDark.background,
   surface: surfaceDark.surface,
@@ -65,56 +54,43 @@ const darkColors = {
 
   border: borderDark.default,
   borderLight: borderDark.strong,
-  borderFoil: borderDark.foil,
   borderFocus: borderDark.focus,
 
-  // Mobile glass — cream alpha on umber so the foil can breathe through.
+  // Mobile glass uses slightly richer alpha than shared glassDark
+  // (keeps legacy visual weight for sheets & sticky chrome).
   glass: {
-    bg: "rgba(245, 241, 234, 0.05)",
-    border: "rgba(245, 241, 234, 0.10)",
-    highlight: "rgba(245, 241, 234, 0.07)",
+    bg: "rgba(255, 255, 255, 0.06)",
+    border: "rgba(255, 255, 255, 0.12)",
+    highlight: "rgba(255, 255, 255, 0.08)",
   },
 
-  // Cream ink on umber — replaces the legacy pure white.
-  text: "#F5F1EA",
+  // Mobile historically used hex white + 0.4 tertiary; keep those exact
+  // values for pixel parity with existing screens.
+  text: "#ffffff",
   textSecondary: textDark.secondary,
-  textTertiary: "rgba(245, 241, 234, 0.38)",
+  textTertiary: "rgba(255, 255, 255, 0.4)",
   textMuted: textDark.muted,
 
   orange: tonesDark.orange,
   emerald: tonesDark.emerald,
   amber: tonesDark.amber,
   rose: tonesDark.rose,
-  foil: tonesDark.foil,
-  sageT: tonesDark.sage,
-  honey: tonesDark.honey,
-  umber: tonesDark.umber,
-  slate: tonesDark.slate,
   sky: tonesDark.sky,
   cyan: tonesDark.cyan,
 
   gradient: {
-    primary: gradients.foil as readonly [string, string, string],
-    foil: gradients.foil as readonly [string, string, string],
-    rose: gradients.rose as readonly [string, string],
+    primary: gradients.primary as readonly [string, string],
     warm: gradients.warm as readonly [string, string],
     glow: gradients.glow as readonly [string, string],
   },
 } as const;
 
-// Light palette — ivory paper, deeper rose for contrast. Same shape
-// as darkColors so any `Theme`-typed component can swap palettes.
+// Light palette — same brand orange, surfaces inverted, text darkened.
+// Tones chosen to hit WCAG AA on common Tailwind-ish contrast checks.
 const lightColors = {
   ...darkColors,
 
-  // Rose deepens a hair on paper for AA contrast over ivory.
-  primary: "#B85A42",
-  primaryLight: "#D4846A",
-  primaryDark: "#8B3E28",
-  primaryFaded: "rgba(184, 90, 66, 0.10)",
-  rosePrimary: "#B85A42",
-  roseLight: "#D4846A",
-  roseDeep: "#8B3E28",
+  primaryFaded: "rgba(249, 115, 22, 0.10)",
 
   background: surfaceLight.background,
   surface: surfaceLight.surface,
@@ -124,16 +100,15 @@ const lightColors = {
 
   border: borderLight.default,
   borderLight: borderLight.strong,
-  borderFoil: borderLight.foil,
   borderFocus: borderLight.focus,
 
   glass: {
-    bg: "rgba(255, 255, 255, 0.70)",
-    border: "rgba(42, 31, 24, 0.08)",
-    highlight: "rgba(42, 31, 24, 0.04)",
+    bg: "rgba(15, 23, 42, 0.04)",
+    border: "rgba(15, 23, 42, 0.08)",
+    highlight: "rgba(15, 23, 42, 0.04)",
   },
 
-  text: "#2A1F18",
+  text: "#0f172a",
   textSecondary: textLight.secondary,
   textTertiary: textLight.tertiary,
   textMuted: textLight.muted,
@@ -142,39 +117,8 @@ const lightColors = {
   emerald: tonesLight.emerald,
   amber: tonesLight.amber,
   rose: tonesLight.rose,
-  foil: tonesLight.foil,
-  sageT: tonesLight.sage,
-  honey: tonesLight.honey,
-  umber: tonesLight.umber,
-  slate: tonesLight.slate,
   sky: tonesLight.sky,
   cyan: tonesLight.cyan,
-} as const;
-
-// ──────────────────────────────────────────────────────────────────────
-// Typography — Edition VI font family names match the fonts registered
-// in `app/_layout.tsx` via @expo-google-fonts. Use these in StyleSheets:
-//
-//   title: { fontFamily: theme.typography.display, fontSize: 28 }
-//   italic: { fontFamily: theme.typography.displayItalic }
-//
-// When a screen is on NativeWind, prefer the tailwind classes
-// (`font-display`, `font-sans`, `font-mono`) — they resolve to the same
-// registered family names from `tailwind.config.ts`.
-// ──────────────────────────────────────────────────────────────────────
-const typography = {
-  display: "Fraunces",
-  displayLight: "Fraunces-Light",
-  displayMedium: "Fraunces-Medium",
-  displayItalic: "Fraunces-Italic",
-  displayLightItalic: "Fraunces-LightItalic",
-  sans: "Geist",
-  sansLight: "Geist-Light",
-  sansMedium: "Geist-Medium",
-  sansSemiBold: "Geist-SemiBold",
-  sansBold: "Geist-Bold",
-  mono: "GeistMono",
-  monoMedium: "GeistMono-Medium",
 } as const;
 
 export const theme = {
@@ -182,7 +126,6 @@ export const theme = {
   spacing: tokenSpacing,
   radius: tokenRadii,
   shadow: shadowsMobile,
-  typography,
 } as const;
 
 export type Theme = typeof theme;

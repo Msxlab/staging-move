@@ -98,7 +98,10 @@ export async function GET() {
           })
         : [];
     const creatorLabels = new Map(
-      adminUsers.map((admin) => [admin.id, admin.email]),
+      adminUsers.map((admin: { id: string; email: string | null }) => [
+        admin.id,
+        admin.email,
+      ]),
     );
     const storage = await getBackupStorageSummary();
 

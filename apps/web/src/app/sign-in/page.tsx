@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+interface OAuthProviderStatus {
+  configured: boolean;
+  label: string;
+  message: string;
+}
 
 function SignInForm() {
   const router = useRouter();
@@ -41,6 +47,19 @@ function SignInForm() {
       ? tAuth(OAUTH_ERROR_KEYS[oauthErrorKey] || "error_generic")
       : null,
   );
+  const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/oauth/providers", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => setOauthProviders(data.providers || null))
+      .catch(() => setOauthProviders(null));
+  }, []);
+
+  const googleReady = oauthProviders?.google?.configured ?? true;
+  const appleReady = oauthProviders?.apple?.configured ?? true;
+  const showOAuthReadinessNote =
+    Boolean(oauthProviders) && (!googleReady || !appleReady);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,9 +114,13 @@ function SignInForm() {
 
         {!requiresMfa && (
           <div className="space-y-2">
-            <a
-              href={`/api/auth/oauth/google?redirect=${encodeURIComponent(redirectTo)}`}
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition"
+            <button
+              type="button"
+              disabled={!googleReady}
+              onClick={() => {
+                window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(redirectTo)}`;
+              }}
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white/5"
             >
               {/* Google G logo */}
               <svg className="h-4 w-4" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -106,17 +129,27 @@ function SignInForm() {
                 <path fill="#4CAF50" d="M24 44c5.3 0 10-2 13.6-5.3l-6.3-5.3A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/>
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3A12 12 0 0 1 31.3 33.4l6.3 5.3C37.2 39.8 44 34.7 44 24c0-1.2-.1-2.4-.4-3.5z"/>
               </svg>
-              {tAuth("continueWithGoogle")}
-            </a>
-            <a
-              href={`/api/auth/oauth/apple?redirect=${encodeURIComponent(redirectTo)}`}
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-black hover:bg-black/80 px-4 py-2.5 text-sm font-medium text-white transition"
+              {googleReady ? tAuth("continueWithGoogle") : "Google sign-in unavailable"}
+            </button>
+            <button
+              type="button"
+              disabled={!appleReady}
+              onClick={() => {
+                window.location.href = `/api/auth/oauth/apple?redirect=${encodeURIComponent(redirectTo)}`;
+              }}
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-black hover:bg-black/80 px-4 py-2.5 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
               </svg>
-              {tAuth("continueWithApple")}
-            </a>
+              {appleReady ? tAuth("continueWithApple") : "Apple sign-in unavailable"}
+            </button>
+
+            {showOAuthReadinessNote && (
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+                Password sign-in is available now. Social sign-in will be enabled after admin OAuth credentials are added.
+              </div>
+            )}
 
             <div className="flex items-center gap-3 py-1">
               <div className="flex-1 h-px bg-white/10" />

@@ -78,17 +78,16 @@ function generatePDF(address: AddressInfo, userName: string) {
     .bar-fill { height: 100%; border-radius: 6px; }
     .bar-value { font-size: 12px; font-weight: 600; color: #475569; width: 80px; text-align: right; }
     .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; color: #94a3b8; font-size: 11px; }
-    /* Edition VI tonal palette — six brand tones, cycled across categories. */
-    .cat-utility .bar-fill { background: #E3B04B; }     /* honey */
-    .cat-financial .bar-fill { background: #5EAD9A; }   /* sage */
-    .cat-housing .bar-fill { background: #8AA9C0; }     /* slate */
-    .cat-healthcare .bar-fill { background: #C85A3E; }  /* warm-red (danger family) */
-    .cat-government .bar-fill { background: #A85A42; }  /* rose-deep */
-    .cat-transportation .bar-fill { background: #8AA9C0; } /* slate */
-    .cat-kids .bar-fill { background: #EDB99D; }        /* rose-light */
-    .cat-fitness .bar-fill { background: #D4846A; }     /* rose */
-    .cat-shopping .bar-fill { background: #B8936C; }    /* foil-c */
-    .cat-other .bar-fill { background: #8E6D4A; }       /* foil-ink */
+    .cat-utility .bar-fill { background: #f59e0b; }
+    .cat-financial .bar-fill { background: #10b981; }
+    .cat-housing .bar-fill { background: #0ea5e9; }
+    .cat-healthcare .bar-fill { background: #f43f5e; }
+    .cat-government .bar-fill { background: #ef4444; }
+    .cat-transportation .bar-fill { background: #3b82f6; }
+    .cat-kids .bar-fill { background: #a855f7; }
+    .cat-fitness .bar-fill { background: #f97316; }
+    .cat-shopping .bar-fill { background: #ec4899; }
+    .cat-other .bar-fill { background: #6b7280; }
   </style>
 </head>
 <body>

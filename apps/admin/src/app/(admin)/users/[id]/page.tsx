@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
 async function readAdminApiError(response: Response, fallback: string) {
@@ -31,10 +31,13 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
+  const [loginSessions, setLoginSessions] = useState<any[]>([]);
   const [recentEvents, setRecentEvents] = useState<any[]>([]);
   const [eventCounts, setEventCounts] = useState<any[]>([]);
   const [pushDevices, setPushDevices] = useState<any[]>([]);
   const [supportTickets, setSupportTickets] = useState<any[]>([]);
+  const [gdprRequests, setGdprRequests] = useState<any[]>([]);
+  const [adminNotes, setAdminNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,6 +48,9 @@ export default function UserDetailPage() {
   });
   const [savingPremium, setSavingPremium] = useState(false);
   const [premiumError, setPremiumError] = useState<string | null>(null);
+  const [newAdminNote, setNewAdminNote] = useState("");
+  const [savingAdminNote, setSavingAdminNote] = useState(false);
+  const [revokingLoginSessions, setRevokingLoginSessions] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -55,10 +61,13 @@ export default function UserDetailPage() {
         setUser(data.user);
         setAuditLogs(data.auditLogs || []);
         setSessions(data.sessions || []);
+        setLoginSessions(data.loginSessions || []);
         setRecentEvents(data.recentEvents || []);
         setEventCounts(data.eventCounts || []);
         setPushDevices(data.pushDevices || []);
         setSupportTickets(data.user?.supportTickets || []);
+        setGdprRequests(data.gdprRequests || []);
+        setAdminNotes(data.adminNotes || []);
         if (data.user) {
           setEditForm({
             firstName: data.user.firstName || "",
@@ -81,13 +90,83 @@ export default function UserDetailPage() {
   async function handleDelete() {
     if (!user) return;
     if (!confirm(`Queue staged deletion for user ${user.email}? This cannot be undone.`)) return;
+    const confirmPassword = window.prompt(
+      "Confirm your admin password to queue this deletion.",
+    );
+    if (!confirmPassword) return;
     try {
-      const res = await fetch(`/api/users/${params.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error || "Failed to delete"); return; }
       toast.success(data.message || "User deletion queued");
       router.push("/users");
     } catch { toast.error("Failed to delete user"); }
+  }
+
+  async function handleAddAdminNote() {
+    if (!newAdminNote.trim()) {
+      toast.error("Enter a note before saving.");
+      return;
+    }
+
+    setSavingAdminNote(true);
+    try {
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add_note", note: newAdminNote }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Failed to save note.");
+        return;
+      }
+      setAdminNotes((prev) => [data.note, ...prev]);
+      setNewAdminNote("");
+      toast.success("Admin note added.");
+    } catch {
+      toast.error("Failed to save note.");
+    } finally {
+      setSavingAdminNote(false);
+    }
+  }
+
+  async function handleRevokeLoginSessions(sessionId?: string) {
+    setRevokingLoginSessions(true);
+    try {
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          sessionId
+            ? { action: "revoke_login_session", sessionId }
+            : { action: "revoke_all_login_sessions" },
+        ),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Failed to revoke login session.");
+        return;
+      }
+      setLoginSessions((prev) =>
+        prev.map((session: any) =>
+          !sessionId || session.id === sessionId
+            ? { ...session, isActive: false, lastActivity: new Date().toISOString() }
+            : session,
+        ),
+      );
+      toast.success(
+        sessionId ? "Login session revoked." : `${data.revoked || 0} login sessions revoked.`,
+      );
+    } catch {
+      toast.error("Failed to revoke login sessions.");
+    } finally {
+      setRevokingLoginSessions(false);
+    }
   }
 
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
@@ -99,10 +178,17 @@ export default function UserDetailPage() {
   const totalServices = addressList.reduce((sum: number, addr: any) => sum + (addr.services?.length || 0), 0);
   const activeMove = movingPlans.find((plan: any) => plan.status === "IN_PROGRESS" || plan.status === "PLANNING") || movingPlans[0] || null;
   const lastSession = sessions[0] || null;
+  const lastLoginSession = loginSessions[0] || null;
   const lastSeenAt = lastSession?.lastActivity || lastSession?.sessionStart || recentEvents[0]?.createdAt || null;
   const daysSinceLastSeen = lastSeenAt
     ? Math.floor((Date.now() - new Date(lastSeenAt).getTime()) / (24 * 60 * 60 * 1000))
     : null;
+  const linkedProviders = Array.isArray(user.oauthAccounts) ? user.oauthAccounts : [];
+  const activeLoginSessions = loginSessions.filter((session: any) => session.isActive);
+  const hasPasswordLogin = Boolean(user.passwordHash);
+  const latestVerificationToken = user.emailVerificationTokens?.[0] || null;
+  const latestPasswordReset = user.passwordResetTokens?.[0] || null;
+  const latestConsentByCategory = buildLatestConsentEntries(user.dataConsents || []);
   const onboardingChecks = [
     { label: "Profile", complete: !!user.profile, detail: user.profile ? user.profile.moveType || "Profile saved" : "Missing" },
     { label: "Primary address", complete: !!primaryAddress, detail: primaryAddress ? `${primaryAddress.city}, ${primaryAddress.state}` : "Missing" },
@@ -322,6 +408,267 @@ export default function UserDetailPage() {
             ) : (
               <p className="text-sm text-muted-foreground">No obvious onboarding or auth blockers detected.</p>
             )}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-foreground">
+            <KeyRound className="mr-2 inline h-5 w-5" /> Account Security & Access
+          </h2>
+          <button
+            onClick={() => handleRevokeLoginSessions()}
+            disabled={revokingLoginSessions || activeLoginSessions.length === 0}
+            className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+          >
+            {revokingLoginSessions ? "Revoking..." : "Revoke All Login Sessions"}
+          </button>
+        </div>
+
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <InfoCard label="Email Verified" value={user.emailVerifiedAt ? "Verified" : "Pending"} />
+          <InfoCard label="Password Login" value={hasPasswordLogin ? "Enabled" : "OAuth Only"} />
+          <InfoCard label="MFA" value={user.mfaEnabled ? "Enabled" : "Off"} />
+          <InfoCard label="Linked Providers" value={linkedProviders.length} />
+          <InfoCard label="Active Login Sessions" value={activeLoginSessions.length} />
+          <InfoCard label="Locale" value={user.preferredLocale || "System"} />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Linked Sign-In Methods</p>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${hasPasswordLogin ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}>
+                  Password
+                </span>
+                {linkedProviders.map((account: any) => (
+                  <span key={account.id} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                    {formatAuthProvider(account.provider)}
+                  </span>
+                ))}
+                {linkedProviders.length === 0 && !hasPasswordLogin && (
+                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-500">
+                    No sign-in method found
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2 text-sm">
+                {linkedProviders.map((account: any) => (
+                  <div key={account.id} className="rounded-lg bg-background/70 px-3 py-2">
+                    <p className="font-medium text-foreground">{formatAuthProvider(account.provider)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Linked {new Date(account.createdAt).toLocaleString()} · ID {maskProviderIdentifier(account.providerId)}
+                    </p>
+                  </div>
+                ))}
+                {linkedProviders.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No OAuth provider is linked to this account yet.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Verification & Recovery</p>
+              <div className="space-y-2 text-sm">
+                <div className="rounded-lg bg-background/70 px-3 py-2">
+                  <p className="font-medium text-foreground">
+                    Email verification
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {user.emailVerifiedAt
+                      ? `Verified on ${new Date(user.emailVerifiedAt).toLocaleString()}`
+                      : latestVerificationToken
+                        ? `Latest token ${new Date(latestVerificationToken.createdAt).toLocaleString()} · ${latestVerificationToken.consumedAt ? "Consumed" : "Pending"}`
+                        : "No verification token activity recorded"}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-background/70 px-3 py-2">
+                  <p className="font-medium text-foreground">
+                    Password reset
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {latestPasswordReset
+                      ? `Latest token ${new Date(latestPasswordReset.createdAt).toLocaleString()} · ${latestPasswordReset.usedAt ? "Used" : "Unused"}`
+                      : "No password reset activity recorded"}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-background/70 px-3 py-2">
+                  <p className="font-medium text-foreground">
+                    Latest authenticated login
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {lastLoginSession
+                      ? `${new Date(lastLoginSession.lastActivity || lastLoginSession.createdAt).toLocaleString()} · ${lastLoginSession.browser || "Unknown browser"}${lastLoginSession.os ? ` / ${lastLoginSession.os}` : ""}`
+                      : "No login-session record found"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <p className="text-xs font-medium uppercase text-muted-foreground mb-3">User Login Sessions</p>
+            {loginSessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No authenticated login sessions found for this user.</p>
+            ) : (
+              <div className="space-y-2">
+                {loginSessions.map((session: any) => (
+                  <div key={session.id} className="rounded-lg bg-background/70 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${session.isActive ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}>
+                            {session.isActive ? "Active" : "Revoked"}
+                          </span>
+                          {session.impersonatedByAdminId && (
+                            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-500">
+                              Impersonated
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-2 text-sm font-medium text-foreground">
+                          {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}{session.deviceType ? ` · ${session.deviceType}` : ""}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {session.ipAddress || "No IP"} · Created {new Date(session.createdAt).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Last activity {new Date(session.lastActivity).toLocaleString()} · Expires {new Date(session.expiresAt).toLocaleString()}
+                        </p>
+                      </div>
+                      {session.isActive && (
+                        <button
+                          onClick={() => handleRevokeLoginSessions(session.id)}
+                          disabled={revokingLoginSessions}
+                          className="shrink-0 rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                        >
+                          Revoke
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">
+          <Shield className="mr-2 inline h-5 w-5" /> Privacy, GDPR & Admin Notes
+        </h2>
+        <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="space-y-4">
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Current Consent State</p>
+              {latestConsentByCategory.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No consent history recorded yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {latestConsentByCategory.map((entry: any) => (
+                    <span
+                      key={`${entry.category}-${entry.createdAt}`}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${entry.granted ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}
+                    >
+                      {formatConsentCategory(entry.category)}: {entry.granted ? "Granted" : "Off"}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {user.dataConsents?.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {user.dataConsents.slice(0, 6).map((entry: any) => (
+                    <div key={entry.id} className="rounded-lg bg-background/70 px-3 py-2 text-xs text-muted-foreground">
+                      {formatConsentCategory(entry.category)} · {entry.granted ? "Granted" : "Revoked"} · {new Date(entry.createdAt).toLocaleString()}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <p className="text-xs font-medium uppercase text-muted-foreground mb-3">GDPR Requests</p>
+              {gdprRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No GDPR export/delete/rectify requests on record.</p>
+              ) : (
+                <div className="space-y-2">
+                  {gdprRequests.map((request: any) => (
+                    <div key={request.id} className="rounded-lg bg-background/70 px-3 py-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{request.type}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Requested {new Date(request.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          request.status === "COMPLETED"
+                            ? "bg-green-500/10 text-green-500"
+                            : request.status === "REJECTED"
+                              ? "bg-red-500/10 text-red-500"
+                              : request.status === "PROCESSING"
+                                ? "bg-blue-500/10 text-blue-500"
+                                : "bg-amber-500/10 text-amber-500"
+                        }`}>
+                          {request.status}
+                        </span>
+                      </div>
+                      {request.completedAt && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Completed {new Date(request.completedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Admin Notes</p>
+            <div className="space-y-3">
+              <textarea
+                value={newAdminNote}
+                onChange={(event) => setNewAdminNote(event.target.value)}
+                rows={4}
+                placeholder="Add an internal note for support, trust/safety, or ops handoff..."
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+              />
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAddAdminNote}
+                  disabled={savingAdminNote || !newAdminNote.trim()}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {savingAdminNote ? "Saving..." : "Add Note"}
+                </button>
+              </div>
+              <div className="space-y-2">
+                {adminNotes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No internal notes yet.</p>
+                ) : (
+                  adminNotes.map((note: any) => (
+                    <div key={note.id} className="rounded-lg bg-background/70 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium text-foreground">
+                          {note.adminUser?.firstName} {note.adminUser?.lastName}
+                        </p>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(note.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">
+                        {extractAdminNote(note)}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -794,6 +1141,53 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
       <p className="mt-1 text-xl font-bold text-foreground">{value}</p>
     </div>
   );
+}
+
+function InfoCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-lg bg-muted/30 p-4">
+      <p className="text-[10px] font-medium uppercase text-muted-foreground mb-1">{label}</p>
+      <p className="text-sm font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function buildLatestConsentEntries(entries: any[]) {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.category)) return false;
+    seen.add(entry.category);
+    return true;
+  });
+}
+
+function formatConsentCategory(category: string) {
+  return category
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatAuthProvider(provider: string) {
+  if (provider === "google") return "Google";
+  if (provider === "apple") return "Apple";
+  return provider;
+}
+
+function maskProviderIdentifier(value: string | null | undefined) {
+  if (!value) return "—";
+  if (value.length <= 10) return value;
+  return `${value.slice(0, 4)}…${value.slice(-4)}`;
+}
+
+function extractAdminNote(note: any) {
+  try {
+    const parsed = JSON.parse(note?.changes || "{}");
+    return typeof parsed.note === "string" ? parsed.note : "Internal note";
+  } catch {
+    return typeof note?.changes === "string" ? note.changes : "Internal note";
+  }
 }
 
 function InfoItem({ label, value }: { label: string; value: string | number }) {

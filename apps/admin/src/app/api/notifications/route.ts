@@ -68,9 +68,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title and body required" }, { status: 400 });
     }
 
+    const scheduledFor = sendAt ? new Date(sendAt) : new Date();
+    if (sendAt && scheduledFor.getTime() > Date.now() + 60 * 1000) {
+      return NextResponse.json(
+        {
+          error:
+            "Scheduled notification delivery is not enabled yet. Send immediately for now.",
+        },
+        { status: 400 },
+      );
+    }
+
     if (broadcast) {
       const users = await prisma.user.findMany({ select: { id: true } });
-      const notifications = users.map((u) => ({
+      const notifications = users.map((u: { id: string }) => ({
         userId: u.id,
         type: type || "SYSTEM",
         title,
@@ -79,7 +90,7 @@ export async function POST(req: NextRequest) {
         channel: channel || "IN_APP",
         sent: true,
         sentAt: new Date(),
-        sendAt: sendAt ? new Date(sendAt) : new Date(),
+        sendAt: scheduledFor,
       }));
 
       await prisma.notification.createMany({ data: notifications });
@@ -92,10 +103,26 @@ export async function POST(req: NextRequest) {
           body: msgBody,
           href,
           channel: channel || "IN_APP",
-          sendAt: sendAt ? new Date(sendAt) : new Date(),
+          sendAt: scheduledFor,
           sent: true,
           sentAt: new Date(),
           createdBy: session.adminId,
+        },
+      });
+
+      await prisma.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "SEND_NOTIFICATION",
+          entityType: "Notification",
+          entityId: "broadcast",
+          changes: JSON.stringify({
+            broadcast: true,
+            channel: channel || "IN_APP",
+            type: type || "SYSTEM",
+            count: users.length,
+          }),
+          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
         },
       });
 
@@ -116,7 +143,23 @@ export async function POST(req: NextRequest) {
         channel: channel || "IN_APP",
         sent: true,
         sentAt: new Date(),
-        sendAt: sendAt ? new Date(sendAt) : new Date(),
+        sendAt: scheduledFor,
+      },
+    });
+
+    await prisma.adminAuditLog.create({
+      data: {
+        adminUserId: session.adminId,
+        action: "SEND_NOTIFICATION",
+        entityType: "Notification",
+        entityId: notification.id,
+        changes: JSON.stringify({
+          broadcast: false,
+          userId,
+          channel: channel || "IN_APP",
+          type: type || "SYSTEM",
+        }),
+        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
       },
     });
 

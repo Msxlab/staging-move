@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, MessageSquare, ChevronRight } from "lucide-react";
+import { Loader2, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const statusBadge: Record<string, string> = {
@@ -27,6 +27,7 @@ interface Ticket {
   category: string;
   status: string;
   priority: string;
+  assignedTo: string | null;
   updatedAt: string;
   createdAt: string;
   user: { id: string; firstName: string | null; lastName: string | null; email: string | null };
@@ -34,21 +35,37 @@ interface Ticket {
   _count: { messages: number };
 }
 
-const STATUS_FILTERS = ["", "OPEN", "IN_PROGRESS", "WAITING_USER", "CLOSED"];
+const STATUS_FILTERS = ["", "OPEN", "IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOSED"];
+const CATEGORY_FILTERS = ["", "GENERAL", "BUG", "BILLING", "ACCOUNT", "FEATURE_REQUEST"];
+const PRIORITY_FILTERS = ["", "LOW", "MEDIUM", "HIGH", "URGENT"];
+const ASSIGNMENT_FILTERS = [
+  { value: "", label: "All Assignments" },
+  { value: "me", label: "Assigned To Me" },
+  { value: "unassigned", label: "Unassigned" },
+];
 
 export default function AdminSupportPage() {
   const router = useRouter();
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [stats, setStats] = useState({ open: 0, inProgress: 0, waitingUser: 0, urgent: 0 });
+  const [stats, setStats] = useState({ open: 0, inProgress: 0, waitingUser: 0, urgent: 0, myTickets: 0 });
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
+  const [assignmentFilter, setAssignmentFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 1 });
 
   const fetchTickets = useCallback(async () => {
     const params = new URLSearchParams();
     if (statusFilter) params.set("status", statusFilter);
+    if (categoryFilter) params.set("category", categoryFilter);
+    if (priorityFilter) params.set("priority", priorityFilter);
+    if (assignmentFilter) params.set("assignedTo", assignmentFilter);
     if (search) params.set("search", search);
-    params.set("limit", "50");
+    params.set("page", String(page));
+    params.set("limit", "25");
     const res = await fetch(`/api/tickets?${params.toString()}`);
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -62,7 +79,8 @@ export default function AdminSupportPage() {
     }
     setTickets(data.tickets || []);
     if (data.stats) setStats(data.stats);
-  }, [router, statusFilter, search]);
+    if (data.pagination) setPagination(data.pagination);
+  }, [assignmentFilter, categoryFilter, page, priorityFilter, router, search, statusFilter]);
 
   useEffect(() => {
     setLoading(true);
@@ -77,12 +95,13 @@ export default function AdminSupportPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {[
           { label: "Open", value: stats.open, cls: "text-blue-500" },
           { label: "In Progress", value: stats.inProgress, cls: "text-amber-500" },
           { label: "Waiting User", value: stats.waitingUser, cls: "text-orange-500" },
           { label: "Urgent", value: stats.urgent, cls: "text-red-500" },
+          { label: "My Queue", value: stats.myTickets, cls: "text-emerald-500" },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4">
             <p className={`text-2xl font-bold ${s.cls}`}>{s.value}</p>
@@ -97,20 +116,85 @@ export default function AdminSupportPage() {
           type="text"
           placeholder="Search subject or email..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-56"
         />
         <div className="flex gap-1">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s || "all"}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => {
+                setStatusFilter(s);
+                setPage(1);
+              }}
               className={`px-3 py-1 rounded-lg text-xs font-medium transition ${statusFilter === s ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground hover:text-foreground"}`}
             >
               {s || "All"}
             </button>
           ))}
         </div>
+        <select
+          value={categoryFilter}
+          onChange={(e) => {
+            setCategoryFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        >
+          <option value="">All Categories</option>
+          {CATEGORY_FILTERS.filter(Boolean).map((category) => (
+            <option key={category} value={category}>
+              {category.replace("_", " ")}
+            </option>
+          ))}
+        </select>
+        <select
+          value={priorityFilter}
+          onChange={(e) => {
+            setPriorityFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        >
+          <option value="">All Priorities</option>
+          {PRIORITY_FILTERS.filter(Boolean).map((priority) => (
+            <option key={priority} value={priority}>
+              {priority}
+            </option>
+          ))}
+        </select>
+        <select
+          value={assignmentFilter}
+          onChange={(e) => {
+            setAssignmentFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground"
+        >
+          {ASSIGNMENT_FILTERS.map((assignment) => (
+            <option key={assignment.value || "all"} value={assignment.value}>
+              {assignment.label}
+            </option>
+          ))}
+        </select>
+        {(statusFilter || categoryFilter || priorityFilter || assignmentFilter || search) && (
+          <button
+            onClick={() => {
+              setStatusFilter("");
+              setCategoryFilter("");
+              setPriorityFilter("");
+              setAssignmentFilter("");
+              setSearch("");
+              setPage(1);
+            }}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -130,6 +214,7 @@ export default function AdminSupportPage() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">User</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Priority</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Assignment</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Updated</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -156,6 +241,13 @@ export default function AdminSupportPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {ticket.assignedTo
+                      ? assignmentFilter === "me"
+                        ? "Me"
+                        : "Assigned"
+                      : "Unassigned"}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
                     {new Date(ticket.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </td>
                   <td className="px-4 py-3">
@@ -169,6 +261,34 @@ export default function AdminSupportPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Showing {(pagination.page - 1) * pagination.limit + 1}-
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={pagination.page <= 1}
+              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-xs text-muted-foreground">
+              Page {pagination.page} / {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+              disabled={pagination.page >= pagination.totalPages}
+              className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -43,26 +43,22 @@ export function LogoBrand({ size = "md", showText = true }: LogoBrandProps) {
           fill="none"
         >
           <Defs>
-            {/* Edition VI · pin draws from rose-light → rose for the body. */}
             <LinearGradient id="pinGrad" x1="20" y1="8" x2="44" y2="56">
-              <Stop offset="0%" stopColor="#EDB99D" />
-              <Stop offset="100%" stopColor="#D4846A" />
+              <Stop offset="0%" stopColor="#FB923C" />
+              <Stop offset="100%" stopColor="#F97316" />
             </LinearGradient>
-            {/* Inner dot — full foil gradient (the brand's hero treatment). */}
             <LinearGradient id="dotGrad" x1="26" y1="30" x2="38" y2="42">
-              <Stop offset="0%" stopColor="#F4E4D0" />
-              <Stop offset="50%" stopColor="#E5C9A8" />
-              <Stop offset="100%" stopColor="#B8936C" />
+              <Stop offset="0%" stopColor="#FBBF24" />
+              <Stop offset="100%" stopColor="#F97316" />
             </LinearGradient>
-            {/* Flow waves arc from rose into foil — the wordmark "flow". */}
             <LinearGradient id="waveGrad" x1="12" y1="48" x2="52" y2="48">
-              <Stop offset="0%" stopColor="#D4846A" stopOpacity="0.6" />
-              <Stop offset="50%" stopColor="#E5C9A8" stopOpacity="0.9" />
-              <Stop offset="100%" stopColor="#B8936C" stopOpacity="0.4" />
+              <Stop offset="0%" stopColor="#F97316" stopOpacity="0.6" />
+              <Stop offset="50%" stopColor="#FBBF24" stopOpacity="0.9" />
+              <Stop offset="100%" stopColor="#F97316" stopOpacity="0.4" />
             </LinearGradient>
           </Defs>
           {/* Subtle glow */}
-          <Circle cx="32" cy="32" r="22" fill="#D4846A" opacity={0.06} />
+          <Circle cx="32" cy="32" r="22" fill="#F97316" opacity={0.06} />
           {/* Pin body outline */}
           <Path
             d="M32 10C32 10 18 26 18 36C18 43.7 24.3 50 32 50C39.7 50 46 43.7 46 36C46 26 32 10 32 10Z"
@@ -110,22 +106,19 @@ const styles = StyleSheet.create({
   iconWrap: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(212, 132, 106, 0.1)",
+    backgroundColor: "rgba(249, 115, 22, 0.1)",
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106, 0.25)",
+    borderColor: "rgba(249, 115, 22, 0.25)",
     ...theme.shadow.glow,
   },
   brandText: {
-    // Edition VI wordmark — Fraunces light, italic em on "Flow" with foil.
-    fontFamily: "Fraunces-Light",
+    fontWeight: "800",
     letterSpacing: -0.5,
   },
   brandLocate: {
-    color: "#F5F1EA",
-    fontFamily: "Fraunces-Light",
+    color: "#ffffff",
   },
   brandFlow: {
-    color: "#E5C9A8",
-    fontFamily: "Fraunces-LightItalic",
+    color: "#FBBF24",
   },
 });

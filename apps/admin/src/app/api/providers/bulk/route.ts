@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
-    const { action, ids, data } = await request.json();
+    const { action, ids, data, confirmPassword } = await request.json();
 
     const session = action === "delete"
       ? await requirePermission("providers", "canDelete", { minimumRole: "ADMIN" })
@@ -12,6 +13,16 @@ export async function POST(request: NextRequest) {
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: "No items selected" }, { status: 400 });
+    }
+
+    if (action === "delete") {
+      const confirm = await requirePasswordConfirm(session, confirmPassword);
+      if (!confirm.confirmed) {
+        return NextResponse.json(
+          { error: confirm.error, requiresPassword: true },
+          { status: 403 },
+        );
+      }
     }
 
     let result: any = {};
@@ -71,6 +82,8 @@ export async function POST(request: NextRequest) {
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
+
+    revalidateTag("providers", "default");
 
     return NextResponse.json({ success: true, affected: result.count || ids.length });
   } catch (error: any) {

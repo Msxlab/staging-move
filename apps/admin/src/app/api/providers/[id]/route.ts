@@ -58,12 +58,36 @@ export async function GET(
     await requirePermission("providers", "canRead", { minimumRole: "VIEWER" });
     const { id } = await params;
 
-    const provider = await prisma.serviceProvider.findUnique({ where: { id } });
+    const [provider, coverageCount, auditLogs] = await Promise.all([
+      prisma.serviceProvider.findUnique({ where: { id } }),
+      prisma.serviceProviderCoverage.count({ where: { providerId: id } }),
+      prisma.adminAuditLog.findMany({
+        where: {
+          entityType: "ServiceProvider",
+          entityId: id,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        include: {
+          adminUser: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+      }),
+    ]);
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ provider });
+    return NextResponse.json({
+      provider,
+      meta: { coverageCount },
+      auditLogs,
+    });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -144,7 +168,7 @@ export async function PATCH(
     const expectedVersion =
       typeof body.version === "number" ? body.version : existing.version;
 
-    const provider = await prisma.$transaction(async (tx) => {
+    const provider = await prisma.$transaction(async (tx: any) => {
       await updateWithVersion(
         tx.serviceProvider,
         { id, version: expectedVersion },

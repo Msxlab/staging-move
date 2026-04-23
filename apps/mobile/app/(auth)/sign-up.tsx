@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
   TouchableOpacity, Linking,
@@ -13,6 +13,12 @@ import { LogoBrand } from "@/components/ui/LogoBrand";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { api, API_URL } from "@/lib/api";
 
+interface OAuthProviderStatus {
+  configured: boolean;
+  label: string;
+  message: string;
+}
+
 export default function SignUpScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -25,6 +31,18 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
+  const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+
+  useEffect(() => {
+    api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
+      .then((res) => setOauthProviders(res.data?.providers || null))
+      .catch(() => setOauthProviders(null));
+  }, []);
+
+  const googleReady = oauthProviders?.google?.configured ?? true;
+  const appleReady = oauthProviders?.apple?.configured ?? true;
+  const showOAuthReadinessNote =
+    Boolean(oauthProviders) && (!googleReady || !appleReady);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -79,17 +97,25 @@ export default function SignUpScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Button
-          title={t("auth.continueWithGoogle")}
+          title={googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
           variant="outline"
           onPress={() => openOAuth("google")}
+          disabled={!googleReady}
           style={styles.oauthBtn}
         />
         <Button
-          title={t("auth.continueWithApple")}
+          title={appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
           variant="primary"
           onPress={() => openOAuth("apple")}
+          disabled={!appleReady}
           style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
         />
+
+        {showOAuthReadinessNote ? (
+          <Text style={styles.oauthNote}>
+            Email and password sign-up is available now. Social sign-in will turn on after admin OAuth credentials are added.
+          </Text>
+        ) : null}
 
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
@@ -142,8 +168,20 @@ const styles = StyleSheet.create({
   scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
   title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
-  error: { color: "#DC8470", fontSize: 13, marginBottom: 8 },
+  error: { color: "#f87171", fontSize: 13, marginBottom: 8 },
   oauthBtn: { marginBottom: 6 },
+  oauthNote: {
+    color: "#fde68a",
+    fontSize: 12,
+    lineHeight: 18,
+    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(245, 158, 11, 0.2)",
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
   divider: { flexDirection: "row", alignItems: "center", marginVertical: 12, gap: 8 },
   dividerLine: { flex: 1, height: 1, backgroundColor: theme.colors.border },
   dividerText: { color: theme.colors.textMuted, fontSize: 10, letterSpacing: 1.5 },

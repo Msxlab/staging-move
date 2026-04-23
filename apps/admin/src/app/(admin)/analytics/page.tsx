@@ -74,8 +74,7 @@ function DonutChart({ data, colorMap }: { data: [string, number][]; colorMap?: R
     return seg;
   });
 
-  // Edition VI tonal palette — six brand tones, cycled if more segments.
-  const colors = ["#D4846A", "#E5C9A8", "#5EAD9A", "#E3B04B", "#B8936C", "#8AA9C0", "#EDB99D", "#8E6D4A"];
+  const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#6b7280"];
 
   return (
     <div className="flex items-center gap-6">

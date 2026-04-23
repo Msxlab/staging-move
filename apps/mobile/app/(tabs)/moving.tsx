@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingBottom: 32 },
   list: { gap: 12 },
   planTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  planIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(212, 132, 106,0.2)", alignItems: "center", justifyContent: "center" },
+  planIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)", alignItems: "center", justifyContent: "center" },
   planTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
   planMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   planDate: { fontSize: 12, color: theme.colors.textTertiary },

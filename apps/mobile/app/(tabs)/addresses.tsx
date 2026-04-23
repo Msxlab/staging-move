@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106, 0.2)",
+    borderColor: "rgba(249, 115, 22, 0.2)",
     alignItems: "center",
     justifyContent: "center",
   },

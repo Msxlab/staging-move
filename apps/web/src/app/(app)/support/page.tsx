@@ -117,7 +117,7 @@ export default function SupportPage() {
               <div>
                 <label className="block text-xs text-white/40 mb-1">Category</label>
                 <select
-                  className="w-full rounded-xl border border-white/10 bg-[#0E0A07] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
+                  className="w-full rounded-xl border border-white/10 bg-[#0a0a0f] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                 >
@@ -127,7 +127,7 @@ export default function SupportPage() {
               <div>
                 <label className="block text-xs text-white/40 mb-1">Priority</label>
                 <select
-                  className="w-full rounded-xl border border-white/10 bg-[#0E0A07] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
+                  className="w-full rounded-xl border border-white/10 bg-[#0a0a0f] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
                   value={form.priority}
                   onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
                 >

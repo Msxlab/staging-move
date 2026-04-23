@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: theme.colors.borderFoil,
+    borderColor: "rgba(249, 115, 22, 0.3)",
   },
   ghost: {
     backgroundColor: "transparent",

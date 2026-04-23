@@ -197,7 +197,7 @@ export async function sendEmailVerificationEmail(opts: {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#EDB99D,#A85A42);padding:32px 24px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#f97316,#06b6d4);padding:32px 24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:22px;">Verify your email</h1>
     </div>
     <div style="padding:24px;">
@@ -205,7 +205,7 @@ export async function sendEmailVerificationEmail(opts: {
       <p style="color:#334155;font-size:15px;line-height:1.5;">
         Thanks for creating a LocateFlow account. Confirm your email to finish setup:
       </p>
-      <a href="${verifyLink}" style="display:block;text-align:center;background:#D4846A;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin:20px 0;">
+      <a href="${verifyLink}" style="display:block;text-align:center;background:#f97316;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin:20px 0;">
         Verify Email
       </a>
       <p style="color:#64748b;font-size:12px;">This link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>
@@ -237,7 +237,7 @@ export async function sendPasswordResetEmail(opts: {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#EDB99D,#A85A42);padding:32px 24px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#f97316,#06b6d4);padding:32px 24px;text-align:center;">
       <h1 style="color:#fff;margin:0;font-size:22px;">Reset your password</h1>
     </div>
     <div style="padding:24px;">
@@ -246,7 +246,7 @@ export async function sendPasswordResetEmail(opts: {
         We received a request to reset your LocateFlow password.
         This link is valid for 1 hour.
       </p>
-      <a href="${resetLink}" style="display:block;text-align:center;background:#D4846A;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin:20px 0;">
+      <a href="${resetLink}" style="display:block;text-align:center;background:#f97316;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin:20px 0;">
         Reset Password
       </a>
       <p style="color:#64748b;font-size:12px;">If you didn't request a reset, you can safely ignore this email — your password won't change.</p>

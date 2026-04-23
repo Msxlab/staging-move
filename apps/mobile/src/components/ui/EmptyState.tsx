@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106, 0.2)",
+    borderColor: "rgba(249, 115, 22, 0.2)",
   },
   title: {
     fontSize: 20,

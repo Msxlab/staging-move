@@ -189,9 +189,9 @@ export default function DashboardScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text style={styles.title}>{t("tabs.dashboard")}</Text>
             {isPremium && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(227, 176, 75,0.12)", borderWidth: 1, borderColor: "rgba(227, 176, 75,0.3)" }}>
-                <Text style={{ fontSize: 10, color: "#EFC878" }}>{"✦"}</Text>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: "#EFC878", letterSpacing: 0.3 }}>Premium</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(245,158,11,0.12)", borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" }}>
+                <Text style={{ fontSize: 10, color: "#fbbf24" }}>{"✦"}</Text>
+                <Text style={{ fontSize: 10, fontWeight: "700", color: "#fbbf24", letterSpacing: 0.3 }}>Premium</Text>
               </View>
             )}
           </View>
@@ -301,8 +301,8 @@ export default function DashboardScreen() {
 
               {checklist.overdueItems.length > 0 && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: "rgba(239,68,68,0.08)", borderWidth: 1, borderColor: "rgba(239,68,68,0.2)" }}>
-                  <AlertTriangle size={14} color="#C85A3E" />
-                  <Text style={{ fontSize: 11, color: "#DC8470", flex: 1 }} numberOfLines={2}>
+                  <AlertTriangle size={14} color="#ef4444" />
+                  <Text style={{ fontSize: 11, color: "#f87171", flex: 1 }} numberOfLines={2}>
                     Overdue: {checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}
                     {checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""}
                   </Text>
@@ -319,7 +319,7 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: "600", color: theme.colors.text }} numberOfLines={1}>{checklist.nextAction.title}</Text>
                     {checklist.nextAction.stateNote ? (
-                      <Text style={{ fontSize: 10, color: "#EFC878" }} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
+                      <Text style={{ fontSize: 10, color: "#fbbf24" }} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
                     ) : null}
                     {checklist.nextAction.estimatedMinutes ? (
                       <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>~{checklist.nextAction.estimatedMinutes} min</Text>

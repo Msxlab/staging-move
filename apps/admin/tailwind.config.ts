@@ -48,22 +48,21 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Edition VI semantic palette — sage/honey/warm-red/slate, no tailwind defaults.
         success: {
-          DEFAULT: "#5EAD9A",
-          light: "#D5EDE6",
+          DEFAULT: "#10b981",
+          light: "#d1fae5",
         },
         warning: {
-          DEFAULT: "#E3B04B",
-          light: "#F8E5BA",
+          DEFAULT: "#f59e0b",
+          light: "#fef3c7",
         },
         danger: {
-          DEFAULT: "#C85A3E",
-          light: "#F0CFC4",
+          DEFAULT: "#ef4444",
+          light: "#fee2e2",
         },
         info: {
-          DEFAULT: "#8AA9C0",
-          light: "#D8E3EC",
+          DEFAULT: "#3b82f6",
+          light: "#dbeafe",
         },
         // Edition VI · Champagne & Rose. Mirrors apps/web/tailwind.config.ts.
         brand: {

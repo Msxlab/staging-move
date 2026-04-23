@@ -169,7 +169,7 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
         ]}
       >
         <LinearGradient
-          colors={["rgba(212, 132, 106, 0.35)", "rgba(229, 201, 168, 0.08)", "transparent"]}
+          colors={["rgba(249,115,22,0.35)", "rgba(251,191,36,0.08)", "transparent"]}
           style={styles.glowGradient}
           start={{ x: 0.5, y: 0.5 }}
           end={{ x: 1, y: 1 }}
@@ -207,7 +207,7 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
                 style={[styles.pinDot, { transform: [{ scale: dotScale }] }]}
               >
                 <LinearGradient
-                  colors={["#EFC878", "#D4846A"]}
+                  colors={["#FBBF24", "#F97316"]}
                   style={styles.dotGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -236,7 +236,7 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
             ]}
           >
             <LinearGradient
-              colors={["transparent", "#D4846A", "#EFC878", "#D4846A", "transparent"]}
+              colors={["transparent", "#F97316", "#FBBF24", "#F97316", "transparent"]}
               start={{ x: 0, y: 0.5 }}
               end={{ x: 1, y: 0.5 }}
               style={styles.waveGradient}
@@ -256,7 +256,7 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
             ]}
           >
             <LinearGradient
-              colors={["transparent", "#EFC878", "#EDB99D", "#EFC878", "transparent"]}
+              colors={["transparent", "#FBBF24", "#FB923C", "#FBBF24", "transparent"]}
               start={{ x: 0, y: 0.5 }}
               end={{ x: 1, y: 0.5 }}
               style={styles.waveGradient}
@@ -315,7 +315,7 @@ function LoadingBar() {
         ]}
       >
         <LinearGradient
-          colors={["#A85A42", "#D4846A", "#EFC878"]}
+          colors={["#EA580C", "#F97316", "#FBBF24"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={{ flex: 1, borderRadius: 2 }}
@@ -328,7 +328,7 @@ function LoadingBar() {
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#0E0A07",
+    backgroundColor: "#0a0a0f",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
@@ -363,10 +363,10 @@ const styles = StyleSheet.create({
     height: 88,
     borderRadius: 44,
     borderWidth: 3,
-    borderColor: "#D4846A",
+    borderColor: "#F97316",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(212, 132, 106, 0.06)",
+    backgroundColor: "rgba(249, 115, 22, 0.06)",
   },
   pinTip: {
     width: 0,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 20,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#D4846A",
+    borderTopColor: "#F97316",
     marginTop: -2,
   },
   pinRing: {
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     height: 30,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: "#EFC878",
+    borderColor: "#FBBF24",
   },
   pinDot: {
     width: 28,
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 8,
     borderRadius: 16,
-    backgroundColor: "rgba(212, 132, 106, 0.2)",
+    backgroundColor: "rgba(249, 115, 22, 0.2)",
     marginTop: 8,
   },
   wavesContainer: {
@@ -427,25 +427,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   brandText: {
-    // Edition VI · Fraunces display, light weight + tight tracking. The
-    // word "Flow" gets the foil treatment via brandFlow (italic Fraunces).
-    fontFamily: "Fraunces-Light",
-    fontSize: 44,
-    letterSpacing: -1.2,
+    fontSize: 38,
+    fontWeight: "800",
+    letterSpacing: -1,
   },
   brandLocate: {
-    color: "#F5F1EA",
-    fontFamily: "Fraunces-Light",
+    color: "#ffffff",
   },
   brandFlow: {
-    // Italic Fraunces, foil-tinted — the brand signature.
-    color: "#E5C9A8",
-    fontFamily: "Fraunces-LightItalic",
+    color: "#FBBF24",
   },
   tagline: {
-    color: "rgba(245, 241, 234, 0.38)",
-    fontSize: 11,
-    fontFamily: "GeistMono",
+    color: "rgba(255, 255, 255, 0.25)",
+    fontSize: 12,
+    fontWeight: "600",
     marginTop: 10,
     letterSpacing: 2,
     textTransform: "uppercase",
@@ -458,7 +453,7 @@ const styles = StyleSheet.create({
   loadingTrack: {
     height: 3,
     borderRadius: 2,
-    backgroundColor: "rgba(245, 241, 234, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     overflow: "hidden",
   },
   loadingFill: {

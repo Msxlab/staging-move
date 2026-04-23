@@ -29,6 +29,40 @@ export async function GET(
           orderBy: { updatedAt: "desc" },
           take: 5,
         },
+        oauthAccounts: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            provider: true,
+            providerId: true,
+            createdAt: true,
+          },
+        },
+        dataConsents: {
+          orderBy: { createdAt: "desc" },
+          take: 30,
+        },
+        emailVerificationTokens: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          select: {
+            id: true,
+            email: true,
+            expiresAt: true,
+            consumedAt: true,
+            createdAt: true,
+          },
+        },
+        passwordResetTokens: {
+          orderBy: { createdAt: "desc" },
+          take: 10,
+          select: {
+            id: true,
+            expiresAt: true,
+            usedAt: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -43,7 +77,15 @@ export async function GET(
     });
 
     // Session & behavior data
-    const [sessions, recentEvents, eventCounts, pushDevices] = await Promise.all([
+    const [
+      sessions,
+      recentEvents,
+      eventCounts,
+      pushDevices,
+      loginSessions,
+      gdprRequests,
+      adminNotes,
+    ] = await Promise.all([
       prisma.userSession.findMany({
         where: { userId: id },
         orderBy: { sessionStart: "desc" },
@@ -63,9 +105,47 @@ export async function GET(
         where: { userId: id },
         orderBy: { lastSeenAt: "desc" },
       }),
+      prisma.userLoginSession.findMany({
+        where: { userId: id },
+        orderBy: [{ isActive: "desc" }, { lastActivity: "desc" }],
+        take: 15,
+      }),
+      prisma.gDPRRequest.findMany({
+        where: { userId: id },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      prisma.adminAuditLog.findMany({
+        where: {
+          entityType: "User",
+          entityId: id,
+          action: "USER_INTERNAL_NOTE",
+        },
+        include: {
+          adminUser: {
+            select: {
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
     ]);
 
-    return NextResponse.json({ user, auditLogs, sessions, recentEvents, eventCounts, pushDevices });
+    return NextResponse.json({
+      user,
+      auditLogs,
+      sessions,
+      recentEvents,
+      eventCounts,
+      pushDevices,
+      loginSessions,
+      gdprRequests,
+      adminNotes,
+    });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -75,6 +155,118 @@ export async function GET(
     }
     console.error("Failed to fetch user:", error);
     return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+
+    const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (body?.action === "add_note") {
+      const note = typeof body.note === "string" ? body.note.trim() : "";
+      if (!note) {
+        return NextResponse.json({ error: "Note is required" }, { status: 400 });
+      }
+      if (note.length > 2000) {
+        return NextResponse.json({ error: "Note is too long" }, { status: 400 });
+      }
+
+      const entry = await prisma.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "USER_INTERNAL_NOTE",
+          entityType: "User",
+          entityId: id,
+          changes: JSON.stringify({ note }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+
+      const created = await prisma.adminAuditLog.findUnique({
+        where: { id: entry.id },
+        include: {
+          adminUser: {
+            select: {
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+
+      return NextResponse.json({ note: created }, { status: 201 });
+    }
+
+    if (body?.action === "revoke_login_session") {
+      const sessionId = typeof body.sessionId === "string" ? body.sessionId : "";
+      if (!sessionId) {
+        return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+      }
+
+      const result = await prisma.userLoginSession.updateMany({
+        where: { id: sessionId, userId: id, isActive: true },
+        data: { isActive: false, lastActivity: new Date() },
+      });
+
+      if (result.count === 0) {
+        return NextResponse.json({ error: "Session not found or already inactive" }, { status: 404 });
+      }
+
+      await prisma.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "REVOKE_LOGIN",
+          entityType: "UserLoginSession",
+          entityId: sessionId,
+          changes: JSON.stringify({ userId: id, mode: "single" }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+
+      return NextResponse.json({ success: true, revoked: result.count });
+    }
+
+    if (body?.action === "revoke_all_login_sessions") {
+      const result = await prisma.userLoginSession.updateMany({
+        where: { userId: id, isActive: true },
+        data: { isActive: false, lastActivity: new Date() },
+      });
+
+      await prisma.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "REVOKE_LOGIN",
+          entityType: "User",
+          entityId: id,
+          changes: JSON.stringify({ mode: "all", revoked: result.count }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+
+      return NextResponse.json({ success: true, revoked: result.count });
+    }
+
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error?.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    console.error("Failed to perform user admin action:", error);
+    return NextResponse.json({ error: "Failed to perform user admin action" }, { status: 500 });
   }
 }
 

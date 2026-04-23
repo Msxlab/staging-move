@@ -30,6 +30,7 @@ interface Ticket {
   category: string;
   status: string;
   priority: string;
+  assignedTo: string | null;
   createdAt: string;
   updatedAt: string;
   user: { id: string; email: string | null; firstName: string | null; lastName: string | null };
@@ -44,6 +45,7 @@ export default function AdminTicketDetailPage() {
   const [isInternal, setIsInternal] = useState(false);
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [currentAdminId, setCurrentAdminId] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const fetchTicket = useCallback(async () => {
@@ -57,6 +59,13 @@ export default function AdminTicketDetailPage() {
   useEffect(() => {
     fetchTicket().finally(() => setLoading(false));
   }, [fetchTicket]);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => setCurrentAdminId(data?.admin?.id || ""))
+      .catch(() => null);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,7 +93,7 @@ export default function AdminTicketDetailPage() {
     }
   };
 
-  const handleUpdate = async (field: string, value: string) => {
+  const handleUpdate = async (field: string, value: string | null) => {
     setUpdating(true);
     try {
       const res = await fetch(`/api/tickets/${id}`, {
@@ -219,6 +228,32 @@ export default function AdminTicketDetailPage() {
               >
                 {PRIORITY_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
+            </div>
+            <div className="rounded-lg border border-border bg-background/50 p-3">
+              <p className="text-xs text-muted-foreground">Assignment</p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                {!ticket.assignedTo
+                  ? "Unassigned"
+                  : ticket.assignedTo === currentAdminId
+                    ? "Assigned to you"
+                    : "Assigned to another admin"}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => handleUpdate("assignedTo", currentAdminId)}
+                  disabled={updating || !currentAdminId || ticket.assignedTo === currentAdminId}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  Assign to me
+                </button>
+                <button
+                  onClick={() => handleUpdate("assignedTo", null)}
+                  disabled={updating || !ticket.assignedTo}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  Unassign
+                </button>
+              </div>
             </div>
             <div className="text-xs text-muted-foreground pt-1 border-t border-border">
               <p>Created: {new Date(ticket.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
