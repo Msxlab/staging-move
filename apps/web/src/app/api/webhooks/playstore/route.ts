@@ -87,9 +87,17 @@ export async function POST(request: NextRequest) {
         console.warn("[PLAYSTORE WEBHOOK] OIDC verify failed:", (err as Error).message);
         return NextResponse.json({ error: "Invalid OIDC token" }, { status: 401 });
       }
+    } else if (process.env.NODE_ENV === "production") {
+      captureMessage(
+        "[PLAYSTORE WEBHOOK] GOOGLE_PLAY_RTDN_AUDIENCE unset in production; rejecting RTDN",
+        "error",
+      );
+      return NextResponse.json(
+        { error: "Google Play RTDN audience is not configured" },
+        { status: 503 },
+      );
     } else {
-      // No audience configured — log a warning but accept. This is a development
-      // escape hatch; production MUST set GOOGLE_PLAY_RTDN_AUDIENCE.
+      // Development/test escape hatch only. Production rejects before parsing.
       console.warn("[PLAYSTORE WEBHOOK] GOOGLE_PLAY_RTDN_AUDIENCE unset — skipping OIDC verification");
     }
 

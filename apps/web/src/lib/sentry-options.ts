@@ -11,7 +11,8 @@
 
 type Runtime = "client" | "server" | "edge";
 
-const PII_FIELD_RE = /^(email|phone|password|token|authorization|cookie|ssn|session)$/i;
+const PII_FIELD_RE =
+  /(email|phone|password|token|authorization|cookie|ssn|session|secret|mfa|backupCode|reset|verification|providerId|pushToken|privateKey|apiKey|accessKey)/i;
 
 function scrubObject(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return obj;

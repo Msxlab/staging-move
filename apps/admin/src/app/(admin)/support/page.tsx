@@ -31,6 +31,8 @@ interface Ticket {
   updatedAt: string;
   createdAt: string;
   user: { id: string; firstName: string | null; lastName: string | null; email: string | null };
+  assignedAdmin?: { id: string; email: string | null; firstName: string | null; lastName: string | null } | null;
+  sla?: { breached: boolean; remainingHours: number | null; dueAt: string; targetHours: number; policy?: string; note?: string };
   messages: { content: string; senderType: string; createdAt: string }[];
   _count: { messages: number };
 }
@@ -43,6 +45,20 @@ const ASSIGNMENT_FILTERS = [
   { value: "me", label: "Assigned To Me" },
   { value: "unassigned", label: "Unassigned" },
 ];
+
+function getAdminLabel(admin?: Ticket["assignedAdmin"]) {
+  if (!admin) return "Unassigned";
+  return [admin.firstName, admin.lastName].filter(Boolean).join(" ") || admin.email || "Assigned";
+}
+
+function getSlaLabel(sla?: Ticket["sla"]) {
+  if (!sla) return "No target";
+  if (sla.remainingHours === null) return "Closed";
+  if (sla.breached) return "Breached";
+  if (sla.remainingHours <= 0) return "Due now";
+  if (sla.remainingHours < 24) return `${sla.remainingHours}h left`;
+  return `${Math.ceil(sla.remainingHours / 24)}d left`;
+}
 
 export default function AdminSupportPage() {
   const router = useRouter();
@@ -207,6 +223,9 @@ export default function AdminSupportPage() {
         </div>
       ) : (
         <div className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="border-b border-border bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
+            Targets are derived from priority for triage only; no configured contractual SLA policy is active.
+          </div>
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
@@ -215,6 +234,7 @@ export default function AdminSupportPage() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Status</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Priority</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Assignment</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Target</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground">Updated</th>
                 <th className="px-4 py-3" />
               </tr>
@@ -241,11 +261,20 @@ export default function AdminSupportPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {ticket.assignedTo
-                      ? assignmentFilter === "me"
+                    {ticket.assignedTo === null
+                      ? "Unassigned"
+                      : assignmentFilter === "me"
                         ? "Me"
-                        : "Assigned"
-                      : "Unassigned"}
+                        : getAdminLabel(ticket.assignedAdmin)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
+                      ticket.sla?.breached
+                        ? "bg-red-500/10 text-red-500 border-red-500/20"
+                        : "bg-muted text-muted-foreground border-border"
+                    }`}>
+                      {getSlaLabel(ticket.sla)}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {new Date(ticket.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}

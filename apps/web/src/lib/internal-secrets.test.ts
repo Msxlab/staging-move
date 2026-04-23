@@ -17,4 +17,23 @@ describe("web internal secrets", () => {
     expect(getInternalCallerSecret("impersonation")).toBe("handoff-secret");
     expect(verifyInternalAuth("Bearer handoff-secret", "impersonation")).toBe(true);
   });
+
+  it("does not accept CRON_SECRET for internal webhooks", () => {
+    vi.stubEnv("CRON_SECRET", "cron-secret");
+    expect(getInternalCallerSecret("internal")).toBeUndefined();
+    expect(verifyInternalAuth("Bearer cron-secret", "internal")).toBe(false);
+  });
+
+  it("accepts INTERNAL_WEBHOOK_SECRET for internal webhooks", () => {
+    vi.stubEnv("CRON_SECRET", "cron-secret");
+    vi.stubEnv("INTERNAL_WEBHOOK_SECRET", "internal-secret");
+    expect(getInternalCallerSecret("internal")).toBe("internal-secret");
+    expect(verifyInternalAuth("Bearer internal-secret", "internal")).toBe(true);
+  });
+
+  it("keeps CRON_SECRET scoped to cron calls", () => {
+    vi.stubEnv("CRON_SECRET", "cron-secret");
+    expect(getInternalCallerSecret("cron")).toBe("cron-secret");
+    expect(verifyInternalAuth("Bearer cron-secret", "cron")).toBe(true);
+  });
 });

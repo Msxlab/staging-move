@@ -34,7 +34,23 @@ interface Ticket {
   createdAt: string;
   updatedAt: string;
   user: { id: string; email: string | null; firstName: string | null; lastName: string | null };
+  assignedAdmin?: { id: string; email: string | null; firstName: string | null; lastName: string | null } | null;
+  sla?: { breached: boolean; remainingHours: number | null; dueAt: string; targetHours: number; policy?: string; note?: string };
   messages: Message[];
+}
+
+function getAdminLabel(admin?: Ticket["assignedAdmin"]) {
+  if (!admin) return "";
+  return [admin.firstName, admin.lastName].filter(Boolean).join(" ") || admin.email || "Assigned admin";
+}
+
+function getSlaLabel(sla?: Ticket["sla"]) {
+  if (!sla) return "No target";
+  if (sla.remainingHours === null) return "Closed";
+  if (sla.breached) return "Breached";
+  if (sla.remainingHours <= 0) return "Due now";
+  if (sla.remainingHours < 24) return `${sla.remainingHours}h left`;
+  return `${Math.ceil(sla.remainingHours / 24)}d left`;
 }
 
 export default function AdminTicketDetailPage() {
@@ -236,7 +252,7 @@ export default function AdminTicketDetailPage() {
                   ? "Unassigned"
                   : ticket.assignedTo === currentAdminId
                     ? "Assigned to you"
-                    : "Assigned to another admin"}
+                    : getAdminLabel(ticket.assignedAdmin) || "Assigned to another admin"}
               </p>
               <div className="mt-3 flex gap-2">
                 <button
@@ -254,6 +270,24 @@ export default function AdminTicketDetailPage() {
                   Unassign
                 </button>
               </div>
+            </div>
+            <div className={`rounded-lg border p-3 ${
+              ticket.sla?.breached
+                ? "border-red-500/30 bg-red-500/5"
+                : "border-border bg-background/50"
+            }`}>
+              <p className="text-xs text-muted-foreground">Response Target</p>
+              <p className={`mt-1 text-sm font-medium ${ticket.sla?.breached ? "text-red-400" : "text-foreground"}`}>
+                {getSlaLabel(ticket.sla)}
+              </p>
+              {ticket.sla && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Derived {ticket.sla.targetHours}h target · Due {new Date(ticket.sla.dueAt).toLocaleString()}
+                </p>
+              )}
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Triage guidance only; no configured contractual SLA policy is active.
+              </p>
             </div>
             <div className="text-xs text-muted-foreground pt-1 border-t border-border">
               <p>Created: {new Date(ticket.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>

@@ -69,7 +69,8 @@ const TYPES = [
   "CONTRACT_EXPIRY",
 ];
 
-const CHANNELS = ["IN_APP", "EMAIL", "PUSH"];
+const CHANNELS = ["IN_APP"];
+const DISABLED_CHANNELS = ["EMAIL", "PUSH"];
 
 const EMPTY_STATS: Stats = {
   total: 0,
@@ -312,9 +313,9 @@ export default function NotificationsPage() {
               Scheduled delivery is not enabled yet.
             </p>
             <p className="text-muted-foreground">
-              Operators can send immediate notifications now. Queue records are
-              visible for audit and future worker support, but there is no live
-              delayed-delivery processor yet.
+              Operators can send immediate in-app notifications now. Email,
+              push, and delayed delivery are intentionally disabled until a real
+              worker/provider path is enabled.
             </p>
           </div>
         </div>
@@ -399,7 +400,15 @@ export default function NotificationsPage() {
                     {channel}
                   </option>
                 ))}
+                {DISABLED_CHANNELS.map((channel) => (
+                  <option key={channel} value={channel} disabled>
+                    {channel} — not live
+                  </option>
+                ))}
               </select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Only in-app records are actually delivered by this admin flow.
+              </p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-muted-foreground">
