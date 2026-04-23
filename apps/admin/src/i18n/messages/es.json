@@ -54,6 +54,7 @@
     "runtimeConfig": "Configuración de ejecución",
     "settings": "Configuración",
     "backups": "Respaldos",
+    "auditLogs": "Registros de auditoria",
     "tickets": "Tickets",
     "support": "Soporte"
   },

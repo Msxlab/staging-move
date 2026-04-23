@@ -12,10 +12,6 @@ const BACKUP_TABLES: Record<string, { model: string }> = {
   services: { model: "service" },
   providers: { model: "serviceProvider" },
   movingPlans: { model: "movingPlan" },
-  tasks: { model: "task" },
-  reviews: { model: "review" },
-  documents: { model: "document" },
-  badges: { model: "badge" },
   budgets: { model: "budget" },
   subscriptions: { model: "subscription" },
 };
@@ -27,7 +23,6 @@ const BACKUP_TABLE_FETCHERS = {
   services: () => prisma.service.findMany(),
   providers: () => prisma.serviceProvider.findMany(),
   movingPlans: () => prisma.movingPlan.findMany(),
-  tasks: () => prisma.task.findMany(),
   budgets: () => prisma.budget.findMany(),
   subscriptions: () => prisma.subscription.findMany(),
 } as const;

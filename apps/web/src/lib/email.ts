@@ -1,12 +1,18 @@
 import { Resend } from "resend";
+import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
 
 let _resend: Resend | null = null;
-function getResend(): Resend {
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+let _resendApiKey: string | null = null;
+function getResend(apiKey: string): Resend {
+  if (!_resend || _resendApiKey !== apiKey) {
+    _resend = new Resend(apiKey);
+    _resendApiKey = apiKey;
+  }
   return _resend;
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "LocateFlow <noreply@locateflow.com>";
+const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
+const DEFAULT_APP_URL = "http://localhost:3000";
 
 export interface EmailOptions {
   to: string;
@@ -20,15 +26,33 @@ export interface SendEmailResult {
   error: string | null;
 }
 
-export async function sendEmailWithResult(options: EmailOptions): Promise<SendEmailResult> {
-  if (!process.env.RESEND_API_KEY) {
+async function resolveEmailConfig() {
+  const values = await getRequiredRuntimeConfigValues([
+    "RESEND_API_KEY",
+    "EMAIL_FROM",
+    "NEXT_PUBLIC_APP_URL",
+  ]);
+
+  return {
+    resendApiKey: values.RESEND_API_KEY,
+    fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
+    appUrl: values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL,
+  };
+}
+
+export async function sendEmailWithResult(
+  options: EmailOptions,
+): Promise<SendEmailResult> {
+  const { resendApiKey, fromEmail } = await resolveEmailConfig();
+
+  if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${options.to} | Subject: ${options.subject}`);
     return { success: true, providerMessageId: null, error: null };
   }
 
   try {
-    const { data, error } = await getResend().emails.send({
-      from: FROM_EMAIL,
+    const { data, error } = await getResend(resendApiKey).emails.send({
+      from: fromEmail,
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -36,7 +60,11 @@ export async function sendEmailWithResult(options: EmailOptions): Promise<SendEm
 
     if (error) {
       console.error("[EMAIL] Send failed:", error);
-      return { success: false, providerMessageId: null, error: error.message || "SEND_FAILED" };
+      return {
+        success: false,
+        providerMessageId: null,
+        error: error.message || "SEND_FAILED",
+      };
     }
     return { success: true, providerMessageId: data?.id || null, error: null };
   } catch (err) {
@@ -55,7 +83,13 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 // SEC-012: HTML escape helper to prevent injection in email templates
-const htmlEscapeMap: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const htmlEscapeMap: Record<string, string> = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+};
 function esc(str: string): string {
   return str.replace(/[&<>"']/g, (c) => htmlEscapeMap[c] || c);
 }
@@ -69,6 +103,7 @@ export function billReminderHtml(data: {
   amount: number;
   dueDate: string;
   daysUntilDue: number;
+  appUrl?: string;
 }): string {
   return `
 <!DOCTYPE html>
@@ -96,7 +131,7 @@ export function billReminderHtml(data: {
           <tr><td style="padding:6px 0;">Due Date</td><td style="text-align:right;">${esc(data.dueDate)}</td></tr>
         </table>
       </div>
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/services" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
+      <a href="${data.appUrl || DEFAULT_APP_URL}/services" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
         View Services
       </a>
     </div>
@@ -157,11 +192,12 @@ export function weeklyDigestHtml(data: {
   upcomingBills: { name: string; amount: number; dueDate: string }[];
   totalExpenses: number;
   newServices: number;
+  appUrl?: string;
 }): string {
   const billRows = data.upcomingBills
     .map(
       (b) =>
-        `<tr><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">${esc(b.name)}</td><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;">$${b.amount.toFixed(2)}</td><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;color:#64748b;">${esc(b.dueDate)}</td></tr>`
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">${esc(b.name)}</td><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;">$${b.amount.toFixed(2)}</td><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;color:#64748b;">${esc(b.dueDate)}</td></tr>`,
     )
     .join("");
 
@@ -203,7 +239,7 @@ export function weeklyDigestHtml(data: {
           : ""
       }
 
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
+      <a href="${data.appUrl || DEFAULT_APP_URL}/dashboard" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
         Open Dashboard
       </a>
     </div>

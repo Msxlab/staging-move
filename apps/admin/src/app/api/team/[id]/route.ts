@@ -38,6 +38,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.newPassword) data.password = await bcrypt.hash(body.newPassword, 12);
 
     const updated = await prisma.adminUser.update({ where: { id }, data });
+    let revokedSessions = 0;
+    if (isSensitiveChange) {
+      const revokeResult = await prisma.adminSession.updateMany({
+        where: { adminUserId: id, isActive: true },
+        data: { isActive: false, lastActivity: new Date() },
+      });
+      revokedSessions = revokeResult.count;
+    }
 
     await prisma.adminAuditLog.create({
       data: {
@@ -45,7 +53,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         action: "UPDATE_ADMIN",
         entityType: "AdminUser",
         entityId: id,
-        changes: JSON.stringify(Object.keys(data)),
+        changes: JSON.stringify({
+          fields: Object.keys(data),
+          revokedSessions,
+          previousRole: admin.role,
+          newRole: updated.role,
+          previousActive: admin.isActive,
+          newActive: updated.isActive,
+        }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });

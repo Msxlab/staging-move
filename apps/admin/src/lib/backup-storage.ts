@@ -10,7 +10,12 @@ const BACKUP_STORAGE_KEYS = [
   "BACKUP_STORAGE_SECRET_ACCESS_KEY",
 ] as const;
 
-type BackupStorageProvider = "s3" | "s3-compatible" | "aws-s3";
+type BackupStorageProvider =
+  | "s3"
+  | "s3-compatible"
+  | "aws-s3"
+  | "r2"
+  | "cloudflare-r2";
 
 export interface BackupOffsiteMetadata {
   status: "stored" | "disabled" | "failed";
@@ -62,9 +67,17 @@ function normalizeValue(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
-function normalizeProvider(value: string | null | undefined): BackupStorageProvider | null {
+function normalizeProvider(
+  value: string | null | undefined,
+): BackupStorageProvider | null {
   const normalized = normalizeValue(value)?.toLowerCase();
-  if (normalized === "s3" || normalized === "s3-compatible" || normalized === "aws-s3") {
+  if (
+    normalized === "s3" ||
+    normalized === "s3-compatible" ||
+    normalized === "aws-s3" ||
+    normalized === "r2" ||
+    normalized === "cloudflare-r2"
+  ) {
     return normalized;
   }
   return null;
@@ -73,7 +86,7 @@ function normalizeProvider(value: string | null | undefined): BackupStorageProvi
 async function resolveBackupStorageConfig(): Promise<BackupStorageConfig> {
   const values = await getAdminRuntimeConfigValues([...BACKUP_STORAGE_KEYS]);
   return {
-    provider: normalizeValue(values.BACKUP_STORAGE_PROVIDER),
+    provider: normalizeProvider(values.BACKUP_STORAGE_PROVIDER),
     bucket: normalizeValue(values.BACKUP_STORAGE_BUCKET),
     region: normalizeValue(values.BACKUP_STORAGE_REGION),
     endpoint: normalizeValue(values.BACKUP_STORAGE_ENDPOINT),
@@ -83,13 +96,19 @@ async function resolveBackupStorageConfig(): Promise<BackupStorageConfig> {
 }
 
 function encodeRfc3986(value: string) {
-  return encodeURIComponent(value).replace(/[!'()*]/g, (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
+  return encodeURIComponent(value).replace(
+    /[!'()*]/g,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }
 
 function buildObjectUrl(baseUrl: URL, bucket: string, objectKey: string) {
   const encodedObjectKey = objectKey.split("/").map(encodeRfc3986).join("/");
   const prefix = baseUrl.pathname.replace(/\/+$/, "");
-  const pathname = `${prefix}/${bucket}/${encodedObjectKey}`.replace(/\/+/g, "/");
+  const pathname = `${prefix}/${bucket}/${encodedObjectKey}`.replace(
+    /\/+/g,
+    "/",
+  );
   const target = new URL(baseUrl.toString());
   target.pathname = pathname.startsWith("/") ? pathname : `/${pathname}`;
   return target;
@@ -103,7 +122,12 @@ function hmacSha256(key: Buffer | string, value: string) {
   return createHmac("sha256", key).update(value).digest();
 }
 
-function getSignatureKey(secretAccessKey: string, dateStamp: string, region: string, service: string) {
+function getSignatureKey(
+  secretAccessKey: string,
+  dateStamp: string,
+  region: string,
+  service: string,
+) {
   const kDate = hmacSha256(`AWS4${secretAccessKey}`, dateStamp);
   const kRegion = hmacSha256(kDate, region);
   const kService = hmacSha256(kRegion, service);
@@ -117,12 +141,21 @@ function buildSignedStorageRequest(input: {
   payloadHash: string;
   requestDate?: Date;
 }) {
-  const endpointValue = input.config.endpoint || `https://s3.${input.config.region}.amazonaws.com`;
-  const baseUrl = new URL(endpointValue.startsWith("http://") || endpointValue.startsWith("https://") ? endpointValue : `https://${endpointValue}`);
+  const endpointValue =
+    input.config.endpoint || `https://s3.${input.config.region}.amazonaws.com`;
+  const baseUrl = new URL(
+    endpointValue.startsWith("http://") || endpointValue.startsWith("https://")
+      ? endpointValue
+      : `https://${endpointValue}`,
+  );
   const date = input.requestDate || new Date();
   const dateStamp = date.toISOString().slice(0, 10).replace(/-/g, "");
   const amzDate = `${dateStamp}T${date.toISOString().slice(11, 19).replace(/:/g, "")}Z`;
-  const requestUrl = buildObjectUrl(baseUrl, input.config.bucket!, input.objectKey);
+  const requestUrl = buildObjectUrl(
+    baseUrl,
+    input.config.bucket!,
+    input.objectKey,
+  );
   const canonicalHeaders = `host:${requestUrl.host}\nx-amz-content-sha256:${input.payloadHash}\nx-amz-date:${amzDate}\n`;
   const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
   const canonicalRequest = [
@@ -140,8 +173,15 @@ function buildSignedStorageRequest(input: {
     credentialScope,
     sha256Hex(canonicalRequest),
   ].join("\n");
-  const signingKey = getSignatureKey(input.config.secretAccessKey!, dateStamp, input.config.region!, "s3");
-  const signature = createHmac("sha256", signingKey).update(stringToSign).digest("hex");
+  const signingKey = getSignatureKey(
+    input.config.secretAccessKey!,
+    dateStamp,
+    input.config.region!,
+    "s3",
+  );
+  const signature = createHmac("sha256", signingKey)
+    .update(stringToSign)
+    .digest("hex");
   const authorization = `AWS4-HMAC-SHA256 Credential=${input.config.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
   return {
@@ -154,7 +194,7 @@ function buildSignedStorageRequest(input: {
 function createOffsiteMetadata(
   status: BackupOffsiteMetadata["status"],
   config: BackupStorageConfig,
-  overrides: Partial<BackupOffsiteMetadata> = {}
+  overrides: Partial<BackupOffsiteMetadata> = {},
 ): BackupOffsiteMetadata {
   return {
     status,
@@ -186,25 +226,32 @@ function normalizeOffsiteMetadata(input: any): BackupOffsiteMetadata | null {
   };
 }
 
-function normalizeArchiveRecordMetadata(input: any): BackupArchiveRecordMetadata | null {
+function normalizeArchiveRecordMetadata(
+  input: any,
+): BackupArchiveRecordMetadata | null {
   if (!input || typeof input !== "object") return null;
-  const tableCounts = input.tableCounts && typeof input.tableCounts === "object"
-    ? Object.fromEntries(
-        Object.entries(input.tableCounts).filter(
-          (entry): entry is [string, number] => typeof entry[0] === "string" && typeof entry[1] === "number"
+  const tableCounts =
+    input.tableCounts && typeof input.tableCounts === "object"
+      ? Object.fromEntries(
+          Object.entries(input.tableCounts).filter(
+            (entry): entry is [string, number] =>
+              typeof entry[0] === "string" && typeof entry[1] === "number",
+          ),
         )
-      )
-    : {};
+      : {};
 
   return {
     encrypted: Boolean(input.encrypted),
     signature: Boolean(input.signature),
-    totalRecords: typeof input.totalRecords === "number" ? input.totalRecords : null,
+    totalRecords:
+      typeof input.totalRecords === "number" ? input.totalRecords : null,
     tableCounts,
   };
 }
 
-export function parseBackupRecordMetadata(raw: string | null | undefined): BackupRecordMetadata {
+export function parseBackupRecordMetadata(
+  raw: string | null | undefined,
+): BackupRecordMetadata {
   if (!raw) return {};
 
   try {
@@ -213,14 +260,19 @@ export function parseBackupRecordMetadata(raw: string | null | undefined): Backu
     return {
       offsite: normalizeOffsiteMetadata((parsed as any).offsite),
       archive: normalizeArchiveRecordMetadata((parsed as any).archive),
-      error: typeof (parsed as any).error === "string" ? (parsed as any).error : null,
+      error:
+        typeof (parsed as any).error === "string"
+          ? (parsed as any).error
+          : null,
     };
   } catch {
     return { error: raw };
   }
 }
 
-export function serializeBackupRecordMetadata(metadata: BackupRecordMetadata): string | null {
+export function serializeBackupRecordMetadata(
+  metadata: BackupRecordMetadata,
+): string | null {
   const payload: BackupRecordMetadata = {};
   if (metadata.offsite) payload.offsite = metadata.offsite;
   if (metadata.archive) payload.archive = metadata.archive;
@@ -233,7 +285,9 @@ export async function getBackupStorageSummary(): Promise<BackupStorageSummary> {
   const provider = normalizeProvider(config.provider);
   const unsupportedProvider = Boolean(config.provider && !provider);
   const configured = Boolean(config.provider && config.bucket && config.region);
-  const credentialsConfigured = Boolean(config.accessKeyId && config.secretAccessKey);
+  const credentialsConfigured = Boolean(
+    config.accessKeyId && config.secretAccessKey,
+  );
 
   return {
     provider: config.provider,
@@ -281,7 +335,9 @@ export async function uploadBackupArchive(input: {
 
   const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
   const objectKey = `backups/${dateStamp}/${input.backupId}/${input.fileName}`;
-  const payload = Buffer.isBuffer(input.archiveBody) ? input.archiveBody : Buffer.from(input.archiveBody, "utf-8");
+  const payload = Buffer.isBuffer(input.archiveBody)
+    ? input.archiveBody
+    : Buffer.from(input.archiveBody, "utf-8");
   const requestBody = new Uint8Array(payload);
   const payloadHash = sha256Hex(payload);
   const signedRequest = buildSignedStorageRequest({
@@ -304,11 +360,15 @@ export async function uploadBackupArchive(input: {
     });
 
     if (!response.ok) {
-      const detail = (await response.text().catch(() => "")).slice(0, 300).trim();
+      const detail = (await response.text().catch(() => ""))
+        .slice(0, 300)
+        .trim();
       return createOffsiteMetadata("failed", config, {
         objectKey,
         location: `s3://${config.bucket}/${objectKey}`,
-        reason: detail ? `Upload failed (${response.status}): ${detail}` : `Upload failed with status ${response.status}.`,
+        reason: detail
+          ? `Upload failed (${response.status}): ${detail}`
+          : `Upload failed with status ${response.status}.`,
       });
     }
 
@@ -326,7 +386,9 @@ export async function uploadBackupArchive(input: {
   }
 }
 
-export async function downloadBackupArchive(offsite: BackupOffsiteMetadata): Promise<{ content: string; contentType: string | null }> {
+export async function downloadBackupArchive(
+  offsite: BackupOffsiteMetadata,
+): Promise<{ content: string; contentType: string | null }> {
   const config = await resolveBackupStorageConfig();
   const provider = normalizeProvider(config.provider);
 
@@ -334,7 +396,13 @@ export async function downloadBackupArchive(offsite: BackupOffsiteMetadata): Pro
     throw new Error("BACKUP_NOT_AVAILABLE_OFFSITE");
   }
 
-  if (!provider || !config.bucket || !config.region || !config.accessKeyId || !config.secretAccessKey) {
+  if (
+    !provider ||
+    !config.bucket ||
+    !config.region ||
+    !config.accessKeyId ||
+    !config.secretAccessKey
+  ) {
     throw new Error("BACKUP_STORAGE_NOT_READY");
   }
 
@@ -357,7 +425,11 @@ export async function downloadBackupArchive(offsite: BackupOffsiteMetadata): Pro
 
   if (!response.ok) {
     const detail = (await response.text().catch(() => "")).slice(0, 300).trim();
-    throw new Error(detail ? `BACKUP_DOWNLOAD_FAILED:${detail}` : `BACKUP_DOWNLOAD_FAILED:${response.status}`);
+    throw new Error(
+      detail
+        ? `BACKUP_DOWNLOAD_FAILED:${detail}`
+        : `BACKUP_DOWNLOAD_FAILED:${response.status}`,
+    );
   }
 
   return {

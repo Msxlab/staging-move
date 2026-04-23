@@ -59,7 +59,7 @@ async function main() {
   // is a known maintenance cost. If the list grows, update both.
   const adminResources = [
     "users", "subscriptions", "reviews", "providers",
-    "state_rules", "badges", "documents", "moving_plans",
+    "state_rules", "badges", "documents", "moving_plans", "tickets",
     "audit_logs", "admin_users", "settings",
   ];
 

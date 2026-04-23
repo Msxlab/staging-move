@@ -54,7 +54,8 @@ export function encrypt(plaintext: string): string {
 /**
  * Decrypt an encrypted string.
  * If the value is not encrypted (no prefix), returns it unchanged (backward compatible).
- * If decryption key is not configured, returns the raw value.
+ * If decryption key is not configured, returns the raw value in development
+ * and throws in production.
  */
 export function decrypt(encryptedValue: string): string {
   if (!encryptedValue) return encryptedValue;
@@ -71,7 +72,9 @@ export function decrypt(encryptedValue: string): string {
   try {
     const payload = encryptedValue.slice(PREFIX.length);
     const [ivB64, ciphertextB64, tagB64] = payload.split(":");
-    if (!ivB64 || !ciphertextB64 || !tagB64) return encryptedValue;
+    if (!ivB64 || !ciphertextB64 || !tagB64) {
+      throw new Error("ENCRYPTION_DECRYPT_FAILED: malformed encrypted value.");
+    }
 
     const iv = Buffer.from(ivB64, "base64");
     const ciphertext = Buffer.from(ciphertextB64, "base64");
@@ -82,8 +85,13 @@ export function decrypt(encryptedValue: string): string {
 
     const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
     return decrypted.toString("utf8");
-  } catch {
-    // If decryption fails, return raw value to avoid breaking the app
+  } catch (error) {
+    if (process.env.NODE_ENV === "production") {
+      throw error instanceof Error
+        ? error
+        : new Error("ENCRYPTION_DECRYPT_FAILED: encrypted value could not be decrypted.");
+    }
+    console.warn("[ENCRYPTION] Failed to decrypt value; returning raw encrypted value in development.", error);
     return encryptedValue;
   }
 }

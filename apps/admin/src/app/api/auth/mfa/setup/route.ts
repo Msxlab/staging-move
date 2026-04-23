@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import QRCode from "qrcode";
 import { prisma } from "@/lib/db";
 import { requireAdmin, requirePasswordConfirm } from "@/lib/auth";
 import { generateSecret, generateProvisioningURI, generateBackupCodes } from "@/lib/totp";
@@ -34,6 +35,15 @@ export async function POST(request: NextRequest) {
     const provisioningURI = generateProvisioningURI(secret, admin.email);
     const { codes: backupCodes, hashes: backupHashes } = await generateBackupCodes();
 
+    // Render QR server-side as a data URL — avoids leaking the TOTP secret
+    // to any third-party QR rendering service and keeps the admin CSP
+    // (img-src 'self' data: blob:) intact without a host exception.
+    const qrDataUrl = await QRCode.toDataURL(provisioningURI, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      width: 240,
+    });
+
     // Store encrypted secret temporarily (not yet enabled — needs verify step)
     const encryptedSecret = encrypt(secret);
     await prisma.adminUser.update({
@@ -58,6 +68,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       provisioningURI,
+      qrDataUrl,
       secret, // Show once for manual entry
       backupCodes, // Show once — user must save these
       message: "Scan the QR code with your authenticator app, then verify with a code to enable MFA.",

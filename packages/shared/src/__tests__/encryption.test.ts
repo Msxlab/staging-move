@@ -77,6 +77,15 @@ describe("encryption module", () => {
       const decrypted = encryption.decrypt(encrypted);
       expect(decrypted).toBe(plaintext);
     });
+
+    it("should return raw tampered ciphertext in development", () => {
+      const encrypted = encryption.encrypt("sensitive-data");
+      const tampered = `${encrypted.slice(0, -2)}xx`;
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      expect(encryption.decrypt(tampered)).toBe(tampered);
+      expect(warn).toHaveBeenCalled();
+      warn.mockRestore();
+    });
   });
 
   describe("without key (development mode)", () => {
@@ -110,6 +119,24 @@ describe("encryption module", () => {
 
     it("should throw when decrypting encrypted value without key in production", () => {
       expect(() => encryption.decrypt("enc_v1:abc:def:ghi")).toThrow("ENCRYPTION_KEY_MISSING");
+    });
+  });
+
+  describe("tampered data (production mode)", () => {
+    beforeEach(async () => {
+      vi.stubEnv("FIELD_ENCRYPTION_KEY", VALID_KEY);
+      vi.stubEnv("NODE_ENV", "production");
+      encryption = await import("../encryption");
+    });
+
+    it("should throw instead of silently returning ciphertext", () => {
+      const encrypted = encryption.encrypt("sensitive-data");
+      const tampered = `${encrypted.slice(0, -2)}xx`;
+      expect(() => encryption.decrypt(tampered)).toThrow();
+    });
+
+    it("should throw for malformed encrypted payloads", () => {
+      expect(() => encryption.decrypt("enc_v1:abc:def")).toThrow("ENCRYPTION_DECRYPT_FAILED");
     });
   });
 

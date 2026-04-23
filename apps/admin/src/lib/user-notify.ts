@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
+import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
 
 export type AdminChangeSet = Record<
   string,
@@ -124,7 +125,9 @@ export async function notifyUserOfAdminChange(input: {
 
     if (recent) return;
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl =
+      (await getAdminRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||
+      "http://localhost:3000";
     void sendEmail({
       to: user.email,
       subject: "Your LocateFlow account was updated",

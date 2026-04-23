@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { sendContractReminderEmail } from "@/lib/email-service";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser } from "@/lib/notification-preferences";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,9 @@ async function handleCron(request: NextRequest) {
 
     const now = new Date();
     const reminderDays = [30, 14, 7, 1];
+    const appUrl =
+      (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||
+      "http://localhost:3000";
     let sent = 0;
 
     for (const days of reminderDays) {
@@ -54,7 +58,7 @@ async function handleCron(request: NextRequest) {
           serviceName: service.providerName,
           contractEndDate: service.contractEndDate!.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
           daysRemaining: days,
-          serviceLink: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/services/${service.id}`,
+          serviceLink: `${appUrl}/services/${service.id}`,
           dedupeKey: `cron:contract-reminder:${service.id}:${service.contractEndDate!.toISOString().slice(0, 10)}:${days}`,
           metadata: {
             userId: service.user.id,

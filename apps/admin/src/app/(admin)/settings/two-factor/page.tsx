@@ -24,6 +24,7 @@ export default function TwoFactorPage() {
   const [setupStep, setSetupStep] = useState<SetupStep>("idle");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [provisioningURI, setProvisioningURI] = useState("");
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const [secret, setSecret] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [verifyCode, setVerifyCode] = useState("");
@@ -57,6 +58,7 @@ export default function TwoFactorPage() {
         return;
       }
       setProvisioningURI(data.provisioningURI);
+      setQrDataUrl(data.qrDataUrl || "");
       setSecret(data.secret);
       setBackupCodes(data.backupCodes || []);
       setSetupStep("scanning");
@@ -134,10 +136,10 @@ export default function TwoFactorPage() {
     toast.success("Backup codes downloaded");
   }
 
-  // QR code URL via Google Charts API (no dependency needed)
-  const qrUrl = provisioningURI
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(provisioningURI)}`
-    : "";
+  // QR code rendered server-side and returned as a data: URL. Keeps the
+  // TOTP secret off third-party services and satisfies the admin CSP's
+  // img-src 'self' data: blob: directive without a host exception.
+  const qrUrl = qrDataUrl;
 
   if (status === "loading") {
     return (
@@ -270,7 +272,7 @@ export default function TwoFactorPage() {
           <div className="flex flex-col items-center gap-4">
             {qrUrl && (
               <div className="rounded-xl border border-border bg-white p-4">
-                <img src={qrUrl} alt="2FA QR Code" width={200} height={200} className="block" />
+                <img src={qrUrl} alt="2FA QR Code" width={240} height={240} className="block" />
               </div>
             )}
 

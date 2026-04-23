@@ -41,8 +41,6 @@ export async function GET(request: NextRequest) {
           user: { select: { id: true, email: true, firstName: true, lastName: true } },
           fromAddress: { select: { street: true, city: true, state: true, zip: true } },
           toAddress: { select: { street: true, city: true, state: true, zip: true } },
-          tasks: { select: { id: true, templateId: true, completed: true }, orderBy: { dueDate: "asc" } },
-          _count: { select: { tasks: true, boxes: true } },
         },
         orderBy: { moveDate: "desc" },
         take: perPage,

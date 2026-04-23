@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "./db";
 import bcrypt from "bcryptjs";
 import { trackFailedPasswordConfirm, trackSensitiveOp } from "./security-monitor";
+import { generateAdminSessionFingerprint } from "./session-fingerprint";
 
 const adminJwtSecret = process.env.ADMIN_JWT_SECRET;
 if (!adminJwtSecret || adminJwtSecret.length < 32) {
@@ -36,16 +37,18 @@ export interface AdminSession {
 }
 
 /**
- * Generate a SHA-256 fingerprint from IP + User-Agent.
- * Binds the session to the client's network/browser identity.
+ * Generate a SHA-256 admin session fingerprint from a coarse client IP bucket
+ * plus stable request headers. IPv4 is bound at /24 and IPv6 at /64 so normal
+ * ISP churn is tolerated while stolen cookies replayed from a different
+ * network are rejected.
  */
-export async function generateFingerprint(ip: string, userAgent: string): Promise<string> {
-  const raw = `${ip}|${userAgent}`;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(raw);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+export async function generateFingerprint(
+  ip: string,
+  userAgent: string,
+  acceptLanguage?: string | null,
+  secChUa?: string | null,
+): Promise<string> {
+  return generateAdminSessionFingerprint({ ip, userAgent, acceptLanguage, secChUa });
 }
 
 export async function hashSessionToken(token: string): Promise<string> {
@@ -206,10 +209,12 @@ export async function getSession(): Promise<AdminSession | null> {
 export async function validateFingerprint(
   session: AdminSession,
   ip: string,
-  userAgent: string
+  userAgent: string,
+  acceptLanguage?: string | null,
+  secChUa?: string | null,
 ): Promise<boolean> {
   if (!session.fingerprint) return true; // Legacy sessions without fingerprint
-  const currentFp = await generateFingerprint(ip, userAgent);
+  const currentFp = await generateFingerprint(ip, userAgent, acceptLanguage, secChUa);
   return currentFp === session.fingerprint;
 }
 

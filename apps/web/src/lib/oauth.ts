@@ -5,6 +5,7 @@
 
 import { randomBytes, createHash, createPrivateKey } from "crypto";
 import { SignJWT } from "jose";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 // ── State + PKCE ──────────────────────────────────────────────
 
@@ -20,6 +21,11 @@ export function generatePkce() {
 
 export function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "http://localhost:3000";
+}
+
+export async function getRuntimeBaseUrl(): Promise<string> {
+  const value = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL");
+  return (value || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
 }
 
 // ── Google ─────────────────────────────────────────────────────

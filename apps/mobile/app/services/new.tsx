@@ -599,7 +599,7 @@ export default function NewServiceScreen() {
 
             <Text style={styles.sectionLabel}>Billing Cycle</Text>
             <View style={styles.chipRow}>
-              {BILLING_CYCLES.map((b) => (
+              {billingCycles.map((b) => (
                 <TouchableOpacity
                   key={b.value}
                   style={[styles.chip, manualForm.billingCycle === b.value && styles.chipActive]}

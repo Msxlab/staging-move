@@ -54,6 +54,7 @@
     "runtimeConfig": "Runtime Config",
     "settings": "Settings",
     "backups": "Backups",
+    "auditLogs": "Audit Logs",
     "tickets": "Tickets",
     "support": "Support"
   },

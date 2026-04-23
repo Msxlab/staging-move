@@ -5,6 +5,7 @@ import { createSession, generateFingerprint, hashSessionToken } from "@/lib/auth
 import { trackFailedLogin, trackSuccessfulLogin } from "@/lib/security-monitor";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
+import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
 
 function parseLoginUA(ua: string) {
   const result = { browser: "Unknown", os: "Unknown", deviceType: "Desktop" };
@@ -53,11 +54,11 @@ async function writeLoginLog(input: {
   } catch {}
 }
 // SEC-005: Rate limiter for admin login (5 attempts per 15 minutes per IP)
-// Uses Upstash Redis when available, falls back to in-memory for development.
+// Uses Upstash Redis when available, falls back to in-memory so admin access
+// is not blocked during low-cost or first-boot deployments.
 const MAX_ATTEMPTS = 5;
 const WINDOW_SECONDS = 15 * 60; // 15 minutes
 const LOCKOUT_SECONDS = 30 * 60; // 30 minutes lockout after exceeding
-const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 
 // In-memory fallback
 interface LoginAttempt { count: number; resetAt: number; lockedUntil: number; }
@@ -111,13 +112,32 @@ async function writeLoginAuditLog(input: {
   }).catch(() => null);
 }
 
+function resolveClientIP(request: NextRequest): string {
+  if (process.env.VERCEL_ENV) {
+    const vercelIp = request.headers.get("x-vercel-forwarded-for");
+    if (vercelIp) return vercelIp.split(",")[0].trim();
+  }
+
+  const cfIp = request.headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp.trim();
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+
+  return "unknown";
+}
+
 async function checkLoginRateLimitRedis(ip: string): Promise<{ allowed: boolean; retryAfterSec: number; unavailable?: boolean }> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token || url.includes("REPLACE")) {
-    if (isProduction) {
-      return { allowed: false, retryAfterSec: 60, unavailable: true };
-    }
+  const values = await getAdminRuntimeConfigValues([
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+  ]);
+  const url = values.UPSTASH_REDIS_REST_URL;
+  const token = values.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token || url.includes("REPLACE") || token.includes("REPLACE")) {
     return checkLoginRateLimitMemory(ip);
   }
 
@@ -162,10 +182,8 @@ async function checkLoginRateLimitRedis(ip: string): Promise<{ allowed: boolean;
 
     return { allowed: true, retryAfterSec: 0 };
   } catch {
-    // Fallback to in-memory on Redis error
-    if (isProduction) {
-      return { allowed: false, retryAfterSec: 60, unavailable: true };
-    }
+    // Fallback to in-memory on Redis error. Upstash should improve distributed
+    // protection, but it must not make the only admin login path unavailable.
     return checkLoginRateLimitMemory(ip);
   }
 }
@@ -201,7 +219,7 @@ export async function POST(request: NextRequest) {
     }
 
     // SEC-005: Rate limiting
-    const ip = (request.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
+    const ip = resolveClientIP(request);
     const rateCheck = await checkLoginRateLimitRedis(ip);
     if (!rateCheck.allowed) {
       await prisma.rateLimitLog.create({
@@ -299,7 +317,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Session fingerprinting — bind JWT to IP + User-Agent
-    const fp = await generateFingerprint(ip, ua);
+    const fp = await generateFingerprint(
+      ip,
+      ua,
+      request.headers.get("accept-language"),
+      request.headers.get("sec-ch-ua"),
+    );
     // Embed `mfaEnabled` in the JWT so the Edge-Runtime middleware can gate
     // access without a DB call. SUPER_ADMINs without MFA are steered to the
     // setup page (see admin middleware `applyMfaSetupGate`).

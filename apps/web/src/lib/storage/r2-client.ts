@@ -4,14 +4,15 @@
  * already used in apps/admin/src/lib/backup-storage.ts.
  *
  * Safety:
- *   - Credentials are read from env only (server-only, never exposed to
- *     the browser).
+ *   - Credentials are read server-side from runtime config/env only, never
+ *     exposed to the browser.
  *   - Content-Type is required on upload — prevents browser sniffing.
  *   - Object keys are scoped by `kind/userId/uuid` so a user's objects can
  *     never collide with another user's namespace.
  */
 
 import { createHash, createHmac, randomUUID } from "crypto";
+import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
 
 export interface R2Config {
   endpoint: string;
@@ -22,6 +23,14 @@ export interface R2Config {
 }
 
 export type UploadKind = "avatar" | "document" | "provider-logo" | "backup";
+
+export const ALLOWED_UPLOAD_CONTENT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/pdf",
+]);
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -36,6 +45,30 @@ export function getR2Config(): R2Config {
     bucket: requireEnv("R2_BUCKET"),
     accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
     secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
+  };
+}
+
+function requireConfigValue(values: Record<string, string | null>, key: string): string {
+  const value = values[key];
+  if (!value) throw new Error(`${key} is not set`);
+  return value;
+}
+
+export async function resolveR2Config(): Promise<R2Config> {
+  const values = await getRequiredRuntimeConfigValues([
+    "R2_ENDPOINT",
+    "R2_REGION",
+    "R2_BUCKET",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+  ]);
+
+  return {
+    endpoint: requireConfigValue(values, "R2_ENDPOINT"),
+    region: values.R2_REGION || "auto",
+    bucket: requireConfigValue(values, "R2_BUCKET"),
+    accessKeyId: requireConfigValue(values, "R2_ACCESS_KEY_ID"),
+    secretAccessKey: requireConfigValue(values, "R2_SECRET_ACCESS_KEY"),
   };
 }
 
@@ -117,6 +150,14 @@ function signRequest(input: {
   return { url, authorization, amzDate };
 }
 
+export function normalizeAllowedUploadContentType(contentType: string): string {
+  const mediaType = contentType.split(";")[0].trim().toLowerCase();
+  if (!ALLOWED_UPLOAD_CONTENT_TYPES.has(mediaType)) {
+    throw new Error(`UNSUPPORTED_UPLOAD_CONTENT_TYPE: ${contentType}`);
+  }
+  return mediaType;
+}
+
 /**
  * Build a namespaced, collision-free object key. Format:
  *   <kind>/<userId>/<uuid>.<ext>
@@ -143,21 +184,22 @@ export async function putObject(input: {
   body: Buffer;
   contentType: string;
 }): Promise<void> {
-  const cfg = getR2Config();
+  const contentType = normalizeAllowedUploadContentType(input.contentType);
+  const cfg = await resolveR2Config();
   const payloadHash = sha256Hex(input.body);
   const signed = signRequest({
     cfg,
     method: "PUT",
     objectKey: input.objectKey,
     payloadHash,
-    contentType: input.contentType,
+    contentType,
   });
 
   const res = await fetch(signed.url, {
     method: "PUT",
     headers: {
       Authorization: signed.authorization,
-      "Content-Type": input.contentType,
+      "Content-Type": contentType,
       "x-amz-content-sha256": payloadHash,
       "x-amz-date": signed.amzDate,
     },
@@ -175,7 +217,7 @@ export async function putObject(input: {
  * Returns true when the object is gone (or was never there).
  */
 export async function deleteObject(objectKey: string): Promise<boolean> {
-  const cfg = getR2Config();
+  const cfg = await resolveR2Config();
   const signed = signRequest({
     cfg,
     method: "DELETE",

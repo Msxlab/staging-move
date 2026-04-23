@@ -74,6 +74,7 @@ services:
     build:
       context: .
       dockerfile: docker/web.prod.Dockerfile
+      target: runner
     container_name: locateflow-web
     restart: unless-stopped
     depends_on:
@@ -88,6 +89,8 @@ services:
       CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
       USER_JWT_SECRET: ${USER_JWT_SECRET:?USER_JWT_SECRET is required}
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET:-}
+      IMPERSONATION_HANDOFF_SECRET: ${IMPERSONATION_HANDOFF_SECRET:-}
       # OAuth (optional)
       GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
@@ -99,6 +102,7 @@ services:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
       STRIPE_PRICE_INDIVIDUAL: ${STRIPE_PRICE_INDIVIDUAL}
+      STRIPE_PRICE_INDIVIDUAL_YEARLY: ${STRIPE_PRICE_INDIVIDUAL_YEARLY:-}
       # Email
       RESEND_API_KEY: ${RESEND_API_KEY}
       EMAIL_FROM: ${EMAIL_FROM}
@@ -130,6 +134,7 @@ services:
     build:
       context: .
       dockerfile: docker/admin.prod.Dockerfile
+      target: runner
     container_name: locateflow-admin
     restart: unless-stopped
     depends_on:
@@ -140,6 +145,8 @@ services:
     environment:
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
       ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET is required}
+      INTERNAL_WEBHOOK_SECRET: ${INTERNAL_WEBHOOK_SECRET:-}
+      IMPERSONATION_HANDOFF_SECRET: ${IMPERSONATION_HANDOFF_SECRET:-}
       FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY}
       CRON_SECRET: ${CRON_SECRET}
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}

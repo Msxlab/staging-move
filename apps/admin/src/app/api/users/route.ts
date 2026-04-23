@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
     if (subStatus) {
       where.subscription = { ...where.subscription, status: subStatus };
     }
-    if (hasReviews === "true") where.providerReviews = { some: {} };
+    if (hasReviews === "true") {
+      where.services = { some: { personalReview: { not: null } } };
+    }
     if (hasMoving === "true") where.movingPlans = { some: {} };
     if (dateFrom || dateTo) {
       where.createdAt = {};
@@ -59,10 +61,10 @@ export async function GET(request: NextRequest) {
             select: {
               addresses: true,
               services: true,
-              providerReviews: true,
               movingPlans: true,
             },
           },
+          services: { select: { personalReview: true } },
         },
         orderBy,
         take: perPage,
@@ -76,6 +78,20 @@ export async function GET(request: NextRequest) {
       prisma.subscription.groupBy({ by: ["plan"], _count: { id: true } }),
     ]);
 
+    const usersWithReviewCounts = users.map((user) => {
+      const reviewCount = user.services.filter((service) =>
+        Boolean(service.personalReview),
+      ).length;
+      const { services, ...rest } = user;
+      return {
+        ...rest,
+        _count: {
+          ...rest._count,
+          providerReviews: reviewCount,
+        },
+      };
+    });
+
     const planMap: Record<string, number> = {};
     planCounts.forEach((p: any) => { planMap[p.plan] = p._count.id; });
 
@@ -84,7 +100,7 @@ export async function GET(request: NextRequest) {
       : newThisWeek > 0 ? 100 : 0;
 
     return NextResponse.json({
-      users, total, page, perPage,
+      users: usersWithReviewCounts, total, page, perPage,
       stats: { totalAll, newThisWeek, weeklyTrend, activeSubCount, planMap },
     });
   } catch (error: any) {

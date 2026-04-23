@@ -25,6 +25,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 
 COPY packages/db ./packages/db
 
+RUN pnpm --filter @locateflow/db exec prisma generate
+
 # Default command runs migrations then the admin seed.
 # Data seed (master) is intentionally NOT run in prod — operators decide.
 # The admin seed is required because admin login depends on an AdminUser row.

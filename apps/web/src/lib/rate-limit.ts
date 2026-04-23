@@ -8,7 +8,14 @@ import { Redis } from "@upstash/redis";
 
 // ── Redis-backed rate limiters (production) ──────────────────
 
-const hasRedis = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const hasRedis = Boolean(
+  redisUrl &&
+    redisToken &&
+    !redisUrl.includes("REPLACE") &&
+    !redisToken.includes("REPLACE"),
+);
 const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 const REDIS_DEGRADE_WINDOW_MS = 60 * 1000;
 
@@ -20,8 +27,8 @@ let redisFailureWarned = false;
 
 if (hasRedis) {
   const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: redisUrl!,
+    token: redisToken!,
   });
 
   readLimiter = new Ratelimit({
@@ -131,13 +138,14 @@ export async function rateLimit(
 
 /**
  * Extracts the most reliable client IP from the request.
- * Priority: x-vercel-forwarded-for > x-real-ip > x-forwarded-for > cf-connecting-ip > fallback.
+ * Priority: x-vercel-forwarded-for on Vercel only > x-real-ip > x-forwarded-for > cf-connecting-ip > fallback.
  * Each platform sets its trusted header — we check the most reliable first.
  */
 function resolveClientIP(request: Request): string {
-  // Vercel sets this and it cannot be spoofed by the client
-  const vercelIp = request.headers.get("x-vercel-forwarded-for");
-  if (vercelIp) return vercelIp.split(",")[0].trim();
+  if (process.env.VERCEL_ENV) {
+    const vercelIp = request.headers.get("x-vercel-forwarded-for");
+    if (vercelIp) return vercelIp.split(",")[0].trim();
+  }
 
   // Cloudflare's trusted header
   const cfIp = request.headers.get("cf-connecting-ip");

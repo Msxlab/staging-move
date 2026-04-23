@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appleAuthorizeUrl, generateState, getBaseUrl } from "@/lib/oauth";
+import { appleAuthorizeUrl, generateState, getRuntimeBaseUrl } from "@/lib/oauth";
 
 export const runtime = "nodejs";
 
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   const state = generateState();
-  const redirectUri = `${getBaseUrl()}/api/auth/oauth/apple/callback`;
+  const redirectUri = `${await getRuntimeBaseUrl()}/api/auth/oauth/apple/callback`;
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
   const safeRedirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";

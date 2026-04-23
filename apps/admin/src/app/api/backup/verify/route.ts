@@ -6,7 +6,7 @@ import { decryptBackup, verifyBackupSignature } from "@/lib/shared-encryption";
 
 const ALLOWED_TABLES = new Set([
   "users", "profiles", "addresses", "services", "providers",
-  "movingPlans", "tasks", "reviews", "documents", "badges",
+  "movingPlans",
   "budgets", "subscriptions", "auditLogs", "notifications",
 ]);
 
@@ -17,7 +17,6 @@ const BACKUP_TABLE_COUNTERS = {
   services: () => prisma.service.count(),
   providers: () => prisma.serviceProvider.count(),
   movingPlans: () => prisma.movingPlan.count(),
-  tasks: () => prisma.task.count(),
   budgets: () => prisma.budget.count(),
   subscriptions: () => prisma.subscription.count(),
   auditLogs: () => prisma.auditLog.count(),

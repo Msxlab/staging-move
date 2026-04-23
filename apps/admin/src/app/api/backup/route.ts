@@ -40,10 +40,6 @@ const BACKUP_TABLE_OPS = {
     count: () => prisma.movingPlan.count(),
     findRecords: () => prisma.movingPlan.findMany({ take: 50000 }),
   },
-  tasks: {
-    count: () => prisma.task.count(),
-    findRecords: () => prisma.task.findMany({ take: 50000 }),
-  },
   budgets: {
     count: () => prisma.budget.count(),
     findRecords: () => prisma.budget.findMany({ take: 50000 }),

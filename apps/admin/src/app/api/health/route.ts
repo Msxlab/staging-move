@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
 
 interface HealthCheck {
   name: string;
@@ -12,6 +13,16 @@ interface HealthCheck {
 export async function GET(request: NextRequest) {
   try {
     await requirePermission("settings", "canRead", { minimumRole: "ADMIN" });
+
+    const runtimeValues = await getAdminRuntimeConfigValues([
+      "UPSTASH_REDIS_REST_URL",
+      "UPSTASH_REDIS_REST_TOKEN",
+      "RESEND_API_KEY",
+      "BACKUP_STORAGE_BUCKET",
+      "BACKUP_STORAGE_PROVIDER",
+      "NEXT_PUBLIC_SENTRY_DSN",
+      "SLACK_WEBHOOK_URL",
+    ]);
 
     const checks: HealthCheck[] = [];
 
@@ -27,12 +38,17 @@ export async function GET(request: NextRequest) {
         details: dbLatency > 500 ? "High latency" : "Connected",
       });
     } catch (err: any) {
-      checks.push({ name: "Database", status: "down", latencyMs: Date.now() - dbStart, details: err.message?.slice(0, 100) });
+      checks.push({
+        name: "Database",
+        status: "down",
+        latencyMs: Date.now() - dbStart,
+        details: err.message?.slice(0, 100),
+      });
     }
 
     // ── Redis (Upstash) ─────────────────────────────────────
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const redisUrl = runtimeValues.UPSTASH_REDIS_REST_URL;
+    const redisToken = runtimeValues.UPSTASH_REDIS_REST_TOKEN;
     if (redisUrl && redisToken && !redisUrl.includes("REPLACE")) {
       const redisStart = Date.now();
       try {
@@ -44,68 +60,131 @@ export async function GET(request: NextRequest) {
         const data = await res.json();
         checks.push({
           name: "Redis (Upstash)",
-          status: data.result === "PONG" ? (redisLatency > 300 ? "degraded" : "healthy") : "degraded",
+          status:
+            data.result === "PONG"
+              ? redisLatency > 300
+                ? "degraded"
+                : "healthy"
+              : "degraded",
           latencyMs: redisLatency,
           details: data.result === "PONG" ? "Connected" : "Unexpected response",
         });
       } catch (err: any) {
-        checks.push({ name: "Redis (Upstash)", status: "down", latencyMs: Date.now() - redisStart, details: err.message?.slice(0, 100) });
+        checks.push({
+          name: "Redis (Upstash)",
+          status: "down",
+          latencyMs: Date.now() - redisStart,
+          details: err.message?.slice(0, 100),
+        });
       }
     } else {
-      checks.push({ name: "Redis (Upstash)", status: "unknown", details: "Not configured" });
+      checks.push({
+        name: "Redis (Upstash)",
+        status: "unknown",
+        details: "Not configured",
+      });
     }
 
     // ── Auth (JWT secret) ───────────────────────────────────
-    const jwtSecret = process.env.ADMIN_JWT_SECRET || process.env.USER_JWT_SECRET;
+    const jwtSecret =
+      process.env.ADMIN_JWT_SECRET || process.env.USER_JWT_SECRET;
     if (jwtSecret && !jwtSecret.includes("REPLACE") && jwtSecret.length >= 32) {
-      checks.push({ name: "Auth (JWT)", status: "healthy", details: "Secret configured" });
+      checks.push({
+        name: "Auth (JWT)",
+        status: "healthy",
+        details: "Secret configured",
+      });
     } else {
-      checks.push({ name: "Auth (JWT)", status: "degraded", details: jwtSecret ? "Secret too short" : "Not configured" });
+      checks.push({
+        name: "Auth (JWT)",
+        status: "degraded",
+        details: jwtSecret ? "Secret too short" : "Not configured",
+      });
     }
 
     // ── Email (Resend) ──────────────────────────────────────
-    const resendKey = process.env.RESEND_API_KEY;
+    const resendKey = runtimeValues.RESEND_API_KEY;
     if (resendKey && !resendKey.includes("REPLACE")) {
-      checks.push({ name: "Email (Resend)", status: "healthy", details: "API key configured" });
+      checks.push({
+        name: "Email (Resend)",
+        status: "healthy",
+        details: "API key configured",
+      });
     } else {
-      checks.push({ name: "Email (Resend)", status: "unknown", details: "Not configured" });
+      checks.push({
+        name: "Email (Resend)",
+        status: "unknown",
+        details: "Not configured",
+      });
     }
 
-    // ── S3 Backup Storage ───────────────────────────────────
-    const s3Bucket = process.env.BACKUP_STORAGE_BUCKET;
-    if (s3Bucket && !s3Bucket.includes("REPLACE")) {
-      checks.push({ name: "Backup Storage (S3)", status: "healthy", details: `Bucket: ${s3Bucket}` });
+    // ── S3-Compatible Backup Storage ────────────────────────
+    const backupBucket = runtimeValues.BACKUP_STORAGE_BUCKET;
+    const backupProvider =
+      runtimeValues.BACKUP_STORAGE_PROVIDER || "S3-compatible";
+    if (backupBucket && !backupBucket.includes("REPLACE")) {
+      checks.push({
+        name: "Backup Storage (S3-Compatible)",
+        status: "healthy",
+        details: `${backupProvider} bucket: ${backupBucket}`,
+      });
     } else {
-      checks.push({ name: "Backup Storage (S3)", status: "unknown", details: "Not configured" });
+      checks.push({
+        name: "Backup Storage (S3-Compatible)",
+        status: "unknown",
+        details: "Not configured",
+      });
     }
 
     // ── Sentry ──────────────────────────────────────────────
-    const sentryDsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+    const sentryDsn = runtimeValues.NEXT_PUBLIC_SENTRY_DSN;
     if (sentryDsn && !sentryDsn.includes("REPLACE")) {
-      checks.push({ name: "Error Tracking (Sentry)", status: "healthy", details: "DSN configured" });
+      checks.push({
+        name: "Error Tracking (Sentry)",
+        status: "healthy",
+        details: "DSN configured",
+      });
     } else {
-      checks.push({ name: "Error Tracking (Sentry)", status: "unknown", details: "Not configured" });
+      checks.push({
+        name: "Error Tracking (Sentry)",
+        status: "unknown",
+        details: "Not configured",
+      });
     }
 
     // ── Slack Webhook ───────────────────────────────────────
-    const slackUrl = process.env.SLACK_WEBHOOK_URL;
+    const slackUrl = runtimeValues.SLACK_WEBHOOK_URL;
     if (slackUrl && !slackUrl.includes("REPLACE")) {
-      checks.push({ name: "Slack Alerts", status: "healthy", details: "Webhook configured" });
+      checks.push({
+        name: "Slack Alerts",
+        status: "healthy",
+        details: "Webhook configured",
+      });
     } else {
-      checks.push({ name: "Slack Alerts", status: "unknown", details: "Not configured" });
+      checks.push({
+        name: "Slack Alerts",
+        status: "unknown",
+        details: "Not configured",
+      });
     }
 
     // ── System Metrics ──────────────────────────────────────
     const [
-      totalUsers, totalSessions, totalEvents, totalAdminLogs,
-      totalBackups, activeAdminSessions,
+      totalUsers,
+      totalSessions,
+      totalEvents,
+      totalAdminLogs,
+      totalBackups,
+      activeAdminSessions,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.userSession.count(),
       prisma.userEvent.count(),
       prisma.adminAuditLog.count(),
       prisma.backupRecord?.count().catch(() => 0) || 0,
-      prisma.adminSession?.count({ where: { isActive: true } }).catch(() => 0) || 0,
+      prisma.adminSession
+        ?.count({ where: { isActive: true } })
+        .catch(() => 0) || 0,
     ]);
 
     // Last backup
@@ -142,8 +221,10 @@ export async function GET(request: NextRequest) {
       version: "1.0.0",
     });
   } catch (error: any) {
-    if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error?.message === "UNAUTHORIZED")
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error?.message === "FORBIDDEN")
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     console.error("Health check error:", error);
     return NextResponse.json({ error: "Health check failed" }, { status: 500 });
   }

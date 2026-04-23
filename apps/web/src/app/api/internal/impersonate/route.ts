@@ -4,6 +4,7 @@ import { SignJWT } from "jose";
 import { prisma } from "@/lib/db";
 import { hashSessionToken } from "@/lib/user-auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 export const runtime = "nodejs";
 
@@ -12,8 +13,7 @@ export const runtime = "nodejs";
  * impersonation session for a target user.
  *
  * Security model:
- *  - Requires `Authorization: Bearer <CRON_SECRET>` (the same shared
- *    secret the admin container already uses for other cross-app calls).
+ *  - Requires `Authorization: Bearer <IMPERSONATION_HANDOFF_SECRET>`.
  *  - Hard 15-minute TTL — the admin UI can only ask for ≤15 minutes,
  *    and we cap server-side regardless.
  *  - Writes to UserLoginSession with `impersonatedByAdminId` set so
@@ -38,8 +38,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  // Shared-secret check — uses IMPERSONATION_HANDOFF_SECRET when configured,
-  // falls back to CRON_SECRET for deployments that haven't rotated yet.
+  // Shared-secret check; CRON_SECRET is intentionally not accepted here.
   if (!verifyInternalAuth(request.headers.get("authorization"), "impersonation")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -94,7 +93,10 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+  const appUrl =
+    (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    request.nextUrl.origin;
   const handoffUrl = `${appUrl}/api/auth/impersonate-handoff?token=${encodeURIComponent(token)}`;
 
   return NextResponse.json({

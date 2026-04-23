@@ -6,6 +6,7 @@
 
 export {
   getR2Config,
+  resolveR2Config,
   buildObjectKey,
   putObject,
   deleteObject,

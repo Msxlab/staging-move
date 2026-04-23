@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Loader2, MessageSquare, ChevronRight, AlertCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, MessageSquare, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 
 const statusBadge: Record<string, string> = {
   OPEN: "bg-blue-500/10 text-blue-400 border-blue-500/20",
@@ -35,6 +37,7 @@ interface Ticket {
 const STATUS_FILTERS = ["", "OPEN", "IN_PROGRESS", "WAITING_USER", "CLOSED"];
 
 export default function AdminSupportPage() {
+  const router = useRouter();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState({ open: 0, inProgress: 0, waitingUser: 0, urgent: 0 });
   const [loading, setLoading] = useState(true);
@@ -47,12 +50,19 @@ export default function AdminSupportPage() {
     if (search) params.set("search", search);
     params.set("limit", "50");
     const res = await fetch(`/api/tickets?${params.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      setTickets(data.tickets || []);
-      if (data.stats) setStats(data.stats);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      if (data?.mfaSetupRequired) {
+        toast.error("MFA setup is required before support tickets can be loaded.");
+        router.push("/settings/two-factor?required=1");
+        return;
+      }
+      toast.error(data?.error || "Failed to load support tickets");
+      return;
     }
-  }, [statusFilter, search]);
+    setTickets(data.tickets || []);
+    if (data.stats) setStats(data.stats);
+  }, [router, statusFilter, search]);
 
   useEffect(() => {
     setLoading(true);

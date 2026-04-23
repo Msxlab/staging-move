@@ -40,11 +40,6 @@ const IMPORT_MODEL_OPS = {
       prisma.movingPlan.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.movingPlan.create({ data }),
   },
-  tasks: {
-    count: () => prisma.task.count(),
-    findUniqueById: (id: string) => prisma.task.findUnique({ where: { id } }),
-    createRecord: (data: any) => prisma.task.create({ data }),
-  },
   services: {
     count: () => prisma.service.count(),
     findUniqueById: (id: string) =>
@@ -183,6 +178,16 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if ((mode === "MERGE" || mode === "REPLACE") && (!signature || !rawContent)) {
+      return NextResponse.json(
+        {
+          error:
+            `${mode} mode requires a backup signature and raw signed content for integrity verification. Use a backup exported from this system.`,
+        },
+        { status: 400 },
+      );
+    }
+    let signatureVerified = false;
     if (signature && rawContent) {
       const isValid = verifyBackupSignature(rawContent, signature);
       if (!isValid) {
@@ -194,6 +199,7 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         );
       }
+      signatureVerified = true;
     }
 
     const requestedTables =
@@ -271,6 +277,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         mode: "DRY_RUN",
+        signatureVerified,
         message:
           "No changes were made. This is a preview of what would happen.",
         tables: selectedTables,
@@ -430,7 +437,7 @@ export async function POST(request: NextRequest) {
           totalImported,
           totalSkipped,
           totalErrors,
-          signatureVerified: !!signature,
+          signatureVerified,
           encryptedArchive,
           dependencyWarnings,
         }),
@@ -441,6 +448,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       mode,
+      signatureVerified,
       tables: selectedTables,
       warnings: dependencyWarnings,
       results,

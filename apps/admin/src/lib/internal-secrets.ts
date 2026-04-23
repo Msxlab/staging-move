@@ -1,22 +1,10 @@
 /**
  * Shared-secret authentication for server-to-server calls.
  *
- * Historically a single `CRON_SECRET` protected three very different
- * surfaces — scheduled cron jobs, internal webhook fan-out (security events,
- * IP-rule cache, rate-limit logs), and the admin→web impersonation handoff.
- * One secret = one breach → three compromised surfaces. This helper lets
- * operators rotate them independently while staying backward-compatible
- * with deployments that only configure `CRON_SECRET`.
- *
- * Rollout strategy:
- *   1. Deploy this change — receivers accept EITHER the kind-specific
- *      secret (if set) OR the legacy `CRON_SECRET`. No break.
- *   2. Operator sets `INTERNAL_WEBHOOK_SECRET` + `IMPERSONATION_HANDOFF_SECRET`
- *      on both caller and receiver containers, then rotates `CRON_SECRET`
- *      to a fresh value used ONLY by scheduled cron endpoints.
- *   3. Once traffic stabilizes, operator may optionally drop acceptance
- *      of `CRON_SECRET` on internal/impersonation routes — but that
- *      enforcement switch is deliberately left for a later hardening pass.
+ * `CRON_SECRET` is scoped to scheduled cron endpoints. Internal webhook calls
+ * may still accept it for compatibility, but the admin-to-web impersonation
+ * handoff must use `IMPERSONATION_HANDOFF_SECRET` and never falls back to
+ * `CRON_SECRET`.
  */
 export type InternalSecretKind = "cron" | "internal" | "impersonation";
 
@@ -26,7 +14,7 @@ function getSpecificEnv(kind: InternalSecretKind): string | undefined {
   return undefined;
 }
 
-/** Constant-time string equality — safe in Edge Runtime (no Node crypto). */
+/** Constant-time string equality; safe in Edge Runtime. */
 function safeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -48,6 +36,7 @@ export function verifyInternalAuth(
 
   const specific = getSpecificEnv(kind);
   if (specific && safeEqual(token, specific)) return true;
+  if (kind === "impersonation") return false;
 
   const legacy = process.env.CRON_SECRET;
   if (legacy && safeEqual(token, legacy)) return true;
@@ -60,5 +49,6 @@ export function getInternalCallerSecret(
 ): string | undefined {
   const specific = getSpecificEnv(kind);
   if (specific) return specific;
+  if (kind === "impersonation") return undefined;
   return process.env.CRON_SECRET || undefined;
 }

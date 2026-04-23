@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
 import { getInternalCallerSecret } from "@/lib/internal-secrets";
+import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
 
 export const runtime = "nodejs";
 
@@ -20,8 +21,7 @@ export const runtime = "nodejs";
  *    IMPERSONATION_START and creates a Notification for the target user
  *    so they're informed about the access.
  *  - Cross-app handoff is done through the web app's internal endpoint
- *    authenticated by CRON_SECRET (same shared secret used for security
- *    event emission).
+ *    authenticated by IMPERSONATION_HANDOFF_SECRET.
  *
  * The response contains a one-shot `handoffUrl` the operator should open
  * in a new browser profile / incognito window. That URL, served by the
@@ -68,7 +68,9 @@ export async function POST(
     // only place where a user JWT is minted on behalf of an admin —
     // keeping that logic in the web app means admin containers never
     // need USER_JWT_SECRET.
+    const appUrl = await getAdminRuntimeConfigValue("NEXT_PUBLIC_APP_URL");
     const webBase =
+      appUrl ||
       process.env.NEXT_PUBLIC_APP_URL ||
       process.env.WEB_INTERNAL_URL ||
       "http://web:3000";
@@ -77,7 +79,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Impersonation is unavailable (IMPERSONATION_HANDOFF_SECRET or CRON_SECRET not configured)",
+            "Impersonation is unavailable (IMPERSONATION_HANDOFF_SECRET not configured)",
         },
         { status: 503 },
       );

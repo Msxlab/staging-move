@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
-import { exchangeAppleCode, getBaseUrl } from "@/lib/oauth";
+import { exchangeAppleCode, getRuntimeBaseUrl } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
 
 export const runtime = "nodejs";
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   const tokens = await exchangeAppleCode({
     code,
-    redirectUri: `${getBaseUrl()}/api/auth/oauth/apple/callback`,
+    redirectUri: `${await getRuntimeBaseUrl()}/api/auth/oauth/apple/callback`,
     clientId, teamId, keyId, privateKeyPem,
   });
   if (!tokens?.idToken) {

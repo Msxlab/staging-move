@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 const findUniqueUser = vi.fn();
 const findFirstNotification = vi.fn();
 const createNotification = vi.fn();
+const findUniqueRuntimeConfigEntry = vi.fn();
 const sendEmail = vi.fn();
 
 vi.mock("@/lib/db", () => ({
@@ -11,6 +12,9 @@ vi.mock("@/lib/db", () => ({
     notification: {
       findFirst: (...args: unknown[]) => findFirstNotification(...args),
       create: (...args: unknown[]) => createNotification(...args),
+    },
+    runtimeConfigEntry: {
+      findUnique: (...args: unknown[]) => findUniqueRuntimeConfigEntry(...args),
     },
   },
 }));
@@ -27,6 +31,7 @@ describe("notifyUserOfAdminChange", () => {
     findUniqueUser.mockResolvedValue({ email: "alice@example.com", firstName: "Alice" });
     findFirstNotification.mockResolvedValue(null);
     createNotification.mockResolvedValue({ id: "notif_1" });
+    findUniqueRuntimeConfigEntry.mockResolvedValue(null);
     sendEmail.mockResolvedValue(true);
   });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import { rateLimit, getRateLimitKey } from "./rate-limit";
 
 function makeRequest(headers: Record<string, string>): Request {
@@ -6,12 +6,25 @@ function makeRequest(headers: Record<string, string>): Request {
 }
 
 describe("getRateLimitKey", () => {
-  it("prefers x-vercel-forwarded-for over everything else", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("ignores x-vercel-forwarded-for outside Vercel", () => {
     const req = makeRequest({
       "x-vercel-forwarded-for": "1.1.1.1",
       "cf-connecting-ip": "2.2.2.2",
       "x-real-ip": "3.3.3.3",
       "x-forwarded-for": "4.4.4.4",
+    });
+    expect(getRateLimitKey(req, "test")).toBe("test:2.2.2.2");
+  });
+
+  it("trusts x-vercel-forwarded-for on Vercel only", () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    const req = makeRequest({
+      "x-vercel-forwarded-for": "1.1.1.1",
+      "cf-connecting-ip": "2.2.2.2",
     });
     expect(getRateLimitKey(req, "test")).toBe("test:1.1.1.1");
   });

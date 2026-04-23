@@ -21,7 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requirePermission("users", "canRead", { minimumRole: "ADMIN" });
+    await requirePermission("tickets", "canRead", { minimumRole: "ADMIN" });
     const { id } = await params;
 
     const ticket = await prisma.supportTicket.findUnique({
@@ -62,7 +62,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
+    const session = await requirePermission("tickets", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
 
     const ticket = await prisma.supportTicket.findUnique({ where: { id } });
@@ -123,7 +123,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
+    const session = await requirePermission("tickets", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
 
     const ticket = await prisma.supportTicket.findUnique({ where: { id } });

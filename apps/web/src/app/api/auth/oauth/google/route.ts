@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { googleAuthorizeUrl, generateState, generatePkce, getBaseUrl } from "@/lib/oauth";
+import { googleAuthorizeUrl, generateState, generatePkce, getRuntimeBaseUrl } from "@/lib/oauth";
 
 export const runtime = "nodejs";
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   const state = generateState();
   const pkce = generatePkce();
-  const redirectUri = `${getBaseUrl()}/api/auth/oauth/google/callback`;
+  const redirectUri = `${await getRuntimeBaseUrl()}/api/auth/oauth/google/callback`;
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
   // Only allow same-site relative redirects.

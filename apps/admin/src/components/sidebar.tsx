@@ -74,7 +74,7 @@ const navGroups: NavGroup[] = [
     label: "Communication",
     labelKey: "communication",
     items: [
-      { name: "Support", nameKey: "support", href: "/support", icon: LifeBuoy },
+      { name: "Tickets", nameKey: "tickets", href: "/support", icon: LifeBuoy },
       { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell },
       { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail },
       { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },
@@ -96,7 +96,7 @@ const navGroups: NavGroup[] = [
       { name: "Security", nameKey: "security", href: "/security", icon: Lock },
       { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Lock },
       { name: "Backups", nameKey: "backups", href: "/backups", icon: Database },
-      { name: "Audit Logs", nameKey: "tickets", href: "/logs", icon: ScrollText },
+      { name: "Audit Logs", nameKey: "auditLogs", href: "/logs", icon: ScrollText },
       { name: "Admin Team", nameKey: "users", href: "/team", icon: Shield },
       { name: "Settings", nameKey: "settings", href: "/settings", icon: Settings },
     ],

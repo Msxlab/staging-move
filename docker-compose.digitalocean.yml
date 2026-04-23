@@ -1,0 +1,37 @@
+# DigitalOcean managed-MySQL override.
+#
+# Usage:
+#   docker compose \
+#     -f docker-compose.prod.yml \
+#     -f docker-compose.digitalocean.yml \
+#     --env-file .env.production \
+#     up -d --build
+#
+# This keeps the production stack the same, but disables the local MySQL
+# container and points web/admin/migrate at the managed DATABASE_URL.
+
+services:
+  mysql:
+    profiles:
+      - local-mysql
+
+  migrate:
+    depends_on: !reset []
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+
+  web:
+    depends_on: !override
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+
+  admin:
+    depends_on: !override
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+    healthcheck:
+      disable: true

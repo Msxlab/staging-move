@@ -60,7 +60,7 @@ const BACKUP_TYPES = [
   },
   { value: "PROVIDERS", label: "Providers Only", desc: "Service providers" },
   { value: "SERVICES", label: "Services Only", desc: "User services" },
-  { value: "MOVING_PLANS", label: "Moving Plans", desc: "Plans, tasks" },
+  { value: "MOVING_PLANS", label: "Moving Plans", desc: "Moving plan records" },
 ];
 
 const STATUS_ICONS: Record<string, React.ElementType> = {
@@ -166,7 +166,6 @@ function LegacyBackupsPage() {
     "profiles",
     "providers",
     "movingPlans",
-    "tasks",
     "budgets",
     "subscriptions",
     "auditLogs",

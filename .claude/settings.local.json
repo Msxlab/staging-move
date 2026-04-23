@@ -50,7 +50,15 @@
       "Bash(pnpm build *)",
       "Bash(node -e \"const j=require\\('./apps/web/src/i18n/messages/en.json'\\); const addr=j.addresses; Object.keys\\(addr\\).filter\\(k=>k.includes\\('owner'\\) || k.includes\\('rent'\\) || k.includes\\('family'\\) || k.includes\\('type_'\\)\\).forEach\\(k=>console.log\\(k, ':', addr[k]\\)\\)\")",
       "Bash(git add *)",
-      "Bash(git commit -m 'Fix i18n: Replace hardcoded English strings with translation keys *)"
+      "Bash(git commit -m 'Fix i18n: Replace hardcoded English strings with translation keys *)",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new root@159.203.134.149 \"echo CONNECTED && hostname && uname -a && uptime\")",
+      "Bash(ssh root@159.203.134.149 \"bash -s\")",
+      "Bash(pnpm ls *)",
+      "Bash(ssh root@159.203.134.149 'cd /opt/locateflow && TS=$\\(date +%Y%m%d%H%M%S\\) && cp pnpm-lock.yaml pnpm-lock.yaml.bak.$TS && cp apps/admin/package.json apps/admin/package.json.bak.$TS && cp apps/admin/src/app/api/auth/mfa/setup/route.ts apps/admin/src/app/api/auth/mfa/setup/route.ts.bak.$TS && cp '\\\\''apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx'\\\\'' '\\\\''apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx.bak.'\\\\''$TS && echo backed up with ts=$TS')",
+      "Bash(scp pnpm-lock.yaml root@159.203.134.149:/opt/locateflow/pnpm-lock.yaml)",
+      "Bash(scp apps/admin/package.json root@159.203.134.149:/opt/locateflow/apps/admin/package.json)",
+      "Bash(scp apps/admin/src/app/api/auth/mfa/setup/route.ts root@159.203.134.149:/opt/locateflow/apps/admin/src/app/api/auth/mfa/setup/route.ts)",
+      "Bash(scp \"apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx\" \"root@159.203.134.149:/opt/locateflow/apps/admin/src/app/\\(admin\\)/settings/two-factor/page.tsx\")"
     ]
   }
 }

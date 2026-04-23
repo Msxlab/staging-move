@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { checkIPAccess } from "@/lib/ip-rules";
 import { getInternalCallerSecret } from "@/lib/internal-secrets";
+import { generateAdminSessionFingerprint } from "@/lib/session-fingerprint";
 
 // NOTE: Do NOT import PrismaClient here — middleware runs on Edge Runtime
 // where Node.js-only DB drivers (SQLite/libSQL) cannot execute.
@@ -15,6 +16,24 @@ if (!adminJwtSecret || adminJwtSecret.length < 32) {
 const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+
+function resolveClientIP(request: NextRequest): string {
+  if (process.env.VERCEL_ENV) {
+    const vercelIp = request.headers.get("x-vercel-forwarded-for");
+    if (vercelIp) return vercelIp.split(",")[0].trim();
+  }
+
+  const cfIp = request.headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp.trim();
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+
+  return "unknown";
+}
 
 async function emitSecurityEvent(
   request: NextRequest,
@@ -114,12 +133,28 @@ function buildCspHeader(nonce: string, isDev: boolean): string {
     `style-src ${styleSrc}`,
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob:",
-    `connect-src 'self'${isDev ? " ws: http: https:" : ""}`,
+    `connect-src 'self' https://errors.locateflow.com${isDev ? " ws: http: https:" : ""}`,
     "frame-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; ");
+}
+
+const STRICT_NO_SCRIPT_CSP = [
+  "default-src 'none'",
+  "base-uri 'none'",
+  "frame-ancestors 'none'",
+  "form-action 'none'",
+].join("; ");
+
+function hardenEarlyResponse(response: NextResponse): NextResponse {
+  response.headers.set("Content-Security-Policy", STRICT_NO_SCRIPT_CSP);
+  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "no-referrer");
+  return response;
 }
 
 // Request body size limit (5MB for backup imports, 1MB for regular JSON)
@@ -241,15 +276,17 @@ export async function middleware(request: NextRequest) {
   }
 
   // IP rule enforcement — runs before auth to block banned IPs early
-  const ip = (request.headers.get("x-forwarded-for") || "unknown").split(",")[0].trim();
+  const ip = resolveClientIP(request);
   const baseUrl = request.nextUrl.origin;
   const ipCheck = await checkIPAccess(ip, baseUrl);
   if (ipCheck.blocked) {
     await emitSecurityEvent(request, { type: "BLOCKED_IP_ATTEMPT", ip, pathname });
     if (pathname.startsWith("/api/")) {
-      return NextResponse.json({ error: ipCheck.reason || "Access denied" }, { status: 403 });
+      return hardenEarlyResponse(
+        NextResponse.json({ error: ipCheck.reason || "Access denied" }, { status: 403 }),
+      );
     }
-    return new NextResponse(ipCheck.reason || "Access denied", { status: 403 });
+    return hardenEarlyResponse(new NextResponse(ipCheck.reason || "Access denied", { status: 403 }));
   }
 
   // Allow internal endpoints (used by IP rule cache refresh)
@@ -264,11 +301,11 @@ export async function middleware(request: NextRequest) {
 
   // Body size limit check
   const bodySizeBlocked = applyBodySizeLimit(request);
-  if (bodySizeBlocked) return bodySizeBlocked;
+  if (bodySizeBlocked) return hardenEarlyResponse(bodySizeBlocked);
 
   // SEC-008: CSRF check on API mutations
   const csrfBlocked = applyCsrfCheck(request);
-  if (csrfBlocked) return csrfBlocked;
+  if (csrfBlocked) return hardenEarlyResponse(csrfBlocked);
 
   // Check session cookie
   const token = request.cookies.get("admin_session")?.value;
@@ -277,9 +314,9 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     // API routes get 401 JSON; page routes redirect to login
     if (isApiRoute) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return hardenEarlyResponse(NextResponse.json({ error: "Unauthorized" }, { status: 401 }));
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return hardenEarlyResponse(NextResponse.redirect(new URL("/login", request.url)));
   }
 
   try {
@@ -307,17 +344,19 @@ export async function middleware(request: NextRequest) {
         pathname === "/api/auth/sessions";
       if (!allowedDuringSetup) {
         if (isApiRoute) {
-          return NextResponse.json(
-            {
-              error: "MFA enrollment required before this action is allowed.",
-              mfaSetupRequired: true,
-            },
-            { status: 403 },
+          return hardenEarlyResponse(
+            NextResponse.json(
+              {
+                error: "MFA enrollment required before this action is allowed.",
+                mfaSetupRequired: true,
+              },
+              { status: 403 },
+            ),
           );
         }
         const setupUrl = new URL("/settings/two-factor", request.url);
         setupUrl.searchParams.set("required", "1");
-        return NextResponse.redirect(setupUrl);
+        return hardenEarlyResponse(NextResponse.redirect(setupUrl));
       }
     }
 
@@ -325,12 +364,12 @@ export async function middleware(request: NextRequest) {
     const fp = payload.fp as string | undefined;
     if (fp) {
       const ua = request.headers.get("user-agent") || "unknown";
-      const raw = `${ip}|${ua}`;
-      const encoder = new TextEncoder();
-      const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(raw));
-      const currentFp = Array.from(new Uint8Array(hashBuffer))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
+      const currentFp = await generateAdminSessionFingerprint({
+        ip,
+        userAgent: ua,
+        acceptLanguage: request.headers.get("accept-language"),
+        secChUa: request.headers.get("sec-ch-ua"),
+      });
       if (currentFp !== fp) {
         await emitSecurityEvent(request, {
           type: "SESSION_HIJACK_ATTEMPT",
@@ -342,11 +381,11 @@ export async function middleware(request: NextRequest) {
         if (isApiRoute) {
           const resp = NextResponse.json({ error: "Session invalid. Please log in again." }, { status: 401 });
           resp.cookies.delete("admin_session");
-          return resp;
+          return hardenEarlyResponse(resp);
         }
         const resp = NextResponse.redirect(new URL("/login", request.url));
         resp.cookies.delete("admin_session");
-        return resp;
+        return hardenEarlyResponse(resp);
       }
     }
 
@@ -371,11 +410,11 @@ export async function middleware(request: NextRequest) {
     if (isApiRoute) {
       const response = NextResponse.json({ error: "Session expired" }, { status: 401 });
       response.cookies.delete("admin_session");
-      return response;
+      return hardenEarlyResponse(response);
     }
     const response = NextResponse.redirect(new URL("/login", request.url));
     response.cookies.delete("admin_session");
-    return response;
+    return hardenEarlyResponse(response);
   }
 }
 

@@ -13,6 +13,8 @@
  * noisy neighbor on the same NAT.
  */
 
+import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
+
 const MAX_FAILURES = 5;
 const WINDOW_SECONDS = 15 * 60;
 const LOCKOUT_SECONDS = 30 * 60;
@@ -29,22 +31,38 @@ interface Attempt {
 
 const memStore = new Map<string, Attempt>();
 
-function hasUsableRedis(): boolean {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  return Boolean(url && token && !url.includes("REPLACE"));
+interface RedisConfig {
+  url: string;
+  token: string;
+}
+
+async function resolveRedisConfig(): Promise<RedisConfig | null> {
+  const values = await getRequiredRuntimeConfigValues([
+    "UPSTASH_REDIS_REST_URL",
+    "UPSTASH_REDIS_REST_TOKEN",
+  ]);
+  const url = values.UPSTASH_REDIS_REST_URL;
+  const token = values.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token || url.includes("REPLACE") || token.includes("REPLACE")) {
+    return null;
+  }
+
+  return { url, token };
 }
 
 async function redisCall(
+  config: RedisConfig,
   path: string,
   init?: RequestInit,
 ): Promise<{ result: unknown } | null> {
-  const url = process.env.UPSTASH_REDIS_REST_URL!;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN!;
   try {
-    const res = await fetch(`${url}${path}`, {
+    const res = await fetch(`${config.url}${path}`, {
       ...init,
-      headers: { Authorization: `Bearer ${token}`, ...(init?.headers || {}) },
+      headers: {
+        Authorization: `Bearer ${config.token}`,
+        ...(init?.headers || {}),
+      },
     });
     if (!res.ok) return null;
     return (await res.json()) as { result: unknown };
@@ -64,11 +82,19 @@ export interface LockoutCheck {
  * Call this before running the expensive bcrypt comparison.
  */
 export async function isLoginLocked(ip: string): Promise<LockoutCheck> {
-  if (hasUsableRedis()) {
+  const redisConfig = await resolveRedisConfig();
+
+  if (redisConfig) {
     const lockKey = `user:login:lock:${ip}`;
-    const data = await redisCall(`/get/${encodeURIComponent(lockKey)}`);
+    const data = await redisCall(
+      redisConfig,
+      `/get/${encodeURIComponent(lockKey)}`,
+    );
     if (data && data.result) {
-      const ttl = await redisCall(`/ttl/${encodeURIComponent(lockKey)}`);
+      const ttl = await redisCall(
+        redisConfig,
+        `/ttl/${encodeURIComponent(lockKey)}`,
+      );
       const ttlSec =
         typeof ttl?.result === "number" && ttl.result > 0
           ? ttl.result
@@ -98,24 +124,31 @@ export async function isLoginLocked(ip: string): Promise<LockoutCheck> {
  * callers can surface `locked: true` to the client in the same response.
  */
 export async function recordLoginFailure(ip: string): Promise<LockoutCheck> {
-  if (hasUsableRedis()) {
+  const redisConfig = await resolveRedisConfig();
+
+  if (redisConfig) {
     const countKey = `user:login:fail:${ip}`;
     const lockKey = `user:login:lock:${ip}`;
-    const incr = await redisCall(`/incr/${encodeURIComponent(countKey)}`);
+    const incr = await redisCall(
+      redisConfig,
+      `/incr/${encodeURIComponent(countKey)}`,
+    );
     const count =
       typeof incr?.result === "number" && incr.result > 0 ? incr.result : 1;
 
     if (count === 1) {
       await redisCall(
+        redisConfig,
         `/expire/${encodeURIComponent(countKey)}/${WINDOW_SECONDS}`,
       );
     }
 
     if (count >= MAX_FAILURES) {
       await redisCall(
+        redisConfig,
         `/set/${encodeURIComponent(lockKey)}/locked/EX/${LOCKOUT_SECONDS}`,
       );
-      await redisCall(`/del/${encodeURIComponent(countKey)}`);
+      await redisCall(redisConfig, `/del/${encodeURIComponent(countKey)}`);
       return { locked: true, retryAfterSec: LOCKOUT_SECONDS };
     }
     return { locked: false, retryAfterSec: 0 };
@@ -142,9 +175,11 @@ export async function recordLoginFailure(ip: string): Promise<LockoutCheck> {
 
 /** Called on a successful login — resets the counter so NAT neighbors aren't punished. */
 export async function clearLoginFailures(ip: string): Promise<void> {
-  if (hasUsableRedis()) {
+  const redisConfig = await resolveRedisConfig();
+
+  if (redisConfig) {
     const countKey = `user:login:fail:${ip}`;
-    await redisCall(`/del/${encodeURIComponent(countKey)}`);
+    await redisCall(redisConfig, `/del/${encodeURIComponent(countKey)}`);
     return;
   }
   memStore.delete(ip);

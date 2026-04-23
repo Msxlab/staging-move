@@ -34,6 +34,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn, formatDateTime, truncate } from "@/lib/utils";
 
@@ -145,7 +146,7 @@ const BACKUP_TYPES = [
   {
     value: "MOVING_PLANS",
     label: "Moving Plans",
-    desc: "Plans, tasks and documents",
+    desc: "Moving plan records",
   },
 ] as const;
 
@@ -156,10 +157,6 @@ const FALLBACK_TABLES = [
   "services",
   "providers",
   "movingPlans",
-  "tasks",
-  "reviews",
-  "documents",
-  "badges",
   "budgets",
   "subscriptions",
   "auditLogs",
@@ -344,6 +341,7 @@ function buildToneClass(
 }
 
 export function BackupControlPlane() {
+  const router = useRouter();
   const passwordResolverRef = useRef<((value: string | null) => void) | null>(
     null,
   );
@@ -639,8 +637,13 @@ export function BackupControlPlane() {
 
     try {
       const response = await fetch("/api/backup", { cache: "no-store" });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
+        if (data?.mfaSetupRequired) {
+          toast.error("MFA setup is required before backups can be loaded.");
+          router.push("/settings/two-factor?required=1");
+          return;
+        }
         throw new Error(data.error || "Failed to load backups");
       }
       setBackups(data.backups || []);
@@ -657,7 +660,7 @@ export function BackupControlPlane() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     void loadBackups();

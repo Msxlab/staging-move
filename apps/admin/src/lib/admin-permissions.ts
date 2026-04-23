@@ -32,6 +32,7 @@ export const ADMIN_RESOURCES = [
   "badges",
   "documents",
   "moving_plans",
+  "tickets",
   "audit_logs",
   "admin_users",
   "settings",

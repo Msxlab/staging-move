@@ -2,6 +2,7 @@
 const path = require("path");
 
 const isDev = process.env.NODE_ENV !== "production";
+const sentryConnectSrc = "https://errors.locateflow.com";
 
 const nextConfig = {
   output: "standalone",
@@ -41,7 +42,7 @@ const nextConfig = {
       : "script-src 'self'";
     const connectSrc = isDev
       ? "connect-src 'self' ws: http: https: https://api.stripe.com"
-      : "connect-src 'self' https://api.stripe.com";
+      : `connect-src 'self' https://api.stripe.com ${sentryConnectSrc}`;
 
     const csp = [
       "default-src 'self'",

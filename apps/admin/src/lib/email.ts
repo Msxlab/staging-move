@@ -1,27 +1,70 @@
 import { Resend } from "resend";
+import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
 
 let _resend: Resend | null = null;
-function getResend(): Resend {
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+let _resendApiKey: string | null = null;
+function getResend(apiKey: string): Resend {
+  if (!_resend || _resendApiKey !== apiKey) {
+    _resend = new Resend(apiKey);
+    _resendApiKey = apiKey;
+  }
   return _resend;
 }
 
-const FROM_EMAIL = process.env.EMAIL_FROM || "LocateFlow <noreply@locateflow.com>";
+const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
+const DEFAULT_APP_URL = "http://localhost:3000";
 
-export async function sendEmail(opts: { to: string; subject: string; html: string }): Promise<boolean> {
-  if (!process.env.RESEND_API_KEY) {
+async function resolveEmailConfig() {
+  const values = await getAdminRuntimeConfigValues([
+    "RESEND_API_KEY",
+    "EMAIL_FROM",
+    "NEXT_PUBLIC_APP_URL",
+  ]);
+
+  return {
+    resendApiKey: values.RESEND_API_KEY,
+    fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
+    appUrl: values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL,
+  };
+}
+
+export async function sendEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<boolean> {
+  const { resendApiKey, fromEmail } = await resolveEmailConfig();
+
+  if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${opts.to} | Subject: ${opts.subject}`);
     return true;
   }
   try {
-    const { error } = await getResend().emails.send({ from: FROM_EMAIL, to: opts.to, subject: opts.subject, html: opts.html });
-    if (error) { console.error("[EMAIL] Send failed:", error); return false; }
+    const { error } = await getResend(resendApiKey).emails.send({
+      from: fromEmail,
+      to: opts.to,
+      subject: opts.subject,
+      html: opts.html,
+    });
+    if (error) {
+      console.error("[EMAIL] Send failed:", error);
+      return false;
+    }
     return true;
-  } catch (err) { console.error("[EMAIL] Error:", err); return false; }
+  } catch (err) {
+    console.error("[EMAIL] Error:", err);
+    return false;
+  }
 }
 
 function esc(str: string): string {
-  const map: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  const map: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
   return str.replace(/[&<>"']/g, (c) => map[c] || c);
 }
 
@@ -32,7 +75,7 @@ export async function sendReviewModerationEmail(opts: {
   action: "APPROVED" | "REJECTED";
   note?: string;
 }): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const { appUrl } = await resolveEmailConfig();
   const isApproved = opts.action === "APPROVED";
   const subject = isApproved
     ? `Your review of ${opts.providerName} has been approved`

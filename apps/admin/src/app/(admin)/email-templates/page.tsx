@@ -72,7 +72,12 @@ export default function EmailTemplatesPage() {
           <div className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-semibold text-foreground">Preview: {preview.name}</h2><button onClick={() => setPreview(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
             <p className="text-sm text-muted-foreground mb-2">Subject: {preview.subject}</p>
-            <div className="rounded-lg border border-border bg-background p-4" dangerouslySetInnerHTML={{ __html: preview.body }} />
+            <iframe
+              title={`Email preview: ${preview.name}`}
+              sandbox=""
+              srcDoc={preview.body}
+              className="h-[420px] w-full rounded-lg border border-border bg-background"
+            />
           </div>
         </div>
       )}

@@ -34,8 +34,72 @@ DROP TABLE IF EXISTS `Document`;
 DROP TABLE IF EXISTS `FamilyMember`;
 
 -- ── 3) Drop legacy gamification columns from Profile ──────────────
-ALTER TABLE `Profile`
-  DROP COLUMN IF EXISTS `currentStreak`,
-  DROP COLUMN IF EXISTS `longestStreak`,
-  DROP COLUMN IF EXISTS `lastActiveDate`,
-  DROP COLUMN IF EXISTS `totalPoints`;
+-- DigitalOcean MySQL 8 rejects `ALTER TABLE ... DROP COLUMN IF EXISTS`,
+-- so each drop is guarded through INFORMATION_SCHEMA instead.
+SET @drop_profile_current_streak = (
+  SELECT IF(
+    EXISTS (
+      SELECT 1
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'Profile'
+        AND COLUMN_NAME = 'currentStreak'
+    ),
+    'ALTER TABLE `Profile` DROP COLUMN `currentStreak`',
+    'SELECT 1'
+  )
+);
+PREPARE drop_profile_current_streak_stmt FROM @drop_profile_current_streak;
+EXECUTE drop_profile_current_streak_stmt;
+DEALLOCATE PREPARE drop_profile_current_streak_stmt;
+
+SET @drop_profile_longest_streak = (
+  SELECT IF(
+    EXISTS (
+      SELECT 1
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'Profile'
+        AND COLUMN_NAME = 'longestStreak'
+    ),
+    'ALTER TABLE `Profile` DROP COLUMN `longestStreak`',
+    'SELECT 1'
+  )
+);
+PREPARE drop_profile_longest_streak_stmt FROM @drop_profile_longest_streak;
+EXECUTE drop_profile_longest_streak_stmt;
+DEALLOCATE PREPARE drop_profile_longest_streak_stmt;
+
+SET @drop_profile_last_active_date = (
+  SELECT IF(
+    EXISTS (
+      SELECT 1
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'Profile'
+        AND COLUMN_NAME = 'lastActiveDate'
+    ),
+    'ALTER TABLE `Profile` DROP COLUMN `lastActiveDate`',
+    'SELECT 1'
+  )
+);
+PREPARE drop_profile_last_active_date_stmt FROM @drop_profile_last_active_date;
+EXECUTE drop_profile_last_active_date_stmt;
+DEALLOCATE PREPARE drop_profile_last_active_date_stmt;
+
+SET @drop_profile_total_points = (
+  SELECT IF(
+    EXISTS (
+      SELECT 1
+      FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'Profile'
+        AND COLUMN_NAME = 'totalPoints'
+    ),
+    'ALTER TABLE `Profile` DROP COLUMN `totalPoints`',
+    'SELECT 1'
+  )
+);
+PREPARE drop_profile_total_points_stmt FROM @drop_profile_total_points;
+EXECUTE drop_profile_total_points_stmt;
+DEALLOCATE PREPARE drop_profile_total_points_stmt;

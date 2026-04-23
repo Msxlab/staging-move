@@ -35,6 +35,28 @@ curl -fsS https://admin.yourdomain.com/api/health | jq '.status'
 Both should return `"healthy"`. If Caddy is still provisioning TLS, wait ~30
 seconds and retry — the first boot requests Let's Encrypt certs.
 
+## DigitalOcean Managed MySQL
+
+If you use DigitalOcean Managed MySQL instead of the local MySQL container,
+set `DATABASE_URL` in `.env.production`:
+
+```bash
+DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE?ssl-mode=REQUIRED"
+```
+
+Then deploy with the DigitalOcean override:
+
+```bash
+docker compose \
+  -f docker-compose.prod.yml \
+  -f docker-compose.digitalocean.yml \
+  --env-file .env.production \
+  up -d --build
+```
+
+The override disables the local `mysql` service and points `migrate`, `web`,
+and `admin` directly at the managed database.
+
 ## Generating secrets
 
 ```bash
@@ -119,6 +141,113 @@ docker compose -f docker-compose.prod.yml exec -T mysql \
       on Debian/Ubuntu).
 - [ ] Regular offsite backups of the `mysql_data` volume.
 - [ ] DNS CAA records limit cert issuance to `letsencrypt.org`.
+- [ ] `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` set in
+      production; `/api/health` should report Redis `ok`, not in-memory
+      fallback.
+- [ ] `NEXT_PUBLIC_SENTRY_DSN` points at the GlitchTip project on
+      `https://errors.yourdomain.com`.
+- [ ] `IMPERSONATION_HANDOFF_SECRET` is set on both web and admin. Do not
+      reuse `CRON_SECRET` for impersonation.
+- [ ] Root SSH login disabled after a non-root `deploy` user has been tested.
+
+## Host SSH hardening
+
+Run these steps from an existing root session, but keep that root session open
+until a new `deploy` SSH login has been tested in a second terminal.
+
+```bash
+adduser deploy
+usermod -aG sudo,docker deploy
+install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+cp /root/.ssh/authorized_keys /home/deploy/.ssh/authorized_keys
+chown deploy:deploy /home/deploy/.ssh/authorized_keys
+chmod 600 /home/deploy/.ssh/authorized_keys
+
+# In a second terminal, verify this works before changing sshd:
+ssh deploy@your-server
+```
+
+After the `deploy` login works:
+
+```bash
+cat >/etc/ssh/sshd_config.d/99-locateflow-hardening.conf <<'EOF'
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+EOF
+
+sshd -t
+systemctl reload ssh
+apt-get update
+apt-get install -y fail2ban
+systemctl enable --now fail2ban
+```
+
+## Env rotation hygiene
+
+Keep `.env.production` backups local to the server, mode `600`, and retain only
+the newest three copies. Install this helper as `/usr/local/bin/rotate-env.sh`:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENV_FILE=/opt/locateflow/.env.production
+TS=$(date +%Y%m%d%H%M%S)
+
+install -m 600 "$ENV_FILE" "$ENV_FILE.bak.$TS"
+find /opt/locateflow -maxdepth 1 -name '.env.production.bak.*' \
+  -type f -printf '%T@ %p\n' \
+  | sort -rn \
+  | awk 'NR>3 {print $2}' \
+  | xargs -r rm --
+```
+
+Then run:
+
+```bash
+chmod 700 /usr/local/bin/rotate-env.sh
+/usr/local/bin/rotate-env.sh
+find /opt/locateflow -maxdepth 1 -name '.env.production.bak.*' -type f -ls
+```
+
+Remove accidental trailing-dot backups such as `.env.production.bak.` after
+confirming a timestamped backup exists.
+
+## Incident response
+
+For a suspected admin compromise:
+
+1. Revoke admin sessions from the admin UI under Settings -> Health/Sessions,
+   or call `POST /api/auth/sessions` with `{"action":"revoke_all","revokeAll":"all"}`
+   as a `SUPER_ADMIN`.
+2. Rotate `ADMIN_JWT_SECRET`, `USER_JWT_SECRET`, `FIELD_ENCRYPTION_KEY`,
+   `CRON_SECRET`, `INTERNAL_WEBHOOK_SECRET`, and
+   `IMPERSONATION_HANDOFF_SECRET` as appropriate.
+3. Rebuild and restart web/admin:
+   `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build web admin`.
+4. Check `AdminAuditLog`, `AdminLoginLog`, GlitchTip, and Caddy logs for the
+   compromise window.
+
+For leaked env or provider credentials, rotate the upstream provider secret
+first, update `.env.production`, run `rotate-env.sh`, then restart affected
+services.
+
+## Restore testing
+
+Run a monthly restore drill against a temporary database:
+
+```bash
+docker compose -f docker-compose.prod.yml exec -T mysql \
+  mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE" \
+  > "restore-test-source-$(date +%F).sql"
+```
+
+Create a throwaway MySQL instance, restore the dump, run `prisma migrate
+deploy`, then verify web `/api/health` against that database. For admin backup
+archives, download the newest offsite backup and perform a `DRY_RUN` import
+first; `MERGE` and `REPLACE` require a valid HMAC signature.
 
 ## Managed Runtime Config
 

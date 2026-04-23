@@ -35,6 +35,7 @@ export default function ProvidersPage() {
   const [filterScope, setFilterScope] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [filterState, setFilterState] = useState("");
   const [scoreMin, setScoreMin] = useState("");
   const [scoreMax, setScoreMax] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -51,7 +52,7 @@ export default function ProvidersPage() {
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
 
-  const activeFilters = [filterScope, filterStatus, filterCategory, scoreMin, scoreMax].filter(Boolean).length;
+  const activeFilters = [filterScope, filterStatus, filterCategory, filterState, scoreMin, scoreMax].filter(Boolean).length;
 
   const fetchProviders = useCallback(async () => {
     setLoading(true);
@@ -61,19 +62,32 @@ export default function ProvidersPage() {
       if (filterScope) params.set("scope", filterScope);
       if (filterStatus) params.set("status", filterStatus);
       if (filterCategory) params.set("category", filterCategory);
+      if (filterState) params.set("states", filterState.trim().toUpperCase());
       if (scoreMin) params.set("scoreMin", scoreMin);
       if (scoreMax) params.set("scoreMax", scoreMax);
 
       const res = await fetch(`/api/providers?${params}`);
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data?.mfaSetupRequired) {
+          toast.error("MFA setup is required before provider data can be loaded.");
+          router.push("/settings/two-factor?required=1");
+          return;
+        }
+        throw new Error(data?.error || "Failed to fetch providers");
+      }
       setGroups(data.groups || {});
       setCategoryStats(data.categoryStats || []);
       setTotal(data.total || 0);
       setActiveCount(data.activeCount || 0);
       setInactiveCount(data.inactiveCount || 0);
-    } catch { toast.error("Failed to fetch providers"); }
+      setOpenCategories((prev) => {
+        if (prev.size > 0) return prev;
+        return new Set(Object.keys(data.groups || {}).slice(0, 5));
+      });
+    } catch (error: any) { toast.error(error?.message || "Failed to fetch providers"); }
     finally { setLoading(false); }
-  }, [search, filterScope, filterStatus, filterCategory, scoreMin, scoreMax]);
+  }, [router, search, filterScope, filterStatus, filterCategory, filterState, scoreMin, scoreMax]);
 
   useEffect(() => { fetchProviders(); }, [fetchProviders]);
 
@@ -145,7 +159,7 @@ export default function ProvidersPage() {
 
   function clearFilters() {
     setFilterScope(""); setFilterStatus(""); setFilterCategory("");
-    setScoreMin(""); setScoreMax("");
+    setFilterState(""); setScoreMin(""); setScoreMax("");
   }
 
   async function handleImport() {
@@ -290,7 +304,7 @@ export default function ProvidersPage() {
             <h3 className="text-sm font-semibold text-foreground">Advanced Filters</h3>
             <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground">Clear all</button>
           </div>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Scope</label>
               <select value={filterScope} onChange={(e) => setFilterScope(e.target.value)} className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground">
@@ -315,6 +329,17 @@ export default function ProvidersPage() {
                   <option key={c.category} value={c.category}>{getCategoryLabel(c.category)} ({c.count})</option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">State</label>
+              <input
+                type="text"
+                value={filterState}
+                onChange={(e) => setFilterState(e.target.value.toUpperCase().slice(0, 2))}
+                placeholder="TX"
+                maxLength={2}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs text-muted-foreground">Min Score</label>

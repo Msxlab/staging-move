@@ -1,5 +1,11 @@
 import { prisma } from "@/lib/db";
-import { billReminderHtml, contractReminderHtml, sendEmailWithResult, weeklyDigestHtml } from "@/lib/email";
+import {
+  billReminderHtml,
+  contractReminderHtml,
+  sendEmailWithResult,
+  weeklyDigestHtml,
+} from "@/lib/email";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 function buildEmailMetadata(metadata?: Record<string, unknown>) {
   if (!metadata) return null;
@@ -8,6 +14,13 @@ function buildEmailMetadata(metadata?: Record<string, unknown>) {
 
 function isUniqueConstraintError(error: any) {
   return error?.code === "P2002";
+}
+
+async function resolveAppUrl() {
+  return (
+    (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||
+    "http://localhost:3000"
+  );
 }
 
 export async function sendLoggedEmail(opts: {
@@ -35,7 +48,9 @@ export async function sendLoggedEmail(opts: {
     logId = log.id;
   } catch (error) {
     if (opts.dedupeKey && isUniqueConstraintError(error)) {
-      const existing = await prisma.emailLog.findFirst({ where: { dedupeKey: opts.dedupeKey } });
+      const existing = await prisma.emailLog.findFirst({
+        where: { dedupeKey: opts.dedupeKey },
+      });
       if (!existing) {
         return { success: false, skipped: true };
       }
@@ -88,7 +103,7 @@ export async function sendLoggedEmail(opts: {
  */
 export async function renderTemplate(
   slug: string,
-  variables: Record<string, string>
+  variables: Record<string, string>,
 ): Promise<{ subject: string; html: string } | null> {
   const template = await prisma.emailTemplate.findUnique({
     where: { slug },
@@ -126,7 +141,9 @@ export async function sendTemplatedEmail(opts: {
     return false;
   }
 
-  const template = await prisma.emailTemplate.findUnique({ where: { slug: opts.slug } });
+  const template = await prisma.emailTemplate.findUnique({
+    where: { slug: opts.slug },
+  });
   const result = await sendLoggedEmail({
     to: opts.to,
     subject: rendered.subject,
@@ -153,7 +170,7 @@ export async function sendWelcomeEmail(user: {
   firstName?: string | null;
   dedupeKey?: string;
 }): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = await resolveAppUrl();
   return sendTemplatedEmail({
     to: user.email,
     slug: "welcome",
@@ -175,7 +192,7 @@ export async function sendEmailVerificationEmail(opts: {
   verifyToken: string;
   dedupeKey?: string;
 }): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = await resolveAppUrl();
   const verifyLink = `${appUrl}/verify-email/${encodeURIComponent(opts.verifyToken)}`;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
@@ -215,7 +232,7 @@ export async function sendPasswordResetEmail(opts: {
   resetToken: string;
   dedupeKey?: string;
 }): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = await resolveAppUrl();
   const resetLink = `${appUrl}/reset-password/${encodeURIComponent(opts.resetToken)}`;
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
@@ -248,7 +265,13 @@ export async function sendPasswordResetEmail(opts: {
 }
 
 function escapeHtml(str: string): string {
-  const map: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  const map: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
   return (str || "").replace(/[&<>"']/g, (c) => map[c] || c);
 }
 
@@ -263,6 +286,7 @@ export async function sendBillReminderEmail(opts: {
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
   const subject = `Bill Reminder: ${opts.serviceName} — $${opts.amount.toFixed(2)} due in ${opts.daysUntilDue} day${opts.daysUntilDue !== 1 ? "s" : ""}`;
   const result = await sendLoggedEmail({
     to: opts.userEmail,
@@ -274,6 +298,7 @@ export async function sendBillReminderEmail(opts: {
       amount: opts.amount,
       dueDate: opts.dueDate,
       daysUntilDue: opts.daysUntilDue,
+      appUrl,
     }),
     dedupeKey: opts.dedupeKey,
     metadata: {
@@ -297,6 +322,7 @@ export async function sendWeeklyDigestEmail(opts: {
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
   const result = await sendLoggedEmail({
     to: opts.userEmail,
     subject: `Your Weekly Digest — ${opts.weekStart} to ${opts.weekEnd}`,
@@ -307,6 +333,7 @@ export async function sendWeeklyDigestEmail(opts: {
       upcomingBills: opts.upcomingBills,
       totalExpenses: opts.totalExpenses,
       newServices: opts.newServices,
+      appUrl,
     }),
     dedupeKey: opts.dedupeKey,
     metadata: {
@@ -362,7 +389,7 @@ export async function sendTrialExpiringEmail(opts: {
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = await resolveAppUrl();
   return sendTemplatedEmail({
     to: opts.userEmail,
     slug: "trial-expiring",
@@ -393,7 +420,7 @@ export async function sendMoveReminderEmail(opts: {
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = await resolveAppUrl();
   return sendTemplatedEmail({
     to: opts.userEmail,
     slug: "move-reminder",
@@ -412,4 +439,3 @@ export async function sendMoveReminderEmail(opts: {
     },
   });
 }
-

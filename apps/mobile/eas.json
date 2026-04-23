@@ -23,13 +23,13 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api"
+        "EXPO_PUBLIC_API_URL": "https://app.locateflow.com/api"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api"
+        "EXPO_PUBLIC_API_URL": "https://app.locateflow.com/api"
       }
     }
   },

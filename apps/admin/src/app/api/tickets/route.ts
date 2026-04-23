@@ -5,7 +5,7 @@ import { requirePermission } from "@/lib/auth";
 // GET /api/tickets — list all tickets (admin view with filters)
 export async function GET(request: NextRequest) {
   try {
-    const session = await requirePermission("users", "canRead", { minimumRole: "ADMIN" });
+    const session = await requirePermission("tickets", "canRead", { minimumRole: "ADMIN" });
     const { searchParams } = new URL(request.url);
 
     const status = searchParams.get("status");

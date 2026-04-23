@@ -43,6 +43,22 @@ function parseUA(ua: string) {
   return r;
 }
 
+function resolveLoginIP(request: NextRequest): string {
+  const vercelIp = request.headers.get("x-vercel-forwarded-for");
+  if (vercelIp) return vercelIp.split(",")[0].trim();
+
+  const cfIp = request.headers.get("cf-connecting-ip");
+  if (cfIp) return cfIp.trim();
+
+  const realIp = request.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+
+  const forwarded = request.headers.get("x-forwarded-for");
+  if (forwarded) return forwarded.split(",")[0].trim();
+
+  return "unknown";
+}
+
 export async function POST(request: NextRequest) {
   // General per-IP rate limit for the register/login cluster — absorbs
   // bursty clients without punishing individual accounts.
@@ -60,11 +76,7 @@ export async function POST(request: NextRequest) {
   // rate-limit above — a legitimate user typing the wrong password once
   // on a NATed network won't lock out their neighbors because the
   // counter is reset on successful login (see clearLoginFailures).
-  const forwardedFor = request.headers.get("x-forwarded-for") || "";
-  const ip =
-    forwardedFor.split(",")[0].trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+  const ip = resolveLoginIP(request);
 
   const lockState = await isLoginLocked(ip);
   if (lockState.locked) {
