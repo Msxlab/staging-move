@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",
-    "@expo/metro-runtime": "^6.1.2",
+    "@expo/metro-runtime": "^55.0.10",
     "@expo/vector-icons": "^15.0.3",
     "@hookform/resolvers": "^3.9.0",
     "@locateflow/shared": "workspace:*",
