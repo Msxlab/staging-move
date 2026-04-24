@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronRight,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,8 +34,8 @@ interface Plan {
     firstName: string | null;
     lastName: string | null;
   };
-  fromAddress: { street: string; city: string; state: string; zip: string };
-  toAddress: { street: string; city: string; state: string; zip: string };
+  fromAddress: { street: string; city: string; state: string; zip: string; _count?: { services: number } };
+  toAddress: { street: string; city: string; state: string; zip: string; _count?: { services: number } };
 }
 
 interface Stats {
@@ -400,6 +401,9 @@ export default function MovingPage() {
             const days = daysUntilMove(plan);
             const isExpanded = expandedPlan === plan.id;
             const StatusIcon = STATUS_ICONS[plan.status] || Clock;
+            const originServiceCount = plan.fromAddress._count?.services || 0;
+            const destinationServiceCount = plan.toAddress._count?.services || 0;
+            const isInterstate = plan.fromAddress.state !== plan.toAddress.state;
             return (
               <div
                 key={plan.id}
@@ -519,6 +523,35 @@ export default function MovingPage() {
                             </span>
                           </div>
                         )}
+                      </div>
+                    </div>
+                    <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-foreground">
+                            Operator transition context
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Guidance is manual support context only. LocateFlow does not update provider accounts or execute address changes.
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                              {isInterstate ? "Interstate move" : "Same-state move"}
+                            </span>
+                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                              Origin services: {originServiceCount}
+                            </span>
+                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                              Destination services: {destinationServiceCount}
+                            </span>
+                            {originServiceCount > 0 && destinationServiceCount === 0 && (
+                              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-600">
+                                Destination service setup not tracked yet
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="mt-4 flex gap-2">

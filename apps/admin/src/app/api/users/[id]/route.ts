@@ -38,8 +38,8 @@ export async function GET(
         addresses: { include: { services: true } },
         movingPlans: {
           include: {
-            fromAddress: { select: { city: true, state: true } },
-            toAddress: { select: { city: true, state: true } },
+            fromAddress: { select: { id: true, city: true, state: true, zip: true } },
+            toAddress: { select: { id: true, city: true, state: true, zip: true } },
           },
         },
         budgets: { orderBy: { month: "desc" }, take: 6 },

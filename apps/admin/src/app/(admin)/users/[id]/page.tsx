@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 async function readAdminApiError(response: Response, fallback: string) {
@@ -177,6 +177,20 @@ export default function UserDetailPage() {
   const primaryAddress = addressList.find((addr: any) => addr.isPrimary) || addressList[0] || null;
   const totalServices = addressList.reduce((sum: number, addr: any) => sum + (addr.services?.length || 0), 0);
   const activeMove = movingPlans.find((plan: any) => plan.status === "IN_PROGRESS" || plan.status === "PLANNING") || movingPlans[0] || null;
+  const serviceCountByAddressId = new Map<string, number>(
+    addressList.map((addr: any): [string, number] => [addr.id, addr.services?.length || 0]),
+  );
+  const activeMoveOriginServices: number = activeMove?.fromAddress?.id
+    ? serviceCountByAddressId.get(activeMove.fromAddress.id) || 0
+    : 0;
+  const activeMoveDestinationServices: number = activeMove?.toAddress?.id
+    ? serviceCountByAddressId.get(activeMove.toAddress.id) || 0
+    : 0;
+  const activeMoveIsInterstate = Boolean(
+    activeMove?.fromAddress?.state &&
+    activeMove?.toAddress?.state &&
+    activeMove.fromAddress.state !== activeMove.toAddress.state,
+  );
   const lastSession = sessions[0] || null;
   const lastLoginSession = loginSessions[0] || null;
   const lastSeenAt = lastSession?.lastActivity || lastSession?.sessionStart || recentEvents[0]?.createdAt || null;
@@ -996,6 +1010,54 @@ export default function UserDetailPage() {
         </div>
       )}
 
+      {/* Move Transition Context */}
+      {activeMove && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-6">
+          <div className="flex items-start gap-3">
+            <Truck className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+            <div className="flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Move Transition Support Context</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    This is operator context for manual guidance. LocateFlow does not update provider accounts or execute address changes.
+                  </p>
+                </div>
+                <span className="rounded-full border border-amber-500/20 bg-background px-2.5 py-1 text-xs font-medium text-amber-600">
+                  Manual guidance only
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                <InfoCard
+                  label="Move type"
+                  value={activeMoveIsInterstate ? "Interstate" : "Same state"}
+                />
+                <InfoCard
+                  label="Origin services"
+                  value={activeMoveOriginServices}
+                />
+                <InfoCard
+                  label="Destination services"
+                  value={activeMoveDestinationServices}
+                />
+                <InfoCard
+                  label="Route"
+                  value={`${activeMove.fromAddress?.state || "?"} to ${activeMove.toAddress?.state || "?"}`}
+                />
+              </div>
+              {activeMoveOriginServices > 0 && activeMoveDestinationServices === 0 && (
+                <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-background/70 p-3 text-sm text-muted-foreground">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                  <p>
+                    Origin services exist, but no destination services are tracked yet. Support should expect stop, verify, shop, or start-service guidance depending on provider coverage.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Addresses */}
       {user.addresses?.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-6">
@@ -1035,7 +1097,7 @@ export default function UserDetailPage() {
                     <p className="font-medium text-foreground truncate">
                       {d.deviceName || "Unnamed device"} <span className="text-xs font-normal text-muted-foreground">· {d.platform}</span>
                     </p>
-                    <p className="text-[11px] text-muted-foreground font-mono truncate">{d.token.slice(0, 24)}…</p>
+                    <p className="text-[11px] text-muted-foreground truncate">Token redacted from admin browser response</p>
                   </div>
                 </div>
                 <div className="shrink-0 text-right">

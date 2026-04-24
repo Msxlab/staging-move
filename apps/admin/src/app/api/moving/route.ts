@@ -39,8 +39,24 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           user: { select: { id: true, email: true, firstName: true, lastName: true } },
-          fromAddress: { select: { street: true, city: true, state: true, zip: true } },
-          toAddress: { select: { street: true, city: true, state: true, zip: true } },
+          fromAddress: {
+            select: {
+              street: true,
+              city: true,
+              state: true,
+              zip: true,
+              _count: { select: { services: true } },
+            },
+          },
+          toAddress: {
+            select: {
+              street: true,
+              city: true,
+              state: true,
+              zip: true,
+              _count: { select: { services: true } },
+            },
+          },
         },
         orderBy: { moveDate: "desc" },
         take: perPage,
