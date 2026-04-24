@@ -32,32 +32,49 @@ import {
   purchaseSubscription,
   restorePurchases,
 } from "@/lib/iap";
+import {
+  BILLING_PLAN_DEFINITIONS,
+  BILLING_PLAN_ORDER,
+  UPCOMING_BILLING_PLAN_DEFINITIONS,
+  UPCOMING_BILLING_PLAN_ORDER,
+  TRIAL_DURATION_DAYS,
+} from "@locateflow/shared";
 
-const PLANS = [
-  {
-    key: "FREE_TRIAL",
-    name: "Free Trial",
-    price: "Free",
-    period: "7 days",
-    features: [
-      "Up to 2 addresses",
-      "Up to 10 services",
-      "Basic moving checklist",
-    ],
-  },
-  {
-    key: "INDIVIDUAL",
-    name: "Individual",
-    price: "$4.99",
-    period: "/month",
-    features: [
-      "Up to 10 addresses",
-      "Up to 100 services",
-      "Full moving planner",
-      "QR box tracking",
-    ],
-  },
-] as const;
+// Single source of truth — shared billing module. Prices, features, and
+// trial length stay in sync with web automatically.
+const PLANS = BILLING_PLAN_ORDER.map((key) => {
+  const def = BILLING_PLAN_DEFINITIONS[key];
+  return {
+    key,
+    name: def.displayName,
+    price: def.priceLabel,
+    period:
+      key === "FREE_TRIAL"
+        ? `${TRIAL_DURATION_DAYS} days`
+        : def.periodLabel,
+    yearlyPrice: def.yearlyPriceLabel ?? null,
+    features: def.features,
+    isPaid: def.isPaid,
+    isUpcoming: false as const,
+  };
+});
+
+// Coming-soon teaser plans (Family / Pro). Matches the web marketing page so
+// the mobile user sees the same roadmap, but CTAs are locked until Stripe /
+// store products exist.
+const UPCOMING_PLANS = UPCOMING_BILLING_PLAN_ORDER.map((key) => {
+  const def = UPCOMING_BILLING_PLAN_DEFINITIONS[key];
+  return {
+    key,
+    name: def.displayName,
+    price: def.priceLabel,
+    period: def.periodLabel,
+    yearlyPrice: def.yearlyPriceLabel ?? null,
+    features: def.features,
+    isPaid: true,
+    isUpcoming: true as const,
+  };
+});
 
 type SubscriptionRecord = {
   plan?: string | null;
@@ -391,6 +408,47 @@ function LegacySubscriptionScreen() {
                 )}
               </TouchableOpacity>
             )}
+          </Card>
+        ))}
+
+        {/* Upcoming plan teasers (Family / Pro). Locked — store products
+            don't exist yet; show the roadmap + notify CTA. */}
+        {UPCOMING_PLANS.map((plan) => (
+          <Card key={plan.key} variant="default" style={{ marginTop: 14, opacity: 0.72 }}>
+            <View style={styles.planHeader}>
+              <View style={{ flex: 1 }}>
+                <View style={styles.planNameRow}>
+                  <Text style={styles.planName}>{plan.name}</Text>
+                  <UiBadge label="Coming soon" variant="neutral" />
+                </View>
+                <Text style={styles.planPrice}>
+                  {plan.price}
+                  <Text style={styles.planPeriod}> {plan.period}</Text>
+                </Text>
+                {plan.yearlyPrice ? (
+                  <Text style={styles.planPeriod}>or {plan.yearlyPrice}</Text>
+                ) : null}
+              </View>
+            </View>
+
+            <View style={styles.featureList}>
+              {plan.features.map((f) => (
+                <View key={f} style={styles.featureRow}>
+                  <Check size={14} color={theme.colors.textTertiary} />
+                  <Text style={styles.featureText}>{f}</Text>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.currentBtn}
+              disabled
+              accessibilityRole="button"
+              accessibilityLabel={`${plan.name} plan coming soon`}
+              accessibilityState={{ disabled: true }}
+            >
+              <Text style={styles.currentBtnText}>Notify me at launch</Text>
+            </TouchableOpacity>
           </Card>
         ))}
 

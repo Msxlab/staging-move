@@ -1,5 +1,6 @@
 # dependencies
 node_modules
+.pnpm-store/
 .pnpm-debug.log*
 
 # next.js
@@ -23,6 +24,7 @@ yarn-error.log*
 .env
 .env*.local
 .env.production
+.env.production.bak*
 # NOTE: .env.production.example IS committed as a template
 
 # vercel
@@ -30,6 +32,7 @@ yarn-error.log*
 
 # turbo
 .turbo
+*.tsbuildinfo
 
 # prisma
 packages/db/prisma/*.db
@@ -43,8 +46,14 @@ apps/web/public/uploads/
 # design handoff staging (raw zip extractions land here, not committed;
 # canonical design system lives in docs/design-system/)
 .design-staging/
+.design-backup-*/
+LocateFlow Design System-handoff*/
+LocateFlow Design System-handoff*.zip
 
 # IDE
 .idea
 .vscode/*
 !.vscode/settings.json
+
+# local assistant/tool state
+.claude/

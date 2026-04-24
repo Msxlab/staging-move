@@ -15,6 +15,29 @@ const updateSchema = z.object({
   category: z.enum(["GENERAL", "BUG", "BILLING", "ACCOUNT", "FEATURE_REQUEST"]).optional(),
 });
 
+function buildSla(ticket: { priority: string; status: string; createdAt: Date }) {
+  const hoursByPriority: Record<string, number> = {
+    URGENT: 4,
+    HIGH: 24,
+    MEDIUM: 72,
+    LOW: 120,
+  };
+  const targetHours = hoursByPriority[ticket.priority] || 72;
+  const dueAt = new Date(ticket.createdAt.getTime() + targetHours * 60 * 60 * 1000);
+  const terminal = ticket.status === "RESOLVED" || ticket.status === "CLOSED";
+  const now = Date.now();
+  return {
+    targetHours,
+    dueAt,
+    breached: !terminal && dueAt.getTime() < now,
+    remainingHours: terminal
+      ? null
+      : Math.ceil((dueAt.getTime() - now) / (60 * 60 * 1000)),
+    policy: "derived_default",
+    note: "Derived operational target based on priority; not a configured contractual SLA.",
+  };
+}
+
 // GET /api/tickets/:id — get ticket details (admin sees all messages including internal)
 export async function GET(
   _request: NextRequest,
@@ -46,8 +69,20 @@ export async function GET(
     if (!ticket) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
+    const assignedAdmin = ticket.assignedTo
+      ? await prisma.adminUser.findUnique({
+          where: { id: ticket.assignedTo },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        })
+      : null;
 
-    return NextResponse.json({ ticket });
+    return NextResponse.json({
+      ticket: {
+        ...ticket,
+        assignedAdmin,
+        sla: buildSla(ticket),
+      },
+    });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

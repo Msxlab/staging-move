@@ -157,6 +157,22 @@ function hardenEarlyResponse(response: NextResponse): NextResponse {
   return response;
 }
 
+function nextWithCsp(request: NextRequest): NextResponse {
+  const nonce = generateCspNonce();
+  const isDev = process.env.NODE_ENV !== "production";
+  const csp = buildCspHeader(nonce, isDev);
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+  response.headers.set("Content-Security-Policy", csp);
+  response.headers.set("x-nonce", nonce);
+  return response;
+}
+
 // Request body size limit (5MB for backup imports, 1MB for regular JSON)
 const MAX_JSON_BODY = 1 * 1024 * 1024; // 1MB
 const MAX_BACKUP_BODY = 50 * 1024 * 1024; // 50MB (backups can be large)
@@ -296,7 +312,7 @@ export async function middleware(request: NextRequest) {
 
   // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return seedLocaleCookie(request, NextResponse.next());
+    return seedLocaleCookie(request, nextWithCsp(request));
   }
 
   // Body size limit check
@@ -389,22 +405,7 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Happy path: attach nonce + CSP. Radix/shadcn inline styles
-    // continue to work under CSP3 nonce-priority; prod gets a strict
-    // no-'unsafe-inline' script-src.
-    const nonce = generateCspNonce();
-    const isDev = process.env.NODE_ENV !== "production";
-    const csp = buildCspHeader(nonce, isDev);
-
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-nonce", nonce);
-
-    const response = NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-    response.headers.set("Content-Security-Policy", csp);
-    response.headers.set("x-nonce", nonce);
-    return response;
+    return nextWithCsp(request);
   } catch {
     // Token invalid or expired — clear cookie
     if (isApiRoute) {

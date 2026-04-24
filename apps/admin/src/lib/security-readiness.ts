@@ -122,6 +122,22 @@ function detectDatabaseTransportCheck(databaseUrl: string | undefined): Security
     };
   }
 
+  const skipsCertificateValidation =
+    normalized.includes("sslaccept=accept_invalid_certs") ||
+    normalized.includes("sslaccept=accept_invalid_hostnames") ||
+    normalized.includes("sslmode=disable") ||
+    normalized.includes("tls=false");
+
+  if (skipsCertificateValidation) {
+    return {
+      key: "database_transport",
+      label: "Database transport security",
+      status: "warn",
+      detail: "DATABASE_URL appears to allow TLS/SSL without strict certificate validation. Require verified certificates for production database traffic.",
+      source: "DERIVED",
+    };
+  }
+
   const hasExplicitTls =
     normalized.includes("sslmode=require") ||
     normalized.includes("sslaccept=strict") ||
@@ -325,14 +341,14 @@ export async function getSecurityReadinessSnapshot(): Promise<SecurityReadinessS
       "internal_webhook_secret",
       "Internal webhook secret",
       "Internal webhook secret is configured independently of CRON_SECRET",
-      "Internal webhook secret is not configured — falling back to CRON_SECRET (rotate it independently for stronger isolation)"
+      "Internal webhook secret is not configured — internal webhook endpoints will reject server-to-server calls"
     ),
     buildConfigCheck(
       catalogMap.get("IMPERSONATION_HANDOFF_SECRET"),
       "impersonation_handoff_secret",
       "Impersonation handoff secret",
       "Impersonation handoff secret is configured independently of CRON_SECRET",
-      "Impersonation handoff secret is not configured — falling back to CRON_SECRET (rotate it independently for stronger isolation)"
+      "Impersonation handoff secret is not configured — admin impersonation handoff is disabled"
     ),
     detectDatabaseTransportCheck(process.env.DATABASE_URL),
     buildDatabaseAtRestCheck(),

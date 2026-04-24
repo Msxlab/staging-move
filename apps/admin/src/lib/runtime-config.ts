@@ -113,7 +113,9 @@ export async function listRuntimeConfigCatalog(): Promise<RuntimeConfigCatalogIt
       lastValidationStatus: true,
     },
   }).catch(() => [] as RuntimeConfigEntryRecord[]);
-  const entryMap = new Map<string, RuntimeConfigEntryRecord>(entries.map((entry) => [entry.key, entry]));
+  const entryMap = new Map<string, RuntimeConfigEntryRecord>(
+    entries.map((entry: RuntimeConfigEntryRecord) => [entry.key, entry]),
+  );
 
   return RUNTIME_CONFIG_DEFINITIONS
     .map((definition) => buildCatalogItem(definition, entryMap.get(definition.key)))

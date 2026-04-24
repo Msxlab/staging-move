@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }
       if (existing.type === "DELETE" && data.status === "COMPLETED") {
-        return NextResponse.json({ error: "Delete requests are completed automatically after staged cleanuprisma." }, { status: 400 });
+        return NextResponse.json({ error: "Delete requests are completed automatically after staged cleanup." }, { status: 400 });
       }
 
       const updated = await prisma.gDPRRequest.update({

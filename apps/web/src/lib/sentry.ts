@@ -10,6 +10,8 @@
  * can call captureException / captureMessage without a hard dependency.
  */
 
+import { redactLogValue } from "@/lib/logger";
+
 let sentryInitialized = false;
 
 export function initSentry(): void {
@@ -43,7 +45,7 @@ export function captureException(error: unknown, context?: Record<string, unknow
     Sentry.captureException(error, { extra: context });
   } catch {
     // Sentry not available — fall back to console
-    console.error("[Error]", error, context);
+    console.error("[Error]", redactLogValue(error), redactLogValue(context));
   }
 }
 

@@ -1,6 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import {
+  listRuntimeConfigCatalog,
+  type RuntimeConfigCatalogItem,
+} from "@/lib/runtime-config";
+
+function detectDatabaseLabel(databaseUrl: string | undefined) {
+  if (!databaseUrl) return "Database URL missing";
+  if (databaseUrl.startsWith("mysql://")) return "MySQL (Prisma)";
+  if (databaseUrl.startsWith("postgres://") || databaseUrl.startsWith("postgresql://")) {
+    return "PostgreSQL (Prisma)";
+  }
+  if (databaseUrl.startsWith("file:")) return "SQLite (Prisma)";
+  return "Managed Database (Prisma)";
+}
+
+function buildIntegrationStatus(
+  catalogMap: Map<string, RuntimeConfigCatalogItem>,
+  id: string,
+  label: string,
+  keys: string[],
+) {
+  const missingKeys = keys.filter((key) => !catalogMap.get(key)?.configured);
+  return {
+    id,
+    label,
+    configured: missingKeys.length === 0,
+    missingKeys,
+  };
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +40,7 @@ export async function GET(request: NextRequest) {
       subscriptionCount, movingPlanCount,
       auditLogCount, adminAuditLogCount, sessionCount, eventCount,
       adminUser,
+      runtimeCatalog,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.serviceProvider.count(),
@@ -29,6 +59,7 @@ export async function GET(request: NextRequest) {
           _count: { select: { auditLogs: true } },
         },
       }),
+      listRuntimeConfigCatalog(),
     ]);
 
     const recentErrors = await prisma.adminAuditLog.findMany({
@@ -38,20 +69,78 @@ export async function GET(request: NextRequest) {
       select: { action: true, entityType: true, createdAt: true },
     });
 
-    // Stripe configuration status (read-only, from env)
-    const stripeConfig = {
-      isConfigured: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
-      hasIndividualPrice: !!process.env.STRIPE_PRICE_INDIVIDUAL,
-      webhookConfigured: !!process.env.STRIPE_WEBHOOK_SECRET,
-      // Show masked keys so admin knows they're set (never expose full keys)
-      secretKeyMasked: process.env.STRIPE_SECRET_KEY ? `sk_...${process.env.STRIPE_SECRET_KEY.slice(-6)}` : null,
-      priceIndividualId: process.env.STRIPE_PRICE_INDIVIDUAL || null,
+    const runtimeConfigMap = new Map<string, RuntimeConfigCatalogItem>(
+      runtimeCatalog.map((item: RuntimeConfigCatalogItem) => [item.key, item]),
+    );
+    const runtimeSummary = {
+      managedKeys: runtimeCatalog.length,
+      configured: runtimeCatalog.filter(
+        (item: RuntimeConfigCatalogItem) => item.configured,
+      ).length,
+      dbOverrides: runtimeCatalog.filter(
+        (item: RuntimeConfigCatalogItem) => item.source === "DB",
+      ).length,
+      missingRequired: runtimeCatalog.filter(
+        (item: RuntimeConfigCatalogItem) =>
+          item.requiredInProduction && !item.configured,
+      ).length,
+      missingRequiredKeys: runtimeCatalog
+        .filter(
+          (item: RuntimeConfigCatalogItem) =>
+            item.requiredInProduction && !item.configured,
+        )
+        .map((item: RuntimeConfigCatalogItem) => item.key),
     };
 
-    // Encryption status
-    const encryptionConfig = {
-      fieldEncryptionConfigured: process.env.FIELD_ENCRYPTION_KEY?.length === 64,
-    };
+    const integrations = [
+      buildIntegrationStatus(runtimeConfigMap, "google_oauth", "Google OAuth", [
+        "GOOGLE_OAUTH_CLIENT_ID",
+        "GOOGLE_OAUTH_CLIENT_SECRET",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "apple_oauth", "Apple OAuth", [
+        "APPLE_OAUTH_CLIENT_ID",
+        "APPLE_OAUTH_TEAM_ID",
+        "APPLE_OAUTH_KEY_ID",
+        "APPLE_OAUTH_PRIVATE_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "stripe", "Stripe Billing", [
+        "STRIPE_SECRET_KEY",
+        "STRIPE_WEBHOOK_SECRET",
+        "STRIPE_PRICE_INDIVIDUAL",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "resend", "Transactional Email", [
+        "RESEND_API_KEY",
+        "EMAIL_FROM",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "google_maps", "Google Maps", [
+        "GOOGLE_MAPS_API_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "mobile_app_store", "Apple Mobile Billing", [
+        "APPLE_BUNDLE_ID",
+        "APPLE_APP_STORE_ISSUER_ID",
+        "APPLE_APP_STORE_KEY_ID",
+        "APPLE_APP_STORE_PRIVATE_KEY",
+        "MOBILE_IOS_PRODUCT_INDIVIDUAL",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "mobile_play", "Google Play Billing", [
+        "GOOGLE_PLAY_PACKAGE_NAME",
+        "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
+        "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY",
+        "GOOGLE_PLAY_RTDN_AUDIENCE",
+        "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "backup_storage", "Encrypted Backup Storage", [
+        "BACKUP_STORAGE_PROVIDER",
+        "BACKUP_STORAGE_BUCKET",
+        "BACKUP_STORAGE_REGION",
+        "BACKUP_STORAGE_ACCESS_KEY_ID",
+        "BACKUP_STORAGE_SECRET_ACCESS_KEY",
+      ]),
+      buildIntegrationStatus(runtimeConfigMap, "redis", "Rate Limit Redis", [
+        "UPSTASH_REDIS_REST_URL",
+        "UPSTASH_REDIS_REST_TOKEN",
+      ]),
+    ];
 
     return NextResponse.json({
       counts: {
@@ -63,8 +152,16 @@ export async function GET(request: NextRequest) {
       },
       adminProfile: adminUser,
       recentErrors,
-      stripeConfig,
-      encryptionConfig,
+      runtimeSummary,
+      integrations,
+      systemInfo: {
+        version: "0.1.0",
+        framework: "Next.js 16.1.6",
+        database: detectDatabaseLabel(process.env.DATABASE_URL),
+        auth: "JWT + bcrypt + TOTP",
+        node: process.version,
+        environment: process.env.NODE_ENV || "development",
+      },
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {

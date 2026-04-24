@@ -12,9 +12,16 @@ interface Sub {
   id: string;
   plan: string;
   status: string;
+  provider: string;
+  platform: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripeCurrentPeriodEnd: string | null;
+  originalTransactionId: string | null;
+  latestTransactionId: string | null;
+  purchaseToken: string | null;
+  lastValidatedAt: string | null;
+  lastSyncedAt: string | null;
   trialEndsAt: string | null;
   canceledAt: string | null;
   createdAt: string;
@@ -47,7 +54,7 @@ export default function SubscriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [detail, setDetail] = useState<Sub | null>(null);
-  const [filters, setFilters] = useState({ plan: "", status: "", dateFrom: "", dateTo: "" });
+  const [filters, setFilters] = useState({ plan: "", status: "", provider: "", platform: "", dateFrom: "", dateTo: "" });
   const perPage = 20;
 
   const fetchSubs = useCallback(async () => {
@@ -56,6 +63,8 @@ export default function SubscriptionsPage() {
       const params = new URLSearchParams({ page: String(page), perPage: String(perPage), search });
       if (filters.plan) params.set("plan", filters.plan);
       if (filters.status) params.set("status", filters.status);
+      if (filters.provider) params.set("provider", filters.provider);
+      if (filters.platform) params.set("platform", filters.platform);
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.set("dateTo", filters.dateTo);
 
@@ -77,6 +86,22 @@ export default function SubscriptionsPage() {
     if (!date) return null;
     const d = Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     return d;
+  }
+
+  function getOpsStatus(sub: Sub) {
+    if (sub.provider === "APP_STORE") {
+      if (!sub.latestTransactionId && !sub.originalTransactionId) return { label: "Missing transaction", cls: "bg-red-500/10 text-red-500" };
+      if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-amber-500/10 text-amber-500" };
+    }
+    if (sub.provider === "PLAY_STORE") {
+      if (!sub.purchaseToken) return { label: "Missing token", cls: "bg-red-500/10 text-red-500" };
+      if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-amber-500/10 text-amber-500" };
+    }
+    if (sub.lastValidatedAt && ["APP_STORE", "PLAY_STORE"].includes(sub.provider)) {
+      const hoursSinceValidation = (Date.now() - new Date(sub.lastValidatedAt).getTime()) / (1000 * 60 * 60);
+      if (hoursSinceValidation > 24) return { label: "Stale validation", cls: "bg-amber-500/10 text-amber-500" };
+    }
+    return { label: "OK", cls: "bg-green-500/10 text-green-500" };
   }
 
   return (
@@ -154,6 +179,23 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
+      {stats?.providerMap && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground mr-1">Sources:</span>
+            {Object.entries(stats.providerMap).map(([provider, count]) => (
+              <button key={provider} onClick={() => { setFilters({ ...filters, provider: filters.provider === provider ? "" : provider }); setPage(1); }}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${filters.provider === provider ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                {provider} ({count as number})
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Store health reflects recorded transaction identifiers and last validation timestamps only; it does not imply live App Store or Play Store verification unless production credentials are configured.
+          </p>
+        </div>
+      )}
+
       {/* Search + Filters */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-md">
@@ -167,7 +209,7 @@ export default function SubscriptionsPage() {
           <Filter className="h-3.5 w-3.5" /> Filters {activeFilterCount > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{activeFilterCount}</span>}
         </button>
         {activeFilterCount > 0 && (
-          <button onClick={() => { setFilters({ plan: "", status: "", dateFrom: "", dateTo: "" }); setPage(1); }} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent">
+          <button onClick={() => { setFilters({ plan: "", status: "", provider: "", platform: "", dateFrom: "", dateTo: "" }); setPage(1); }} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent">
             <X className="h-3 w-3" /> Clear
           </button>
         )}
@@ -175,7 +217,7 @@ export default function SubscriptionsPage() {
 
       {showFilters && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
             <div>
               <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Plan</label>
               <select value={filters.plan} onChange={(e) => { setFilters({ ...filters, plan: e.target.value }); setPage(1); }} className={inputCls}>
@@ -192,6 +234,26 @@ export default function SubscriptionsPage() {
                 <option value="ACTIVE">Active</option>
                 <option value="TRIALING">Trialing</option>
                 <option value="CANCELED">Canceled</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Provider</label>
+              <select value={filters.provider} onChange={(e) => { setFilters({ ...filters, provider: e.target.value }); setPage(1); }} className={inputCls}>
+                <option value="">All Providers</option>
+                <option value="TRIAL">Trial</option>
+                <option value="STRIPE">Stripe</option>
+                <option value="APP_STORE">App Store</option>
+                <option value="PLAY_STORE">Play Store</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Platform</label>
+              <select value={filters.platform} onChange={(e) => { setFilters({ ...filters, platform: e.target.value }); setPage(1); }} className={inputCls}>
+                <option value="">All Platforms</option>
+                <option value="web">Web</option>
+                <option value="ios">iOS</option>
+                <option value="android">Android</option>
+                <option value="unassigned">Unassigned</option>
               </select>
             </div>
             <div>
@@ -213,7 +275,9 @@ export default function SubscriptionsPage() {
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">User</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Plan</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Source</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Recorded Health</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Trial Ends</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Period End</th>
               <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Created</th>
@@ -222,11 +286,12 @@ export default function SubscriptionsPage() {
           </thead>
           <tbody className="divide-y divide-border">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>
+              <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">Loading...</td></tr>
             ) : subs.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">No subscriptions found</td></tr>
+              <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground">No subscriptions found</td></tr>
             ) : subs.map((sub) => {
               const trialDays = daysUntil(sub.trialEndsAt);
+              const opsStatus = getOpsStatus(sub);
               return (
                 <tr key={sub.id} className="bg-card hover:bg-accent/50 transition-colors">
                   <td className="px-4 py-3">
@@ -241,8 +306,17 @@ export default function SubscriptionsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
+                    <p className="text-xs font-medium text-foreground">{sub.provider || "UNKNOWN"}</p>
+                    <p className="text-[11px] text-muted-foreground">{sub.platform || "unassigned"}</p>
+                  </td>
+                  <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[sub.status] || "bg-muted text-muted-foreground"}`}>
                       {sub.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${opsStatus.cls}`}>
+                      {opsStatus.label}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -311,12 +385,16 @@ export default function SubscriptionsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <DetailItem label="Plan" value={detail.plan.replace("_", " ")} />
                 <DetailItem label="Status" value={detail.status} />
+                <DetailItem label="Provider" value={detail.provider || "UNKNOWN"} />
+                <DetailItem label="Platform" value={detail.platform || "unassigned"} />
                 <DetailItem label="Created" value={new Date(detail.createdAt).toLocaleDateString()} />
                 <DetailItem label="Updated" value={new Date(detail.updatedAt).toLocaleDateString()} />
                 <DetailItem label="Trial Ends" value={detail.trialEndsAt ? new Date(detail.trialEndsAt).toLocaleDateString() : "—"} />
                 <DetailItem label="Canceled At" value={detail.canceledAt ? new Date(detail.canceledAt).toLocaleDateString() : "—"} />
                 <DetailItem label="Period End" value={detail.stripeCurrentPeriodEnd ? new Date(detail.stripeCurrentPeriodEnd).toLocaleDateString() : "—"} />
                 <DetailItem label="Stripe Customer" value={detail.stripeCustomerId || "—"} />
+                <DetailItem label="Last Validated" value={detail.lastValidatedAt ? new Date(detail.lastValidatedAt).toLocaleString() : "Never"} />
+                <DetailItem label="Last Synced" value={detail.lastSyncedAt ? new Date(detail.lastSyncedAt).toLocaleString() : "Never"} />
               </div>
 
               {detail.stripeSubscriptionId && (

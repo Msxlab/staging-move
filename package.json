@@ -43,7 +43,7 @@
     "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts"
   },
   "devDependencies": {
-    "turbo": "^2.3.0"
+    "turbo": "^2.9.6"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

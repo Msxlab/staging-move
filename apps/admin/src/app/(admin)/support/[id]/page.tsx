@@ -30,10 +30,27 @@ interface Ticket {
   category: string;
   status: string;
   priority: string;
+  assignedTo: string | null;
   createdAt: string;
   updatedAt: string;
   user: { id: string; email: string | null; firstName: string | null; lastName: string | null };
+  assignedAdmin?: { id: string; email: string | null; firstName: string | null; lastName: string | null } | null;
+  sla?: { breached: boolean; remainingHours: number | null; dueAt: string; targetHours: number; policy?: string; note?: string };
   messages: Message[];
+}
+
+function getAdminLabel(admin?: Ticket["assignedAdmin"]) {
+  if (!admin) return "";
+  return [admin.firstName, admin.lastName].filter(Boolean).join(" ") || admin.email || "Assigned admin";
+}
+
+function getSlaLabel(sla?: Ticket["sla"]) {
+  if (!sla) return "No target";
+  if (sla.remainingHours === null) return "Closed";
+  if (sla.breached) return "Breached";
+  if (sla.remainingHours <= 0) return "Due now";
+  if (sla.remainingHours < 24) return `${sla.remainingHours}h left`;
+  return `${Math.ceil(sla.remainingHours / 24)}d left`;
 }
 
 export default function AdminTicketDetailPage() {
@@ -44,6 +61,7 @@ export default function AdminTicketDetailPage() {
   const [isInternal, setIsInternal] = useState(false);
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [currentAdminId, setCurrentAdminId] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const fetchTicket = useCallback(async () => {
@@ -57,6 +75,13 @@ export default function AdminTicketDetailPage() {
   useEffect(() => {
     fetchTicket().finally(() => setLoading(false));
   }, [fetchTicket]);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => setCurrentAdminId(data?.admin?.id || ""))
+      .catch(() => null);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -84,7 +109,7 @@ export default function AdminTicketDetailPage() {
     }
   };
 
-  const handleUpdate = async (field: string, value: string) => {
+  const handleUpdate = async (field: string, value: string | null) => {
     setUpdating(true);
     try {
       const res = await fetch(`/api/tickets/${id}`, {
@@ -219,6 +244,50 @@ export default function AdminTicketDetailPage() {
               >
                 {PRIORITY_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
+            </div>
+            <div className="rounded-lg border border-border bg-background/50 p-3">
+              <p className="text-xs text-muted-foreground">Assignment</p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                {!ticket.assignedTo
+                  ? "Unassigned"
+                  : ticket.assignedTo === currentAdminId
+                    ? "Assigned to you"
+                    : getAdminLabel(ticket.assignedAdmin) || "Assigned to another admin"}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={() => handleUpdate("assignedTo", currentAdminId)}
+                  disabled={updating || !currentAdminId || ticket.assignedTo === currentAdminId}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  Assign to me
+                </button>
+                <button
+                  onClick={() => handleUpdate("assignedTo", null)}
+                  disabled={updating || !ticket.assignedTo}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  Unassign
+                </button>
+              </div>
+            </div>
+            <div className={`rounded-lg border p-3 ${
+              ticket.sla?.breached
+                ? "border-red-500/30 bg-red-500/5"
+                : "border-border bg-background/50"
+            }`}>
+              <p className="text-xs text-muted-foreground">Response Target</p>
+              <p className={`mt-1 text-sm font-medium ${ticket.sla?.breached ? "text-red-400" : "text-foreground"}`}>
+                {getSlaLabel(ticket.sla)}
+              </p>
+              {ticket.sla && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Derived {ticket.sla.targetHours}h target · Due {new Date(ticket.sla.dueAt).toLocaleString()}
+                </p>
+              )}
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Triage guidance only; no configured contractual SLA policy is active.
+              </p>
             </div>
             <div className="text-xs text-muted-foreground pt-1 border-t border-border">
               <p>Created: {new Date(ticket.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>

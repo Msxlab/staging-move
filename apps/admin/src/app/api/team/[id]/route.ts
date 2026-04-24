@@ -1,7 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import {
+  ADMIN_RESOURCES,
+  buildDefaultPermissionMatrix,
+} from "@/lib/admin-permissions";
+
+function normalizePermissionMatrix(input: unknown) {
+  if (!Array.isArray(input)) return null;
+
+  const normalized = input
+    .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object")
+    .map((row) => ({
+      resource:
+        typeof row.resource === "string" &&
+        (ADMIN_RESOURCES as readonly string[]).includes(row.resource)
+          ? row.resource
+          : null,
+      canRead: Boolean(row.canRead),
+      canCreate: Boolean(row.canCreate),
+      canUpdate: Boolean(row.canUpdate),
+      canDelete: Boolean(row.canDelete),
+    }))
+    .filter((row): row is {
+      resource: string;
+      canRead: boolean;
+      canCreate: boolean;
+      canUpdate: boolean;
+      canDelete: boolean;
+    } => Boolean(row.resource));
+
+  if (normalized.length !== ADMIN_RESOURCES.length) return null;
+  return normalized;
+}
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -13,9 +46,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!admin) return NextResponse.json({ error: "Admin not found" }, { status: 404 });
 
     // Role/password/activation changes require SUPER_ADMIN
-    const isSensitiveChange = body.role !== undefined || body.newPassword !== undefined || body.isActive !== undefined;
+    const isSensitiveChange =
+      body.role !== undefined ||
+      body.newPassword !== undefined ||
+      body.isActive !== undefined ||
+      body.permissions !== undefined;
     if (isSensitiveChange && session.role !== "SUPER_ADMIN") {
-      return NextResponse.json({ error: "Only SUPER_ADMIN can change roles, passwords, or activation status" }, { status: 403 });
+      return NextResponse.json({ error: "Only SUPER_ADMIN can change roles, passwords, activation status, or permissions" }, { status: 403 });
     }
 
     // Prevent self-promotion
@@ -37,7 +74,35 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.isActive !== undefined) data.isActive = body.isActive;
     if (body.newPassword) data.password = await bcrypt.hash(body.newPassword, 12);
 
-    const updated = await prisma.adminUser.update({ where: { id }, data });
+    let permissionMode: "unchanged" | "default_reset" | "custom" = "unchanged";
+    let nextPermissions = normalizePermissionMatrix(body.permissions);
+    if (body.permissions !== undefined && !nextPermissions) {
+      return NextResponse.json({ error: "Invalid permission matrix" }, { status: 400 });
+    }
+    if (body.role !== undefined && !nextPermissions) {
+      nextPermissions = buildDefaultPermissionMatrix(body.role);
+      permissionMode = "default_reset";
+    } else if (nextPermissions) {
+      permissionMode = "custom";
+    }
+
+    const updated = await prisma.$transaction(async (tx: any) => {
+      const adminUser = await tx.adminUser.update({ where: { id }, data });
+      if (nextPermissions) {
+        await tx.adminPermission.deleteMany({ where: { adminUserId: id } });
+        await tx.adminPermission.createMany({
+          data: nextPermissions.map((permission) => ({
+            adminUserId: id,
+            resource: permission.resource,
+            canRead: permission.canRead,
+            canCreate: permission.canCreate,
+            canUpdate: permission.canUpdate,
+            canDelete: permission.canDelete,
+          })),
+        });
+      }
+      return adminUser;
+    });
     let revokedSessions = 0;
     if (isSensitiveChange) {
       const revokeResult = await prisma.adminSession.updateMany({
@@ -60,6 +125,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           newRole: updated.role,
           previousActive: admin.isActive,
           newActive: updated.isActive,
+          permissionMode,
         }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
@@ -83,7 +149,22 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
     }
 
-    // Step-up auth: deleting a team member wipes their audit trail.
+    const admin = await prisma.adminUser.findUnique({ where: { id } });
+    if (!admin) {
+      return NextResponse.json({ error: "Admin not found" }, { status: 404 });
+    }
+
+    const roleHierarchy: Record<string, number> = {
+      VIEWER: 0,
+      MODERATOR: 1,
+      ADMIN: 2,
+      SUPER_ADMIN: 3,
+    };
+    if ((roleHierarchy[admin.role] ?? 0) >= (roleHierarchy[session.role] ?? 0)) {
+      return NextResponse.json({ error: "Cannot archive an admin with equal or higher role" }, { status: 403 });
+    }
+
+    // Step-up auth: archival is destructive and revokes every active session.
     let confirmPassword: string | undefined;
     try {
       const body = await request.json();
@@ -99,21 +180,50 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       );
     }
 
-    await prisma.adminPermission.deleteMany({ where: { adminUserId: id } });
-    await prisma.adminAuditLog.deleteMany({ where: { adminUserId: id } });
-    await prisma.adminUser.delete({ where: { id } });
+    const archivedEmail = `archived+${Date.now()}+${id}@invalid.locateflow`;
+    const archivedPassword = await bcrypt.hash(
+      randomBytes(32).toString("hex"),
+      12,
+    );
+
+    await prisma.$transaction(async (tx: any) => {
+      await tx.adminPermission.deleteMany({ where: { adminUserId: id } });
+      await tx.adminSession.updateMany({
+        where: { adminUserId: id, isActive: true },
+        data: { isActive: false, lastActivity: new Date() },
+      });
+      await tx.adminUser.update({
+        where: { id },
+        data: {
+          email: archivedEmail,
+          firstName: "Archived",
+          lastName: "Admin",
+          password: archivedPassword,
+          role: "VIEWER",
+          isActive: false,
+          mfaEnabled: false,
+          mfaSecret: null,
+          mfaVerifiedAt: null,
+          mfaBackupCodes: null,
+        },
+      });
+    });
 
     await prisma.adminAuditLog.create({
       data: {
         adminUserId: session.adminId,
-        action: "DELETE_ADMIN",
+        action: "ARCHIVE_ADMIN",
         entityType: "AdminUser",
         entityId: id,
+        changes: JSON.stringify({
+          previousEmail: admin.email,
+          archivedEmail,
+        }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, archived: true });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED" || error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: error.message }, { status: 403 });

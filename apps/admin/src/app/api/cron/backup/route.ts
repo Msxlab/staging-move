@@ -1,30 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createBackupArchive } from "@/lib/backup-archive";
+import { BACKUP_TABLE_ORDER } from "@/lib/backup-tables";
 import { serializeBackupRecordMetadata, uploadBackupArchive } from "@/lib/backup-storage";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 
-const BACKUP_TABLES: Record<string, { model: string }> = {
-  users: { model: "user" },
-  profiles: { model: "profile" },
-  addresses: { model: "address" },
-  services: { model: "service" },
-  providers: { model: "serviceProvider" },
-  movingPlans: { model: "movingPlan" },
-  budgets: { model: "budget" },
-  subscriptions: { model: "subscription" },
-};
-
 const BACKUP_TABLE_FETCHERS = {
   users: () => prisma.user.findMany(),
   profiles: () => prisma.profile.findMany(),
+  providers: () => prisma.serviceProvider.findMany(),
+  providerCoverages: () => prisma.serviceProviderCoverage.findMany(),
   addresses: () => prisma.address.findMany(),
   services: () => prisma.service.findMany(),
-  providers: () => prisma.serviceProvider.findMany(),
   movingPlans: () => prisma.movingPlan.findMany(),
   budgets: () => prisma.budget.findMany(),
   subscriptions: () => prisma.subscription.findMany(),
+  notifications: () => prisma.notification.findMany(),
+  auditLogs: () => prisma.auditLog.findMany(),
 } as const;
 
 // POST /api/cron/backup — automated daily backup via cron
@@ -42,7 +35,7 @@ export async function POST(request: NextRequest) {
         type: "FULL",
         status: "IN_PROGRESS",
         format: "JSON",
-        tables: JSON.stringify(Object.keys(BACKUP_TABLES)),
+        tables: JSON.stringify(BACKUP_TABLE_ORDER),
         createdBy: "CRON",
       },
     });
@@ -50,11 +43,11 @@ export async function POST(request: NextRequest) {
 
     // Collect data from all tables
     const backupData: Record<string, any[]> = {};
-    const selectedTables = Object.keys(BACKUP_TABLES);
+    const selectedTables = BACKUP_TABLE_ORDER;
     const tableCounts: Record<string, number> = {};
     let totalRecords = 0;
 
-    for (const [tableName, config] of Object.entries(BACKUP_TABLES)) {
+    for (const tableName of selectedTables) {
       try {
         const fetchRecords = BACKUP_TABLE_FETCHERS[tableName as keyof typeof BACKUP_TABLE_FETCHERS];
         if (!fetchRecords) continue;

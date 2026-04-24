@@ -1,59 +1,165 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   LocateFlow Admin — Edition VI · Champagne & Rose
+   Mirrors apps/web. Admin keeps the same visual language with denser
+   spacing (per the brand doc).
+   ========================================================================= */
+:root,
+.dark {
+  --rose:        #D4846A;
+  --rose-light:  #EDB99D;
+  --rose-deep:   #A85A42;
+  --foil-a:      #F4E4D0;
+  --foil-b:      #E5C9A8;
+  --foil-c:      #B8936C;
+  --foil:        #E5C9A8;
+  --foil-ink:    #8E6D4A;
+  --sage:        #5EAD9A;
+
+  --brand-orange:       #D4846A;
+  --brand-orange-light: #EDB99D;
+  --brand-orange-dark:  #A85A42;
+  --brand-amber:        #E5C9A8;
+
+  --orange-50:  #FBF1ED;
+  --orange-100: #F6E0D6;
+  --orange-200: #EDC0AC;
+  --orange-300: #E5A287;
+  --orange-400: #DC8B6F;
+  --orange-500: #D4846A;
+  --orange-600: #BC6C53;
+  --orange-700: #A85A42;
+  --orange-800: #8A4630;
+  --orange-900: #6A2E1C;
+
+  --bg:        #0E0A07;
+  --surface:   #13100B;
+  --surface-2: #181410;
+  --surface-3: #1F1A14;
+
+  --line:        rgba(245, 241, 234, 0.08);
+  --line-2:      rgba(245, 241, 234, 0.14);
+  --line-foil:   rgba(229, 201, 168, 0.22);
+  --border-focus: rgba(212, 132, 106, 0.55);
+
+  --tone-rose-bg: rgba(212, 132, 106, 0.10); --tone-rose-br: rgba(212, 132, 106, 0.22); --tone-rose-fg: #EDB99D;
+  --tone-foil-bg: rgba(229, 201, 168, 0.09); --tone-foil-br: rgba(229, 201, 168, 0.22); --tone-foil-fg: #F4E4D0;
+  --tone-sage-bg: rgba(94, 173, 154, 0.09);  --tone-sage-br: rgba(94, 173, 154, 0.22);  --tone-sage-fg: #8FC9B7;
+  --tone-honey-bg: rgba(227, 176, 75, 0.09); --tone-honey-br: rgba(227, 176, 75, 0.22); --tone-honey-fg: #EFC878;
+  --tone-umber-bg: rgba(184, 147, 108, 0.09); --tone-umber-br: rgba(184, 147, 108, 0.22); --tone-umber-fg: #D4B68F;
+  --tone-slate-bg: rgba(138, 169, 192, 0.09); --tone-slate-br: rgba(138, 169, 192, 0.22); --tone-slate-fg: #B5CDDD;
+  --tone-orange-bg: rgba(212, 132, 106, 0.10); --tone-orange-br: rgba(212, 132, 106, 0.22); --tone-orange-fg: #EDB99D;
+  --tone-emerald-bg: rgba(94, 173, 154, 0.09); --tone-emerald-br: rgba(94, 173, 154, 0.22); --tone-emerald-fg: #8FC9B7;
+  --tone-amber-bg: rgba(227, 176, 75, 0.09); --tone-amber-br: rgba(227, 176, 75, 0.22); --tone-amber-fg: #EFC878;
+  --tone-sky-bg: rgba(138, 169, 192, 0.09); --tone-sky-br: rgba(138, 169, 192, 0.22); --tone-sky-fg: #B5CDDD;
+  --tone-cyan-bg: rgba(138, 169, 192, 0.09); --tone-cyan-br: rgba(138, 169, 192, 0.22); --tone-cyan-fg: #B5CDDD;
+
+  --shadow-glow: 0 0 20px rgba(212, 132, 106, 0.28);
+  --shadow-rose: 0 0 20px rgba(212, 132, 106, 0.28);
+  --shadow-foil: 0 0 30px rgba(229, 201, 168, 0.16);
+
+  --font-display: "Fraunces", "Didot", Georgia, serif;
+  --font-sans:    "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Light mode — ivory paper canvas */
+    --background: 35 60% 95%;
+    --foreground: 27 30% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 27 30% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 24 94% 53%;
+    --popover-foreground: 27 30% 13%;
+    --primary: 13 47% 49%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 24 94% 53%;
-    --radius: 0.5rem;
+    --secondary: 35 53% 75%;
+    --secondary-foreground: 30 30% 12%;
+    --muted: 35 30% 90%;
+    --muted-foreground: 30 15% 35%;
+    --accent: 35 53% 78%;
+    --accent-foreground: 30 30% 12%;
+    --destructive: 11 56% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 30% 88%;
+    --input: 30 30% 88%;
+    --ring: 13 47% 49%;
+    --radius: 0.625rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 24 94% 53%;
+    /* Dark mode — umber canvas */
+    --background: 24 27% 4%;
+    --foreground: 36 27% 94%;
+    --card: 27 24% 6%;
+    --card-foreground: 36 27% 94%;
+    --popover: 30 25% 12%;
+    --popover-foreground: 36 27% 94%;
+    --primary: 17 56% 62%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 24 94% 53%;
+    --secondary: 35 53% 78%;
+    --secondary-foreground: 30 30% 12%;
+    --muted: 30 20% 14%;
+    --muted-foreground: 35 17% 60%;
+    --accent: 35 53% 78%;
+    --accent-foreground: 30 30% 12%;
+    --destructive: 11 56% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 36 27% 12%;
+    --input: 36 27% 14%;
+    --ring: 17 56% 62%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+  }
+  h1 em, h2 em, h3 em {
+    font-style: italic;
+    background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--border-focus);
+  }
+}
+
+@layer utilities {
+  .foil-text {
+    background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .glass {
+    background: rgba(245, 241, 234, 0.04);
+    border: 1px solid rgba(245, 241, 234, 0.08);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .hairline { position: relative; }
+  .hairline::before {
+    content: ""; position: absolute; inset: 14px;
+    border: 1px solid var(--line-foil);
+    border-radius: inherit;
+    pointer-events: none;
   }
 }
