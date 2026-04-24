@@ -31,7 +31,7 @@ The current product is materially more complete: persistent move tasks, custom p
 | Notifications | Usable but thin | In-app records exist; external delivery depends on configured providers/workers. |
 | Support/help | Usable | Tickets and help surfaces exist. |
 | Legal/policy | Usable after copy review | Privacy, terms, cookie, disclaimer, refund, DPA, CCPA, acceptable-use, security, and contact pages exist. |
-| Mobile app | Usable but requires device QA | Core flows exist; mobile caveats and task UX need real-device review. |
+| Mobile app | Usable but requires device QA | Core flows exist; mobile caveats and task UX need real-device review. Dedicated custom-provider edit/delete is still a parity gap; mobile can create a private provider through service creation. |
 | Admin dashboard/users | Usable | User detail includes services, custom providers, move plans, tasks, and support context. |
 | Admin providers | Production-ready after QA | Provider list/detail/edit plus quality visibility. |
 | Admin provider governance | Production-ready after QA | Quality, gap, duplicate, contact, broad coverage, source backlog, and custom-provider queues exist. |
@@ -46,6 +46,7 @@ The current product is materially more complete: persistent move tasks, custom p
 
 - Web app has public, auth, onboarding, app-shell, settings, support, provider, service, moving, address, and policy routes.
 - Mobile has auth, onboarding, tabs, address, moving, service, provider, budget, help, notifications, and settings screens.
+- Mobile custom-provider management is thinner than web: create-through-service exists, but a dedicated custom-provider edit/delete screen still needs implementation before a green launch verdict.
 - Admin sidebar reaches dashboard, users, subscriptions, billing, providers, provider governance, state rules, moving, support, notifications, email templates, help center, waitlist, analytics, reports, feature flags, security, runtime config, backups, logs, team, and settings.
 - Remaining manual QA: verify no dead buttons in provider governance queues, mobile back navigation, modals, empty states, and local-effect confirmation flows.
 
