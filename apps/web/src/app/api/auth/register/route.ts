@@ -8,6 +8,10 @@ import {
 } from "@/lib/user-auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
+import {
+  normalizeAcceptedLegalConsents,
+  recordLegalAcceptance,
+} from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
 
@@ -16,6 +20,13 @@ const registerSchema = z.object({
   password: z.string().max(200),
   firstName: z.string().trim().max(100).optional(),
   lastName: z.string().trim().max(100).optional(),
+  legalConsents: z.object({
+    termsAccepted: z.boolean(),
+    disclaimerAccepted: z.boolean(),
+    termsVersion: z.string().optional(),
+    disclaimerVersion: z.string().optional(),
+    acceptedAt: z.string().optional(),
+  }).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -39,6 +50,13 @@ export async function POST(request: NextRequest) {
   }
 
   const { email, password, firstName, lastName } = parsed.data;
+  const acceptedLegalConsents = normalizeAcceptedLegalConsents(parsed.data.legalConsents);
+  if (!acceptedLegalConsents) {
+    return NextResponse.json(
+      { error: "You must accept the Terms of Use and Legal Disclaimer before creating an account." },
+      { status: 400 },
+    );
+  }
 
   const policyError = validatePasswordPolicy(password);
   if (policyError) {
@@ -81,6 +99,14 @@ export async function POST(request: NextRequest) {
       tokenHash: hash,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     },
+  });
+
+  await recordLegalAcceptance({
+    userId: user.id,
+    request,
+    page: "/sign-up",
+    source: "email_signup",
+    consents: acceptedLegalConsents,
   });
 
   await sendEmailVerificationEmail({

@@ -364,6 +364,7 @@ export async function findOrLinkOAuthUser(input: {
   firstName?: string | null;
   lastName?: string | null;
   imageUrl?: string | null;
+  allowNewAccount?: boolean;
 }): Promise<string> {
   // 1) Existing OAuth link
   const existingLink = await prisma.oAuthAccount.findUnique({
@@ -398,6 +399,10 @@ export async function findOrLinkOAuthUser(input: {
       });
     }
     return userByEmail.id;
+  }
+
+  if (input.allowNewAccount === false) {
+    throw new Error("LEGAL_ACCEPTANCE_REQUIRED");
   }
 
   // 3) Brand new account

@@ -4,6 +4,7 @@ Use this checklist before opening or merging the current-product readiness epic.
 
 ## Web Provider And Custom Provider
 
+- Signup requires Terms of Use and Legal Disclaimer acknowledgement before email/password or social account creation.
 - Provider list shows listed/unverified provider labels and availability caveats.
 - Provider detail says adding a provider is manual tracking only.
 - Provider detail does not claim official partnership, guaranteed availability, or automatic account updates.
@@ -15,6 +16,7 @@ Use this checklist before opening or merging the current-product readiness epic.
 
 ## Mobile Provider And Custom Provider
 
+- Signup requires Terms of Use and Legal Disclaimer acknowledgement before email/password or social account creation.
 - Provider list/card/detail shows the same trust and coverage meaning as web.
 - Mobile does not hide caveats because of screen size.
 - Add service with a listed provider remains local tracking.

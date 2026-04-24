@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
+import {
+  createAcceptedLegalConsents,
+  getDefaultLegalConsents,
+  hasRequiredLegalConsents,
+} from "@/lib/legal";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -20,6 +26,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+  const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
   const tToast = useTranslations("toast");
@@ -32,13 +39,25 @@ export default function SignUpPage() {
       .catch(() => setOauthProviders(null));
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("error") === "legal-acceptance-required") {
+      setError("Review and accept the Terms of Use and Legal Disclaimer before creating an account with social sign-in.");
+    }
+  }, []);
+
   const googleReady = oauthProviders?.google?.configured ?? true;
   const appleReady = oauthProviders?.apple?.configured ?? true;
+  const legalAccepted = hasRequiredLegalConsents(legalConsents);
   const showOAuthReadinessNote =
     Boolean(oauthProviders) && (!googleReady || !appleReady);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!legalAccepted) {
+      setError("Review and accept the Terms of Use and Legal Disclaimer before creating an account.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -50,6 +69,7 @@ export default function SignUpPage() {
           password,
           firstName: firstName.trim() || undefined,
           lastName: lastName.trim() || undefined,
+          legalConsents: createAcceptedLegalConsents(legalConsents),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -106,7 +126,11 @@ export default function SignUpPage() {
             type="button"
             disabled={!googleReady}
             onClick={() => {
-              window.location.href = "/api/auth/oauth/google";
+              if (!legalAccepted) {
+                setError("Review and accept the Terms of Use and Legal Disclaimer before creating an account with Google.");
+                return;
+              }
+              window.location.href = "/api/auth/oauth/google?acceptLegal=true";
             }}
             className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white/5"
           >
@@ -122,7 +146,11 @@ export default function SignUpPage() {
             type="button"
             disabled={!appleReady}
             onClick={() => {
-              window.location.href = "/api/auth/oauth/apple";
+              if (!legalAccepted) {
+                setError("Review and accept the Terms of Use and Legal Disclaimer before creating an account with Apple.");
+                return;
+              }
+              window.location.href = "/api/auth/oauth/apple?acceptLegal=true";
             }}
             className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-black hover:bg-black/80 px-4 py-2.5 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
           >
@@ -185,8 +213,16 @@ export default function SignUpPage() {
             </p>
           </div>
 
+          <LegalConsentPanel
+            consents={legalConsents}
+            onChange={setLegalConsents}
+            title="Required acknowledgements"
+            description="Accept these before creating your LocateFlow account."
+            compact
+          />
+
           <button
-            type="submit" disabled={loading}
+            type="submit" disabled={loading || !legalAccepted}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}

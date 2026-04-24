@@ -12,6 +12,13 @@ import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { api, API_URL } from "@/lib/api";
+import { LegalConsentPanel } from "@/components/legal/LegalConsentPanel";
+import {
+  createAcceptedLegalConsents,
+  getDefaultLegalConsents,
+  hasRequiredLegalConsents,
+  setPendingLegalConsents,
+} from "@/lib/legal";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -32,6 +39,7 @@ export default function SignUpScreen() {
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+  const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
 
   useEffect(() => {
     api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
@@ -41,10 +49,16 @@ export default function SignUpScreen() {
 
   const googleReady = oauthProviders?.google?.configured ?? true;
   const appleReady = oauthProviders?.apple?.configured ?? true;
+  const legalAccepted = hasRequiredLegalConsents(legalConsents);
   const showOAuthReadinessNote =
     Boolean(oauthProviders) && (!googleReady || !appleReady);
 
   const handleSubmit = async () => {
+    if (!legalAccepted) {
+      setError("Review and accept the Terms of Use and Legal Disclaimer before creating an account.");
+      hapticError();
+      return;
+    }
     setLoading(true);
     setError("");
     const res = await api.post<{ success?: boolean; error?: string }>("/api/auth/register", {
@@ -52,6 +66,7 @@ export default function SignUpScreen() {
       password,
       firstName: firstName.trim() || undefined,
       lastName: lastName.trim() || undefined,
+      legalConsents: createAcceptedLegalConsents(legalConsents),
     });
 
     if (res.error || !res.data?.success) {
@@ -67,7 +82,13 @@ export default function SignUpScreen() {
   };
 
   const openOAuth = (provider: "google" | "apple") => {
-    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?redirect=/dashboard`);
+    if (!legalAccepted) {
+      setError(`Review and accept the Terms of Use and Legal Disclaimer before creating an account with ${provider === "google" ? "Google" : "Apple"}.`);
+      hapticError();
+      return;
+    }
+    setPendingLegalConsents(createAcceptedLegalConsents(legalConsents));
+    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?redirect=/dashboard&acceptLegal=true`);
   };
 
   if (done) {
@@ -144,10 +165,18 @@ export default function SignUpScreen() {
           leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
         />
 
+        <LegalConsentPanel
+          consents={legalConsents}
+          onChange={setLegalConsents}
+          title="Required acknowledgements"
+          description="Accept these before creating your LocateFlow account."
+          compact
+        />
+
         <Button
           title={loading ? t("common.loading") : t("auth.signUp")}
           onPress={handleSubmit}
-          disabled={loading || !email || !password}
+          disabled={loading || !email || !password || !legalAccepted}
           style={{ marginTop: 12 }}
         />
 

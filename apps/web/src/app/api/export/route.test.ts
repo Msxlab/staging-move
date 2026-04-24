@@ -6,6 +6,7 @@ vi.mock("@/lib/db", () => ({
     service: { findMany: vi.fn() },
     userCustomProvider: { findMany: vi.fn() },
     moveTask: { findMany: vi.fn() },
+    userEvent: { findMany: vi.fn() },
     budget: { findMany: vi.fn() },
     movingPlan: { findMany: vi.fn() },
   },
@@ -28,6 +29,7 @@ const mockPrisma = {
   service: { findMany: prisma.service.findMany as Mock },
   userCustomProvider: { findMany: prisma.userCustomProvider.findMany as Mock },
   moveTask: { findMany: prisma.moveTask.findMany as Mock },
+  userEvent: { findMany: prisma.userEvent.findMany as Mock },
   budget: { findMany: prisma.budget.findMany as Mock },
   movingPlan: { findMany: prisma.movingPlan.findMany as Mock },
 };
@@ -45,6 +47,7 @@ describe("export route", () => {
     mockPrisma.service.findMany.mockResolvedValue([]);
     mockPrisma.userCustomProvider.findMany.mockResolvedValue([]);
     mockPrisma.moveTask.findMany.mockResolvedValue([]);
+    mockPrisma.userEvent.findMany.mockResolvedValue([]);
     mockPrisma.budget.findMany.mockResolvedValue([]);
     mockPrisma.movingPlan.findMany.mockResolvedValue([]);
   });
@@ -198,5 +201,30 @@ describe("export route", () => {
 
     expect(data.customProviders[0].notes).toBe("membership note");
     expect(data.moveTasks[0].notes).toBe("task note");
+  });
+
+  it("includes legal acknowledgement history in full JSON exports", async () => {
+    mockPrisma.userEvent.findMany.mockResolvedValue([
+      {
+        event: "LEGAL_CONSENT_ACCEPTED",
+        page: "/sign-up",
+        metadata: JSON.stringify({
+          termsAccepted: true,
+          disclaimerAccepted: true,
+          termsVersion: "2026-03-13",
+          disclaimerVersion: "2026-03-13",
+          source: "email_signup",
+        }),
+        createdAt: new Date("2026-04-24T12:00:00.000Z"),
+      },
+    ]);
+
+    const response = await GET(makeRequest("?type=full&format=json"));
+    const data = JSON.parse(await response.text());
+
+    expect(response.status).toBe(200);
+    expect(data.legalConsents).toHaveLength(1);
+    expect(data.legalConsents[0].metadata.termsAccepted).toBe(true);
+    expect(data.legalConsents[0].metadata.source).toBe("email_signup");
   });
 });

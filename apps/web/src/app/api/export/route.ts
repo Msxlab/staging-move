@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { decrypt } from "@/lib/shared-encryption";
+import { LEGAL_CONSENT_EVENT } from "@/lib/legal";
 
-// GET /api/export?type=addresses|services|budget|moving|moveTasks|customProviders|full&format=csv|json&includeNotes=true
+// GET /api/export?type=addresses|services|budget|moving|moveTasks|customProviders|legal|full&format=csv|json&includeNotes=true
 //
 // `notes` is a free-form, encrypted field; decrypting it into the export
 // default would produce an exported plaintext copy that can easily leak via
@@ -199,6 +200,31 @@ export async function GET(request: NextRequest) {
         ...task,
         notes: exportPlainNotes(task.notes),
       }));
+    }
+
+    if (type === "legal" || type === "full") {
+      data.legalConsents = (
+        await prisma.userEvent.findMany({
+          where: { userId, event: LEGAL_CONSENT_EVENT },
+          select: {
+            event: true,
+            page: true,
+            metadata: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      ).map((event) => {
+        let metadata: unknown = event.metadata;
+        if (typeof event.metadata === "string") {
+          try {
+            metadata = JSON.parse(event.metadata);
+          } catch {
+            metadata = event.metadata;
+          }
+        }
+        return { ...event, metadata };
+      });
     }
 
     if (format === "csv") {
