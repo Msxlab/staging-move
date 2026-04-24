@@ -31,6 +31,33 @@ function buildIntegrationStatus(
   };
 }
 
+const CURRENT_PRODUCT_READINESS_MODES = [
+  {
+    id: "provider_trust_labels_enabled",
+    label: "Provider trust labels",
+    status: "enabled",
+    detail: "Providers are presented as listed/manual directory records unless future source-backed verification exists.",
+  },
+  {
+    id: "move_transition_classifier_enabled",
+    label: "Move transition guidance",
+    status: "enabled",
+    detail: "Move service guidance is deterministic and read-only. Provider account updates are not executed.",
+  },
+  {
+    id: "provider_quality_admin_enabled",
+    label: "Provider quality admin visibility",
+    status: "enabled",
+    detail: "Admin provider surfaces show quality warnings derived from current catalog fields.",
+  },
+  {
+    id: "backup_dr_proof",
+    label: "Backup DR proof",
+    status: "not_proven",
+    detail: "Backups are stricter, but DR is not proven until a clean staging restore drill succeeds with offsite storage.",
+  },
+];
+
 export async function GET(request: NextRequest) {
   try {
     const session = await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
@@ -154,6 +181,7 @@ export async function GET(request: NextRequest) {
       recentErrors,
       runtimeSummary,
       integrations,
+      currentProductReadiness: CURRENT_PRODUCT_READINESS_MODES,
       systemInfo: {
         version: "0.1.0",
         framework: "Next.js 16.1.6",

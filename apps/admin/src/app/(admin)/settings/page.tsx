@@ -86,6 +86,12 @@ type SettingsResponse = {
     configured: boolean;
     missingKeys: string[];
   }[];
+  currentProductReadiness: {
+    id: string;
+    label: string;
+    status: "enabled" | "not_proven" | string;
+    detail: string;
+  }[];
   systemInfo: {
     version: string;
     framework: string;
@@ -293,6 +299,34 @@ export default function SettingsPage() {
                 </p>
               </div>
             )}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Shield className="h-5 w-5" /> Current Product Readiness
+            </h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              These modes describe current behavior. They do not enable provider connectors, account linking, or automatic address-change execution.
+            </p>
+            <div className="space-y-3">
+              {data.currentProductReadiness.map((item) => (
+                <div key={item.id} className="rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{item.label}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{item.detail}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
+                      item.status === "enabled"
+                        ? "bg-green-500/10 text-green-600"
+                        : "bg-amber-500/10 text-amber-600"
+                    }`}>
+                      {item.status.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
