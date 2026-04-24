@@ -3,6 +3,12 @@ import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
 
+function maskProviderIdentifier(value: string | null | undefined) {
+  if (!value) return null;
+  if (value.length <= 10) return value;
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -11,9 +17,22 @@ export async function GET(
     await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
     const { id } = await params;
 
-    const user = await prisma.user.findUnique({
+    const userRecord = await prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        imageUrl: true,
+        passwordHash: true,
+        emailVerifiedAt: true,
+        mfaEnabled: true,
+        preferredLocale: true,
+        dashboardWidgetPrefs: true,
+        createdAt: true,
+        updatedAt: true,
+        deletedAt: true,
         subscription: true,
         profile: true,
         addresses: { include: { services: true } },
@@ -66,9 +85,25 @@ export async function GET(
       },
     });
 
-    if (!user) {
+    if (!userRecord) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+
+    const {
+      passwordHash,
+      oauthAccounts,
+      ...safeUserRecord
+    } = userRecord as any;
+    const user = {
+      ...safeUserRecord,
+      hasPasswordLogin: Boolean(passwordHash),
+      oauthAccounts: (oauthAccounts || []).map((account: any) => ({
+        id: account.id,
+        provider: account.provider,
+        providerIdHint: maskProviderIdentifier(account.providerId),
+        createdAt: account.createdAt,
+      })),
+    };
 
     const auditLogs = await prisma.auditLog.findMany({
       where: { userId: id },
@@ -104,11 +139,31 @@ export async function GET(
       prisma.pushDevice.findMany({
         where: { userId: id },
         orderBy: { lastSeenAt: "desc" },
+        select: {
+          id: true,
+          platform: true,
+          deviceName: true,
+          lastSeenAt: true,
+          createdAt: true,
+        },
       }),
       prisma.userLoginSession.findMany({
         where: { userId: id },
         orderBy: [{ isActive: "desc" }, { lastActivity: "desc" }],
         take: 15,
+        select: {
+          id: true,
+          ipAddress: true,
+          userAgent: true,
+          browser: true,
+          os: true,
+          deviceType: true,
+          isActive: true,
+          expiresAt: true,
+          lastActivity: true,
+          createdAt: true,
+          impersonatedByAdminId: true,
+        },
       }),
       prisma.gDPRRequest.findMany({
         where: { userId: id },

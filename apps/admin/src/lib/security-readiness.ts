@@ -341,14 +341,14 @@ export async function getSecurityReadinessSnapshot(): Promise<SecurityReadinessS
       "internal_webhook_secret",
       "Internal webhook secret",
       "Internal webhook secret is configured independently of CRON_SECRET",
-      "Internal webhook secret is not configured — falling back to CRON_SECRET (rotate it independently for stronger isolation)"
+      "Internal webhook secret is not configured — internal webhook endpoints will reject server-to-server calls"
     ),
     buildConfigCheck(
       catalogMap.get("IMPERSONATION_HANDOFF_SECRET"),
       "impersonation_handoff_secret",
       "Impersonation handoff secret",
       "Impersonation handoff secret is configured independently of CRON_SECRET",
-      "Impersonation handoff secret is not configured — falling back to CRON_SECRET (rotate it independently for stronger isolation)"
+      "Impersonation handoff secret is not configured — admin impersonation handoff is disabled"
     ),
     detectDatabaseTransportCheck(process.env.DATABASE_URL),
     buildDatabaseAtRestCheck(),
