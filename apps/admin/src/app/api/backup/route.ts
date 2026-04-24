@@ -13,6 +13,14 @@ import {
   serializeBackupRecordMetadata,
   uploadBackupArchive,
 } from "@/lib/backup-storage";
+import {
+  BackupPolicyError,
+  getBackupArchivePolicy,
+  requireArchiveProtected,
+  requireBackupCrypto,
+  requireOffsiteStored,
+  shouldReturnBrowserDownloadFallback,
+} from "@/lib/backup-policy";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 
 const BACKUP_TABLE_OPS = {
@@ -73,7 +81,7 @@ function normalizeBackupRecord(backup: any, createdByLabel?: string) {
   };
 }
 
-// GET /api/backup — list backup records
+// GET /api/backup - list backup records
 export async function GET() {
   try {
     await requirePermission("settings", "canRead", {
@@ -108,6 +116,7 @@ export async function GET() {
       ]),
     );
     const storage = await getBackupStorageSummary();
+    const archivePolicy = getBackupArchivePolicy();
 
     // Table stats
     const stats: Record<string, number> = {};
@@ -132,6 +141,7 @@ export async function GET() {
       stats,
       tables: BACKUP_TABLES,
       storage,
+      archivePolicy,
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
@@ -148,7 +158,7 @@ export async function GET() {
   }
 }
 
-// POST /api/backup — create a new backup
+// POST /api/backup - create a new backup
 export async function POST(request: NextRequest) {
   let backupId: string | null = null;
   try {
@@ -163,6 +173,7 @@ export async function POST(request: NextRequest) {
       format = "JSON",
       confirmPassword,
     } = body;
+    const archivePolicy = getBackupArchivePolicy();
 
     const requestedTables =
       Array.isArray(tables) && tables.length > 0 ? tables : BACKUP_TABLE_ORDER;
@@ -194,6 +205,7 @@ export async function POST(request: NextRequest) {
       },
     });
     backupId = backup.id;
+    requireBackupCrypto(archivePolicy);
 
     // Collect data
     const backupData: Record<string, any[]> = {};
@@ -240,6 +252,11 @@ export async function POST(request: NextRequest) {
     // Encrypt backup data with AES-256-GCM
     const encrypted = encryptBackup(content);
     const signature = signBackup(content);
+    requireArchiveProtected({
+      policy: archivePolicy,
+      encrypted: Boolean(encrypted),
+      signed: Boolean(signature),
+    });
     const archive = createBackupArchive({
       metadata: {
         backupId: backup.id,
@@ -263,6 +280,7 @@ export async function POST(request: NextRequest) {
       fileName,
       archiveBody: downloadData,
     });
+    requireOffsiteStored({ policy: archivePolicy, offsite });
     const completedAt = new Date();
     const metadata = serializeBackupRecordMetadata({
       offsite,
@@ -308,6 +326,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const browserDownloadFallback = shouldReturnBrowserDownloadFallback({
+      policy: archivePolicy,
+      offsite,
+    });
+
     return NextResponse.json(
       {
         backup: normalizeBackupRecord(
@@ -326,7 +349,8 @@ export async function POST(request: NextRequest) {
           offsite.status === "stored"
             ? `/api/backup/${backup.id}/download`
             : undefined,
-        downloadData: offsite.status === "stored" ? undefined : downloadData,
+        downloadData: browserDownloadFallback ? downloadData : undefined,
+        archivePolicy,
         isEncrypted: !!encrypted,
         offsite,
       },
@@ -351,6 +375,12 @@ export async function POST(request: NextRequest) {
     }
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (error instanceof BackupPolicyError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      );
     }
     console.error("Failed to create backup:", error);
     return NextResponse.json(

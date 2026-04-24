@@ -5,6 +5,13 @@ import { BACKUP_TABLE_ORDER } from "@/lib/backup-tables";
 import { serializeBackupRecordMetadata, uploadBackupArchive } from "@/lib/backup-storage";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
+import {
+  BackupPolicyError,
+  getBackupArchivePolicy,
+  requireArchiveProtected,
+  requireBackupCrypto,
+  requireOffsiteStored,
+} from "@/lib/backup-policy";
 
 const BACKUP_TABLE_FETCHERS = {
   users: () => prisma.user.findMany(),
@@ -29,6 +36,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const archivePolicy = getBackupArchivePolicy();
     // Create backup record
     const backup = await prisma.backupRecord.create({
       data: {
@@ -40,6 +48,7 @@ export async function POST(request: NextRequest) {
       },
     });
     backupId = backup.id;
+    requireBackupCrypto(archivePolicy);
 
     // Collect data from all tables
     const backupData: Record<string, any[]> = {};
@@ -79,6 +88,11 @@ export async function POST(request: NextRequest) {
     // Encrypt backup
     const encrypted = encryptBackup(jsonContent);
     const signature = signBackup(jsonContent);
+    requireArchiveProtected({
+      policy: archivePolicy,
+      encrypted: Boolean(encrypted),
+      signed: Boolean(signature),
+    });
     const fileName = `backup-${createdAtIso.split("T")[0]}-auto-${backup.id}.json`;
     const archive = createBackupArchive({
       metadata: {
@@ -105,6 +119,7 @@ export async function POST(request: NextRequest) {
       fileName,
       archiveBody,
     });
+    requireOffsiteStored({ policy: archivePolicy, offsite });
     const completedAt = new Date();
     const metadata = serializeBackupRecordMetadata({
       offsite,
@@ -148,6 +163,7 @@ export async function POST(request: NextRequest) {
         encrypted: Boolean(encrypted),
         signed: Boolean(signature),
         offsite,
+        archivePolicy,
         tables: Object.keys(backupData).length,
       },
       retention: { cleaned: cleaned.count },
@@ -161,6 +177,12 @@ export async function POST(request: NextRequest) {
           errorMessage: serializeBackupRecordMetadata({ error: error instanceof Error ? error.message : "Backup failed" }),
         },
       }).catch(() => null);
+    }
+    if (error instanceof BackupPolicyError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      );
     }
     console.error("[CRON-BACKUP] Backup failed:", error);
     return NextResponse.json({ error: "Backup failed" }, { status: 500 });

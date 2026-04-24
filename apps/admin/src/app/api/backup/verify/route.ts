@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { parseBackupArchive } from "@/lib/backup-archive";
+import { BACKUP_TABLES } from "@/lib/backup-tables";
 import { requirePermission } from "@/lib/auth";
 import { decryptBackup, verifyBackupSignature } from "@/lib/shared-encryption";
 
-const ALLOWED_TABLES = new Set([
-  "users", "profiles", "addresses", "services", "providers",
-  "movingPlans",
-  "budgets", "subscriptions", "auditLogs", "notifications",
-]);
+const ALLOWED_TABLES = new Set(Object.keys(BACKUP_TABLES));
 
 const BACKUP_TABLE_COUNTERS = {
   users: () => prisma.user.count(),
@@ -16,6 +13,7 @@ const BACKUP_TABLE_COUNTERS = {
   addresses: () => prisma.address.count(),
   services: () => prisma.service.count(),
   providers: () => prisma.serviceProvider.count(),
+  providerCoverages: () => prisma.serviceProviderCoverage.count(),
   movingPlans: () => prisma.movingPlan.count(),
   budgets: () => prisma.budget.count(),
   subscriptions: () => prisma.subscription.count(),

@@ -1,0 +1,4 @@
+.gitattributes text eol=lf
+apps/admin/src/**/*.ts text eol=lf
+apps/admin/src/**/*.tsx text eol=lf
+docs/**/*.md text eol=lf
