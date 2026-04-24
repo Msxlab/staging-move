@@ -24,6 +24,8 @@ import { PasswordChangeForm } from "./password-form";
 const MODEL_ICONS: Record<string, typeof Users> = {
   users: Users,
   providers: Server,
+  customProviders: Server,
+  moveTasks: Activity,
   stateRules: MapPin,
   subscriptions: CreditCard,
   movingPlans: Smartphone,
@@ -36,6 +38,8 @@ const MODEL_ICONS: Record<string, typeof Users> = {
 const MODEL_LABELS: Record<string, string> = {
   users: "Users",
   providers: "Providers",
+  customProviders: "Custom Providers",
+  moveTasks: "Move Tasks",
   stateRules: "State Rules",
   subscriptions: "Subscriptions",
   movingPlans: "Moving Plans",

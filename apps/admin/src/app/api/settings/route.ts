@@ -42,13 +42,31 @@ const CURRENT_PRODUCT_READINESS_MODES = [
     id: "move_transition_classifier_enabled",
     label: "Move transition guidance",
     status: "enabled",
-    detail: "Move service guidance is deterministic and read-only. Provider account updates are not executed.",
+    detail: "Move service guidance is deterministic and creates local move tasks. Provider account updates are not executed.",
+  },
+  {
+    id: "move_transition_tasks_enabled",
+    label: "Move task tracking",
+    status: "enabled",
+    detail: "Users can accept, complete, dismiss, and reopen local move tasks. Completion updates LocateFlow only.",
+  },
+  {
+    id: "custom_provider_enabled",
+    label: "User-created providers",
+    status: "enabled",
+    detail: "Users can create private local provider records for manual service tracking.",
   },
   {
     id: "provider_quality_admin_enabled",
     label: "Provider quality admin visibility",
     status: "enabled",
-    detail: "Admin provider surfaces show quality warnings derived from current catalog fields.",
+    detail: "Admin provider surfaces show quality warnings, governance queues, and user-created provider review context.",
+  },
+  {
+    id: "provider_recommendation_explainability_enabled",
+    label: "Provider recommendation explanations",
+    status: "enabled",
+    detail: "Recommendations expose coverage confidence, caveats, and manual-confirmation language.",
   },
   {
     id: "backup_dr_proof",
@@ -63,7 +81,7 @@ export async function GET(request: NextRequest) {
     const session = await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
 
     const [
-      userCount, providerCount, stateRuleCount,
+      userCount, providerCount, customProviderCount, moveTaskCount, stateRuleCount,
       subscriptionCount, movingPlanCount,
       auditLogCount, adminAuditLogCount, sessionCount, eventCount,
       adminUser,
@@ -71,6 +89,8 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       prisma.user.count(),
       prisma.serviceProvider.count(),
+      prisma.userCustomProvider.count({ where: { deletedAt: null } }),
+      prisma.moveTask.count({ where: { deletedAt: null } }),
       prisma.stateRule.count(),
       prisma.subscription.count(),
       prisma.movingPlan.count(),
@@ -172,6 +192,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       counts: {
         users: userCount, providers: providerCount,
+        customProviders: customProviderCount, moveTasks: moveTaskCount,
         stateRules: stateRuleCount, subscriptions: subscriptionCount,
         movingPlans: movingPlanCount,
         auditLogs: auditLogCount, adminAuditLogs: adminAuditLogCount,
