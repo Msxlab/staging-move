@@ -284,7 +284,7 @@ export default function MovingDetailScreen() {
                     <View key={`tp-${planItem.serviceId || i}`} style={[styles.transitionItem, i > 0 && styles.migRowDivider]}>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.transitionAction}>
-                          {String(planItem.actionType || "").replace(/_/g, " ")}
+                          {planItem.actionLabel || String(planItem.actionType || "").replace(/_/g, " ")}
                         </Text>
                         <Text style={styles.transitionReason}>{planItem.primaryReason}</Text>
                         <Text style={styles.transitionStep}>{planItem.suggestedNextStep}</Text>

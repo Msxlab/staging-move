@@ -64,6 +64,7 @@ export interface MoveServiceTransitionPlan {
   serviceId?: string | null;
   serviceCategory: string;
   actionType: MoveTransitionActionType;
+  actionLabel: string;
   confidence: TaskSourceConfidence;
   primaryReason: string;
   caveats: string[];
@@ -239,6 +240,7 @@ function buildPlan(
     serviceId: input.service.id,
     serviceCategory: normalizeCategory(input.service.category),
     actionType: input.actionType,
+    actionLabel: action.label,
     confidence: input.confidence,
     primaryReason: input.primaryReason,
     caveats,

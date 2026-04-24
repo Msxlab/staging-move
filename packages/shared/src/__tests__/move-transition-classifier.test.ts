@@ -44,6 +44,7 @@ describe("classifyMoveServiceTransition", () => {
 
     expect(plan.oldProviderAction).toBe("STOP_SERVICE");
     expect(plan.actionType).toBe("SHOP_PROVIDER");
+    expect(plan.actionLabel).toBe("Compare providers");
     expect(plan.secondaryActions).toContain("VERIFY_AVAILABILITY");
     expect(plan.userFacingCopy).not.toContain("PSE&G can transfer");
     expect(plan.caveats.join(" ")).toContain("Manual guidance only");

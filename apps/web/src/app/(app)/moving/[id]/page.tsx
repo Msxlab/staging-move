@@ -261,7 +261,7 @@ export default function MovingPlanDetailPage() {
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div>
                             <p className="text-xs font-semibold text-white">
-                              {String(planItem.actionType || "").replace(/_/g, " ")}
+                              {planItem.actionLabel || String(planItem.actionType || "").replace(/_/g, " ")}
                             </p>
                             <p className="text-[11px] text-white/40 mt-1">{planItem.primaryReason}</p>
                           </div>
