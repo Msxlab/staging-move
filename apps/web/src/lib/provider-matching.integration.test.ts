@@ -37,6 +37,7 @@ describe("full coverage tier cascade", () => {
     );
 
     expect(result.zipMatchLevel).toBe("exact");
+    expect(result.coverageConfidence).toBe("EXACT_ZIP");
     expect(result.providers.map((p) => p.id).sort()).toEqual(
       ["exact-94103", "federal", "prefix-941", "state-only"].sort()
     );
@@ -60,6 +61,7 @@ describe("full coverage tier cascade", () => {
     );
 
     expect(result.zipMatchLevel).toBe("prefix");
+    expect(result.coverageConfidence).toBe("ZIP_PREFIX");
     expect(result.providers.map((p) => p.id).sort()).toEqual(["prefix-941", "state-only"].sort());
   });
 
@@ -133,6 +135,7 @@ describe("full coverage tier cascade", () => {
     );
 
     expect(result.zipMatchLevel).toBe("state");
+    expect(result.coverageConfidence).toBe("STATE_LEVEL");
     expect(result.providers.map((p) => p.id)).toEqual(["state-provider"]);
   });
 

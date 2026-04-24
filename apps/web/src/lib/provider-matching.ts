@@ -20,7 +20,14 @@ export {
 } from "@locateflow/shared";
 
 import { getProviderCoverageMetadata, type ProviderCoveragePolygon } from "@locateflow/db";
-import { safeJsonArray, normalizeZip, normalizeZipRule, resolveEffectiveState } from "@locateflow/shared";
+import {
+  safeJsonArray,
+  normalizeZip,
+  normalizeZipRule,
+  resolveEffectiveState,
+  mapCoverageMatchToConfidence,
+  type CoverageConfidence,
+} from "@locateflow/shared";
 
 export interface ProviderCoverageLike {
   scope: string;
@@ -35,6 +42,7 @@ export interface ProviderMatchResult<T> {
   effectiveState?: string;
   providers: T[];
   zipMatchLevel: ZipMatchLevel;
+  coverageConfidence: CoverageConfidence;
 }
 
 interface ProviderMatchOptions {
@@ -133,6 +141,7 @@ export function matchProvidersByCoverage<T extends ProviderCoverageLike>(
       effectiveState,
       providers: stateEligibleProviders,
       zipMatchLevel: "state",
+      coverageConfidence: "STATE_LEVEL",
     };
   }
 
@@ -142,6 +151,7 @@ export function matchProvidersByCoverage<T extends ProviderCoverageLike>(
       effectiveState,
       providers: exactMatches,
       zipMatchLevel: "exact",
+      coverageConfidence: "EXACT_ZIP",
     };
   }
 
@@ -151,6 +161,7 @@ export function matchProvidersByCoverage<T extends ProviderCoverageLike>(
       effectiveState,
       providers: prefixMatches,
       zipMatchLevel: "prefix",
+      coverageConfidence: "ZIP_PREFIX",
     };
   }
 
@@ -162,6 +173,7 @@ export function matchProvidersByCoverage<T extends ProviderCoverageLike>(
       effectiveState,
       providers: [...polygonMatches, ...getUnrestrictedProviders(stateEligibleProviders).filter((provider) => provider.coverageModel !== "polygon")],
       zipMatchLevel: "polygon",
+      coverageConfidence: "MAPPED_SERVICE_AREA",
     };
   }
 
@@ -173,6 +185,7 @@ export function matchProvidersByCoverage<T extends ProviderCoverageLike>(
       effectiveState,
       providers: [...stateMatches, ...getUnrestrictedProviders(stateEligibleProviders).filter((provider) => provider.coverageModel === "live_address")],
       zipMatchLevel: "state",
+      coverageConfidence: "STATE_LEVEL",
     };
   }
 
@@ -180,6 +193,7 @@ export function matchProvidersByCoverage<T extends ProviderCoverageLike>(
     effectiveState,
     providers: getUnrestrictedProviders(stateEligibleProviders),
     zipMatchLevel: "live_address",
+    coverageConfidence: "ADDRESS_CHECK_REQUIRED",
   };
 }
 
@@ -255,6 +269,19 @@ export function getProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
   return matchLevel === "none" ? "state" : matchLevel;
 }
 
+export function getProviderCoverageConfidenceFromDb<T extends ProviderWithCoverages>(
+  provider: T,
+  options: ProviderMatchOptions
+): CoverageConfidence {
+  const matchLevel = getProviderMatchLevelFromDb(provider, options);
+  return mapCoverageMatchToConfidence(matchLevel, {
+    scope: provider.scope,
+    coverageModel: provider.coverageModel,
+    requiresAddressCheck: provider.coverageModel === "live_address",
+    requiresPolygonCheck: provider.coverageModel === "polygon",
+  });
+}
+
 export function tierProvidersFromDb<T extends ProviderWithCoverages>(
   providers: T[],
   options: ProviderMatchOptions
@@ -264,7 +291,7 @@ export function tierProvidersFromDb<T extends ProviderWithCoverages>(
   const hasCoordinates = isFiniteCoordinate(options.latitude) && isFiniteCoordinate(options.longitude);
 
   if (!normalizedZip && !hasCoordinates) {
-    return { effectiveState, providers, zipMatchLevel: "state" };
+    return { effectiveState, providers, zipMatchLevel: "state", coverageConfidence: "STATE_LEVEL" };
   }
 
   const exact: T[] = [];
@@ -305,19 +332,19 @@ export function tierProvidersFromDb<T extends ProviderWithCoverages>(
 
   const matchedProviders = [...exact, ...prefix, ...polygon, ...stateOnly, ...liveAddress];
   if (exact.length > 0) {
-    return { effectiveState, providers: matchedProviders, zipMatchLevel: "exact" };
+    return { effectiveState, providers: matchedProviders, zipMatchLevel: "exact", coverageConfidence: "EXACT_ZIP" };
   }
   if (prefix.length > 0) {
-    return { effectiveState, providers: matchedProviders, zipMatchLevel: "prefix" };
+    return { effectiveState, providers: matchedProviders, zipMatchLevel: "prefix", coverageConfidence: "ZIP_PREFIX" };
   }
   if (polygon.length > 0) {
-    return { effectiveState, providers: matchedProviders, zipMatchLevel: "polygon" };
+    return { effectiveState, providers: matchedProviders, zipMatchLevel: "polygon", coverageConfidence: "MAPPED_SERVICE_AREA" };
   }
   if (stateOnly.length > 0) {
-    return { effectiveState, providers: matchedProviders, zipMatchLevel: "state" };
+    return { effectiveState, providers: matchedProviders, zipMatchLevel: "state", coverageConfidence: "STATE_LEVEL" };
   }
   if (liveAddress.length > 0) {
-    return { effectiveState, providers: matchedProviders, zipMatchLevel: "live_address" };
+    return { effectiveState, providers: matchedProviders, zipMatchLevel: "live_address", coverageConfidence: "ADDRESS_CHECK_REQUIRED" };
   }
-  return { effectiveState, providers: matchedProviders, zipMatchLevel: "state" };
+  return { effectiveState, providers: matchedProviders, zipMatchLevel: "state", coverageConfidence: "UNKNOWN" };
 }
