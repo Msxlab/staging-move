@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   compareCoverageConfidence,
+  getCurrentProductCopy,
   getCoverageConfidencePresentation,
+  getManualTrackingDisclaimer,
+  getMoveTaskEffectPresentation,
+  getMoveTaskSourcePresentation,
+  getMoveTaskStatusPresentation,
   getMoveTransitionActionPresentation,
   getProviderTrustPresentation,
+  getTaskCompletionDisclaimer,
   isCoverageAddressSensitive,
   mapCoverageMatchToConfidence,
 } from "../provider-move-domain";
@@ -17,6 +23,14 @@ describe("provider move domain helpers", () => {
     expect(trust.label).toBe("Listed provider");
     expect(trust.canClaimVerified).toBe(false);
     expect(trust.description).toContain("manual tracking");
+  });
+
+  it("formats user-created provider trust without verification claims", () => {
+    const trust = getProviderTrustPresentation("USER_CUSTOM");
+
+    expect(trust.label).toBe("User-added provider");
+    expect(trust.canClaimVerified).toBe(false);
+    expect(trust.description).toContain("private provider record");
   });
 
   it("maps coverage match levels to shared confidence labels", () => {
@@ -66,6 +80,30 @@ describe("provider move domain helpers", () => {
     expect(forwarding.label).toBe("Forward mail");
     expect(forwarding.description).toContain("manual");
     expect(forwarding.description).toContain("No connector execution");
+  });
+
+  it("formats move task lifecycle labels with local-only completion copy", () => {
+    expect(getMoveTaskStatusPresentation("COMPLETED").description).toContain(
+      "No external provider update",
+    );
+    expect(getMoveTaskSourcePresentation("CLASSIFIER").description).toContain(
+      "deterministic",
+    );
+    expect(
+      getMoveTaskEffectPresentation("MARK_AVAILABILITY_VERIFIED_BY_USER")
+        .description,
+    ).toContain("not official source verification");
+  });
+
+  it("exposes shared current-product caveat copy", () => {
+    expect(getCurrentProductCopy("LISTED_PROVIDER")).toBe("Listed provider");
+    expect(getManualTrackingDisclaimer()).toContain("Manual tracking only");
+    expect(getManualTrackingDisclaimer()).toContain(
+      "No automatic account update",
+    );
+    expect(getTaskCompletionDisclaimer()).toContain(
+      "updates LocateFlow only",
+    );
   });
 
   it("identifies address-sensitive provider categories", () => {
