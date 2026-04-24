@@ -64,7 +64,10 @@ export async function GET(request: NextRequest) {
         privateToUser: true,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Failed to fetch custom providers:", error);
     return NextResponse.json({ error: "Failed to fetch custom providers" }, { status: 500 });
   }
@@ -122,6 +125,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ provider: presentCustomProvider(provider) }, { status: 201 });
   } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

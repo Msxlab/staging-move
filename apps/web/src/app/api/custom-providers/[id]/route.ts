@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 
 function cleanText(value: string | undefined): string | null {
   const trimmed = (value || "").trim();
@@ -43,7 +44,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
     }
 
     return NextResponse.json({ provider: presentCustomProvider(provider) });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Failed to fetch custom provider:", error);
     return NextResponse.json({ error: "Failed to fetch custom provider" }, { status: 500 });
   }
@@ -52,6 +56,11 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireDbUserId();
+    const rlKey = getRateLimitKey(request, "custom-provider:update");
+    const rl = await rateLimit(rlKey, { limit: 60, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
     const { id } = await params;
     const existing = await prisma.userCustomProvider.findFirst({
       where: { id, userId, deletedAt: null },
@@ -98,6 +107,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({ provider: presentCustomProvider(provider) });
   } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }
@@ -109,6 +121,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const userId = await requireDbUserId();
+    const rlKey = getRateLimitKey(request, "custom-provider:delete");
+    const rl = await rateLimit(rlKey, { limit: 30, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
     const { id } = await params;
     const existing = await prisma.userCustomProvider.findFirst({
       where: { id, userId, deletedAt: null },
@@ -133,7 +150,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Failed to delete custom provider:", error);
     return NextResponse.json({ error: "Failed to delete custom provider" }, { status: 500 });
   }

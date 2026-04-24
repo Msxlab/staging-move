@@ -56,7 +56,10 @@ export async function GET(request: NextRequest) {
         completionMeaning: "Task completion updates LocateFlow only.",
       },
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Failed to fetch move tasks:", error);
     return NextResponse.json({ error: "Failed to fetch move tasks" }, { status: 500 });
   }
@@ -110,6 +113,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     if (error?.message === "Moving plan not found") {
       return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
     }
@@ -124,6 +130,11 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const rlKey = getRateLimitKey(request, "move-task:update");
+    const rl = await rateLimit(rlKey, { limit: 60, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
     const body = await request.json();
     const id = typeof body?.id === "string" ? body.id : null;
     const event = typeof body?.event === "string" ? body.event.toUpperCase() : null;
@@ -197,7 +208,10 @@ export async function PATCH(request: NextRequest) {
         noExternalAutomation: true,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Failed to update move task:", error);
     return NextResponse.json({ error: "Failed to update move task" }, { status: 500 });
   }

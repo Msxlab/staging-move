@@ -63,6 +63,15 @@ export async function completeMoveTaskWithLocalEffect(
   });
 
   if (!task) throw new Error("Move task not found");
+  if (task.service && task.service.userId !== userId) {
+    throw new Error("Move task service ownership mismatch");
+  }
+  if (task.destinationAddress && task.destinationAddress.userId !== userId) {
+    throw new Error("Move task destination ownership mismatch");
+  }
+  if (task.destinationAddress && task.destinationAddress.deletedAt) {
+    throw new Error("Move task destination is no longer available");
+  }
 
   const now = new Date();
   const selectedProvider = await getSelectedProvider(
