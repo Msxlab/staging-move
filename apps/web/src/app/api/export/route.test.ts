@@ -4,6 +4,8 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     address: { findMany: vi.fn() },
     service: { findMany: vi.fn() },
+    userCustomProvider: { findMany: vi.fn() },
+    moveTask: { findMany: vi.fn() },
     budget: { findMany: vi.fn() },
     movingPlan: { findMany: vi.fn() },
   },
@@ -24,6 +26,8 @@ import { GET } from "./route";
 const mockPrisma = {
   address: { findMany: prisma.address.findMany as Mock },
   service: { findMany: prisma.service.findMany as Mock },
+  userCustomProvider: { findMany: prisma.userCustomProvider.findMany as Mock },
+  moveTask: { findMany: prisma.moveTask.findMany as Mock },
   budget: { findMany: prisma.budget.findMany as Mock },
   movingPlan: { findMany: prisma.movingPlan.findMany as Mock },
 };
@@ -39,6 +43,8 @@ describe("export route", () => {
     mockRequireDbUserId.mockResolvedValue("user-1");
     mockPrisma.address.findMany.mockResolvedValue([]);
     mockPrisma.service.findMany.mockResolvedValue([]);
+    mockPrisma.userCustomProvider.findMany.mockResolvedValue([]);
+    mockPrisma.moveTask.findMany.mockResolvedValue([]);
     mockPrisma.budget.findMany.mockResolvedValue([]);
     mockPrisma.movingPlan.findMany.mockResolvedValue([]);
   });
@@ -150,5 +156,47 @@ describe("export route", () => {
     expect(response.headers.get("Content-Type")).toContain("text/csv");
     expect(csv).toContain("'=cmd|' /C calc'!A0");
     expect(csv).toContain("****1234");
+  });
+
+  it("includes move tasks and custom providers in full JSON exports without notes by default", async () => {
+    mockPrisma.userCustomProvider.findMany.mockResolvedValue([
+      {
+        name: "Local Dentist",
+        category: "HEALTHCARE_DENTAL",
+        notes: "private provider note",
+      },
+    ]);
+    mockPrisma.moveTask.findMany.mockResolvedValue([
+      {
+        title: "Find new dentist",
+        actionType: "FIND_REPLACEMENT",
+        status: "SUGGESTED",
+        notes: "private task note",
+      },
+    ]);
+
+    const response = await GET(makeRequest("?type=full&format=json"));
+    const data = JSON.parse(await response.text());
+
+    expect(response.status).toBe(200);
+    expect(data.customProviders).toHaveLength(1);
+    expect(data.moveTasks).toHaveLength(1);
+    expect(data.customProviders[0].notes).toBeNull();
+    expect(data.moveTasks[0].notes).toBeNull();
+  });
+
+  it("exports custom provider and move task notes only with includeNotes=true", async () => {
+    mockPrisma.userCustomProvider.findMany.mockResolvedValue([
+      { name: "Local Gym", category: "FITNESS_GYM", notes: "membership note" },
+    ]);
+    mockPrisma.moveTask.findMany.mockResolvedValue([
+      { title: "Cancel gym", actionType: "CANCEL_OR_CLOSE", status: "ACCEPTED", notes: "task note" },
+    ]);
+
+    const response = await GET(makeRequest("?type=full&format=json&includeNotes=true"));
+    const data = JSON.parse(await response.text());
+
+    expect(data.customProviders[0].notes).toBe("membership note");
+    expect(data.moveTasks[0].notes).toBe("task note");
   });
 });

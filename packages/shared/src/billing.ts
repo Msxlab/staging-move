@@ -1,16 +1,8 @@
 export const TRIAL_DURATION_DAYS = 14;
 
-// Plans that are actually purchasable today. FAMILY and PRO are surfaced on
-// marketing pages as "Coming soon" teasers but are not listed here because
-// Stripe/App Store/Play Store have no product mapped to them yet.
+// Plans that are actually purchasable today.
 export const BILLING_PLAN_ORDER = ["FREE_TRIAL", "INDIVIDUAL"] as const;
 export type BillingPlan = (typeof BILLING_PLAN_ORDER)[number];
-
-// Upcoming plans shown as teasers on the marketing page. When a plan here
-// ships, move it into BILLING_PLAN_ORDER + add a BILLING_PLAN_DEFINITIONS
-// entry + create the Stripe / store products before the marketing toggle.
-export const UPCOMING_BILLING_PLAN_ORDER = ["FAMILY", "PRO"] as const;
-export type UpcomingBillingPlan = (typeof UPCOMING_BILLING_PLAN_ORDER)[number];
 
 export const PAID_BILLING_PLANS = ["INDIVIDUAL"] as const;
 export type PaidBillingPlan = (typeof PAID_BILLING_PLANS)[number];
@@ -79,61 +71,9 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
       "10 addresses",
       "100 services",
       "Bill & renewal reminders",
-      "Document storage + OCR",
+      "Document storage",
       "Smart moving checklist",
       "Export anytime (CSV, PDF)",
-    ],
-  },
-};
-
-/** Upcoming plan teasers — shown on marketing pages with a "Coming soon"
- *  badge. Kept in a separate map so nothing else in the app can accidentally
- *  treat them as billable. */
-export interface UpcomingBillingPlanDefinition {
-  id: UpcomingBillingPlan;
-  displayName: string;
-  shortDescription: string;
-  priceLabel: string;
-  periodLabel: string;
-  yearlyPriceLabel?: string;
-  features: string[];
-}
-
-export const UPCOMING_BILLING_PLAN_DEFINITIONS: Record<
-  UpcomingBillingPlan,
-  UpcomingBillingPlanDefinition
-> = {
-  FAMILY: {
-    id: "FAMILY",
-    displayName: "Family",
-    shortDescription:
-      "Up to 5 members under one household, shared addresses and services.",
-    priceLabel: "$14.99",
-    periodLabel: "/month",
-    yearlyPriceLabel: "$149/year",
-    features: [
-      "Everything in Individual",
-      "Up to 5 household members",
-      "Shared addresses + services",
-      "Per-member task assignment",
-      "Unified budget view",
-    ],
-  },
-  PRO: {
-    id: "PRO",
-    displayName: "Pro",
-    shortDescription:
-      "For realtors, relocation managers, and anyone tracking services on behalf of clients.",
-    priceLabel: "$19.99",
-    periodLabel: "/month",
-    yearlyPriceLabel: "$199/year",
-    features: [
-      "Everything in Family",
-      "Unlimited addresses + services",
-      "Team seats & roles",
-      "White-label email + reports",
-      "API access",
-      "Priority support",
     ],
   },
 };

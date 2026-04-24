@@ -9,12 +9,12 @@ import { absoluteUrl, SITE_NAME } from "@/lib/seo";
 export const metadata: Metadata = {
   title: `Pricing · ${SITE_NAME}`,
   description:
-    "Simple pricing for LocateFlow. Free trial, Individual plan, and Family / Pro tiers on the way.",
+    "Simple pricing for LocateFlow's current moving workflow: free trial and Individual plan.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: `Pricing · ${SITE_NAME}`,
     description:
-      "Free trial, Individual plan, and Family / Pro tiers on the way.",
+      "Free trial and Individual plan for LocateFlow's current moving workflow.",
     url: absoluteUrl("/pricing"),
   },
 };
@@ -36,17 +36,12 @@ export default async function PricingPage() {
     <div className="min-h-screen bg-background">
       <PricingSection ctaHref={ctaHref} ctaLabelLoggedIn={!!userId} />
 
-      {/* Transparency note — Family/Pro aren't purchasable yet. Say so on
-          the pricing page so visitors don't click the teaser and assume
-          it's broken. */}
       <section className="container pb-4">
         <div className="mx-auto max-w-3xl rounded-2xl border bg-card/60 p-5 text-center">
           <p className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Family</strong> and{" "}
-            <strong className="text-foreground">Pro</strong> tiers are on the
-            roadmap but not yet open for purchase. Use the
-            {" "}<em>Notify me at launch</em>{" "} button to join the waitlist —
-            we&apos;ll email the moment either opens.
+            LocateFlow is a manual moving workflow and local service tracking
+            product. It does not update external provider accounts or
+            guarantee provider availability at an address.
           </p>
         </div>
       </section>

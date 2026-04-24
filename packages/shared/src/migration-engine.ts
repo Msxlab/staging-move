@@ -4,7 +4,7 @@
  * Analyzes a user's existing services at their "from" address and determines
  * what needs to happen at the "to" address:
  *   - KEEP:     Federal provider, no change needed (e.g., Chase, Geico)
- *   - TRANSFER: Same provider available in destination state
+ *   - TRANSFER: Same provider appears listed for the destination state
  *   - SWITCH:   Provider not in destination state → recommend alternative
  *   - NEW:      Essential service the user doesn't have yet
  *   - CANCEL:   Service only relevant to origin (e.g., NYC MetroCard)
@@ -245,7 +245,7 @@ export function analyzeMigration(
         action: "KEEP",
         urgency: "LOW",
         phase: 2,
-        note: `${svc.providerName} operates nationwide. Update your address.`,
+        note: `${svc.providerName} is listed nationally. Confirm account address requirements with the provider.`,
       });
       continue;
     }
@@ -254,13 +254,13 @@ export function analyzeMigration(
     if (providerScope === "STATE" && svc.provider) {
       const providerStates = svc.provider.states || [];
       if (providerStates.includes(toState)) {
-        // Same provider available in new state → TRANSFER
+        // Same provider is listed in the new state -> possible transfer.
         transfers.push({
           ...baseItem,
           action: "TRANSFER",
           urgency: "MEDIUM",
           phase: 1,
-          note: `${svc.providerName} is available in ${toState}. Transfer your account.`,
+          note: `${svc.providerName} is listed in ${toState}. Confirm address-level availability and transfer options with the provider.`,
         });
       } else {
         // Provider not in new state → SWITCH
@@ -286,9 +286,9 @@ export function analyzeMigration(
 
     if (matchingProvider) {
       if (matchingProvider.scope === "FEDERAL") {
-        keeps.push({ ...baseItem, action: "KEEP", urgency: "LOW", phase: 2, note: `${svc.providerName} operates nationwide. Update your address.` });
+        keeps.push({ ...baseItem, action: "KEEP", urgency: "LOW", phase: 2, note: `${svc.providerName} is listed nationally. Confirm account address requirements with the provider.` });
       } else if (matchingProvider.states.includes(toState)) {
-        transfers.push({ ...baseItem, action: "TRANSFER", urgency: "MEDIUM", phase: 1, note: `${svc.providerName} is available in ${toState}. Transfer your account.` });
+        transfers.push({ ...baseItem, action: "TRANSFER", urgency: "MEDIUM", phase: 1, note: `${svc.providerName} is listed in ${toState}. Confirm address-level availability and transfer options with the provider.` });
       } else {
         const recommended = findBestProvider(svc.category, toState, availableProviders);
         switches.push({
@@ -304,7 +304,7 @@ export function analyzeMigration(
       }
     } else {
       // Can't determine → default to KEEP with address update reminder
-      keeps.push({ ...baseItem, action: "KEEP", urgency: "LOW", phase: 2, note: `Update ${svc.providerName} with your new address.` });
+      keeps.push({ ...baseItem, action: "KEEP", urgency: "LOW", phase: 2, note: `Record an address-update task for ${svc.providerName} and confirm requirements with the provider.` });
     }
   }
 
@@ -460,7 +460,7 @@ export function generateMigrationTasks(
     const svcId = item.currentService?.id || "unknown";
     tasks.push({
       title: `${item.icon} Update ${item.currentService?.providerName || item.categoryLabel} address`,
-      description: `${item.note}\n\nThis provider operates nationwide — just update your address to your new location in ${toState}.`,
+      description: `${item.note}\n\nThis is local LocateFlow guidance. Confirm the provider's address-update process before acting.`,
       category: item.category,
       priority: "MEDIUM",
       dueDate: dueFrom(3),
@@ -477,7 +477,7 @@ export function generateMigrationTasks(
     const svcId = item.currentService?.id || "unknown";
     tasks.push({
       title: `${item.icon} Transfer ${item.currentService?.providerName || item.categoryLabel} to ${toState}`,
-      description: `${item.note}\n\nYour current provider is available in ${toState}. Contact them to transfer your account to the new address.`,
+      description: `${item.note}\n\nContact the provider to confirm whether service can be transferred to the new address. LocateFlow does not perform the transfer.`,
       category: item.category,
       priority: "HIGH",
       dueDate: dueFrom(-3),

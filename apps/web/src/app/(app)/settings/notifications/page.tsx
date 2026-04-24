@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Bell, Loader2, Receipt, Users, Star, Calendar, Shield, Trophy, Mail } from "lucide-react";
+import { ArrowLeft, Bell, Loader2, Receipt, Calendar, Mail } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { WEB_NOTIFICATION_PREFERENCE_DEFINITIONS } from "@/lib/notification-preferences";
@@ -31,24 +31,6 @@ const notifGroups: NotifGroup[] = [
     items: [
       { key: "taskReminder", label: "Task Reminders", description: "Reminders for upcoming moving tasks" },
       { key: "moveUpdate", label: "Moving Plan Updates", description: "Updates on your active moving plan progress" },
-    ],
-  },
-  {
-    title: "Family & Social",
-    icon: Users,
-    iconColor: "text-orange-400",
-    items: [
-      { key: "familyInvite", label: "Family Invitations", description: "When someone invites you to their family group" },
-      { key: "familyActivity", label: "Family Activity", description: "When a family member makes changes" },
-    ],
-  },
-  {
-    title: "Community",
-    icon: Star,
-    iconColor: "text-emerald-400",
-    items: [
-      { key: "reviewApproved", label: "Review Approved", description: "When your review gets approved by admin" },
-      { key: "reviewHelpful", label: "Review Helpful", description: "When someone marks your review as helpful" },
     ],
   },
   {

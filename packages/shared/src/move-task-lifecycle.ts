@@ -28,10 +28,32 @@ export interface MoveTaskLifecyclePatch {
   lastStatusChangedAt: Date;
 }
 
+const ALLOWED_MOVE_TASK_TRANSITIONS: Record<
+  MoveTaskStatus,
+  ReadonlySet<MoveTaskLifecycleEvent>
+> = {
+  SUGGESTED: new Set(["ACCEPT", "START", "COMPLETE", "DISMISS"]),
+  ACCEPTED: new Set(["START", "COMPLETE", "DISMISS"]),
+  IN_PROGRESS: new Set(["COMPLETE", "DISMISS"]),
+  COMPLETED: new Set(["REOPEN"]),
+  DISMISSED: new Set(["REOPEN"]),
+  REOPENED: new Set(["ACCEPT", "START", "COMPLETE", "DISMISS"]),
+};
+
+export function canTransitionMoveTaskStatus(
+  current: MoveTaskStatus,
+  event: MoveTaskLifecycleEvent,
+): boolean {
+  return ALLOWED_MOVE_TASK_TRANSITIONS[current]?.has(event) ?? false;
+}
+
 export function getNextMoveTaskStatus(
   current: MoveTaskStatus,
   event: MoveTaskLifecycleEvent,
 ): MoveTaskStatus {
+  if (!canTransitionMoveTaskStatus(current, event)) {
+    throw new Error("INVALID_MOVE_TASK_STATUS_TRANSITION");
+  }
   if (event === "ACCEPT") return "ACCEPTED";
   if (event === "START") return "IN_PROGRESS";
   if (event === "COMPLETE") return "COMPLETED";

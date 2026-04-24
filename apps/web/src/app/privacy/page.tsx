@@ -14,7 +14,7 @@ const highlights = [
   {
     icon: Database,
     title: "Account and move data",
-    description: "LocateFlow stores the profile, address, service, moving-plan, and document data you create so the product can organize your relocation workflow.",
+    description: "LocateFlow stores the profile, address, service, custom provider, move-task, and document data you create so the product can organize your relocation workflow.",
   },
   {
     icon: Shield,
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="Information LocateFlow may collect">
         <p>
-          Depending on how you use the product, LocateFlow may process account identity details, profile information, addresses, service provider selections, moving-plan records, uploaded documents, subscriptions, and product activity required to operate the app.
+          Depending on how you use the product, LocateFlow may process account identity details, profile information, addresses, service provider selections, user-created custom providers, move tasks, moving-plan records, uploaded documents, subscriptions, and product activity required to operate the app.
         </p>
         <p>
           When authentication is enabled, sign-in and account identity are handled through the configured auth provider. Billing and operational tooling may also introduce limited data processing needed to run those features.
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="How the data is used">
         <p>
-          LocateFlow uses account and household data to create and maintain your move plan, match addresses with likely services, store your records, personalize recommendations, and keep your account secure.
+          LocateFlow uses account and household data to create and maintain your move plan, match addresses with likely services, store your records, generate local move tasks, personalize recommendations, and keep your account secure.
         </p>
         <p>
           Product activity data may also be used for debugging, fraud prevention, system reliability, and understanding how the experience can be improved.

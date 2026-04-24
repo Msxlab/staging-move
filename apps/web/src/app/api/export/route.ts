@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { decrypt } from "@/lib/shared-encryption";
 
-// GET /api/export?type=addresses|services|budget|moving|full&format=csv|json&includeNotes=true
+// GET /api/export?type=addresses|services|budget|moving|moveTasks|customProviders|full&format=csv|json&includeNotes=true
 //
 // `notes` is a free-form, encrypted field; decrypting it into the export
 // default would produce an exported plaintext copy that can easily leak via
@@ -32,6 +32,8 @@ export async function GET(request: NextRequest) {
       if (!value) return "";
       return decrypt(value);
     };
+    const exportPlainNotes = (value: string | null | undefined): string | null =>
+      includeNotes ? value || "" : null;
     const maskSensitiveFields = (items: any[]) =>
       items.map((item: any) => {
         const out = { ...item };
@@ -85,10 +87,45 @@ export async function GET(request: NextRequest) {
           contractEndDate: true,
           isActive: true,
           notes: true,
+          provider: { select: { name: true, category: true, scope: true } },
+          customProvider: { select: { name: true, category: true, providerType: true, trustStatus: true } },
           address: { select: { nickname: true, city: true, state: true } },
         },
       });
       data.services = maskSensitiveFields(rawServices);
+    }
+
+    if (type === "customProviders" || type === "full") {
+      data.customProviders = (
+        await prisma.userCustomProvider.findMany({
+          where: { userId },
+          select: {
+            name: true,
+            category: true,
+            description: true,
+            website: true,
+            phone: true,
+            email: true,
+            addressLine1: true,
+            addressLine2: true,
+            city: true,
+            state: true,
+            zipCode: true,
+            notes: true,
+            providerType: true,
+            trustStatus: true,
+            adminReviewStatus: true,
+            linkedServiceProvider: { select: { name: true, category: true } },
+            createdAt: true,
+            updatedAt: true,
+            deletedAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      ).map((provider) => ({
+        ...provider,
+        notes: exportPlainNotes(provider.notes),
+      }));
     }
 
     if (type === "budget" || type === "full") {
@@ -115,6 +152,53 @@ export async function GET(request: NextRequest) {
           toAddress: { select: { city: true, state: true } },
         },
       });
+    }
+
+    if (type === "moveTasks" || type === "moving" || type === "full") {
+      data.moveTasks = (
+        await prisma.moveTask.findMany({
+          where: { userId, deletedAt: null },
+          select: {
+            title: true,
+            description: true,
+            actionType: true,
+            status: true,
+            source: true,
+            reason: true,
+            caveats: true,
+            confidence: true,
+            dueDate: true,
+            acceptedAt: true,
+            completedAt: true,
+            dismissedAt: true,
+            reopenedAt: true,
+            lastStatusChangedAt: true,
+            localEffect: true,
+            metadata: true,
+            notes: true,
+            movingPlan: {
+              select: {
+                moveDate: true,
+                status: true,
+                fromAddress: { select: { city: true, state: true } },
+                toAddress: { select: { city: true, state: true } },
+              },
+            },
+            service: { select: { category: true, providerName: true, isActive: true } },
+            provider: { select: { name: true, category: true, scope: true } },
+            customProvider: { select: { name: true, category: true, providerType: true } },
+            destinationProvider: { select: { name: true, category: true, scope: true } },
+            originAddress: { select: { nickname: true, city: true, state: true } },
+            destinationAddress: { select: { nickname: true, city: true, state: true } },
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      ).map((task) => ({
+        ...task,
+        notes: exportPlainNotes(task.notes),
+      }));
     }
 
     if (format === "csv") {

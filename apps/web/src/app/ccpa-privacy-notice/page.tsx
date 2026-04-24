@@ -58,13 +58,13 @@ export default function CcpaNoticePage() {
           <li>Internet / network activity — product usage, device metadata, error diagnostics.</li>
           <li>Geolocation-related data — addresses you add to the product (provided by you).</li>
           <li>Inferences — service and provider recommendations derived from the data you enter.</li>
-          <li>Professional information (Pro plan only) — details about clients or households you manage.</li>
+          <li>Move workflow information - addresses, services, custom providers, move tasks, notes, and support records you create.</li>
         </ul>
       </PublicSection>
 
       <PublicSection title="Why we collect it">
         <p>
-          To operate the service (create an account, store your addresses and services, generate moving checklists), to process billing, to keep the product secure, to comply with law, and to improve the product experience.
+          To operate the service (create an account, store your addresses and services, generate moving tasks and checklists), to process billing, to keep the product secure, to comply with law, and to improve the product experience.
         </p>
       </PublicSection>
 

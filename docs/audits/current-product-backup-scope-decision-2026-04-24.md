@@ -14,11 +14,14 @@ The app-level backup system currently protects:
 | `providerCoverages` | `ServiceProviderCoverage` | Generated provider coverage rows. |
 | `addresses` | `Address` | User address records. |
 | `movingPlans` | `MovingPlan` | Current moving workflow records. |
+| `customProviders` | `UserCustomProvider` | User-created local/custom provider records for private service tracking. |
 | `services` | `Service` | User tracked service records. |
+| `moveTasks` | `MoveTask` | Persistent current-product move task workflow records. |
 | `budgets` | `Budget` | User budget records. |
 | `subscriptions` | `Subscription` | Current subscription entitlement records. |
 | `notifications` | `Notification` | In-app notification records. |
 | `auditLogs` | `AuditLog` | User-facing audit trail records. |
+| `providerGovernanceIssues` | `ProviderGovernanceIssue` | Provider data-quality and governance queue state. |
 
 This scope is appropriate as an app-level portability and selected-table recovery archive, but it is not enough by itself for disaster recovery.
 
@@ -85,6 +88,9 @@ For the current product, keep the app-level backup scope as:
 - Core user data.
 - Provider catalog and provider coverage.
 - Address/moving/service/budget records.
+- Current-product move task records.
+- User-created custom provider records.
+- Provider governance issue records.
 - Subscription entitlement records.
 - In-app notifications.
 - User audit logs.

@@ -5,11 +5,17 @@ export const BACKUP_TABLES = {
   providerCoverages: { model: "serviceProviderCoverage", label: "Provider Coverage" },
   addresses: { model: "address", label: "Addresses" },
   movingPlans: { model: "movingPlan", label: "Moving Plans" },
+  customProviders: { model: "userCustomProvider", label: "User Custom Providers" },
   services: { model: "service", label: "Services" },
+  moveTasks: { model: "moveTask", label: "Move Tasks" },
   budgets: { model: "budget", label: "Budgets" },
   subscriptions: { model: "subscription", label: "Subscriptions" },
   notifications: { model: "notification", label: "Notifications" },
   auditLogs: { model: "auditLog", label: "Audit Logs" },
+  providerGovernanceIssues: {
+    model: "providerGovernanceIssue",
+    label: "Provider Governance Issues",
+  },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;
@@ -21,11 +27,14 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "providerCoverages",
   "addresses",
   "movingPlans",
+  "customProviders",
   "services",
+  "moveTasks",
   "budgets",
   "subscriptions",
   "notifications",
   "auditLogs",
+  "providerGovernanceIssues",
 ];
 
 const BACKUP_TABLE_DEPENDENCIES: Partial<
@@ -35,11 +44,21 @@ const BACKUP_TABLE_DEPENDENCIES: Partial<
   providerCoverages: ["providers"],
   addresses: ["users"],
   movingPlans: ["users", "addresses"],
-  services: ["users", "addresses"],
+  customProviders: ["users", "providers"],
+  services: ["users", "addresses", "providers", "customProviders"],
+  moveTasks: [
+    "users",
+    "movingPlans",
+    "services",
+    "addresses",
+    "providers",
+    "customProviders",
+  ],
   budgets: ["users"],
   subscriptions: ["users"],
   notifications: ["users"],
   auditLogs: ["users"],
+  providerGovernanceIssues: ["providers", "customProviders"],
 };
 
 const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
@@ -49,14 +68,20 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
     "profiles",
     "addresses",
     "movingPlans",
+    "customProviders",
     "services",
+    "moveTasks",
     "budgets",
     "subscriptions",
     "notifications",
+    "providerGovernanceIssues",
   ],
-  providers: ["providerCoverages", "services"],
+  providers: ["providerCoverages", "services", "moveTasks", "providerGovernanceIssues"],
   providerCoverages: ["providers"],
-  addresses: ["movingPlans", "services", "budgets"],
+  addresses: ["movingPlans", "services", "moveTasks", "budgets"],
+  movingPlans: ["moveTasks"],
+  customProviders: ["services", "moveTasks", "providerGovernanceIssues"],
+  services: ["moveTasks"],
 };
 
 export function isSupportedBackupTable(

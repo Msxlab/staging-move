@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { addressSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
+import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 
 // GET /api/addresses/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -71,11 +72,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const meta = extractRequestMeta(request);
     await createAuditLog({ userId, action: "UPDATE", entityType: "Address", entityId: id, changes: validated, ...meta });
 
+    const moveTaskSync = await syncMoveTasksForAddress(userId, id);
+
     return NextResponse.json({
       address: {
         ...address,
         formattedAddress: address.formattedAddress ? decrypt(address.formattedAddress) : address.formattedAddress,
       },
+      moveTaskSync,
     });
   } catch (error: any) {
     if (error?.code === "P2025") {

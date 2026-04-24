@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { encrypt, decrypt } from "@/lib/shared-encryption";
+import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 
 // GET /api/services/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -101,7 +102,20 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const meta = extractRequestMeta(request);
     await createAuditLog({ userId, action: "UPDATE", entityType: "Service", entityId: id, changes: validated, ...meta });
 
-    return NextResponse.json({ service });
+    const addressIdsToSync = [
+      existing.addressId,
+      validated.addressId,
+    ].filter((value): value is string => Boolean(value));
+    const moveTaskSync =
+      addressIdsToSync.length > 0
+        ? await Promise.all(
+            [...new Set(addressIdsToSync)].map((addressId) =>
+              syncMoveTasksForAddress(userId, addressId),
+            ),
+          )
+        : [];
+
+    return NextResponse.json({ service, moveTaskSync });
   } catch (error: any) {
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });

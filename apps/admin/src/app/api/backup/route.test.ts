@@ -14,10 +14,13 @@ const mocks = vi.hoisted(() => {
     address: { count, findMany },
     service: { count, findMany },
     movingPlan: { count, findMany },
+    userCustomProvider: { count, findMany },
+    moveTask: { count, findMany },
     budget: { count, findMany },
     subscription: { count, findMany },
     auditLog: { count, findMany },
     notification: { count, findMany },
+    providerGovernanceIssue: { count, findMany },
     backupRecord: {
       create: vi.fn(),
       update: vi.fn(),

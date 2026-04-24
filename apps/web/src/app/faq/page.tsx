@@ -32,8 +32,8 @@ const groups: Array<{ title: string; items: Faq[] }> = [
         a: "If something isn't right in the first 14 days of a paid plan, reach out and we'll refund the period. After that, cancellation ends future charges but does not pro-rate the current period.",
       },
       {
-        q: "Why is Family locked and Pro locked?",
-        a: "Family and Pro are next on the roadmap. Family adds household sharing (up to 5 members) and unified budget; Pro adds team seats, white-label reports, and API access for realtors and relocation managers. Add yourself to the notify list and we'll email when each opens.",
+        q: "Does LocateFlow update provider accounts for me?",
+        a: "No. LocateFlow gives you local task tracking, provider directory guidance, and reminders. Completing a task updates LocateFlow only; you still confirm and complete changes with the provider.",
       },
     ],
   },
@@ -46,7 +46,7 @@ const groups: Array<{ title: string; items: Faq[] }> = [
       },
       {
         q: "Can I export everything?",
-        a: "Yes — at any time, from settings. CSV for tables (services, addresses, reminders), PDF for per-address packets. No lock-in.",
+        a: "Yes - at any time, from settings. Exports include your account data, addresses, services, custom providers, move tasks, and related records. Free-form notes are exported only when you request notes.",
       },
       {
         q: "What happens to my data if I cancel?",
@@ -71,11 +71,11 @@ const groups: Array<{ title: string; items: Faq[] }> = [
       },
       {
         q: "Does the moving checklist work in every state?",
-        a: "The moving checklist covers 51 US jurisdictions (50 states + DC). Each service gets the right action — transfer, cancel, or fresh signup — based on the destination.",
+        a: "Move guidance can use destination state and ZIP context across 51 US jurisdictions (50 states + DC). Service actions are local suggestions, and address-sensitive providers still need confirmation.",
       },
       {
-        q: "Can I use LocateFlow for clients (realtor, relocation manager)?",
-        a: "That is the Pro plan use case — team seats, white-label email, and per-client spaces. Pro is not live yet; join the notify list on the pricing page.",
+        q: "Can I use LocateFlow for someone else's move?",
+        a: "Only use LocateFlow with information you have permission to manage. The current product is built for personal moving workflows and local service tracking.",
       },
     ],
   },

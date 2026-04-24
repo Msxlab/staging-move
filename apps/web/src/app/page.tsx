@@ -13,8 +13,6 @@ import {
   ArrowRight,
   Shield,
   ChevronDown,
-  Star,
-  Quote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +24,6 @@ import {
 } from "@/lib/seo";
 import {
   BILLING_PLAN_DEFINITIONS,
-  UPCOMING_BILLING_PLAN_DEFINITIONS,
   TRIAL_DURATION_DAYS,
 } from "@locateflow/shared";
 import { LogoMark, Wordmark } from "@/components/marketing/logo";
@@ -177,24 +174,26 @@ export default async function LandingPage() {
           </p>
         </div>
 
-        {/* Social proof strip — placeholder numbers until live metrics land. */}
+        {/* Current-product scope strip */}
         <div className="mx-auto mt-14 max-w-4xl">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 rounded-2xl border bg-card/40 px-6 py-5 text-center">
+          <div className="grid grid-cols-1 gap-4 rounded-2xl border bg-card/40 px-6 py-5 text-center sm:grid-cols-3">
             <div>
-              <p className="text-2xl font-bold tracking-tight">2,400+</p>
-              <p className="text-xs text-muted-foreground mt-1">Moves organized</p>
+              <p className="text-sm font-semibold">Manual move tasks</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Track local workflow steps without external account automation.
+              </p>
             </div>
             <div>
-              <p className="text-2xl font-bold tracking-tight">50</p>
-              <p className="text-xs text-muted-foreground mt-1">US states supported</p>
+              <p className="text-sm font-semibold">Listed providers</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Provider data is directory guidance; confirm availability with the provider.
+              </p>
             </div>
             <div>
-              <p className="text-2xl font-bold tracking-tight">120k+</p>
-              <p className="text-xs text-muted-foreground mt-1">Services tracked</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold tracking-tight">4.8 ★</p>
-              <p className="text-xs text-muted-foreground mt-1">Beta rating</p>
+              <p className="text-sm font-semibold">Web and mobile</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Use the same service, provider, and move-task model across devices.
+              </p>
             </div>
           </div>
         </div>
@@ -257,30 +256,33 @@ export default async function LandingPage() {
 
       <PricingSection ctaHref={primaryHref} ctaLabelLoggedIn={!!userId} />
 
-      {/* Testimonials */}
+      {/* Current workflow coverage */}
       <section className="container py-20 border-t">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">Loved by Movers Everywhere</h2>
-          <p className="text-muted-foreground text-lg">See what our users have to say</p>
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Built for manual move coordination</h2>
+          <p className="text-muted-foreground text-lg">
+            LocateFlow helps you organize what to do; it does not contact providers for you.
+          </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {[
-            { name: "Sarah M.", role: "Relocated from TX to CA", text: "LocateFlow saved me hours of work. I had 15+ services to transfer and the checklist kept me on track.", rating: 5 },
-            { name: "James K.", role: "Military Family", text: "We move every 2-3 years. LocateFlow is the first tool that actually understands state-by-state requirements.", rating: 5 },
-            { name: "Priya R.", role: "First-time Homeowner", text: "The budget tracking and document management made closing on our new home so much less stressful.", rating: 5 },
-          ].map((t) => (
-            <div key={t.name} className="rounded-xl border bg-card p-6 space-y-4">
-              <Quote className="h-8 w-8 text-primary/20" />
-              <p className="text-sm text-muted-foreground leading-relaxed">{t.text}</p>
-              <div className="flex items-center gap-0.5 mb-1">
-                {Array.from({ length: t.rating }).map((_, i) => (
-                  <Star key={i} className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
-                ))}
-              </div>
-              <div>
-                <p className="text-sm font-semibold">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.role}</p>
-              </div>
+            {
+              title: "Services to stop or start",
+              text: "Track old-address and destination service work as local LocateFlow tasks.",
+            },
+            {
+              title: "Address updates to record",
+              text: "Keep a local checklist of account address updates without implying external account access.",
+            },
+            {
+              title: "Provider availability to confirm",
+              text: "Use listed provider guidance with caveats and confirm details with the provider.",
+            },
+          ].map((item) => (
+            <div key={item.title} className="rounded-xl border bg-card p-6 space-y-3">
+              <CheckCircle2 className="h-7 w-7 text-primary" />
+              <h3 className="text-base font-semibold">{item.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
             </div>
           ))}
         </div>
@@ -324,13 +326,12 @@ export default async function LandingPage() {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              Mobile apps — coming soon
+              Mobile companion
             </div>
             <h2 className="text-3xl font-bold tracking-tight">Your service list in your pocket</h2>
             <p className="text-muted-foreground">
-              Snap a photo of a bill, add a service on the go, and get push
-              reminders before a contract renews. iOS and Android apps are in
-              closed beta — join the waitlist to be first in line.
+              Add services, providers, and move tasks on the go. iOS and
+              Android availability depends on store release status.
             </p>
             <AppStoreCTA />
           </div>

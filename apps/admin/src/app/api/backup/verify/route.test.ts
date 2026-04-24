@@ -10,10 +10,13 @@ const mocks = vi.hoisted(() => {
     serviceProvider: { count },
     serviceProviderCoverage: { count: vi.fn().mockResolvedValue(7) },
     movingPlan: { count },
+    userCustomProvider: { count: vi.fn().mockResolvedValue(3) },
+    moveTask: { count: vi.fn().mockResolvedValue(5) },
     budget: { count },
     subscription: { count },
     auditLog: { count },
     notification: { count },
+    providerGovernanceIssue: { count: vi.fn().mockResolvedValue(2) },
   };
 
   return {
@@ -79,5 +82,25 @@ describe("backup verify catalog validation", () => {
           check.detail.includes("providerCoverages"),
       ),
     ).toBe(false);
+  });
+
+  it("recognizes move tasks, custom providers, and provider governance issues", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        data: {
+          customProviders: [{ id: "custom_1", userId: "user_1", name: "Dentist" }],
+          moveTasks: [{ id: "task_1", userId: "user_1", movingPlanId: "move_1" }],
+          providerGovernanceIssues: [{ id: "issue_1", issueType: "MISSING_PHONE" }],
+        },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.tableStats.customProviders).toMatchObject({ count: 1, dbCount: 3 });
+    expect(body.tableStats.moveTasks).toMatchObject({ count: 1, dbCount: 5 });
+    expect(body.tableStats.providerGovernanceIssues).toMatchObject({ count: 1, dbCount: 2 });
   });
 });
