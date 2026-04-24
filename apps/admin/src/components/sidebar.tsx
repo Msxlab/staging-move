@@ -27,6 +27,7 @@ import {
   Search,
   Database,
   LifeBuoy,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -78,6 +79,7 @@ const navGroups: NavGroup[] = [
       { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell },
       { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail },
       { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },
+      { name: "Waitlist", nameKey: "waitlist", href: "/waitlist", icon: Sparkles },
     ],
   },
   {
@@ -168,14 +170,38 @@ export function Sidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-          <svg className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-          </svg>
-        </div>
-        <span className="text-lg font-bold text-foreground">LocateFlow</span>
+      {/* Logo — mirrors public/logo-mark.svg from the design system */}
+      <div className="flex h-16 items-center gap-2.5 border-b border-border px-6">
+        <svg className="h-8 w-8 shrink-0" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="admin-mk-foil" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0%" stopColor="#B8936C" />
+              <stop offset="45%" stopColor="#E5C9A8" />
+              <stop offset="100%" stopColor="#F4E4D0" />
+            </linearGradient>
+            <linearGradient id="admin-mk-rose" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#EDB99D" />
+              <stop offset="100%" stopColor="#A85A42" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M20 65 Q 30 32, 50 48 T 80 40"
+            stroke="url(#admin-mk-foil)"
+            strokeWidth="3.25"
+            fill="none"
+            strokeLinecap="round"
+          />
+          <circle cx="20" cy="65" r="4.5" fill="url(#admin-mk-foil)" />
+          <circle cx="20" cy="65" r="1.5" fill="#0E0A07" />
+          <circle cx="80" cy="40" r="7.25" fill="url(#admin-mk-rose)" />
+          <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
+        </svg>
+        <span
+          className="text-lg leading-none tracking-[-0.02em] text-foreground"
+          style={{ fontFamily: "var(--fraunces), Didot, Georgia, serif", fontWeight: 400 }}
+        >
+          Locate<span className="italic">flow</span>
+        </span>
         <span className="ml-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Admin</span>
       </div>
 

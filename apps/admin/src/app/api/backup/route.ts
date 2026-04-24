@@ -28,6 +28,10 @@ const BACKUP_TABLE_OPS = {
     count: () => prisma.serviceProvider.count(),
     findRecords: () => prisma.serviceProvider.findMany({ take: 50000 }),
   },
+  providerCoverages: {
+    count: () => prisma.serviceProviderCoverage.count(),
+    findRecords: () => prisma.serviceProviderCoverage.findMany({ take: 50000 }),
+  },
   addresses: {
     count: () => prisma.address.count(),
     findRecords: () => prisma.address.findMany({ take: 50000 }),
@@ -98,7 +102,10 @@ export async function GET() {
           })
         : [];
     const creatorLabels = new Map(
-      adminUsers.map((admin) => [admin.id, admin.email]),
+      adminUsers.map((admin: { id: string; email: string | null }) => [
+        admin.id,
+        admin.email,
+      ]),
     );
     const storage = await getBackupStorageSummary();
 

@@ -78,8 +78,8 @@ export async function GET(request: NextRequest) {
       prisma.subscription.groupBy({ by: ["plan"], _count: { id: true } }),
     ]);
 
-    const usersWithReviewCounts = users.map((user) => {
-      const reviewCount = user.services.filter((service) =>
+    const usersWithReviewCounts = users.map((user: any) => {
+      const reviewCount = user.services.filter((service: any) =>
         Boolean(service.personalReview),
       ).length;
       const { services, ...rest } = user;

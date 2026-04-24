@@ -188,7 +188,7 @@ export default async function DashboardPage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Add Provider", desc: "New service provider", href: "/providers", icon: Building2, color: "text-cyan-500" },
+          { label: "Add Provider", desc: "New service provider", href: "/providers/new", icon: Building2, color: "text-cyan-500" },
           { label: "User Analytics", desc: `${stats.totalSessions} sessions`, href: "/analytics", icon: BarChart3, color: "text-purple-500" },
           { label: "Upcoming Moves", desc: `${stats.upcomingMoves.length} in 2 weeks`, href: "/moving", icon: Truck, color: "text-blue-500" },
         ].map((action) => (

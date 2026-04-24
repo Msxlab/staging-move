@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest) {
       }
 
       try {
-        const createdProvider = await prisma.$transaction(async (tx) => {
+        const createdProvider = await prisma.$transaction(async (tx: any) => {
           const provider = await tx.serviceProvider.create({
             data: {
               name: normalized.name,
@@ -265,7 +265,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const provider = await prisma.$transaction(async (tx) => {
+    const provider = await prisma.$transaction(async (tx: any) => {
       const createdProvider = await tx.serviceProvider.create({
         data: {
           name: normalized.name,

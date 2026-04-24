@@ -1,32 +1,104 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
-  Lock, Database, Download, Server, Shield, Activity,
-  Users, FileText, Star, MapPin, CreditCard, Award,
-  ClipboardList, Monitor, Globe, Zap,
+  Activity,
+  ArrowRight,
+  CreditCard,
+  Database,
+  Download,
+  ExternalLink,
+  HardDrive,
+  Lock,
+  Mail,
+  MapPin,
+  Server,
+  Shield,
+  Smartphone,
+  Users,
 } from "lucide-react";
 import { PasswordChangeForm } from "./password-form";
 
 const MODEL_ICONS: Record<string, typeof Users> = {
-  users: Users, providers: Server, reviews: Star, stateRules: MapPin,
-  subscriptions: CreditCard, documents: FileText, movingPlans: ClipboardList,
-  badges: Award, auditLogs: Activity, adminAuditLogs: Shield,
-  sessions: Monitor, events: Zap,
+  users: Users,
+  providers: Server,
+  stateRules: MapPin,
+  subscriptions: CreditCard,
+  movingPlans: Smartphone,
+  auditLogs: Activity,
+  adminAuditLogs: Shield,
+  sessions: Server,
+  events: Activity,
 };
 
 const MODEL_LABELS: Record<string, string> = {
-  users: "Users", providers: "Providers", reviews: "Reviews", stateRules: "State Rules",
-  subscriptions: "Subscriptions", documents: "Documents", movingPlans: "Moving Plans",
-  badges: "Badges", auditLogs: "User Logs", adminAuditLogs: "Admin Logs",
-  sessions: "Sessions", events: "Events",
+  users: "Users",
+  providers: "Providers",
+  stateRules: "State Rules",
+  subscriptions: "Subscriptions",
+  movingPlans: "Moving Plans",
+  auditLogs: "User Logs",
+  adminAuditLogs: "Admin Logs",
+  sessions: "Sessions",
+  events: "Events",
+};
+
+const INTEGRATION_ICONS: Record<string, typeof Shield> = {
+  google_oauth: Shield,
+  apple_oauth: Shield,
+  stripe: CreditCard,
+  resend: Mail,
+  google_maps: MapPin,
+  mobile_app_store: Smartphone,
+  mobile_play: Smartphone,
+  backup_storage: HardDrive,
+  redis: Activity,
+};
+
+type SettingsResponse = {
+  counts: Record<string, number>;
+  adminProfile: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    lastLoginAt: string | null;
+    createdAt: string;
+    _count?: { auditLogs?: number };
+  } | null;
+  recentErrors: {
+    action: string;
+    entityType: string;
+    createdAt: string;
+  }[];
+  runtimeSummary: {
+    managedKeys: number;
+    configured: number;
+    dbOverrides: number;
+    missingRequired: number;
+    missingRequiredKeys: string[];
+  };
+  integrations: {
+    id: string;
+    label: string;
+    configured: boolean;
+    missingKeys: string[];
+  }[];
+  systemInfo: {
+    version: string;
+    framework: string;
+    database: string;
+    auth: string;
+    node: string;
+    environment: string;
+  };
 };
 
 export default function SettingsPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<SettingsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [thresholds, setThresholds] = useState({ approve: 0.80, flag: 0.40, reject: 0.20 });
   const [exporting, setExporting] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,122 +106,199 @@ export default function SettingsPage() {
       try {
         const res = await fetch("/api/settings");
         const json = await res.json();
+        if (!res.ok) {
+          toast.error(json.error || "Failed to load settings");
+          return;
+        }
         setData(json);
-      } catch { toast.error("Failed to load settings"); }
-      finally { setLoading(false); }
+      } catch {
+        toast.error("Failed to load settings");
+      } finally {
+        setLoading(false);
+      }
     }
-    load();
+    void load();
   }, []);
 
   async function exportData(type: string) {
+    const endpointMap: Record<string, string> = {
+      users: "/api/users?perPage=9999",
+      providers: "/api/providers?perPage=9999",
+      subscriptions: "/api/subscriptions?perPage=9999",
+      waitlist: "/api/waitlist",
+    };
+    const responseKeyMap: Record<string, string> = {
+      users: "users",
+      providers: "providers",
+      subscriptions: "subscriptions",
+      waitlist: "signups",
+    };
+
     setExporting(type);
     try {
-      const res = await fetch(`/api/${type}?perPage=9999`);
+      const res = await fetch(endpointMap[type]);
       const json = await res.json();
-      const items = json[type] || json.users || json.reviews || json.subscriptions || [];
-      if (items.length === 0) { toast.error("No data to export"); return; }
+      const items = json[responseKeyMap[type]] || [];
+      if (!Array.isArray(items) || items.length === 0) {
+        toast.error("No data to export");
+        return;
+      }
 
-      const header = Object.keys(items[0]).filter((k) => typeof items[0][k] !== "object").join(",");
+      const header = Object.keys(items[0])
+        .filter((key) => typeof items[0][key] !== "object")
+        .join(",");
       const rows = items.map((item: any) =>
-        Object.entries(item).filter(([, v]) => typeof v !== "object").map(([, v]) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
+        Object.entries(item)
+          .filter(([, value]) => typeof value !== "object")
+          .map(([, value]) => `"${String(value ?? "").replace(/"/g, '""')}"`)
+          .join(","),
       );
-      const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
+      const blob = new Blob([header + "\n" + rows.join("\n")], {
+        type: "text/csv",
+      });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = `${type}-export.csv`; a.click();
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${type}-export.csv`;
+      anchor.click();
       URL.revokeObjectURL(url);
       toast.success(`Exported ${items.length} ${type} records`);
-    } catch { toast.error(`Failed to export ${type}`); }
-    finally { setExporting(null); }
+    } catch {
+      toast.error(`Failed to export ${type}`);
+    } finally {
+      setExporting(null);
+    }
   }
-
-  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
 
   const profile = data?.adminProfile;
   const counts = data?.counts || {};
+
+  const recordTotal = useMemo(
+    () =>
+      Object.values(counts).reduce(
+        (sum, value) => sum + (typeof value === "number" ? value : 0),
+        0,
+      ),
+    [counts],
+  );
+
+  if (loading) {
+    return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
+  }
+
+  if (!data) {
+    return <div className="py-12 text-center text-muted-foreground">Failed to load settings</div>;
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="mt-1 text-muted-foreground">System configuration, health, and admin profile</p>
+        <p className="mt-1 text-muted-foreground">
+          Runtime readiness, admin account controls, exports, and operational links
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left Column */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-6">
-          {/* Admin Profile */}
           {profile && (
             <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
                 <Shield className="h-5 w-5" /> Admin Profile
               </h2>
-              <div className="flex items-center gap-4 mb-4">
+              <div className="mb-4 flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-xl font-bold text-primary">
-                  {profile.firstName?.[0]}{profile.lastName?.[0]}
+                  {profile.firstName?.[0]}
+                  {profile.lastName?.[0]}
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-foreground">{profile.firstName} {profile.lastName}</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {profile.firstName} {profile.lastName}
+                  </p>
                   <p className="text-sm text-muted-foreground">{profile.email}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <InfoCard label="Role" value={profile.role?.replace("_", " ")} />
-                <InfoCard label="Total Actions" value={profile._count?.auditLogs || 0} />
-                <InfoCard label="Last Login" value={profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : "—"} />
-                <InfoCard label="Member Since" value={new Date(profile.createdAt).toLocaleDateString()} />
+                <InfoCard
+                  label="Total Actions"
+                  value={profile._count?.auditLogs || 0}
+                />
+                <InfoCard
+                  label="Last Login"
+                  value={
+                    profile.lastLoginAt
+                      ? new Date(profile.lastLoginAt).toLocaleString()
+                      : "—"
+                  }
+                />
+                <InfoCard
+                  label="Member Since"
+                  value={new Date(profile.createdAt).toLocaleDateString()}
+                />
               </div>
             </div>
           )}
 
-          {/* Password Change */}
           <PasswordChangeForm />
 
-          {/* Two-Factor Authentication */}
           <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+            <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-foreground">
               <Lock className="h-5 w-5" /> Two-Factor Authentication
             </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Protect your admin account with an authenticator app (Google Authenticator, Authy, etc.)
+            <p className="mb-4 text-sm text-muted-foreground">
+              Protect your admin account with a TOTP authenticator and backup codes.
             </p>
-            <a href="/settings/two-factor"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+            <Link
+              href="/settings/two-factor"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            >
               <Shield className="h-4 w-4" /> Manage 2FA
-            </a>
+            </Link>
           </div>
 
-          {/* AI Moderation Thresholds */}
           <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-              <Zap className="h-5 w-5" /> AI Moderation Thresholds
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">Adjust automatic review moderation score boundaries</p>
-            <div className="space-y-5">
-              <ThresholdSlider label="Auto-approve" description="Reviews above this score → auto-approved"
-                value={thresholds.approve} color="green"
-                onChange={(v) => setThresholds({ ...thresholds, approve: v })} />
-              <ThresholdSlider label="Flag for review" description="Reviews below this → flagged for manual check"
-                value={thresholds.flag} color="yellow"
-                onChange={(v) => setThresholds({ ...thresholds, flag: v })} />
-              <ThresholdSlider label="Auto-reject" description="Reviews below this → auto-rejected"
-                value={thresholds.reject} color="red"
-                onChange={(v) => setThresholds({ ...thresholds, reject: v })} />
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Activity className="h-5 w-5" /> Runtime Readiness
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  This view reflects the real managed runtime-config catalog and deployment inputs.
+                </p>
+              </div>
+              <Link
+                href="/runtime-config"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+              >
+                Open Runtime Config <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
             </div>
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">Changes apply to next AI moderation run</p>
-              <button onClick={() => toast.success("Thresholds saved")}
-                className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
-                Save Thresholds
-              </button>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <InfoCard label="Managed Keys" value={data.runtimeSummary.managedKeys} />
+              <InfoCard label="Configured" value={data.runtimeSummary.configured} />
+              <InfoCard label="DB Overrides" value={data.runtimeSummary.dbOverrides} />
+              <InfoCard
+                label="Missing Required"
+                value={data.runtimeSummary.missingRequired}
+              />
             </div>
+            {data.runtimeSummary.missingRequiredKeys.length > 0 && (
+              <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+                <p className="text-sm font-medium text-foreground">
+                  Required runtime keys still missing
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {data.runtimeSummary.missingRequiredKeys.join(", ")}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Column */}
         <div className="space-y-6">
-          {/* System Health */}
           <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
               <Database className="h-5 w-5" /> Database Records
             </h2>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -159,44 +308,119 @@ export default function SettingsPage() {
                   <div key={key} className="rounded-lg bg-muted/50 p-3">
                     <div className="flex items-center gap-2">
                       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <p className="text-[10px] font-medium uppercase text-muted-foreground">{MODEL_LABELS[key] || key}</p>
+                      <p className="text-[10px] font-medium uppercase text-muted-foreground">
+                        {MODEL_LABELS[key] || key}
+                      </p>
                     </div>
-                    <p className="mt-1 text-lg font-bold text-foreground">{(count as number).toLocaleString()}</p>
+                    <p className="mt-1 text-lg font-bold text-foreground">
+                      {count.toLocaleString()}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-3 rounded-lg bg-muted/30 p-3 text-sm text-muted-foreground">
+              Total indexed records:{" "}
+              <span className="font-medium text-foreground">
+                {recordTotal.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Server className="h-5 w-5" /> System Information
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <InfoCard label="Version" value={data.systemInfo.version} />
+              <InfoCard label="Framework" value={data.systemInfo.framework} />
+              <InfoCard label="Database" value={data.systemInfo.database} />
+              <InfoCard label="Auth" value={data.systemInfo.auth} />
+              <InfoCard label="Node.js" value={data.systemInfo.node} />
+              <InfoCard
+                label="Environment"
+                value={data.systemInfo.environment}
+              />
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Shield className="h-5 w-5" /> Integration Readiness
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Provider availability across OAuth, billing, mobile verification, alerts, and backups.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {data.integrations.map((integration) => {
+                const Icon = INTEGRATION_ICONS[integration.id] || Shield;
+                return (
+                  <div
+                    key={integration.id}
+                    className="rounded-lg border border-border bg-muted/30 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-lg bg-background p-2">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {integration.label}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {integration.configured
+                              ? "Configured and ready"
+                              : `Missing ${integration.missingKeys.length} required setting${integration.missingKeys.length === 1 ? "" : "s"}`}
+                          </p>
+                          {!integration.configured &&
+                            integration.missingKeys.length > 0 && (
+                              <p className="mt-1 text-[11px] text-muted-foreground">
+                                {integration.missingKeys.join(", ")}
+                              </p>
+                            )}
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
+                          integration.configured
+                            ? "bg-green-500/10 text-green-500"
+                            : "bg-amber-500/10 text-amber-500"
+                        }`}
+                      >
+                        {integration.configured ? "Ready" : "Needs config"}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* System Info */}
           <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Server className="h-5 w-5" /> System Information
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              <InfoCard label="Version" value="0.1.0" />
-              <InfoCard label="Framework" value="Next.js 15" />
-              <InfoCard label="Database" value="SQLite (Prisma)" />
-              <InfoCard label="Auth" value="JWT + bcrypt" />
-              <InfoCard label="Total Records" value={Object.values(counts).reduce((a: number, b: any) => a + (b as number), 0).toLocaleString()} />
-              <InfoCard label="Node.js" value={typeof window === "undefined" ? "" : "Client"} />
-            </div>
-          </div>
-
-          {/* Data Export */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+            <h2 className="mb-2 flex items-center gap-2 text-lg font-semibold text-foreground">
               <Download className="h-5 w-5" /> Data Export
             </h2>
-            <p className="text-sm text-muted-foreground mb-4">Download data as CSV files</p>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Export currently supported admin datasets as CSV.
+            </p>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { key: "users", label: "Users", icon: Users },
-                { key: "reviews", label: "Reviews", icon: Star },
+                { key: "providers", label: "Providers", icon: Server },
                 { key: "subscriptions", label: "Subscriptions", icon: CreditCard },
+                { key: "waitlist", label: "Waitlist", icon: Mail },
               ].map(({ key, label, icon: Icon }) => (
-                <button key={key} onClick={() => exportData(key)} disabled={exporting === key}
-                  className="flex items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50 transition-colors">
+                <button
+                  key={key}
+                  onClick={() => void exportData(key)}
+                  disabled={exporting === key}
+                  className="flex items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                >
                   <Icon className="h-4 w-4 text-muted-foreground" />
                   {exporting === key ? "Exporting..." : `Export ${label}`}
                 </button>
@@ -204,44 +428,77 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* System Health */}
           <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
-              <Monitor className="h-5 w-5" /> System Health
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Check database, Redis, email, backup storage, and external service connectivity
-            </p>
-            <a href="/settings/health"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              <Activity className="h-4 w-4" /> View Health Dashboard
-            </a>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-              <Activity className="h-5 w-5" /> Quick Actions
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Activity className="h-5 w-5" /> Operational Links
             </h2>
             <div className="space-y-2">
-              <button onClick={() => { window.location.reload(); toast.success("Page refreshed"); }}
-                className="w-full flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-accent transition-colors text-left">
-                <Globe className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p>Refresh Data</p>
-                  <p className="text-xs text-muted-foreground">Reload all cached data</p>
-                </div>
-              </button>
-              <button onClick={() => toast.info("This feature will clear server-side caches in production")}
-                className="w-full flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-accent transition-colors text-left">
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p>Clear Cache</p>
-                  <p className="text-xs text-muted-foreground">Purge server-side caches</p>
-                </div>
-              </button>
+              {[
+                {
+                  href: "/settings/health",
+                  label: "Health Dashboard",
+                  description: "Connectivity, service checks, and system metrics",
+                },
+                {
+                  href: "/runtime-config",
+                  label: "Runtime Config",
+                  description: "Manage secret-backed provider and infrastructure values",
+                },
+                {
+                  href: "/feature-flags",
+                  label: "Feature Flags",
+                  description: "Review rollout toggles and staged releases",
+                },
+                {
+                  href: "/security/dashboard",
+                  label: "Security Dashboard",
+                  description: "Review admin sessions, login history, and alerts",
+                },
+                {
+                  href: "/backups",
+                  label: "Backups",
+                  description: "Inspect backup runs, verification, and import controls",
+                },
+              ].map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex items-center gap-3 rounded-lg border border-border px-4 py-3 text-left hover:bg-accent"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">{link.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {link.description}
+                    </p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              ))}
             </div>
           </div>
+
+          {data.recentErrors.length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                <Activity className="h-5 w-5" /> Recent Admin Errors
+              </h2>
+              <div className="space-y-2">
+                {data.recentErrors.map((entry, index) => (
+                  <div
+                    key={`${entry.action}-${entry.createdAt}-${index}`}
+                    className="rounded-lg bg-muted/40 p-3"
+                  >
+                    <p className="text-sm font-medium text-foreground">
+                      {entry.action}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.entityType} · {new Date(entry.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -251,34 +508,10 @@ export default function SettingsPage() {
 function InfoCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-lg bg-muted/50 p-3">
-      <p className="text-[10px] font-medium uppercase text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-medium uppercase text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-0.5 text-sm font-medium text-foreground">{value}</p>
-    </div>
-  );
-}
-
-function ThresholdSlider({ label, description, value, color, onChange }: {
-  label: string; description: string; value: number; color: string;
-  onChange: (v: number) => void;
-}) {
-  const colorMap: Record<string, string> = {
-    green: "accent-green-500", yellow: "accent-yellow-500", red: "accent-red-500",
-  };
-  const bgMap: Record<string, string> = {
-    green: "bg-green-500/10 text-green-500", yellow: "bg-yellow-500/10 text-yellow-500", red: "bg-red-500/10 text-red-500",
-  };
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <div>
-          <p className="text-sm font-medium text-foreground">{label}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-        <span className={`rounded-lg px-3 py-1.5 text-sm font-bold ${bgMap[color]}`}>{value.toFixed(2)}</span>
-      </div>
-      <input type="range" min="0" max="1" step="0.05" value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className={`w-full h-2 rounded-lg bg-muted cursor-pointer ${colorMap[color]}`} />
     </div>
   );
 }

@@ -292,10 +292,10 @@ function getRequestIpFromHeaderValue(value: string | null): string {
 }
 
 export async function destroyUserSession(): Promise<void> {
+  const found = await readTokenFromRequest();
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (token) {
-    const tokenHash = await hashSessionToken(token).catch(() => null);
+  if (found?.token) {
+    const tokenHash = await hashSessionToken(found.token).catch(() => null);
     if (tokenHash) {
       await prisma.userLoginSession
         .updateMany({

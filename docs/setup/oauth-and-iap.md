@@ -173,7 +173,7 @@ Google takes 15–30% of each subscription.
    - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`   = from the JSON (`private_key`),
      full PEM including BEGIN/END lines. Paste exactly — the UI escapes newlines.
    - `GOOGLE_PLAY_RTDN_AUDIENCE`                 = `https://app.yourdomain.com/api/webhooks/playstore`
-     (same as the Pub/Sub subscription's audience)
+     (same as the Pub/Sub subscription's audience; production webhooks reject when this is missing)
    - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL`         = `locateflow_individual_monthly`
 
 ---

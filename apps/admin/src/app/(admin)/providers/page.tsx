@@ -128,13 +128,20 @@ export default function ProvidersPage() {
       if (!score) return;
       body.data = { score: parseInt(score) };
     }
+    if (bulkAction === "delete") {
+      const confirmPassword = window.prompt(
+        "Enter your admin password to confirm this bulk provider deletion:",
+      );
+      if (!confirmPassword) return;
+      body.confirmPassword = confirmPassword;
+    }
 
     try {
       const res = await fetch("/api/providers/bulk", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) { toast.error(data.error || "Failed"); return; }
       toast.success(`${data.affected} providers updated`);
       setSelected(new Set());
@@ -145,9 +152,18 @@ export default function ProvidersPage() {
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Delete "${name}"?`)) return;
+    const confirmPassword = window.prompt(
+      "Enter your admin password to confirm this provider deletion:",
+    );
+    if (!confirmPassword) return;
     try {
-      const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });
-      if (!res.ok) { toast.error("Failed"); return; }
+      const res = await fetch(`/api/providers/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { toast.error(data.error || "Failed"); return; }
       toast.success("Deleted");
       fetchProviders();
     } catch { toast.error("Failed"); }

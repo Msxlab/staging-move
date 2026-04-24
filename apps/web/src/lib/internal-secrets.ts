@@ -1,10 +1,10 @@
 /**
  * Shared-secret authentication for server-to-server calls.
  *
- * `CRON_SECRET` is scoped to scheduled cron endpoints. Internal webhook calls
- * may still accept it for compatibility, but the admin-to-web impersonation
- * handoff must use `IMPERSONATION_HANDOFF_SECRET` and never falls back to
- * `CRON_SECRET`.
+ * `CRON_SECRET` is scoped to scheduled cron endpoints only. Internal webhook
+ * calls must use `INTERNAL_WEBHOOK_SECRET`, and admin-to-web impersonation
+ * must use `IMPERSONATION_HANDOFF_SECRET`. Do not broaden one secret into
+ * another security boundary.
  */
 export type InternalSecretKind = "cron" | "internal" | "impersonation";
 
@@ -40,23 +40,23 @@ export function verifyInternalAuth(
 
   const specific = getSpecificEnv(kind);
   if (specific && safeEqual(token, specific)) return true;
-  if (kind === "impersonation") return false;
-
-  const legacy = process.env.CRON_SECRET;
-  if (legacy && safeEqual(token, legacy)) return true;
+  if (kind === "cron") {
+    const cron = process.env.CRON_SECRET;
+    if (cron && safeEqual(token, cron)) return true;
+  }
 
   return false;
 }
 
 /**
  * Return the secret a caller should send for a given kind of internal call.
- * Impersonation requires the kind-specific secret.
+ * Internal and impersonation calls require kind-specific secrets.
  */
 export function getInternalCallerSecret(
   kind: InternalSecretKind,
 ): string | undefined {
   const specific = getSpecificEnv(kind);
   if (specific) return specific;
-  if (kind === "impersonation") return undefined;
-  return process.env.CRON_SECRET || undefined;
+  if (kind === "cron") return process.env.CRON_SECRET || undefined;
+  return undefined;
 }

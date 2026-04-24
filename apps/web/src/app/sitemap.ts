@@ -20,6 +20,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
     { path: "/cookie-policy", changeFrequency: "yearly", priority: 0.3 },
     { path: "/disclaimer", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/refund", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/acceptable-use", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/dpa", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/security", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/ccpa-privacy-notice", changeFrequency: "yearly", priority: 0.3 },
   ];
 
   return routes.map((r) => ({

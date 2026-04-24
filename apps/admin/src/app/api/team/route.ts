@@ -16,6 +16,7 @@ export async function GET() {
         lastName: true,
         role: true,
         isActive: true,
+        mfaEnabled: true,
         lastLoginAt: true,
         createdAt: true,
         permissions: true,
@@ -23,7 +24,58 @@ export async function GET() {
       orderBy: { createdAt: "asc" },
     });
 
-    return NextResponse.json({ admins });
+    const [activeSessions, recentLoginStats] = await Promise.all([
+      prisma.adminSession.groupBy({
+        by: ["adminUserId"],
+        where: {
+          isActive: true,
+          expiresAt: { gt: new Date() },
+        },
+        _count: { _all: true },
+      }),
+      prisma.adminLoginLog.groupBy({
+        by: ["adminUserId", "success"],
+        where: {
+          adminUserId: { not: null },
+          createdAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const activeSessionMap = new Map(
+      activeSessions.map((row: any) => [row.adminUserId, row._count._all]),
+    );
+    const loginStatMap = new Map<
+      string,
+      { recentSuccessfulLogins: number; recentFailedLogins: number }
+    >();
+    for (const row of recentLoginStats) {
+      if (!row.adminUserId) continue;
+      const current = loginStatMap.get(row.adminUserId) || {
+        recentSuccessfulLogins: 0,
+        recentFailedLogins: 0,
+      };
+      if (row.success) {
+        current.recentSuccessfulLogins = row._count._all;
+      } else {
+        current.recentFailedLogins = row._count._all;
+      }
+      loginStatMap.set(row.adminUserId, current);
+    }
+
+    return NextResponse.json({
+      admins: admins.map((admin: any) => ({
+        ...admin,
+        activeSessionCount: activeSessionMap.get(admin.id) || 0,
+        recentSuccessfulLogins:
+          loginStatMap.get(admin.id)?.recentSuccessfulLogins || 0,
+        recentFailedLogins:
+          loginStatMap.get(admin.id)?.recentFailedLogins || 0,
+      })),
+    });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED" || error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: error.message }, { status: 403 });

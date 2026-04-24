@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 
+const SUPPORTED_ADMIN_SEND_CHANNELS = ["IN_APP"] as const;
+
 export async function GET(req: NextRequest) {
   try {
     await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
@@ -44,6 +46,13 @@ export async function GET(req: NextRequest) {
       total,
       pages: Math.ceil(total / limit),
       queue,
+      capabilities: {
+        supportedSendChannels: SUPPORTED_ADMIN_SEND_CHANNELS,
+        schedulingEnabled: false,
+        workerEnabled: false,
+        note:
+          "Admin-created notifications are delivered immediately as in-app records only. Email, push, and delayed delivery require a dedicated worker/provider path.",
+      },
       stats: {
         total: stats[0],
         unread: stats[1],
@@ -62,24 +71,49 @@ export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canCreate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
     const body = await req.json();
-    const { type, title, body: msgBody, href, channel, userId, broadcast, sendAt } = body;
+    const { type, title, body: msgBody, href, channel = "IN_APP", userId, broadcast, sendAt } = body;
 
     if (!title || !msgBody) {
       return NextResponse.json({ error: "Title and body required" }, { status: 400 });
     }
 
+    if (!SUPPORTED_ADMIN_SEND_CHANNELS.includes(channel)) {
+      return NextResponse.json(
+        {
+          error:
+            "This admin send path only supports immediate in-app notifications. Email and push delivery are disabled until a real worker/provider path is enabled.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const requestedSendAt = sendAt ? new Date(sendAt) : null;
+    if (requestedSendAt && Number.isNaN(requestedSendAt.getTime())) {
+      return NextResponse.json({ error: "Invalid sendAt value" }, { status: 400 });
+    }
+    if (requestedSendAt && requestedSendAt.getTime() > Date.now() + 5000) {
+      return NextResponse.json(
+        {
+          error:
+            "Scheduled notification delivery is not enabled yet. Send immediately for now.",
+        },
+        { status: 400 },
+      );
+    }
+    const deliveredAt = new Date();
+
     if (broadcast) {
       const users = await prisma.user.findMany({ select: { id: true } });
-      const notifications = users.map((u) => ({
+      const notifications = users.map((u: { id: string }) => ({
         userId: u.id,
         type: type || "SYSTEM",
         title,
         body: msgBody,
         href: href || null,
-        channel: channel || "IN_APP",
+        channel,
         sent: true,
-        sentAt: new Date(),
-        sendAt: sendAt ? new Date(sendAt) : new Date(),
+        sentAt: deliveredAt,
+        sendAt: deliveredAt,
       }));
 
       await prisma.notification.createMany({ data: notifications });
@@ -91,11 +125,27 @@ export async function POST(req: NextRequest) {
           title,
           body: msgBody,
           href,
-          channel: channel || "IN_APP",
-          sendAt: sendAt ? new Date(sendAt) : new Date(),
+          channel,
+          sendAt: deliveredAt,
           sent: true,
-          sentAt: new Date(),
+          sentAt: deliveredAt,
           createdBy: session.adminId,
+        },
+      });
+
+      await prisma.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "SEND_NOTIFICATION",
+          entityType: "Notification",
+          entityId: "broadcast",
+          changes: JSON.stringify({
+            broadcast: true,
+            channel,
+            type: type || "SYSTEM",
+            count: users.length,
+          }),
+          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
         },
       });
 
@@ -113,10 +163,26 @@ export async function POST(req: NextRequest) {
         title,
         body: msgBody,
         href,
-        channel: channel || "IN_APP",
+        channel,
         sent: true,
-        sentAt: new Date(),
-        sendAt: sendAt ? new Date(sendAt) : new Date(),
+        sentAt: deliveredAt,
+        sendAt: deliveredAt,
+      },
+    });
+
+    await prisma.adminAuditLog.create({
+      data: {
+        adminUserId: session.adminId,
+        action: "SEND_NOTIFICATION",
+        entityType: "Notification",
+        entityId: notification.id,
+        changes: JSON.stringify({
+          broadcast: false,
+          userId,
+          channel,
+          type: type || "SYSTEM",
+        }),
+        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
       },
     });
 

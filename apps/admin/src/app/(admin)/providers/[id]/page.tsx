@@ -1,75 +1,167 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft, Pencil, Trash2, Globe, MapPin, Phone, ExternalLink,
-  Users, Building2, Tag, Clock,
+  ArrowLeft,
+  Clock,
+  ExternalLink,
+  MapPin,
+  Pencil,
+  Phone,
+  Shield,
+  Tag,
+  Trash2,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import {
+  getCategoryIcon,
+  getCategoryLabel,
+} from "@/lib/recommendation-engine";
 
 interface Provider {
-  id: string; name: string; slug: string; category: string; subCategory: string | null;
-  description: string | null; website: string | null; phone: string | null; logoUrl: string | null;
-  scope: string; states: string; zipCodes: string; tags: string;
-  popularityScore: number; isActive: boolean; displayOrder: number;
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  subCategory: string | null;
+  description: string | null;
+  website: string | null;
+  phone: string | null;
+  logoUrl: string | null;
+  scope: string;
+  states: string;
+  zipCodes: string;
+  tags: string;
+  popularityScore: number;
+  isActive: boolean;
+  displayOrder: number;
   userCount: number;
-  createdAt: string; updatedAt: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ProviderDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const [provider, setProvider] = useState<Provider | null>(null);
+  const [coverageCount, setCoverageCount] = useState(0);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeletePrompt, setShowDeletePrompt] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch(`/api/providers/${id}`)
-      .then((r) => r.json())
-      .then((data) => setProvider(data.provider || data))
+      .then((res) => res.json())
+      .then((data) => {
+        setProvider(data.provider || null);
+        setCoverageCount(data.meta?.coverageCount || 0);
+        setAuditLogs(data.auditLogs || []);
+      })
       .catch(() => toast.error("Failed to load provider"))
       .finally(() => setLoading(false));
   }, [id]);
 
   async function handleDelete() {
-    if (!provider || !confirm(`Delete "${provider.name}"?`)) return;
-    const res = await fetch(`/api/providers/${id}`, { method: "DELETE" });
-    if (res.ok) { toast.success("Deleted"); router.push("/providers"); }
-    else toast.error("Failed to delete");
+    if (!provider || !confirmPassword) {
+      toast.error("Confirm your password to delete this provider.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/providers/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Failed to delete provider");
+        return;
+      }
+      toast.success("Provider deleted");
+      router.push("/providers");
+    } catch {
+      toast.error("Failed to delete provider");
+    } finally {
+      setDeleting(false);
+    }
   }
 
-  if (loading) return <div className="py-20 text-center text-muted-foreground">Loading...</div>;
-  if (!provider) return <div className="py-20 text-center text-muted-foreground">Provider not found</div>;
+  if (loading) {
+    return <div className="py-20 text-center text-muted-foreground">Loading...</div>;
+  }
 
-  const states: string[] = (() => { try { return JSON.parse(provider.states); } catch { return []; } })();
-  const zipCodes: string[] = (() => { try { return JSON.parse(provider.zipCodes); } catch { return []; } })();
-  const tags: string[] = (() => { try { return JSON.parse(provider.tags); } catch { return []; } })();
+  if (!provider) {
+    return (
+      <div className="py-20 text-center text-muted-foreground">Provider not found</div>
+    );
+  }
+
+  const states: string[] = (() => {
+    try {
+      return JSON.parse(provider.states);
+    } catch {
+      return [];
+    }
+  })();
+  const zipCodes: string[] = (() => {
+    try {
+      return JSON.parse(provider.zipCodes);
+    } catch {
+      return [];
+    }
+  })();
+  const tags: string[] = (() => {
+    try {
+      return JSON.parse(provider.tags);
+    } catch {
+      return [];
+    }
+  })();
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
-        <button onClick={() => router.push("/providers")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <button
+          onClick={() => router.push("/providers")}
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Back to Providers
         </button>
         <div className="flex items-center gap-2">
-          <button onClick={() => router.push(`/providers/${id}/edit`)}
-            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">
+          <button
+            onClick={() => router.push(`/providers/${id}/edit`)}
+            className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+          >
             <Pencil className="h-4 w-4" /> Edit
           </button>
-          <button onClick={handleDelete}
-            className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm text-destructive hover:bg-destructive/10">
+          <button
+            onClick={() => setShowDeletePrompt(true)}
+            className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm text-destructive hover:bg-destructive/10"
+          >
             <Trash2 className="h-4 w-4" /> Delete
           </button>
         </div>
       </div>
 
-      {/* Header Card */}
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="flex items-start gap-5">
           <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-2xl">
             {provider.logoUrl ? (
-              <img src={provider.logoUrl} alt="" className="h-12 w-12 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img
+                src={provider.logoUrl}
+                alt=""
+                className="h-12 w-12 rounded-lg object-cover"
+                onError={(event) => {
+                  (event.target as HTMLImageElement).style.display = "none";
+                }}
+              />
             ) : (
               <span>{getCategoryIcon(provider.category)}</span>
             )}
@@ -77,12 +169,20 @@ export default function ProviderDetailPage() {
           <div className="flex-1">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-foreground">{provider.name}</h1>
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${provider.isActive ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-400"}`}>
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  provider.isActive
+                    ? "bg-green-500/10 text-green-500"
+                    : "bg-gray-500/10 text-gray-400"
+                }`}
+              >
                 {provider.isActive ? "Active" : "Inactive"}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">{provider.slug}</p>
-            {provider.description && <p className="mt-2 text-sm text-foreground/80">{provider.description}</p>}
+            <p className="mt-1 text-sm text-muted-foreground">{provider.slug}</p>
+            {provider.description && (
+              <p className="mt-2 text-sm text-foreground/80">{provider.description}</p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-4xl font-bold text-foreground">{provider.popularityScore}</p>
@@ -91,52 +191,68 @@ export default function ProviderDetailPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-purple-500/10 p-2.5"><Users className="h-5 w-5 text-purple-500" /></div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{provider.userCount}</p>
-              <p className="text-xs text-muted-foreground">Users</p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-cyan-500/10 p-2.5"><Clock className="h-5 w-5 text-cyan-500" /></div>
-            <div>
-              <p className="text-sm font-bold text-foreground">{new Date(provider.updatedAt).toLocaleDateString()}</p>
-              <p className="text-xs text-muted-foreground">Last Updated</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          icon={Users}
+          tone="purple"
+          label="Users"
+          value={provider.userCount}
+        />
+        <StatCard
+          icon={Clock}
+          tone="cyan"
+          label="Last Updated"
+          value={new Date(provider.updatedAt).toLocaleDateString()}
+        />
+        <StatCard
+          icon={MapPin}
+          tone="amber"
+          label="Coverage Rows"
+          value={coverageCount}
+        />
+        <StatCard
+          icon={Shield}
+          tone="blue"
+          label="Version"
+          value={`v${provider.version}`}
+        />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        {/* Details */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-semibold text-foreground">Details</h2>
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span className="font-medium text-foreground">{getCategoryLabel(provider.category)}</span></div>
-            {provider.subCategory && <div className="flex justify-between"><span className="text-muted-foreground">Sub Category</span><span className="font-medium text-foreground">{provider.subCategory}</span></div>}
-            <div className="flex justify-between"><span className="text-muted-foreground">Scope</span>
-              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${provider.scope === "FEDERAL" ? "bg-blue-500/10 text-blue-500" : "bg-orange-500/10 text-orange-500"}`}>
-                {provider.scope === "FEDERAL" ? "Federal" : "State"}
-              </span>
-            </div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Display Order</span><span className="font-medium text-foreground">{provider.displayOrder}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">ZIP Rules</span><span className="font-medium text-foreground">{zipCodes.length || "—"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span className="font-medium text-foreground">{new Date(provider.createdAt).toLocaleDateString()}</span></div>
+            <DetailRow
+              label="Category"
+              value={getCategoryLabel(provider.category)}
+            />
+            {provider.subCategory && (
+              <DetailRow label="Sub Category" value={provider.subCategory} />
+            )}
+            <DetailRow
+              label="Scope"
+              value={provider.scope === "FEDERAL" ? "Federal" : "State"}
+            />
+            <DetailRow label="Display Order" value={provider.displayOrder} />
+            <DetailRow label="Version" value={provider.version} />
+            <DetailRow label="ZIP Rules" value={zipCodes.length || "—"} />
+            <DetailRow
+              label="Created"
+              value={new Date(provider.createdAt).toLocaleDateString()}
+            />
           </div>
         </div>
 
-        {/* Contact */}
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="font-semibold text-foreground">Contact & Links</h2>
           <div className="space-y-3 text-sm">
             {provider.website && (
-              <a href={provider.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-primary hover:underline">
+              <a
+                href={provider.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-primary hover:underline"
+              >
                 <ExternalLink className="h-4 w-4" /> {provider.website}
               </a>
             )}
@@ -145,18 +261,26 @@ export default function ProviderDetailPage() {
                 <Phone className="h-4 w-4 text-muted-foreground" /> {provider.phone}
               </div>
             )}
-            {!provider.website && !provider.phone && <p className="text-muted-foreground">No contact info</p>}
+            {!provider.website && !provider.phone && (
+              <p className="text-muted-foreground">No contact info</p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* States */}
       {provider.scope === "STATE" && states.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="font-semibold text-foreground mb-3">Coverage States ({states.length})</h2>
+          <h2 className="mb-3 font-semibold text-foreground">
+            Coverage States ({states.length})
+          </h2>
           <div className="flex flex-wrap gap-1.5">
-            {states.map((s) => (
-              <span key={s} className="rounded-lg bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-500">{s}</span>
+            {states.map((state) => (
+              <span
+                key={state}
+                className="rounded-lg bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-500"
+              >
+                {state}
+              </span>
             ))}
           </div>
         </div>
@@ -164,28 +288,157 @@ export default function ProviderDetailPage() {
 
       {provider.scope === "STATE" && zipCodes.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="font-semibold text-foreground mb-3">ZIP Coverage Rules ({zipCodes.length})</h2>
+          <h2 className="mb-3 font-semibold text-foreground">
+            ZIP Coverage Rules ({zipCodes.length})
+          </h2>
           <div className="flex flex-wrap gap-1.5">
             {zipCodes.map((zip) => (
-              <span key={zip} className="rounded-lg bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-500">{zip}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tags */}
-      {tags.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h2 className="font-semibold text-foreground mb-3">Tags</h2>
-          <div className="flex flex-wrap gap-1.5">
-            {tags.map((t) => (
-              <span key={t} className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1 text-xs text-muted-foreground">
-                <Tag className="h-3 w-3" /> {t}
+              <span
+                key={zip}
+                className="rounded-lg bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-500"
+              >
+                {zip}
               </span>
             ))}
           </div>
         </div>
       )}
+
+      {tags.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-3 font-semibold text-foreground">Tags</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1 text-xs text-muted-foreground"
+              >
+                <Tag className="h-3 w-3" /> {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {auditLogs.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-3 font-semibold text-foreground">
+            Recent Admin Activity
+          </h2>
+          <div className="space-y-2">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="rounded-lg bg-muted/40 p-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-medium text-foreground">{log.action}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {(log.adminUser?.firstName || log.adminUser?.email || "Admin")}
+                  {log.adminUser?.lastName ? ` ${log.adminUser.lastName}` : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showDeletePrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => {
+            setShowDeletePrompt(false);
+            setConfirmPassword("");
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-foreground">Delete Provider</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              This permanently removes {provider.name} and affects provider matching.
+              Confirm your password to continue.
+            </p>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              className="mt-4 w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeletePrompt(false);
+                  setConfirmPassword("");
+                }}
+                className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="rounded-lg bg-destructive px-4 py-2 text-sm text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete Provider"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: string | number;
+  tone: "purple" | "cyan" | "amber" | "blue";
+}) {
+  const toneMap = {
+    purple: "bg-purple-500/10 text-purple-500",
+    cyan: "bg-cyan-500/10 text-cyan-500",
+    amber: "bg-amber-500/10 text-amber-500",
+    blue: "bg-blue-500/10 text-blue-500",
+  } as const;
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-center gap-3">
+        <div className={`rounded-lg p-2.5 ${toneMap[tone]}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
+          <p className="text-xs text-muted-foreground">{label}</p>
+        </div>
+      </div>
     </div>
   );
 }

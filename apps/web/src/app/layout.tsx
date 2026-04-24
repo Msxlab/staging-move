@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -10,10 +10,33 @@ import { QueryProvider } from "@/components/query-provider";
 import { SessionTracker } from "@/components/tracking/session-tracker";
 import CookieConsent from "@/components/shared/cookie-consent";
 
-const inter = Inter({
+// Edition VI · Geist for UI, Fraunces variable for display, Geist Mono for meta.
+// `display: "swap"` so the umber canvas paints immediately and Fraunces
+// joins when ready — the brand survives a missed font, but the canvas can't.
+const geistSans = Geist({
   subsets: ["latin"],
   display: "swap",
-  fallback: ["system-ui", "Arial", "sans-serif"],
+  variable: "--font-geist-sans",
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist-mono",
+  fallback: ["JetBrains Mono", "Consolas", "monospace"],
+});
+
+// Fraunces is a variable font — passing `axes` enables the opsz + SOFT
+// axes Next.js otherwise strips. `weight` must be omitted (or set to
+// "variable") when `axes` is present; setting both throws at build time.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-fraunces",
+  axes: ["opsz", "SOFT"],
+  style: ["normal", "italic"],
+  fallback: ["Didot", "Georgia", "serif"],
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app";
@@ -81,18 +104,23 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#F97316" />
+        <meta name="theme-color" content="#0E0A07" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LocateFlow" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <link rel="icon" type="image/svg+xml" href="/logo-mark.svg" />
-        <link rel="mask-icon" href="/logo-mark.svg" color="#F97316" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="alternate icon" href="/favicon.svg" />
+        <link rel="mask-icon" href="/logo-mark.svg" color="#D4846A" />
       </head>
-      <body className={inter.className}>
+      <body className={geistSans.className}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
             <ThemeProvider>
