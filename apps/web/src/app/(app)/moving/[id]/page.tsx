@@ -118,7 +118,7 @@ export default function MovingPlanDetailPage() {
     ? t("interstateMoveFocus")
     : t("intrastateMoveFocus");
   const migrationSummaryLabel = migration
-    ? `${migration.summary.transfers} transfer · ${migration.summary.switches} switch · ${migration.summary.newNeeded} new`
+    ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
     : t("migrationGuidanceEmpty");
 
   return (
@@ -200,12 +200,12 @@ export default function MovingPlanDetailPage() {
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">Route</p>
             <p className="text-sm font-medium text-white">{plan.fromAddress.city}, {plan.fromAddress.state} → {plan.toAddress.city}, {plan.toAddress.state}</p>
-            <p className="text-xs text-white/35 mt-1">Your checklist adapts to this route automatically.</p>
+            <p className="text-xs text-white/35 mt-1">Your guidance uses this route, but provider actions remain manual.</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">Service migration</p>
             <p className="text-sm font-medium text-white">{migrationSummaryLabel}</p>
-            <p className="text-xs text-white/35 mt-1">Provider recommendations update as your origin services change.</p>
+            <p className="text-xs text-white/35 mt-1">Provider guidance is listed and unverified until confirmed with the provider.</p>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">Checklist posture</p>
@@ -230,7 +230,7 @@ export default function MovingPlanDetailPage() {
             </div>
             {migration && (
               <p className="text-xs text-white/40">
-                {migration.summary.total} services analyzed · {migration.summary.switches} need switching · {migration.summary.newNeeded} new needed
+                {migration.summary.total} services analyzed · {migration.transitionPlans?.length || 0} manual transition guidance items
               </p>
             )}
           </div>
@@ -242,6 +242,52 @@ export default function MovingPlanDetailPage() {
             </div>
           ) : migration ? (
             <div className="px-5 pb-5 space-y-4">
+              {migration.transitionPlans?.length > 0 && (
+                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">Move Transition Plan</p>
+                      <p className="text-xs text-white/40 mt-1">
+                        Read-only guidance. LocateFlow does not update provider accounts or execute address changes.
+                      </p>
+                    </div>
+                    <span className="text-[10px] px-2 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-300">
+                      Manual tracking only
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {migration.transitionPlans.map((planItem: any, i: number) => (
+                      <div key={`transition-${planItem.serviceId || i}`} className="rounded-xl border border-white/10 bg-black/10 p-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-semibold text-white">
+                              {String(planItem.actionType || "").replace(/_/g, " ")}
+                            </p>
+                            <p className="text-[11px] text-white/40 mt-1">{planItem.primaryReason}</p>
+                          </div>
+                          <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/40">
+                            {planItem.confidence} confidence
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/60 mt-2">{planItem.suggestedNextStep}</p>
+                        {planItem.destinationProviderCandidates?.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {planItem.destinationProviderCandidates.slice(0, 3).map((candidate: any) => (
+                              <span key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} className="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/45 border border-white/10">
+                                {candidate.name} · {candidate.coverageLabel}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {planItem.caveats?.length > 0 && (
+                          <p className="text-[10px] text-white/30 mt-2">{planItem.caveats[0]}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* KEEP */}
               {migration.keeps.length > 0 && (
                 <div>

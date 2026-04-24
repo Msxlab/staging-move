@@ -28,6 +28,7 @@ export interface ServiceWithProvider {
   provider?: {
     id: string;
     name: string;
+    slug?: string | null;
     scope: string;
     states: string[];
     category: string;

@@ -166,7 +166,7 @@ export default function MovingDetailScreen() {
     ? "Expect DMV, voter registration, tax, and provider switching tasks across states."
     : "Expect utility transfers, local updates, and scheduling tasks within the same state.";
   const migrationSummaryLabel = migration
-    ? `${migration.summary.switches} switch · ${migration.summary.newNeeded} new · ${migration.summary.keeps} keep`
+    ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
     : "Migration guidance appears automatically after your origin services are analyzed.";
 
   return (
@@ -268,8 +268,41 @@ export default function MovingDetailScreen() {
                 </Text>
               </View>
               <Text style={{ fontSize: 12, color: theme.colors.textTertiary, marginBottom: 12 }}>
-                {(migration.summary.transfers || 0)} transfer · {migration.summary.switches} switch · {migration.summary.newNeeded} new · {migration.summary.keeps} keep · {(migration.summary.cancels || 0)} cancel
+                {(migration.transitionPlans?.length || 0)} manual guidance items · provider actions are not automatic
               </Text>
+
+              {(migration.transitionPlans || []).length > 0 && (
+                <View style={styles.transitionPanel}>
+                  <View style={styles.transitionHeader}>
+                    <Text style={styles.transitionTitle}>Move Transition Plan</Text>
+                    <UiBadge label="Manual tracking only" variant="warning" />
+                  </View>
+                  <Text style={styles.transitionIntro}>
+                    Read-only guidance. LocateFlow does not update provider accounts or execute address changes.
+                  </Text>
+                  {migration.transitionPlans.map((planItem: any, i: number) => (
+                    <View key={`tp-${planItem.serviceId || i}`} style={[styles.transitionItem, i > 0 && styles.migRowDivider]}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.transitionAction}>
+                          {String(planItem.actionType || "").replace(/_/g, " ")}
+                        </Text>
+                        <Text style={styles.transitionReason}>{planItem.primaryReason}</Text>
+                        <Text style={styles.transitionStep}>{planItem.suggestedNextStep}</Text>
+                        {planItem.destinationProviderCandidates?.length > 0 && (
+                          <View style={styles.transitionCandidates}>
+                            {planItem.destinationProviderCandidates.slice(0, 2).map((candidate: any) => (
+                              <Text key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} style={styles.transitionCandidate}>
+                                {candidate.name} · {candidate.coverageLabel}
+                              </Text>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.transitionConfidence}>{planItem.confidence}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               {(migration.transfers || []).length > 0 && (
                 <View style={{ marginBottom: 12 }}>
@@ -573,6 +606,74 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   migBtnPrimaryText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  transitionPanel: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: theme.radius.lg,
+    padding: 12,
+    marginBottom: 14,
+  },
+  transitionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 6,
+  },
+  transitionTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  transitionIntro: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  transitionItem: {
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 10,
+  },
+  transitionAction: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: theme.colors.text,
+    textTransform: "capitalize",
+  },
+  transitionReason: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 3,
+    lineHeight: 16,
+  },
+  transitionStep: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 5,
+    lineHeight: 17,
+  },
+  transitionCandidates: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+  },
+  transitionCandidate: {
+    fontSize: 10,
+    color: theme.colors.textMuted,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  transitionConfidence: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.textMuted,
+    textTransform: "uppercase",
+    marginTop: 2,
+  },
   stateGuideCard: {
     marginTop: 16,
     backgroundColor: theme.colors.card,
