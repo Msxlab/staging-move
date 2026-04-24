@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import {
+  classifyMoveServiceTransition,
+  safeJsonArray,
+  type MoveTransitionProviderInput,
+} from "@locateflow/shared";
+import {
+  getProviderCoverageConfidenceFromDb,
+  resolveEffectiveState,
+} from "@/lib/provider-matching";
 import {
   analyzeMigration,
   type ServiceWithProvider,
@@ -34,8 +44,11 @@ export async function GET(request: NextRequest) {
 
     const fromState = (plan as any).fromAddress?.state || "";
     const toState = (plan as any).toAddress?.state || "";
+    const fromZip = (plan as any).fromAddress?.zip || "";
+    const toZip = (plan as any).toAddress?.zip || "";
+    const effectiveToState = resolveEffectiveState(toState, toZip);
 
-    if (!fromState || !toState) {
+    if (!fromState || !effectiveToState) {
       return NextResponse.json({ error: "Plan addresses must have state info" }, { status: 400 });
     }
 
@@ -51,6 +64,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             name: true,
+            slug: true,
             scope: true,
             states: true,
             category: true,
@@ -72,6 +86,7 @@ export async function GET(request: NextRequest) {
         ? {
             id: s.provider.id,
             name: s.provider.name,
+            slug: s.provider.slug,
             scope: s.provider.scope,
             states: safeParseJSON(s.provider.states, []),
             category: s.provider.category,
@@ -79,12 +94,59 @@ export async function GET(request: NextRequest) {
         : null,
     }));
 
-    // Fetch all providers available in destination state
-    const allProviders = await prisma.serviceProvider.findMany({
-      where: { isActive: true },
+    // Fetch providers available in the destination state through the indexed
+    // coverage table. Federal providers remain broad candidates, but the
+    // classifier treats them as weaker confidence for address-sensitive work.
+    const destinationProviders = await prisma.serviceProvider.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { scope: "FEDERAL" },
+          { coverages: { some: { state: effectiveToState } } },
+        ],
+      },
+      include: {
+        coverages: { where: { state: effectiveToState } },
+      },
     });
 
-    const providersForMigration: ProviderForMigration[] = allProviders
+    const destinationProviderInputs: MoveTransitionProviderInput[] = destinationProviders.map((p: any) => {
+      const metadata = getProviderCoverageMetadata(p.slug);
+      const zipCodes = safeJsonArray(p.zipCodes);
+      const coverageModel: ProviderCoverageModel =
+        metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+      const coverageConfidence = getProviderCoverageConfidenceFromDb(
+        {
+          id: p.id,
+          slug: p.slug,
+          scope: p.scope,
+          coverageModel,
+          coverages: p.coverages || [],
+        },
+        {
+          state: effectiveToState,
+          zip: toZip,
+          latitude: (plan as any).toAddress?.latitude ?? null,
+          longitude: (plan as any).toAddress?.longitude ?? null,
+        },
+      );
+
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        scope: p.scope,
+        states: safeJsonArray(p.states),
+        coverageConfidence,
+        coverageModel,
+        coverageMatchLevel: null,
+        requiresAddressCheck: coverageModel === "live_address",
+        requiresPolygonCheck: coverageModel === "polygon",
+        popularityScore: p.popularityScore || 0,
+      };
+    });
+
+    const providersForMigration: ProviderForMigration[] = destinationProviders
       .map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -96,7 +158,7 @@ export async function GET(request: NextRequest) {
       }))
       .filter((p: ProviderForMigration) => {
         if (p.scope === "FEDERAL") return true;
-        return p.states.includes(toState);
+        return p.states.includes(effectiveToState);
       });
 
     // Build user profile for condition checking
@@ -119,12 +181,50 @@ export async function GET(request: NextRequest) {
     const analysis = analyzeMigration(
       servicesWithParsedStates,
       fromState,
-      toState,
+      effectiveToState,
       providersForMigration,
       checklistProfile,
     );
 
-    return NextResponse.json({ analysis });
+    const transitionPlans = servicesWithParsedStates.map((service) =>
+      classifyMoveServiceTransition({
+        service,
+        currentProvider: service.provider
+          ? {
+              id: service.provider.id,
+              name: service.provider.name,
+              category: service.provider.category,
+              scope: service.provider.scope,
+              states: service.provider.states,
+            }
+          : null,
+        originAddress: { state: fromState, zip: fromZip },
+        destinationAddress: { state: effectiveToState, zip: toZip },
+        destinationProviderCandidates: destinationProviderInputs,
+      }),
+    );
+
+    const transitionSummary = transitionPlans.reduce<Record<string, number>>((acc, plan) => {
+      acc[plan.actionType] = (acc[plan.actionType] || 0) + 1;
+      return acc;
+    }, {});
+
+    return NextResponse.json({
+      analysis: {
+        ...analysis,
+        transitionPlans,
+        transitionSummary,
+      },
+      transitionPlans,
+      transitionSummary,
+      meta: {
+        fromState,
+        toState: effectiveToState,
+        toZip,
+        guidanceOnly: true,
+        manualTrackingOnly: true,
+      },
+    });
   } catch (error) {
     console.error("Failed to analyze migration:", error);
     return NextResponse.json({ error: "Failed to analyze migration" }, { status: 500 });

@@ -67,6 +67,7 @@ const navGroups: NavGroup[] = [
     labelKey: "content",
     items: [
       { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2 },
+      { name: "Provider Governance", nameKey: "providerGovernance", href: "/provider-governance", icon: Shield },
       { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin },
       { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck },
     ],

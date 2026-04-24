@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
         include: {
           address: { select: { nickname: true, city: true, state: true } },
           provider: { select: { id: true, name: true, slug: true, website: true, phone: true, scope: true } },
+          customProvider: { select: { id: true, name: true, category: true, phone: true, website: true, email: true, providerType: true, trustStatus: true } },
         },
         orderBy: { createdAt: "desc" },
         skip: pagination.skip,
@@ -76,6 +77,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = serviceSchema.parse(body);
 
+    if (validated.providerId && validated.customProviderId) {
+      return NextResponse.json({ error: "Choose either a listed provider or a custom provider, not both" }, { status: 400 });
+    }
+
     const address = await prisma.address.findUnique({ where: { id: validated.addressId } });
     if (!address) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
@@ -89,6 +94,15 @@ export async function POST(request: NextRequest) {
       const providerExists = await prisma.serviceProvider.findUnique({ where: { id: validated.providerId } });
       if (!providerExists) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+      }
+    }
+
+    if (validated.customProviderId) {
+      const customProvider = await prisma.userCustomProvider.findFirst({
+        where: { id: validated.customProviderId, userId, deletedAt: null },
+      });
+      if (!customProvider) {
+        return NextResponse.json({ error: "Custom provider not found" }, { status: 404 });
       }
     }
 
@@ -111,7 +125,19 @@ export async function POST(request: NextRequest) {
     });
 
     const meta = extractRequestMeta(request);
-    await createAuditLog({ userId, action: "CREATE", entityType: "Service", entityId: service.id, changes: { provider: validated.providerName, category: validated.category, providerId: validated.providerId || null }, ...meta });
+    await createAuditLog({
+      userId,
+      action: "CREATE",
+      entityType: "Service",
+      entityId: service.id,
+      changes: {
+        provider: validated.providerName,
+        category: validated.category,
+        providerId: validated.providerId || null,
+        customProviderId: validated.customProviderId || null,
+      },
+      ...meta,
+    });
 
     // ── Update ServiceProvider stats (atomic increment, non-blocking) ──
     if (validated.providerId) {

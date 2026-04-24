@@ -6,6 +6,11 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import {
+  getProviderTrustSummary,
+  type ProviderCoverageConfidence,
+  type ProviderTrustSummary,
+} from "@locateflow/shared";
 
 export type ProviderCardData = {
   id: string;
@@ -20,6 +25,14 @@ export type ProviderCardData = {
   tags?: string[] | null;
   userCount?: number | null;
   popularityScore?: number | null;
+  coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address" | string | null;
+  coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address" | string | null;
+  coverageNote?: string | null;
+  coverageSourceUrl?: string | null;
+  requiresAddressCheck?: boolean | null;
+  requiresPolygonCheck?: boolean | null;
+  coverageConfidence?: ProviderCoverageConfidence;
+  trust?: ProviderTrustSummary;
 };
 
 interface ProviderCardProps {
@@ -44,15 +57,9 @@ export function ProviderCard({
   style,
   badge,
 }: ProviderCardProps) {
-  const scopeLabel =
-    provider.scope === "FEDERAL"
-      ? "Nationwide"
-      : provider.states && provider.states.length > 0
-      ? provider.states.slice(0, 2).join(", ") + (provider.states.length > 2 ? ` +${provider.states.length - 2}` : "")
-      : "—";
-
   const iconEmoji = getCategoryIcon(provider.category);
   const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
+  const trust = provider.trust || getProviderTrustSummary(provider);
 
   if (variant === "compact") {
     return (
@@ -88,7 +95,7 @@ export function ProviderCard({
           <View style={compactStyles.scopePill}>
             <MapPin size={10} color={theme.colors.textTertiary} />
             <Text style={compactStyles.scopeText} numberOfLines={1}>
-              {scopeLabel}
+              {trust.coverageConfidence.label}
             </Text>
           </View>
           {provider.userCount && provider.userCount > 0 ? (
@@ -139,7 +146,8 @@ export function ProviderCard({
       ) : null}
 
       <View style={fullStyles.metaRow}>
-        <UiBadge label={scopeLabel} variant="info" />
+        <UiBadge label="Listed provider" variant="warning" />
+        <UiBadge label={trust.coverageConfidence.label} variant="info" />
         {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
         {provider.userCount && provider.userCount > 0 ? (
           <View style={fullStyles.users}>
@@ -148,6 +156,10 @@ export function ProviderCard({
           </View>
         ) : null}
       </View>
+
+      <Text style={fullStyles.caveat} numberOfLines={3}>
+        {trust.coverageConfidence.message} Manual tracking only; confirm with the official provider.
+      </Text>
 
       {provider.tags && provider.tags.length > 0 ? (
         <View style={fullStyles.tagsRow}>
@@ -293,6 +305,12 @@ const fullStyles = StyleSheet.create({
     gap: 6,
     marginTop: 8,
     flexWrap: "wrap",
+  },
+  caveat: {
+    fontSize: 11,
+    color: theme.colors.textTertiary,
+    marginTop: 8,
+    lineHeight: 16,
   },
   tag: {
     paddingHorizontal: 8,

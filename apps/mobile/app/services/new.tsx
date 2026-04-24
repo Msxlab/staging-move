@@ -252,17 +252,33 @@ export default function NewServiceScreen() {
       return;
     }
     setSaving(true);
+    const providerRes = await api.post<any>("/api/custom-providers", {
+      name: manualForm.providerName,
+      category: manualForm.category,
+      website: manualForm.website,
+      phone: manualForm.phone,
+      notes: manualForm.notes,
+      providerType: "OTHER",
+    });
+    if (providerRes.error || !providerRes.data?.provider?.id) {
+      setSaving(false);
+      hapticError();
+      Alert.alert(t("common.retry"), providerRes.error || "Failed to add custom provider");
+      return;
+    }
+
     const payload: any = {
       addressId: selectedAddress,
+      customProviderId: providerRes.data.provider.id,
       category: manualForm.category,
       providerName: manualForm.providerName,
       billingCycle: manualForm.billingCycle,
       isActive: true,
+      notes: manualForm.notes || "User-added provider. Manual tracking only.",
     };
     if (manualForm.monthlyCost) payload.monthlyCost = parseFloat(manualForm.monthlyCost) || 0;
     if (manualForm.phone) payload.phone = manualForm.phone;
     if (manualForm.website) payload.website = manualForm.website;
-    if (manualForm.notes) payload.notes = manualForm.notes;
     if (fromServiceId) {
       payload.previousServiceId = fromServiceId;
       payload.migrationAction = "NEW";
@@ -553,6 +569,12 @@ export default function NewServiceScreen() {
         {/* ═══════════════════════ MANUAL MODE ═══════════════════════ */}
         {mode === "manual" && (
           <View style={{ marginTop: 8 }}>
+            <View style={styles.manualTrustBox}>
+              <Text style={styles.manualTrustTitle}>User-added provider</Text>
+              <Text style={styles.manualTrustText}>
+                This creates a private provider record for LocateFlow tracking only. It does not update an external account.
+              </Text>
+            </View>
             <Text style={styles.sectionLabel}>Category *</Text>
             <View style={styles.chipRow}>
               {MANUAL_CATEGORIES.map((c) => (
@@ -840,6 +862,25 @@ const styles = StyleSheet.create({
   manualLinkText: { fontSize: 14, fontWeight: "500", color: theme.colors.primary },
 
   // Manual form
+  manualTrustBox: {
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(6,182,212,0.24)",
+    backgroundColor: "rgba(6,182,212,0.08)",
+    padding: 12,
+    marginBottom: 14,
+  },
+  manualTrustTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  manualTrustText: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    lineHeight: 18,
+    marginTop: 4,
+  },
   input: {
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
     borderRadius: theme.radius.lg, paddingHorizontal: 14, paddingVertical: 12,

@@ -3,7 +3,13 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { rebuildProviderCoverage } from "@locateflow/db";
-import { findProviderConflicts, normalizeProviderRecord, slugifyProviderName } from "@locateflow/shared";
+import {
+  findProviderConflicts,
+  getProviderQualityWarnings,
+  normalizeProviderRecord,
+  normalizeProviderUrlDomain,
+  slugifyProviderName,
+} from "@locateflow/shared";
 
 function parseIncomingProvider(raw: Record<string, unknown>) {
   return normalizeProviderRecord({
@@ -35,6 +41,39 @@ async function loadComparableProviders() {
       website: true,
     },
   });
+}
+
+function buildDomainCounts(providers: Array<{ website: string | null }>) {
+  const counts = new Map<string, number>();
+  for (const provider of providers) {
+    const domain = normalizeProviderUrlDomain(provider.website);
+    if (!domain) continue;
+    counts.set(domain, (counts.get(domain) || 0) + 1);
+  }
+  return counts;
+}
+
+function attachQualityWarnings(provider: any, domainCounts: Map<string, number>) {
+  const domain = normalizeProviderUrlDomain(provider.website);
+  const qualityWarnings = getProviderQualityWarnings({
+    ...provider,
+    duplicateDomainCount: domain ? domainCounts.get(domain) || 0 : 0,
+  });
+  return {
+    ...provider,
+    qualityWarnings,
+    qualityWarningCount: qualityWarnings.length,
+  };
+}
+
+function summarizeQuality(providers: Array<{ qualityWarnings?: Array<{ code: string }> }>) {
+  const counts: Record<string, number> = {};
+  for (const provider of providers) {
+    for (const warning of provider.qualityWarnings || []) {
+      counts[warning.code] = (counts[warning.code] || 0) + 1;
+    }
+  }
+  return counts;
 }
 
 function getConflictMessage(conflictType: string, name: string, slug: string) {
@@ -81,7 +120,7 @@ export async function GET(request: NextRequest) {
     if (states) where.states = { contains: states };
     if (tags) where.tags = { contains: tags };
 
-    const [providers, total, categoryStats] = await Promise.all([
+    const [providers, total, categoryStats, comparableProviders] = await Promise.all([
       prisma.serviceProvider.findMany({
         where,
         orderBy: [{ category: "asc" }, { popularityScore: "desc" }, { name: "asc" }],
@@ -95,6 +134,7 @@ export async function GET(request: NextRequest) {
         _avg: { popularityScore: true },
         where,
       }),
+      loadComparableProviders(),
     ]);
 
     const scopeStats = await prisma.serviceProvider.groupBy({
@@ -105,10 +145,15 @@ export async function GET(request: NextRequest) {
 
     const activeCount = await prisma.serviceProvider.count({ where: { ...where, isActive: true } });
     const inactiveCount = total - activeCount;
+    const domainCounts = buildDomainCounts(comparableProviders);
+    const providersWithQuality = providers.map((provider: any) =>
+      attachQualityWarnings(provider, domainCounts),
+    );
+    const qualitySummary = summarizeQuality(providersWithQuality);
 
     if (grouped) {
       const groups: Record<string, any[]> = {};
-      providers.forEach((provider: any) => {
+      providersWithQuality.forEach((provider: any) => {
         if (!groups[provider.category]) groups[provider.category] = [];
         groups[provider.category].push(provider);
       });
@@ -122,6 +167,7 @@ export async function GET(request: NextRequest) {
           avgScore: Math.round((item._avg.popularityScore || 0) * 10) / 10,
         })),
         scopeStats: scopeStats.map((item: any) => ({ scope: item.scope, count: item._count.id })),
+        qualitySummary,
         activeCount,
         inactiveCount,
         page,
@@ -129,7 +175,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ providers, total, page, perPage, categoryStats, activeCount, inactiveCount });
+    return NextResponse.json({ providers: providersWithQuality, total, page, perPage, categoryStats, qualitySummary, activeCount, inactiveCount });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

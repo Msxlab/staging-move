@@ -33,6 +33,7 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
 import { ProviderCard, type ProviderCardData } from "@/components/provider/ProviderCard";
+import { getProviderTrustSummary } from "@locateflow/shared";
 
 type Provider = ProviderCardData & {
   website?: string | null;
@@ -184,6 +185,7 @@ export default function ProviderDetailScreen() {
   }
 
   const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
+  const trust = provider.trust || getProviderTrustSummary(provider);
   const daysUntilMove = daysUntil(recMeta?.meta?.moveDate);
   const stateRuleDays = recMeta?.meta?.stateRule?.daysToUpdate;
   const showStateRule =
@@ -247,16 +249,27 @@ export default function ProviderDetailScreen() {
           ) : null}
 
           <View style={styles.badgesRow}>
-            <UiBadge
-              label={provider.scope === "FEDERAL" ? "Nationwide" : "State Coverage"}
-              variant="info"
-            />
+            <UiBadge label="Listed provider" variant="warning" />
+            <UiBadge label={trust.coverageConfidence.label} variant="info" />
             {tier === "CRITICAL" ? <UiBadge label="Critical" variant="error" /> : null}
             {tier === "IMPORTANT" ? <UiBadge label="Important" variant="warning" /> : null}
           </View>
 
+          <View style={styles.truthBox}>
+            <AlertTriangle size={16} color={theme.colors.warning} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.truthTitle}>Unverified directory data</Text>
+              <Text style={styles.truthText}>
+                {trust.coverageConfidence.message} Confirm with the official provider before acting.
+              </Text>
+              <Text style={styles.truthText}>
+                Adding this provider only creates a LocateFlow service record; it does not update your address with the provider.
+              </Text>
+            </View>
+          </View>
+
           <Button
-            title="Add as my service"
+            title="Track manually as service"
             onPress={goAddService}
             variant="gradient"
             size="lg"
@@ -277,7 +290,7 @@ export default function ProviderDetailScreen() {
                   {primaryAddress?.state ? ` in ${primaryAddress.state}` : ""} use this
                 </Text>
                 <Text style={styles.usersText}>
-                  Community signal — shared providers tend to be reliable.
+                  Community signal only; it does not verify availability or official status.
                 </Text>
               </View>
             </View>
@@ -310,11 +323,12 @@ export default function ProviderDetailScreen() {
               <Text style={styles.detailLabel}>Coverage</Text>
               <Text style={styles.detailValue}>
                 {provider.scope === "FEDERAL"
-                  ? "Available nationwide"
+                  ? "National listing"
                   : provider.states && provider.states.length > 0
                   ? provider.states.join(", ")
                   : "Not specified"}
               </Text>
+              <Text style={styles.detailHint}>{trust.coverageConfidence.label}</Text>
             </View>
           </View>
 
@@ -461,12 +475,26 @@ const styles = StyleSheet.create({
   providerCategory: { fontSize: 13, color: theme.colors.textSecondary, marginTop: 4 },
   providerDescription: { fontSize: 14, color: theme.colors.textTertiary, marginTop: 14, lineHeight: 20 },
   badgesRow: { flexDirection: "row", gap: 8, flexWrap: "wrap", alignItems: "center", marginTop: 16 },
+  truthBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginTop: 14,
+    padding: 12,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.warningFaded,
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.25)",
+  },
+  truthTitle: { fontSize: 13, fontWeight: "700", color: theme.colors.text },
+  truthText: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
   usersRow: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
   usersTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
   usersText: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
   detailRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, paddingVertical: 12 },
   detailLabel: { fontSize: 12, color: theme.colors.textMuted, textTransform: "uppercase", letterSpacing: 0.4 },
   detailValue: { fontSize: 14, color: theme.colors.text, marginTop: 2, lineHeight: 20 },
+  detailHint: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 3, lineHeight: 17 },
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",

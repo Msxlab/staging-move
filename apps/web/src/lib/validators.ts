@@ -56,6 +56,7 @@ export type AddressFormData = z.infer<typeof addressSchema>;
 export const serviceSchema = z.strictObject({
   addressId: z.string().min(1, "Address is required"),
   providerId: z.string().max(30).optional(),
+  customProviderId: z.string().max(30).optional(),
   category: z.string().min(1, "Category is required"),
   subCategory: z.string().optional(),
   providerName: z.string().min(1, "Provider name is required").max(200),
@@ -76,6 +77,33 @@ export const serviceSchema = z.strictObject({
 });
 
 export type ServiceFormData = z.infer<typeof serviceSchema>;
+
+export const customProviderSchema = z.strictObject({
+  name: z.string().min(1, "Provider name is required").max(200),
+  category: z.string().min(1, "Category is required").max(50),
+  description: z.string().max(1000).optional().or(z.literal("")),
+  website: z.string().url().optional().or(z.literal("")),
+  phone: z.string().max(30).optional().or(z.literal("")),
+  email: z.string().email().optional().or(z.literal("")),
+  addressLine1: z.string().max(200).optional().or(z.literal("")),
+  addressLine2: z.string().max(200).optional().or(z.literal("")),
+  city: z.string().max(100).optional().or(z.literal("")),
+  state: z.string().length(2, "Use 2-letter state code").optional().or(z.literal("")),
+  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/, "Invalid ZIP code").optional().or(z.literal("")),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+  providerType: z.enum([
+    "LOCAL_BUSINESS",
+    "PROFESSIONAL_SERVICE",
+    "HEALTHCARE",
+    "LEGAL",
+    "DENTAL",
+    "PHYSICAL_THERAPY",
+    "GYM",
+    "OTHER",
+  ]).default("OTHER"),
+});
+
+export type CustomProviderFormData = z.infer<typeof customProviderSchema>;
 
 // ==================== MOVING PLAN ====================
 

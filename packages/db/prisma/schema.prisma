@@ -10,20 +10,20 @@ datasource db {
 // ==================== USER & AUTH ====================
 
 model User {
-  id        String   @id @default(cuid()) @db.VarChar(30)
-  email     String   @unique @db.VarChar(191)
-  firstName String?  @db.VarChar(100)
-  lastName  String?  @db.VarChar(100)
-  imageUrl  String?  @db.VarChar(500)
+  id        String  @id @default(cuid()) @db.VarChar(30)
+  email     String  @unique @db.VarChar(191)
+  firstName String? @db.VarChar(100)
+  lastName  String? @db.VarChar(100)
+  imageUrl  String? @db.VarChar(500)
 
   // Password auth (null for pure-OAuth accounts)
-  passwordHash      String? @db.VarChar(255)
-  emailVerifiedAt   DateTime?
+  passwordHash    String?   @db.VarChar(255)
+  emailVerifiedAt DateTime?
 
   // MFA (TOTP, same pattern as AdminUser)
   mfaEnabled     Boolean @default(false)
-  mfaSecret      String? @db.Text          // encrypted with FIELD_ENCRYPTION_KEY
-  mfaBackupCodes String? @db.Text          // JSON array of bcrypt hashes
+  mfaSecret      String? @db.Text // encrypted with FIELD_ENCRYPTION_KEY
+  mfaBackupCodes String? @db.Text // JSON array of bcrypt hashes
 
   // OAuth linkage (one row per user; second provider goes into OAuthAccount)
   oauthAccounts OAuthAccount[]
@@ -41,22 +41,24 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  subscription   Subscription?
-  profile        Profile?
-  addresses      Address[]
-  services       Service[]
-  budgets        Budget[]
-  movingPlans    MovingPlan[]
-  loginSessions  UserLoginSession[]
-  sessions       UserSession[]
-  events         UserEvent[]
-  passwordResetTokens  PasswordResetToken[]
+  subscription            Subscription?
+  profile                 Profile?
+  addresses               Address[]
+  services                Service[]
+  budgets                 Budget[]
+  movingPlans             MovingPlan[]
+  moveTasks               MoveTask[]
+  customProviders         UserCustomProvider[]
+  loginSessions           UserLoginSession[]
+  sessions                UserSession[]
+  events                  UserEvent[]
+  passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
-  notifications         Notification[]
+  notifications           Notification[]
   notificationPreferences NotificationPreference[]
-  supportTickets        SupportTicket[]
-  pushDevices           PushDevice[]
-  dataConsents          DataConsent[]
+  supportTickets          SupportTicket[]
+  pushDevices             PushDevice[]
+  dataConsents            DataConsent[]
 
   // Soft-delete. Populated by admin UI "delete" action; hard-delete runs
   // from cron/data-retention after the undo window. Queries must filter
@@ -72,7 +74,7 @@ model PushDevice {
   userId     String   @db.VarChar(30)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   token      String   @unique @db.VarChar(255)
-  platform   String   @db.VarChar(10)  // "ios" | "android"
+  platform   String   @db.VarChar(10) // "ios" | "android"
   deviceName String?  @db.VarChar(100)
   lastSeenAt DateTime @default(now())
   createdAt  DateTime @default(now())
@@ -83,12 +85,12 @@ model PushDevice {
 // ==================== AUTH: OAUTH / SESSION / TOKENS ====================
 
 model OAuthAccount {
-  id       String @id @default(cuid()) @db.VarChar(30)
-  userId   String @db.VarChar(30)
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  provider    String @db.VarChar(20)   // "google" | "apple"
-  providerId  String @db.VarChar(255)  // sub claim from ID token
+  provider   String @db.VarChar(20) // "google" | "apple"
+  providerId String @db.VarChar(255) // sub claim from ID token
 
   createdAt DateTime @default(now())
 
@@ -97,19 +99,19 @@ model OAuthAccount {
 }
 
 model UserLoginSession {
-  id            String  @id @default(cuid()) @db.VarChar(30)
-  userId        String  @db.VarChar(30)
-  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash     String  @unique @db.VarChar(64)
-  ipAddress     String? @db.VarChar(45)
-  userAgent     String? @db.VarChar(500)
-  browser       String? @db.VarChar(50)
-  os            String? @db.VarChar(50)
-  deviceType    String? @db.VarChar(30)
-  isActive      Boolean @default(true)
-  expiresAt     DateTime
-  lastActivity  DateTime @default(now())
-  createdAt     DateTime @default(now())
+  id           String   @id @default(cuid()) @db.VarChar(30)
+  userId       String   @db.VarChar(30)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash    String   @unique @db.VarChar(64)
+  ipAddress    String?  @db.VarChar(45)
+  userAgent    String?  @db.VarChar(500)
+  browser      String?  @db.VarChar(50)
+  os           String?  @db.VarChar(50)
+  deviceType   String?  @db.VarChar(30)
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   // Impersonation — populated when a SUPER_ADMIN is acting as the user.
   // Sessions with this set are capped at 15 minutes, show a persistent
@@ -123,13 +125,13 @@ model UserLoginSession {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(cuid()) @db.VarChar(30)
-  userId    String   @db.VarChar(30)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String   @unique @db.VarChar(64)
+  id        String    @id @default(cuid()) @db.VarChar(30)
+  userId    String    @db.VarChar(30)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique @db.VarChar(64)
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([userId])
   @@index([expiresAt])
@@ -147,9 +149,9 @@ model PasswordResetToken {
 // lifecycle in audit. The *current* effective consent is the newest row
 // per (userId, category).
 model DataConsent {
-  id        String  @id @default(cuid()) @db.VarChar(30)
-  userId    String  @db.VarChar(30)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   category  String  @db.VarChar(20) // ANALYTICS | MARKETING | SENSITIVE | FUNCTIONAL
   granted   Boolean
@@ -164,14 +166,14 @@ model DataConsent {
 }
 
 model EmailVerificationToken {
-  id        String   @id @default(cuid()) @db.VarChar(30)
-  userId    String   @db.VarChar(30)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  email     String   @db.VarChar(191)
-  tokenHash String   @unique @db.VarChar(64)
-  expiresAt DateTime
+  id         String    @id @default(cuid()) @db.VarChar(30)
+  userId     String    @db.VarChar(30)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email      String    @db.VarChar(191)
+  tokenHash  String    @unique @db.VarChar(64)
+  expiresAt  DateTime
   consumedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([userId])
   @@index([expiresAt])
@@ -182,20 +184,20 @@ model Subscription {
   userId String @unique @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  plan   String @default("FREE_TRIAL") @db.VarChar(30)
-  status String @default("TRIALING") @db.VarChar(30)
-  provider String @default("TRIAL") @db.VarChar(30)
+  plan     String  @default("FREE_TRIAL") @db.VarChar(30)
+  status   String  @default("TRIALING") @db.VarChar(30)
+  provider String  @default("TRIAL") @db.VarChar(30)
   platform String? @db.VarChar(20)
 
-  stripeCustomerId       String? @unique @db.VarChar(191)
-  stripeSubscriptionId   String? @unique @db.VarChar(191)
-  stripePriceId          String? @db.VarChar(191)
+  stripeCustomerId       String?   @unique @db.VarChar(191)
+  stripeSubscriptionId   String?   @unique @db.VarChar(191)
+  stripePriceId          String?   @db.VarChar(191)
   stripeCurrentPeriodEnd DateTime?
-  billingProductId       String? @db.VarChar(191)
-  originalTransactionId  String? @unique @db.VarChar(191)
-  latestTransactionId    String? @db.VarChar(191)
-  purchaseToken          String? @db.Text
-  appStoreEnvironment    String? @db.VarChar(30)
+  billingProductId       String?   @db.VarChar(191)
+  originalTransactionId  String?   @unique @db.VarChar(191)
+  latestTransactionId    String?   @db.VarChar(191)
+  purchaseToken          String?   @db.Text
+  appStoreEnvironment    String?   @db.VarChar(30)
   currentPeriodEndsAt    DateTime?
   gracePeriodEndsAt      DateTime?
   lastValidatedAt        DateTime?
@@ -240,16 +242,16 @@ model Profile {
   petTypes      String  @default("[]") @db.VarChar(500)
 
   carCount      Int     @default(0)
-  hasMotorcycle  Boolean @default(false)
-  hasBoatRV      Boolean @default(false)
-  needsStorage   Boolean @default(false)
+  hasMotorcycle Boolean @default(false)
+  hasBoatRV     Boolean @default(false)
+  needsStorage  Boolean @default(false)
 
-  moveType          String?  @db.VarChar(20)
-  isBusinessOwner   Boolean  @default(false)
-  businessType      String?  @db.VarChar(30)
-  isImmigrant       Boolean  @default(false)
-  immigrationStatus String?  @db.VarChar(30)
-  isMilitary        Boolean  @default(false)
+  moveType          String? @db.VarChar(20)
+  isBusinessOwner   Boolean @default(false)
+  businessType      String? @db.VarChar(30)
+  isImmigrant       Boolean @default(false)
+  immigrationStatus String? @db.VarChar(30)
+  isMilitary        Boolean @default(false)
 
   preferredLanguage String @default("en") @db.VarChar(10)
   timezone          String @default("America/New_York") @db.VarChar(50)
@@ -267,18 +269,18 @@ model Address {
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type      String @db.VarChar(20)
-  nickname  String? @db.VarChar(50)
+  type     String  @db.VarChar(20)
+  nickname String? @db.VarChar(50)
 
-  street  String @db.VarChar(200)
+  street  String  @db.VarChar(200)
   street2 String? @db.VarChar(200)
-  city    String @db.VarChar(100)
-  state   String @db.VarChar(2)
-  zip     String @db.VarChar(10)
-  country String @default("USA") @db.VarChar(10)
+  city    String  @db.VarChar(100)
+  state   String  @db.VarChar(2)
+  zip     String  @db.VarChar(10)
+  country String  @default("USA") @db.VarChar(10)
 
   isPrimary Boolean @default(false)
-  ownership String @db.VarChar(20)
+  ownership String  @db.VarChar(20)
 
   startDate DateTime
   endDate   DateTime?
@@ -288,10 +290,12 @@ model Address {
   placeId          String? @db.VarChar(191)
   formattedAddress String? @db.VarChar(500)
 
-  services        Service[]
-  budgets         Budget[]
-  movingPlansFrom MovingPlan[] @relation("FromAddress")
-  movingPlansTo   MovingPlan[] @relation("ToAddress")
+  services             Service[]
+  budgets              Budget[]
+  movingPlansFrom      MovingPlan[] @relation("FromAddress")
+  movingPlansTo        MovingPlan[] @relation("ToAddress")
+  moveTasksOrigin      MoveTask[]   @relation("MoveTaskOriginAddress")
+  moveTasksDestination MoveTask[]   @relation("MoveTaskDestinationAddress")
 
   deletedAt DateTime?
 
@@ -308,19 +312,22 @@ model Address {
 // ==================== SERVICES ====================
 
 model Service {
-  id        String @id @default(cuid()) @db.VarChar(30)
-  userId    String @db.VarChar(30)
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  addressId String @db.VarChar(30)
+  addressId String  @db.VarChar(30)
   address   Address @relation(fields: [addressId], references: [id], onDelete: Cascade)
 
-  providerId String? @db.VarChar(30)
+  providerId String?          @db.VarChar(30)
   provider   ServiceProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
 
-  category     String @db.VarChar(50)
+  customProviderId String?             @db.VarChar(30)
+  customProvider   UserCustomProvider? @relation(fields: [customProviderId], references: [id], onDelete: SetNull)
+
+  category     String  @db.VarChar(50)
   subCategory  String? @db.VarChar(50)
-  providerName String @db.VarChar(200)
+  providerName String  @db.VarChar(200)
 
   accountNumber String? @db.VarChar(100)
   username      String? @db.VarChar(100)
@@ -331,8 +338,8 @@ model Service {
 
   monthlyCost     Float?
   billingDay      Int?
-  billingCycle    String? @db.VarChar(20)
-  autoRenewal     Boolean  @default(false)
+  billingCycle    String?   @db.VarChar(20)
+  autoRenewal     Boolean   @default(false)
   contractEndDate DateTime?
 
   notes String? @db.Text
@@ -342,12 +349,13 @@ model Service {
   deactivatedAt DateTime?
 
   migrationAction   String? @db.VarChar(20)
-  previousServiceId  String? @db.VarChar(30)
+  previousServiceId String? @db.VarChar(30)
 
   personalRating Int?
   personalReview String? @db.Text
 
   reminders Reminder[]
+  moveTasks MoveTask[]
 
   deletedAt DateTime?
 
@@ -359,6 +367,7 @@ model Service {
   @@index([category])
   @@index([providerName])
   @@index([providerId])
+  @@index([customProviderId])
   @@index([userId, isActive])
   @@index([userId, category])
   @@index([userId, addressId, isActive])
@@ -372,14 +381,14 @@ model MovingPlan {
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  fromAddressId String @db.VarChar(30)
+  fromAddressId String  @db.VarChar(30)
   fromAddress   Address @relation("FromAddress", fields: [fromAddressId], references: [id])
 
-  toAddressId String @db.VarChar(30)
+  toAddressId String  @db.VarChar(30)
   toAddress   Address @relation("ToAddress", fields: [toAddressId], references: [id])
 
   moveDate          DateTime
-  isTemporary       Boolean @default(false)
+  isTemporary       Boolean  @default(false)
   estimatedDuration Int?
 
   status String @default("PLANNING") @db.VarChar(20)
@@ -387,6 +396,8 @@ model MovingPlan {
   deletedAt DateTime?
 
   version Int @default(1)
+
+  moveTasks MoveTask[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -405,7 +416,7 @@ model Budget {
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  addressId String? @db.VarChar(30)
+  addressId String?  @db.VarChar(30)
   address   Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
 
   month DateTime
@@ -437,11 +448,11 @@ model Budget {
 model Reminder {
   id String @id @default(cuid()) @db.VarChar(30)
 
-  serviceId String? @db.VarChar(30)
+  serviceId String?  @db.VarChar(30)
   service   Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
-  type    String @db.VarChar(30)
-  title   String @db.VarChar(200)
+  type    String  @db.VarChar(30)
+  title   String  @db.VarChar(200)
   message String? @db.Text
 
   remindAt DateTime
@@ -481,31 +492,35 @@ model StateRule {
 model ServiceProvider {
   id String @id @default(cuid()) @db.VarChar(30)
 
-  name         String @db.VarChar(200)
-  slug         String   @unique @db.VarChar(191)
-  category     String @db.VarChar(50)
-  subCategory  String? @db.VarChar(50)
-  description  String? @db.Text
+  name        String  @db.VarChar(200)
+  slug        String  @unique @db.VarChar(191)
+  category    String  @db.VarChar(50)
+  subCategory String? @db.VarChar(50)
+  description String? @db.Text
 
-  website      String? @db.VarChar(500)
-  phone        String? @db.VarChar(20)
-  logoUrl      String? @db.VarChar(500)
+  website String? @db.VarChar(500)
+  phone   String? @db.VarChar(20)
+  logoUrl String? @db.VarChar(500)
 
-  scope        String   @default("FEDERAL") @db.VarChar(20)
-  states       String   @default("[]") @db.VarChar(2000)
-  zipCodes     String   @default("[]") @db.VarChar(2000)
+  scope    String @default("FEDERAL") @db.VarChar(20)
+  states   String @default("[]") @db.VarChar(2000)
+  zipCodes String @default("[]") @db.VarChar(2000)
 
-  tags         String   @default("[]") @db.VarChar(2000)
+  tags String @default("[]") @db.VarChar(2000)
 
-  popularityScore Int    @default(0)
+  popularityScore Int     @default(0)
   isActive        Boolean @default(true)
   displayOrder    Int     @default(0)
 
-  userCount      Int     @default(0)
-  lastUpdatedBy  String? @db.VarChar(30)
+  userCount     Int     @default(0)
+  lastUpdatedBy String? @db.VarChar(30)
 
-  services  Service[]
-  coverages ServiceProviderCoverage[]
+  services              Service[]
+  coverages             ServiceProviderCoverage[]
+  linkedCustomProviders UserCustomProvider[]      @relation("LinkedCustomProviders")
+  moveTasks             MoveTask[]                @relation("MoveTaskProvider")
+  destinationMoveTasks  MoveTask[]                @relation("MoveTaskDestinationProvider")
+  governanceIssues      ProviderGovernanceIssue[]
 
   deletedAt DateTime?
 
@@ -522,15 +537,166 @@ model ServiceProvider {
   @@index([deletedAt])
 }
 
+// ==================== MOVE TASKS ====================
+
+model MoveTask {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  movingPlanId String     @db.VarChar(30)
+  movingPlan   MovingPlan @relation(fields: [movingPlanId], references: [id], onDelete: Cascade)
+
+  serviceId String?  @db.VarChar(30)
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  originAddressId String?  @db.VarChar(30)
+  originAddress   Address? @relation("MoveTaskOriginAddress", fields: [originAddressId], references: [id], onDelete: SetNull)
+
+  destinationAddressId String?  @db.VarChar(30)
+  destinationAddress   Address? @relation("MoveTaskDestinationAddress", fields: [destinationAddressId], references: [id], onDelete: SetNull)
+
+  providerId String?          @db.VarChar(30)
+  provider   ServiceProvider? @relation("MoveTaskProvider", fields: [providerId], references: [id], onDelete: SetNull)
+
+  customProviderId String?             @db.VarChar(30)
+  customProvider   UserCustomProvider? @relation(fields: [customProviderId], references: [id], onDelete: SetNull)
+
+  destinationProviderId String?          @db.VarChar(30)
+  destinationProvider   ServiceProvider? @relation("MoveTaskDestinationProvider", fields: [destinationProviderId], references: [id], onDelete: SetNull)
+
+  actionType String @db.VarChar(40)
+  status     String @default("SUGGESTED") @db.VarChar(20)
+  source     String @default("CLASSIFIER") @db.VarChar(20)
+
+  title       String  @db.VarChar(200)
+  description String? @db.Text
+  reason      String? @db.Text
+  caveats     Json?
+  confidence  String  @default("UNVERIFIED") @db.VarChar(20)
+
+  dueDate             DateTime?
+  acceptedAt          DateTime?
+  completedAt         DateTime?
+  dismissedAt         DateTime?
+  reopenedAt          DateTime?
+  completedByUserId   String?   @db.VarChar(30)
+  lastStatusChangedAt DateTime  @default(now())
+
+  localEffect    Json?
+  metadata       Json?
+  idempotencyKey String? @db.VarChar(191)
+  notes          String? @db.Text
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId])
+  @@index([movingPlanId])
+  @@index([status])
+  @@index([actionType])
+  @@index([dueDate])
+  @@index([serviceId])
+  @@index([providerId])
+  @@index([customProviderId])
+  @@index([destinationProviderId])
+  @@index([deletedAt])
+}
+
+// ==================== USER CUSTOM PROVIDERS ====================
+
+model UserCustomProvider {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String  @db.VarChar(200)
+  category    String  @db.VarChar(50)
+  description String? @db.Text
+
+  website String? @db.VarChar(500)
+  phone   String? @db.VarChar(30)
+  email   String? @db.VarChar(191)
+
+  addressLine1 String? @db.VarChar(200)
+  addressLine2 String? @db.VarChar(200)
+  city         String? @db.VarChar(100)
+  state        String? @db.VarChar(2)
+  zipCode      String? @db.VarChar(10)
+  notes        String? @db.Text
+
+  providerType      String @default("OTHER") @db.VarChar(40)
+  trustStatus       String @default("USER_CUSTOM") @db.VarChar(40)
+  adminReviewStatus String @default("NOT_REVIEWED") @db.VarChar(40)
+
+  linkedServiceProviderId String?          @db.VarChar(30)
+  linkedServiceProvider   ServiceProvider? @relation("LinkedCustomProviders", fields: [linkedServiceProviderId], references: [id], onDelete: SetNull)
+
+  services         Service[]
+  moveTasks        MoveTask[]
+  governanceIssues ProviderGovernanceIssue[]
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([providerType])
+  @@index([adminReviewStatus])
+  @@index([linkedServiceProviderId])
+  @@index([deletedAt])
+}
+
+// ==================== PROVIDER GOVERNANCE ====================
+
+model ProviderGovernanceIssue {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  providerId String?          @db.VarChar(30)
+  provider   ServiceProvider? @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  customProviderId String?             @db.VarChar(30)
+  customProvider   UserCustomProvider? @relation(fields: [customProviderId], references: [id], onDelete: Cascade)
+
+  issueType String @db.VarChar(60)
+  status    String @default("OPEN") @db.VarChar(30)
+  severity  String @default("MEDIUM") @db.VarChar(20)
+
+  title       String  @db.VarChar(200)
+  description String? @db.Text
+  metadata    Json?
+
+  reviewedByAdminId String?    @db.VarChar(30)
+  reviewedByAdmin   AdminUser? @relation("ProviderGovernanceReviewedBy", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+  reviewedAt        DateTime?
+  dismissedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([customProviderId])
+  @@index([issueType])
+  @@index([status])
+  @@index([severity])
+  @@index([reviewedByAdminId])
+}
 
 model ServiceProviderCoverage {
-  id         String @id @default(cuid()) @db.VarChar(30)
-  providerId String @db.VarChar(30)
+  id         String          @id @default(cuid()) @db.VarChar(30)
+  providerId String          @db.VarChar(30)
   provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
 
-  state      String? @db.VarChar(2)
-  zipPrefix  String? @db.VarChar(5)
-  zipExact   String? @db.VarChar(10)
+  state     String? @db.VarChar(2)
+  zipPrefix String? @db.VarChar(5)
+  zipExact  String? @db.VarChar(10)
 
   createdAt DateTime @default(now())
 
@@ -566,31 +732,31 @@ model UserSession {
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  ipAddress       String? @db.VarChar(45)
-  userAgent       String? @db.VarChar(500)
+  ipAddress String? @db.VarChar(45)
+  userAgent String? @db.VarChar(500)
 
-  browser         String? @db.VarChar(50)
-  browserVersion  String? @db.VarChar(20)
-  os              String? @db.VarChar(50)
-  osVersion       String? @db.VarChar(20)
-  device          String? @db.VarChar(50)
-  deviceType      String? @db.VarChar(20) // MOBILE, TABLET, DESKTOP
+  browser        String? @db.VarChar(50)
+  browserVersion String? @db.VarChar(20)
+  os             String? @db.VarChar(50)
+  osVersion      String? @db.VarChar(20)
+  device         String? @db.VarChar(50)
+  deviceType     String? @db.VarChar(20) // MOBILE, TABLET, DESKTOP
 
-  platform        String? @db.VarChar(20) // WEB, ANDROID_APP, IOS_APP, PWA
+  platform         String? @db.VarChar(20) // WEB, ANDROID_APP, IOS_APP, PWA
   screenResolution String? @db.VarChar(20)
-  language        String? @db.VarChar(10)
+  language         String? @db.VarChar(10)
 
-  country         String? @db.VarChar(50)
-  city            String? @db.VarChar(100)
-  region          String? @db.VarChar(100)
-  latitude        Float?
-  longitude       Float?
+  country   String? @db.VarChar(50)
+  city      String? @db.VarChar(100)
+  region    String? @db.VarChar(100)
+  latitude  Float?
+  longitude Float?
 
-  sessionStart    DateTime @default(now())
-  sessionEnd      DateTime?
-  lastActivity    DateTime @default(now())
-  pageViews       Int      @default(1)
-  isActive        Boolean  @default(true)
+  sessionStart DateTime  @default(now())
+  sessionEnd   DateTime?
+  lastActivity DateTime  @default(now())
+  pageViews    Int       @default(1)
+  isActive     Boolean   @default(true)
 
   events UserEvent[]
 
@@ -604,16 +770,16 @@ model UserSession {
 }
 
 model UserEvent {
-  id        String @id @default(cuid()) @db.VarChar(30)
-  userId    String @db.VarChar(30)
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  sessionId String? @db.VarChar(30)
+  sessionId String?      @db.VarChar(30)
   session   UserSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
-  event     String   @db.VarChar(50) // PAGE_VIEW, BUTTON_CLICK, SEARCH, LOGIN, LOGOUT, EXPORT, etc.
-  page      String?  @db.VarChar(200) // /dashboard, /services/new, etc.
-  metadata  String?  @db.Text // JSON: search terms, filters, etc.
+  event    String  @db.VarChar(50) // PAGE_VIEW, BUTTON_CLICK, SEARCH, LOGIN, LOGOUT, EXPORT, etc.
+  page     String? @db.VarChar(200) // /dashboard, /services/new, etc.
+  metadata String? @db.Text // JSON: search terms, filters, etc.
 
   createdAt DateTime @default(now())
 
@@ -627,28 +793,29 @@ model UserEvent {
 // ==================== ADMIN PANEL ====================
 
 model AdminUser {
-  id        String   @id @default(cuid()) @db.VarChar(30)
-  email     String   @unique @db.VarChar(191)
-  password  String   @db.VarChar(255)
-  firstName String   @db.VarChar(100)
-  lastName  String   @db.VarChar(100)
-  role      String   @default("MODERATOR") @db.VarChar(20)
-  isActive  Boolean  @default(true)
+  id        String  @id @default(cuid()) @db.VarChar(30)
+  email     String  @unique @db.VarChar(191)
+  password  String  @db.VarChar(255)
+  firstName String  @db.VarChar(100)
+  lastName  String  @db.VarChar(100)
+  role      String  @default("MODERATOR") @db.VarChar(20)
+  isActive  Boolean @default(true)
 
   // MFA (TOTP)
-  mfaEnabled    Boolean  @default(false)
-  mfaSecret     String?  @db.VarChar(255) // Encrypted TOTP secret
-  mfaVerifiedAt DateTime? // When MFA was last verified (for grace window)
-  mfaBackupCodes String? @db.Text // JSON array of hashed backup codes
+  mfaEnabled     Boolean   @default(false)
+  mfaSecret      String?   @db.VarChar(255) // Encrypted TOTP secret
+  mfaVerifiedAt  DateTime? // When MFA was last verified (for grace window)
+  mfaBackupCodes String?   @db.Text // JSON array of hashed backup codes
 
   lastLoginAt DateTime?
-  createdBy   String? @db.VarChar(30)
+  createdBy   String?   @db.VarChar(30)
 
-  permissions AdminPermission[]
-  auditLogs   AdminAuditLog[]
-  sessions    AdminSession[]
-  loginLogs   AdminLoginLog[]
-  runtimeConfigUpdates RuntimeConfigEntry[] @relation("RuntimeConfigUpdatedBy")
+  permissions               AdminPermission[]
+  auditLogs                 AdminAuditLog[]
+  sessions                  AdminSession[]
+  loginLogs                 AdminLoginLog[]
+  runtimeConfigUpdates      RuntimeConfigEntry[]      @relation("RuntimeConfigUpdatedBy")
+  providerGovernanceReviews ProviderGovernanceIssue[] @relation("ProviderGovernanceReviewedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -662,20 +829,20 @@ model AdminSession {
   adminUserId String    @db.VarChar(30)
   adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
 
-  tokenHash   String    @db.VarChar(64) // SHA-256 of the JWT token (for revocation)
-  ipAddress   String?   @db.VarChar(45)
-  userAgent   String?   @db.VarChar(500)
-  browser     String?   @db.VarChar(50)
-  os          String?   @db.VarChar(50)
-  deviceType  String?   @db.VarChar(20)
-  country     String?   @db.VarChar(50)
-  city        String?   @db.VarChar(100)
+  tokenHash  String  @db.VarChar(64) // SHA-256 of the JWT token (for revocation)
+  ipAddress  String? @db.VarChar(45)
+  userAgent  String? @db.VarChar(500)
+  browser    String? @db.VarChar(50)
+  os         String? @db.VarChar(50)
+  deviceType String? @db.VarChar(20)
+  country    String? @db.VarChar(50)
+  city       String? @db.VarChar(100)
 
-  isActive    Boolean   @default(true)
+  isActive     Boolean  @default(true)
   lastActivity DateTime @default(now())
-  expiresAt   DateTime
+  expiresAt    DateTime
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([adminUserId])
   @@index([tokenHash])
@@ -684,25 +851,25 @@ model AdminSession {
 }
 
 model AdminLoginLog {
-  id          String    @id @default(cuid()) @db.VarChar(30)
-  adminUserId String?   @db.VarChar(30)
+  id          String     @id @default(cuid()) @db.VarChar(30)
+  adminUserId String?    @db.VarChar(30)
   adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
 
-  email       String    @db.VarChar(191)
-  success     Boolean   @default(false)
-  failReason  String?   @db.VarChar(50) // INVALID_PASSWORD, INVALID_MFA, INACTIVE_ADMIN, UNKNOWN_EMAIL, RATE_LIMITED
+  email      String  @db.VarChar(191)
+  success    Boolean @default(false)
+  failReason String? @db.VarChar(50) // INVALID_PASSWORD, INVALID_MFA, INACTIVE_ADMIN, UNKNOWN_EMAIL, RATE_LIMITED
 
-  ipAddress   String?   @db.VarChar(45)
-  userAgent   String?   @db.VarChar(500)
-  browser     String?   @db.VarChar(50)
-  os          String?   @db.VarChar(50)
-  country     String?   @db.VarChar(50)
-  city        String?   @db.VarChar(100)
+  ipAddress String? @db.VarChar(45)
+  userAgent String? @db.VarChar(500)
+  browser   String? @db.VarChar(50)
+  os        String? @db.VarChar(50)
+  country   String? @db.VarChar(50)
+  city      String? @db.VarChar(100)
 
-  mfaUsed     Boolean   @default(false)
-  mfaMethod   String?   @db.VarChar(20) // TOTP, BACKUP_CODE
+  mfaUsed   Boolean @default(false)
+  mfaMethod String? @db.VarChar(20) // TOTP, BACKUP_CODE
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([adminUserId, createdAt])
   @@index([email, createdAt])
@@ -715,7 +882,7 @@ model AdminPermission {
   adminUserId String    @db.VarChar(30)
   adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
 
-  resource  String @db.VarChar(50)
+  resource  String  @db.VarChar(50)
   canRead   Boolean @default(true)
   canCreate Boolean @default(false)
   canUpdate Boolean @default(false)
@@ -730,9 +897,9 @@ model AdminAuditLog {
   adminUserId String    @db.VarChar(30)
   adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
 
-  action     String @db.VarChar(20)
-  entityType String @db.VarChar(50)
-  entityId   String @db.VarChar(30)
+  action     String  @db.VarChar(20)
+  entityType String  @db.VarChar(50)
+  entityId   String  @db.VarChar(30)
   changes    String? @db.Text
   ipAddress  String? @db.VarChar(45)
 
@@ -795,18 +962,18 @@ model Notification {
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type    String  @db.VarChar(30) // BILL_REMINDER, MOVE_REMINDER, REVIEW_STATUS, SYSTEM, MARKETING, TASK_DUE, CONTRACT_EXPIRY
-  title   String  @db.VarChar(200)
-  body    String  @db.Text
-  href    String? @db.VarChar(500)
-  icon    String? @db.VarChar(50)
+  type  String  @db.VarChar(30) // BILL_REMINDER, MOVE_REMINDER, REVIEW_STATUS, SYSTEM, MARKETING, TASK_DUE, CONTRACT_EXPIRY
+  title String  @db.VarChar(200)
+  body  String  @db.Text
+  href  String? @db.VarChar(500)
+  icon  String? @db.VarChar(50)
 
   channel String @default("IN_APP") @db.VarChar(20) // EMAIL, IN_APP, PUSH
 
-  read    Boolean   @default(false)
-  readAt  DateTime?
-  sent    Boolean   @default(false)
-  sentAt  DateTime?
+  read   Boolean   @default(false)
+  readAt DateTime?
+  sent   Boolean   @default(false)
+  sentAt DateTime?
 
   sendAt    DateTime  @default(now())
   expiresAt DateTime?
@@ -822,21 +989,21 @@ model Notification {
 }
 
 model NotificationQueue {
-  id     String @id @default(cuid()) @db.VarChar(30)
+  id String @id @default(cuid()) @db.VarChar(30)
 
   userId    String? @db.VarChar(30)
   broadcast Boolean @default(false)
 
-  type    String @db.VarChar(30)
-  title   String @db.VarChar(200)
-  body    String @db.Text
+  type    String  @db.VarChar(30)
+  title   String  @db.VarChar(200)
+  body    String  @db.Text
   href    String? @db.VarChar(500)
   channel String  @default("IN_APP") @db.VarChar(20)
 
-  sendAt    DateTime
-  sent      Boolean   @default(false)
-  sentAt    DateTime?
-  error     String? @db.Text
+  sendAt DateTime
+  sent   Boolean   @default(false)
+  sentAt DateTime?
+  error  String?   @db.Text
 
   createdBy String? @db.VarChar(30) // admin user id
 
@@ -854,7 +1021,7 @@ model EmailTemplate {
   name     String @db.VarChar(100)
   subject  String @db.VarChar(200)
   body     String @db.LongText // HTML content
-  category String  @default("SYSTEM") @db.VarChar(20) // SYSTEM, MARKETING, TRANSACTIONAL, NOTIFICATION
+  category String @default("SYSTEM") @db.VarChar(20) // SYSTEM, MARKETING, TRANSACTIONAL, NOTIFICATION
 
   variables String? @db.Text // JSON: list of available variables like {{firstName}}, {{link}}
 
@@ -874,20 +1041,20 @@ model EmailTemplate {
 }
 
 model EmailLog {
-  id         String @id @default(cuid()) @db.VarChar(30)
-  templateId String? @db.VarChar(30)
+  id         String         @id @default(cuid()) @db.VarChar(30)
+  templateId String?        @db.VarChar(30)
   template   EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
   dedupeKey         String? @unique @db.VarChar(191)
   providerMessageId String? @db.VarChar(191)
 
-  to      String @db.VarChar(191)
-  subject String @db.VarChar(200)
-  status  String @default("PENDING") @db.VarChar(20) // PENDING, SENT, FAILED, BOUNCED
+  to      String  @db.VarChar(191)
+  subject String  @db.VarChar(200)
+  status  String  @default("PENDING") @db.VarChar(20) // PENDING, SENT, FAILED, BOUNCED
   error   String? @db.Text
 
-  sentAt    DateTime?
-  openedAt  DateTime?
+  sentAt   DateTime?
+  openedAt DateTime?
 
   metadata String? @db.Text // JSON
 
@@ -903,19 +1070,19 @@ model EmailLog {
 // ==================== HELP CENTER / CMS (M10) ====================
 
 model HelpArticle {
-  id          String @id @default(cuid()) @db.VarChar(30)
-  slug        String @unique @db.VarChar(191)
-  title       String @db.VarChar(200)
-  content     String @db.LongText
+  id          String  @id @default(cuid()) @db.VarChar(30)
+  slug        String  @unique @db.VarChar(191)
+  title       String  @db.VarChar(200)
+  content     String  @db.LongText
   excerpt     String? @db.VarChar(500)
-  category    String @db.VarChar(50)
+  category    String  @db.VarChar(50)
   tags        String  @default("[]") @db.VarChar(2000) // JSON array
   order       Int     @default(0)
   isPublished Boolean @default(false)
 
-  viewCount   Int @default(0)
-  helpfulYes  Int @default(0)
-  helpfulNo   Int @default(0)
+  viewCount  Int @default(0)
+  helpfulYes Int @default(0)
+  helpfulNo  Int @default(0)
 
   createdBy String? @db.VarChar(30)
   updatedBy String? @db.VarChar(30)
@@ -929,11 +1096,11 @@ model HelpArticle {
 }
 
 model FAQ {
-  id       String @id @default(cuid()) @db.VarChar(30)
-  question String @db.VarChar(500)
-  answer   String @db.Text
-  category String @db.VarChar(50)
-  order    Int    @default(0)
+  id          String  @id @default(cuid()) @db.VarChar(30)
+  question    String  @db.VarChar(500)
+  answer      String  @db.Text
+  category    String  @db.VarChar(50)
+  order       Int     @default(0)
   isPublished Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -946,8 +1113,8 @@ model FAQ {
 // ==================== FEATURE FLAGS (M11) ====================
 
 model FeatureFlag {
-  id          String @id @default(cuid()) @db.VarChar(30)
-  name        String @unique @db.VarChar(100)
+  id          String  @id @default(cuid()) @db.VarChar(30)
+  name        String  @unique @db.VarChar(100)
   description String? @db.VarChar(500)
   enabled     Boolean @default(false)
 
@@ -967,13 +1134,13 @@ model FeatureFlag {
 // ==================== SECURITY & COMPLIANCE (M13) ====================
 
 model IPRule {
-  id        String @id @default(cuid()) @db.VarChar(30)
-  ipAddress String @db.VarChar(45)
-  type      String @db.VarChar(20) // WHITELIST, BLACKLIST
+  id        String  @id @default(cuid()) @db.VarChar(30)
+  ipAddress String  @db.VarChar(45)
+  type      String  @db.VarChar(20) // WHITELIST, BLACKLIST
   reason    String? @db.VarChar(500)
   isActive  Boolean @default(true)
 
-  createdBy String? @db.VarChar(30)
+  createdBy String?   @db.VarChar(30)
   expiresAt DateTime?
 
   createdAt DateTime @default(now())
@@ -984,10 +1151,10 @@ model IPRule {
 }
 
 model RateLimitLog {
-  id        String @id @default(cuid()) @db.VarChar(30)
-  ipAddress String @db.VarChar(45)
-  endpoint  String @db.VarChar(200)
-  count     Int    @default(1)
+  id        String  @id @default(cuid()) @db.VarChar(30)
+  ipAddress String  @db.VarChar(45)
+  endpoint  String  @db.VarChar(200)
+  count     Int     @default(1)
   blocked   Boolean @default(false)
 
   windowStart DateTime
@@ -1003,8 +1170,8 @@ model RateLimitLog {
 // ==================== WEBHOOK IDEMPOTENCY ====================
 
 model ProcessedWebhookEvent {
-  id        String   @id @db.VarChar(255) // Stripe event ID (evt_...)
-  source    String   @db.VarChar(30)      // "stripe", "clerk", etc.
+  id          String   @id @db.VarChar(255) // Stripe event ID (evt_...)
+  source      String   @db.VarChar(30) // "stripe", "clerk", etc.
   processedAt DateTime @default(now())
 
   @@index([source])
@@ -1017,8 +1184,8 @@ model GDPRRequest {
   type   String @db.VarChar(20) // EXPORT, DELETE, RECTIFY
   status String @default("PENDING") @db.VarChar(20) // PENDING, PROCESSING, COMPLETED, REJECTED
 
-  requestData String? @db.Text // JSON
-  resultUrl   String? @db.VarChar(500)
+  requestData String?   @db.Text // JSON
+  resultUrl   String?   @db.VarChar(500)
   completedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -1031,19 +1198,19 @@ model GDPRRequest {
 // ==================== BACKUP ====================
 
 model BackupRecord {
-  id          String @id @default(cuid()) @db.VarChar(30)
-  type        String @db.VarChar(30) // FULL, USERS, PROVIDERS, SERVICES, MOVING_PLANS
-  status      String @default("PENDING") @db.VarChar(20) // PENDING, IN_PROGRESS, COMPLETED, FAILED
-  format      String @default("JSON") @db.VarChar(10) // JSON, CSV
+  id     String @id @default(cuid()) @db.VarChar(30)
+  type   String @db.VarChar(30) // FULL, USERS, PROVIDERS, SERVICES, MOVING_PLANS
+  status String @default("PENDING") @db.VarChar(20) // PENDING, IN_PROGRESS, COMPLETED, FAILED
+  format String @default("JSON") @db.VarChar(10) // JSON, CSV
 
   fileName    String? @db.VarChar(255)
   fileSize    Int?
   recordCount Int?
 
-  tables      String? @db.Text // JSON array of table names included
+  tables       String? @db.Text // JSON array of table names included
   errorMessage String? @db.Text
 
-  createdBy   String  @db.VarChar(30)
+  createdBy   String    @db.VarChar(30)
   completedAt DateTime?
 
   createdAt DateTime @default(now())
@@ -1057,27 +1224,27 @@ model BackupRecord {
 // ==================== SUPPORT TICKETS ====================
 
 model SupportTicket {
-  id          String @id @default(cuid()) @db.VarChar(30)
-  userId      String @db.VarChar(30)
-  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid()) @db.VarChar(30)
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  subject     String @db.VarChar(255)
-  category    String @default("GENERAL") @db.VarChar(30) // GENERAL, BUG, BILLING, ACCOUNT, FEATURE_REQUEST
-  priority    String @default("MEDIUM") @db.VarChar(20)  // LOW, MEDIUM, HIGH, URGENT
-  status      String @default("OPEN") @db.VarChar(20)    // OPEN, IN_PROGRESS, WAITING_USER, RESOLVED, CLOSED
+  subject  String @db.VarChar(255)
+  category String @default("GENERAL") @db.VarChar(30) // GENERAL, BUG, BILLING, ACCOUNT, FEATURE_REQUEST
+  priority String @default("MEDIUM") @db.VarChar(20) // LOW, MEDIUM, HIGH, URGENT
+  status   String @default("OPEN") @db.VarChar(20) // OPEN, IN_PROGRESS, WAITING_USER, RESOLVED, CLOSED
 
   // Source platform
-  platform    String @default("WEB") @db.VarChar(10)     // WEB, MOBILE, ADMIN
+  platform String @default("WEB") @db.VarChar(10) // WEB, MOBILE, ADMIN
 
   // Assignment
-  assignedTo  String? @db.VarChar(30) // AdminUser id
-  resolvedAt  DateTime?
-  closedAt    DateTime?
+  assignedTo String?   @db.VarChar(30) // AdminUser id
+  resolvedAt DateTime?
+  closedAt   DateTime?
 
-  messages    TicketMessage[]
+  messages TicketMessage[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -1088,15 +1255,15 @@ model SupportTicket {
 }
 
 model TicketMessage {
-  id        String @id @default(cuid()) @db.VarChar(30)
-  ticketId  String @db.VarChar(30)
-  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  id       String        @id @default(cuid()) @db.VarChar(30)
+  ticketId String        @db.VarChar(30)
+  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
 
   // Who sent the message
   senderType String @db.VarChar(10) // USER, ADMIN, SYSTEM
   senderId   String @db.VarChar(30) // userId or adminUserId
 
-  content    String @db.Text
+  content       String  @db.Text
   // Optional file attachment (Cloudinary URL)
   attachmentUrl String? @db.VarChar(500)
 
@@ -1113,14 +1280,14 @@ model TicketMessage {
 // Kept in a single table with a `target` discriminator so admin can pull
 // per-segment counts without scanning separate tables.
 model WaitlistSignup {
-  id        String @id @default(cuid()) @db.VarChar(30)
-  email     String @db.VarChar(255)
-  target    String @db.VarChar(30) // MOBILE_IOS, MOBILE_ANDROID, MOBILE_ANY, PLAN_FAMILY, PLAN_PRO, API_ACCESS
-  source    String? @db.VarChar(60) // landing-hero, pricing-family, pricing-pro, contact-form, ...
+  id     String  @id @default(cuid()) @db.VarChar(30)
+  email  String  @db.VarChar(255)
+  target String  @db.VarChar(30) // MOBILE_IOS, MOBILE_ANDROID, MOBILE_ANY, PLAN_FAMILY, PLAN_PRO, API_ACCESS
+  source String? @db.VarChar(60) // landing-hero, pricing-family, pricing-pro, contact-form, ...
 
   // Optional free-form note from the user ("I manage 40 rentals", etc.)
   // Useful for prioritizing Pro / API outreach.
-  note      String? @db.Text
+  note String? @db.Text
 
   // Basic context captured at signup — helps admin triage and dedupe.
   ipHash    String? @db.VarChar(64) // SHA-256 of request IP (privacy-friendly)
@@ -1129,10 +1296,10 @@ model WaitlistSignup {
 
   // If the signup happens while the user is logged in, tie it back so admin
   // can reach out through the existing account path.
-  userId    String? @db.VarChar(30)
+  userId String? @db.VarChar(30)
 
   // Outreach tracking — admin marks when a waitlist entry is contacted.
-  notifiedAt DateTime?
+  notifiedAt  DateTime?
   convertedAt DateTime? // User eventually subscribed / downloaded the app
 
   createdAt DateTime @default(now())

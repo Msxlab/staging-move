@@ -72,21 +72,27 @@ export async function GET(req: NextRequest) {
   const categories = [...new Set(providers.map((p) => p.category))].sort();
   const allTags = [...new Set(providers.flatMap((p) => { try { return JSON.parse(p.tags || "[]"); } catch { return []; } }))].sort();
 
-  // Availability check based on user's state
+  // State listing check based on the user's state. This is not an address-level
+  // serviceability or official availability check.
   const user = await prisma.user.findUnique({ where: { id: userId }, include: { addresses: { where: { isPrimary: true }, take: 1 } } });
   const userState = user?.addresses?.[0]?.state || "";
 
   if (userState) {
     providers = providers.map((p) => {
-      let available = false;
-      if (p.scope === "FEDERAL") available = true;
+      let listed = false;
+      if (p.scope === "FEDERAL") listed = true;
       else {
         try {
           const states = JSON.parse(p.states || "[]");
-          available = states.includes(userState);
+          listed = states.includes(userState);
         } catch {}
       }
-      return { ...p, availableInUserState: available };
+      return {
+        ...p,
+        listedInUserState: listed,
+        availabilityCaveat:
+          "Listed provider only. Confirm address-level availability with the official provider.",
+      };
     });
   }
 

@@ -1,0 +1,60 @@
+import type { MoveTaskStatus } from "./provider-move-domain";
+
+export const MOVE_TASK_LIFECYCLE_EVENTS = [
+  "ACCEPT",
+  "START",
+  "COMPLETE",
+  "DISMISS",
+  "REOPEN",
+] as const;
+
+export type MoveTaskLifecycleEvent =
+  (typeof MOVE_TASK_LIFECYCLE_EVENTS)[number];
+
+export interface MoveTaskLifecycleState {
+  status: MoveTaskStatus;
+  acceptedAt?: Date | string | null;
+  completedAt?: Date | string | null;
+  dismissedAt?: Date | string | null;
+  reopenedAt?: Date | string | null;
+}
+
+export interface MoveTaskLifecyclePatch {
+  status: MoveTaskStatus;
+  acceptedAt?: Date;
+  completedAt?: Date;
+  dismissedAt?: Date;
+  reopenedAt?: Date;
+  lastStatusChangedAt: Date;
+}
+
+export function getNextMoveTaskStatus(
+  current: MoveTaskStatus,
+  event: MoveTaskLifecycleEvent,
+): MoveTaskStatus {
+  if (event === "ACCEPT") return "ACCEPTED";
+  if (event === "START") return "IN_PROGRESS";
+  if (event === "COMPLETE") return "COMPLETED";
+  if (event === "DISMISS") return "DISMISSED";
+  if (event === "REOPEN") return "REOPENED";
+  return current;
+}
+
+export function buildMoveTaskLifecyclePatch(
+  state: MoveTaskLifecycleState,
+  event: MoveTaskLifecycleEvent,
+  now = new Date(),
+): MoveTaskLifecyclePatch {
+  const status = getNextMoveTaskStatus(state.status, event);
+  const patch: MoveTaskLifecyclePatch = {
+    status,
+    lastStatusChangedAt: now,
+  };
+
+  if (event === "ACCEPT") patch.acceptedAt = now;
+  if (event === "COMPLETE") patch.completedAt = now;
+  if (event === "DISMISS") patch.dismissedAt = now;
+  if (event === "REOPEN") patch.reopenedAt = now;
+
+  return patch;
+}

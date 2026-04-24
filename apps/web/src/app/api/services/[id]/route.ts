@@ -15,6 +15,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         address: true,
         reminders: true,
+        provider: { select: { id: true, name: true, slug: true, website: true, phone: true, scope: true } },
+        customProvider: { select: { id: true, name: true, category: true, phone: true, website: true, email: true, providerType: true, trustStatus: true } },
       },
     });
 
@@ -52,10 +54,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
     const validated = serviceSchema.partial().parse(body);
 
+    if (validated.providerId && validated.customProviderId) {
+      return NextResponse.json({ error: "Choose either a listed provider or a custom provider, not both" }, { status: 400 });
+    }
+
     if (validated.addressId) {
       const address = await prisma.address.findUnique({ where: { id: validated.addressId } });
       if (!address || address.userId !== userId) {
         return NextResponse.json({ error: "Address not found" }, { status: 404 });
+      }
+    }
+
+    if (validated.providerId) {
+      const provider = await prisma.serviceProvider.findUnique({ where: { id: validated.providerId } });
+      if (!provider || provider.deletedAt) {
+        return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+      }
+    }
+
+    if (validated.customProviderId) {
+      const customProvider = await prisma.userCustomProvider.findFirst({
+        where: { id: validated.customProviderId, userId, deletedAt: null },
+      });
+      if (!customProvider) {
+        return NextResponse.json({ error: "Custom provider not found" }, { status: 404 });
       }
     }
 

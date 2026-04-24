@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeProviderSeedRecords } from "../provider-integrity";
+import {
+  getProviderCoverageConfidence,
+  getProviderQualityWarnings,
+  getProviderTrustSummary,
+  sanitizeProviderSeedRecords,
+} from "../provider-integrity";
 
 describe("sanitizeProviderSeedRecords", () => {
   it("deduplicates same-category providers even when their slugs differ", () => {
@@ -53,5 +58,67 @@ describe("sanitizeProviderSeedRecords", () => {
         category: "FINANCIAL_INSURANCE_MOTORCYCLE",
       }),
     ]);
+  });
+});
+
+describe("provider trust helpers", () => {
+  it("labels provider records as listed and manual-only", () => {
+    const summary = getProviderTrustSummary({
+      name: "Example Internet",
+      category: "UTILITY_INTERNET",
+      scope: "FEDERAL",
+      website: "https://example.com",
+      description: "Internet provider",
+    });
+
+    expect(summary.statusLabel).toBe("Listed provider");
+    expect(summary.manualTrackingLabel).toBe("Manual tracking only");
+    expect(summary.verificationLabel).toBe("Unverified directory data");
+    expect(summary.qualityWarnings.map((warning) => warning.code)).toContain(
+      "broad_national_coverage",
+    );
+  });
+
+  it("surfaces state and address-level coverage caveats", () => {
+    expect(
+      getProviderCoverageConfidence({
+        name: "Metro Water",
+        category: "UTILITY_WATER",
+        scope: "STATE",
+        coverageMatchLevel: "state",
+      }).label,
+    ).toBe("State-level listing");
+
+    expect(
+      getProviderCoverageConfidence({
+        name: "Fiber Co",
+        category: "UTILITY_INTERNET",
+        scope: "FEDERAL",
+        coverageModel: "live_address",
+      }).label,
+    ).toBe("Address check required");
+  });
+
+  it("flags common data quality warnings without claiming verification", () => {
+    const warnings = getProviderQualityWarnings({
+      name: "Best Provider",
+      category: "UTILITY_WATER",
+      scope: "STATE",
+      states: ["CA"],
+      description: "Best provider",
+      website: "https://example.com",
+      duplicateDomainCount: 2,
+    });
+
+    expect(warnings.map((warning) => warning.code)).toEqual(
+      expect.arrayContaining([
+        "missing_logo",
+        "missing_phone",
+        "generic_description",
+        "marketing_description",
+        "duplicate_domain",
+        "broad_state_coverage",
+      ]),
+    );
   });
 });

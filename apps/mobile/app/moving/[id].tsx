@@ -51,10 +51,17 @@ export default function MovingDetailScreen() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [stateRules, setStateRules] = useState<any>(null);
   const [stateGuideOpen, setStateGuideOpen] = useState(false);
+  const [moveTasks, setMoveTasks] = useState<any[]>([]);
+  const [taskBusy, setTaskBusy] = useState<string | null>(null);
 
   const fetchMigration = useCallback(async (planId: string) => {
     const mRes = await api.get<any>("/api/moving/migration", { planId });
     if (mRes.data?.analysis) setMigration(mRes.data.analysis);
+  }, []);
+
+  const fetchMoveTasks = useCallback(async (planId: string) => {
+    const taskRes = await api.get<any>("/api/move-tasks", { movingPlanId: planId });
+    if (taskRes.data?.tasks) setMoveTasks(taskRes.data.tasks);
   }, []);
 
   const fetch_ = useCallback(async () => {
@@ -64,13 +71,52 @@ export default function MovingDetailScreen() {
       setPlan(p);
       if (p && (p.status === "PLANNING" || p.status === "IN_PROGRESS")) {
         await fetchMigration(p.id);
+        await fetchMoveTasks(p.id);
       }
       if (p?.toAddress?.state) {
         const srRes = await api.get<any>(`/api/state-rules?state=${encodeURIComponent(p.toAddress.state)}`);
         if (srRes.data?.rules?.length) setStateRules(srRes.data.rules[0]);
       }
     }
-  }, [id, fetchMigration]);
+  }, [id, fetchMigration, fetchMoveTasks]);
+
+  const generateMoveTasks = async () => {
+    if (!plan) return;
+    setTaskBusy("generate");
+    const res = await api.post<any>("/api/move-tasks", { movingPlanId: plan.id });
+    setTaskBusy(null);
+    if (res.error) {
+      hapticError();
+      Alert.alert("Move tasks", res.error);
+      return;
+    }
+    hapticSuccess();
+    setMoveTasks(res.data?.tasks || []);
+  };
+
+  const updateMoveTask = async (taskId: string, event: "ACCEPT" | "COMPLETE" | "DISMISS" | "REOPEN") => {
+    setTaskBusy(taskId);
+    const res = await api.patch<any>("/api/move-tasks", { id: taskId, event });
+    setTaskBusy(null);
+    if (res.error) {
+      hapticError();
+      Alert.alert("Move tasks", res.error);
+      return;
+    }
+    hapticSuccess();
+    if (plan) await fetchMoveTasks(plan.id);
+  };
+
+  const confirmCompleteMoveTask = (taskId: string) => {
+    Alert.alert(
+      "Complete task locally?",
+      "This updates LocateFlow task and service records only. External provider accounts are not updated.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Complete locally", onPress: () => updateMoveTask(taskId, "COMPLETE") },
+      ],
+    );
+  };
 
   const confirmAction = async (
     serviceId: string,
@@ -166,7 +212,7 @@ export default function MovingDetailScreen() {
     ? "Expect DMV, voter registration, tax, and provider switching tasks across states."
     : "Expect utility transfers, local updates, and scheduling tasks within the same state.";
   const migrationSummaryLabel = migration
-    ? `${migration.summary.switches} switch · ${migration.summary.newNeeded} new · ${migration.summary.keeps} keep`
+    ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
     : "Migration guidance appears automatically after your origin services are analyzed.";
 
   return (
@@ -256,6 +302,84 @@ export default function MovingDetailScreen() {
           </View>
         </Card>
 
+        <Text style={styles.sectionTitle}>Move Tasks</Text>
+        <Card variant="default">
+          <View style={styles.transitionHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.transitionTitle}>Task tracking</Text>
+              <Text style={styles.transitionIntro}>
+                Completing tasks updates LocateFlow only. External provider accounts are not updated.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.migBtnPrimary}
+              onPress={generateMoveTasks}
+              disabled={taskBusy === "generate"}
+            >
+              <Text style={styles.migBtnPrimaryText}>{taskBusy === "generate" ? "Syncing" : "Generate"}</Text>
+            </TouchableOpacity>
+          </View>
+          {moveTasks.length === 0 ? (
+            <Text style={styles.emptyText}>No move tasks yet. Generate tasks after adding origin services.</Text>
+          ) : (
+            moveTasks.map((task, index) => {
+              const done = task.status === "COMPLETED";
+              const dismissed = task.status === "DISMISSED";
+              return (
+                <View key={task.id} style={[styles.taskRow, index > 0 && styles.migRowDivider]}>
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.taskBadges}>
+                      <UiBadge label={task.status.replace(/_/g, " ")} variant={done ? "success" : dismissed ? "neutral" : "warning"} />
+                      <UiBadge label={`${task.confidence} confidence`} variant="neutral" />
+                    </View>
+                    <Text style={styles.taskTitle}>{task.title}</Text>
+                    {!!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
+                    <Text style={styles.taskCaveat}>Manual tracking only. Confirm with the official provider.</Text>
+                  </View>
+                  <View style={styles.taskActions}>
+                    {!done && !dismissed && task.status === "SUGGESTED" && (
+                      <TouchableOpacity
+                        style={styles.migBtn}
+                        disabled={taskBusy === task.id}
+                        onPress={() => updateMoveTask(task.id, "ACCEPT")}
+                      >
+                        <Text style={styles.migBtnText}>Accept</Text>
+                      </TouchableOpacity>
+                    )}
+                    {!done && !dismissed && (
+                      <TouchableOpacity
+                        style={styles.migBtnPrimary}
+                        disabled={taskBusy === task.id}
+                        onPress={() => confirmCompleteMoveTask(task.id)}
+                      >
+                        <Text style={styles.migBtnPrimaryText}>Complete</Text>
+                      </TouchableOpacity>
+                    )}
+                    {!done && !dismissed && (
+                      <TouchableOpacity
+                        style={styles.migBtn}
+                        disabled={taskBusy === task.id}
+                        onPress={() => updateMoveTask(task.id, "DISMISS")}
+                      >
+                        <Text style={styles.migBtnText}>Dismiss</Text>
+                      </TouchableOpacity>
+                    )}
+                    {(done || dismissed) && (
+                      <TouchableOpacity
+                        style={styles.migBtn}
+                        disabled={taskBusy === task.id}
+                        onPress={() => updateMoveTask(task.id, "REOPEN")}
+                      >
+                        <Text style={styles.migBtnText}>Reopen</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </Card>
+
         {/* Migration Panel */}
         {migration && migration.summary.total > 0 && (
           <View style={{ marginTop: 16 }}>
@@ -268,8 +392,41 @@ export default function MovingDetailScreen() {
                 </Text>
               </View>
               <Text style={{ fontSize: 12, color: theme.colors.textTertiary, marginBottom: 12 }}>
-                {(migration.summary.transfers || 0)} transfer · {migration.summary.switches} switch · {migration.summary.newNeeded} new · {migration.summary.keeps} keep · {(migration.summary.cancels || 0)} cancel
+                {(migration.transitionPlans?.length || 0)} manual guidance items · provider actions are not automatic
               </Text>
+
+              {(migration.transitionPlans || []).length > 0 && (
+                <View style={styles.transitionPanel}>
+                  <View style={styles.transitionHeader}>
+                    <Text style={styles.transitionTitle}>Move Transition Plan</Text>
+                    <UiBadge label="Manual tracking only" variant="warning" />
+                  </View>
+                  <Text style={styles.transitionIntro}>
+                    Read-only guidance. LocateFlow does not update provider accounts or execute address changes.
+                  </Text>
+                  {migration.transitionPlans.map((planItem: any, i: number) => (
+                    <View key={`tp-${planItem.serviceId || i}`} style={[styles.transitionItem, i > 0 && styles.migRowDivider]}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.transitionAction}>
+                          {planItem.actionLabel || String(planItem.actionType || "").replace(/_/g, " ")}
+                        </Text>
+                        <Text style={styles.transitionReason}>{planItem.primaryReason}</Text>
+                        <Text style={styles.transitionStep}>{planItem.suggestedNextStep}</Text>
+                        {planItem.destinationProviderCandidates?.length > 0 && (
+                          <View style={styles.transitionCandidates}>
+                            {planItem.destinationProviderCandidates.slice(0, 2).map((candidate: any) => (
+                              <Text key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} style={styles.transitionCandidate}>
+                                {candidate.name} · {candidate.coverageLabel}
+                              </Text>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.transitionConfidence}>{planItem.confidence}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
 
               {(migration.transfers || []).length > 0 && (
                 <View style={{ marginBottom: 12 }}>
@@ -573,6 +730,112 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   migBtnPrimaryText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  transitionPanel: {
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: theme.radius.lg,
+    padding: 12,
+    marginBottom: 14,
+  },
+  transitionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 6,
+  },
+  transitionTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  transitionIntro: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  transitionItem: {
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 10,
+  },
+  transitionAction: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: theme.colors.text,
+    textTransform: "capitalize",
+  },
+  transitionReason: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 3,
+    lineHeight: 16,
+  },
+  transitionStep: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 5,
+    lineHeight: 17,
+  },
+  transitionCandidates: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 8,
+  },
+  transitionCandidate: {
+    fontSize: 10,
+    color: theme.colors.textMuted,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: "rgba(255,255,255,0.03)",
+  },
+  transitionConfidence: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: theme.colors.textMuted,
+    textTransform: "uppercase",
+    marginTop: 2,
+  },
+  emptyText: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    lineHeight: 18,
+  },
+  taskRow: {
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 12,
+  },
+  taskBadges: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 6,
+  },
+  taskTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.text,
+  },
+  taskDescription: {
+    fontSize: 12,
+    color: theme.colors.textTertiary,
+    lineHeight: 17,
+    marginTop: 4,
+  },
+  taskCaveat: {
+    fontSize: 10,
+    color: theme.colors.textMuted,
+    marginTop: 6,
+    lineHeight: 15,
+  },
+  taskActions: {
+    alignItems: "flex-end",
+    gap: 6,
+    maxWidth: 92,
+  },
   stateGuideCard: {
     marginTop: 16,
     backgroundColor: theme.colors.card,

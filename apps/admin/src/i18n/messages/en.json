@@ -42,6 +42,7 @@
     "subscriptions": "Subscriptions",
     "billing": "Billing",
     "providers": "Providers",
+    "providerGovernance": "Provider Governance",
     "stateRules": "State Rules",
     "movingPlans": "Moving Plans",
     "notifications": "Notifications",

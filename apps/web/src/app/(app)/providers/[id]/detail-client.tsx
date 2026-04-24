@@ -17,6 +17,10 @@ import {
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryLabel,
 } from "@/lib/recommendation-engine";
+import type {
+  ProviderCoverageConfidence,
+  ProviderTrustSummary,
+} from "@locateflow/shared";
 
 export interface ProviderDetail {
   id: string;
@@ -35,6 +39,14 @@ export interface ProviderDetail {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address" | string;
+  coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address" | string;
+  coverageNote?: string | null;
+  coverageSourceUrl?: string | null;
+  requiresAddressCheck?: boolean;
+  requiresPolygonCheck?: boolean;
+  coverageConfidence?: ProviderCoverageConfidence;
+  trust?: ProviderTrustSummary;
 }
 
 interface AddressSummary {
@@ -99,6 +111,7 @@ export function ProviderDetailClient({
         ? stateRule.taxInfo
         : stateRule.dmvRules
     : null;
+  const coverageConfidence = provider.trust?.coverageConfidence || provider.coverageConfidence;
 
   return (
     <div className="space-y-6">
@@ -139,6 +152,13 @@ export function ProviderDetailClient({
           </div>
         </div>
 
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+          <p className="text-xs font-semibold text-amber-200">Listed provider</p>
+          <p className="text-[11px] text-amber-100/75 mt-1 leading-relaxed">
+            This is unverified directory data, not an official partnership or integration. Confirm details with the official provider before acting.
+          </p>
+        </div>
+
         {provider.description && (
           <p className="text-sm text-white/70 leading-relaxed">{provider.description}</p>
         )}
@@ -148,7 +168,7 @@ export function ProviderDetailClient({
             href={addCta}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:from-orange-600 hover:to-orange-700 transition"
           >
-            + Add as my service <ArrowRight className="h-4 w-4" />
+            Track manually as my service <ArrowRight className="h-4 w-4" />
           </Link>
           {provider.website && (
             <a
@@ -167,6 +187,24 @@ export function ProviderDetailClient({
             >
               <Phone className="h-4 w-4" /> Call
             </a>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex gap-3">
+        <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-xs font-semibold text-white">
+            {coverageConfidence?.label || "Unverified coverage"}
+          </p>
+          <p className="text-[12px] text-white/55 mt-1 leading-relaxed">
+            {coverageConfidence?.message || "Availability may vary by address. Confirm with the official provider before acting."}
+          </p>
+          <p className="text-[11px] text-white/40 mt-1">
+            Adding this provider only creates a LocateFlow service record; it does not update your address with the provider.
+          </p>
+          {provider.coverageNote && (
+            <p className="text-[11px] text-white/40 mt-2">{provider.coverageNote}</p>
           )}
         </div>
       </div>
@@ -245,10 +283,13 @@ export function ProviderDetailClient({
             <p className="text-white/40">Coverage</p>
             <p className="text-white/80 mt-0.5">
               {provider.scope === "FEDERAL"
-                ? "All U.S. states"
+                ? "National listing"
                 : provider.states.length > 0
                   ? provider.states.join(", ")
                   : "State-scoped"}
+            </p>
+            <p className="text-[11px] text-white/40 mt-1">
+              {coverageConfidence?.label || "Unverified coverage"}
             </p>
           </div>
           {provider.tags.length > 0 && (

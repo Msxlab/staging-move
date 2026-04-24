@@ -6,6 +6,7 @@ import {
   Search, Plus, Pencil, Trash2, ChevronDown, ChevronRight,
   Filter, X, Download, ToggleLeft, ToggleRight, LayoutGrid, List, Layers,
   Building2, Globe, MapPin, CheckSquare, Square, Eye, Upload, Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCategoryIcon, getCategoryLabel, getCategoryOrder } from "@/lib/recommendation-engine";
@@ -15,6 +16,8 @@ interface Provider {
   description: string | null; website: string | null; phone: string | null; logoUrl: string | null;
   scope: string; states: string; tags: string;
   popularityScore: number; isActive: boolean; displayOrder: number;
+  qualityWarningCount?: number;
+  qualityWarnings?: Array<{ code: string; label: string; message: string; severity: string }>;
 }
 
 interface CategoryStat { category: string; count: number; avgScore: number; }
@@ -28,6 +31,7 @@ export default function ProvidersPage() {
   const [total, setTotal] = useState(0);
   const [activeCount, setActiveCount] = useState(0);
   const [inactiveCount, setInactiveCount] = useState(0);
+  const [qualitySummary, setQualitySummary] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -81,6 +85,7 @@ export default function ProvidersPage() {
       setTotal(data.total || 0);
       setActiveCount(data.activeCount || 0);
       setInactiveCount(data.inactiveCount || 0);
+      setQualitySummary(data.qualitySummary || {});
       setOpenCategories((prev) => {
         if (prev.size > 0) return prev;
         return new Set(Object.keys(data.groups || {}).slice(0, 5));
@@ -225,6 +230,10 @@ export default function ProvidersPage() {
   const allProviders = Object.values(groups).flat();
   const federalCount = allProviders.filter((p) => p.scope === "FEDERAL").length;
   const stateCount = allProviders.filter((p) => p.scope === "STATE").length;
+  const qualityWarningTotal = Object.values(qualitySummary).reduce((sum, count) => sum + count, 0);
+  const qualityIssues = Object.entries(qualitySummary)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
 
   return (
     <div className="space-y-5">
@@ -275,19 +284,43 @@ export default function ProvidersPage() {
       )}
 
       {/* Stats Bar */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {[
           { label: "Total", value: total, color: "text-foreground", bg: "bg-card" },
           { label: "Active", value: activeCount, color: "text-green-500", bg: "bg-green-500/5" },
           { label: "Inactive", value: inactiveCount, color: "text-gray-400", bg: "bg-gray-500/5" },
           { label: "Federal", value: federalCount, color: "text-blue-500", bg: "bg-blue-500/5" },
           { label: "State", value: stateCount, color: "text-orange-500", bg: "bg-orange-500/5" },
+          { label: "Quality warnings", value: qualityWarningTotal, color: "text-amber-500", bg: "bg-amber-500/5" },
         ].map((s) => (
           <div key={s.label} className={`rounded-xl border border-border ${s.bg} p-4`}>
             <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
             <p className={`mt-1 text-2xl font-bold ${s.color}`}>{s.value}</p>
           </div>
         ))}
+      </div>
+
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Provider data quality</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Warnings are derived from current catalog fields only. They do not prove a provider is verified or official.
+            </p>
+            {qualityIssues.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {qualityIssues.map(([code, count]) => (
+                  <span key={code} className="rounded-full border border-amber-500/20 bg-background px-2.5 py-1 text-xs text-amber-600">
+                    {code.replace(/_/g, " ")}: {count}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">No warnings in the current result set.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Search + Filter Bar + View Toggle */}
@@ -451,6 +484,11 @@ export default function ProvidersPage() {
                               <td className="px-3 py-2.5">
                                 <p className="font-medium text-foreground text-sm">{p.name}</p>
                                 <p className="text-[11px] text-muted-foreground">{p.slug}</p>
+                                {(p.qualityWarningCount || 0) > 0 && (
+                                  <p className="mt-1 text-[11px] text-amber-600">
+                                    {p.qualityWarningCount} quality warning{p.qualityWarningCount === 1 ? "" : "s"}
+                                  </p>
+                                )}
                               </td>
                               <td className="px-3 py-2.5">
                                 <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${p.scope === "FEDERAL" ? "bg-blue-500/10 text-blue-500" : "bg-orange-500/10 text-orange-500"}`}>
@@ -500,6 +538,11 @@ export default function ProvidersPage() {
                   <div>
                     <p className="font-semibold text-foreground text-sm">{p.name}</p>
                     <p className="text-[11px] text-muted-foreground">{getCategoryIcon(p.category)} {getCategoryLabel(p.category)}</p>
+                    {(p.qualityWarningCount || 0) > 0 && (
+                      <p className="mt-1 text-[11px] text-amber-600">
+                        {p.qualityWarningCount} quality warning{p.qualityWarningCount === 1 ? "" : "s"}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.isActive ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-400"}`}>
@@ -540,7 +583,15 @@ export default function ProvidersPage() {
                 return (
                   <tr key={p.id} className="bg-card hover:bg-accent/50 transition-colors">
                     <td className="px-3 py-3"><button onClick={() => toggleSelect(p.id)}>{selected.has(p.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-muted-foreground" />}</button></td>
-                    <td className="px-4 py-3"><p className="font-medium text-foreground">{p.name}</p><p className="text-xs text-muted-foreground">{p.slug}</p></td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-foreground">{p.name}</p>
+                      <p className="text-xs text-muted-foreground">{p.slug}</p>
+                      {(p.qualityWarningCount || 0) > 0 && (
+                        <p className="mt-1 text-[11px] text-amber-600">
+                          {p.qualityWarningCount} quality warning{p.qualityWarningCount === 1 ? "" : "s"}
+                        </p>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-foreground"><span className="mr-1">{getCategoryIcon(p.category)}</span>{getCategoryLabel(p.category)}</td>
                     <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.scope === "FEDERAL" ? "bg-blue-500/10 text-blue-500" : "bg-orange-500/10 text-orange-500"}`}>{p.scope}</span></td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">{p.scope === "FEDERAL" ? "All" : states.length > 3 ? `${states.slice(0, 3).join(", ")}...` : states.join(", ")}</td>

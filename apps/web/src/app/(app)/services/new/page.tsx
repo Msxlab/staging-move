@@ -59,6 +59,16 @@ export default function NewServicePage() {
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCustomProvider, setShowCustomProvider] = useState(false);
+  const [customProvider, setCustomProvider] = useState({
+    name: "",
+    category: prefillCategory || "OTHER",
+    providerType: "OTHER",
+    website: "",
+    phone: "",
+    email: "",
+    notes: "",
+  });
 
   // Billing expansion per provider
   const [billingExpanded, setBillingExpanded] = useState<Set<string>>(new Set());
@@ -231,6 +241,45 @@ export default function NewServicePage() {
     }
   };
 
+  const handleAddCustomProvider = async () => {
+    if (!selectedAddress) { setError("Please select an address."); return; }
+    if (!customProvider.name.trim()) { setError("Provider name is required."); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      const providerRes = await fetch("/api/custom-providers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(customProvider),
+      });
+      const providerData = await providerRes.json();
+      if (!providerRes.ok) throw new Error(providerData.error || "Failed to add custom provider");
+
+      const serviceRes = await fetch("/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: selectedAddress,
+          customProviderId: providerData.provider.id,
+          category: providerData.provider.category || "OTHER",
+          providerName: providerData.provider.name,
+          website: providerData.provider.website || "",
+          phone: providerData.provider.phone || "",
+          email: providerData.provider.email || "",
+          notes: customProvider.notes || "User-added provider. Manual tracking only.",
+        }),
+      });
+      const serviceData = await serviceRes.json();
+      if (!serviceRes.ok) throw new Error(serviceData.error || "Failed to attach custom provider");
+      toast.success("Custom provider added for local tracking");
+      router.push("/services");
+    } catch (error: any) {
+      setError(error?.message || "Failed to add custom provider");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const selectedCount = selectedProviders.size;
 
   // ─── Render ─────────────────────────────────────────────────────────────
@@ -355,6 +404,67 @@ export default function NewServicePage() {
               value={providerSearch}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProviderSearch(e.target.value)}
             />
+          </div>
+
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-white">Add a local or custom provider</p>
+                <p className="text-xs text-white/40 mt-1">
+                  For dentists, gyms, law offices, local utilities, healthcare, and other private provider records. Manual tracking only.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCustomProvider((value) => !value)}
+                className="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-200 text-xs hover:bg-cyan-500/30"
+              >
+                {showCustomProvider ? "Hide" : "Add local provider"}
+              </button>
+            </div>
+            {showCustomProvider && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Provider name"
+                  value={customProvider.name}
+                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, name: e.target.value }))}
+                />
+                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Category, e.g. HEALTHCARE_DENTIST"
+                  value={customProvider.category}
+                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, category: e.target.value }))}
+                />
+                <select className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+                  value={customProvider.providerType}
+                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, providerType: e.target.value }))}
+                >
+                  {["OTHER", "LOCAL_BUSINESS", "PROFESSIONAL_SERVICE", "HEALTHCARE", "LEGAL", "DENTAL", "PHYSICAL_THERAPY", "GYM"].map((type) => (
+                    <option key={type} value={type}>{type.replace(/_/g, " ")}</option>
+                  ))}
+                </select>
+                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Phone"
+                  value={customProvider.phone}
+                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, phone: e.target.value }))}
+                />
+                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Website"
+                  value={customProvider.website}
+                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, website: e.target.value }))}
+                />
+                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Email"
+                  value={customProvider.email}
+                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, email: e.target.value }))}
+                />
+                <textarea className="sm:col-span-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Notes"
+                  value={customProvider.notes}
+                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, notes: e.target.value }))}
+                />
+                <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-[11px] text-white/35">This creates a private user-added provider and a local service record. It does not update any external account.</p>
+                  <button type="button" disabled={saving} onClick={handleAddCustomProvider}
+                    className="px-3 py-2 rounded-xl bg-cyan-500 text-white text-xs font-medium hover:bg-cyan-600 disabled:opacity-50">
+                    {saving ? "Adding..." : "Add custom provider"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Category filter */}

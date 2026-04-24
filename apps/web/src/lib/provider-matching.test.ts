@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getProviderMatchLevelFromDb, tierProvidersFromDb } from "./provider-matching";
+import {
+  getProviderCoverageConfidenceFromDb,
+  getProviderMatchLevelFromDb,
+  tierProvidersFromDb,
+} from "./provider-matching";
 
 describe("tierProvidersFromDb", () => {
   it("keeps exact matches without dropping broader state/federal providers", () => {
@@ -30,6 +34,7 @@ describe("tierProvidersFromDb", () => {
     );
 
     expect(result.zipMatchLevel).toBe("exact");
+    expect(result.coverageConfidence).toBe("EXACT_ZIP");
     expect(result.providers.map((provider) => provider.id)).toEqual(["exact", "prefix", "state", "federal"]);
   });
 
@@ -51,6 +56,7 @@ describe("tierProvidersFromDb", () => {
     );
 
     expect(result.zipMatchLevel).toBe("prefix");
+    expect(result.coverageConfidence).toBe("ZIP_PREFIX");
     expect(result.providers.map((provider) => provider.id)).toEqual(["prefix", "state"]);
   });
 
@@ -74,6 +80,7 @@ describe("tierProvidersFromDb", () => {
     );
 
     expect(result.zipMatchLevel).toBe("polygon");
+    expect(result.coverageConfidence).toBe("MAPPED_SERVICE_AREA");
     expect(result.providers.map((provider) => provider.id)).toEqual(["polygon", "state"]);
   });
 
@@ -97,6 +104,7 @@ describe("tierProvidersFromDb", () => {
     );
 
     expect(result.zipMatchLevel).toBe("state");
+    expect(result.coverageConfidence).toBe("STATE_LEVEL");
     expect(result.providers.map((provider) => provider.id)).toEqual(["state"]);
   });
 
@@ -109,5 +117,8 @@ describe("tierProvidersFromDb", () => {
     };
 
     expect(getProviderMatchLevelFromDb(provider, { state: "TX", zip: "78759" })).toBe("live_address");
+    expect(getProviderCoverageConfidenceFromDb(provider, { state: "TX", zip: "78759" })).toBe(
+      "ADDRESS_CHECK_REQUIRED",
+    );
   });
 });

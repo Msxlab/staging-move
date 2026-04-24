@@ -1,4 +1,11 @@
 import { safeJsonArray } from "./provider-coverage";
+import {
+  getCoverageConfidencePresentation,
+  getProviderTrustPresentation,
+  mapCoverageMatchToConfidence,
+  type CoverageConfidence,
+  type ProviderTrustStatus,
+} from "./provider-move-domain";
 
 export interface ProviderIntegrityRecord {
   id?: string;
@@ -28,6 +35,103 @@ export interface NormalizedProviderRecord extends ProviderIntegrityRecord {
   normalizedName: string;
   websiteDomain: string | null;
 }
+
+export type ProviderCoverageMatchLevel =
+  | "exact"
+  | "prefix"
+  | "polygon"
+  | "state"
+  | "live_address"
+  | "unknown";
+
+export type ProviderCoverageConfidenceLevel =
+  | "high"
+  | "medium"
+  | "low"
+  | "unknown";
+
+export interface ProviderTrustRecord extends ProviderIntegrityRecord {
+  coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address" | string | null;
+  coverageMatchLevel?: ProviderCoverageMatchLevel | string | null;
+  coverageNote?: string | null;
+  coverageSourceUrl?: string | null;
+  requiresAddressCheck?: boolean | null;
+  requiresPolygonCheck?: boolean | null;
+  duplicateDomainCount?: number | null;
+}
+
+export interface ProviderCoverageConfidence {
+  confidence: CoverageConfidence;
+  level: ProviderCoverageConfidenceLevel;
+  label: string;
+  message: string;
+  requiresConfirmation: boolean;
+}
+
+export interface ProviderQualityWarning {
+  code:
+    | "missing_logo"
+    | "missing_phone"
+    | "missing_website"
+    | "missing_description"
+    | "generic_description"
+    | "marketing_description"
+    | "duplicate_domain"
+    | "broad_state_coverage"
+    | "broad_national_coverage"
+    | "address_check_required"
+    | "polygon_check_required";
+  label: string;
+  message: string;
+  severity: "info" | "warning" | "critical";
+}
+
+export interface ProviderTrustSummary {
+  status: ProviderTrustStatus;
+  statusLabel: "Listed provider";
+  statusDescription: string;
+  manualTracking: true;
+  manualTrackingLabel: "Manual tracking only";
+  manualTrackingDescription: string;
+  verificationLabel: "Unverified directory data";
+  verificationDescription: string;
+  coverageConfidence: ProviderCoverageConfidence;
+  qualityWarnings: ProviderQualityWarning[];
+}
+
+export const LOCATION_SENSITIVE_PROVIDER_CATEGORIES = new Set([
+  "UTILITY_ELECTRIC",
+  "UTILITY_GAS",
+  "UTILITY_WATER",
+  "UTILITY_INTERNET",
+  "UTILITY_TRASH",
+  "UTILITY_SEWER",
+  "TRANSPORTATION_TRANSIT",
+  "TRANSPORTATION_TOLL",
+  "HOUSING_HOME_SERVICE",
+  "HOUSING_MOVING",
+  "GROCERY_DELIVERY",
+]);
+
+export const ADDRESS_QUALIFIED_FEDERAL_CATEGORIES = new Set([
+  "UTILITY_INTERNET",
+  "UTILITY_TRASH",
+  "GROCERY_DELIVERY",
+  "HOUSING_HOME_SERVICE",
+  "HOUSING_MOVING",
+  "HOUSING_STORAGE",
+  "LOCAL_DINING",
+  "FITNESS_GYM",
+]);
+
+const MARKETING_DESCRIPTION_PATTERN =
+  /\b(best|best-in-class|largest|leading|most convenient|number one|premium|premier|trusted|top-rated|world-class|#1)\b/i;
+
+const GENERIC_DESCRIPTION_PATTERNS = [
+  /\b(provider|service|company)\s*$/i,
+  /^(local|regional|national|statewide)?\s*(service|provider|company)$/i,
+  /\b(address|account|moving)\s+(service|provider)\b/i,
+];
 
 export interface ProviderConflict {
   type: "slug" | "name-category" | "website-category";
@@ -92,6 +196,248 @@ export function normalizeProviderUrlDomain(
   } catch {
     return null;
   }
+}
+
+export function isGenericProviderDescription(
+  description?: string | null,
+  providerName?: string | null,
+): boolean {
+  const clean = description?.trim();
+  if (!clean) return false;
+  const lower = clean.toLowerCase();
+  const normalizedName = providerName?.trim().toLowerCase();
+
+  if (clean.length < 24) return true;
+  if (normalizedName && lower === normalizedName) return true;
+  return GENERIC_DESCRIPTION_PATTERNS.some((pattern) => pattern.test(clean));
+}
+
+export function hasMarketingProviderDescription(
+  description?: string | null,
+): boolean {
+  return MARKETING_DESCRIPTION_PATTERN.test(description || "");
+}
+
+export function getProviderCoverageConfidence(
+  record: ProviderTrustRecord,
+): ProviderCoverageConfidence {
+  const matchLevel = (record.coverageMatchLevel ||
+    (record.coverageModel === "live_address" ? "live_address" : null) ||
+    (record.scope === "FEDERAL" ? "state" : "state")) as ProviderCoverageMatchLevel;
+  const confidence = mapCoverageMatchToConfidence(matchLevel, {
+    scope: record.scope,
+    coverageModel: record.coverageModel,
+    requiresAddressCheck: record.requiresAddressCheck,
+    requiresPolygonCheck: record.requiresPolygonCheck,
+  });
+  const presentation = getCoverageConfidencePresentation(confidence);
+
+  if (matchLevel === "exact") {
+    return {
+      confidence,
+      level: "high",
+      label: presentation.label,
+      message: presentation.description,
+      requiresConfirmation: true,
+    };
+  }
+
+  if (matchLevel === "prefix") {
+    return {
+      confidence,
+      level: "medium",
+      label: presentation.label,
+      message: presentation.description,
+      requiresConfirmation: true,
+    };
+  }
+
+  if (matchLevel === "polygon" || record.requiresPolygonCheck) {
+    return {
+      confidence,
+      level: "medium",
+      label: presentation.label,
+      message: presentation.description,
+      requiresConfirmation: true,
+    };
+  }
+
+  if (matchLevel === "live_address" || record.requiresAddressCheck) {
+    return {
+      confidence,
+      level: "low",
+      label: presentation.label,
+      message: presentation.description,
+      requiresConfirmation: true,
+    };
+  }
+
+  if (record.scope === "FEDERAL") {
+    return {
+      confidence,
+      level: "low",
+      label: presentation.label,
+      message: presentation.description,
+      requiresConfirmation: true,
+    };
+  }
+
+  if (matchLevel === "state") {
+    return {
+      confidence,
+      level: "low",
+      label: presentation.label,
+      message: presentation.description,
+      requiresConfirmation: true,
+    };
+  }
+
+  return {
+    confidence,
+    level: "unknown",
+    label: presentation.label,
+    message: presentation.description,
+    requiresConfirmation: true,
+  };
+}
+
+export function getProviderQualityWarnings(
+  record: ProviderTrustRecord,
+): ProviderQualityWarning[] {
+  const warnings: ProviderQualityWarning[] = [];
+  const states = normalizeStates(record.states);
+  const zipCodes = normalizeZipCodes(record.zipCodes);
+  const domain = normalizeProviderUrlDomain(record.website);
+
+  if (!record.logoUrl) {
+    warnings.push({
+      code: "missing_logo",
+      label: "Missing logo",
+      message: "Provider has no logo URL; users will see a generic category icon.",
+      severity: "info",
+    });
+  }
+
+  if (!record.phone) {
+    warnings.push({
+      code: "missing_phone",
+      label: "Missing phone",
+      message: "Provider has no phone number in the catalog.",
+      severity: "warning",
+    });
+  }
+
+  if (!record.website) {
+    warnings.push({
+      code: "missing_website",
+      label: "Missing website",
+      message: "Provider has no website URL in the catalog.",
+      severity: "critical",
+    });
+  }
+
+  if (!record.description) {
+    warnings.push({
+      code: "missing_description",
+      label: "Missing description",
+      message: "Provider has no neutral user-facing description.",
+      severity: "warning",
+    });
+  } else if (isGenericProviderDescription(record.description, record.name)) {
+    warnings.push({
+      code: "generic_description",
+      label: "Generic description",
+      message: "Description is too generic to establish what this provider covers.",
+      severity: "warning",
+    });
+  }
+
+  if (hasMarketingProviderDescription(record.description)) {
+    warnings.push({
+      code: "marketing_description",
+      label: "Marketing language",
+      message: "Description contains promotional language that should be neutralized.",
+      severity: "warning",
+    });
+  }
+
+  if (domain && (record.duplicateDomainCount || 0) > 1) {
+    warnings.push({
+      code: "duplicate_domain",
+      label: "Duplicate domain candidate",
+      message: `This domain appears on ${record.duplicateDomainCount} provider records. Review whether the split is intentional.`,
+      severity: "info",
+    });
+  }
+
+  if (
+    record.scope === "STATE" &&
+    zipCodes.length === 0 &&
+    LOCATION_SENSITIVE_PROVIDER_CATEGORIES.has(record.category)
+  ) {
+    warnings.push({
+      code: "broad_state_coverage",
+      label: "Broad state coverage",
+      message:
+        "Location-sensitive category is modeled at state level. Availability may vary by city, territory, route, or address.",
+      severity: "warning",
+    });
+  }
+
+  if (
+    record.scope === "FEDERAL" &&
+    zipCodes.length === 0 &&
+    ADDRESS_QUALIFIED_FEDERAL_CATEGORIES.has(record.category)
+  ) {
+    warnings.push({
+      code: "broad_national_coverage",
+      label: "Broad national listing",
+      message:
+        "National brand likely requires address-level serviceability confirmation.",
+      severity: "warning",
+    });
+  }
+
+  if (record.requiresAddressCheck || record.coverageModel === "live_address") {
+    warnings.push({
+      code: "address_check_required",
+      label: "Address check required",
+      message: "Official address-level availability check is required before relying on this provider.",
+      severity: "warning",
+    });
+  }
+
+  if (record.requiresPolygonCheck || record.coverageModel === "polygon") {
+    warnings.push({
+      code: "polygon_check_required",
+      label: "Mapped coverage",
+      message: "Coverage is approximate and should be reviewed against provider source maps.",
+      severity: states.length > 1 ? "warning" : "info",
+    });
+  }
+
+  return warnings;
+}
+
+export function getProviderTrustSummary(
+  record: ProviderTrustRecord,
+): ProviderTrustSummary {
+  const trust = getProviderTrustPresentation("LISTED");
+
+  return {
+    status: trust.status,
+    statusLabel: "Listed provider",
+    statusDescription: trust.description,
+    manualTracking: true,
+    manualTrackingLabel: "Manual tracking only",
+    manualTrackingDescription:
+      "Adding this provider creates a service record for your checklist. LocateFlow does not update your address with the provider.",
+    verificationLabel: "Unverified directory data",
+    verificationDescription:
+      "Provider details should be confirmed with the official provider before you act.",
+    coverageConfidence: getProviderCoverageConfidence(record),
+    qualityWarnings: getProviderQualityWarnings(record),
+  };
 }
 
 function normalizeStringArray(

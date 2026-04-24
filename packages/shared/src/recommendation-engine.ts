@@ -17,6 +17,13 @@
  *   7. Negative scoring for irrelevant providers
  */
 
+import {
+  getCoverageConfidencePresentation,
+  isCoverageAddressSensitive,
+  mapCoverageMatchToConfidence,
+  type CoverageConfidence,
+} from "./provider-move-domain";
+
 // ── Types ────────────────────────────────────────────────────
 
 export type UrgencyTier = "CRITICAL" | "IMPORTANT" | "RECOMMENDED" | "OPTIONAL";
@@ -67,6 +74,11 @@ export interface RecommendationExplanation {
   urgencyTier: UrgencyTier;
   headline: string;
   reason: string;
+  coverageConfidence: CoverageConfidence;
+  coverageLabel: string;
+  caveat?: string;
+  manualConfirmationNote: string;
+  recommendationUse: "MANUAL_TRACKING_CANDIDATE";
   deadline?: string;
   profileMatch?: string;
   communityNote?: string;
@@ -113,6 +125,32 @@ export interface RecommendationStateRuleContext {
 
 export interface RecommendationContext {
   stateRule?: RecommendationStateRuleContext | null;
+}
+
+const COVERAGE_SCORE_WEIGHT: Record<CoverageConfidence, number> = {
+  EXACT_ZIP: 36,
+  ZIP_PREFIX: 28,
+  MAPPED_SERVICE_AREA: 22,
+  STATE_LEVEL: 8,
+  NATIONAL_OR_FEDERAL: 2,
+  ADDRESS_CHECK_REQUIRED: -8,
+  UNKNOWN: -10,
+};
+
+const ADDRESS_SENSITIVE_COVERAGE_PENALTY: Partial<Record<CoverageConfidence, number>> = {
+  STATE_LEVEL: -8,
+  NATIONAL_OR_FEDERAL: -18,
+  ADDRESS_CHECK_REQUIRED: -16,
+  UNKNOWN: -20,
+};
+
+function getProviderCoverageConfidence(provider: Provider): CoverageConfidence {
+  return mapCoverageMatchToConfidence(provider.coverageMatchLevel, {
+    scope: provider.scope,
+    coverageModel: provider.coverageModel,
+    requiresAddressCheck: provider.requiresAddressCheck,
+    requiresPolygonCheck: provider.requiresPolygonCheck,
+  });
 }
 
 // ── Category Metadata ────────────────────────────────────────
@@ -481,6 +519,9 @@ export function scoreProviders(
       let score = 0;
       const reasons: string[] = [];
       const tags = provider.tags || [];
+      const addressSensitive = isCoverageAddressSensitive(provider.category);
+      const coverageConfidence = getProviderCoverageConfidence(provider);
+      const coveragePresentation = getCoverageConfidencePresentation(coverageConfidence);
 
       // 0. Urgency tier (primary sort signal)
       const urgencyTier = getUrgencyTier(provider.category, profile);
@@ -510,24 +551,37 @@ export function scoreProviders(
 
       // 4. State-specific boost
       if (provider.scope === "STATE" && provider.states?.includes(userState)) {
-        score += 15;
-        reasons.push(`Available in ${userState}`);
+        score += addressSensitive ? 4 : 15;
+        reasons.push(
+          addressSensitive
+            ? `Listed in ${userState}; confirm address availability`
+            : `Listed in ${userState}`,
+        );
       }
 
-      if (provider.coverageMatchLevel === "exact") {
-        score += 8;
+      const coverageScore =
+        COVERAGE_SCORE_WEIGHT[coverageConfidence] +
+        (addressSensitive ? ADDRESS_SENSITIVE_COVERAGE_PENALTY[coverageConfidence] || 0 : 0);
+      score += coverageScore;
+
+      if (coverageConfidence === "EXACT_ZIP") {
         reasons.push("Exact ZIP match");
-      } else if (provider.coverageMatchLevel === "prefix") {
-        score += 5;
+      } else if (coverageConfidence === "ZIP_PREFIX") {
         reasons.push("Local ZIP-area match");
-      } else if (provider.coverageMatchLevel === "polygon") {
-        score += 2;
-        reasons.push("Route/corridor coverage");
+      } else if (coverageConfidence === "MAPPED_SERVICE_AREA") {
+        reasons.push("Mapped service-area match");
+      } else if (coverageConfidence === "STATE_LEVEL" && addressSensitive) {
+        reasons.push("State-level listing; confirm service territory");
+      } else if (coverageConfidence === "NATIONAL_OR_FEDERAL" && addressSensitive) {
+        reasons.push("National listing; confirm destination availability");
+      } else if (coverageConfidence === "ADDRESS_CHECK_REQUIRED") {
+        reasons.push("Confirm availability by address");
+      } else if (coverageConfidence === "UNKNOWN") {
+        reasons.push("Coverage unverified");
       }
 
-      if (provider.requiresAddressCheck) {
-        score -= 3;
-        reasons.push("Confirm availability by address");
+      if (addressSensitive && coveragePresentation.requiresCaveat) {
+        reasons.push("Availability may vary by address");
       }
 
       // 4b. Ownership-aware steering: renters vs homeowners insurance
@@ -612,6 +666,11 @@ export function scoreProviders(
         urgencyTier,
         headline,
         reason: reasons.slice(0, 3).join(" · ") || getCategoryLabel(provider.category),
+        coverageConfidence,
+        coverageLabel: coveragePresentation.label,
+        caveat: coveragePresentation.requiresCaveat ? coveragePresentation.description : undefined,
+        manualConfirmationNote: "Confirm details and availability with the provider. LocateFlow recommendations are manual guidance only.",
+        recommendationUse: "MANUAL_TRACKING_CANDIDATE",
         deadline: CATEGORY_DEADLINES[provider.category],
         profileMatch: reasons.find((r) => r.startsWith("You have") || r.includes("your")) || undefined,
         communityNote: provider.userCount && provider.userCount > 10
@@ -637,6 +696,12 @@ export function scoreProviders(
       const tierOrder: Record<UrgencyTier, number> = { CRITICAL: 0, IMPORTANT: 1, RECOMMENDED: 2, OPTIONAL: 3 };
       const tierDiff = tierOrder[a.urgencyTier] - tierOrder[b.urgencyTier];
       if (tierDiff !== 0) return tierDiff;
+      if (isCoverageAddressSensitive(a.category) || isCoverageAddressSensitive(b.category)) {
+        const coverageDiff =
+          getCoverageConfidencePresentation(getProviderCoverageConfidence(b)).rank -
+          getCoverageConfidencePresentation(getProviderCoverageConfidence(a)).rank;
+        if (coverageDiff !== 0) return coverageDiff;
+      }
       // Secondary sort: score within tier
       const scoreDiff = b.recommendationScore - a.recommendationScore;
       if (scoreDiff !== 0) return scoreDiff;

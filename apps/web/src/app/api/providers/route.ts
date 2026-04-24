@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderTrustSummary } from "@locateflow/shared";
 import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
@@ -130,34 +131,60 @@ export async function GET(request: NextRequest) {
       return a.name.localeCompare(b.name);
     });
 
-    const result = filtered.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      category: p.category,
-      subCategory: p.subCategory,
-      description: p.description,
-      website: p.website,
-      phone: p.phone,
-      logoUrl: p.logoUrl,
-      scope: p.scope,
-      states: safeJsonArray(p.states),
-      zipCodes: Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes),
-      tags: safeJsonArray(p.tags),
-      popularityScore: p.popularityScore,
-      displayOrder: p.displayOrder,
-      coverageModel: p.coverageModel || "state",
-      coverageMatchLevel: getProviderMatchLevelFromDb(p, {
+    const result = filtered.map((p) => {
+      const states = safeJsonArray(p.states);
+      const zipCodes = Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes);
+      const tags = safeJsonArray(p.tags);
+      const coverageModel = p.coverageModel || "state";
+      const coverageMatchLevel = getProviderMatchLevelFromDb(p, {
         state,
         zip,
         latitude: normalizedLatitude,
         longitude: normalizedLongitude,
-      }),
-      coverageNote: ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null,
-      coverageSourceUrl: ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null,
-      requiresAddressCheck: p.coverageModel === "live_address",
-      requiresPolygonCheck: p.coverageModel === "polygon",
-    }));
+      });
+      const coverageNote = ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null;
+      const coverageSourceUrl = ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null;
+      const requiresAddressCheck = coverageModel === "live_address";
+      const requiresPolygonCheck = coverageModel === "polygon";
+      const trust = getProviderTrustSummary({
+        ...p,
+        states,
+        zipCodes,
+        tags,
+        coverageModel,
+        coverageMatchLevel,
+        coverageNote,
+        coverageSourceUrl,
+        requiresAddressCheck,
+        requiresPolygonCheck,
+      });
+
+      return {
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        category: p.category,
+        subCategory: p.subCategory,
+        description: p.description,
+        website: p.website,
+        phone: p.phone,
+        logoUrl: p.logoUrl,
+        scope: p.scope,
+        states,
+        zipCodes,
+        tags,
+        popularityScore: p.popularityScore,
+        displayOrder: p.displayOrder,
+        coverageModel,
+        coverageMatchLevel,
+        coverageNote,
+        coverageSourceUrl,
+        requiresAddressCheck,
+        requiresPolygonCheck,
+        coverageConfidence: trust.coverageConfidence,
+        trust,
+      };
+    });
 
     const grouped: Record<string, typeof result> = {};
     for (const p of result) {

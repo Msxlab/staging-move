@@ -39,8 +39,41 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           user: { select: { id: true, email: true, firstName: true, lastName: true } },
-          fromAddress: { select: { street: true, city: true, state: true, zip: true } },
-          toAddress: { select: { street: true, city: true, state: true, zip: true } },
+          fromAddress: {
+            select: {
+              street: true,
+              city: true,
+              state: true,
+              zip: true,
+              _count: { select: { services: true } },
+            },
+          },
+          toAddress: {
+            select: {
+              street: true,
+              city: true,
+              state: true,
+              zip: true,
+              _count: { select: { services: true } },
+            },
+          },
+          moveTasks: {
+            where: { deletedAt: null },
+            select: {
+              id: true,
+              actionType: true,
+              status: true,
+              confidence: true,
+              title: true,
+              dueDate: true,
+              provider: { select: { id: true, name: true, scope: true } },
+              customProvider: { select: { id: true, name: true, providerType: true } },
+              destinationProvider: { select: { id: true, name: true, scope: true } },
+            },
+            orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
+            take: 8,
+          },
+          _count: { select: { moveTasks: true } },
         },
         orderBy: { moveDate: "desc" },
         take: perPage,

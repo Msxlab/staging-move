@@ -3,7 +3,9 @@ import { resolve } from "node:path";
 import {
   CATEGORY_META,
   expandCoverageRows,
+  getProviderQualityWarnings,
   normalizeProviderRecord,
+  normalizeProviderUrlDomain,
   sanitizeProviderSeedRecords,
 } from "../packages/shared/src";
 import {
@@ -28,6 +30,18 @@ type RawProvider = {
 type DuplicateBucket = {
   key: string;
   providers: Array<{
+    name: string;
+    slug: string;
+    category: string;
+    website: string | null;
+  }>;
+};
+
+type QualityIssueBucket = {
+  code: string;
+  label: string;
+  count: number;
+  examples: Array<{
     name: string;
     slug: string;
     category: string;
@@ -138,6 +152,88 @@ function summarizeCoverage(
   };
 }
 
+function summarizeQuality(
+  providers: ReturnType<typeof normalizeProviderRecord>[],
+) {
+  const domainCounts = new Map<string, number>();
+  for (const provider of providers) {
+    const domain = normalizeProviderUrlDomain(provider.website);
+    if (!domain) continue;
+    domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
+  }
+
+  const buckets = new Map<string, QualityIssueBucket>();
+  const broadCoverageAssumptions: Array<{
+    name: string;
+    slug: string;
+    category: string;
+    scope: string;
+    states: string[];
+    website: string | null;
+    warnings: string[];
+  }> = [];
+
+  for (const provider of providers) {
+    const domain = normalizeProviderUrlDomain(provider.website);
+    const warnings = getProviderQualityWarnings({
+      ...provider,
+      duplicateDomainCount: domain ? domainCounts.get(domain) || 0 : 0,
+    });
+
+    for (const warning of warnings) {
+      const bucket = buckets.get(warning.code) || {
+        code: warning.code,
+        label: warning.label,
+        count: 0,
+        examples: [],
+      };
+      bucket.count += 1;
+      if (bucket.examples.length < 20) {
+        bucket.examples.push({
+          name: provider.name,
+          slug: provider.slug,
+          category: provider.category,
+          website: provider.websiteDomain,
+        });
+      }
+      buckets.set(warning.code, bucket);
+    }
+
+    const broadWarnings = warnings
+      .filter((warning) =>
+        [
+          "broad_state_coverage",
+          "broad_national_coverage",
+          "address_check_required",
+          "polygon_check_required",
+        ].includes(warning.code),
+      )
+      .map((warning) => warning.label);
+
+    if (broadWarnings.length > 0) {
+      broadCoverageAssumptions.push({
+        name: provider.name,
+        slug: provider.slug,
+        category: provider.category,
+        scope: provider.scope,
+        states: provider.states,
+        website: provider.websiteDomain,
+        warnings: broadWarnings,
+      });
+    }
+  }
+
+  return {
+    issueBuckets: [...buckets.values()].sort(
+      (a, b) => b.count - a.count || a.code.localeCompare(b.code),
+    ),
+    broadCoverageAssumptions: broadCoverageAssumptions.sort(
+      (a, b) =>
+        a.category.localeCompare(b.category) || a.name.localeCompare(b.name),
+    ),
+  };
+}
+
 function buildMarkdownReport(input: {
   rawCount: number;
   sanitizedCount: number;
@@ -150,6 +246,7 @@ function buildMarkdownReport(input: {
   crossCategoryNameDuplicates: DuplicateBucket[];
   crossCategoryDomainDuplicates: DuplicateBucket[];
   coverageSummary: ReturnType<typeof summarizeCoverage>;
+  qualitySummary: ReturnType<typeof summarizeQuality>;
 }) {
   const lines: string[] = [];
 
@@ -172,6 +269,9 @@ function buildMarkdownReport(input: {
   lines.push(
     `- Cross-category domain duplicates: ${input.crossCategoryDomainDuplicates.length}`,
   );
+  for (const issue of input.qualitySummary.issueBuckets) {
+    lines.push(`- ${issue.label}: ${issue.count}`);
+  }
   lines.push("");
   lines.push("## Scope Distribution");
   lines.push("");
@@ -233,6 +333,37 @@ function buildMarkdownReport(input: {
     input.coverageSummary.anomalies
       .slice(0, 50)
       .forEach((entry) => lines.push(`- ${entry}`));
+  }
+  lines.push("");
+  lines.push("## Data Quality Warnings");
+  lines.push("");
+  if (input.qualitySummary.issueBuckets.length === 0) {
+    lines.push("- None");
+    lines.push("");
+  } else {
+    input.qualitySummary.issueBuckets.forEach((bucket) => {
+      lines.push(`### ${bucket.label} (${bucket.count})`);
+      lines.push("");
+      bucket.examples.slice(0, 10).forEach((provider) => {
+        lines.push(
+          `- ${provider.name} | ${provider.category} | ${provider.slug}${provider.website ? ` | ${provider.website}` : ""}`,
+        );
+      });
+      lines.push("");
+    });
+  }
+  lines.push("## Broad Or Unverified Coverage Assumptions");
+  lines.push("");
+  if (input.qualitySummary.broadCoverageAssumptions.length === 0) {
+    lines.push("- None");
+  } else {
+    input.qualitySummary.broadCoverageAssumptions
+      .slice(0, 100)
+      .forEach((provider) => {
+        lines.push(
+          `- ${provider.name} | ${provider.category} | ${provider.scope} | ${provider.warnings.join(", ")}`,
+        );
+      });
   }
   lines.push("");
   lines.push("## Recommended Next Cleanup Slice");
@@ -326,6 +457,7 @@ async function main() {
   const coverageSummary = summarizeCoverage(
     sanitized.providers.map((provider) => normalizeProviderRecord(provider)),
   );
+  const qualitySummary = summarizeQuality(sanitizedNormalizedProviders);
   const report = buildMarkdownReport({
     rawCount: rawProviders.length,
     sanitizedCount: sanitized.providers.length,
@@ -341,6 +473,7 @@ async function main() {
     crossCategoryNameDuplicates,
     crossCategoryDomainDuplicates,
     coverageSummary,
+    qualitySummary,
   });
 
   if (shouldWrite) {
@@ -363,6 +496,7 @@ async function main() {
           crossCategoryNameDuplicates,
           crossCategoryDomainDuplicates,
           coverageSummary,
+          qualitySummary,
         },
         null,
         2,
