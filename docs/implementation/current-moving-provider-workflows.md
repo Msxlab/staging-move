@@ -30,11 +30,11 @@ ZIP and state matching are confidence signals, not proof of service. Exact ZIP a
 
 The current app does not ship all US ZIP codes to web or mobile clients. Provider matching uses server/API-side provider fields, generated coverage rows, and static coverage metadata where available.
 
-## Move Transition Guidance
+## Move Tasks And Transition Guidance
 
-The move transition classifier produces read-only guidance. It does not persist tasks, update provider accounts, or execute address changes.
+The move transition classifier now feeds persistent move tasks. These tasks are current-product workflow records inside LocateFlow; they do not update provider accounts or execute address changes outside LocateFlow.
 
-Supported action labels:
+Supported move task actions:
 
 - Stop old service.
 - Start destination service.
@@ -49,7 +49,41 @@ Supported action labels:
 - Forward mail.
 - No action.
 
-Each guidance item includes a reason, confidence, caveats, suggested next step, and provider candidates when relevant.
+Each task includes a reason, confidence, caveats, suggested next step, local effect, and provider candidates when relevant.
+
+Move task statuses:
+
+- Suggested.
+- Accepted.
+- In progress.
+- Completed.
+- Dismissed.
+- Reopened.
+
+Task completion can update LocateFlow local state where appropriate:
+
+- Stop or cancel tasks can mark an existing local service inactive.
+- Start, shop, or find replacement tasks can create a destination service record when the user selects a listed or custom provider.
+- Transfer tasks can create a destination service record and mark the old service inactive when the user confirms.
+- Update-address, government, insurance, mail, and verify tasks record local completion only.
+
+Task completion never means LocateFlow updated an external provider account. Web and mobile must ask for confirmation before applying local effects.
+
+## Custom Providers
+
+Users can create private custom providers for local or personal services that are not in the global provider catalog.
+
+Examples:
+
+- Dentist.
+- Law office.
+- Physical therapy center.
+- Local gym.
+- Local utility.
+- Local daycare.
+- Local storage or parking provider.
+
+Custom providers are private user records by default. They are user-added, unverified, and manual tracking only. Admin can review, link to a global provider, mark as local-only reviewed, reject, or flag as a promotion candidate, but promotion to the global catalog still requires source review.
 
 ## Examples
 
@@ -128,3 +162,14 @@ Review:
 - Split, merge, or cross-link candidates.
 
 Use official sources only: state public utility commissions, FCC broadband data/maps, official state DMV/voter/toll/transit pages, official provider websites/contact pages, and approved licensed logo sources.
+
+## Surface Requirements
+
+Web, mobile, and admin must use the same product meaning:
+
+- Provider records are listed/unverified unless source-backed validation exists.
+- User-added providers are private custom records.
+- Coverage confidence is a signal, not proof.
+- Move tasks are manual workflow items.
+- Completing a task updates LocateFlow only.
+- External provider accounts are never updated by this workflow.
