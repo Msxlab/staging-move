@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  AlertTriangle,
   Clock,
   ExternalLink,
   MapPin,
@@ -41,6 +42,13 @@ interface Provider {
   version: number;
   createdAt: string;
   updatedAt: string;
+  qualityWarningCount?: number;
+  qualityWarnings?: Array<{
+    code: string;
+    label: string;
+    message: string;
+    severity: "info" | "warning" | "critical" | string;
+  }>;
 }
 
 export default function ProviderDetailPage() {
@@ -147,6 +155,40 @@ export default function ProviderDetailPage() {
           >
             <Trash2 className="h-4 w-4" /> Delete
           </button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <div className="flex-1">
+            <h2 className="font-semibold text-foreground">Provider quality warnings</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              These checks are derived from current catalog fields. They do not prove this provider is official or verified.
+            </p>
+            {provider.qualityWarnings && provider.qualityWarnings.length > 0 ? (
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {provider.qualityWarnings.map((warning) => (
+                  <div
+                    key={warning.code}
+                    className="rounded-lg border border-border bg-background/80 p-3"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium text-foreground">{warning.label}</p>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase text-muted-foreground">
+                        {warning.severity}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">{warning.message}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No automated quality warnings for this record.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 

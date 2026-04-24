@@ -1,9 +1,16 @@
 {
-  "generatedAt": "2026-04-18T17:23:41.368Z",
-  "rawCount": 700,
-  "sanitizedCount": 700,
+  "generatedAt": "2026-04-24T03:42:57.999Z",
+  "rawCount": 777,
+  "sanitizedCount": 776,
   "renamed": [],
-  "deduped": [],
+  "deduped": [
+    {
+      "slug": "tmobile-home-internet",
+      "keptName": "T-Mobile Home Internet",
+      "keptCategory": "UTILITY_INTERNET",
+      "removedCount": 1
+    }
+  ],
   "categoryStats": [
     {
       "category": "UTILITY_ELECTRIC",
@@ -41,24 +48,24 @@
       "label": "Health Insurance"
     },
     {
-      "category": "FINANCIAL_BANK",
-      "count": 18,
-      "label": "Banks"
-    },
-    {
       "category": "SHOPPING_RETAIL",
-      "count": 18,
+      "count": 24,
       "label": "Shopping"
     },
     {
-      "category": "SHOPPING_SUBSCRIPTION",
-      "count": 17,
-      "label": "Subscriptions"
+      "category": "FINANCIAL_BANK",
+      "count": 23,
+      "label": "Banks"
     },
     {
       "category": "UTILITY_INTERNET",
-      "count": 17,
+      "count": 20,
       "label": "Internet"
+    },
+    {
+      "category": "SHOPPING_SUBSCRIPTION",
+      "count": 16,
+      "label": "Subscriptions"
     },
     {
       "category": "UTILITY_PHONE",
@@ -76,19 +83,49 @@
       "label": "Credit Cards"
     },
     {
+      "category": "HEALTHCARE_TELEMEDICINE",
+      "count": 12,
+      "label": "Telemedicine"
+    },
+    {
+      "category": "HOUSING_HOME_SERVICE",
+      "count": 12,
+      "label": "Home Services"
+    },
+    {
+      "category": "LOCAL_DINING",
+      "count": 12,
+      "label": "Dining & Food"
+    },
+    {
+      "category": "FINANCIAL_FINTECH",
+      "count": 11,
+      "label": "Payment Apps"
+    },
+    {
+      "category": "FINANCIAL_INSURANCE_RENTERS",
+      "count": 10,
+      "label": "Renters Insurance"
+    },
+    {
       "category": "HOUSING_MOVING",
       "count": 9,
       "label": "Moving"
     },
     {
-      "category": "HOUSING_HOME_SERVICE",
+      "category": "FITNESS_STUDIO",
       "count": 8,
-      "label": "Home Services"
+      "label": "Studio"
     },
     {
       "category": "HOUSING_SECURITY",
       "count": 8,
       "label": "Home Security"
+    },
+    {
+      "category": "KIDS_DAYCARE",
+      "count": 8,
+      "label": "Daycare"
     },
     {
       "category": "FINANCIAL_INSURANCE_AUTO",
@@ -136,6 +173,11 @@
       "label": "Real Estate"
     },
     {
+      "category": "PET_SERVICES",
+      "count": 6,
+      "label": "Pet Services"
+    },
+    {
       "category": "FINANCIAL_INSURANCE_LIFE",
       "count": 5,
       "label": "Life Insurance"
@@ -144,6 +186,11 @@
       "category": "TRANSPORTATION_OTHER",
       "count": 5,
       "label": "Car Rental & Other"
+    },
+    {
+      "category": "TRANSPORTATION_PARKING",
+      "count": 5,
+      "label": "Parking"
     },
     {
       "category": "EDUCATION_ONLINE",
@@ -161,11 +208,6 @@
       "label": "Mail & Postal"
     },
     {
-      "category": "HEALTHCARE_DOCTORS",
-      "count": 4,
-      "label": "Doctors"
-    },
-    {
       "category": "HOUSING_CLEANING",
       "count": 4,
       "label": "Cleaning"
@@ -179,21 +221,6 @@
       "category": "HOUSING_STORAGE",
       "count": 4,
       "label": "Storage"
-    },
-    {
-      "category": "KIDS_DAYCARE",
-      "count": 4,
-      "label": "Daycare"
-    },
-    {
-      "category": "KIDS_SCHOOL",
-      "count": 4,
-      "label": "Schools"
-    },
-    {
-      "category": "PET_SERVICES",
-      "count": 4,
-      "label": "Pet Services"
     },
     {
       "category": "SECURITY_IDENTITY",
@@ -231,19 +258,24 @@
       "label": "Pest Control"
     },
     {
+      "category": "KIDS_SCHOOL",
+      "count": 3,
+      "label": "Schools"
+    },
+    {
       "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
       "count": 2,
       "label": "Motorcycle Ins."
     },
     {
-      "category": "FINANCIAL_LOAN",
-      "count": 2,
-      "label": "Loans"
-    },
-    {
       "category": "GOVERNMENT_EDUCATION",
       "count": 2,
       "label": "Education / FAFSA"
+    },
+    {
+      "category": "HEALTHCARE_DOCTORS",
+      "count": 2,
+      "label": "Doctors"
     },
     {
       "category": "HOUSING_HOA",
@@ -286,6 +318,11 @@
       "label": "Boat Insurance"
     },
     {
+      "category": "FINANCIAL_LOAN",
+      "count": 1,
+      "label": "Loans"
+    },
+    {
       "category": "GOVERNMENT_EMERGENCY",
       "count": 1,
       "label": "Emergency (FEMA)"
@@ -309,21 +346,16 @@
       "category": "HEALTHCARE_DENTIST",
       "count": 1,
       "label": "Dentist"
-    },
-    {
-      "category": "TRANSPORTATION_PARKING",
-      "count": 1,
-      "label": "Parking"
     }
   ],
   "scopeStats": [
     {
       "scope": "STATE",
-      "count": 427
+      "count": 433
     },
     {
       "scope": "FEDERAL",
-      "count": 273
+      "count": 343
     }
   ],
   "slugDuplicates": [],
@@ -362,6 +394,35 @@
           "slug": "source-gas-wy",
           "category": "UTILITY_GAS",
           "website": "blackhillsenergy.com"
+        }
+      ]
+    },
+    {
+      "key": "progressive.com",
+      "providers": [
+        {
+          "name": "Progressive",
+          "slug": "progressive",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "progressive.com"
+        },
+        {
+          "name": "Progressive Motorcycle",
+          "slug": "progressive-motorcycle",
+          "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+          "website": "progressive.com"
+        },
+        {
+          "name": "Progressive Boat Insurance",
+          "slug": "progressive-boat",
+          "category": "FINANCIAL_INSURANCE_BOAT",
+          "website": "progressive.com"
+        },
+        {
+          "name": "Progressive Renters",
+          "slug": "progressive-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "progressive.com"
         }
       ]
     },
@@ -412,6 +473,29 @@
       ]
     },
     {
+      "key": "geico.com",
+      "providers": [
+        {
+          "name": "GEICO",
+          "slug": "geico",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "geico.com"
+        },
+        {
+          "name": "GEICO Motorcycle",
+          "slug": "geico-motorcycle",
+          "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+          "website": "geico.com"
+        },
+        {
+          "name": "Geico Renters",
+          "slug": "geico-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "geico.com"
+        }
+      ]
+    },
+    {
       "key": "montana-dakota.com",
       "providers": [
         {
@@ -431,29 +515,6 @@
           "slug": "mdu",
           "category": "UTILITY_GAS",
           "website": "montana-dakota.com"
-        }
-      ]
-    },
-    {
-      "key": "progressive.com",
-      "providers": [
-        {
-          "name": "Progressive",
-          "slug": "progressive",
-          "category": "FINANCIAL_INSURANCE_AUTO",
-          "website": "progressive.com"
-        },
-        {
-          "name": "Progressive Motorcycle",
-          "slug": "progressive-motorcycle",
-          "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
-          "website": "progressive.com"
-        },
-        {
-          "name": "Progressive Boat Insurance",
-          "slug": "progressive-boat",
-          "category": "FINANCIAL_INSURANCE_BOAT",
-          "website": "progressive.com"
         }
       ]
     },
@@ -481,6 +542,52 @@
       ]
     },
     {
+      "key": "statefarm.com",
+      "providers": [
+        {
+          "name": "State Farm",
+          "slug": "state-farm",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "statefarm.com"
+        },
+        {
+          "name": "State Farm Home",
+          "slug": "state-farm-home",
+          "category": "FINANCIAL_INSURANCE_HOME",
+          "website": "statefarm.com"
+        },
+        {
+          "name": "State Farm Renters",
+          "slug": "state-farm-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "statefarm.com"
+        }
+      ]
+    },
+    {
+      "key": "verizon.com",
+      "providers": [
+        {
+          "name": "Verizon",
+          "slug": "verizon",
+          "category": "UTILITY_PHONE",
+          "website": "verizon.com"
+        },
+        {
+          "name": "Verizon Fios",
+          "slug": "verizon-fios",
+          "category": "UTILITY_INTERNET",
+          "website": "verizon.com"
+        },
+        {
+          "name": "Verizon 5G Home Internet",
+          "slug": "verizon-5g-home",
+          "category": "UTILITY_INTERNET",
+          "website": "verizon.com"
+        }
+      ]
+    },
+    {
       "key": "xcelenergy.com",
       "providers": [
         {
@@ -504,6 +611,23 @@
       ]
     },
     {
+      "key": "allstate.com",
+      "providers": [
+        {
+          "name": "Allstate",
+          "slug": "allstate",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "allstate.com"
+        },
+        {
+          "name": "Allstate Renters",
+          "slug": "allstate-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "allstate.com"
+        }
+      ]
+    },
+    {
       "key": "amazon.com",
       "providers": [
         {
@@ -517,6 +641,40 @@
           "slug": "amazon-fresh",
           "category": "GROCERY_DELIVERY",
           "website": "amazon.com"
+        }
+      ]
+    },
+    {
+      "key": "apple.com",
+      "providers": [
+        {
+          "name": "Apple One",
+          "slug": "apple-one",
+          "category": "SHOPPING_SUBSCRIPTION",
+          "website": "apple.com"
+        },
+        {
+          "name": "Apple Pay",
+          "slug": "apple-pay",
+          "category": "FINANCIAL_FINTECH",
+          "website": "apple.com"
+        }
+      ]
+    },
+    {
+      "key": "assurant.com",
+      "providers": [
+        {
+          "name": "Assurant Flood Solutions",
+          "slug": "assurant-flood",
+          "category": "FINANCIAL_INSURANCE_FLOOD",
+          "website": "assurant.com"
+        },
+        {
+          "name": "Assurant Renters",
+          "slug": "assurant-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "assurant.com"
         }
       ]
     },
@@ -640,19 +798,36 @@
       ]
     },
     {
-      "key": "geico.com",
+      "key": "lemonade.com",
       "providers": [
         {
-          "name": "GEICO",
-          "slug": "geico",
-          "category": "FINANCIAL_INSURANCE_AUTO",
-          "website": "geico.com"
+          "name": "Lemonade Insurance",
+          "slug": "lemonade",
+          "category": "FINANCIAL_INSURANCE_HOME",
+          "website": "lemonade.com"
         },
         {
-          "name": "GEICO Motorcycle",
-          "slug": "geico-motorcycle",
-          "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
-          "website": "geico.com"
+          "name": "Lemonade Renters",
+          "slug": "lemonade-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "lemonade.com"
+        }
+      ]
+    },
+    {
+      "key": "libertymutual.com",
+      "providers": [
+        {
+          "name": "Liberty Mutual",
+          "slug": "liberty-mutual",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "libertymutual.com"
+        },
+        {
+          "name": "Liberty Mutual Renters",
+          "slug": "liberty-mutual-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "libertymutual.com"
         }
       ]
     },
@@ -793,23 +968,6 @@
       ]
     },
     {
-      "key": "statefarm.com",
-      "providers": [
-        {
-          "name": "State Farm",
-          "slug": "state-farm",
-          "category": "FINANCIAL_INSURANCE_AUTO",
-          "website": "statefarm.com"
-        },
-        {
-          "name": "State Farm Home",
-          "slug": "state-farm-home",
-          "category": "FINANCIAL_INSURANCE_HOME",
-          "website": "statefarm.com"
-        }
-      ]
-    },
-    {
       "key": "t-mobile.com",
       "providers": [
         {
@@ -820,9 +978,26 @@
         },
         {
           "name": "T-Mobile Home Internet",
-          "slug": "t-mobile-home",
+          "slug": "tmobile-home-internet",
           "category": "UTILITY_INTERNET",
           "website": "t-mobile.com"
+        }
+      ]
+    },
+    {
+      "key": "usaa.com",
+      "providers": [
+        {
+          "name": "USAA",
+          "slug": "usaa",
+          "category": "FINANCIAL_INSURANCE_AUTO",
+          "website": "usaa.com"
+        },
+        {
+          "name": "USAA Renters",
+          "slug": "usaa-renters",
+          "category": "FINANCIAL_INSURANCE_RENTERS",
+          "website": "usaa.com"
         }
       ]
     },
@@ -840,23 +1015,6 @@
           "slug": "us-bank-cards",
           "category": "FINANCIAL_CREDIT_CARD",
           "website": "usbank.com"
-        }
-      ]
-    },
-    {
-      "key": "verizon.com",
-      "providers": [
-        {
-          "name": "Verizon",
-          "slug": "verizon",
-          "category": "UTILITY_PHONE",
-          "website": "verizon.com"
-        },
-        {
-          "name": "Verizon Fios",
-          "slug": "verizon-fios",
-          "category": "UTILITY_INTERNET",
-          "website": "verizon.com"
         }
       ]
     },
@@ -897,9 +1055,3720 @@
   ],
   "coverageSummary": {
     "exactZipRules": 0,
-    "prefixZipRules": 280,
-    "stateWideRows": 575,
-    "emptyCoverageRows": 273,
+    "prefixZipRules": 1009,
+    "stateWideRows": 558,
+    "emptyCoverageRows": 343,
     "anomalies": []
+  },
+  "qualitySummary": {
+    "issueBuckets": [
+      {
+        "code": "missing_logo",
+        "label": "Missing logo",
+        "count": 776,
+        "examples": [
+          {
+            "name": "USPS",
+            "slug": "usps",
+            "category": "GOVERNMENT_POSTAL",
+            "website": "usps.com"
+          },
+          {
+            "name": "USPS Movers Guide",
+            "slug": "usps-address-change",
+            "category": "GOVERNMENT_POSTAL",
+            "website": "moversguide.usps.com"
+          },
+          {
+            "name": "UPS",
+            "slug": "ups",
+            "category": "GOVERNMENT_POSTAL",
+            "website": "ups.com"
+          },
+          {
+            "name": "FedEx",
+            "slug": "fedex",
+            "category": "GOVERNMENT_POSTAL",
+            "website": "fedex.com"
+          },
+          {
+            "name": "IRS",
+            "slug": "irs",
+            "category": "GOVERNMENT_TAX",
+            "website": "irs.gov"
+          },
+          {
+            "name": "IRS Form 8822",
+            "slug": "irs-address",
+            "category": "GOVERNMENT_TAX",
+            "website": "irs.gov"
+          },
+          {
+            "name": "USCIS (Immigration)",
+            "slug": "uscis",
+            "category": "GOVERNMENT_IMMIGRATION",
+            "website": "uscis.gov"
+          },
+          {
+            "name": "SSA (Social Security)",
+            "slug": "ssa",
+            "category": "GOVERNMENT_BENEFITS",
+            "website": "ssa.gov"
+          },
+          {
+            "name": "VA (Veterans Affairs)",
+            "slug": "va-gov",
+            "category": "GOVERNMENT_BENEFITS",
+            "website": "va.gov"
+          },
+          {
+            "name": "Healthcare.gov",
+            "slug": "healthcare-gov",
+            "category": "GOVERNMENT_HEALTH",
+            "website": "healthcare.gov"
+          },
+          {
+            "name": "Medicare.gov",
+            "slug": "medicare-gov",
+            "category": "GOVERNMENT_HEALTH",
+            "website": "medicare.gov"
+          },
+          {
+            "name": "Medicaid.gov",
+            "slug": "medicaid-gov",
+            "category": "GOVERNMENT_HEALTH",
+            "website": "medicaid.gov"
+          },
+          {
+            "name": "Federal Student Aid (FAFSA)",
+            "slug": "fafsa",
+            "category": "GOVERNMENT_EDUCATION",
+            "website": "studentaid.gov"
+          },
+          {
+            "name": "StudentAid.gov",
+            "slug": "studentaid-gov",
+            "category": "GOVERNMENT_EDUCATION",
+            "website": "studentaid.gov"
+          },
+          {
+            "name": "Vote.gov",
+            "slug": "vote-gov",
+            "category": "GOVERNMENT_VOTER",
+            "website": "vote.gov"
+          },
+          {
+            "name": "Selective Service System",
+            "slug": "selective-service",
+            "category": "GOVERNMENT_OTHER",
+            "website": "sss.gov"
+          },
+          {
+            "name": "US Passport Services",
+            "slug": "us-passport",
+            "category": "GOVERNMENT_ID",
+            "website": "travel.state.gov"
+          },
+          {
+            "name": "TSA PreCheck",
+            "slug": "tsa-precheck",
+            "category": "GOVERNMENT_OTHER",
+            "website": "tsa.gov"
+          },
+          {
+            "name": "CBP (Customs & Border)",
+            "slug": "cbp",
+            "category": "GOVERNMENT_OTHER",
+            "website": "cbp.gov"
+          },
+          {
+            "name": "FEMA",
+            "slug": "fema",
+            "category": "GOVERNMENT_EMERGENCY",
+            "website": "fema.gov"
+          }
+        ]
+      },
+      {
+        "code": "missing_phone",
+        "label": "Missing phone",
+        "count": 301,
+        "examples": [
+          {
+            "name": "Vote.gov",
+            "slug": "vote-gov",
+            "category": "GOVERNMENT_VOTER",
+            "website": "vote.gov"
+          },
+          {
+            "name": "Regions Bank",
+            "slug": "regions-bank",
+            "category": "FINANCIAL_BANK",
+            "website": "regions.com"
+          },
+          {
+            "name": "Huntington Bank",
+            "slug": "huntington-bank",
+            "category": "FINANCIAL_BANK",
+            "website": "huntington.com"
+          },
+          {
+            "name": "Citizens Bank",
+            "slug": "citizens-bank",
+            "category": "FINANCIAL_BANK",
+            "website": "citizensbank.com"
+          },
+          {
+            "name": "KeyBank",
+            "slug": "keybank",
+            "category": "FINANCIAL_BANK",
+            "website": "key.com"
+          },
+          {
+            "name": "Capital One Credit Cards",
+            "slug": "capital-one-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "capitalone.com"
+          },
+          {
+            "name": "Bank of America Credit Cards",
+            "slug": "boa-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "bankofamerica.com"
+          },
+          {
+            "name": "Wells Fargo Credit Cards",
+            "slug": "wells-fargo-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "creditcards.wellsfargo.com"
+          },
+          {
+            "name": "U.S. Bank Credit Cards",
+            "slug": "us-bank-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "usbank.com"
+          },
+          {
+            "name": "Ambetter (Centene)",
+            "slug": "ambetter",
+            "category": "FINANCIAL_INSURANCE_HEALTH",
+            "website": "ambetterhealth.com"
+          },
+          {
+            "name": "Healthy Paws",
+            "slug": "healthy-paws",
+            "category": "FINANCIAL_INSURANCE_PET",
+            "website": "healthypawspetinsurance.com"
+          },
+          {
+            "name": "Nationwide Pet Insurance",
+            "slug": "nationwide-pet",
+            "category": "FINANCIAL_INSURANCE_PET",
+            "website": "petinsurance.com"
+          },
+          {
+            "name": "Progressive Motorcycle",
+            "slug": "progressive-motorcycle",
+            "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+            "website": "progressive.com"
+          },
+          {
+            "name": "GEICO Motorcycle",
+            "slug": "geico-motorcycle",
+            "category": "FINANCIAL_INSURANCE_MOTORCYCLE",
+            "website": "geico.com"
+          },
+          {
+            "name": "Progressive Boat Insurance",
+            "slug": "progressive-boat",
+            "category": "FINANCIAL_INSURANCE_BOAT",
+            "website": "progressive.com"
+          },
+          {
+            "name": "NFIP (Flood Insurance)",
+            "slug": "nfip-flood",
+            "category": "FINANCIAL_INSURANCE_FLOOD",
+            "website": "floodsmart.gov"
+          },
+          {
+            "name": "Better.com",
+            "slug": "better",
+            "category": "FINANCIAL_MORTGAGE",
+            "website": "better.com"
+          },
+          {
+            "name": "Mint Mobile",
+            "slug": "mint-mobile",
+            "category": "UTILITY_PHONE",
+            "website": "mintmobile.com"
+          },
+          {
+            "name": "Google Fi",
+            "slug": "google-fi",
+            "category": "UTILITY_PHONE",
+            "website": "fi.google.com"
+          },
+          {
+            "name": "Xfinity Mobile",
+            "slug": "xfinity-mobile",
+            "category": "UTILITY_PHONE",
+            "website": "xfinity.com"
+          }
+        ]
+      },
+      {
+        "code": "broad_state_coverage",
+        "label": "Broad state coverage",
+        "count": 155,
+        "examples": [
+          {
+            "name": "NJ E-ZPass",
+            "slug": "nj-ezpass",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "ezpassnj.com"
+          },
+          {
+            "name": "NJ Natural Gas",
+            "slug": "njng",
+            "category": "UTILITY_GAS",
+            "website": "njng.com"
+          },
+          {
+            "name": "National Grid NY",
+            "slug": "national-grid-ny",
+            "category": "UTILITY_GAS",
+            "website": "nationalgridus.com"
+          },
+          {
+            "name": "MTA",
+            "slug": "mta",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "mta.info"
+          },
+          {
+            "name": "NY E-ZPass",
+            "slug": "ny-ezpass",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "e-zpassny.com"
+          },
+          {
+            "name": "Optimum",
+            "slug": "optimum",
+            "category": "UTILITY_INTERNET",
+            "website": "optimum.com"
+          },
+          {
+            "name": "Reliant Energy",
+            "slug": "reliant",
+            "category": "UTILITY_ELECTRIC",
+            "website": "reliant.com"
+          },
+          {
+            "name": "CenterPoint Energy",
+            "slug": "centerpoint",
+            "category": "UTILITY_GAS",
+            "website": "centerpointenergy.com"
+          },
+          {
+            "name": "TxTag",
+            "slug": "txtag",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "txtag.org"
+          },
+          {
+            "name": "DART",
+            "slug": "dart",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "dart.org"
+          },
+          {
+            "name": "Houston METRO",
+            "slug": "metro-houston",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "ridemetro.org"
+          },
+          {
+            "name": "VIA Metropolitan Transit",
+            "slug": "via-sa",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "viainfo.net"
+          },
+          {
+            "name": "FasTrak",
+            "slug": "fastrak",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "bayareafastrak.org"
+          },
+          {
+            "name": "LA Metro",
+            "slug": "la-metro",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "metro.net"
+          },
+          {
+            "name": "BART",
+            "slug": "bart",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "bart.gov"
+          },
+          {
+            "name": "SF Muni",
+            "slug": "muni",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "sfmta.com"
+          },
+          {
+            "name": "Caltrain",
+            "slug": "caltrain",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "caltrain.com"
+          },
+          {
+            "name": "San Diego MTS",
+            "slug": "mts-sd",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "sdmts.com"
+          },
+          {
+            "name": "VTA",
+            "slug": "vta",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "vta.org"
+          },
+          {
+            "name": "FPL (Florida Power & Light)",
+            "slug": "fpl",
+            "category": "UTILITY_ELECTRIC",
+            "website": "fpl.com"
+          }
+        ]
+      },
+      {
+        "code": "generic_description",
+        "label": "Generic description",
+        "count": 133,
+        "examples": [
+          {
+            "name": "Wells Fargo",
+            "slug": "wells-fargo",
+            "category": "FINANCIAL_BANK",
+            "website": "wellsfargo.com"
+          },
+          {
+            "name": "Capital One",
+            "slug": "capital-one",
+            "category": "FINANCIAL_BANK",
+            "website": "capitalone.com"
+          },
+          {
+            "name": "GEICO",
+            "slug": "geico",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "geico.com"
+          },
+          {
+            "name": "Progressive",
+            "slug": "progressive",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "progressive.com"
+          },
+          {
+            "name": "Allstate",
+            "slug": "allstate",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "allstate.com"
+          },
+          {
+            "name": "Choice Home Warranty",
+            "slug": "choice-warranty",
+            "category": "FINANCIAL_INSURANCE_HOME",
+            "website": "choicehomewarranty.com"
+          },
+          {
+            "name": "Cigna",
+            "slug": "cigna",
+            "category": "FINANCIAL_INSURANCE_HEALTH",
+            "website": "cigna.com"
+          },
+          {
+            "name": "MetLife Dental",
+            "slug": "metlife-dental",
+            "category": "FINANCIAL_INSURANCE_HEALTH",
+            "website": "metlife.com"
+          },
+          {
+            "name": "New York Life",
+            "slug": "ny-life",
+            "category": "FINANCIAL_INSURANCE_LIFE",
+            "website": "newyorklife.com"
+          },
+          {
+            "name": "Healthy Paws",
+            "slug": "healthy-paws",
+            "category": "FINANCIAL_INSURANCE_PET",
+            "website": "healthypawspetinsurance.com"
+          },
+          {
+            "name": "Rocket Mortgage",
+            "slug": "rocket-mortgage",
+            "category": "FINANCIAL_MORTGAGE",
+            "website": "rocketmortgage.com"
+          },
+          {
+            "name": "Better.com",
+            "slug": "better",
+            "category": "FINANCIAL_MORTGAGE",
+            "website": "better.com"
+          },
+          {
+            "name": "T-Mobile",
+            "slug": "t-mobile",
+            "category": "UTILITY_PHONE",
+            "website": "t-mobile.com"
+          },
+          {
+            "name": "Total Wireless",
+            "slug": "total-wireless",
+            "category": "UTILITY_PHONE",
+            "website": "totalwireless.com"
+          },
+          {
+            "name": "Spectrum",
+            "slug": "spectrum",
+            "category": "UTILITY_INTERNET",
+            "website": "spectrum.com"
+          },
+          {
+            "name": "AT&T Fiber",
+            "slug": "att-fiber",
+            "category": "UTILITY_INTERNET",
+            "website": "att.com"
+          },
+          {
+            "name": "DirecTV",
+            "slug": "directv",
+            "category": "UTILITY_CABLE",
+            "website": "directv.com"
+          },
+          {
+            "name": "YouTube TV",
+            "slug": "youtube-tv",
+            "category": "UTILITY_CABLE",
+            "website": "tv.youtube.com"
+          },
+          {
+            "name": "Republic Services",
+            "slug": "republic-services",
+            "category": "UTILITY_TRASH",
+            "website": "republicservices.com"
+          },
+          {
+            "name": "Planet Fitness",
+            "slug": "planet-fitness",
+            "category": "FITNESS_GYM",
+            "website": "planetfitness.com"
+          }
+        ]
+      },
+      {
+        "code": "duplicate_domain",
+        "label": "Duplicate domain candidate",
+        "count": 127,
+        "examples": [
+          {
+            "name": "IRS",
+            "slug": "irs",
+            "category": "GOVERNMENT_TAX",
+            "website": "irs.gov"
+          },
+          {
+            "name": "IRS Form 8822",
+            "slug": "irs-address",
+            "category": "GOVERNMENT_TAX",
+            "website": "irs.gov"
+          },
+          {
+            "name": "SSA (Social Security)",
+            "slug": "ssa",
+            "category": "GOVERNMENT_BENEFITS",
+            "website": "ssa.gov"
+          },
+          {
+            "name": "Federal Student Aid (FAFSA)",
+            "slug": "fafsa",
+            "category": "GOVERNMENT_EDUCATION",
+            "website": "studentaid.gov"
+          },
+          {
+            "name": "StudentAid.gov",
+            "slug": "studentaid-gov",
+            "category": "GOVERNMENT_EDUCATION",
+            "website": "studentaid.gov"
+          },
+          {
+            "name": "SSA Disability (SSDI)",
+            "slug": "ssa-disability",
+            "category": "GOVERNMENT_BENEFITS",
+            "website": "ssa.gov"
+          },
+          {
+            "name": "Bank of America",
+            "slug": "bank-of-america",
+            "category": "FINANCIAL_BANK",
+            "website": "bankofamerica.com"
+          },
+          {
+            "name": "Citibank",
+            "slug": "citibank",
+            "category": "FINANCIAL_BANK",
+            "website": "citi.com"
+          },
+          {
+            "name": "Capital One",
+            "slug": "capital-one",
+            "category": "FINANCIAL_BANK",
+            "website": "capitalone.com"
+          },
+          {
+            "name": "US Bank",
+            "slug": "us-bank",
+            "category": "FINANCIAL_BANK",
+            "website": "usbank.com"
+          },
+          {
+            "name": "Discover Bank",
+            "slug": "discover-bank",
+            "category": "FINANCIAL_BANK",
+            "website": "discover.com"
+          },
+          {
+            "name": "Citi Cards",
+            "slug": "citi-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "citi.com"
+          },
+          {
+            "name": "Discover Card",
+            "slug": "discover-card",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "discover.com"
+          },
+          {
+            "name": "Capital One Credit Cards",
+            "slug": "capital-one-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "capitalone.com"
+          },
+          {
+            "name": "Bank of America Credit Cards",
+            "slug": "boa-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "bankofamerica.com"
+          },
+          {
+            "name": "U.S. Bank Credit Cards",
+            "slug": "us-bank-cards",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "usbank.com"
+          },
+          {
+            "name": "GEICO",
+            "slug": "geico",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "geico.com"
+          },
+          {
+            "name": "State Farm",
+            "slug": "state-farm",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "statefarm.com"
+          },
+          {
+            "name": "Progressive",
+            "slug": "progressive",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "progressive.com"
+          },
+          {
+            "name": "Allstate",
+            "slug": "allstate",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "allstate.com"
+          }
+        ]
+      },
+      {
+        "code": "broad_national_coverage",
+        "label": "Broad national listing",
+        "count": 62,
+        "examples": [
+          {
+            "name": "Xfinity (Comcast)",
+            "slug": "xfinity",
+            "category": "UTILITY_INTERNET",
+            "website": "xfinity.com"
+          },
+          {
+            "name": "Spectrum",
+            "slug": "spectrum",
+            "category": "UTILITY_INTERNET",
+            "website": "spectrum.com"
+          },
+          {
+            "name": "AT&T Fiber",
+            "slug": "att-fiber",
+            "category": "UTILITY_INTERNET",
+            "website": "att.com"
+          },
+          {
+            "name": "Verizon Fios",
+            "slug": "verizon-fios",
+            "category": "UTILITY_INTERNET",
+            "website": "verizon.com"
+          },
+          {
+            "name": "T-Mobile Home Internet",
+            "slug": "tmobile-home-internet",
+            "category": "UTILITY_INTERNET",
+            "website": "t-mobile.com"
+          },
+          {
+            "name": "Starlink",
+            "slug": "starlink",
+            "category": "UTILITY_INTERNET",
+            "website": "starlink.com"
+          },
+          {
+            "name": "Waste Management",
+            "slug": "waste-management",
+            "category": "UTILITY_TRASH",
+            "website": "wm.com"
+          },
+          {
+            "name": "Republic Services",
+            "slug": "republic-services",
+            "category": "UTILITY_TRASH",
+            "website": "republicservices.com"
+          },
+          {
+            "name": "Planet Fitness",
+            "slug": "planet-fitness",
+            "category": "FITNESS_GYM",
+            "website": "planetfitness.com"
+          },
+          {
+            "name": "LA Fitness",
+            "slug": "la-fitness",
+            "category": "FITNESS_GYM",
+            "website": "lafitness.com"
+          },
+          {
+            "name": "Anytime Fitness",
+            "slug": "anytime-fitness",
+            "category": "FITNESS_GYM",
+            "website": "anytimefitness.com"
+          },
+          {
+            "name": "Equinox",
+            "slug": "equinox",
+            "category": "FITNESS_GYM",
+            "website": "equinox.com"
+          },
+          {
+            "name": "Orangetheory",
+            "slug": "orangetheory",
+            "category": "FITNESS_GYM",
+            "website": "orangetheory.com"
+          },
+          {
+            "name": "YMCA",
+            "slug": "ymca",
+            "category": "FITNESS_GYM",
+            "website": "ymca.org"
+          },
+          {
+            "name": "Peloton",
+            "slug": "peloton",
+            "category": "FITNESS_GYM",
+            "website": "onepeloton.com"
+          },
+          {
+            "name": "U-Haul",
+            "slug": "uhaul",
+            "category": "HOUSING_MOVING",
+            "website": "uhaul.com"
+          },
+          {
+            "name": "Penske Truck Rental",
+            "slug": "penske",
+            "category": "HOUSING_MOVING",
+            "website": "pensketruckrental.com"
+          },
+          {
+            "name": "Budget Truck Rental",
+            "slug": "budget-truck",
+            "category": "HOUSING_MOVING",
+            "website": "budgettruck.com"
+          },
+          {
+            "name": "PODS",
+            "slug": "pods",
+            "category": "HOUSING_MOVING",
+            "website": "pods.com"
+          },
+          {
+            "name": "1-800-GOT-JUNK",
+            "slug": "got-junk",
+            "category": "HOUSING_MOVING",
+            "website": "1800gotjunk.com"
+          }
+        ]
+      },
+      {
+        "code": "marketing_description",
+        "label": "Marketing language",
+        "count": 21,
+        "examples": [
+          {
+            "name": "Chase",
+            "slug": "chase",
+            "category": "FINANCIAL_BANK",
+            "website": "chase.com"
+          },
+          {
+            "name": "Bank of America",
+            "slug": "bank-of-america",
+            "category": "FINANCIAL_BANK",
+            "website": "bankofamerica.com"
+          },
+          {
+            "name": "US Bank",
+            "slug": "us-bank",
+            "category": "FINANCIAL_BANK",
+            "website": "usbank.com"
+          },
+          {
+            "name": "TD Bank",
+            "slug": "td-bank",
+            "category": "FINANCIAL_BANK",
+            "website": "td.com"
+          },
+          {
+            "name": "Navy Federal Credit Union",
+            "slug": "navy-federal",
+            "category": "FINANCIAL_BANK",
+            "website": "navyfederal.org"
+          },
+          {
+            "name": "American Express",
+            "slug": "amex",
+            "category": "FINANCIAL_CREDIT_CARD",
+            "website": "americanexpress.com"
+          },
+          {
+            "name": "UnitedHealthcare",
+            "slug": "unitedhealthcare",
+            "category": "FINANCIAL_INSURANCE_HEALTH",
+            "website": "uhc.com"
+          },
+          {
+            "name": "Delta Dental",
+            "slug": "delta-dental",
+            "category": "FINANCIAL_INSURANCE_HEALTH",
+            "website": "deltadental.com"
+          },
+          {
+            "name": "New York Life",
+            "slug": "ny-life",
+            "category": "FINANCIAL_INSURANCE_LIFE",
+            "website": "newyorklife.com"
+          },
+          {
+            "name": "Waste Management",
+            "slug": "waste-management",
+            "category": "UTILITY_TRASH",
+            "website": "wm.com"
+          },
+          {
+            "name": "CycleBar",
+            "slug": "cyclebar",
+            "category": "FITNESS_STUDIO",
+            "website": "cyclebar.com"
+          },
+          {
+            "name": "Public Storage",
+            "slug": "public-storage",
+            "category": "HOUSING_STORAGE",
+            "website": "publicstorage.com"
+          },
+          {
+            "name": "FirstService Residential",
+            "slug": "firstservice",
+            "category": "HOUSING_HOA",
+            "website": "fsresidential.com"
+          },
+          {
+            "name": "FPL (Florida Power & Light)",
+            "slug": "fpl",
+            "category": "UTILITY_ELECTRIC",
+            "website": "fpl.com"
+          },
+          {
+            "name": "Georgia Power",
+            "slug": "georgia-power",
+            "category": "UTILITY_ELECTRIC",
+            "website": "georgiapower.com"
+          },
+          {
+            "name": "APS (Arizona Public Service)",
+            "slug": "aps-az",
+            "category": "UTILITY_ELECTRIC",
+            "website": "aps.com"
+          },
+          {
+            "name": "Alabama Power",
+            "slug": "alabama-power",
+            "category": "UTILITY_ELECTRIC",
+            "website": "alabamapower.com"
+          },
+          {
+            "name": "Chugach Electric",
+            "slug": "chugach-electric",
+            "category": "UTILITY_ELECTRIC",
+            "website": "chugachelectric.com"
+          },
+          {
+            "name": "Green Mountain Power",
+            "slug": "gmp-vt",
+            "category": "UTILITY_ELECTRIC",
+            "website": "greenmountainpower.com"
+          },
+          {
+            "name": "Merry Maids",
+            "slug": "merry-maids",
+            "category": "HOUSING_CLEANING",
+            "website": "merrymaids.com"
+          }
+        ]
+      }
+    ],
+    "broadCoverageAssumptions": [
+      {
+        "name": "Anytime Fitness",
+        "slug": "anytime-fitness",
+        "category": "FITNESS_GYM",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "anytimefitness.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Equinox",
+        "slug": "equinox",
+        "category": "FITNESS_GYM",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "equinox.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "LA Fitness",
+        "slug": "la-fitness",
+        "category": "FITNESS_GYM",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "lafitness.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Orangetheory",
+        "slug": "orangetheory",
+        "category": "FITNESS_GYM",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "orangetheory.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Peloton",
+        "slug": "peloton",
+        "category": "FITNESS_GYM",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "onepeloton.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Planet Fitness",
+        "slug": "planet-fitness",
+        "category": "FITNESS_GYM",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "planetfitness.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "YMCA",
+        "slug": "ymca",
+        "category": "FITNESS_GYM",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "ymca.org",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Amazon Fresh",
+        "slug": "amazon-fresh",
+        "category": "GROCERY_DELIVERY",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "amazon.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Blue Apron",
+        "slug": "blue-apron",
+        "category": "GROCERY_DELIVERY",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "blueapron.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "DoorDash",
+        "slug": "doordash",
+        "category": "GROCERY_DELIVERY",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "doordash.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "HelloFresh",
+        "slug": "hellofresh",
+        "category": "GROCERY_DELIVERY",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "hellofresh.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Instacart",
+        "slug": "instacart",
+        "category": "GROCERY_DELIVERY",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "instacart.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Shipt",
+        "slug": "shipt",
+        "category": "GROCERY_DELIVERY",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "shipt.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Walmart+ Delivery",
+        "slug": "walmart-plus",
+        "category": "GROCERY_DELIVERY",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "walmart.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Ace Hardware",
+        "slug": "ace-hardware",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "acehardware.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Angi (Angie's List)",
+        "slug": "angi",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "angi.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Home Depot",
+        "slug": "home-depot",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "homedepot.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "HomeAdvisor",
+        "slug": "homeadvisor",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "homeadvisor.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Lowe's",
+        "slug": "lowes",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "lowes.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Mr. Handyman",
+        "slug": "mr-handyman",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "mrhandyman.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Ring",
+        "slug": "ring-security",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "ring.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Roto-Rooter",
+        "slug": "roto-rooter",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "rotorooter.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "ServPro",
+        "slug": "servpro",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "servpro.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "TaskRabbit",
+        "slug": "taskrabbit",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "taskrabbit.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Thumbtack",
+        "slug": "thumbtack",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "thumbtack.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "True Value",
+        "slug": "true-value",
+        "category": "HOUSING_HOME_SERVICE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "truevalue.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "1-800-GOT-JUNK",
+        "slug": "got-junk",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "1800gotjunk.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Allied Van Lines",
+        "slug": "allied-van-lines",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "allied.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Budget Truck Rental",
+        "slug": "budget-truck",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "budgettruck.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Mayflower Moving",
+        "slug": "mayflower",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "mayflower.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Penske Truck Rental",
+        "slug": "penske",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "pensketruckrental.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "PODS",
+        "slug": "pods",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "pods.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Two Men and a Truck",
+        "slug": "two-men-truck",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "twomenandatruck.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "U-Haul",
+        "slug": "uhaul",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "uhaul.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "United Van Lines",
+        "slug": "united-van-lines",
+        "category": "HOUSING_MOVING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "unitedvanlines.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "CubeSmart",
+        "slug": "cubesmart",
+        "category": "HOUSING_STORAGE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "cubesmart.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Extra Space Storage",
+        "slug": "extra-space",
+        "category": "HOUSING_STORAGE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "extraspace.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Life Storage",
+        "slug": "life-storage",
+        "category": "HOUSING_STORAGE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "lifestorage.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Public Storage",
+        "slug": "public-storage",
+        "category": "HOUSING_STORAGE",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "publicstorage.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Caviar",
+        "slug": "caviar",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "trycaviar.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "ChowNow",
+        "slug": "chownow",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "chownow.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Grubhub",
+        "slug": "grubhub",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "grubhub.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "OpenTable",
+        "slug": "opentable",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "opentable.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Postmates",
+        "slug": "postmates",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "postmates.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Resy",
+        "slug": "resy",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "resy.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Seamless",
+        "slug": "seamless",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "seamless.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Toast TakeOut",
+        "slug": "toast-takeout",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "pos.toasttab.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Tock",
+        "slug": "tock",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "exploretock.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "TripAdvisor",
+        "slug": "tripadvisor",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "tripadvisor.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Uber Eats",
+        "slug": "uber-eats",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "ubereats.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Yelp",
+        "slug": "yelp",
+        "category": "LOCAL_DINING",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "yelp.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "ExpressToll",
+        "slug": "expresstoll",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "CO"
+        ],
+        "website": "expresstoll.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "FasTrak",
+        "slug": "fastrak",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "CA"
+        ],
+        "website": "bayareafastrak.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "GeauxPass",
+        "slug": "geauxpass",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "LA"
+        ],
+        "website": "geauxpass.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Good To Go!",
+        "slug": "good-to-go",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "WA"
+        ],
+        "website": "wsdot.wa.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "K-TAG",
+        "slug": "ktag",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "KS"
+        ],
+        "website": "ksturnpike.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "NJ E-ZPass",
+        "slug": "nj-ezpass",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "NJ"
+        ],
+        "website": "ezpassnj.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "NY E-ZPass",
+        "slug": "ny-ezpass",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "NY"
+        ],
+        "website": "e-zpassny.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "PA Turnpike E-ZPass",
+        "slug": "pa-ezpass",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "PA"
+        ],
+        "website": "paturnpike.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Peach Pass",
+        "slug": "peach-pass",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "GA"
+        ],
+        "website": "peachpass.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "SunPass",
+        "slug": "sunpass",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "FL"
+        ],
+        "website": "sunpass.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "TxTag",
+        "slug": "txtag",
+        "category": "TRANSPORTATION_TOLL",
+        "scope": "STATE",
+        "states": [
+          "TX"
+        ],
+        "website": "txtag.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "BART",
+        "slug": "bart",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "CA"
+        ],
+        "website": "bart.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Caltrain",
+        "slug": "caltrain",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "CA"
+        ],
+        "website": "caltrain.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "DART",
+        "slug": "dart",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "TX"
+        ],
+        "website": "dart.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "DART First State",
+        "slug": "dart-first-state",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "DE"
+        ],
+        "website": "dartfirststate.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "GoRaleigh",
+        "slug": "goraleigh",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "NC"
+        ],
+        "website": "goraleigh.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "GoTriangle",
+        "slug": "gotriangle",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "NC"
+        ],
+        "website": "gotriangle.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Houston METRO",
+        "slug": "metro-houston",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "TX"
+        ],
+        "website": "ridemetro.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "IndyGo",
+        "slug": "indygo",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "IN"
+        ],
+        "website": "indygo.net",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "LA Metro",
+        "slug": "la-metro",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "CA"
+        ],
+        "website": "metro.net",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Lynx",
+        "slug": "lynx",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "FL"
+        ],
+        "website": "golynx.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Metra",
+        "slug": "metra",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "IL"
+        ],
+        "website": "metrarail.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "MTA",
+        "slug": "mta",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "NY"
+        ],
+        "website": "mta.info",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "New Orleans Regional Transit Authority",
+        "slug": "norta",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "LA"
+        ],
+        "website": "norta.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Pittsburgh Port Authority",
+        "slug": "pittsburgh-port-auth",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "PA"
+        ],
+        "website": "rideprt.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "RIPTA",
+        "slug": "ripta",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "RI"
+        ],
+        "website": "ripta.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "RTA Cleveland",
+        "slug": "rta-cleveland",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "OH"
+        ],
+        "website": "riderta.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "RTC Southern Nevada",
+        "slug": "rtc-snv",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "NV"
+        ],
+        "website": "rtcsnv.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "RTD",
+        "slug": "rtd",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "CO"
+        ],
+        "website": "rtd-denver.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "San Diego MTS",
+        "slug": "mts-sd",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "CA"
+        ],
+        "website": "sdmts.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "SF Muni",
+        "slug": "muni",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "CA"
+        ],
+        "website": "sfmta.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "TheBus",
+        "slug": "thebus-hi",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "HI"
+        ],
+        "website": "thebus.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "UTA",
+        "slug": "uta",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "UT"
+        ],
+        "website": "rideuta.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "VIA Metropolitan Transit",
+        "slug": "via-sa",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "TX"
+        ],
+        "website": "viainfo.net",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "VTA",
+        "slug": "vta",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "CA"
+        ],
+        "website": "vta.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "WeGo Public Transit",
+        "slug": "wego-tn",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "TN"
+        ],
+        "website": "wegotransit.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "WMATA (Metro)",
+        "slug": "wmata",
+        "category": "TRANSPORTATION_TRANSIT",
+        "scope": "STATE",
+        "states": [
+          "VA",
+          "DC",
+          "MD"
+        ],
+        "website": "wmata.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Alliant Energy",
+        "slug": "alliant-energy",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "IA",
+          "WI"
+        ],
+        "website": "alliantenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Ameren Illinois",
+        "slug": "ameren-il",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "IL"
+        ],
+        "website": "ameren.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Appalachian Power WV",
+        "slug": "apco-wv",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "WV",
+          "VA"
+        ],
+        "website": "appalachianpower.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Black Hills Energy SD",
+        "slug": "bhe-sd",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "SD",
+          "CO",
+          "WY",
+          "NE",
+          "IA",
+          "KS",
+          "AR"
+        ],
+        "website": "blackhillsenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Central Maine Power",
+        "slug": "cmp-me",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "ME"
+        ],
+        "website": "cmpco.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Chugach Electric",
+        "slug": "chugach-electric",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "AK"
+        ],
+        "website": "chugachelectric.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Entergy Arkansas",
+        "slug": "entergy-ar",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "AR"
+        ],
+        "website": "entergy-arkansas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Evergy",
+        "slug": "evergy",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "KS",
+          "MO"
+        ],
+        "website": "evergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "FPL (Florida Power & Light)",
+        "slug": "fpl",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "FL"
+        ],
+        "website": "fpl.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Green Mountain Power",
+        "slug": "gmp-vt",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "VT"
+        ],
+        "website": "greenmountainpower.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Hawaiian Electric (HECO)",
+        "slug": "heco",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "HI"
+        ],
+        "website": "hawaiianelectric.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Idaho Power",
+        "slug": "idaho-power",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "ID"
+        ],
+        "website": "idahopower.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Kentucky Utilities",
+        "slug": "ky-utilities",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "KY"
+        ],
+        "website": "lge-ku.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Liberty Utilities NH",
+        "slug": "liberty-nh",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "NH"
+        ],
+        "website": "libertyutilities.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "MDU Resources",
+        "slug": "mdu-nd",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "ND",
+          "MT",
+          "SD",
+          "WY"
+        ],
+        "website": "montana-dakota.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "MidAmerican Energy",
+        "slug": "midamerican",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "IA"
+        ],
+        "website": "midamericanenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Mon Power",
+        "slug": "mon-power-wv",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "WV"
+        ],
+        "website": "firstenergycorp.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Nashville Electric Service",
+        "slug": "nes-tn",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "TN"
+        ],
+        "website": "nespower.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "OG&E",
+        "slug": "oge-ok",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "OK",
+          "AR"
+        ],
+        "website": "oge.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Ohio Edison",
+        "slug": "ohio-edison",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "OH"
+        ],
+        "website": "firstenergycorp.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Orlando Utilities Commission",
+        "slug": "ouc",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "FL"
+        ],
+        "website": "ouc.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Pacific Power",
+        "slug": "pacific-power-or",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "OR"
+        ],
+        "website": "pacificpower.net",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "PNM",
+        "slug": "pnm-nm",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "NM"
+        ],
+        "website": "pnm.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Portland General Electric",
+        "slug": "pge-or",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "OR"
+        ],
+        "website": "portlandgeneral.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Public Service Oklahoma (PSO)",
+        "slug": "pso-ok",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "OK"
+        ],
+        "website": "psoklahoma.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Puget Sound Energy",
+        "slug": "pse-wa",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "WA"
+        ],
+        "website": "pse.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Reliant Energy",
+        "slug": "reliant",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "TX"
+        ],
+        "website": "reliant.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Rocky Mountain Power",
+        "slug": "rmp-ut",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "UT",
+          "WY",
+          "ID"
+        ],
+        "website": "rockymountainpower.net",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "SRP (Salt River Project)",
+        "slug": "srp-az",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "AZ"
+        ],
+        "website": "srpnet.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Versant Power",
+        "slug": "versant-me",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "ME"
+        ],
+        "website": "versantpower.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Xcel Energy",
+        "slug": "xcel-energy",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "CO",
+          "MN",
+          "WI"
+        ],
+        "website": "xcelenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Xcel Energy ND",
+        "slug": "xcel-nd",
+        "category": "UTILITY_ELECTRIC",
+        "scope": "STATE",
+        "states": [
+          "ND",
+          "MN",
+          "CO",
+          "WI",
+          "SD"
+        ],
+        "website": "xcelenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Atlanta Gas Light",
+        "slug": "atlanta-gas-light",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "GA"
+        ],
+        "website": "atlantagaslight.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Atmos Energy Kentucky",
+        "slug": "atmos-ky",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "KY"
+        ],
+        "website": "atmosenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Atmos Energy Louisiana",
+        "slug": "atmos-la",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "LA"
+        ],
+        "website": "atmosenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Atmos Energy Mississippi",
+        "slug": "atmos-ms",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "MS"
+        ],
+        "website": "atmosenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Black Hills Energy Colorado",
+        "slug": "bhe-co-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "CO"
+        ],
+        "website": "blackhillsenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Black Hills Energy Iowa",
+        "slug": "bhe-ia-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "IA"
+        ],
+        "website": "blackhillsenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Black Hills Energy Nebraska",
+        "slug": "bhe-ne-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "NE"
+        ],
+        "website": "blackhillsenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "CenterPoint Energy",
+        "slug": "centerpoint",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "TX"
+        ],
+        "website": "centerpointenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "CenterPoint Energy Arkansas",
+        "slug": "centerpoint-ar",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "AR"
+        ],
+        "website": "centerpointenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "CenterPoint Energy Minnesota",
+        "slug": "centerpoint-mn",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "MN"
+        ],
+        "website": "centerpointenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Chesapeake Utilities Delaware",
+        "slug": "chpk-de-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "DE",
+          "MD"
+        ],
+        "website": "chpkgas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Citizens Energy Group",
+        "slug": "citizens-energy-in",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "IN"
+        ],
+        "website": "citizensenergygroup.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Columbia Gas of Pennsylvania",
+        "slug": "columbia-gas-pa",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "PA"
+        ],
+        "website": "columbiagaspa.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Dominion Energy South Carolina Gas",
+        "slug": "dominion-sc-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "SC"
+        ],
+        "website": "dominionenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Dominion Energy Utah",
+        "slug": "dominion-ut-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "UT",
+          "WY",
+          "ID"
+        ],
+        "website": "dominionenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "ENSTAR Natural Gas",
+        "slug": "enstar-ak",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "AK"
+        ],
+        "website": "enstarnaturalgas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Georgia Natural Gas",
+        "slug": "gng",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "GA"
+        ],
+        "website": "gng.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Hawaii Gas",
+        "slug": "hawaii-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "HI"
+        ],
+        "website": "hawaiigas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Intermountain Gas",
+        "slug": "intgas-id",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "ID"
+        ],
+        "website": "intgas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Kansas Gas Service",
+        "slug": "kgs-ks",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "KS"
+        ],
+        "website": "kansasgasservice.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "MDU Resources South Dakota Gas",
+        "slug": "mdu-sd-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "SD"
+        ],
+        "website": "montana-dakota.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Minnesota Energy Resources",
+        "slug": "mn-energy-resources",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "MN"
+        ],
+        "website": "minnesotaenergyresources.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Montana-Dakota Utilities",
+        "slug": "mdu",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "ND",
+          "SD",
+          "WY"
+        ],
+        "website": "montana-dakota.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Mountaineer Gas",
+        "slug": "mountaineer-wv",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "WV"
+        ],
+        "website": "mountaineergas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "National Grid NY",
+        "slug": "national-grid-ny",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "NY"
+        ],
+        "website": "nationalgridus.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "NJ Natural Gas",
+        "slug": "njng",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "NJ"
+        ],
+        "website": "njng.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "NorthWestern Energy",
+        "slug": "nwe-mt",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "MT",
+          "SD",
+          "NE"
+        ],
+        "website": "northwesternenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "NW Natural Gas",
+        "slug": "nw-natural",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "OR"
+        ],
+        "website": "nwnatural.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Oklahoma Natural Gas (ONE Gas)",
+        "slug": "ong-ok",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "OK"
+        ],
+        "website": "oklahomanaturalgas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Piedmont Natural Gas",
+        "slug": "piedmont-carolinas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "NC",
+          "SC"
+        ],
+        "website": "piedmontng.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Piedmont Natural Gas Tennessee",
+        "slug": "piedmont-tn",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "TN",
+          "NC",
+          "SC"
+        ],
+        "website": "piedmontng.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "PSNC Energy",
+        "slug": "psnc",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "NC"
+        ],
+        "website": "psncenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Source Gas Distribution Wyoming",
+        "slug": "source-gas-wy",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "WY"
+        ],
+        "website": "blackhillsenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Spire Missouri",
+        "slug": "spire-mo",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "MO"
+        ],
+        "website": "spireenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Summit Natural Gas of Maine",
+        "slug": "summit-me",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "ME"
+        ],
+        "website": "summitnaturalgas.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "TECO Peoples Gas",
+        "slug": "teco-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "FL"
+        ],
+        "website": "tecoenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "UGI Utilities",
+        "slug": "ugi",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "PA"
+        ],
+        "website": "ugi.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Unitil New Hampshire",
+        "slug": "unitil-nh",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "NH",
+          "MA"
+        ],
+        "website": "unitil.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Xcel Energy North Dakota Gas",
+        "slug": "xcel-nd-gas",
+        "category": "UTILITY_GAS",
+        "scope": "STATE",
+        "states": [
+          "ND"
+        ],
+        "website": "xcelenergy.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Astound Broadband",
+        "slug": "astound",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "astound.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "AT&T Fiber",
+        "slug": "att-fiber",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "att.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "CenturyLink (Lumen)",
+        "slug": "centurylink",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "AL",
+          "AZ",
+          "AR",
+          "CO",
+          "FL",
+          "GA",
+          "ID",
+          "IL",
+          "IN",
+          "IA",
+          "KS",
+          "LA",
+          "MI",
+          "MN",
+          "MS",
+          "MO",
+          "MT",
+          "NE",
+          "NV",
+          "NM",
+          "NC",
+          "OH",
+          "OK",
+          "OR",
+          "PA",
+          "TX",
+          "UT",
+          "VA",
+          "WA",
+          "WI"
+        ],
+        "website": "centurylink.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Consolidated Communications VT",
+        "slug": "consolidated-vt",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "VT",
+          "NH",
+          "ME"
+        ],
+        "website": "consolidated.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Cox Communications",
+        "slug": "cox",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "AZ",
+          "AR",
+          "CA",
+          "CT",
+          "FL",
+          "GA",
+          "ID",
+          "IA",
+          "KS",
+          "LA",
+          "NE",
+          "NV",
+          "OH",
+          "OK",
+          "RI",
+          "VA"
+        ],
+        "website": "cox.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Frontier Communications",
+        "slug": "frontier",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "AL",
+          "AZ",
+          "CA",
+          "CT",
+          "FL",
+          "IL",
+          "IN",
+          "NY",
+          "OH",
+          "OR",
+          "PA",
+          "TX",
+          "WA",
+          "WV",
+          "WI"
+        ],
+        "website": "frontier.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "GCI",
+        "slug": "gci-ak",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "AK"
+        ],
+        "website": "gci.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Google Fiber",
+        "slug": "google-fiber",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "TX",
+          "NC",
+          "TN",
+          "GA",
+          "MO",
+          "KS",
+          "UT",
+          "CO",
+          "AZ",
+          "NE",
+          "NV",
+          "IA"
+        ],
+        "website": "fiber.google.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Hawaiian Telcom",
+        "slug": "hawaiian-telcom",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "HI"
+        ],
+        "website": "hawaiiantel.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Mediacom",
+        "slug": "mediacom-ia",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "IA"
+        ],
+        "website": "mediacomcable.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Midco",
+        "slug": "midco-nd",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "ND",
+          "SD",
+          "MN",
+          "WI",
+          "KS"
+        ],
+        "website": "midco.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Optimum",
+        "slug": "optimum",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "NY",
+          "NJ",
+          "CT"
+        ],
+        "website": "optimum.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Spectrum",
+        "slug": "spectrum",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "spectrum.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Spectrum Maine",
+        "slug": "spectrum-me",
+        "category": "UTILITY_INTERNET",
+        "scope": "STATE",
+        "states": [
+          "ME",
+          "NY",
+          "OH",
+          "TX",
+          "WI",
+          "NC",
+          "CA"
+        ],
+        "website": "spectrum.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Starlink",
+        "slug": "starlink",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "starlink.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "T-Mobile Home Internet",
+        "slug": "tmobile-home-internet",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "t-mobile.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Verizon 5G Home Internet",
+        "slug": "verizon-5g-home",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "verizon.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Verizon Fios",
+        "slug": "verizon-fios",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "verizon.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "WOW! Internet",
+        "slug": "wow-internet",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "wowway.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Xfinity (Comcast)",
+        "slug": "xfinity",
+        "category": "UTILITY_INTERNET",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "xfinity.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Republic Services",
+        "slug": "republic-services",
+        "category": "UTILITY_TRASH",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "republicservices.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Waste Management",
+        "slug": "waste-management",
+        "category": "UTILITY_TRASH",
+        "scope": "FEDERAL",
+        "states": [],
+        "website": "wm.com",
+        "warnings": [
+          "Broad national listing"
+        ]
+      },
+      {
+        "name": "Albuquerque Bernalillo County Water Utility",
+        "slug": "abcwua-nm",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "NM"
+        ],
+        "website": "abcwua.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Anchorage Water & Wastewater Utility",
+        "slug": "anchorage-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "AK"
+        ],
+        "website": "awwu.biz",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Aquarion Water",
+        "slug": "aquarion-ct",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "CT",
+          "MA",
+          "NH"
+        ],
+        "website": "aquarionwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Artesian Water Company",
+        "slug": "artesian-de",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "DE"
+        ],
+        "website": "artesianwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Birmingham Water Works",
+        "slug": "bwwb",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "AL"
+        ],
+        "website": "bwwb.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Board of Water Supply (Honolulu)",
+        "slug": "honolulu-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "HI"
+        ],
+        "website": "boardofwatersupply.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Boston Water and Sewer Commission",
+        "slug": "bwsc-ma",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "MA"
+        ],
+        "website": "bwsc.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Burlington Department of Public Works Water",
+        "slug": "burlington-water-vt",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "VT"
+        ],
+        "website": "burlingtonvt.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Central Arkansas Water",
+        "slug": "central-ar-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "AR"
+        ],
+        "website": "carkw.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Cheyenne Board of Public Utilities",
+        "slug": "cheyenne-bopu-wy",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "WY"
+        ],
+        "website": "cheyennebopu.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "City of Billings Water",
+        "slug": "billings-water-mt",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "MT"
+        ],
+        "website": "ci.billings.mt.us",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Fargo Water",
+        "slug": "fargo-water-nd",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "ND"
+        ],
+        "website": "fargond.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Great Lakes Water Authority",
+        "slug": "glwa-mi",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "MI"
+        ],
+        "website": "glwater.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Illinois American Water",
+        "slug": "il-american-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "IL"
+        ],
+        "website": "amwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Indiana American Water",
+        "slug": "indiana-american-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "IN"
+        ],
+        "website": "amwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Iowa American Water",
+        "slug": "iowa-american-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "IA"
+        ],
+        "website": "amwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Jackson Water",
+        "slug": "jackson-water-ms",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "MS"
+        ],
+        "website": "jacksonms.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "JEA",
+        "slug": "jea",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "FL"
+        ],
+        "website": "jea.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Maine Water Company",
+        "slug": "maine-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "ME"
+        ],
+        "website": "mainewater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Metropolitan Utilities District (Omaha)",
+        "slug": "mud-ne",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "NE"
+        ],
+        "website": "mudomaha.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Missouri American Water",
+        "slug": "missouri-american-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "MO"
+        ],
+        "website": "amwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Oklahoma City Utilities",
+        "slug": "okc-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "OK"
+        ],
+        "website": "okc.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Pennichuck Water",
+        "slug": "pennichuck-nh",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "NH"
+        ],
+        "website": "pennichuck.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Portland Water Bureau",
+        "slug": "portland-water-or",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "OR"
+        ],
+        "website": "portland.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Providence Water",
+        "slug": "providence-water-ri",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "RI"
+        ],
+        "website": "provwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Salt Lake City Public Utilities",
+        "slug": "slc-water-ut",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "UT"
+        ],
+        "website": "slc.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Seattle Public Utilities",
+        "slug": "spu-wa",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "WA"
+        ],
+        "website": "seattle.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Sewerage & Water Board of New Orleans",
+        "slug": "swbno",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "LA"
+        ],
+        "website": "swbno.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Sioux Falls Water",
+        "slug": "sioux-falls-water-sd",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "SD"
+        ],
+        "website": "siouxfalls.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Suez Idaho (Veolia)",
+        "slug": "veolia-id",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "ID"
+        ],
+        "website": "mywater.veolia.us",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Tampa Water Department",
+        "slug": "tampa-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "FL"
+        ],
+        "website": "tampa.gov",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Tulsa Water",
+        "slug": "tulsa-water-ok",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "OK"
+        ],
+        "website": "cityoftulsa.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "Virginia American Water",
+        "slug": "va-american-water",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "VA"
+        ],
+        "website": "amwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "WaterOne",
+        "slug": "waterone-ks",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "KS"
+        ],
+        "website": "waterone.org",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "West Virginia American Water",
+        "slug": "wvaw",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "WV"
+        ],
+        "website": "amwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      },
+      {
+        "name": "WSSC Water",
+        "slug": "wssc-md",
+        "category": "UTILITY_WATER",
+        "scope": "STATE",
+        "states": [
+          "MD"
+        ],
+        "website": "wsscwater.com",
+        "warnings": [
+          "Broad state coverage"
+        ]
+      }
+    ]
   }
 }

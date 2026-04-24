@@ -33,6 +33,7 @@ type ProviderRow = {
   logoUrl: string | null;
   scope: string;
   states: string;
+  zipCodes: string;
   tags: string;
   popularityScore: number;
   displayOrder: number;
@@ -80,6 +81,7 @@ export default async function ProvidersPage() {
     logoUrl: p.logoUrl,
     scope: p.scope,
     states: parseJsonArray(p.states),
+    zipCodes: parseJsonArray(p.zipCodes),
     tags: parseJsonArray(p.tags),
     popularityScore: p.popularityScore || 0,
     displayOrder: p.displayOrder || 0,

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderTrustSummary } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
+import { getProviderMatchLevelFromDb } from "@/lib/provider-matching";
 
 type ProviderRow = {
   id: string;
@@ -18,6 +21,11 @@ type ProviderRow = {
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  coverages?: Array<{
+    state: string | null;
+    zipPrefix: string | null;
+    zipExact: string | null;
+  }>;
 };
 
 export async function GET(
@@ -32,6 +40,9 @@ export async function GET(
 
     const provider = (await prisma.serviceProvider.findFirst({
       where: { id, isActive: true },
+      include: {
+        coverages: stateParam ? { where: { state: stateParam } } : true,
+      },
     })) as ProviderRow | null;
 
     if (!provider) {
@@ -54,14 +65,17 @@ export async function GET(
       }
       alternatives = (await prisma.serviceProvider.findMany({
         where: altWhere,
+        include: {
+          coverages: stateParam ? { where: { state: stateParam } } : true,
+        },
         orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
         take: 4,
       })) as ProviderRow[];
     }
 
     return NextResponse.json({
-      provider: shape(provider),
-      alternatives: alternatives.map(shape),
+      provider: shape(provider, stateParam),
+      alternatives: alternatives.map((alt) => shape(alt, stateParam)),
     });
   } catch (error) {
     console.error("Failed to fetch provider:", error);
@@ -69,7 +83,39 @@ export async function GET(
   }
 }
 
-function shape(p: ProviderRow) {
+function shape(p: ProviderRow, state: string | null) {
+  const states = safeJsonParse(p.states, []) as string[];
+  const zipCodes = safeJsonParse(p.zipCodes, []) as string[];
+  const tags = safeJsonParse(p.tags, []) as string[];
+  const metadata = getProviderCoverageMetadata(p.slug);
+  const coverageModel: ProviderCoverageModel = metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+  const coverageMatchLevel = getProviderMatchLevelFromDb(
+    {
+      id: p.id,
+      slug: p.slug,
+      scope: p.scope,
+      coverageModel,
+      coverages: p.coverages || [],
+    },
+    { state },
+  );
+  const requiresAddressCheck = coverageModel === "live_address";
+  const requiresPolygonCheck = coverageModel === "polygon";
+  const coverageNote = metadata?.note || null;
+  const coverageSourceUrl = metadata?.officialUrl || null;
+  const trust = getProviderTrustSummary({
+    ...p,
+    states,
+    zipCodes,
+    tags,
+    coverageModel,
+    coverageMatchLevel,
+    coverageNote,
+    coverageSourceUrl,
+    requiresAddressCheck,
+    requiresPolygonCheck,
+  });
+
   return {
     id: p.id,
     name: p.name,
@@ -81,12 +127,20 @@ function shape(p: ProviderRow) {
     phone: p.phone,
     logoUrl: p.logoUrl,
     scope: p.scope,
-    states: safeJsonParse(p.states, []) as string[],
-    zipCodes: safeJsonParse(p.zipCodes, []) as string[],
-    tags: safeJsonParse(p.tags, []) as string[],
+    states,
+    zipCodes,
+    tags,
     popularityScore: p.popularityScore,
     displayOrder: p.displayOrder,
     userCount: p.userCount || 0,
+    coverageModel,
+    coverageMatchLevel,
+    coverageNote,
+    coverageSourceUrl,
+    requiresAddressCheck,
+    requiresPolygonCheck,
+    coverageConfidence: trust.coverageConfidence,
+    trust,
   };
 }
 

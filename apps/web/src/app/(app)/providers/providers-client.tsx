@@ -22,6 +22,11 @@ import {
   type ScoredProvider,
   type UrgencyTier,
 } from "@/lib/recommendation-engine";
+import {
+  getProviderTrustSummary,
+  type ProviderCoverageConfidence,
+  type ProviderTrustSummary,
+} from "@locateflow/shared";
 
 export interface AddressOption {
   id: string;
@@ -44,10 +49,19 @@ export interface ProviderItem {
   logoUrl: string | null;
   scope: string;
   states: string[];
+  zipCodes?: string[];
   tags: string[];
   popularityScore: number;
   displayOrder: number;
   userCount?: number;
+  coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address" | string;
+  coverageMatchLevel?: "exact" | "prefix" | "polygon" | "state" | "live_address" | string;
+  coverageNote?: string | null;
+  coverageSourceUrl?: string | null;
+  requiresAddressCheck?: boolean;
+  requiresPolygonCheck?: boolean;
+  coverageConfidence?: ProviderCoverageConfidence;
+  trust?: ProviderTrustSummary;
 }
 
 interface RecommendationsResponse {
@@ -85,6 +99,11 @@ function formatCount(n: number | undefined): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return String(n);
+}
+
+function trustFor(provider: ProviderItem | ScoredProvider): ProviderTrustSummary {
+  if ("trust" in provider && provider.trust) return provider.trust;
+  return getProviderTrustSummary(provider);
 }
 
 export function ProvidersClient({
@@ -191,7 +210,7 @@ export function ProvidersClient({
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white">Providers</h1>
           <p className="text-white/40 mt-1 text-sm">
-            Discover banks, utilities, healthcare and government services for your location.
+            Browse listed directory entries for banks, utilities, healthcare, and government services.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -222,6 +241,16 @@ export function ProvidersClient({
         </div>
       </div>
 
+      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex gap-3">
+        <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-xs font-semibold text-amber-200">Listed providers, manual tracking only</p>
+          <p className="text-[11px] text-amber-100/75 mt-1 leading-relaxed">
+            Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding a provider creates a service record in LocateFlow and does not update your address with that provider.
+          </p>
+        </div>
+      </div>
+
       {/* Recommended for you */}
       {highlightProviders.length > 0 && (
         <div className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-cyan-500/5 p-5 space-y-3">
@@ -241,12 +270,19 @@ export function ProvidersClient({
                   {getMergedDisplayCategoryIcon(p.category)}
                 </div>
                 <div className="min-w-0 flex-1">
+                  {(() => {
+                    const trust = trustFor(p);
+                    return (
+                      <>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-white truncate">{p.name}</p>
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded border ${TIER_BADGE[p.urgencyTier].className}`}
                     >
                       {TIER_BADGE[p.urgencyTier].label}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-white/50">
+                      {trust.coverageConfidence.label}
                     </span>
                   </div>
                   <p className="text-xs text-white/40 mt-0.5 truncate">
@@ -255,6 +291,9 @@ export function ProvidersClient({
                   {p.explanation?.reason && (
                     <p className="text-[11px] text-white/50 mt-1 line-clamp-2">{p.explanation.reason}</p>
                   )}
+                      </>
+                    );
+                  })()}
                 </div>
               </Link>
             ))}
@@ -349,6 +388,10 @@ export function ProvidersClient({
               href={`/providers/${p.id}`}
               className="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/[0.08] transition p-4 flex gap-3"
             >
+              {(() => {
+                const trust = trustFor(p);
+                return (
+                  <>
               <div className="h-12 w-12 shrink-0 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
                 {getMergedDisplayCategoryIcon(p.category)}
               </div>
@@ -357,13 +400,16 @@ export function ProvidersClient({
                   <h3 className="text-sm font-semibold text-white truncate">{p.name}</h3>
                   {p.scope === "FEDERAL" ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 flex items-center gap-1">
-                      <Flag className="h-2.5 w-2.5" /> Federal
+                      <Flag className="h-2.5 w-2.5" /> National listing
                     </span>
                   ) : (
                     <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-white/60 flex items-center gap-1">
-                      <MapPin className="h-2.5 w-2.5" /> State
+                      <MapPin className="h-2.5 w-2.5" /> State-level
                     </span>
                   )}
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/20 bg-amber-500/10 text-amber-200">
+                    Listed provider
+                  </span>
                 </div>
                 <p className="text-xs text-white/40 mt-0.5">
                   {getMergedDisplayCategoryLabel(p.category)}
@@ -371,6 +417,9 @@ export function ProvidersClient({
                 {p.description && (
                   <p className="text-xs text-white/50 mt-1.5 line-clamp-2">{p.description}</p>
                 )}
+                <p className="text-[11px] text-white/40 mt-2">
+                  {trust.coverageConfidence.label}: {trust.coverageConfidence.message} Manual tracking only.
+                </p>
                 <div className="flex items-center gap-3 mt-2 text-[11px] text-white/40">
                   {p.userCount && p.userCount > 0 ? (
                     <span className="flex items-center gap-1">
@@ -389,6 +438,9 @@ export function ProvidersClient({
                   ) : null}
                 </div>
               </div>
+                  </>
+                );
+              })()}
             </Link>
           ))}
         </div>

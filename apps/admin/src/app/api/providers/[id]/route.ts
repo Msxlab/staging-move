@@ -7,7 +7,12 @@ import {
   updateWithVersion,
   isOptimisticLockError,
 } from "@locateflow/db";
-import { findProviderConflicts, normalizeProviderRecord } from "@locateflow/shared";
+import {
+  findProviderConflicts,
+  getProviderQualityWarnings,
+  normalizeProviderRecord,
+  normalizeProviderUrlDomain,
+} from "@locateflow/shared";
 
 function getConflictMessage(conflictType: string, name: string, slug: string) {
   if (conflictType === "slug") {
@@ -58,7 +63,7 @@ export async function GET(
     await requirePermission("providers", "canRead", { minimumRole: "VIEWER" });
     const { id } = await params;
 
-    const [provider, coverageCount, auditLogs] = await Promise.all([
+    const [provider, coverageCount, auditLogs, comparableProviders] = await Promise.all([
       prisma.serviceProvider.findUnique({ where: { id } }),
       prisma.serviceProviderCoverage.count({ where: { providerId: id } }),
       prisma.adminAuditLog.findMany({
@@ -78,14 +83,34 @@ export async function GET(
           },
         },
       }),
+      prisma.serviceProvider.findMany({
+        select: {
+          website: true,
+        },
+      }),
     ]);
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
     }
 
+    const providerDomain = normalizeProviderUrlDomain(provider.website);
+    const duplicateDomainCount = providerDomain
+      ? comparableProviders.filter(
+          (entry) => normalizeProviderUrlDomain(entry.website) === providerDomain,
+        ).length
+      : 0;
+    const qualityWarnings = getProviderQualityWarnings({
+      ...provider,
+      duplicateDomainCount,
+    });
+
     return NextResponse.json({
-      provider,
-      meta: { coverageCount },
+      provider: {
+        ...provider,
+        qualityWarnings,
+        qualityWarningCount: qualityWarnings.length,
+      },
+      meta: { coverageCount, qualityWarningCount: qualityWarnings.length },
       auditLogs,
     });
   } catch (error: any) {

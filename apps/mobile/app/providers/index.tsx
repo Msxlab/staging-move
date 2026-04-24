@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, ArrowLeft, X } from "lucide-react-native";
+import { Search, ArrowLeft, X, AlertTriangle } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -251,6 +251,13 @@ export default function ProvidersScreen() {
         </View>
       </View>
 
+      <View style={styles.truthBanner}>
+        <AlertTriangle size={15} color={theme.colors.warning} />
+        <Text style={styles.truthText}>
+          Listed provider data is unverified. Availability may vary by address, and adding a provider is manual tracking only.
+        </Text>
+      </View>
+
       {!search && categoryChips.length > 0 ? (
         <CategoryChipRow
           categories={categoryChips}
@@ -333,6 +340,24 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   searchInput: { flex: 1, fontSize: 15, color: theme.colors.text },
+  truthBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.warningFaded,
+    borderWidth: 1,
+    borderColor: "rgba(245,158,11,0.25)",
+  },
+  truthText: {
+    flex: 1,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    lineHeight: 17,
+  },
   scrollContent: { paddingBottom: 32 },
   listItem: { paddingHorizontal: 20, paddingBottom: 12 },
   footer: { paddingVertical: 16, alignItems: "center" },
