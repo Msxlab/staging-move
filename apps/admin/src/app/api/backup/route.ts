@@ -52,6 +52,10 @@ const BACKUP_TABLE_OPS = {
     count: () => prisma.movingPlan.count(),
     findRecords: () => prisma.movingPlan.findMany({ take: 50000 }),
   },
+  customProviders: {
+    count: () => prisma.userCustomProvider.count(),
+    findRecords: () => prisma.userCustomProvider.findMany({ take: 50000 }),
+  },
   budgets: {
     count: () => prisma.budget.count(),
     findRecords: () => prisma.budget.findMany({ take: 50000 }),
@@ -67,6 +71,14 @@ const BACKUP_TABLE_OPS = {
   notifications: {
     count: () => prisma.notification.count(),
     findRecords: () => prisma.notification.findMany({ take: 50000 }),
+  },
+  moveTasks: {
+    count: () => prisma.moveTask.count(),
+    findRecords: () => prisma.moveTask.findMany({ take: 50000 }),
+  },
+  providerGovernanceIssues: {
+    count: () => prisma.providerGovernanceIssue.count(),
+    findRecords: () => prisma.providerGovernanceIssue.findMany({ take: 50000 }),
   },
 } as const;
 

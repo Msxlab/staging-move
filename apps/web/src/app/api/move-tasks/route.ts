@@ -212,6 +212,9 @@ export async function PATCH(request: NextRequest) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    if (error?.message === "INVALID_MOVE_TASK_STATUS_TRANSITION") {
+      return NextResponse.json({ error: "Invalid move task status transition" }, { status: 400 });
+    }
     console.error("Failed to update move task:", error);
     return NextResponse.json({ error: "Failed to update move task" }, { status: 500 });
   }

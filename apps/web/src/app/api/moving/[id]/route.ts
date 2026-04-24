@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { z } from "zod";
+import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
 
 const movingPatchSchema = z.object({
   moveDate: z.string().optional(),
@@ -77,7 +78,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       },
     });
 
-    return NextResponse.json({ plan });
+    const moveTaskSync = await syncMoveTasksForPlans(userId, [plan.id]);
+
+    return NextResponse.json({ plan, moveTaskSync });
   } catch (error: any) {
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });

@@ -15,10 +15,13 @@ const BACKUP_TABLE_COUNTERS = {
   providers: () => prisma.serviceProvider.count(),
   providerCoverages: () => prisma.serviceProviderCoverage.count(),
   movingPlans: () => prisma.movingPlan.count(),
+  customProviders: () => prisma.userCustomProvider.count(),
+  moveTasks: () => prisma.moveTask.count(),
   budgets: () => prisma.budget.count(),
   subscriptions: () => prisma.subscription.count(),
   auditLogs: () => prisma.auditLog.count(),
   notifications: () => prisma.notification.count(),
+  providerGovernanceIssues: () => prisma.providerGovernanceIssue.count(),
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {

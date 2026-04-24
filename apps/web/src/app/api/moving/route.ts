@@ -5,6 +5,7 @@ import { movingPlanSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { canCreateAddress, canCreateMovingPlan } from "@/lib/plan-limits";
 import { encrypt } from "@/lib/shared-encryption";
+import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
 
 function normalizeAddressValue(value?: string | null) {
   return (value || "").trim().toUpperCase();
@@ -140,7 +141,9 @@ export async function POST(request: NextRequest) {
       return { plan: created, destinationAddressId };
     });
 
-    return NextResponse.json({ plan, destinationAddressId }, { status: 201 });
+    const moveTaskSync = await syncMoveTasksForPlans(userId, [plan.id]);
+
+    return NextResponse.json({ plan, destinationAddressId, moveTaskSync }, { status: 201 });
   } catch (error: any) {
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });

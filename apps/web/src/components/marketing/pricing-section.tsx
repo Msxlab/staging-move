@@ -2,15 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Lock, Sparkles } from "lucide-react";
+import { CheckCircle2, Shield } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { WaitlistForm } from "./waitlist-form";
 import {
   BILLING_PLAN_DEFINITIONS,
-  UPCOMING_BILLING_PLAN_DEFINITIONS,
-  UPCOMING_BILLING_PLAN_ORDER,
-  TRIAL_DURATION_DAYS,
 } from "@locateflow/shared";
 
 type Cycle = "monthly" | "yearly";
@@ -93,9 +89,9 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 gap-6 max-w-xl mx-auto">
         {/* Individual — the only live paid plan */}
-        <div className="rounded-xl border-2 border-primary p-8 space-y-6 relative bg-card shadow-lg md:scale-[1.02]">
+        <div className="rounded-xl border-2 border-primary p-8 space-y-6 relative bg-card shadow-lg">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
             {tPricing("cta_current")}
           </div>
@@ -141,71 +137,17 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
           <p className="text-[11px] text-center text-muted-foreground">
             {tLanding("noCreditCard")} · {tLanding("cancelAnytime")}
           </p>
-        </div>
-
-        {/* Coming-soon teasers */}
-        {UPCOMING_BILLING_PLAN_ORDER.map((key) => {
-          const plan = UPCOMING_BILLING_PLAN_DEFINITIONS[key];
-          const price =
-            cycle === "yearly" && plan.yearlyPriceLabel
-              ? plan.yearlyPriceLabel.split("/")[0]
-              : plan.priceLabel;
-          const period = cycle === "yearly" ? "/year" : plan.periodLabel;
-          return (
-            <div
-              key={plan.id}
-              className="rounded-xl border p-8 space-y-6 relative bg-card/60 text-muted-foreground"
-              aria-disabled="true"
-            >
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full inline-flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3" /> {tPricing("cta_upgrade")}
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-foreground/80">
-                  {plan.displayName}
-                </h3>
-                <p className="text-sm mt-1">{plan.shortDescription}</p>
-              </div>
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-5xl font-bold tracking-tight text-foreground/70">
-                    {price}
-                  </span>
-                  <span>{period}</span>
-                </div>
-                {plan.yearlyPriceLabel ? (
-                  <p className="text-xs mt-1">
-                    {cycle === "yearly"
-                      ? `Billed annually · ${plan.yearlyPriceLabel}`
-                      : "Switch to yearly to save"}
-                  </p>
-                ) : null}
-              </div>
-              <ul className="space-y-3 text-sm">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 opacity-40" />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button variant="outline" className="w-full" disabled>
-                <Lock className="h-3.5 w-3.5 mr-2" /> {tPricing("cta_upgrade")}
-              </Button>
-              <div className="pt-2">
-                <WaitlistForm
-                  target={plan.id === "FAMILY" ? "PLAN_FAMILY" : "PLAN_PRO"}
-                  source={`pricing-${plan.id.toLowerCase()}`}
-                  submitLabel="Notify me at launch"
-                  helper="We'll email you the moment this plan opens. No marketing."
-                  successMessage={`You're on the list for ${plan.displayName}. We'll email you at launch.`}
-                  withNote={plan.id === "PRO"}
-                  compact
-                />
-              </div>
+          <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+            <div className="mb-1 flex items-center justify-center gap-2 font-medium text-foreground">
+              <Shield className="h-3.5 w-3.5" />
+              Current product scope
             </div>
-          );
-        })}
+            LocateFlow provides local task tracking, provider directory
+            guidance, and move organization. It does not update external
+            provider accounts or guarantee provider availability at an
+            address.
+          </div>
+        </div>
       </div>
     </section>
   );

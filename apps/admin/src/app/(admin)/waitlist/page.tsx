@@ -52,9 +52,9 @@ const TARGET_META: Record<
     color: "text-green-500",
   },
   MOBILE_ANY: { label: "Mobile (any)", icon: Smartphone, color: "text-sky-500" },
-  PLAN_FAMILY: { label: "Family plan", icon: Users, color: "text-rose-500" },
-  PLAN_PRO: { label: "Pro plan", icon: Crown, color: "text-amber-500" },
-  API_ACCESS: { label: "API access", icon: Code2, color: "text-purple-500" },
+  PLAN_FAMILY: { label: "Legacy plan interest", icon: Users, color: "text-rose-500" },
+  PLAN_PRO: { label: "Legacy plan interest", icon: Crown, color: "text-amber-500" },
+  API_ACCESS: { label: "Legacy integration interest", icon: Code2, color: "text-purple-500" },
 };
 
 const TARGETS: Target[] = [
@@ -181,7 +181,7 @@ export default function WaitlistPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Waitlist</h1>
           <p className="mt-1 text-muted-foreground">
-            Outreach and conversion tracking for upcoming product segments
+            Historical mobile and legacy waitlist tracking. These entries do not create launch promises.
           </p>
         </div>
         <button

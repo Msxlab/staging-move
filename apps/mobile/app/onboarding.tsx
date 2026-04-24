@@ -278,12 +278,10 @@ export default function OnboardingScreen() {
     try {
       const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
       const res = await api.post<any>("/api/profile", { ...profile, legalConsents: acceptedLegalConsents });
-      console.log("[ONBOARDING] saveProfile response:", JSON.stringify(res));
       if (res.error) throw new Error(res.error);
       setPendingLegalConsents(null);
       return true;
     } catch (e: any) {
-      console.log("[ONBOARDING] saveProfile error:", e.message);
       setError(e.message || "Failed to save profile");
       return false;
     } finally { setSaving(false); }

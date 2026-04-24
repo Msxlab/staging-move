@@ -21,10 +21,13 @@ const BACKUP_TABLE_FETCHERS = {
   addresses: () => prisma.address.findMany(),
   services: () => prisma.service.findMany(),
   movingPlans: () => prisma.movingPlan.findMany(),
+  customProviders: () => prisma.userCustomProvider.findMany(),
+  moveTasks: () => prisma.moveTask.findMany(),
   budgets: () => prisma.budget.findMany(),
   subscriptions: () => prisma.subscription.findMany(),
   notifications: () => prisma.notification.findMany(),
   auditLogs: () => prisma.auditLog.findMany(),
+  providerGovernanceIssues: () => prisma.providerGovernanceIssue.findMany(),
 } as const;
 
 // POST /api/cron/backup — automated daily backup via cron

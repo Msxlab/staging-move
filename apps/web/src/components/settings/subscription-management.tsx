@@ -2,12 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Crown, Lock, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Crown, Sparkles } from "lucide-react";
 import {
   BILLING_PLAN_ORDER,
   BILLING_PLAN_DEFINITIONS,
-  UPCOMING_BILLING_PLAN_ORDER,
-  UPCOMING_BILLING_PLAN_DEFINITIONS,
   type UnifiedEntitlementSnapshot,
 } from "@/lib/shared-billing";
 
@@ -183,9 +181,7 @@ export default function SubscriptionManagementPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-white/50">Loading subscription...</div>
       ) : (
         <>
-          {/* Billing cycle toggle — applies to the Individual upgrade button
-              and also makes Family/Pro teaser prices match what the user is
-              comparing against. */}
+          {/* Billing cycle toggle applies to the current paid plan. */}
           <div className="flex justify-center">
             <div
               role="tablist"
@@ -222,7 +218,7 @@ export default function SubscriptionManagementPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {BILLING_PLAN_ORDER.map((planKey) => {
               const plan = BILLING_PLAN_DEFINITIONS[planKey];
               const isCurrent = currentPlanKey === planKey;
@@ -298,56 +294,6 @@ export default function SubscriptionManagementPage() {
                         Included by default
                       </button>
                     )}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Upcoming plan teasers — locked CTAs so the user sees the roadmap
-                but can't try to subscribe to something that doesn't exist yet. */}
-            {UPCOMING_BILLING_PLAN_ORDER.map((planKey) => {
-              const plan = UPCOMING_BILLING_PLAN_DEFINITIONS[planKey];
-              const displayPrice =
-                cycle === "yearly" && plan.yearlyPriceLabel
-                  ? plan.yearlyPriceLabel.split("/")[0]
-                  : plan.priceLabel;
-              const displayPeriod = cycle === "yearly" ? "/year" : plan.periodLabel;
-              return (
-                <div
-                  key={planKey}
-                  aria-disabled="true"
-                  className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur-xl"
-                >
-                  <div className="absolute right-3 top-3">
-                    <span className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-medium text-amber-300">
-                      <Sparkles className="h-2.5 w-2.5" /> Coming soon
-                    </span>
-                  </div>
-                  <div className="p-5 pb-3">
-                    <h3 className="text-base font-semibold text-white/70">{plan.displayName}</h3>
-                    <div className="mt-2">
-                      <span className="text-2xl font-bold text-white/70">{displayPrice}</span>
-                      <span className="text-sm text-white/30"> {displayPeriod}</span>
-                    </div>
-                    {cycle === "yearly" && plan.yearlyPriceLabel ? (
-                      <span className="mt-1 block text-[11px] text-white/30">Billed as {plan.yearlyPriceLabel}</span>
-                    ) : null}
-                  </div>
-                  <div className="space-y-3 px-5 pb-5">
-                    <ul className="space-y-2">
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2 text-xs text-white/50">
-                          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-white/30" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <Link
-                      href="/contact"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 py-2 text-sm font-medium text-white/50 transition hover:bg-white/5"
-                    >
-                      <Lock className="h-3.5 w-3.5" /> Notify me at launch
-                    </Link>
                   </div>
                 </div>
               );

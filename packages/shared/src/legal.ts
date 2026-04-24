@@ -39,7 +39,7 @@ export const LEGAL_TERMS_DOCUMENT: LegalConsentDocument = {
     "LocateFlow is a relocation organization platform that helps users track addresses, services, move planning, documents, reminders, and provider research across the United States.",
   highlights: [
     "LocateFlow is an organizational software product, not a law firm, tax preparer, insurance broker, lender, government agency, or regulated advisor.",
-    "You are responsible for the accuracy, completeness, legality, and authority of every address, provider, billing, family, immigration, and document record you enter or upload.",
+    "You are responsible for the accuracy, completeness, legality, and authority of every address, provider, billing, household, custom-provider, move-task, and document record you enter or upload.",
     "Any provider, state-rule, timing, pricing, migration, or recommendation information shown in the product must be independently reviewed before you rely on it.",
     "To the maximum extent permitted by applicable U.S. federal, state, and local law, LocateFlow disclaims warranties and limits liability for losses connected to user-entered information, missed deadlines, third-party services, or reliance on product suggestions.",
   ],
@@ -61,7 +61,7 @@ export const LEGAL_TERMS_DOCUMENT: LegalConsentDocument = {
     {
       heading: "No professional or government advice",
       paragraphs: [
-        "LocateFlow does not provide legal, tax, financial, insurance, immigration, housing, healthcare, or compliance advice. Product content is informational and operational only.",
+        "LocateFlow does not provide legal, tax, financial, insurance, housing, healthcare, or compliance advice. Product content is informational and operational only.",
         "You must verify every filing requirement, eligibility rule, cost, coverage term, notice period, state deadline, and provider instruction directly with the relevant government body, carrier, bank, landlord, employer, or licensed professional.",
       ],
     },
@@ -75,7 +75,7 @@ export const LEGAL_TERMS_DOCUMENT: LegalConsentDocument = {
     {
       heading: "Third-party services and availability",
       paragraphs: [
-        "The product may reference or connect to third-party providers, payment processors, authentication vendors, storage systems, mapping services, or public resources. Those third parties operate independently and may change, fail, or impose their own terms.",
+        "The product may reference third-party providers, payment processors, authentication vendors, storage systems, mapping services, or public resources. Those third parties operate independently and may change, fail, or impose their own terms.",
         "LocateFlow does not guarantee uninterrupted access, perfect availability, or error-free results. Maintenance, outages, data-entry mistakes, stale public information, or third-party failures may affect the service.",
       ],
     },
@@ -98,8 +98,8 @@ export const LEGAL_DISCLAIMER_DOCUMENT: LegalConsentDocument = {
   summary:
     "LocateFlow stores and organizes user-entered relocation information for convenience only. The user, not LocateFlow, remains responsible for verifying and lawfully using every piece of information entered into the system.",
   highlights: [
-    "Addresses, provider names, billing details, family data, move timelines, immigration details, and uploaded files may be incomplete, outdated, or incorrect because they depend on user entry and third-party systems.",
-    "LocateFlow does not guarantee compliance with U.S. federal, state, county, city, agency, utility, insurance, tax, immigration, or licensing rules and is not responsible for missed filings, penalties, denials, service lapses, or other legal consequences.",
+    "Addresses, provider names, billing details, move tasks, move timelines, custom-provider records, and uploaded files may be incomplete, outdated, or incorrect because they depend on user entry and third-party systems.",
+    "LocateFlow does not guarantee compliance with U.S. federal, state, county, city, agency, utility, insurance, tax, or licensing rules and is not responsible for missed filings, penalties, denials, service lapses, or other legal consequences.",
     "We collect only the information reasonably needed to operate accounts, addresses, services, moving plans, reminders, documents, security, analytics, and support. That data is not sold or licensed for commercial marketing use.",
     "Even so, you remain solely responsible for reviewing, correcting, updating, backing up, and lawfully relying on your own information and decisions.",
   ],
@@ -107,15 +107,15 @@ export const LEGAL_DISCLAIMER_DOCUMENT: LegalConsentDocument = {
     {
       heading: "What data we collect and why",
       paragraphs: [
-        "LocateFlow may collect account identifiers, names, emails, profile preferences, household information, addresses, move-planning details, provider selections, billing notes, uploaded files, reminders, and activity logs in order to operate the product and secure the platform.",
-        "This information is used to provide features such as provider recommendations, relocation checklists, service tracking, reminders, document management, troubleshooting, abuse prevention, and product reliability improvements.",
+        "LocateFlow may collect account identifiers, names, emails, profile preferences, addresses, move-planning details, provider selections, user-created custom providers, move tasks, billing notes, uploaded files, reminders, and activity logs in order to operate the product and secure the platform.",
+        "This information is used to provide features such as provider recommendations, relocation checklists, move tasks, service tracking, reminders, document management, troubleshooting, abuse prevention, and product reliability improvements.",
       ],
     },
     {
-      heading: "No legal, tax, financial, insurance, healthcare, or immigration advice",
+      heading: "No legal, tax, financial, insurance, or healthcare advice",
       paragraphs: [
-        "LocateFlow does not replace licensed counsel, certified public accountants, enrolled agents, insurance producers, healthcare professionals, lenders, or immigration representatives.",
-        "Nothing in the product should be treated as a legal opinion, filing instruction, government approval, eligibility determination, tax position, insurance recommendation, immigration strategy, or binding compliance advice.",
+        "LocateFlow does not replace licensed counsel, certified public accountants, enrolled agents, insurance producers, healthcare professionals, or lenders.",
+        "Nothing in the product should be treated as a legal opinion, filing instruction, government approval, eligibility determination, tax position, insurance recommendation, medical recommendation, or binding compliance advice.",
       ],
     },
     {

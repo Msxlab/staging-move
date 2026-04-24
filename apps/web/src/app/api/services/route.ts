@@ -7,6 +7,7 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { encrypt, decrypt } from "@/lib/shared-encryption";
 import { canCreateService } from "@/lib/plan-limits";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
+import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 
 // GET /api/services
 export async function GET(request: NextRequest) {
@@ -151,7 +152,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ service }, { status: 201 });
+    const moveTaskSync = await syncMoveTasksForAddress(userId, validated.addressId);
+
+    return NextResponse.json({ service, moveTaskSync }, { status: 201 });
   } catch (error: any) {
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });

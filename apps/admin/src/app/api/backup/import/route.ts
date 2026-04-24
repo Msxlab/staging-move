@@ -46,11 +46,23 @@ const IMPORT_MODEL_OPS = {
       prisma.movingPlan.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.movingPlan.create({ data }),
   },
+  customProviders: {
+    count: () => prisma.userCustomProvider.count(),
+    findUniqueById: (id: string) =>
+      prisma.userCustomProvider.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.userCustomProvider.create({ data }),
+  },
   services: {
     count: () => prisma.service.count(),
     findUniqueById: (id: string) =>
       prisma.service.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.service.create({ data }),
+  },
+  moveTasks: {
+    count: () => prisma.moveTask.count(),
+    findUniqueById: (id: string) =>
+      prisma.moveTask.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.moveTask.create({ data }),
   },
   budgets: {
     count: () => prisma.budget.count(),
@@ -74,6 +86,12 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) =>
       prisma.auditLog.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.auditLog.create({ data }),
+  },
+  providerGovernanceIssues: {
+    count: () => prisma.providerGovernanceIssue.count(),
+    findUniqueById: (id: string) =>
+      prisma.providerGovernanceIssue.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.providerGovernanceIssue.create({ data }),
   },
 } as const;
 
@@ -133,6 +151,21 @@ function resolveImportPayload(body: any) {
 
 function getTransactionModel(tx: any, tableName: keyof typeof BACKUP_TABLES) {
   return tx[BACKUP_TABLES[tableName].model];
+}
+
+function cleanImportRecord(tableName: keyof typeof BACKUP_TABLES, record: any) {
+  const cleanRecord = { ...record };
+  delete cleanRecord.createdAt;
+  delete cleanRecord.updatedAt;
+
+  // Admin users are intentionally outside the app-level backup archive, so a
+  // restored governance issue cannot safely retain reviewer FKs from another
+  // environment. The issue itself remains restorable and auditable.
+  if (tableName === "providerGovernanceIssues") {
+    cleanRecord.reviewedByAdminId = null;
+  }
+
+  return cleanRecord;
 }
 
 // POST /api/backup/import — import data from a backup JSON
@@ -309,9 +342,7 @@ export async function POST(request: NextRequest) {
               let imported = 0;
 
               for (const record of records) {
-                const cleanRecord = { ...record };
-                delete cleanRecord.createdAt;
-                delete cleanRecord.updatedAt;
+                const cleanRecord = cleanImportRecord(tableName, record);
                 await model.create({ data: cleanRecord });
                 imported++;
               }
@@ -382,9 +413,7 @@ export async function POST(request: NextRequest) {
                     skipped++;
                     continue;
                   }
-                  const cleanRecord = { ...record };
-                  delete cleanRecord.createdAt;
-                  delete cleanRecord.updatedAt;
+                  const cleanRecord = cleanImportRecord(tableName, record);
                   await model.create({ data: cleanRecord });
                   imported++;
                 } catch {

@@ -24,11 +24,14 @@ The current app-level backup catalog includes these tables:
 4. `providerCoverages`
 5. `addresses`
 6. `movingPlans`
-7. `services`
-8. `budgets`
-9. `subscriptions`
-10. `notifications`
-11. `auditLogs`
+7. `customProviders`
+8. `services`
+9. `moveTasks`
+10. `budgets`
+11. `subscriptions`
+12. `notifications`
+13. `auditLogs`
+14. `providerGovernanceIssues`
 
 This archive is not a full managed database snapshot. It does not cover every database table, object storage file, runtime secret, database role, index outside Prisma, or provider-managed PITR record.
 
@@ -110,11 +113,14 @@ providers
 providerCoverages
 addresses
 movingPlans
+customProviders
 services
+moveTasks
 budgets
 subscriptions
 notifications
 auditLogs
+providerGovernanceIssues
 ```
 
 Stop if:
@@ -147,11 +153,14 @@ SELECT COUNT(*) AS providers FROM ServiceProvider;
 SELECT COUNT(*) AS providerCoverages FROM ServiceProviderCoverage;
 SELECT COUNT(*) AS addresses FROM Address;
 SELECT COUNT(*) AS movingPlans FROM MovingPlan;
+SELECT COUNT(*) AS customProviders FROM UserCustomProvider;
 SELECT COUNT(*) AS services FROM Service;
+SELECT COUNT(*) AS moveTasks FROM MoveTask;
 SELECT COUNT(*) AS budgets FROM Budget;
 SELECT COUNT(*) AS subscriptions FROM Subscription;
 SELECT COUNT(*) AS notifications FROM Notification;
 SELECT COUNT(*) AS auditLogs FROM AuditLog;
+SELECT COUNT(*) AS providerGovernanceIssues FROM ProviderGovernanceIssue;
 ```
 
 Run relationship spot checks:
@@ -176,6 +185,26 @@ SELECT COUNT(*) AS orphan_services
 FROM Service s
 LEFT JOIN User u ON u.id = s.userId
 WHERE u.id IS NULL;
+
+SELECT COUNT(*) AS orphan_custom_providers
+FROM UserCustomProvider cp
+LEFT JOIN User u ON u.id = cp.userId
+WHERE u.id IS NULL;
+
+SELECT COUNT(*) AS orphan_move_tasks
+FROM MoveTask mt
+LEFT JOIN User u ON u.id = mt.userId
+WHERE u.id IS NULL;
+
+SELECT COUNT(*) AS orphan_move_task_custom_providers
+FROM MoveTask mt
+LEFT JOIN UserCustomProvider cp ON cp.id = mt.customProviderId
+WHERE mt.customProviderId IS NOT NULL AND cp.id IS NULL;
+
+SELECT COUNT(*) AS orphan_provider_governance_custom_providers
+FROM ProviderGovernanceIssue pgi
+LEFT JOIN UserCustomProvider cp ON cp.id = pgi.customProviderId
+WHERE pgi.customProviderId IS NOT NULL AND cp.id IS NULL;
 ```
 
 Expected result for each orphan query: `0`.
@@ -189,6 +218,9 @@ Against the staging/restore app:
 - User list loads.
 - Provider list and provider detail load.
 - Provider coverage rows are visible for provider detail.
+- User custom providers load for a non-production test user.
+- Move task list loads for a non-production test move.
+- Admin provider governance queue loads.
 - Support list loads.
 - Subscription list loads.
 - Notifications list loads.

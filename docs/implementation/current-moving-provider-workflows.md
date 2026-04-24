@@ -51,6 +51,8 @@ Supported move task actions:
 
 Each task includes a reason, confidence, caveats, suggested next step, local effect, and provider candidates when relevant.
 
+Task suggestions are refreshed when a moving plan is created or updated, when an address tied to a moving plan is updated, when a service is created or updated for an affected address, and when the user explicitly runs task generation. Regeneration is idempotent: completed and dismissed tasks are not immediately recreated unless the inputs produce a distinct task key.
+
 Move task statuses:
 
 - Suggested.
