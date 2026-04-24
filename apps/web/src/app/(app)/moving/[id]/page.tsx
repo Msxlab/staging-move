@@ -23,6 +23,20 @@ interface PlanDetail {
   toAddress: { street: string; city: string; state: string; zip: string };
 }
 
+interface MoveTaskItem {
+  id: string;
+  title: string;
+  description?: string | null;
+  actionType: string;
+  status: string;
+  confidence: string;
+  reason?: string | null;
+  caveats?: string[] | null;
+  localEffect?: { effectType?: string; localOnly?: boolean } | null;
+  destinationProvider?: { name: string } | null;
+  customProvider?: { name: string } | null;
+}
+
 export default function MovingPlanDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -37,6 +51,9 @@ export default function MovingPlanDetailPage() {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [stateRules, setStateRules] = useState<any>(null);
   const [stateGuideOpen, setStateGuideOpen] = useState(false);
+  const [moveTasks, setMoveTasks] = useState<MoveTaskItem[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
+  const [taskBusy, setTaskBusy] = useState<string | null>(null);
 
   const fetchMigration = async (planId: string) => {
     setMigrationLoading(true);
@@ -49,6 +66,58 @@ export default function MovingPlanDetailPage() {
     }
   };
 
+  const fetchMoveTasks = async (planId: string) => {
+    setTasksLoading(true);
+    try {
+      const res = await fetch(`/api/move-tasks?movingPlanId=${planId}`);
+      const data = await res.json();
+      setMoveTasks(data.tasks || []);
+    } catch {
+      toast.error("Failed to load move tasks");
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  const generateMoveTasks = async () => {
+    if (!plan) return;
+    setTasksLoading(true);
+    try {
+      const res = await fetch("/api/move-tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ movingPlanId: plan.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate move tasks");
+      setMoveTasks(data.tasks || []);
+      toast.success(`Generated ${data.generatedCount || 0} suggested tasks`);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to generate move tasks");
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  const updateMoveTask = async (taskId: string, event: "ACCEPT" | "START" | "COMPLETE" | "DISMISS" | "REOPEN") => {
+    setTaskBusy(taskId);
+    try {
+      const res = await fetch("/api/move-tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: taskId, event }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update task");
+      if (plan) await fetchMoveTasks(plan.id);
+      toast.success(event === "COMPLETE" ? "Completed locally in LocateFlow" : "Task updated");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update task");
+    } finally {
+      setTaskBusy(null);
+    }
+  };
+
   useEffect(() => {
     fetch(`/api/moving/${id}`)
       .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
@@ -56,6 +125,7 @@ export default function MovingPlanDetailPage() {
         setPlan(data.plan);
         if (data.plan && (data.plan.status === "PLANNING" || data.plan.status === "IN_PROGRESS")) {
           void fetchMigration(data.plan.id);
+          void fetchMoveTasks(data.plan.id);
         }
         if (data.plan?.toAddress?.state) {
           fetch(`/api/state-rules?state=${encodeURIComponent(data.plan.toAddress.state)}`)
@@ -181,6 +251,86 @@ export default function MovingPlanDetailPage() {
         <div>
           <p className="text-2xl font-bold text-white">{new Date(plan.moveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
           <p className="text-[11px] text-white/40">Move Date</p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-xl p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-white">Move Tasks</h2>
+            <p className="text-xs text-white/40 mt-1 max-w-2xl">
+              Suggested tasks are manual LocateFlow tracking. Completing a task can update local service records, but it does not update an external provider account.
+            </p>
+          </div>
+          <button
+            onClick={generateMoveTasks}
+            disabled={tasksLoading}
+            className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition disabled:opacity-50"
+          >
+            {tasksLoading ? "Syncing..." : "Generate move tasks"}
+          </button>
+        </div>
+        <div className="mt-4 space-y-2">
+          {moveTasks.length === 0 && !tasksLoading && (
+            <div className="rounded-xl border border-white/10 bg-black/10 p-4">
+              <p className="text-sm text-white/60">No move tasks yet.</p>
+              <p className="text-xs text-white/35 mt-1">Generate tasks after adding origin services and a destination address.</p>
+            </div>
+          )}
+          {moveTasks.map((task) => {
+            const busy = taskBusy === task.id;
+            const isDone = task.status === "COMPLETED";
+            const isDismissed = task.status === "DISMISSED";
+            return (
+              <div key={task.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
+                <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/45">
+                        {task.status.replace(/_/g, " ")}
+                      </span>
+                      <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/35">
+                        {task.confidence} confidence
+                      </span>
+                      {task.localEffect?.localOnly && (
+                        <span className="text-[10px] px-2 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-300">
+                          LocateFlow only
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-white mt-2">{task.title}</p>
+                    {task.description && <p className="text-xs text-white/50 mt-1">{task.description}</p>}
+                    {task.destinationProvider?.name && (
+                      <p className="text-[11px] text-emerald-300 mt-2">Candidate: {task.destinationProvider.name}</p>
+                    )}
+                    {task.caveats?.[0] && <p className="text-[10px] text-white/30 mt-2">{task.caveats[0]}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 shrink-0">
+                    {!isDone && !isDismissed && task.status === "SUGGESTED" && (
+                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "ACCEPT")} className="px-2 py-1 rounded-lg bg-white/5 text-white/60 text-[10px] hover:bg-white/10">
+                        Accept
+                      </button>
+                    )}
+                    {!isDone && !isDismissed && (
+                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "COMPLETE")} className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10px] hover:bg-emerald-500/30">
+                        Complete locally
+                      </button>
+                    )}
+                    {!isDone && !isDismissed && (
+                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "DISMISS")} className="px-2 py-1 rounded-lg bg-white/5 text-white/40 text-[10px] hover:bg-white/10">
+                        Dismiss
+                      </button>
+                    )}
+                    {(isDone || isDismissed) && (
+                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "REOPEN")} className="px-2 py-1 rounded-lg bg-white/5 text-white/50 text-[10px] hover:bg-white/10">
+                        Reopen
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
