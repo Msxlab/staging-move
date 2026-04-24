@@ -26,6 +26,15 @@
         "EXPO_PUBLIC_API_URL": "https://app.locateflow.com/api"
       }
     },
+    "staging-preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://locateflow-web-staging.vercel.app/api"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "env": {

@@ -1,0 +1,135 @@
+# Staging Environment Inventory
+
+Current branch: `pr/current-product-readiness-epic`
+Current PR: `#15 Current product readiness epic`
+
+This inventory is for protected Vercel staging and mobile preview builds. It does not add product scope. Leave vendor-backed features disabled until credentials are provided.
+
+## Vercel Projects
+
+| Project | Root directory | Purpose | Build command | Notes |
+|---|---|---|---|---|
+| `locateflow-web-staging` | `apps/web` | User app and API | `pnpm build` from app root, or `pnpm --filter @locateflow/web build` if configured from repo root | Existing `apps/web/vercel.json` contains web cron paths. |
+| `locateflow-admin-staging` | `apps/admin` | Admin console | `pnpm build` from app root, or `pnpm --filter @locateflow/admin build` if configured from repo root | Must use Vercel deployment protection plus admin login. |
+
+Recommended Vercel settings:
+
+- Framework preset: Next.js.
+- Package manager: pnpm, pinned by root `packageManager: pnpm@9.15.0`.
+- Install command: auto-detected pnpm install, or `pnpm install --frozen-lockfile` if overridden.
+- Migrations: do not run during Vercel build. Run `prisma migrate deploy` separately before deployment smoke tests.
+- Prisma generate: root postinstall already runs `pnpm --filter @locateflow/db generate`; if disabled in Vercel, add an explicit generate step before build.
+
+## Secret Generation
+
+Do not commit generated values. Generate locally and paste into Vercel/EAS/local env stores only:
+
+```bash
+openssl rand -hex 32
+```
+
+Use separate values for:
+
+- `USER_JWT_SECRET`
+- `ADMIN_JWT_SECRET`
+- `FIELD_ENCRYPTION_KEY`
+- `INTERNAL_WEBHOOK_SECRET`
+- `CRON_SECRET`
+- `IMPERSONATION_HANDOFF_SECRET`
+
+Place secrets in:
+
+- Vercel web project env: web/API secrets.
+- Vercel admin project env: admin, backup, alert, and shared secrets.
+- EAS preview env: mobile build-time public API URL only, plus EAS secrets where required.
+- Local `.env` files that are gitignored.
+
+## Environment Matrix
+
+| Variable | Web staging | Admin staging | Mobile preview | Production later | Secret | Exposure | Missing impact |
+|---|---|---|---|---|---|---|---|
+| `DATABASE_URL` | Required | Required | No | Required | Yes | Server-only | App cannot access DB; launch blocked. |
+| `USER_JWT_SECRET` | Required | Required if admin impersonation/internal user session verification is used | No | Required | Yes | Server-only | User auth/session verification fails. |
+| `ADMIN_JWT_SECRET` | Required if admin handoff validates admin JWT | Required | No | Required | Yes | Server-only | Admin auth fails. |
+| `FIELD_ENCRYPTION_KEY` | Required | Required | No | Required | Yes | Server-only | Production encryption/backup safety blocked. |
+| `NEXT_PUBLIC_APP_URL` | Required | Required for links/impersonation return URLs | No | Required | No | Public/client-safe | OAuth/email/portal links may point to wrong host. |
+| `NEXT_PUBLIC_ADMIN_URL` | Not used by current code | Optional doc-only if introduced later | No | Optional | No | Public/client-safe | No current impact. |
+| `NODE_ENV` | Vercel sets | Vercel sets | EAS sets build env | Vercel sets | No | Server-only | Do not override unless needed. |
+| `APP_ENV` | Not used by current code | Not used by current code | Not used | Optional future | No | Server-only | No current impact. |
+| `WEB_INTERNAL_URL` | No | Optional for admin-to-web internal calls | No | Recommended | No | Server-only | Admin impersonation may fall back to `NEXT_PUBLIC_APP_URL`. |
+| `INTERNAL_WEBHOOK_SECRET` | Required | Required | No | Required | Yes | Server-only | Internal webhooks disabled/fail closed. |
+| `CRON_SECRET` | Required for web cron | Required for admin backup cron | No | Required | Yes | Server-only | Scheduled jobs cannot run safely. |
+| `IMPERSONATION_HANDOFF_SECRET` | Required for web handoff endpoint | Required for admin handoff issuer | No | Required | Yes | Server-only | Admin impersonation unavailable. |
+| `GOOGLE_OAUTH_CLIENT_ID` | Optional staging | No | No native token handoff required for current preview | Optional | No | Public OAuth ID | Google sign-in stays disabled. |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Optional staging | No | No | Optional | Yes | Server-only | Google sign-in stays disabled. |
+| `APPLE_OAUTH_CLIENT_ID` | Optional staging | No | No native Apple sign-in yet | Optional, required for iOS App Store if offered | No | OAuth ID | Apple sign-in stays disabled. |
+| `APPLE_OAUTH_TEAM_ID` | Optional staging | No | No | Optional | No | OAuth ID | Apple sign-in stays disabled. |
+| `APPLE_OAUTH_KEY_ID` | Optional staging | No | No | Optional | No | OAuth ID | Apple sign-in stays disabled. |
+| `APPLE_OAUTH_PRIVATE_KEY` | Optional staging | No | No | Optional | Yes | Server-only | Apple sign-in stays disabled. |
+| `STRIPE_SECRET_KEY` | Required to test checkout/portal | Optional context checks | No | Required for web billing | Yes | Server-only | Billing checkout/portal/webhooks cannot be fully tested. |
+| `STRIPE_WEBHOOK_SECRET` | Required for Stripe webhook test | No | No | Required | Yes | Server-only | Webhook events rejected. |
+| `STRIPE_PRICE_INDIVIDUAL` | Required for checkout test | Optional display/context | No | Required | No | Server-only/public ID | Checkout cannot create Individual subscription. |
+| `STRIPE_PRICE_INDIVIDUAL_YEARLY` | Optional if yearly enabled | Optional | No | Required if yearly sold | No | Server-only/public ID | Yearly checkout unavailable. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Not used by current Checkout flow | No | No | Optional if future client Stripe UI is added | No | Public | No current impact. |
+| `APPLE_APP_STORE_ISSUER_ID` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | No | Server-only ID | IAP verification unavailable/stale. |
+| `APPLE_APP_STORE_KEY_ID` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | No | Server-only ID | IAP verification unavailable/stale. |
+| `APPLE_APP_STORE_PRIVATE_KEY` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | Yes | Server-only | IAP verification unavailable/stale. |
+| `APPLE_APP_STORE_ENVIRONMENT` | Optional, use `Sandbox` for staging | Optional | No | Required for live IAP | No | Server-only | Defaults may be wrong for store validation. |
+| `MOBILE_IOS_PRODUCT_INDIVIDUAL` | Optional for product endpoint | Optional | No | Required for live IAP | No | Product ID | Product endpoint may return no iOS product. |
+| `MOBILE_ANDROID_PRODUCT_INDIVIDUAL` | Optional for product endpoint | Optional | No | Required for live IAP | No | Product ID | Product endpoint may return no Android product. |
+| `GOOGLE_PLAY_PACKAGE_NAME` | Required for Google Play validation tests | Admin readiness context | No | Required for live Android IAP | No | Server-only ID | Play validation unavailable. |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL` | Required for Google Play validation tests | Admin readiness context | No | Required for live Android IAP | No | Server-only ID | Play validation unavailable. |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY` | Required for Google Play validation tests | Admin readiness context | No | Required for live Android IAP | Yes | Server-only | Play validation unavailable. |
+| `GOOGLE_PLAY_RTDN_AUDIENCE` | Required for production-like Play webhook tests | Admin readiness context | No | Required for live Android RTDN | No | URL | Production webhook rejects without it. |
+| `RESEND_API_KEY` | Required for email tests | Required for alert email delivery | No | Required | Yes | Server-only | Password reset/email verification cannot be fully tested. |
+| `EMAIL_FROM` | Required for email tests | Required if admin sends email | No | Required | No | Server-only config | Email sends may fail or use fallback. |
+| `ALERT_EMAIL_FROM` | Optional | Required for alert sender test | No | Recommended | No | Server-only config | Alert email sender may be fallback. |
+| `ALERT_EMAIL_TO` | Optional | Required for alert delivery test | No | Recommended | No | Server-only config | Security/ops alert delivery cannot be validated. |
+| `NEXT_PUBLIC_SENTRY_DSN` | Optional staging, required for monitoring validation | Optional staging, required for monitoring validation | Optional, public | Recommended production | No | Public DSN | Error capture cannot be validated. |
+| `SENTRY_DSN` | Not used by current code | Not used by current code | Not used | Optional future | Yes | Server-only | No current impact. |
+| `SENTRY_AUTH_TOKEN` | Only needed for source map upload if configured | Same | No | Optional | Yes | CI/build-only | No source map release upload. |
+| `SENTRY_ORG` | Only needed for source map upload if configured | Same | No | Optional | No | CI/build-only | No source map release upload. |
+| `SENTRY_PROJECT` | Only needed for source map upload if configured | Same | No | Optional | No | CI/build-only | No source map release upload. |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Optional public fallback | Optional public fallback | No | Optional if maps shown client-side | No | Public/client-safe | Address autocomplete may be unavailable. |
+| `GOOGLE_MAPS_API_KEY` | Optional server-side address autocomplete | Optional admin fallback | No | Recommended | Yes | Server-only | Address autocomplete may be unavailable. |
+| `R2_ENDPOINT` | Optional unless upload/imgproxy flows are tested | No | No | Required for upload/logo storage | No | Server-only URL | Upload/storage unavailable. |
+| `R2_REGION` | Optional | No | No | Required with R2/S3 | No | Server-only config | Upload/storage unavailable. |
+| `R2_BUCKET` | Optional | No | No | Required with R2/S3 | No | Server-only config | Upload/storage unavailable. |
+| `R2_ACCESS_KEY_ID` | Optional | No | No | Required with R2/S3 | No | Server-only ID | Upload/storage unavailable. |
+| `R2_SECRET_ACCESS_KEY` | Optional | No | No | Required with R2/S3 | Yes | Server-only | Upload/storage unavailable. |
+| `R2_PUBLIC_BASE_URL` | Optional | No | No | Optional | No | Public URL | Raw public object URLs unavailable. |
+| `IMGPROXY_KEY` | Optional unless image proxy tested | No | No | Required if imgproxy enabled | Yes | Server-only | Signed image proxy unavailable. |
+| `IMGPROXY_SALT` | Optional unless image proxy tested | No | No | Required if imgproxy enabled | Yes | Server-only | Signed image proxy unavailable. |
+| `NEXT_PUBLIC_IMGPROXY_URL` | Optional unless image proxy tested | No | No | Required if imgproxy enabled | No | Public/client-safe | Image proxy URLs unavailable. |
+| `BACKUP_STORAGE_PROVIDER` | No | Required for offsite backup drill | No | Required for DR readiness | No | Server-only config | Offsite backup not proven. |
+| `BACKUP_STORAGE_BUCKET` | No | Required for offsite backup drill | No | Required for DR readiness | No | Server-only config | Offsite backup not proven. |
+| `BACKUP_STORAGE_REGION` | No | Required for offsite backup drill | No | Required for DR readiness | No | Server-only config | Offsite backup not proven. |
+| `BACKUP_STORAGE_ENDPOINT` | No | Required for S3-compatible non-AWS storage | No | Required if using R2/Spaces | No | Server-only URL | Offsite backup not proven. |
+| `BACKUP_STORAGE_ACCESS_KEY_ID` | No | Required for offsite backup drill | No | Required for DR readiness | No | Server-only ID | Offsite backup not proven. |
+| `BACKUP_STORAGE_SECRET_ACCESS_KEY` | No | Required for offsite backup drill | No | Required for DR readiness | Yes | Server-only | Offsite backup not proven. |
+| `UPSTASH_REDIS_REST_URL` | Recommended staging | Recommended admin auth/rate checks | No | Required for production-grade rate limits | No | Server-only URL | Falls back to in-memory; not launch-grade. |
+| `UPSTASH_REDIS_REST_TOKEN` | Recommended staging | Recommended admin auth/rate checks | No | Required for production-grade rate limits | Yes | Server-only | Falls back to in-memory; not launch-grade. |
+| `ADMIN_SEED_EMAIL` | No | Required if seeding admin | No | Required for first admin seed | No | Server-only config | Admin account must be created another way. |
+| `ADMIN_SEED_PASSWORD` | No | Required if seeding admin | No | Required for first admin seed | Yes | Server-only | Admin account must be created another way. |
+| `EXPO_PUBLIC_API_URL` | No | No | Required for mobile preview | Required for mobile release | No | Public, inlined into app bundle | Mobile cannot reach API or may hit wrong environment. |
+| `EAS_TOKEN` / `EXPO_TOKEN` | No | No | Required for CI/noninteractive EAS build | Required for CI release builds | Yes | CI/build-only | Native build cannot run non-interactively. |
+| `EAS_PROJECT_ID` | No | No | Optional unless project requires explicit linking | Optional | No | Build config | EAS may prompt for project link. |
+
+## Known Missing Values In This Workspace
+
+Real staging/prod values are not available in the repo and must be provided by the operator:
+
+- Vercel project env values.
+- DigitalOcean staging MySQL `DATABASE_URL`.
+- OAuth client credentials.
+- Stripe test-mode keys, Price IDs, and webhook secret.
+- Resend sender and alert recipients.
+- Sentry DSN and optional source-map upload credentials.
+- Backup object storage credentials.
+- EAS token, Android signing, and Apple credentials.
+
+References:
+
+- Vercel deployment protection: https://vercel.com/docs/security/deployment-protection
+- Vercel protection bypass for automation: https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation
+- Expo EAS environment variables: https://docs.expo.dev/eas/environment-variables
