@@ -185,7 +185,7 @@ export default function UserDetailPage() {
     : null;
   const linkedProviders = Array.isArray(user.oauthAccounts) ? user.oauthAccounts : [];
   const activeLoginSessions = loginSessions.filter((session: any) => session.isActive);
-  const hasPasswordLogin = Boolean(user.passwordHash);
+  const hasPasswordLogin = Boolean(user.hasPasswordLogin);
   const latestVerificationToken = user.emailVerificationTokens?.[0] || null;
   const latestPasswordReset = user.passwordResetTokens?.[0] || null;
   const latestConsentByCategory = buildLatestConsentEntries(user.dataConsents || []);
@@ -459,7 +459,7 @@ export default function UserDetailPage() {
                   <div key={account.id} className="rounded-lg bg-background/70 px-3 py-2">
                     <p className="font-medium text-foreground">{formatAuthProvider(account.provider)}</p>
                     <p className="text-xs text-muted-foreground">
-                      Linked {new Date(account.createdAt).toLocaleString()} · ID {maskProviderIdentifier(account.providerId)}
+                      Linked {new Date(account.createdAt).toLocaleString()} · ID {account.providerIdHint || "—"}
                     </p>
                   </div>
                 ))}

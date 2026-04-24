@@ -1,11 +1,14 @@
 /**
- * Shared Sentry initialization options for the admin app. Mirrors
- * apps/web/src/lib/sentry-options.ts so both apps scrub PII identically.
+ * Shared Sentry initialization options for the admin app.
+ *
+ * Scrubbing strategy mirrors the web app: strip request bodies/cookies and
+ * redact known sensitive fields in extras/tags while keeping event shape.
  */
 
 type Runtime = "client" | "server" | "edge";
 
-const PII_FIELD_RE = /^(email|phone|password|token|authorization|cookie|ssn|session)$/i;
+const PII_FIELD_RE =
+  /(email|phone|password|hash|token|authorization|cookie|ssn|session|secret|mfa|backupCode|reset|verification|providerId|pushToken|privateKey|apiKey|accessKey|backup|archive|storageKey|objectKey|filePath|downloadUrl)/i;
 
 function scrubObject(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return obj;

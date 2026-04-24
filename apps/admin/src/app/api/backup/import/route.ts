@@ -28,6 +28,12 @@ const IMPORT_MODEL_OPS = {
       prisma.serviceProvider.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.serviceProvider.create({ data }),
   },
+  providerCoverages: {
+    count: () => prisma.serviceProviderCoverage.count(),
+    findUniqueById: (id: string) =>
+      prisma.serviceProviderCoverage.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.serviceProviderCoverage.create({ data }),
+  },
   addresses: {
     count: () => prisma.address.count(),
     findUniqueById: (id: string) =>

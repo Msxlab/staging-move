@@ -2,6 +2,43 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 
+function buildSla(ticket: { priority: string; status: string; createdAt: Date }) {
+  const hoursByPriority: Record<string, number> = {
+    URGENT: 4,
+    HIGH: 24,
+    MEDIUM: 72,
+    LOW: 120,
+  };
+  const targetHours = hoursByPriority[ticket.priority] || 72;
+  const dueAt = new Date(ticket.createdAt.getTime() + targetHours * 60 * 60 * 1000);
+  const terminal = ticket.status === "RESOLVED" || ticket.status === "CLOSED";
+  const now = Date.now();
+  return {
+    targetHours,
+    dueAt,
+    breached: !terminal && dueAt.getTime() < now,
+    remainingHours: terminal
+      ? null
+      : Math.ceil((dueAt.getTime() - now) / (60 * 60 * 1000)),
+    policy: "derived_default",
+    note: "Derived operational target based on priority; not a configured contractual SLA.",
+  };
+}
+
+type TicketOpsSummary = {
+  assignedTo: string | null;
+  priority: string;
+  status: string;
+  createdAt: Date;
+};
+
+type AssignedAdminSummary = {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+};
+
 // GET /api/tickets — list all tickets (admin view with filters)
 export async function GET(request: NextRequest) {
   try {
@@ -57,8 +94,29 @@ export async function GET(request: NextRequest) {
       ]),
     ]);
 
+    const assignedIds = Array.from(
+      new Set(
+        tickets
+          .map((ticket: { assignedTo: string | null }) => ticket.assignedTo)
+          .filter((id: string | null): id is string => Boolean(id)),
+      ),
+    );
+    const assignedAdmins = assignedIds.length
+      ? await prisma.adminUser.findMany({
+          where: { id: { in: assignedIds } },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        })
+      : [];
+    const assignedAdminMap = new Map<string, AssignedAdminSummary>(
+      assignedAdmins.map((admin: AssignedAdminSummary) => [admin.id, admin]),
+    );
+
     return NextResponse.json({
-      tickets,
+      tickets: tickets.map((ticket: TicketOpsSummary) => ({
+        ...ticket,
+        assignedAdmin: ticket.assignedTo ? assignedAdminMap.get(ticket.assignedTo) || null : null,
+        sla: buildSla(ticket),
+      })),
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       stats: {
         open: stats[0],

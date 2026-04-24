@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 // Internal endpoint for middleware IP rule cache refresh.
-// Authenticates with INTERNAL_WEBHOOK_SECRET (falls back to CRON_SECRET).
+// Authenticates with INTERNAL_WEBHOOK_SECRET only.
 export async function GET(request: NextRequest) {
   if (!verifyInternalAuth(request.headers.get("authorization"), "internal")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
