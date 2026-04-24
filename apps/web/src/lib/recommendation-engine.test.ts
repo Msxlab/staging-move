@@ -42,7 +42,7 @@ describe("scoreProviders", () => {
   });
 
   it("should boost state-specific providers for matching state", () => {
-    const stateProvider = makeProvider({ id: "1", scope: "STATE", states: ["TX"], tags: [] });
+    const stateProvider = makeProvider({ id: "1", category: "FINANCIAL_BANK", scope: "STATE", states: ["TX"], tags: [] });
     const [scored] = scoreProviders([stateProvider], BASE_PROFILE, "TX");
     expect(scored.recommendationScore).toBeGreaterThan(0);
     expect(scored.matchReasons).toContain("Available in TX");
@@ -146,6 +146,47 @@ describe("scoreProviders", () => {
     });
     const [scored] = scoreProviders([addressChecked], BASE_PROFILE, "TX");
     expect(scored.matchReasons).toContain("Confirm availability by address");
+  });
+
+  it("should rank high-confidence local utilities above national address-sensitive providers", () => {
+    const nationalUtility = makeProvider({
+      id: "national",
+      name: "National Electric",
+      category: "UTILITY_ELECTRIC",
+      scope: "FEDERAL",
+      popularityScore: 100,
+    });
+    const localUtility = makeProvider({
+      id: "local",
+      name: "Local Electric",
+      category: "UTILITY_ELECTRIC",
+      scope: "STATE",
+      states: ["TX"],
+      popularityScore: 20,
+      coverageMatchLevel: "exact",
+      coverageModel: "zip_prefix",
+    });
+
+    const [first] = scoreProviders([nationalUtility, localUtility], BASE_PROFILE, "TX");
+
+    expect(first.id).toBe("local");
+    expect(first.matchReasons).toContain("Exact ZIP match");
+  });
+
+  it("should caveat state-level address-sensitive providers", () => {
+    const stateUtility = makeProvider({
+      id: "state-utility",
+      category: "UTILITY_WATER",
+      scope: "STATE",
+      states: ["TX"],
+      coverageMatchLevel: "state",
+      coverageModel: "state",
+    });
+
+    const [scored] = scoreProviders([stateUtility], BASE_PROFILE, "TX");
+
+    expect(scored.matchReasons).toContain("Listed in TX; confirm address availability");
+    expect(scored.matchReasons).toContain("State-level listing; confirm service territory");
   });
 });
 
