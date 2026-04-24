@@ -520,6 +520,7 @@ model ServiceProvider {
   linkedCustomProviders UserCustomProvider[]      @relation("LinkedCustomProviders")
   moveTasks             MoveTask[]                @relation("MoveTaskProvider")
   destinationMoveTasks  MoveTask[]                @relation("MoveTaskDestinationProvider")
+  governanceIssues      ProviderGovernanceIssue[]
 
   deletedAt DateTime?
 
@@ -636,8 +637,9 @@ model UserCustomProvider {
   linkedServiceProviderId String?          @db.VarChar(30)
   linkedServiceProvider   ServiceProvider? @relation("LinkedCustomProviders", fields: [linkedServiceProviderId], references: [id], onDelete: SetNull)
 
-  services  Service[]
-  moveTasks MoveTask[]
+  services         Service[]
+  moveTasks        MoveTask[]
+  governanceIssues ProviderGovernanceIssue[]
 
   deletedAt DateTime?
 
@@ -650,6 +652,41 @@ model UserCustomProvider {
   @@index([adminReviewStatus])
   @@index([linkedServiceProviderId])
   @@index([deletedAt])
+}
+
+// ==================== PROVIDER GOVERNANCE ====================
+
+model ProviderGovernanceIssue {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  providerId String?          @db.VarChar(30)
+  provider   ServiceProvider? @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  customProviderId String?             @db.VarChar(30)
+  customProvider   UserCustomProvider? @relation(fields: [customProviderId], references: [id], onDelete: Cascade)
+
+  issueType String @db.VarChar(60)
+  status    String @default("OPEN") @db.VarChar(30)
+  severity  String @default("MEDIUM") @db.VarChar(20)
+
+  title       String  @db.VarChar(200)
+  description String? @db.Text
+  metadata    Json?
+
+  reviewedByAdminId String?    @db.VarChar(30)
+  reviewedByAdmin   AdminUser? @relation("ProviderGovernanceReviewedBy", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+  reviewedAt        DateTime?
+  dismissedAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([customProviderId])
+  @@index([issueType])
+  @@index([status])
+  @@index([severity])
+  @@index([reviewedByAdminId])
 }
 
 model ServiceProviderCoverage {
@@ -773,11 +810,12 @@ model AdminUser {
   lastLoginAt DateTime?
   createdBy   String?   @db.VarChar(30)
 
-  permissions          AdminPermission[]
-  auditLogs            AdminAuditLog[]
-  sessions             AdminSession[]
-  loginLogs            AdminLoginLog[]
-  runtimeConfigUpdates RuntimeConfigEntry[] @relation("RuntimeConfigUpdatedBy")
+  permissions               AdminPermission[]
+  auditLogs                 AdminAuditLog[]
+  sessions                  AdminSession[]
+  loginLogs                 AdminLoginLog[]
+  runtimeConfigUpdates      RuntimeConfigEntry[]      @relation("RuntimeConfigUpdatedBy")
+  providerGovernanceReviews ProviderGovernanceIssue[] @relation("ProviderGovernanceReviewedBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
