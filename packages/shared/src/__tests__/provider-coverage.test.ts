@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { expandCoverageRows } from "../provider-coverage";
+import {
+  expandCoverageRows,
+  getZipReferenceFacts,
+} from "../provider-coverage";
 
 describe("expandCoverageRows", () => {
   it("creates state-wide rows for STATE providers without ZIP rules", () => {
@@ -36,5 +39,15 @@ describe("expandCoverageRows", () => {
     });
 
     expect(rows).toEqual([]);
+  });
+
+  it("uses a ZIP-prefix reference rather than a full ZIP dataset", () => {
+    const facts = getZipReferenceFacts();
+
+    expect(facts.granularity).toBe("three_digit_prefix");
+    expect(facts.containsFullFiveDigitZips).toBe(false);
+    expect(facts.clientSafeHintOnly).toBe(true);
+    expect(facts.prefixCount).toBeGreaterThan(300);
+    expect(facts.prefixCount).toBeLessThan(1_000);
   });
 });

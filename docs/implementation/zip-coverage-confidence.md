@@ -26,6 +26,20 @@ Provider availability should be resolved server-side from:
 4. Coverage metadata when present.
 5. Provider scope as a final broad fallback.
 
+## Architecture Questions
+
+1. All U.S. ZIP codes are not stored in the repository or database today.
+2. All U.S. ZIP codes are not sent to web or mobile clients.
+3. Mobile can import the shared 3-digit ZIP-prefix helper, but it does not load a full five-digit ZIP dataset.
+4. Web can import the same helper, but provider matching is resolved through server APIs and coverage rows.
+5. State is inferred from ZIP in `resolveEffectiveState` when the request has no explicit state.
+6. ZIP prefixes are used in seed coverage expansion and provider match tiering.
+7. Provider coverage rows are queried through server APIs using `ServiceProviderCoverage`.
+8. Exact ZIP matches are possible through `ServiceProviderCoverage.zipExact`.
+9. The current generated provider audit reports no exact ZIP rows yet.
+10. Address-sensitive categories include utilities, internet/cable, trash/recycling, transit/toll, local memberships, local dining, and home services.
+11. Coverage confidence affects ranking and task guidance, but it is still a confidence signal rather than proof of service.
+
 ## Confidence Order
 
 Coverage confidence uses the shared labels in `packages/shared/src/provider-move-domain.ts`.

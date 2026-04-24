@@ -5,6 +5,8 @@
 //
 // No Prisma / DB dependencies — this file is safe to import from mobile.
 
+// This is a 3-digit prefix reference, not a full five-digit ZIP dataset.
+
 export type ProviderScope = "FEDERAL" | "STATE";
 
 export interface CoverageRow {
@@ -122,6 +124,20 @@ export function zipToState(zip: string): string | undefined {
   const normalized = normalizeZip(zip);
   if (!normalized || normalized.length < 3) return undefined;
   return ZIP_PREFIX_TO_STATE[normalized.substring(0, 3)];
+}
+
+export function getZipReferenceFacts(): {
+  granularity: "three_digit_prefix";
+  containsFullFiveDigitZips: false;
+  prefixCount: number;
+  clientSafeHintOnly: true;
+} {
+  return {
+    granularity: "three_digit_prefix",
+    containsFullFiveDigitZips: false,
+    prefixCount: Object.keys(ZIP_PREFIX_TO_STATE).length,
+    clientSafeHintOnly: true,
+  };
 }
 
 export function resolveEffectiveState(state?: string | null, zip?: string | null): string | undefined {
