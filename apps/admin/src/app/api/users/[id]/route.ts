@@ -35,12 +35,85 @@ export async function GET(
         deletedAt: true,
         subscription: true,
         profile: true,
-        addresses: { include: { services: true } },
+        addresses: {
+          include: {
+            services: {
+              include: {
+                provider: { select: { id: true, name: true, slug: true, scope: true } },
+                customProvider: {
+                  select: {
+                    id: true,
+                    name: true,
+                    providerType: true,
+                    trustStatus: true,
+                    adminReviewStatus: true,
+                  },
+                },
+              },
+            },
+          },
+        },
         movingPlans: {
           include: {
             fromAddress: { select: { id: true, city: true, state: true, zip: true } },
             toAddress: { select: { id: true, city: true, state: true, zip: true } },
+            moveTasks: {
+              where: { deletedAt: null },
+              include: {
+                service: { select: { id: true, providerName: true, category: true, isActive: true } },
+                provider: { select: { id: true, name: true, slug: true, scope: true } },
+                customProvider: {
+                  select: {
+                    id: true,
+                    name: true,
+                    providerType: true,
+                    trustStatus: true,
+                    adminReviewStatus: true,
+                  },
+                },
+                destinationProvider: { select: { id: true, name: true, slug: true, scope: true } },
+              },
+              orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
+              take: 25,
+            },
           },
+        },
+        customProviders: {
+          where: { deletedAt: null },
+          include: {
+            linkedServiceProvider: { select: { id: true, name: true, slug: true } },
+            _count: { select: { services: true, moveTasks: true, governanceIssues: true } },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: 25,
+        },
+        moveTasks: {
+          where: { deletedAt: null },
+          include: {
+            movingPlan: {
+              select: {
+                id: true,
+                status: true,
+                moveDate: true,
+                fromAddress: { select: { state: true, zip: true } },
+                toAddress: { select: { state: true, zip: true } },
+              },
+            },
+            service: { select: { id: true, providerName: true, category: true, isActive: true } },
+            provider: { select: { id: true, name: true, slug: true, scope: true } },
+            customProvider: {
+              select: {
+                id: true,
+                name: true,
+                providerType: true,
+                trustStatus: true,
+                adminReviewStatus: true,
+              },
+            },
+            destinationProvider: { select: { id: true, name: true, slug: true, scope: true } },
+          },
+          orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "desc" }],
+          take: 50,
         },
         budgets: { orderBy: { month: "desc" }, take: 6 },
         supportTickets: {

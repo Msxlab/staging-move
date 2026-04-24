@@ -33,7 +33,52 @@ interface Ticket {
   assignedTo: string | null;
   createdAt: string;
   updatedAt: string;
-  user: { id: string; email: string | null; firstName: string | null; lastName: string | null };
+  user: {
+    id: string;
+    email: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    subscription?: {
+      plan: string;
+      status: string;
+      provider: string | null;
+      platform: string | null;
+      lastValidatedAt: string | null;
+    } | null;
+    movingPlans?: Array<{
+      id: string;
+      status: string;
+      moveDate: string;
+      fromAddress: { city: string; state: string; zip: string } | null;
+      toAddress: { city: string; state: string; zip: string } | null;
+      moveTasks: Array<{
+        id: string;
+        actionType: string;
+        status: string;
+        confidence: string;
+        title: string;
+        provider?: { id: string; name: string; scope: string } | null;
+        customProvider?: { id: string; name: string; providerType: string } | null;
+        destinationProvider?: { id: string; name: string; scope: string } | null;
+      }>;
+    }>;
+    services?: Array<{
+      id: string;
+      category: string;
+      providerName: string;
+      isActive: boolean;
+      provider?: { id: string; name: string; scope: string } | null;
+      customProvider?: { id: string; name: string; providerType: string; trustStatus: string } | null;
+    }>;
+    customProviders?: Array<{
+      id: string;
+      name: string;
+      category: string;
+      providerType: string;
+      trustStatus: string;
+      adminReviewStatus: string;
+    }>;
+  };
   assignedAdmin?: { id: string; email: string | null; firstName: string | null; lastName: string | null } | null;
   sla?: { breached: boolean; remainingHours: number | null; dueAt: string; targetHours: number; policy?: string; note?: string };
   messages: Message[];
@@ -132,6 +177,9 @@ export default function AdminTicketDetailPage() {
   if (!ticket) return <div className="p-6"><p className="text-muted-foreground">Ticket not found.</p><Link href="/support" className="text-primary text-sm mt-2 inline-block">← Back</Link></div>;
 
   const userName = [ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || ticket.user.email || "Unknown";
+  const activeMove = ticket.user.movingPlans?.[0] || null;
+  const openMoveTasks = activeMove?.moveTasks?.filter((task) => !["COMPLETED", "DISMISSED"].includes(task.status)) || [];
+  const lowConfidenceTasks = activeMove?.moveTasks?.filter((task) => ["LOW", "UNVERIFIED"].includes(task.confidence)) || [];
 
   return (
     <div className="p-6 max-w-5xl space-y-6">
@@ -215,9 +263,66 @@ export default function AdminTicketDetailPage() {
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">User</p>
             <p className="text-sm font-medium text-foreground">{userName}</p>
             <p className="text-xs text-muted-foreground mt-1">{ticket.user.email}</p>
+            {ticket.user.subscription && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {ticket.user.subscription.plan} - {ticket.user.subscription.status} - {ticket.user.subscription.provider || "No billing provider"}
+              </p>
+            )}
             <Link href={`/users/${ticket.user.id}`}>
               <button className="mt-3 text-xs text-primary hover:underline">View user profile →</button>
             </Link>
+          </div>
+
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Move Support Context</p>
+            <p className="text-xs text-muted-foreground">
+              Manual guidance only. LocateFlow task completion updates local state and does not update external provider accounts.
+            </p>
+            {activeMove ? (
+              <div className="mt-3 space-y-3">
+                <div className="rounded-lg border border-border bg-background/70 p-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {activeMove.fromAddress?.state || "?"} to {activeMove.toAddress?.state || "?"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {activeMove.status} - Move date {new Date(activeMove.moveDate).toLocaleDateString()}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] text-blue-500">
+                      Open tasks: {openMoveTasks.length}
+                    </span>
+                    {lowConfidenceTasks.length > 0 && (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-500">
+                        Low confidence: {lowConfidenceTasks.length}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {(activeMove.moveTasks || []).slice(0, 4).map((task) => (
+                  <div key={task.id} className="rounded-lg border border-border bg-background/70 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 text-xs font-medium text-foreground">{task.title}</p>
+                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>
+                        {formatLabel(task.status)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {formatLabel(task.actionType)} - {task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"} - {formatLabel(task.confidence)} confidence
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">No moving plan context is available for this user.</p>
+            )}
+            {(ticket.user.customProviders || []).length > 0 && (
+              <div className="mt-3 rounded-lg border border-border bg-background/70 p-3">
+                <p className="text-xs font-medium text-foreground">User-created providers</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {(ticket.user.customProviders || []).length} private provider record(s), not global catalog data or source verified.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Status */}
@@ -298,4 +403,20 @@ export default function AdminTicketDetailPage() {
       </div>
     </div>
   );
+}
+
+function formatLabel(value: string) {
+  return String(value || "")
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function taskStatusClass(status: string) {
+  if (status === "COMPLETED") return "bg-green-500/10 text-green-500";
+  if (status === "DISMISSED") return "bg-muted text-muted-foreground";
+  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-blue-500/10 text-blue-500";
+  if (status === "REOPENED") return "bg-purple-500/10 text-purple-500";
+  return "bg-amber-500/10 text-amber-500";
 }

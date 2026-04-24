@@ -50,7 +50,76 @@ export async function GET(
     const ticket = await prisma.supportTicket.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            subscription: {
+              select: {
+                plan: true,
+                status: true,
+                provider: true,
+                platform: true,
+                lastValidatedAt: true,
+              },
+            },
+            movingPlans: {
+              where: { deletedAt: null },
+              select: {
+                id: true,
+                status: true,
+                moveDate: true,
+                fromAddress: { select: { city: true, state: true, zip: true } },
+                toAddress: { select: { city: true, state: true, zip: true } },
+                moveTasks: {
+                  where: { deletedAt: null },
+                  select: {
+                    id: true,
+                    actionType: true,
+                    status: true,
+                    confidence: true,
+                    title: true,
+                    provider: { select: { id: true, name: true, scope: true } },
+                    customProvider: { select: { id: true, name: true, providerType: true } },
+                    destinationProvider: { select: { id: true, name: true, scope: true } },
+                  },
+                  orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+                  take: 8,
+                },
+              },
+              orderBy: { moveDate: "desc" },
+              take: 2,
+            },
+            services: {
+              where: { deletedAt: null },
+              select: {
+                id: true,
+                category: true,
+                providerName: true,
+                isActive: true,
+                provider: { select: { id: true, name: true, scope: true } },
+                customProvider: { select: { id: true, name: true, providerType: true, trustStatus: true } },
+              },
+              orderBy: { updatedAt: "desc" },
+              take: 8,
+            },
+            customProviders: {
+              where: { deletedAt: null },
+              select: {
+                id: true,
+                name: true,
+                category: true,
+                providerType: true,
+                trustStatus: true,
+                adminReviewStatus: true,
+              },
+              orderBy: { updatedAt: "desc" },
+              take: 8,
+            },
+          },
+        },
         messages: {
           orderBy: { createdAt: "asc" },
           select: {

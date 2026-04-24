@@ -174,6 +174,10 @@ export default function UserDetailPage() {
 
   const addressList = user.addresses || [];
   const movingPlans = user.movingPlans || [];
+  const moveTasks = user.moveTasks || [];
+  const customProviders = user.customProviders || [];
+  const openMoveTasks = moveTasks.filter((task: any) => !["COMPLETED", "DISMISSED"].includes(task.status));
+  const lowConfidenceMoveTasks = moveTasks.filter((task: any) => ["LOW", "UNVERIFIED"].includes(task.confidence));
   const primaryAddress = addressList.find((addr: any) => addr.isPrimary) || addressList[0] || null;
   const totalServices = addressList.reduce((sum: number, addr: any) => sum + (addr.services?.length || 0), 0);
   const activeMove = movingPlans.find((plan: any) => plan.status === "IN_PROGRESS" || plan.status === "PLANNING") || movingPlans[0] || null;
@@ -227,6 +231,11 @@ export default function UserDetailPage() {
     !primaryAddress ? "No primary address is available." : null,
     totalServices === 0 ? "No services have been added yet." : null,
     activeMove && totalServices === 0 ? "Move is planned but service setup has not started." : null,
+    openMoveTasks.length > 0 ? `${openMoveTasks.length} move task${openMoveTasks.length === 1 ? "" : "s"} still open.` : null,
+    lowConfidenceMoveTasks.length > 0 ? `${lowConfidenceMoveTasks.length} low-confidence move task${lowConfidenceMoveTasks.length === 1 ? "" : "s"} need caveated support guidance.` : null,
+    customProviders.some((provider: any) => provider.adminReviewStatus !== "REVIEWED")
+      ? "User-created provider records include unreviewed entries."
+      : null,
     !lastSeenAt ? "No tracked session or behavior activity yet." : null,
     daysSinceLastSeen !== null && daysSinceLastSeen > 14 ? `Last activity is ${daysSinceLastSeen} days old.` : null,
   ].filter(Boolean) as string[];
@@ -366,10 +375,12 @@ export default function UserDetailPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
         <StatCard label="Subscription" value={user.subscription?.plan || "FREE_TRIAL"} />
         <StatCard label="Addresses" value={user.addresses?.length || 0} />
         <StatCard label="Moving Plans" value={user.movingPlans?.length || 0} />
+        <StatCard label="Move Tasks" value={moveTasks.length} />
+        <StatCard label="Custom Providers" value={customProviders.length} />
         <StatCard label="Push Devices" value={pushDevices.length} />
       </div>
 
@@ -1053,7 +1064,74 @@ export default function UserDetailPage() {
                   </p>
                 </div>
               )}
+              {moveTasks.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">Recent move tasks</p>
+                  <div className="grid gap-2 lg:grid-cols-2">
+                    {moveTasks.slice(0, 6).map((task: any) => (
+                      <div key={task.id} className="rounded-lg border border-border bg-background/70 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {formatTaskAction(task.actionType)} · {task.service?.providerName || task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>
+                            {formatStatus(task.status)}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-[11px] text-muted-foreground">
+                          Confidence: {formatStatus(task.confidence)}. Completion updates LocateFlow only; no external provider account is changed.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* User-created Providers */}
+      {customProviders.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">User-Created Providers ({customProviders.length})</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Private provider records for local/manual tracking. They are not global catalog entries and are not source verified.
+              </p>
+            </div>
+            <Link href="/provider-governance" className="text-xs text-primary hover:underline">
+              Governance queue
+            </Link>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {customProviders.slice(0, 8).map((provider: any) => (
+              <div key={provider.id} className="rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-foreground">{provider.name}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {provider.category} · {provider.providerType || "OTHER"} · {provider.trustStatus || "USER_CUSTOM"}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${provider.adminReviewStatus === "REVIEWED" ? "bg-green-500/10 text-green-500" : "bg-amber-500/10 text-amber-500"}`}>
+                    {formatStatus(provider.adminReviewStatus || "NOT_REVIEWED")}
+                  </span>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  {provider._count?.services || 0} service(s), {provider._count?.moveTasks || 0} move task(s), {provider._count?.governanceIssues || 0} governance issue(s).
+                </p>
+                {provider.linkedServiceProvider && (
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Linked to listed provider: {provider.linkedServiceProvider.name}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -1212,6 +1290,26 @@ function InfoCard({ label, value }: { label: string; value: string | number }) {
       <p className="text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
+}
+
+function formatStatus(value: string) {
+  return String(value || "")
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function formatTaskAction(value: string) {
+  return formatStatus(value || "NO_ACTION");
+}
+
+function taskStatusClass(status: string) {
+  if (status === "COMPLETED") return "bg-green-500/10 text-green-500";
+  if (status === "DISMISSED") return "bg-muted text-muted-foreground";
+  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-blue-500/10 text-blue-500";
+  if (status === "REOPENED") return "bg-purple-500/10 text-purple-500";
+  return "bg-amber-500/10 text-amber-500";
 }
 
 function buildLatestConsentEntries(entries: any[]) {

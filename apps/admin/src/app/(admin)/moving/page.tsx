@@ -36,6 +36,18 @@ interface Plan {
   };
   fromAddress: { street: string; city: string; state: string; zip: string; _count?: { services: number } };
   toAddress: { street: string; city: string; state: string; zip: string; _count?: { services: number } };
+  moveTasks?: Array<{
+    id: string;
+    actionType: string;
+    status: string;
+    confidence: string;
+    title: string;
+    dueDate: string | null;
+    provider?: { id: string; name: string; scope: string } | null;
+    customProvider?: { id: string; name: string; providerType: string } | null;
+    destinationProvider?: { id: string; name: string; scope: string } | null;
+  }>;
+  _count?: { moveTasks: number };
 }
 
 interface Stats {
@@ -403,6 +415,8 @@ export default function MovingPage() {
             const StatusIcon = STATUS_ICONS[plan.status] || Clock;
             const originServiceCount = plan.fromAddress._count?.services || 0;
             const destinationServiceCount = plan.toAddress._count?.services || 0;
+            const moveTaskCount = plan._count?.moveTasks || plan.moveTasks?.length || 0;
+            const openMoveTaskCount = (plan.moveTasks || []).filter((task) => !["COMPLETED", "DISMISSED"].includes(task.status)).length;
             const isInterstate = plan.fromAddress.state !== plan.toAddress.state;
             return (
               <div
@@ -545,12 +559,42 @@ export default function MovingPage() {
                             <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
                               Destination services: {destinationServiceCount}
                             </span>
+                            <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                              Move tasks: {moveTaskCount}
+                            </span>
+                            {openMoveTaskCount > 0 && (
+                              <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-[11px] text-blue-600">
+                                Open tasks: {openMoveTaskCount}
+                              </span>
+                            )}
                             {originServiceCount > 0 && destinationServiceCount === 0 && (
                               <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-600">
                                 Destination service setup not tracked yet
                               </span>
                             )}
                           </div>
+                          {(plan.moveTasks || []).length > 0 && (
+                            <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                              {(plan.moveTasks || []).slice(0, 4).map((task) => (
+                                <div key={task.id} className="rounded-lg border border-border bg-background/70 p-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="truncate text-xs font-medium text-foreground">{task.title}</p>
+                                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        {formatLabel(task.actionType)} · {task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
+                                      </p>
+                                    </div>
+                                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>
+                                      {formatLabel(task.status)}
+                                    </span>
+                                  </div>
+                                  <p className="mt-1 text-[10px] text-muted-foreground">
+                                    {formatLabel(task.confidence)} confidence. Manual guidance only.
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -574,4 +618,20 @@ export default function MovingPage() {
       )}
     </div>
   );
+}
+
+function formatLabel(value: string) {
+  return String(value || "")
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function taskStatusClass(status: string) {
+  if (status === "COMPLETED") return "bg-green-500/10 text-green-500";
+  if (status === "DISMISSED") return "bg-muted text-muted-foreground";
+  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-blue-500/10 text-blue-500";
+  if (status === "REOPENED") return "bg-purple-500/10 text-purple-500";
+  return "bg-amber-500/10 text-amber-500";
 }
