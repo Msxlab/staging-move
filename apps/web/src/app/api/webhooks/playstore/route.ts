@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       );
     } else {
       // Development/test escape hatch only. Production rejects before parsing.
-      console.warn("[PLAYSTORE WEBHOOK] GOOGLE_PLAY_RTDN_AUDIENCE unset — skipping OIDC verification");
+      console.warn("[PLAYSTORE WEBHOOK] GOOGLE_PLAY_RTDN_AUDIENCE unset - skipping OIDC verification");
     }
 
     // ── 2. Parse Pub/Sub envelope + extract RTDN. ──

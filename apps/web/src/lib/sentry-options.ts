@@ -2,7 +2,7 @@
  * Shared Sentry initialization options. Used by each runtime's config file
  * (client, server, edge) so the PII scrubber stays in one place.
  *
- * Scrubbing strategy: we strip the entire request body and cookies — the
+ * Scrubbing strategy: we strip the entire request body and cookies - the
  * error itself is what matters, not the user-submitted payload. For known
  * PII fields on event extras/tags (email, phone, token, password), we
  * redact the value but keep the key so the shape of the event is still
@@ -12,7 +12,7 @@
 type Runtime = "client" | "server" | "edge";
 
 const PII_FIELD_RE =
-  /(email|phone|password|token|authorization|cookie|ssn|session|secret|mfa|backupCode|reset|verification|providerId|pushToken|privateKey|apiKey|accessKey)/i;
+  /(email|phone|password|hash|token|authorization|cookie|ssn|session|secret|mfa|backupCode|reset|verification|providerId|pushToken|privateKey|apiKey|accessKey|backup|archive|storageKey|objectKey|filePath|downloadUrl)/i;
 
 function scrubObject(obj: unknown): unknown {
   if (!obj || typeof obj !== "object") return obj;

@@ -115,7 +115,7 @@ What changed:
 ## 3. Schema And Migration Changes
 
 - No database migration was added in this pass.
-- The implementation reused existing models, including `UserLoginSession`, `OAuthAccount`, `UserVerificationToken`, `UserPasswordResetToken`, `AuditLog`, `SupportTicket`, `AdminUser`, `Subscription`, and `Notification`.
+- The implementation reused existing models, including `UserLoginSession`, `OAuthAccount`, `EmailVerificationToken`, `PasswordResetToken`, `AuditLog`, `SupportTicket`, `AdminUser`, `Subscription`, and `Notification`.
 - Internal admin notes for users were not added because that would require a new durable note model and a product-policy decision around retention, visibility, and permissions.
 
 ## 4. New Or Changed APIs
@@ -169,7 +169,7 @@ Changed APIs:
 - Support ticket assignee visibility and derived SLA context.
 - Subscription provider/platform filtering and validation health visibility.
 - Admin users/[id] sensitive field redaction while preserving linked-method/session/support visibility.
-- Backup table catalog aligned with the schema-backed export/import paths.
+- Backup table catalog aligned with the schema-backed export/import paths for `users`, `profiles`, `providers`, `providerCoverages`, `addresses`, `movingPlans`, `services`, `budgets`, `subscriptions`, `notifications`, and `auditLogs`.
 - Cron backup generation now uses the shared canonical backup catalog.
 - Current-system incident response, restore, breach, admin compromise, key rotation, and release checklists documented.
 
@@ -211,7 +211,8 @@ Changed APIs:
 ## 12. Stabilization Cleanup Addendum
 
 - Play Store RTDN now rejects production webhook calls when `GOOGLE_PLAY_RTDN_AUDIENCE` is missing, while retaining the non-production escape hatch for safe local/test work.
-- Backup import/export/cron backup paths share the same schema-backed table catalog, including users, subscriptions, payments, services, addresses, providers, provider coverage, notifications, feature flags, and audit logs.
+- Backup import/export/cron backup paths share the same schema-backed table catalog: users, profiles, providers, provider coverage, addresses, moving plans, services, budgets, subscriptions, notifications, and audit logs.
+- The current backup catalog does not back up feature flags, backup records, login sessions, OAuth accounts, password reset tokens, email verification tokens, push devices, or payments. There is no `Payment` model in the current Prisma schema. Those tables/models should only be added after an explicit backup-scope decision and restore test coverage.
 - Backup import remains dependency-aware through `BACKUP_TABLE_ORDER`, and replace-mode safety checks prevent replacing parent tables without required dependent tables.
 - Admin notification creation is explicitly immediate in-app only; unsupported email/push channels and delayed `sendAt` values are rejected server-side.
 - Support SLA language was narrowed to "derived operational target" so the UI does not imply a configured contractual SLA policy.
@@ -219,12 +220,44 @@ Changed APIs:
 - CI already includes a free `gitleaks` secret-scan job; this pass did not add paid tooling.
 - Current runbooks were added only for current production surfaces, not future Pro/KYC/Plaid/connector features.
 
-## 13. Verification Results
+## 13. Rollback Notes
+
+### Revert The Code Commit
+
+- Preferred rollback for this pass: `git revert c1a4feb` from a clean branch, then redeploy the generated revert commit.
+- If this PR receives additional cleanup commits, revert the whole PR range rather than cherry-picking individual files, because the UI/API behavior changes are coupled.
+- Do not use `git reset --hard` on shared branches.
+
+### Newly Required Or Re-scoped Environment Keys
+
+- `INTERNAL_WEBHOOK_SECRET` is now required for generic internal webhook calls.
+- `IMPERSONATION_HANDOFF_SECRET` remains required for impersonation handoff and must not be reused as a generic internal secret.
+- `CRON_SECRET` remains cron-scoped and should not be accepted by generic internal endpoints.
+- `GOOGLE_PLAY_RTDN_AUDIENCE` is required for production Google Play RTDN webhook verification.
+
+### Expected Operator Behavior Changes
+
+- Production Play Store RTDN rejects requests with `503` when `GOOGLE_PLAY_RTDN_AUDIENCE` is missing.
+- Admin notification creation only supports immediate `IN_APP` records. `EMAIL`, `PUSH`, and future `sendAt` delivery are rejected until a real worker/provider path exists.
+- Account security settings now expose linked login methods, recovery state, live sessions, first-password setup for OAuth-only users, and session revocation.
+- Backup replace/import flows are stricter: dependency warnings are returned, replace mode blocks unsafe parent-table selections, and merge/replace failures roll back the transaction.
+- Support SLA labels are derived triage targets only, not configured contractual SLA promises.
+- Subscription health labels are recorded validation metadata only, not live Apple/Google verification.
+
+### Post-Rollback Or Redeploy Verification
+
+- Play RTDN: in production-like env, unset `GOOGLE_PLAY_RTDN_AUDIENCE` and confirm `POST /api/webhooks/playstore` returns `503`; set it and confirm missing bearer token returns `401`.
+- Notifications: `POST /api/notifications` with `channel: "EMAIL"` should return `400`; immediate `IN_APP` should still create records.
+- Account security: authenticated web and mobile sessions should load `GET /api/auth/security`; `POST /api/auth/security` should only affect the authenticated user's own sessions.
+- Backup import: run a dry-run import first; verify warnings are returned for partial dependency selections and unsafe replace selections are blocked.
+- Redaction: trigger a test Sentry event or run redaction tests to confirm request bodies, cookies, auth headers, tokens, MFA fields, OAuth provider IDs, push tokens, and backup/archive metadata are filtered.
+
+## 14. Verification Results
 
 Passed:
 
-- `pnpm --filter @locateflow/web exec vitest run src/lib/internal-secrets.test.ts src/lib/logger.test.ts src/app/api/webhooks/playstore/route.test.ts`
-- `pnpm --filter @locateflow/admin exec vitest run src/lib/internal-secrets.test.ts src/app/api/backup/import/route.test.ts src/app/api/notifications/route.test.ts`
+- `pnpm --filter @locateflow/web exec vitest run src/lib/internal-secrets.test.ts src/lib/logger.test.ts src/lib/sentry-options.test.ts src/app/api/webhooks/playstore/route.test.ts`
+- `pnpm --filter @locateflow/admin exec vitest run src/lib/internal-secrets.test.ts src/lib/sentry-options.test.ts src/app/api/backup/import/route.test.ts src/app/api/notifications/route.test.ts`
 - `git diff --check`
 
 Typecheck status:
@@ -234,7 +267,7 @@ Typecheck status:
 - `pnpm --filter @locateflow/mobile exec tsc --noEmit` fails on existing `app/settings/subscription.tsx` package-selection typing.
 - `pnpm verify:typecheck` therefore still fails before all packages can pass.
 
-## 14. Recommended Next Sprint
+## 15. Recommended Next Sprint
 
 1. Fix the shared Prisma client/type generation issue so package typecheck can become a reliable gate.
 2. Expand admin users/[id] into the account/security support workspace using the same account-security concepts plus admin-only notes/timeline.
