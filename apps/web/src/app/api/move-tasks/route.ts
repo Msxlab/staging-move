@@ -5,6 +5,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { syncSuggestedMoveTasks } from "@/lib/move-task-generation";
+import { completeMoveTaskWithLocalEffect } from "@/lib/move-task-local-effects";
 
 function includeTaskContext() {
   return {
@@ -110,6 +111,14 @@ export async function PATCH(request: NextRequest) {
     const id = typeof body?.id === "string" ? body.id : null;
     const event = typeof body?.event === "string" ? body.event.toUpperCase() : null;
     const notes = typeof body?.notes === "string" ? body.notes.slice(0, 2000) : undefined;
+    const selectedDestinationProviderId =
+      typeof body?.selectedDestinationProviderId === "string"
+        ? body.selectedDestinationProviderId
+        : undefined;
+    const selectedCustomProviderId =
+      typeof body?.selectedCustomProviderId === "string"
+        ? body.selectedCustomProviderId
+        : undefined;
     if (!id || !["ACCEPT", "START", "COMPLETE", "DISMISS", "REOPEN"].includes(event || "")) {
       return NextResponse.json({ error: "id and valid event are required" }, { status: 400 });
     }
@@ -121,15 +130,23 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Move task not found" }, { status: 404 });
     }
 
-    const patch = buildMoveTaskLifecyclePatch(existing as any, event as any);
-    const task = await prisma.moveTask.update({
-      where: { id },
-      data: {
-        ...patch,
-        ...(notes !== undefined ? { notes } : {}),
-      },
-      include: includeTaskContext(),
-    });
+    const task =
+      event === "COMPLETE"
+        ? (
+            await completeMoveTaskWithLocalEffect(userId, id, {
+              notes,
+              selectedDestinationProviderId,
+              selectedCustomProviderId,
+            })
+          ).task
+        : await prisma.moveTask.update({
+            where: { id },
+            data: {
+              ...buildMoveTaskLifecyclePatch(existing as any, event as any),
+              ...(notes !== undefined ? { notes } : {}),
+            },
+            include: includeTaskContext(),
+          });
 
     const meta = extractRequestMeta(request);
     await createAuditLog({
@@ -137,7 +154,13 @@ export async function PATCH(request: NextRequest) {
       action: "TASK_STATUS",
       entityType: "MoveTask",
       entityId: id,
-      changes: { event, status: task.status },
+      changes: {
+        event,
+        status: task.status,
+        selectedDestinationProviderId: selectedDestinationProviderId || null,
+        selectedCustomProviderId: selectedCustomProviderId || null,
+        localOnly: true,
+      },
       ...meta,
     });
 
