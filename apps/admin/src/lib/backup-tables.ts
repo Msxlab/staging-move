@@ -2,6 +2,7 @@ export const BACKUP_TABLES = {
   users: { model: "user", label: "Users" },
   profiles: { model: "profile", label: "Profiles" },
   providers: { model: "serviceProvider", label: "Service Providers" },
+  providerCoverages: { model: "serviceProviderCoverage", label: "Provider Coverage" },
   addresses: { model: "address", label: "Addresses" },
   movingPlans: { model: "movingPlan", label: "Moving Plans" },
   services: { model: "service", label: "Services" },
@@ -17,6 +18,7 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "users",
   "profiles",
   "providers",
+  "providerCoverages",
   "addresses",
   "movingPlans",
   "services",
@@ -30,6 +32,7 @@ const BACKUP_TABLE_DEPENDENCIES: Partial<
   Record<BackupTableName, BackupTableName[]>
 > = {
   profiles: ["users"],
+  providerCoverages: ["providers"],
   addresses: ["users"],
   movingPlans: ["users", "addresses"],
   services: ["users", "addresses"],
@@ -51,6 +54,8 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
     "subscriptions",
     "notifications",
   ],
+  providers: ["providerCoverages", "services"],
+  providerCoverages: ["providers"],
   addresses: ["movingPlans", "services", "budgets"],
 };
 

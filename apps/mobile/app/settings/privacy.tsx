@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -16,15 +16,101 @@ import {
   Trash2,
   Eye,
   Lock,
+  Smartphone,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
 import { hapticWarning } from "@/lib/haptics";
+import { api } from "@/lib/api";
+
+interface AccountSecurityState {
+  account: {
+    hasPasswordLogin: boolean;
+    emailVerified: boolean;
+    mfaEnabled: boolean;
+  };
+  linkedMethods: Array<{
+    type: string;
+    label: string;
+    enabled: boolean;
+    linkedAt: string | null;
+  }>;
+  sessions: Array<{
+    id: string;
+    current: boolean;
+    browser: string | null;
+    os: string | null;
+    deviceType: string | null;
+    ipAddress: string | null;
+    isActive: boolean;
+    lastActivity: string;
+    createdAt: string;
+  }>;
+}
 
 export default function PrivacySettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const [security, setSecurity] = useState<AccountSecurityState | null>(null);
+  const [loadingSecurity, setLoadingSecurity] = useState(true);
+  const [securityBusy, setSecurityBusy] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  async function loadSecurity() {
+    setLoadingSecurity(true);
+    const res = await api.get<AccountSecurityState>("/api/auth/security");
+    if (res.data) setSecurity(res.data);
+    setLoadingSecurity(false);
+  }
+
+  useEffect(() => {
+    loadSecurity();
+  }, []);
+
+  const setPassword = async () => {
+    if (!newPassword || newPassword !== confirmPassword) {
+      Alert.alert("Password", "Enter matching passwords first.");
+      return;
+    }
+    setSecurityBusy(true);
+    const res = await api.post<AccountSecurityState & { success: boolean }>(
+      "/api/auth/security",
+      { action: "set_password", newPassword },
+    );
+    setSecurityBusy(false);
+    if (res.error) {
+      Alert.alert("Password", res.error);
+      return;
+    }
+    if (res.data) {
+      setSecurity(res.data);
+      setNewPassword("");
+      setConfirmPassword("");
+      Alert.alert("Password", "Password sign-in is now enabled.");
+    }
+  };
+
+  const revokeOtherSessions = async () => {
+    setSecurityBusy(true);
+    const res = await api.post<AccountSecurityState & { success: boolean; revoked: number }>(
+      "/api/auth/security",
+      { action: "revoke_other_sessions" },
+    );
+    setSecurityBusy(false);
+    if (res.error) {
+      Alert.alert("Sessions", res.error);
+      return;
+    }
+    if (res.data) {
+      setSecurity(res.data);
+      Alert.alert("Sessions", `${res.data.revoked || 0} other session(s) revoked.`);
+    }
+  };
 
   const handleExportData = async () => {
     Alert.alert(
@@ -89,6 +175,119 @@ export default function PrivacySettingsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Card variant="default" style={{ marginBottom: 12 }}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.infoTitle}>Account security</Text>
+              <Text style={styles.infoDesc}>
+                Linked sign-in methods and real login sessions for this account.
+              </Text>
+            </View>
+            <Shield size={18} color={theme.colors.primary} />
+          </View>
+
+          {loadingSecurity ? (
+            <Text style={styles.mutedText}>Loading account security...</Text>
+          ) : !security ? (
+            <Text style={styles.errorText}>Account security could not be loaded.</Text>
+          ) : (
+            <View style={{ gap: 14 }}>
+              <View style={styles.badgeRow}>
+                <Badge
+                  label={security.account.emailVerified ? "Email verified" : "Email pending"}
+                  variant={security.account.emailVerified ? "success" : "warning"}
+                />
+                <Badge
+                  label={security.account.hasPasswordLogin ? "Password enabled" : "OAuth only"}
+                  variant={security.account.hasPasswordLogin ? "success" : "warning"}
+                />
+                <Badge
+                  label={security.account.mfaEnabled ? "MFA enabled" : "MFA off"}
+                  variant={security.account.mfaEnabled ? "success" : "neutral"}
+                />
+              </View>
+
+              <View>
+                <Text style={styles.subheading}>Linked methods</Text>
+                <View style={styles.methodList}>
+                  {security.linkedMethods.map((method) => (
+                    <View key={`${method.type}-${method.linkedAt || "none"}`} style={styles.methodRow}>
+                      <Text style={styles.methodLabel}>{method.label}</Text>
+                      <Text style={method.enabled ? styles.methodEnabled : styles.methodDisabled}>
+                        {method.enabled ? "Enabled" : "Not set"}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              {!security.account.hasPasswordLogin && (
+                <View style={styles.passwordBox}>
+                  <Text style={styles.subheading}>Set password</Text>
+                  <Text style={styles.mutedText}>
+                    Required before mobile MFA management. OAuth sign-in remains linked.
+                  </Text>
+                  <Input
+                    label="New password"
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    isPassword
+                    autoCapitalize="none"
+                    placeholder="Min 12 characters"
+                  />
+                  <Input
+                    label="Confirm password"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    isPassword
+                    autoCapitalize="none"
+                    placeholder="Repeat password"
+                  />
+                  <Button
+                    title="Set password"
+                    onPress={setPassword}
+                    loading={securityBusy}
+                    disabled={!newPassword || !confirmPassword}
+                    fullWidth
+                  />
+                </View>
+              )}
+
+              <View>
+                <View style={styles.sessionHeader}>
+                  <Text style={styles.subheading}>Login sessions</Text>
+                  <Button
+                    title="Revoke others"
+                    onPress={revokeOtherSessions}
+                    variant="outline"
+                    size="sm"
+                    loading={securityBusy}
+                    disabled={security.sessions.filter((session) => session.isActive && !session.current).length === 0}
+                  />
+                </View>
+                <View style={styles.methodList}>
+                  {security.sessions.slice(0, 5).map((session) => (
+                    <View key={session.id} style={styles.sessionRow}>
+                      <Smartphone size={16} color={theme.colors.textMuted} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.methodLabel}>
+                          {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}
+                        </Text>
+                        <Text style={styles.mutedText}>
+                          {session.current ? "Current · " : ""}{session.isActive ? "Active" : "Revoked"} · {new Date(session.lastActivity).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                  {security.sessions.length === 0 && (
+                    <Text style={styles.mutedText}>No login sessions recorded yet.</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
+        </Card>
+
         {/* Info Cards */}
         {infoItems.map((item) => {
           const Icon = item.icon;
@@ -150,6 +349,19 @@ const styles = StyleSheet.create({
   },
   infoTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
   infoDesc: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 18 },
+  mutedText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
+  errorText: { fontSize: 12, color: theme.colors.error, lineHeight: 17 },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginBottom: 14 },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  subheading: { fontSize: 12, fontWeight: "700", color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 },
+  methodList: { gap: 8 },
+  methodRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface },
+  methodLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
+  methodEnabled: { fontSize: 12, color: theme.colors.success },
+  methodDisabled: { fontSize: 12, color: theme.colors.warning },
+  passwordBox: { gap: 10, padding: 12, borderWidth: 1, borderColor: "rgba(245,158,11,0.25)", borderRadius: theme.radius.lg, backgroundColor: theme.colors.warningFaded },
+  sessionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 },
+  sessionRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface },
   sectionTitle: {
     fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
     textTransform: "uppercase", letterSpacing: 0.5, marginTop: 24, marginBottom: 12, marginLeft: 4,

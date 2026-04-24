@@ -136,7 +136,7 @@ const BACKUP_TYPES = [
   {
     value: "PROVIDERS",
     label: "Providers",
-    desc: "Provider catalog and reviews",
+    desc: "Provider catalog and coverage",
   },
   {
     value: "SERVICES",

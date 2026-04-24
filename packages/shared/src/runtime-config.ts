@@ -304,22 +304,22 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     key: "INTERNAL_WEBHOOK_SECRET",
     label: "Internal Webhook Secret",
     description:
-      "Bearer secret for server-to-server internal webhooks (IP rule cache refresh, rate-limit log fan-out, security events). Falls back to CRON_SECRET when unset — set this in production to rotate independently.",
+      "Bearer secret for server-to-server internal webhooks (IP rule cache refresh, rate-limit log fan-out, security events). Required independently from CRON_SECRET so scheduled jobs cannot call internal webhook endpoints.",
     scope: "GLOBAL",
     category: "CRON",
     isSecret: true,
-    requiredInProduction: false,
+    requiredInProduction: true,
     maskStrategy: "secret",
   },
   {
     key: "IMPERSONATION_HANDOFF_SECRET",
     label: "Impersonation Handoff Secret",
     description:
-      "Bearer secret guarding the admin→web impersonation handoff endpoint. Falls back to CRON_SECRET when unset — set this in production to isolate impersonation auth from other internal secrets.",
+      "Bearer secret guarding the admin→web impersonation handoff endpoint. Required independently from CRON_SECRET and INTERNAL_WEBHOOK_SECRET.",
     scope: "GLOBAL",
     category: "SECURITY",
     isSecret: true,
-    requiredInProduction: false,
+    requiredInProduction: true,
     maskStrategy: "secret",
   },
   {
@@ -529,11 +529,11 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "GOOGLE_PLAY_RTDN_AUDIENCE",
     label: "Google Play RTDN OIDC Audience",
-    description: "Expected `aud` claim in the OIDC token Pub/Sub sends with push notifications (typically the webhook URL itself, e.g. https://app.example.com/api/webhooks/playstore). Leave blank to skip OIDC verification (NOT recommended for production).",
+    description: "Expected `aud` claim in the OIDC token Pub/Sub sends with push notifications (typically the webhook URL itself, e.g. https://app.example.com/api/webhooks/playstore). Production Play Store webhooks reject when this is missing.",
     scope: "MOBILE",
     category: "MOBILE_BILLING",
     isSecret: false,
-    requiredInProduction: false,
+    requiredInProduction: true,
     maskStrategy: "url",
   },
   {
