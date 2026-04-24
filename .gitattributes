@@ -9,4 +9,6 @@ apps/web/src/**/*.tsx text eol=lf
 docs/**/*.md text eol=lf
 docs/**/*.json text eol=lf
 packages/shared/src/**/*.ts text eol=lf
+packages/db/prisma/**/*.prisma text eol=lf
+packages/db/prisma/migrations/**/*.sql text eol=lf
 scripts/**/*.ts text eol=lf
