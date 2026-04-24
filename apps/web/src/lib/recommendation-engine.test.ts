@@ -45,13 +45,13 @@ describe("scoreProviders", () => {
     const stateProvider = makeProvider({ id: "1", category: "FINANCIAL_BANK", scope: "STATE", states: ["TX"], tags: [] });
     const [scored] = scoreProviders([stateProvider], BASE_PROFILE, "TX");
     expect(scored.recommendationScore).toBeGreaterThan(0);
-    expect(scored.matchReasons).toContain("Available in TX");
+    expect(scored.matchReasons).toContain("Listed in TX");
   });
 
   it("should not boost state providers for non-matching state", () => {
     const stateProvider = makeProvider({ id: "1", scope: "STATE", states: ["NJ"], tags: [] });
     const [scored] = scoreProviders([stateProvider], BASE_PROFILE, "TX");
-    expect(scored.matchReasons).not.toContain("Available in TX");
+    expect(scored.matchReasons).not.toContain("Listed in TX");
   });
 
   it("should boost pet-related providers when user has pets", () => {
