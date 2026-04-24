@@ -84,6 +84,16 @@ interface BackupStorageSummary {
   unsupportedProvider: boolean;
 }
 
+interface BackupArchivePolicy {
+  environment: string;
+  production: boolean;
+  encryptionRequired: boolean;
+  cryptoReady: boolean;
+  offsiteRequired: boolean;
+  browserDownloadFallbackAllowed: boolean;
+  message: string;
+}
+
 interface BackupTableConfig {
   model: string;
   label: string;
@@ -153,14 +163,15 @@ const BACKUP_TYPES = [
 const FALLBACK_TABLES = [
   "users",
   "profiles",
-  "addresses",
-  "services",
   "providers",
+  "providerCoverages",
+  "addresses",
   "movingPlans",
+  "services",
   "budgets",
   "subscriptions",
-  "auditLogs",
   "notifications",
+  "auditLogs",
 ];
 
 const STATUS_FILTERS = [
@@ -359,6 +370,8 @@ export function BackupControlPlane() {
     {},
   );
   const [storage, setStorage] = useState<BackupStorageSummary | null>(null);
+  const [archivePolicy, setArchivePolicy] =
+    useState<BackupArchivePolicy | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -458,11 +471,16 @@ export function BackupControlPlane() {
     const ageHours =
       (Date.now() - new Date(latestCompletedBackup.createdAt).getTime()) /
       (1000 * 60 * 60);
-    if (latestCompletedBackup.offsite?.status === "stored" && ageHours <= 24) {
+    if (
+      latestCompletedBackup.offsite?.status === "stored" &&
+      latestCompletedBackup.archive?.encrypted &&
+      latestCompletedBackup.archive?.signature &&
+      ageHours <= 24
+    ) {
       return {
         tone: "success" as const,
         title: "Protected",
-        description: "A fresh encrypted backup is replicated offsite.",
+        description: "A fresh encrypted and signed backup is replicated offsite.",
       };
     }
 
@@ -510,6 +528,24 @@ export function BackupControlPlane() {
       });
     }
 
+    if (archivePolicy?.encryptionRequired && !archivePolicy.cryptoReady) {
+      items.push({
+        tone: "danger",
+        title: "Backup encryption is not production-ready",
+        detail:
+          "Production backup creation is blocked until FIELD_ENCRYPTION_KEY is configured as a valid 64-character hex key.",
+      });
+    }
+
+    if (archivePolicy?.offsiteRequired && !storage?.ready) {
+      items.push({
+        tone: "danger",
+        title: "Production offsite retention is required",
+        detail:
+          "Production backup jobs must upload to offsite storage. Browser download fallback is disabled in production.",
+      });
+    }
+
     if (!latestCompletedBackup) {
       items.push({
         tone: "danger",
@@ -547,7 +583,7 @@ export function BackupControlPlane() {
     }
 
     return items;
-  }, [failedBackups, latestCompletedBackup, storage]);
+  }, [archivePolicy, failedBackups, latestCompletedBackup, storage]);
 
   useEffect(() => {
     if (!backups.length) {
@@ -650,6 +686,7 @@ export function BackupControlPlane() {
       setStats(data.stats || {});
       setTableMap(data.tables || {});
       setStorage(data.storage || null);
+      setArchivePolicy(data.archivePolicy || null);
       if (showSuccessToast) {
         toast.success("Backup control plane refreshed");
       }
@@ -694,7 +731,9 @@ export function BackupControlPlane() {
       toast.success(
         data.offsite?.status === "stored"
           ? "Backup created and replicated offsite"
-          : "Backup created. Offsite replication is not available for this job",
+          : data.downloadData
+            ? "Backup created for local download. Offsite replication is not available for this non-production job"
+            : "Backup created, but archive download is not available for this job",
       );
     } catch (error: any) {
       toast.error(error?.message || "Failed to create backup");
@@ -953,13 +992,18 @@ export function BackupControlPlane() {
             <Panel
               icon={Download}
               title="Create encrypted backup"
-              description="Issue a new archive immediately. Fresh jobs download to the browser and can be replicated offsite for historical retrieval."
+              description="Issue a new archive immediately. Production jobs require encryption, signing, and offsite retention; browser fallback is non-production only."
               action={
                 <button
                   onClick={createBackup}
                   disabled={
                     creating ||
-                    (selectedType !== "FULL" && selectedTables.length === 0)
+                    (selectedType !== "FULL" && selectedTables.length === 0) ||
+                    Boolean(
+                      archivePolicy?.encryptionRequired &&
+                        !archivePolicy.cryptoReady,
+                    ) ||
+                    Boolean(archivePolicy?.offsiteRequired && !storage?.ready)
                   }
                   className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                 >
@@ -974,6 +1018,24 @@ export function BackupControlPlane() {
             >
               <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
                 <div className="space-y-3">
+                  {archivePolicy ? (
+                    <div
+                      className={cn(
+                        "rounded-2xl border p-4 text-sm",
+                        archivePolicy.encryptionRequired &&
+                          (!archivePolicy.cryptoReady || !storage?.ready)
+                          ? buildToneClass("danger")
+                          : buildToneClass("info"),
+                      )}
+                    >
+                      <p className="font-semibold text-foreground">
+                        Backup archive policy
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                        {archivePolicy.message}
+                      </p>
+                    </div>
+                  ) : null}
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {BACKUP_TYPES.map((type) => (
                       <button
@@ -1850,7 +1912,9 @@ export function BackupControlPlane() {
                           ? "Re-downloadable"
                           : selectedBackup.offsite?.status === "failed"
                             ? "Retention failed"
-                            : "Browser-only copy"}
+                            : archivePolicy?.browserDownloadFallbackAllowed
+                              ? "Browser fallback copy"
+                              : "No retained archive"}
                       </InlineBadge>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
@@ -1907,7 +1971,9 @@ export function BackupControlPlane() {
                       {selectedBackup.offsite?.status === "stored"
                         ? "This archive can be retrieved later from offsite storage through the jobs table or this detail panel."
                         : selectedBackup.offsite?.reason ||
-                          "No local archive retention is configured on the server. If offsite storage is unavailable, only the original browser download exists."}
+                          (archivePolicy?.browserDownloadFallbackAllowed
+                            ? "No local archive retention is configured on the server. If offsite storage is unavailable, only the original browser download exists."
+                            : "No offsite archive is retained. Production browser download fallback is disabled, so this job cannot be used for restore.")}
                     </div>
                   </div>
 
