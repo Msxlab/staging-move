@@ -84,6 +84,32 @@ export const MOVE_TASK_EFFECT_TYPES = [
 
 export type MoveTaskEffectType = (typeof MOVE_TASK_EFFECT_TYPES)[number];
 
+export const USER_CUSTOM_PROVIDER_TYPES = [
+  "LOCAL_BUSINESS",
+  "PROFESSIONAL_SERVICE",
+  "HEALTHCARE",
+  "LEGAL",
+  "DENTAL",
+  "PHYSICAL_THERAPY",
+  "GYM",
+  "OTHER",
+] as const;
+
+export type UserCustomProviderType =
+  (typeof USER_CUSTOM_PROVIDER_TYPES)[number];
+
+export const USER_CUSTOM_PROVIDER_REVIEW_STATUSES = [
+  "NOT_REVIEWED",
+  "NEEDS_REVIEW",
+  "REVIEWED",
+  "REJECTED",
+  "LINKED_TO_GLOBAL_PROVIDER",
+  "PROMOTION_CANDIDATE",
+] as const;
+
+export type UserCustomProviderReviewStatus =
+  (typeof USER_CUSTOM_PROVIDER_REVIEW_STATUSES)[number];
+
 export const CURRENT_PRODUCT_COPY_KEYS = [
   "LISTED_PROVIDER",
   "USER_ADDED_PROVIDER",

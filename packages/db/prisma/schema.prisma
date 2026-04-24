@@ -48,6 +48,7 @@ model User {
   budgets                 Budget[]
   movingPlans             MovingPlan[]
   moveTasks               MoveTask[]
+  customProviders         UserCustomProvider[]
   loginSessions           UserLoginSession[]
   sessions                UserSession[]
   events                  UserEvent[]
@@ -321,6 +322,9 @@ model Service {
   providerId String?          @db.VarChar(30)
   provider   ServiceProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
 
+  customProviderId String?             @db.VarChar(30)
+  customProvider   UserCustomProvider? @relation(fields: [customProviderId], references: [id], onDelete: SetNull)
+
   category     String  @db.VarChar(50)
   subCategory  String? @db.VarChar(50)
   providerName String  @db.VarChar(200)
@@ -363,6 +367,7 @@ model Service {
   @@index([category])
   @@index([providerName])
   @@index([providerId])
+  @@index([customProviderId])
   @@index([userId, isActive])
   @@index([userId, category])
   @@index([userId, addressId, isActive])
@@ -510,10 +515,11 @@ model ServiceProvider {
   userCount     Int     @default(0)
   lastUpdatedBy String? @db.VarChar(30)
 
-  services             Service[]
-  coverages            ServiceProviderCoverage[]
-  moveTasks            MoveTask[]                @relation("MoveTaskProvider")
-  destinationMoveTasks MoveTask[]                @relation("MoveTaskDestinationProvider")
+  services              Service[]
+  coverages             ServiceProviderCoverage[]
+  linkedCustomProviders UserCustomProvider[]      @relation("LinkedCustomProviders")
+  moveTasks             MoveTask[]                @relation("MoveTaskProvider")
+  destinationMoveTasks  MoveTask[]                @relation("MoveTaskDestinationProvider")
 
   deletedAt DateTime?
 
@@ -552,6 +558,9 @@ model MoveTask {
 
   providerId String?          @db.VarChar(30)
   provider   ServiceProvider? @relation("MoveTaskProvider", fields: [providerId], references: [id], onDelete: SetNull)
+
+  customProviderId String?             @db.VarChar(30)
+  customProvider   UserCustomProvider? @relation(fields: [customProviderId], references: [id], onDelete: SetNull)
 
   destinationProviderId String?          @db.VarChar(30)
   destinationProvider   ServiceProvider? @relation("MoveTaskDestinationProvider", fields: [destinationProviderId], references: [id], onDelete: SetNull)
@@ -592,7 +601,54 @@ model MoveTask {
   @@index([dueDate])
   @@index([serviceId])
   @@index([providerId])
+  @@index([customProviderId])
   @@index([destinationProviderId])
+  @@index([deletedAt])
+}
+
+// ==================== USER CUSTOM PROVIDERS ====================
+
+model UserCustomProvider {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String  @db.VarChar(200)
+  category    String  @db.VarChar(50)
+  description String? @db.Text
+
+  website String? @db.VarChar(500)
+  phone   String? @db.VarChar(30)
+  email   String? @db.VarChar(191)
+
+  addressLine1 String? @db.VarChar(200)
+  addressLine2 String? @db.VarChar(200)
+  city         String? @db.VarChar(100)
+  state        String? @db.VarChar(2)
+  zipCode      String? @db.VarChar(10)
+  notes        String? @db.Text
+
+  providerType      String @default("OTHER") @db.VarChar(40)
+  trustStatus       String @default("USER_CUSTOM") @db.VarChar(40)
+  adminReviewStatus String @default("NOT_REVIEWED") @db.VarChar(40)
+
+  linkedServiceProviderId String?          @db.VarChar(30)
+  linkedServiceProvider   ServiceProvider? @relation("LinkedCustomProviders", fields: [linkedServiceProviderId], references: [id], onDelete: SetNull)
+
+  services  Service[]
+  moveTasks MoveTask[]
+
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([providerType])
+  @@index([adminReviewStatus])
+  @@index([linkedServiceProviderId])
   @@index([deletedAt])
 }
 
