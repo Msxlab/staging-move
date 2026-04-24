@@ -118,6 +118,13 @@ export default function MovingPlanDetailPage() {
     }
   };
 
+  const confirmCompleteMoveTask = (taskId: string) => {
+    const confirmed = window.confirm(
+      "Complete this task locally in LocateFlow? This can update LocateFlow service records, but it will not update any external provider account.",
+    );
+    if (confirmed) void updateMoveTask(taskId, "COMPLETE");
+  };
+
   useEffect(() => {
     fetch(`/api/moving/${id}`)
       .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
@@ -312,7 +319,7 @@ export default function MovingPlanDetailPage() {
                       </button>
                     )}
                     {!isDone && !isDismissed && (
-                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "COMPLETE")} className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10px] hover:bg-emerald-500/30">
+                      <button disabled={busy} onClick={() => confirmCompleteMoveTask(task.id)} className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10px] hover:bg-emerald-500/30">
                         Complete locally
                       </button>
                     )}

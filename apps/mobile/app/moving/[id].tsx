@@ -107,6 +107,17 @@ export default function MovingDetailScreen() {
     if (plan) await fetchMoveTasks(plan.id);
   };
 
+  const confirmCompleteMoveTask = (taskId: string) => {
+    Alert.alert(
+      "Complete task locally?",
+      "This updates LocateFlow task and service records only. External provider accounts are not updated.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Complete locally", onPress: () => updateMoveTask(taskId, "COMPLETE") },
+      ],
+    );
+  };
+
   const confirmAction = async (
     serviceId: string,
     action: "KEEP" | "TRANSFER" | "SWITCH" | "CANCEL",
@@ -326,11 +337,20 @@ export default function MovingDetailScreen() {
                     <Text style={styles.taskCaveat}>Manual tracking only. Confirm with the official provider.</Text>
                   </View>
                   <View style={styles.taskActions}>
+                    {!done && !dismissed && task.status === "SUGGESTED" && (
+                      <TouchableOpacity
+                        style={styles.migBtn}
+                        disabled={taskBusy === task.id}
+                        onPress={() => updateMoveTask(task.id, "ACCEPT")}
+                      >
+                        <Text style={styles.migBtnText}>Accept</Text>
+                      </TouchableOpacity>
+                    )}
                     {!done && !dismissed && (
                       <TouchableOpacity
                         style={styles.migBtnPrimary}
                         disabled={taskBusy === task.id}
-                        onPress={() => updateMoveTask(task.id, "COMPLETE")}
+                        onPress={() => confirmCompleteMoveTask(task.id)}
                       >
                         <Text style={styles.migBtnPrimaryText}>Complete</Text>
                       </TouchableOpacity>
