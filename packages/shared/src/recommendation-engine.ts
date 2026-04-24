@@ -74,6 +74,11 @@ export interface RecommendationExplanation {
   urgencyTier: UrgencyTier;
   headline: string;
   reason: string;
+  coverageConfidence: CoverageConfidence;
+  coverageLabel: string;
+  caveat?: string;
+  manualConfirmationNote: string;
+  recommendationUse: "MANUAL_TRACKING_CANDIDATE";
   deadline?: string;
   profileMatch?: string;
   communityNote?: string;
@@ -550,7 +555,7 @@ export function scoreProviders(
         reasons.push(
           addressSensitive
             ? `Listed in ${userState}; confirm address availability`
-            : `Available in ${userState}`,
+            : `Listed in ${userState}`,
         );
       }
 
@@ -661,6 +666,11 @@ export function scoreProviders(
         urgencyTier,
         headline,
         reason: reasons.slice(0, 3).join(" · ") || getCategoryLabel(provider.category),
+        coverageConfidence,
+        coverageLabel: coveragePresentation.label,
+        caveat: coveragePresentation.requiresCaveat ? coveragePresentation.description : undefined,
+        manualConfirmationNote: "Confirm details and availability with the provider. LocateFlow recommendations are manual guidance only.",
+        recommendationUse: "MANUAL_TRACKING_CANDIDATE",
         deadline: CATEGORY_DEADLINES[provider.category],
         profileMatch: reasons.find((r) => r.startsWith("You have") || r.includes("your")) || undefined,
         communityNote: provider.userCount && provider.userCount > 10
@@ -686,15 +696,15 @@ export function scoreProviders(
       const tierOrder: Record<UrgencyTier, number> = { CRITICAL: 0, IMPORTANT: 1, RECOMMENDED: 2, OPTIONAL: 3 };
       const tierDiff = tierOrder[a.urgencyTier] - tierOrder[b.urgencyTier];
       if (tierDiff !== 0) return tierDiff;
-      // Secondary sort: score within tier
-      const scoreDiff = b.recommendationScore - a.recommendationScore;
-      if (scoreDiff !== 0) return scoreDiff;
       if (isCoverageAddressSensitive(a.category) || isCoverageAddressSensitive(b.category)) {
         const coverageDiff =
           getCoverageConfidencePresentation(getProviderCoverageConfidence(b)).rank -
           getCoverageConfidencePresentation(getProviderCoverageConfidence(a)).rank;
         if (coverageDiff !== 0) return coverageDiff;
       }
+      // Secondary sort: score within tier
+      const scoreDiff = b.recommendationScore - a.recommendationScore;
+      if (scoreDiff !== 0) return scoreDiff;
       const displayA = typeof a.displayOrder === "number" && a.displayOrder > 0 ? a.displayOrder : Number.MAX_SAFE_INTEGER;
       const displayB = typeof b.displayOrder === "number" && b.displayOrder > 0 ? b.displayOrder : Number.MAX_SAFE_INTEGER;
       if (displayA !== displayB) return displayA - displayB;
