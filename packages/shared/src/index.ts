@@ -11,5 +11,6 @@ export * from "./migration-engine";
 export * from "./runtime-config";
 export * from "./provider-coverage";
 export * from "./provider-integrity";
+export * from "./provider-move-domain";
 export { ApiClient, type ApiClientConfig } from "./api-client";
 export { scoreProviders, buildRecommendationClusters, getRecommendedProviders, getCategoryLabel, getCategoryIcon, getCategoryOrder, getMergedDisplayCategoryKey, getMergedDisplayCategoryLabel, getMergedDisplayCategoryIcon, getMergedDisplayCategoryOrder, groupByMergedDisplayCategory, CATEGORY_META, PROVIDER_CATEGORY_VALUES, PROVIDER_CATEGORY_OPTIONS, type UrgencyTier, type UserProfile, type UserProfile as RecommendationUserProfile, type Provider, type Provider as RecommendationProvider, type ScoredProvider, type RecommendationExplanation, type RecommendationCluster, type RecommendationResult, type RecommendationContext, type RecommendationStateRuleContext } from "./recommendation-engine";
