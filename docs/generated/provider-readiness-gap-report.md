@@ -1,6 +1,6 @@
 # Provider Readiness Gap Report
 
-Generated: 2026-04-24T14:31:45.898Z
+Generated: 2026-04-24T16:08:45.254Z
 
 ## Summary
 
@@ -405,6 +405,376 @@ Generated: 2026-04-24T14:31:45.898Z
 
 ## Weak Government Task States
 
+
+## Provider Expansion Backlog
+
+- HIGH | AK UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AK UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AK UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AK UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | AK UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AK UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AL UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AL UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | AL UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AL UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AR UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AR UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AR UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AR UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | AR UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AR UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AZ UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | AZ UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | AZ UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CA UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CA UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | CA UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CO UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CO UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CO UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CO UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | CO UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CT UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CT UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | CT UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | CT UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | DC UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | DC UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | DC UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | DE UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | DE UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | DE UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | DE UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | DE UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | FL UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | FL UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | FL UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | FL UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | GA UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | GA UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | GA UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | GA UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | HI UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | HI UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | HI UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | HI UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | HI UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | HI UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IA UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IA UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IA UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IA UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | IA UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IA UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ID UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ID UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ID UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ID UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | ID UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ID UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IL UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IL UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | IL UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IN UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IN UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IN UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | IN UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | IN UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KS UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KS UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KS UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KS UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | KS UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KS UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KY UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KY UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | KY UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | KY UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | LA UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | LA UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | LA UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | LA UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | LA UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MA UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MA UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | MA UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MD UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MD UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | MD UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MD UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ME UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ME UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ME UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ME UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | ME UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | ME UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MI UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MI UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | MI UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MI UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MN UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MN UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MN UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MN UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | MN UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MO UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MO UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MO UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | MO UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MO UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MS UTILITY_GAS | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MS UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MS UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | MS UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | MS UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- 127 additional backlog items omitted from markdown; see JSON.
+
+## User-Created Provider Promotion Candidates
+
+- Static seed reports do not include user-created private provider rows because they require database access.
+- Review user-created provider promotion candidates in the admin Provider Governance Center.
+- Promotion to the global catalog still requires official-source validation and audit.
 
 ## Source-First Expansion Rules
 

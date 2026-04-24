@@ -66,7 +66,60 @@ type MatrixCell = {
   stateCount: number;
   zipRuleCount: number;
   broadOnly: boolean;
+  gapType: "covered" | "missing" | "broad_only";
+  suggestedSourceType: string;
+  riskIfIgnored: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  adminQueue: string;
 };
+
+function getSuggestedSourceType(category: string) {
+  if (category.startsWith("UTILITY_INTERNET") || category === "UTILITY_CABLE") {
+    return "FCC broadband data/map plus official provider availability pages";
+  }
+  if (category.startsWith("UTILITY_")) {
+    return "State public utility commission, EIA/FERC/state utility data, and official utility pages";
+  }
+  if (category === "GOVERNMENT_DMV" || category === "GOVERNMENT_VOTER" || category === "GOVERNMENT_POSTAL") {
+    return "Official state/federal government pages";
+  }
+  if (category.startsWith("TRANSPORTATION_")) {
+    return "Official toll, transit, or transportation agency pages";
+  }
+  if (category.startsWith("FINANCIAL_INSURANCE")) {
+    return "Official provider pages and state insurance department context";
+  }
+  if (category.startsWith("FINANCIAL_")) {
+    return "Official provider contact pages";
+  }
+  return "Official provider or agency source";
+}
+
+function getRiskIfIgnored(category: string, gapType: "covered" | "missing" | "broad_only") {
+  if (gapType === "covered") return "No current critical gap by broad catalog rules; still not proof of address availability.";
+  if (category.startsWith("UTILITY_")) {
+    return gapType === "missing"
+      ? "Users may have no current-product guidance for starting required destination utility service."
+      : "Users may see broad utility listings that are not correct for their exact address or service territory.";
+  }
+  if (category.startsWith("GOVERNMENT_")) {
+    return "Users may miss required state/federal move updates or rely on incomplete government guidance.";
+  }
+  if (category.startsWith("TRANSPORTATION_")) {
+    return "Users may miss toll/transit account updates or local transportation requirements.";
+  }
+  if (category.startsWith("FINANCIAL_INSURANCE")) {
+    return "Users may miss insurance address or requote steps that can affect coverage.";
+  }
+  return "Users may receive incomplete provider guidance for the move.";
+}
+
+function getPriority(category: string, gapType: "covered" | "missing" | "broad_only"): "HIGH" | "MEDIUM" | "LOW" {
+  if (gapType === "covered") return "LOW";
+  if (category.startsWith("UTILITY_") || category === "GOVERNMENT_DMV" || category === "GOVERNMENT_VOTER") return "HIGH";
+  if (category.startsWith("FINANCIAL_INSURANCE") || category.startsWith("TRANSPORTATION_")) return "MEDIUM";
+  return "LOW";
+}
 
 function getSeedProviders(): NormalizedProvider[] {
   const rawProviders: RawProvider[] = [
@@ -139,6 +192,9 @@ function buildMatrix(providers: NormalizedProvider[], domainCounts: Map<string, 
         );
       });
 
+      const gapType: MatrixCell["gapType"] =
+        matches.length === 0 ? "missing" : matches.length === broadMatches.length ? "broad_only" : "covered";
+
       cells.push({
         state,
         category,
@@ -147,6 +203,11 @@ function buildMatrix(providers: NormalizedProvider[], domainCounts: Map<string, 
         stateCount: matches.filter((provider) => provider.scope === "STATE").length,
         zipRuleCount: matches.filter((provider) => provider.zipCodes.length > 0).length,
         broadOnly: matches.length > 0 && matches.length === broadMatches.length,
+        gapType,
+        suggestedSourceType: getSuggestedSourceType(category),
+        riskIfIgnored: getRiskIfIgnored(category, gapType),
+        priority: getPriority(category, gapType),
+        adminQueue: gapType === "missing" ? "Coverage Gap Queue" : gapType === "broad_only" ? "Broad Coverage Review Queue" : "Provider Quality Queue",
       });
     }
   }
@@ -266,6 +327,12 @@ function buildMarkdown(input: {
 }) {
   const missingCells = input.matrix.filter((cell) => cell.count === 0);
   const broadOnlyCells = input.matrix.filter((cell) => cell.broadOnly);
+  const expansionBacklog = input.matrix
+    .filter((cell) => cell.gapType !== "covered")
+    .sort((a, b) => {
+      const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority] || a.state.localeCompare(b.state) || a.category.localeCompare(b.category);
+    });
   const weakUtilityStates = ALL_STATES.map((state) => ({
     state,
     missing: missingCells
@@ -358,6 +425,23 @@ function buildMarkdown(input: {
     lines.push(`- ${entry.state}: missing [${entry.missing.join(", ") || "none"}], broad-only [${entry.broadOnly.join(", ") || "none"}]`);
   });
   lines.push("");
+  lines.push("## Provider Expansion Backlog");
+  lines.push("");
+  expansionBacklog.slice(0, 120).forEach((cell) => {
+    lines.push(`- ${cell.priority} | ${cell.state} ${cell.category} | ${cell.gapType} | ${cell.adminQueue}`);
+    lines.push(`  - Source type: ${cell.suggestedSourceType}`);
+    lines.push(`  - Risk: ${cell.riskIfIgnored}`);
+  });
+  if (expansionBacklog.length > 120) {
+    lines.push(`- ${expansionBacklog.length - 120} additional backlog items omitted from markdown; see JSON.`);
+  }
+  lines.push("");
+  lines.push("## User-Created Provider Promotion Candidates");
+  lines.push("");
+  lines.push("- Static seed reports do not include user-created private provider rows because they require database access.");
+  lines.push("- Review user-created provider promotion candidates in the admin Provider Governance Center.");
+  lines.push("- Promotion to the global catalog still requires official-source validation and audit.");
+  lines.push("");
   lines.push("## Source-First Expansion Rules");
   lines.push("");
   lines.push("- Use state public utility commissions for electric, gas, water, telecom, and utility territory research.");
@@ -380,6 +464,12 @@ async function main() {
   const broadCoverage = summarizeBroadCoverage(providers, domainCounts);
   const suspiciousCategories = summarizeSuspiciousCategories(providers);
   const splitMergeCandidates = summarizeSplitMergeCandidates(providers);
+  const providerExpansionBacklog = matrix
+    .filter((cell) => cell.gapType !== "covered")
+    .sort((a, b) => {
+      const priorityOrder = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+      return priorityOrder[a.priority] - priorityOrder[b.priority] || a.state.localeCompare(b.state) || a.category.localeCompare(b.category);
+    });
 
   const report = {
     generatedAt,
@@ -390,6 +480,13 @@ async function main() {
     matrix,
     missingCriticalCategories: matrix.filter((cell) => cell.count === 0),
     broadOnlyCriticalCoverage: matrix.filter((cell) => cell.broadOnly),
+    providerExpansionBacklog,
+    userCreatedProviderPromotionCandidates: {
+      includedInStaticReport: false,
+      source: "Admin database userCustomProvider records",
+      adminQueue: "User-Created Provider Review Queue",
+      note: "Private user-created provider rows are reviewed in admin. Promotion to global catalog requires official-source validation.",
+    },
     quality,
     duplicateDomains,
     broadCoverage,
