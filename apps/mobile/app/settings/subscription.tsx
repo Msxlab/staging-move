@@ -391,7 +391,7 @@ function LegacySubscriptionScreen() {
               <TouchableOpacity
                 style={styles.upgradeBtn}
                 activeOpacity={0.7}
-                onPress={() => handleUpgrade(plan.key)}
+                onPress={() => handleUpgrade("INDIVIDUAL")}
                 disabled={processingPlan === plan.key}
                 accessibilityRole="button"
                 accessibilityLabel={`Upgrade to ${plan.name}`}
