@@ -50,7 +50,7 @@ function resolveApiUrl() {
     }
   }
 
-  return envApiUrl || "http://localhost:3000/api";
+  return envApiUrl || "https://app.locateflow.com/api";
 }
 
 const API_URL = resolveApiUrl();
