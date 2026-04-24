@@ -6,7 +6,9 @@ import {
   mapCoverageMatchToConfidence,
   type CoverageConfidence,
   type MoveTransitionActionType,
+  type MoveTaskEffectType,
   type TaskSourceConfidence,
+  type UserCustomProviderType,
 } from "./provider-move-domain";
 import { safeJsonArray, resolveEffectiveState } from "./provider-coverage";
 
@@ -20,6 +22,8 @@ export interface MoveTransitionServiceInput {
   name?: string | null;
   category: string;
   providerId?: string | null;
+  customProviderId?: string | null;
+  customProviderType?: UserCustomProviderType | string | null;
   providerName?: string | null;
 }
 
@@ -35,6 +39,8 @@ export interface MoveTransitionProviderInput {
   requiresAddressCheck?: boolean | null;
   requiresPolygonCheck?: boolean | null;
   popularityScore?: number | null;
+  trustStatus?: string | null;
+  providerType?: UserCustomProviderType | string | null;
 }
 
 export interface MoveTransitionClassifierInput {
@@ -72,6 +78,8 @@ export interface MoveServiceTransitionPlan {
   oldProviderAction?: MoveTransitionActionType;
   destinationProviderAction?: MoveTransitionActionType;
   secondaryActions: MoveTransitionActionType[];
+  taskEffectType: MoveTaskEffectType;
+  addressContext: "OLD_ADDRESS" | "NEW_ADDRESS" | "BOTH_ADDRESSES" | "GENERAL";
   destinationProviderCandidates: MoveTransitionProviderRecommendation[];
   userFacingCopy: string;
   adminExplanation: string;
@@ -183,6 +191,56 @@ function isLocalOrMembership(category: string): boolean {
   );
 }
 
+function isHealthcareOrProfessional(category: string): boolean {
+  return (
+    category.startsWith("HEALTHCARE_") ||
+    category.startsWith("LEGAL_") ||
+    category === "PET_SERVICES" ||
+    category === "KIDS_DAYCARE" ||
+    category === "KIDS_SCHOOL"
+  );
+}
+
+function isUserCustomService(
+  service: MoveTransitionServiceInput,
+  provider: MoveTransitionProviderInput | null,
+): boolean {
+  return Boolean(
+    service.customProviderId ||
+      service.customProviderType ||
+      provider?.trustStatus === "USER_CUSTOM" ||
+      provider?.providerType,
+  );
+}
+
+function getTaskEffectType(actionType: MoveTransitionActionType): MoveTaskEffectType {
+  if (actionType === "STOP_SERVICE" || actionType === "CANCEL_OR_CLOSE") {
+    return "CLOSE_OLD_SERVICE";
+  }
+  if (actionType === "START_SERVICE" || actionType === "SHOP_PROVIDER" || actionType === "FIND_REPLACEMENT") {
+    return "CREATE_DESTINATION_SERVICE";
+  }
+  if (actionType === "TRANSFER_SERVICE") return "UPDATE_SERVICE_ADDRESS";
+  if (actionType === "UPDATE_ADDRESS") return "MARK_ADDRESS_UPDATED";
+  if (actionType === "VERIFY_AVAILABILITY") {
+    return "MARK_AVAILABILITY_VERIFIED_BY_USER";
+  }
+  return "NO_LOCAL_STATE_CHANGE";
+}
+
+function getAddressContext(
+  actionType: MoveTransitionActionType,
+): MoveServiceTransitionPlan["addressContext"] {
+  if (actionType === "STOP_SERVICE" || actionType === "CANCEL_OR_CLOSE") {
+    return "OLD_ADDRESS";
+  }
+  if (actionType === "START_SERVICE" || actionType === "FIND_REPLACEMENT" || actionType === "SHOP_PROVIDER") {
+    return "NEW_ADDRESS";
+  }
+  if (actionType === "TRANSFER_SERVICE") return "BOTH_ADDRESSES";
+  return "GENERAL";
+}
+
 function buildProviderRecommendation(
   provider: MoveTransitionProviderInput,
 ): MoveTransitionProviderRecommendation {
@@ -248,6 +306,8 @@ function buildPlan(
     oldProviderAction: input.oldProviderAction,
     destinationProviderAction: input.destinationProviderAction,
     secondaryActions: input.secondaryActions || [],
+    taskEffectType: getTaskEffectType(input.actionType),
+    addressContext: getAddressContext(input.actionType),
     destinationProviderCandidates,
     userFacingCopy: `${action.label}: ${input.suggestedNextStep}`,
     adminExplanation:
@@ -279,6 +339,7 @@ export function classifyMoveServiceTransition(
     isSameProvider(service, candidate),
   );
   const currentProvider = input.currentProvider || sameProviderCandidate || null;
+  const userCustomService = isUserCustomService(service, currentProvider);
   const sameProviderConfidence = sameProviderCandidate
     ? getCandidateCoverageConfidence(sameProviderCandidate)
     : currentProvider && providerCoversDestinationState(currentProvider, destinationState)
@@ -287,6 +348,23 @@ export function classifyMoveServiceTransition(
   const strongCandidates = categoryCandidates.filter((candidate) =>
     HIGH_CONFIDENCE_COVERAGE.has(getCandidateCoverageConfidence(candidate)),
   );
+
+  if (userCustomService && isHealthcareOrProfessional(category)) {
+    return buildPlan({
+      service,
+      actionType: sameState ? "VERIFY_AVAILABILITY" : "FIND_REPLACEMENT",
+      confidence: "MEDIUM",
+      primaryReason: sameState
+        ? "This user-added professional or healthcare provider may still be useful after a same-state move."
+        : "This user-added professional or healthcare provider is location-sensitive and may need replacement near the destination.",
+      suggestedNextStep: sameState
+        ? "Confirm whether the provider still works for the destination address and update local notes."
+        : "Find a destination provider if continuing care or local service is needed.",
+      caveats: [
+        "User-added providers are private records and are not source-verified catalog providers.",
+      ],
+    });
+  }
 
   if (isMailForwarding(category)) {
     return buildPlan({

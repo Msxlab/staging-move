@@ -44,6 +44,8 @@ describe("classifyMoveServiceTransition", () => {
 
     expect(plan.oldProviderAction).toBe("STOP_SERVICE");
     expect(plan.actionType).toBe("SHOP_PROVIDER");
+    expect(plan.taskEffectType).toBe("CREATE_DESTINATION_SERVICE");
+    expect(plan.addressContext).toBe("NEW_ADDRESS");
     expect(plan.actionLabel).toBe("Compare providers");
     expect(plan.secondaryActions).toContain("VERIFY_AVAILABILITY");
     expect(plan.userFacingCopy).not.toContain("PSE&G can transfer");
@@ -132,6 +134,7 @@ describe("classifyMoveServiceTransition", () => {
     });
 
     expect(plan.actionType).toBe("UPDATE_ADDRESS");
+    expect(plan.taskEffectType).toBe("MARK_ADDRESS_UPDATED");
     expect(plan.confidence).toBe("HIGH");
   });
 
@@ -195,5 +198,53 @@ describe("classifyMoveServiceTransition", () => {
 
     expect(plan.actionType).toBe("START_SERVICE");
     expect(plan.destinationProviderCandidates[0]?.name).toBe("Local Exact Electric");
+  });
+
+  it("treats user-added dentists as private local provider records", () => {
+    const plan = classifyMoveServiceTransition({
+      service: {
+        category: "HEALTHCARE_DENTIST",
+        providerName: "Neighborhood Dental",
+        customProviderId: "custom-dentist",
+        customProviderType: "DENTAL",
+      },
+      currentProvider: {
+        id: "custom-dentist",
+        name: "Neighborhood Dental",
+        category: "HEALTHCARE_DENTIST",
+        trustStatus: "USER_CUSTOM",
+        providerType: "DENTAL",
+      },
+      originAddress: { state: "NJ", zip: "07102" },
+      destinationAddress: { state: "TX", zip: "78701" },
+    });
+
+    expect(plan.actionType).toBe("FIND_REPLACEMENT");
+    expect(plan.taskEffectType).toBe("CREATE_DESTINATION_SERVICE");
+    expect(plan.caveats.join(" ")).toContain("User-added providers are private");
+  });
+
+  it("treats local gyms as cancel or close candidates on interstate moves", () => {
+    const plan = classifyMoveServiceTransition({
+      service: {
+        category: "FITNESS_GYM",
+        providerName: "Corner Gym",
+        customProviderId: "custom-gym",
+        customProviderType: "GYM",
+      },
+      currentProvider: {
+        id: "custom-gym",
+        name: "Corner Gym",
+        category: "FITNESS_GYM",
+        trustStatus: "USER_CUSTOM",
+        providerType: "GYM",
+      },
+      originAddress: { state: "NJ" },
+      destinationAddress: { state: "TX" },
+    });
+
+    expect(plan.actionType).toBe("CANCEL_OR_CLOSE");
+    expect(plan.taskEffectType).toBe("CLOSE_OLD_SERVICE");
+    expect(plan.addressContext).toBe("OLD_ADDRESS");
   });
 });
