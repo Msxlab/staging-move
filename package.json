@@ -9,6 +9,7 @@
     "lint": "turbo lint",
     "audit:providers": "pnpm exec tsx scripts/audit-provider-seed.ts",
     "audit:providers:write": "pnpm exec tsx scripts/audit-provider-seed.ts --write",
+    "audit:providers:readiness": "pnpm exec tsx scripts/audit-provider-readiness.ts",
     "audit:providers:coverage": "pnpm exec tsx scripts/audit-provider-coverage.ts",
     "audit:providers:state-completeness": "pnpm exec tsx scripts/audit-state-provider-completeness.ts --skip-fetch",
     "audit:providers:state-completeness:write": "pnpm exec tsx scripts/audit-state-provider-completeness.ts",

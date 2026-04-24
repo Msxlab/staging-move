@@ -1,0 +1,416 @@
+# Provider Readiness Gap Report
+
+Generated: 2026-04-24T14:31:45.898Z
+
+## Summary
+
+- Providers reviewed: 776
+- State/category matrix cells: 765
+- Missing critical state/category cells: 58
+- Broad-only state/category cells: 189
+- Duplicate-domain buckets: 51
+- Missing logo: 776
+- Missing phone: 301
+- Broad state coverage: 155
+- Generic description: 133
+- Duplicate domain candidate: 127
+- Broad national listing: 62
+- Marketing language: 21
+
+## Missing Critical Categories By State
+
+- AL: UTILITY_SEWER
+- AK: UTILITY_SEWER
+- AZ: UTILITY_SEWER
+- AR: UTILITY_SEWER, TRANSPORTATION_TRANSIT
+- CA: UTILITY_SEWER
+- CO: UTILITY_SEWER
+- CT: UTILITY_SEWER, TRANSPORTATION_TRANSIT
+- DE: UTILITY_SEWER
+- DC: UTILITY_SEWER
+- FL: UTILITY_SEWER
+- GA: UTILITY_SEWER
+- HI: UTILITY_SEWER
+- ID: UTILITY_SEWER, TRANSPORTATION_TRANSIT
+- IL: UTILITY_SEWER
+- IN: UTILITY_SEWER
+- IA: UTILITY_SEWER, TRANSPORTATION_TRANSIT
+- KS: UTILITY_SEWER
+- KY: UTILITY_SEWER, TRANSPORTATION_TRANSIT
+- LA: UTILITY_SEWER
+- ME: UTILITY_SEWER
+- MD: UTILITY_SEWER
+- MA: UTILITY_SEWER
+- MI: UTILITY_SEWER
+- MN: UTILITY_SEWER
+- MS: UTILITY_SEWER
+- MO: UTILITY_SEWER
+- MT: UTILITY_SEWER
+- NE: UTILITY_SEWER, TRANSPORTATION_TRANSIT
+- NV: UTILITY_SEWER
+- NH: UTILITY_SEWER
+- NJ: UTILITY_SEWER
+- NM: UTILITY_SEWER
+- NY: UTILITY_SEWER
+- NC: UTILITY_SEWER
+- ND: UTILITY_SEWER, TRANSPORTATION_TRANSIT
+- OH: UTILITY_SEWER
+- OK: UTILITY_SEWER
+- OR: UTILITY_SEWER
+- PA: UTILITY_SEWER
+- RI: UTILITY_SEWER
+- SC: UTILITY_SEWER
+- SD: UTILITY_SEWER
+- TN: UTILITY_SEWER
+- TX: UTILITY_SEWER
+- UT: UTILITY_SEWER
+- VT: UTILITY_SEWER
+- VA: UTILITY_SEWER
+- WA: UTILITY_SEWER
+- WV: UTILITY_SEWER
+- WI: UTILITY_SEWER
+- WY: UTILITY_SEWER
+
+## Broad-Only Critical Coverage
+
+- AL UTILITY_WATER: 1 providers, all broad or address-check-required
+- AL UTILITY_TRASH: 2 providers, all broad or address-check-required
+- AL UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- AK UTILITY_ELECTRIC: 1 providers, all broad or address-check-required
+- AK UTILITY_GAS: 1 providers, all broad or address-check-required
+- AK UTILITY_WATER: 1 providers, all broad or address-check-required
+- AK UTILITY_TRASH: 2 providers, all broad or address-check-required
+- AK UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- AZ UTILITY_TRASH: 2 providers, all broad or address-check-required
+- AZ UTILITY_INTERNET: 13 providers, all broad or address-check-required
+- AR UTILITY_ELECTRIC: 3 providers, all broad or address-check-required
+- AR UTILITY_GAS: 1 providers, all broad or address-check-required
+- AR UTILITY_WATER: 1 providers, all broad or address-check-required
+- AR UTILITY_TRASH: 2 providers, all broad or address-check-required
+- AR UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- CA UTILITY_TRASH: 2 providers, all broad or address-check-required
+- CA UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- CO UTILITY_ELECTRIC: 3 providers, all broad or address-check-required
+- CO UTILITY_GAS: 1 providers, all broad or address-check-required
+- CO UTILITY_TRASH: 2 providers, all broad or address-check-required
+- CO UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- CT UTILITY_WATER: 1 providers, all broad or address-check-required
+- CT UTILITY_TRASH: 2 providers, all broad or address-check-required
+- CT UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- DE UTILITY_GAS: 1 providers, all broad or address-check-required
+- DE UTILITY_WATER: 1 providers, all broad or address-check-required
+- DE UTILITY_TRASH: 2 providers, all broad or address-check-required
+- DE UTILITY_INTERNET: 9 providers, all broad or address-check-required
+- DE TRANSPORTATION_TRANSIT: 1 providers, all broad or address-check-required
+- DC UTILITY_TRASH: 2 providers, all broad or address-check-required
+- DC UTILITY_INTERNET: 9 providers, all broad or address-check-required
+- FL UTILITY_GAS: 1 providers, all broad or address-check-required
+- FL UTILITY_TRASH: 2 providers, all broad or address-check-required
+- FL UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- GA UTILITY_GAS: 2 providers, all broad or address-check-required
+- GA UTILITY_TRASH: 2 providers, all broad or address-check-required
+- GA UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- HI UTILITY_ELECTRIC: 1 providers, all broad or address-check-required
+- HI UTILITY_GAS: 1 providers, all broad or address-check-required
+- HI UTILITY_WATER: 1 providers, all broad or address-check-required
+- HI UTILITY_TRASH: 2 providers, all broad or address-check-required
+- HI UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- ID UTILITY_ELECTRIC: 2 providers, all broad or address-check-required
+- ID UTILITY_GAS: 2 providers, all broad or address-check-required
+- ID UTILITY_WATER: 1 providers, all broad or address-check-required
+- ID UTILITY_TRASH: 2 providers, all broad or address-check-required
+- ID UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- IL UTILITY_TRASH: 2 providers, all broad or address-check-required
+- IL UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- IN UTILITY_GAS: 1 providers, all broad or address-check-required
+- IN UTILITY_WATER: 1 providers, all broad or address-check-required
+- IN UTILITY_TRASH: 2 providers, all broad or address-check-required
+- IN UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- IN TRANSPORTATION_TRANSIT: 1 providers, all broad or address-check-required
+- IA UTILITY_ELECTRIC: 3 providers, all broad or address-check-required
+- IA UTILITY_GAS: 1 providers, all broad or address-check-required
+- IA UTILITY_WATER: 1 providers, all broad or address-check-required
+- IA UTILITY_TRASH: 2 providers, all broad or address-check-required
+- IA UTILITY_INTERNET: 13 providers, all broad or address-check-required
+- KS UTILITY_ELECTRIC: 2 providers, all broad or address-check-required
+- KS UTILITY_GAS: 1 providers, all broad or address-check-required
+- KS UTILITY_WATER: 1 providers, all broad or address-check-required
+- KS UTILITY_TRASH: 2 providers, all broad or address-check-required
+- KS UTILITY_INTERNET: 13 providers, all broad or address-check-required
+- KY UTILITY_GAS: 1 providers, all broad or address-check-required
+- KY UTILITY_TRASH: 2 providers, all broad or address-check-required
+- KY UTILITY_INTERNET: 9 providers, all broad or address-check-required
+- LA UTILITY_GAS: 1 providers, all broad or address-check-required
+- LA UTILITY_WATER: 1 providers, all broad or address-check-required
+- LA UTILITY_TRASH: 2 providers, all broad or address-check-required
+- LA UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- ME UTILITY_ELECTRIC: 2 providers, all broad or address-check-required
+- ME UTILITY_GAS: 1 providers, all broad or address-check-required
+- ME UTILITY_WATER: 1 providers, all broad or address-check-required
+- ME UTILITY_TRASH: 2 providers, all broad or address-check-required
+- ME UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- MD UTILITY_WATER: 1 providers, all broad or address-check-required
+- MD UTILITY_TRASH: 2 providers, all broad or address-check-required
+- MD UTILITY_INTERNET: 9 providers, all broad or address-check-required
+- MA UTILITY_TRASH: 2 providers, all broad or address-check-required
+- MA UTILITY_INTERNET: 9 providers, all broad or address-check-required
+- MI UTILITY_WATER: 1 providers, all broad or address-check-required
+- MI UTILITY_TRASH: 2 providers, all broad or address-check-required
+- MI UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- MN UTILITY_ELECTRIC: 2 providers, all broad or address-check-required
+- MN UTILITY_GAS: 2 providers, all broad or address-check-required
+- MN UTILITY_TRASH: 2 providers, all broad or address-check-required
+- MN UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- MS UTILITY_GAS: 1 providers, all broad or address-check-required
+- MS UTILITY_WATER: 1 providers, all broad or address-check-required
+- MS UTILITY_TRASH: 2 providers, all broad or address-check-required
+- MS UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- MO UTILITY_GAS: 1 providers, all broad or address-check-required
+- MO UTILITY_WATER: 1 providers, all broad or address-check-required
+- MO UTILITY_TRASH: 2 providers, all broad or address-check-required
+- MO UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- MT UTILITY_ELECTRIC: 1 providers, all broad or address-check-required
+- MT UTILITY_GAS: 1 providers, all broad or address-check-required
+- MT UTILITY_WATER: 1 providers, all broad or address-check-required
+- MT UTILITY_TRASH: 2 providers, all broad or address-check-required
+- MT UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- NE UTILITY_GAS: 2 providers, all broad or address-check-required
+- NE UTILITY_WATER: 1 providers, all broad or address-check-required
+- NE UTILITY_TRASH: 2 providers, all broad or address-check-required
+- NE UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- NV UTILITY_TRASH: 2 providers, all broad or address-check-required
+- NV UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- NH UTILITY_GAS: 1 providers, all broad or address-check-required
+- NH UTILITY_WATER: 2 providers, all broad or address-check-required
+- NH UTILITY_TRASH: 2 providers, all broad or address-check-required
+- NH UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- NJ UTILITY_TRASH: 2 providers, all broad or address-check-required
+- NJ UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- NM UTILITY_ELECTRIC: 1 providers, all broad or address-check-required
+- NM UTILITY_WATER: 1 providers, all broad or address-check-required
+- NM UTILITY_TRASH: 2 providers, all broad or address-check-required
+- NM UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- NY UTILITY_GAS: 1 providers, all broad or address-check-required
+- NY UTILITY_TRASH: 2 providers, all broad or address-check-required
+- NY UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- 69 additional broad-only cells omitted from markdown; see JSON.
+
+## Duplicate Domain Buckets
+
+- amwater.com: 7 records across UTILITY_WATER
+- blackhillsenergy.com: 5 records across UTILITY_ELECTRIC, UTILITY_GAS
+- anthem.com: 4 records across FINANCIAL_INSURANCE_HEALTH
+- atmosenergy.com: 4 records across UTILITY_GAS
+- progressive.com: 4 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_BOAT, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
+- centerpointenergy.com: 3 records across UTILITY_GAS
+- costco.com: 3 records across HEALTHCARE_PHARMACY, SHOPPING_SUBSCRIPTION
+- dominionenergy.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
+- duke-energy.com: 3 records across UTILITY_ELECTRIC
+- firstenergycorp.com: 3 records across UTILITY_ELECTRIC
+- geico.com: 3 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
+- montana-dakota.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
+- spectrum.com: 3 records across UTILITY_INTERNET, UTILITY_PHONE
+- statefarm.com: 3 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
+- verizon.com: 3 records across UTILITY_INTERNET, UTILITY_PHONE
+- xcelenergy.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
+- allstate.com: 2 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
+- amazon.com: 2 records across GROCERY_DELIVERY, SHOPPING_SUBSCRIPTION
+- ameren.com: 2 records across UTILITY_ELECTRIC
+- apple.com: 2 records across FINANCIAL_FINTECH, SHOPPING_SUBSCRIPTION
+- assurant.com: 2 records across FINANCIAL_INSURANCE_FLOOD, FINANCIAL_INSURANCE_RENTERS
+- att.com: 2 records across UTILITY_INTERNET, UTILITY_PHONE
+- bankofamerica.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- capitalone.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- chewy.com: 2 records across HEALTHCARE_VET, SHOPPING_SUBSCRIPTION
+- citi.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- cvs.com: 2 records across HEALTHCARE_DOCTORS, HEALTHCARE_PHARMACY
+- discover.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- eversource.com: 2 records across UTILITY_ELECTRIC
+- irs.gov: 2 records across GOVERNMENT_TAX
+- lemonade.com: 2 records across FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
+- lge-ku.com: 2 records across UTILITY_ELECTRIC
+- libertymutual.com: 2 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
+- maine.gov: 2 records across GOVERNMENT_DMV, GOVERNMENT_VOTER
+- miamidade.gov: 2 records across TRANSPORTATION_TRANSIT, UTILITY_WATER
+- nationalgridus.com: 2 records across UTILITY_GAS
+- nj.gov: 2 records across GOVERNMENT_DMV, GOVERNMENT_TAX
+- oklahoma.gov: 2 records across GOVERNMENT_DMV, GOVERNMENT_VOTER
+- piedmontng.com: 2 records across UTILITY_GAS
+- portal.ct.gov: 2 records across GOVERNMENT_DMV, GOVERNMENT_VOTER
+
+## Broad Coverage Provider Candidates
+
+- Anytime Fitness | FITNESS_GYM | FEDERAL | Broad national listing
+- Equinox | FITNESS_GYM | FEDERAL | Broad national listing
+- LA Fitness | FITNESS_GYM | FEDERAL | Broad national listing
+- Orangetheory | FITNESS_GYM | FEDERAL | Broad national listing
+- Peloton | FITNESS_GYM | FEDERAL | Broad national listing
+- Planet Fitness | FITNESS_GYM | FEDERAL | Broad national listing
+- YMCA | FITNESS_GYM | FEDERAL | Broad national listing
+- Amazon Fresh | GROCERY_DELIVERY | FEDERAL | Broad national listing
+- Blue Apron | GROCERY_DELIVERY | FEDERAL | Broad national listing
+- DoorDash | GROCERY_DELIVERY | FEDERAL | Broad national listing
+- HelloFresh | GROCERY_DELIVERY | FEDERAL | Broad national listing
+- Instacart | GROCERY_DELIVERY | FEDERAL | Broad national listing
+- Shipt | GROCERY_DELIVERY | FEDERAL | Broad national listing
+- Walmart+ Delivery | GROCERY_DELIVERY | FEDERAL | Broad national listing
+- Ace Hardware | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- Angi (Angie's List) | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- Home Depot | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- HomeAdvisor | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- Lowe's | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- Mr. Handyman | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- Ring | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- Roto-Rooter | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- ServPro | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- TaskRabbit | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- Thumbtack | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- True Value | HOUSING_HOME_SERVICE | FEDERAL | Broad national listing
+- 1-800-GOT-JUNK | HOUSING_MOVING | FEDERAL | Broad national listing
+- Allied Van Lines | HOUSING_MOVING | FEDERAL | Broad national listing
+- Budget Truck Rental | HOUSING_MOVING | FEDERAL | Broad national listing
+- Mayflower Moving | HOUSING_MOVING | FEDERAL | Broad national listing
+- Penske Truck Rental | HOUSING_MOVING | FEDERAL | Broad national listing
+- PODS | HOUSING_MOVING | FEDERAL | Broad national listing
+- Two Men and a Truck | HOUSING_MOVING | FEDERAL | Broad national listing
+- U-Haul | HOUSING_MOVING | FEDERAL | Broad national listing
+- United Van Lines | HOUSING_MOVING | FEDERAL | Broad national listing
+- CubeSmart | HOUSING_STORAGE | FEDERAL | Broad national listing
+- Extra Space Storage | HOUSING_STORAGE | FEDERAL | Broad national listing
+- Life Storage | HOUSING_STORAGE | FEDERAL | Broad national listing
+- Public Storage | HOUSING_STORAGE | FEDERAL | Broad national listing
+- Caviar | LOCAL_DINING | FEDERAL | Broad national listing
+- ChowNow | LOCAL_DINING | FEDERAL | Broad national listing
+- Grubhub | LOCAL_DINING | FEDERAL | Broad national listing
+- OpenTable | LOCAL_DINING | FEDERAL | Broad national listing
+- Postmates | LOCAL_DINING | FEDERAL | Broad national listing
+- Resy | LOCAL_DINING | FEDERAL | Broad national listing
+- Seamless | LOCAL_DINING | FEDERAL | Broad national listing
+- Toast TakeOut | LOCAL_DINING | FEDERAL | Broad national listing
+- Tock | LOCAL_DINING | FEDERAL | Broad national listing
+- TripAdvisor | LOCAL_DINING | FEDERAL | Broad national listing
+- Uber Eats | LOCAL_DINING | FEDERAL | Broad national listing
+- Yelp | LOCAL_DINING | FEDERAL | Broad national listing
+- ExpressToll | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- FasTrak | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- GeauxPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- Good To Go! | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- K-TAG | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- NJ E-ZPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- NY E-ZPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- PA Turnpike E-ZPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- Peach Pass | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- SunPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- TxTag | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- BART | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- Caltrain | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- DART | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- DART First State | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- GoRaleigh | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- GoTriangle | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- Houston METRO | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- IndyGo | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- LA Metro | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- Lynx | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- Metra | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- MTA | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- New Orleans Regional Transit Authority | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- Pittsburgh Port Authority | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- RIPTA | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- RTA Cleveland | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- RTC Southern Nevada | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- RTD | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+
+## Suspicious Category Counts
+
+- UTILITY_ELECTRIC (Electric): 71 - High count; review for broad imports or over-splitting
+- UTILITY_WATER (Water): 67 - High count; review for broad imports or over-splitting
+- TRANSPORTATION_TRANSIT (Transit): 66 - High count; review for broad imports or over-splitting
+- UTILITY_GAS (Gas): 56 - High count; review for broad imports or over-splitting
+- GOVERNMENT_VOTER (Voter Registration): 52 - High count; review for broad imports or over-splitting
+- GOVERNMENT_DMV (DMV): 51 - High count; review for broad imports or over-splitting
+- FINANCIAL_INSURANCE_BOAT (Boat Insurance): 1 - Suspiciously low catalog count
+- FINANCIAL_LOAN (Loans): 1 - Suspiciously low catalog count
+- GOVERNMENT_EMERGENCY (Emergency (FEMA)): 1 - Suspiciously low catalog count
+- GOVERNMENT_HOUSING (Housing (HUD)): 1 - Suspiciously low catalog count
+- GOVERNMENT_ID (Passport / ID): 1 - Suspiciously low catalog count
+- GOVERNMENT_IMMIGRATION (Immigration): 1 - Suspiciously low catalog count
+- HEALTHCARE_DENTIST (Dentist): 1 - Suspiciously low catalog count
+
+## Split, Merge, Or Cross-Link Candidates
+
+- blackhillsenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
+- progressive.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_BOAT, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
+- costco.com: HEALTHCARE_PHARMACY, SHOPPING_SUBSCRIPTION
+- dominionenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
+- geico.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
+- montana-dakota.com: UTILITY_ELECTRIC, UTILITY_GAS
+- spectrum.com: UTILITY_INTERNET, UTILITY_PHONE
+- statefarm.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
+- verizon.com: UTILITY_INTERNET, UTILITY_PHONE
+- xcelenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
+- allstate.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
+- amazon.com: GROCERY_DELIVERY, SHOPPING_SUBSCRIPTION
+- apple.com: FINANCIAL_FINTECH, SHOPPING_SUBSCRIPTION
+- assurant.com: FINANCIAL_INSURANCE_FLOOD, FINANCIAL_INSURANCE_RENTERS
+- att.com: UTILITY_INTERNET, UTILITY_PHONE
+- bankofamerica.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- capitalone.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- chewy.com: HEALTHCARE_VET, SHOPPING_SUBSCRIPTION
+- citi.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- cvs.com: HEALTHCARE_DOCTORS, HEALTHCARE_PHARMACY
+- discover.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- lemonade.com: FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
+- libertymutual.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
+- maine.gov: GOVERNMENT_DMV, GOVERNMENT_VOTER
+- miamidade.gov: TRANSPORTATION_TRANSIT, UTILITY_WATER
+- nj.gov: GOVERNMENT_DMV, GOVERNMENT_TAX
+- oklahoma.gov: GOVERNMENT_DMV, GOVERNMENT_VOTER
+- portal.ct.gov: GOVERNMENT_DMV, GOVERNMENT_VOTER
+- rienergy.com: UTILITY_ELECTRIC, UTILITY_GAS
+- ring.com: HOUSING_HOME_SERVICE, HOUSING_SECURITY
+
+## Weak Utility States
+
+- AL: missing [UTILITY_SEWER], broad-only [UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- AK: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- AZ: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
+- AR: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- CA: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
+- CO: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
+- CT: missing [UTILITY_SEWER], broad-only [UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- DE: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- DC: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
+- FL: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
+- GA: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
+- HI: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- ID: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- IL: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
+- IN: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- IA: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- KS: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- KY: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
+- LA: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- ME: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- MD: missing [UTILITY_SEWER], broad-only [UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- MA: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
+- MI: missing [UTILITY_SEWER], broad-only [UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- MN: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
+- MS: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- MO: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- MT: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- NE: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- NV: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
+- NH: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+
+## Weak Government Task States
+
+
+## Source-First Expansion Rules
+
+- Use state public utility commissions for electric, gas, water, telecom, and utility territory research.
+- Use FCC broadband data/maps for internet availability research.
+- Use official state DMV, voter, toll, transit, and agency pages for government and transportation records.
+- Use official provider websites/contact pages for domain and phone validation.
+- Do not use generic SEO pages or search snippets as proof.
+- Do not mark providers as verified until source URL, checked date, and validation status have an approved storage path.
