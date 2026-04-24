@@ -18,6 +18,17 @@ function includeTaskContext() {
   };
 }
 
+async function recordMoveTaskEvent(userId: string, event: string, metadata: Record<string, unknown>) {
+  await prisma.userEvent.create({
+    data: {
+      userId,
+      event: event.slice(0, 50),
+      page: "/moving",
+      metadata: JSON.stringify(metadata),
+    },
+  }).catch(() => null);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
@@ -81,6 +92,12 @@ export async function POST(request: NextRequest) {
       entityId: movingPlanId,
       changes: { generated: result.generated.length, skipped: result.skipped.length },
       ...meta,
+    });
+    await recordMoveTaskEvent(userId, "MOVE_TASK_GENERATED", {
+      movingPlanId,
+      generated: result.generated.length,
+      skipped: result.skipped.length,
+      localOnly: true,
     });
 
     return NextResponse.json({
@@ -162,6 +179,15 @@ export async function PATCH(request: NextRequest) {
         localOnly: true,
       },
       ...meta,
+    });
+    await recordMoveTaskEvent(userId, `MOVE_TASK_${event}`, {
+      moveTaskId: id,
+      status: task.status,
+      actionType: task.actionType,
+      selectedDestinationProviderId: selectedDestinationProviderId || null,
+      selectedCustomProviderId: selectedCustomProviderId || null,
+      localOnly: true,
+      noExternalAutomation: true,
     });
 
     return NextResponse.json({

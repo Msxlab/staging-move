@@ -27,6 +27,17 @@ function presentCustomProvider(provider: any) {
   };
 }
 
+async function recordCustomProviderEvent(userId: string, event: string, metadata: Record<string, unknown>) {
+  await prisma.userEvent.create({
+    data: {
+      userId,
+      event: event.slice(0, 50),
+      page: "/services/new",
+      metadata: JSON.stringify(metadata),
+    },
+  }).catch(() => null);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
@@ -100,6 +111,13 @@ export async function POST(request: NextRequest) {
       entityId: provider.id,
       changes: { name: provider.name, category: provider.category, providerType: provider.providerType },
       ...meta,
+    });
+    await recordCustomProviderEvent(userId, "CUSTOM_PROVIDER_CREATED", {
+      customProviderId: provider.id,
+      category: provider.category,
+      providerType: provider.providerType,
+      localOnly: true,
+      privateToUser: true,
     });
 
     return NextResponse.json({ provider: presentCustomProvider(provider) }, { status: 201 });
