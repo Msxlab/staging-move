@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { googleAuthorizeUrl, generateState, generatePkce, getRuntimeBaseUrl } from "@/lib/oauth";
+import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,7 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${await getRuntimeBaseUrl()}/api/auth/oauth/google/callback`;
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
+  const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
   // Only allow same-site relative redirects.
   const safeRedirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 
@@ -45,5 +47,8 @@ export async function GET(request: NextRequest) {
   res.cookies.set("oauth_state_google", state, cookieOpts);
   res.cookies.set("oauth_pkce_google", pkce.verifier, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
+  if (acceptedLegal) {
+    res.cookies.set(OAUTH_LEGAL_ACCEPTANCE_COOKIE, "accepted", cookieOpts);
+  }
   return res;
 }

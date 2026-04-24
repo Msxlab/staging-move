@@ -6,6 +6,10 @@ import {
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
+import {
+  OAUTH_LEGAL_ACCEPTANCE_COOKIE,
+  recordLegalAcceptance,
+} from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
 
@@ -32,6 +36,7 @@ export async function GET(request: NextRequest) {
   const cookieState = request.cookies.get("oauth_state_google")?.value;
   const pkceVerifier = request.cookies.get("oauth_pkce_google")?.value;
   const redirectPath = request.cookies.get("oauth_redirect")?.value || "/dashboard";
+  const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || !pkceVerifier || cookieState !== state) {
     return NextResponse.redirect(new URL("/sign-in?error=state-mismatch", request.url));
   }
@@ -61,14 +66,37 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/sign-in?error=email-unverified", request.url));
   }
 
-  const userId = await findOrLinkOAuthUser({
-    provider: "google",
-    providerId: payload.sub,
-    email: payload.email,
-    firstName: payload.given_name,
-    lastName: payload.family_name,
-    imageUrl: payload.picture,
-  });
+  let userId: string;
+  try {
+    userId = await findOrLinkOAuthUser({
+      provider: "google",
+      providerId: payload.sub,
+      email: payload.email,
+      firstName: payload.given_name,
+      lastName: payload.family_name,
+      imageUrl: payload.picture,
+      allowNewAccount: acceptedLegal,
+    });
+  } catch (err: any) {
+    if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
+      const response = NextResponse.redirect(new URL("/sign-up?error=legal-acceptance-required", request.url));
+      response.cookies.delete("oauth_state_google");
+      response.cookies.delete("oauth_pkce_google");
+      response.cookies.delete("oauth_redirect");
+      response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
+      return response;
+    }
+    throw err;
+  }
+
+  if (acceptedLegal) {
+    await recordLegalAcceptance({
+      userId,
+      request,
+      page: "/sign-up",
+      source: "google_oauth_signup",
+    });
+  }
 
   const ua = request.headers.get("user-agent") || "";
   const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
@@ -81,5 +109,6 @@ export async function GET(request: NextRequest) {
   response.cookies.delete("oauth_state_google");
   response.cookies.delete("oauth_pkce_google");
   response.cookies.delete("oauth_redirect");
+  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }

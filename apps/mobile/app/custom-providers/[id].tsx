@@ -1,0 +1,271 @@
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  Linking,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  ArrowLeft,
+  Building2,
+  Edit,
+  Globe,
+  Mail,
+  MapPin,
+  Phone,
+  Trash2,
+} from "lucide-react-native";
+import { api } from "@/lib/api";
+import { theme } from "@/lib/theme";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
+
+interface CustomProvider {
+  id: string;
+  name: string;
+  category: string;
+  description?: string | null;
+  website?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  notes?: string | null;
+  providerType?: string | null;
+  adminReviewStatus?: string | null;
+  availabilityCaveat?: string;
+  services?: Array<{ id: string; providerName: string; category: string; isActive: boolean }>;
+}
+
+export default function CustomProviderDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [provider, setProvider] = useState<CustomProvider | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadProvider = useCallback(async () => {
+    const res = await api.get<{ provider?: CustomProvider }>(`/api/custom-providers/${id}`);
+    if (res.data?.provider) setProvider(res.data.provider);
+  }, [id]);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await loadProvider();
+      setLoading(false);
+    })();
+  }, [loadProvider]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProvider();
+    setRefreshing(false);
+  }, [loadProvider]);
+
+  const deleteProvider = () => {
+    if (!provider) return;
+    hapticWarning();
+    Alert.alert(
+      "Delete custom provider",
+      "This removes your private provider record from LocateFlow. It does not contact the provider or change external accounts.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const res = await api.delete(`/api/custom-providers/${provider.id}`);
+            if (res.error) {
+              hapticError();
+              Alert.alert("Error", res.error);
+              return;
+            }
+            hapticSuccess();
+            router.back();
+          },
+        },
+      ],
+    );
+  };
+
+  if (loading) return <LoadingScreen />;
+
+  if (!provider) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <ArrowLeft size={22} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Not Found</Text>
+          <View style={{ width: 44 }} />
+        </View>
+        <View style={styles.center}>
+          <Text style={styles.emptyText}>Custom provider not found.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const address = [provider.addressLine1, provider.addressLine2, provider.city, provider.state, provider.zipCode]
+    .filter(Boolean)
+    .join(", ");
+
+  const rows = [
+    provider.phone && { icon: Phone, label: "Phone", value: provider.phone, onPress: () => Linking.openURL(`tel:${provider.phone}`) },
+    provider.website && { icon: Globe, label: "Website", value: provider.website.replace(/^https?:\/\//, ""), onPress: () => Linking.openURL(provider.website!) },
+    provider.email && { icon: Mail, label: "Email", value: provider.email, onPress: () => Linking.openURL(`mailto:${provider.email}`) },
+    address && { icon: MapPin, label: "Address", value: address },
+  ].filter(Boolean) as Array<{ icon: any; label: string; value: string; onPress?: () => void }>;
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ArrowLeft size={22} color={theme.colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.title} numberOfLines={1}>Custom Provider</Text>
+        <TouchableOpacity onPress={() => router.push(`/custom-providers/${provider.id}/edit` as any)} style={styles.iconBtn}>
+          <Edit size={18} color={theme.colors.primary} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+      >
+        <Card variant="glow">
+          <View style={styles.heroRow}>
+            <View style={styles.heroIcon}>
+              <Building2 size={24} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroName}>{provider.name}</Text>
+              <Text style={styles.heroMeta}>{provider.category.replace(/_/g, " ")}</Text>
+            </View>
+          </View>
+          <View style={styles.badgeRow}>
+            <Badge label="User-added provider" variant="info" />
+            <Badge label="Manual tracking only" variant="warning" />
+          </View>
+          <Text style={styles.caveat}>
+            {provider.availabilityCaveat || "This is your private provider record. Confirm details directly with the provider."}
+          </Text>
+        </Card>
+
+        {provider.description ? (
+          <>
+            <Text style={styles.sectionTitle}>Description</Text>
+            <Card variant="default"><Text style={styles.bodyText}>{provider.description}</Text></Card>
+          </>
+        ) : null}
+
+        {rows.length > 0 ? (
+          <>
+            <Text style={styles.sectionTitle}>Contact</Text>
+            <Card variant="default">
+              {rows.map((row, index) => {
+                const Icon = row.icon;
+                return (
+                  <TouchableOpacity
+                    key={row.label}
+                    style={[styles.infoRow, index < rows.length - 1 && styles.infoRowBorder]}
+                    onPress={row.onPress}
+                    disabled={!row.onPress}
+                    activeOpacity={row.onPress ? 0.6 : 1}
+                  >
+                    <View style={styles.infoIcon}><Icon size={16} color={theme.colors.textSecondary} /></View>
+                    <Text style={styles.infoLabel}>{row.label}</Text>
+                    <Text style={[styles.infoValue, row.onPress && { color: theme.colors.primary }]} numberOfLines={1}>{row.value}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </Card>
+          </>
+        ) : null}
+
+        {provider.notes ? (
+          <>
+            <Text style={styles.sectionTitle}>Notes</Text>
+            <Card variant="default"><Text style={styles.bodyText}>{provider.notes}</Text></Card>
+          </>
+        ) : null}
+
+        {provider.services?.length ? (
+          <>
+            <Text style={styles.sectionTitle}>Linked Services</Text>
+            <Card variant="default">
+              {provider.services.map((service, index) => (
+                <TouchableOpacity
+                  key={service.id}
+                  style={[styles.serviceRow, index < provider.services!.length - 1 && styles.infoRowBorder]}
+                  onPress={() => router.push(`/services/${service.id}` as any)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.serviceName}>{service.providerName}</Text>
+                    <Text style={styles.serviceMeta}>{service.category.replace(/_/g, " ")}</Text>
+                  </View>
+                  <Badge label={service.isActive ? "Active" : "Inactive"} variant={service.isActive ? "success" : "neutral"} />
+                </TouchableOpacity>
+              ))}
+            </Card>
+          </>
+        ) : null}
+
+        <TouchableOpacity style={styles.editBtn} onPress={() => router.push(`/custom-providers/${provider.id}/edit` as any)}>
+          <Edit size={16} color={theme.colors.primary} />
+          <Text style={styles.editText}>Edit Custom Provider</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.deleteBtn} onPress={deleteProvider}>
+          <Trash2 size={16} color={theme.colors.error} />
+          <Text style={styles.deleteText}>Delete Custom Provider</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
+  backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  iconBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, flex: 1, textAlign: "center" },
+  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  emptyText: { color: theme.colors.textTertiary },
+  heroRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  heroIcon: { width: 52, height: 52, borderRadius: 16, backgroundColor: theme.colors.primaryFaded, alignItems: "center", justifyContent: "center" },
+  heroName: { fontSize: 20, fontWeight: "800", color: theme.colors.text },
+  heroMeta: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 2 },
+  badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 14 },
+  caveat: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20, marginTop: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text, marginTop: 24, marginBottom: 10 },
+  bodyText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 13, paddingHorizontal: 4 },
+  infoRowBorder: { borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  infoIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: "rgba(255,255,255,0.05)", alignItems: "center", justifyContent: "center" },
+  infoLabel: { fontSize: 13, color: theme.colors.textTertiary, width: 72 },
+  infoValue: { flex: 1, fontSize: 14, fontWeight: "600", color: theme.colors.text, textAlign: "right" },
+  serviceRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13 },
+  serviceName: { color: theme.colors.text, fontSize: 14, fontWeight: "700" },
+  serviceMeta: { color: theme.colors.textTertiary, fontSize: 12, marginTop: 2 },
+  editBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24, paddingVertical: 14, borderRadius: theme.radius.lg, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)" },
+  editText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
+  deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: theme.radius.lg, backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(239,68,68,0.2)" },
+  deleteText: { fontSize: 14, fontWeight: "600", color: theme.colors.error },
+});

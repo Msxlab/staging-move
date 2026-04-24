@@ -31,7 +31,7 @@ The current product is materially more complete: persistent move tasks, custom p
 | Notifications | Usable but thin | In-app records exist; external delivery depends on configured providers/workers. |
 | Support/help | Usable | Tickets and help surfaces exist. |
 | Legal/policy | Usable after copy review | Privacy, terms, cookie, disclaimer, refund, DPA, CCPA, acceptable-use, security, and contact pages exist. |
-| Mobile app | Usable but requires device QA | Core flows exist; mobile caveats and task UX need real-device review. Dedicated custom-provider edit/delete is still a parity gap; mobile can create a private provider through service creation. |
+| Mobile app | Usable but requires device QA | Core flows exist; mobile caveats and task UX need real-device review. Dedicated custom-provider list/detail/edit/delete routes now exist but still require device QA. |
 | Admin dashboard/users | Usable | User detail includes services, custom providers, move plans, tasks, and support context. |
 | Admin providers | Production-ready after QA | Provider list/detail/edit plus quality visibility. |
 | Admin provider governance | Production-ready after QA | Quality, gap, duplicate, contact, broad coverage, source backlog, and custom-provider queues exist. |
@@ -46,7 +46,7 @@ The current product is materially more complete: persistent move tasks, custom p
 
 - Web app has public, auth, onboarding, app-shell, settings, support, provider, service, moving, address, and policy routes.
 - Mobile has auth, onboarding, tabs, address, moving, service, provider, budget, help, notifications, and settings screens.
-- Mobile custom-provider management is thinner than web: create-through-service exists, but a dedicated custom-provider edit/delete screen still needs implementation before a green launch verdict.
+- Mobile custom-provider management now includes dedicated list/detail/edit/delete routes, but it still needs real-device QA before a green launch verdict.
 - Admin sidebar reaches dashboard, users, subscriptions, billing, providers, provider governance, state rules, moving, support, notifications, email templates, help center, waitlist, analytics, reports, feature flags, security, runtime config, backups, logs, team, and settings.
 - Remaining manual QA: verify no dead buttons in provider governance queues, mobile back navigation, modals, empty states, and local-effect confirmation flows.
 
@@ -102,6 +102,32 @@ The product does not ship a full U.S. ZIP dataset to web or mobile clients. ZIP 
 
 Prevention is materially improved through ownership checks, rate limits, status transition validation, custom-provider scoping, admin permission checks, and audit logs. Remaining launch steps are manual/security QA: verify deployed security headers, CORS, cookies, Sentry redaction, rate-limit behavior, and admin permission boundaries in staging.
 
+## Launch Policy Decisions
+
+These defaults are accepted for the current-product readiness epic. They do not add Family, Pro, connectors, partner APIs, ML ranking, external provider automation, or financial admin actions.
+
+### Billing Entitlement Default
+
+- Data export and account deletion remain available regardless of subscription state.
+- Existing user data remains readable after subscription expiration.
+- Completing already-created move tasks remains allowed after subscription expiration so users can finish local tracking without harm.
+- Generating new move tasks requires active entitlement.
+- Creating new custom providers requires active entitlement.
+- Admin can view billing and entitlement context, but cannot refund, cancel, grant grace, retry payment, or otherwise perform financial remediation without a separately approved workflow.
+
+### Email And Social Account Lifecycle
+
+- OAuth-only set-password is supported.
+- Safe email-change and social link/unlink workflows are not launch-ready yet.
+- Do not fake email-change, social link, or social unlink behavior.
+- If any UI exposes email change or social link/unlink, it must be disabled or clearly marked unavailable until a safe re-authentication, verification, audit, and session-handling flow exists.
+
+### Mobile Custom-Provider Parity
+
+- Dedicated mobile custom-provider list/detail/edit/delete routes are implemented.
+- Mobile can create private custom providers through service creation and open dedicated management routes from the More menu.
+- Until these routes are real-device tested, the mobile verdict remains YELLOW and device QA remains a launch caveat.
+
 ## Launch Must-Pass Items
 
 1. Apply Prisma migrations to staging and run Prisma generate.
@@ -118,4 +144,6 @@ Prevention is materially improved through ownership checks, rate limits, status 
 - Whether completed/dismissed tasks should ever be regenerated after material input changes.
 - Whether source verification metadata should be added to the provider schema.
 - Whether custom-provider promotion to global catalog should be implemented as a formal approval workflow.
-- Whether broader admin financial actions are allowed. None were added.
+- Whether broader admin financial actions are allowed. None were added; the current default is billing context only.
+- Whether safe email-change and social link/unlink workflows should be built before a green paying-user launch.
+- Whether mobile custom-provider edit/delete device QA must pass before launch or be accepted as a YELLOW mobile caveat.

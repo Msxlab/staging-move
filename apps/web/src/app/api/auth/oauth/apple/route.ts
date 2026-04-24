@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appleAuthorizeUrl, generateState, getRuntimeBaseUrl } from "@/lib/oauth";
+import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
   const redirectUri = `${await getRuntimeBaseUrl()}/api/auth/oauth/apple/callback`;
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
+  const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
   const safeRedirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
 
   const url = appleAuthorizeUrl({ clientId, redirectUri, state });
@@ -34,5 +36,8 @@ export async function GET(request: NextRequest) {
   };
   res.cookies.set("oauth_state_apple", state, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
+  if (acceptedLegal) {
+    res.cookies.set(OAUTH_LEGAL_ACCEPTANCE_COOKIE, "accepted", cookieOpts);
+  }
   return res;
 }

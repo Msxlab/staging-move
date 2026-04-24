@@ -18,8 +18,6 @@
       "bundleIdentifier": "com.locateflow.mobile",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "LocateFlow needs camera access to scan and upload documents.",
-        "NSPhotoLibraryUsageDescription": "LocateFlow needs photo library access to upload documents and profile pictures.",
         "NSFaceIDUsageDescription": "LocateFlow uses Face ID for secure authentication."
       }
     },
@@ -31,9 +29,6 @@
       "package": "com.locateflow.mobile",
       "versionCode": 1,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
         "INTERNET",
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED"
@@ -54,14 +49,6 @@
           "color": "#F97316"
         }
       ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "LocateFlow needs access to your photos to upload documents.",
-          "cameraPermission": "LocateFlow needs access to your camera to scan documents."
-        }
-      ],
-      "expo-document-picker",
       "expo-web-browser",
       [
         "expo-build-properties",

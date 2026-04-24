@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import { exchangeAppleCode, getRuntimeBaseUrl } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
+import {
+  OAUTH_LEGAL_ACCEPTANCE_COOKIE,
+  recordLegalAcceptance,
+} from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
 
@@ -47,6 +51,7 @@ export async function POST(request: NextRequest) {
 
   const cookieState = request.cookies.get("oauth_state_apple")?.value;
   const redirectPath = request.cookies.get("oauth_redirect")?.value || "/dashboard";
+  const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || cookieState !== state) {
     return NextResponse.redirect(new URL("/sign-in?error=state-mismatch", request.url));
   }
@@ -91,13 +96,35 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const userId = await findOrLinkOAuthUser({
-    provider: "apple",
-    providerId: payload.sub,
-    email: payload.email,
-    firstName,
-    lastName,
-  });
+  let userId: string;
+  try {
+    userId = await findOrLinkOAuthUser({
+      provider: "apple",
+      providerId: payload.sub,
+      email: payload.email,
+      firstName,
+      lastName,
+      allowNewAccount: acceptedLegal,
+    });
+  } catch (err: any) {
+    if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
+      const response = NextResponse.redirect(new URL("/sign-up?error=legal-acceptance-required", request.url));
+      response.cookies.delete("oauth_state_apple");
+      response.cookies.delete("oauth_redirect");
+      response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
+      return response;
+    }
+    throw err;
+  }
+
+  if (acceptedLegal) {
+    await recordLegalAcceptance({
+      userId,
+      request,
+      page: "/sign-up",
+      source: "apple_oauth_signup",
+    });
+  }
 
   const ua = request.headers.get("user-agent") || "";
   const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
@@ -109,5 +136,6 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.redirect(new URL(redirectPath, request.url));
   response.cookies.delete("oauth_state_apple");
   response.cookies.delete("oauth_redirect");
+  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }

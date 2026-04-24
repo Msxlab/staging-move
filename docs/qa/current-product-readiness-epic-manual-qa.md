@@ -4,6 +4,7 @@ Use this checklist before opening or merging the current-product readiness epic.
 
 ## Web Provider And Custom Provider
 
+- Signup requires Terms of Use and Legal Disclaimer acknowledgement before email/password or social account creation.
 - Provider list shows listed/unverified provider labels and availability caveats.
 - Provider detail says adding a provider is manual tracking only.
 - Provider detail does not claim official partnership, guaranteed availability, or automatic account updates.
@@ -15,10 +16,13 @@ Use this checklist before opening or merging the current-product readiness epic.
 
 ## Mobile Provider And Custom Provider
 
+- Signup requires Terms of Use and Legal Disclaimer acknowledgement before email/password or social account creation.
 - Provider list/card/detail shows the same trust and coverage meaning as web.
 - Mobile does not hide caveats because of screen size.
 - Add service with a listed provider remains local tracking.
 - Add custom/local provider creates a private user provider record.
+- Custom provider list/detail/edit/delete routes are reachable from mobile More -> Custom Providers.
+- Editing or deleting a custom provider does not affect other users.
 - Custom provider labels stay user-added and unverified.
 
 ## Move Tasks
@@ -100,6 +104,46 @@ Local gym move:
 
 - Task is cancel/close or find replacement when moving away.
 - Completing cancel/close only changes LocateFlow local service state.
+
+## Provider Expansion Scenarios
+
+Electric utility by ZIP prefix:
+
+- Search a ZIP-prefix-modeled electric provider such as San Diego Gas & Electric, Tampa Electric, Omaha Public Power District, Memphis Light, Gas and Water, or PSEG Long Island.
+- Provider appears only for matching state/ZIP-prefix context.
+- UI shows listed/unverified provider posture and says ZIP-prefix coverage is not exact-address proof.
+- Move task guidance remains verify/start/transfer guidance with manual confirmation.
+
+State-level utility:
+
+- Search a state-level utility such as Entergy Arkansas, Idaho Power, Ameren Illinois, Alliant Energy, Piedmont Natural Gas, or Pacific Power.
+- Provider can appear for the modeled state, but does not claim exact address availability.
+- Recommendation copy says state-level coverage is broad and must be confirmed with the provider.
+
+Transit provider:
+
+- Search a transit provider added by ZIP prefix or state, such as MAX Transit, Valley Metro, DART First State, MTA Maryland, King County Metro, or Cheyenne Transit Program.
+- Provider is shown as listed/unverified and location-sensitive.
+- UI does not imply every address in the state or ZIP prefix is directly served.
+
+Toll provider:
+
+- Search North Texas Tollway Authority in a North Texas ZIP-prefix context.
+- Provider appears as listed/unverified toll guidance, not proof that a user's route requires that toll provider.
+- Backlog toll providers that require corridor/polygon modeling are not shown as newly added seed providers.
+
+PSEG Long Island vs PSE&G New Jersey:
+
+- New York Long Island ZIP prefixes can surface PSEG Long Island.
+- New Jersey service context can surface PSE&G, not PSEG Long Island.
+- Moving from New Jersey PSE&G to New York Long Island does not claim a seamless transfer without verification.
+- Moving from New Jersey PSE&G to Texas never claims PSE&G can transfer to Texas.
+
+Texas electric provider caveat:
+
+- Texas electric recommendations remain conservative because delivery utility, retail choice, municipal/co-op, and exact-address eligibility are not fully modeled.
+- Oncor Electric Delivery remains catalog backlog and is not added as a broad state seed provider.
+- Texas tasks should say start/shop/find replacement or verify availability, with official marketplace/provider confirmation.
 
 ## Admin Governance
 

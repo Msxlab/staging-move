@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { canGenerateMoveTasks } from "@/lib/plan-limits";
 import { syncSuggestedMoveTasks } from "@/lib/move-task-generation";
 import { completeMoveTaskWithLocalEffect } from "@/lib/move-task-local-effects";
 
@@ -72,6 +73,11 @@ export async function POST(request: NextRequest) {
     const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
+
+    const entitlement = await canGenerateMoveTasks(userId);
+    if (!entitlement.allowed) {
+      return NextResponse.json({ error: entitlement.reason, upgradeRequired: true }, { status: 403 });
     }
 
     const body = await request.json();

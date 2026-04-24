@@ -92,10 +92,12 @@ export default function NewServiceScreen() {
     fromServiceId?: string | string[];
     providerId?: string | string[];
     category?: string | string[];
+    mode?: string | string[];
   }>();
 
   // Mode: "browse" = provider list, "manual" = manual form
-  const [mode, setMode] = useState<"browse" | "manual">("browse");
+  const requestedMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const [mode, setMode] = useState<"browse" | "manual">(requestedMode === "manual" ? "manual" : "browse");
 
   // Address state
   const [addresses, setAddresses] = useState<AddressOption[]>([]);

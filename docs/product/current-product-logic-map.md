@@ -184,6 +184,8 @@ Mobile must show the same product meaning as web:
 
 Mobile can use simpler layout, but it must not hide critical caveats.
 
+Current mobile caveat: dedicated custom-provider list/detail/edit/delete screens exist, but the mobile launch verdict remains YELLOW until those routes are tested on real devices.
+
 ## Admin Behavior
 
 Admin surfaces support current-product operations. Admin can inspect user services, custom providers, moving plans, move tasks, provider quality warnings, provider coverage gaps, and governance queues.
@@ -191,6 +193,27 @@ Admin surfaces support current-product operations. Admin can inspect user servic
 Admin actions must be permission-gated and audited where they change task/provider governance state.
 
 Admin must not show providers as official or verified unless source-backed validation exists. Admin should treat user-created providers as private records unless explicitly reviewed.
+
+Admin can view billing and entitlement context for support. Admin must not refund, cancel, grant grace, retry payment, grant/revoke entitlement, or perform other financial remediation unless a separate approved workflow exists.
+
+## Billing Entitlement Defaults
+
+Current-product billing defaults:
+
+- Data export and account deletion are always available.
+- Existing data remains readable after subscription expiration.
+- Completing already-created move tasks remains allowed after subscription expiration.
+- Generating new move tasks requires active entitlement.
+- Creating new custom providers requires active entitlement.
+- Admin billing surfaces are context-only unless a separately approved financial workflow exists.
+
+These defaults preserve user access to their own data while keeping new paid workflow creation behind active entitlement.
+
+## Email And Social Account Lifecycle
+
+OAuth-only users can set a password through the supported account-security flow.
+
+Safe email-change and social link/unlink workflows are not launch-ready. They must not be faked. Any UI that exposes email change or social link/unlink should be disabled or clearly marked unavailable until a safe flow exists with re-authentication, verification, audit logging, and session handling.
 
 ## Manual Work
 
