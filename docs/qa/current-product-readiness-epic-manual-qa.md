@@ -21,6 +21,8 @@ Use this checklist before opening or merging the current-product readiness epic.
 - Mobile does not hide caveats because of screen size.
 - Add service with a listed provider remains local tracking.
 - Add custom/local provider creates a private user provider record.
+- Custom provider list/detail/edit/delete routes are reachable from mobile More -> Custom Providers.
+- Editing or deleting a custom provider does not affect other users.
 - Custom provider labels stay user-added and unverified.
 
 ## Move Tasks

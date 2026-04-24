@@ -5,6 +5,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { canCreateCustomProvider } from "@/lib/plan-limits";
 
 function cleanText(value: string | undefined): string | null {
   const trimmed = (value || "").trim();
@@ -80,6 +81,11 @@ export async function POST(request: NextRequest) {
     const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
+
+    const entitlement = await canCreateCustomProvider(userId);
+    if (!entitlement.allowed) {
+      return NextResponse.json({ error: entitlement.reason, upgradeRequired: true }, { status: 403 });
     }
 
     const body = await request.json();

@@ -184,7 +184,7 @@ Mobile must show the same product meaning as web:
 
 Mobile can use simpler layout, but it must not hide critical caveats.
 
-Current mobile caveat: dedicated custom-provider edit/delete screens are not full parity yet. Mobile can create private custom providers through service creation, but the mobile launch verdict remains YELLOW until dedicated edit/delete management is implemented or explicitly accepted as a launch caveat.
+Current mobile caveat: dedicated custom-provider list/detail/edit/delete screens exist, but the mobile launch verdict remains YELLOW until those routes are tested on real devices.
 
 ## Admin Behavior
 

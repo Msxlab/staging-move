@@ -100,3 +100,40 @@ export async function canCreateMovingPlan(userId: string): Promise<{ allowed: bo
 
   return { allowed: true };
 }
+
+/**
+ * Check if user can create new paid-workflow artifacts.
+ * Existing data remains readable, and completing already-created move tasks
+ * stays available so users are not blocked from finishing local tracking.
+ */
+export async function canGenerateMoveTasks(userId: string): Promise<{ allowed: boolean; reason?: string; upgradeRequired?: boolean }> {
+  const userPlan = await getUserPlan(userId);
+
+  if (!userPlan.isActive) {
+    return {
+      allowed: false,
+      reason: userPlan.isTrialExpired
+        ? "Your free trial has expired. Please upgrade to generate new move tasks."
+        : "Your subscription is not active. Please upgrade to generate new move tasks.",
+      upgradeRequired: true,
+    };
+  }
+
+  return { allowed: true };
+}
+
+export async function canCreateCustomProvider(userId: string): Promise<{ allowed: boolean; reason?: string; upgradeRequired?: boolean }> {
+  const userPlan = await getUserPlan(userId);
+
+  if (!userPlan.isActive) {
+    return {
+      allowed: false,
+      reason: userPlan.isTrialExpired
+        ? "Your free trial has expired. Please upgrade to add new custom providers."
+        : "Your subscription is not active. Please upgrade to add new custom providers.",
+      upgradeRequired: true,
+    };
+  }
+
+  return { allowed: true };
+}
