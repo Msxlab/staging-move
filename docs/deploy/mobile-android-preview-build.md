@@ -1,6 +1,6 @@
 # Mobile Android Preview Build
 
-Goal: build an internal Android APK that talks to the Vercel staging API and supports real-device QA for the current product.
+Goal: build an internal Android APK that talks to the current DigitalOcean App Platform staging API and supports real-device QA for the current product.
 
 This does not prove iOS readiness and does not add mobile product features.
 
@@ -12,23 +12,23 @@ This does not prove iOS readiness and does not add mobile product features.
 - Android version code: `1`
 - iOS build number: `1`
 - EAS profile for staging device QA: `staging-preview`
-- Staging API URL in `staging-preview`: `https://locateflow-web-staging.vercel.app/api`
+- Staging API URL in `staging-preview`: `https://locateflow-staging-owew7.ondigitalocean.app/api`
 
-The existing `preview` profile is left intact. Use `staging-preview` for QA against Vercel staging.
+The existing `preview` profile is left intact. Use `staging-preview` for QA against DigitalOcean staging.
 
 ## Staging API Protection Decision
 
-Mobile device requests will fail if the entire web/API staging deployment is protected by Vercel Authentication and the app cannot send a Vercel bypass token.
+Mobile device requests will fail if the entire web/API staging deployment is protected by a platform-level gate that the app cannot satisfy.
 
 Recommended safe option:
 
-1. Keep `locateflow-admin-staging` protected by Vercel Deployment Protection and admin login.
-2. For mobile QA, expose `locateflow-web-staging` API behind app-level auth, rate limits, staging DB, and non-production data only.
+1. Keep admin staging protected by platform access controls and admin login.
+2. For mobile QA, expose the staging web/API service behind app-level auth, rate limits, staging DB, and non-production data only.
 3. Keep public web staging pages protected if possible, but do not block `/api/*` calls required by mobile unless a safe bypass is implemented.
 
-Alternative if full Vercel protection is required:
+Alternative if full platform protection is required:
 
-- Use Vercel Protection Bypass for Automation only for controlled testing.
+- Use a platform-provided protection bypass only for controlled testing.
 - Do not hardcode the bypass secret into the mobile app.
 - Prefer a short-lived test proxy or controlled QA network path rather than shipping the bypass token in an APK.
 
@@ -85,7 +85,7 @@ Expected result:
 
 - APK build completes.
 - APK installs on a real Android device or emulator.
-- API calls go to `https://locateflow-web-staging.vercel.app/api`.
+- API calls go to `https://locateflow-staging-owew7.ondigitalocean.app/api`.
 - Login, onboarding, provider list/detail, custom provider create/edit/delete, moving plan, move task lifecycle, settings, support, and logout smoke pass.
 
 ## Exact Missing Prerequisites In This Workspace

@@ -226,6 +226,10 @@ export function appleAuthorizeUrl(opts: {
   return `https://appleid.apple.com/auth/authorize?${params.toString()}`;
 }
 
+export function isAppleEmailVerifiedClaim(value: boolean | string | null | undefined): boolean {
+  return value === true || value === "true";
+}
+
 /**
  * Apple requires a short-lived client_secret JWT signed with the developer's
  * private key (ES256). Generated per token exchange.

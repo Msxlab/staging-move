@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { syncSuggestedMoveTasks } from "@/lib/move-task-generation";
+import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 
 export interface MoveTaskSyncSummary {
   attemptedPlans: number;
@@ -51,7 +52,7 @@ export async function syncMoveTasksForAddress(
     where: {
       userId,
       deletedAt: null,
-      status: { notIn: ["COMPLETED", "CANCELED"] },
+      status: { notIn: ["COMPLETED", ...CANCELED_MOVING_PLAN_STATUSES] },
       OR: [{ fromAddressId: addressId }, { toAddressId: addressId }],
     },
     select: { id: true },

@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Truck, Trash2, MapPin, C
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const STATUS_BADGE_CLASSES: Record<string, { cls: string }> = {
   PLANNING: { cls: "bg-white/5 text-white/40 border-white/10" },
@@ -129,13 +130,16 @@ export default function MovingPlanDetailPage() {
     fetch(`/api/moving/${id}`)
       .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
       .then((data) => {
-        setPlan(data.plan);
-        if (data.plan && (data.plan.status === "PLANNING" || data.plan.status === "IN_PROGRESS")) {
-          void fetchMigration(data.plan.id);
-          void fetchMoveTasks(data.plan.id);
+        const normalizedPlan = data.plan
+          ? { ...data.plan, status: normalizeMovingPlanStatus(data.plan.status) }
+          : null;
+        setPlan(normalizedPlan);
+        if (normalizedPlan && (normalizedPlan.status === "PLANNING" || normalizedPlan.status === "IN_PROGRESS")) {
+          void fetchMigration(normalizedPlan.id);
+          void fetchMoveTasks(normalizedPlan.id);
         }
-        if (data.plan?.toAddress?.state) {
-          fetch(`/api/state-rules?state=${encodeURIComponent(data.plan.toAddress.state)}`)
+        if (normalizedPlan?.toAddress?.state) {
+          fetch(`/api/state-rules?state=${encodeURIComponent(normalizedPlan.toAddress.state)}`)
             .then((r) => r.ok ? r.json() : null)
             .then((d) => { if (d?.rules?.length) setStateRules(d.rules[0]); })
             .catch(() => {});

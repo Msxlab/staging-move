@@ -25,6 +25,7 @@ import {
   readPendingLegalConsentsFromSession,
 } from "@/lib/legal";
 import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
+import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/shared-address-autocomplete";
 
 const STEPS = [
@@ -200,7 +201,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...profile, legalConsents: acceptedLegalConsents }),
+        body: JSON.stringify(buildOnboardingProfilePayload(profile, acceptedLegalConsents)),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

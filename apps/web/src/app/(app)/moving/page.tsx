@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getTranslations, getLocale } from "next-intl/server";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,8 @@ export default async function MovingPage() {
       ) : (
         <div className="space-y-4">
           {plans.map((plan: any) => {
-            const status = statusBadge[plan.status] || statusBadge.PLANNING;
+            const normalizedStatus = normalizeMovingPlanStatus(plan.status);
+            const status = statusBadge[normalizedStatus] || statusBadge.PLANNING;
             const fromLabel = plan.fromAddress ? plan.fromAddress.street.split(",")[0] : t("fromAddress");
             const toLabel = plan.toAddress ? plan.toAddress.street.split(",")[0] : t("toAddress");
             const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -80,7 +82,7 @@ export default async function MovingPage() {
                       {status.label}
                     </span>
                   </div>
-                  {plan.status === "IN_PROGRESS" && daysUntil > 0 && (
+                  {normalizedStatus === "IN_PROGRESS" && daysUntil > 0 && (
                     <p className="text-xs text-orange-400 font-medium">{t("daysUntilMove", { days: daysUntil })}</p>
                   )}
                 </div>
