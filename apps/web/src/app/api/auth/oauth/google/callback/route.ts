@@ -3,7 +3,6 @@ import { jwtVerify, createRemoteJWKSet } from "jose";
 import {
   exchangeGoogleCode,
   getGoogleOAuthCredentials,
-  getRuntimeBaseUrl,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
@@ -41,7 +40,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/sign-in?error=state-mismatch", request.url));
   }
 
-  const redirectUri = `${await getRuntimeBaseUrl()}/api/auth/oauth/google/callback`;
+  const redirectUri = `${request.nextUrl.origin}/api/auth/oauth/google/callback`;
   const tokens = await exchangeGoogleCode({
     code, clientId, clientSecret, redirectUri, pkceVerifier,
   });

@@ -4,7 +4,6 @@ import {
   generateState,
   generatePkce,
   getGoogleOAuthCredentials,
-  getRuntimeBaseUrl,
 } from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   const state = generateState();
   const pkce = generatePkce();
-  const redirectUri = `${await getRuntimeBaseUrl()}/api/auth/oauth/google/callback`;
+  const redirectUri = `${request.nextUrl.origin}/api/auth/oauth/google/callback`;
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
   const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";

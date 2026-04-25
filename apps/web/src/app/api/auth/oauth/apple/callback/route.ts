@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
-import { exchangeAppleCode, getAppleOAuthCredentials, getRuntimeBaseUrl } from "@/lib/oauth";
+import { exchangeAppleCode, getAppleOAuthCredentials } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
 import {
   OAUTH_LEGAL_ACCEPTANCE_COOKIE,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
   const tokens = await exchangeAppleCode({
     code,
-    redirectUri: `${await getRuntimeBaseUrl()}/api/auth/oauth/apple/callback`,
+    redirectUri: `${request.nextUrl.origin}/api/auth/oauth/apple/callback`,
     clientId, teamId, keyId, privateKeyPem,
   });
   if (!tokens?.idToken) {
