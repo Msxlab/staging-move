@@ -5,6 +5,7 @@
 
 import { randomBytes, createHash, createPrivateKey } from "crypto";
 import { SignJWT } from "jose";
+import type { NextRequest } from "next/server";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 // ── State + PKCE ──────────────────────────────────────────────
@@ -26,6 +27,58 @@ export function getBaseUrl(): string {
 export async function getRuntimeBaseUrl(): Promise<string> {
   const value = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL");
   return (value || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+}
+
+function firstHeaderValue(value: string | null): string | null {
+  return value?.split(",")[0]?.trim() || null;
+}
+
+function isInternalHost(host: string): boolean {
+  const normalized = host.toLowerCase();
+  return (
+    normalized === "localhost" ||
+    normalized.startsWith("localhost:") ||
+    normalized === "127.0.0.1" ||
+    normalized.startsWith("127.0.0.1:") ||
+    normalized === "0.0.0.0" ||
+    normalized.startsWith("0.0.0.0:") ||
+    normalized === "[::1]" ||
+    normalized.startsWith("[::1]:")
+  );
+}
+
+function originFromHost(host: string | null, proto: string | null): string | null {
+  if (!host || isInternalHost(host)) return null;
+  const scheme = proto === "http" ? "http" : "https";
+  return `${scheme}://${host}`.replace(/\/+$/, "");
+}
+
+export async function getOAuthRedirectUri(request: NextRequest, callbackPath: string): Promise<string> {
+  const forwardedProto = firstHeaderValue(request.headers.get("x-forwarded-proto"));
+  const forwardedHost =
+    firstHeaderValue(request.headers.get("x-forwarded-host")) ||
+    firstHeaderValue(request.headers.get("x-original-host"));
+  const forwardedOrigin = originFromHost(forwardedHost, forwardedProto);
+  if (forwardedOrigin) return `${forwardedOrigin}${callbackPath}`;
+
+  const hostOrigin = originFromHost(
+    firstHeaderValue(request.headers.get("host")),
+    forwardedProto || request.nextUrl.protocol.replace(":", ""),
+  );
+  if (hostOrigin) return `${hostOrigin}${callbackPath}`;
+
+  try {
+    const referer = request.headers.get("referer");
+    if (referer) {
+      const origin = new URL(referer).origin;
+      if (!isInternalHost(new URL(origin).host)) return `${origin}${callbackPath}`;
+    }
+  } catch {
+    // Ignore malformed referers and fall back to runtime config.
+  }
+
+  const runtimeOrigin = await getRuntimeBaseUrl();
+  return `${runtimeOrigin}${callbackPath}`;
 }
 
 export async function getGoogleOAuthCredentials() {

@@ -3,6 +3,7 @@ import { jwtVerify, createRemoteJWKSet } from "jose";
 import {
   exchangeGoogleCode,
   getGoogleOAuthCredentials,
+  getOAuthRedirectUri,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
@@ -34,13 +35,14 @@ export async function GET(request: NextRequest) {
 
   const cookieState = request.cookies.get("oauth_state_google")?.value;
   const pkceVerifier = request.cookies.get("oauth_pkce_google")?.value;
+  const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_google")?.value;
   const redirectPath = request.cookies.get("oauth_redirect")?.value || "/dashboard";
   const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || !pkceVerifier || cookieState !== state) {
     return NextResponse.redirect(new URL("/sign-in?error=state-mismatch", request.url));
   }
 
-  const redirectUri = `${request.nextUrl.origin}/api/auth/oauth/google/callback`;
+  const redirectUri = cookieRedirectUri || await getOAuthRedirectUri(request, "/api/auth/oauth/google/callback");
   const tokens = await exchangeGoogleCode({
     code, clientId, clientSecret, redirectUri, pkceVerifier,
   });
@@ -81,6 +83,7 @@ export async function GET(request: NextRequest) {
       const response = NextResponse.redirect(new URL("/sign-up?error=legal-acceptance-required", request.url));
       response.cookies.delete("oauth_state_google");
       response.cookies.delete("oauth_pkce_google");
+      response.cookies.delete("oauth_redirect_uri_google");
       response.cookies.delete("oauth_redirect");
       response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
       return response;
@@ -107,6 +110,7 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(new URL(redirectPath, request.url));
   response.cookies.delete("oauth_state_google");
   response.cookies.delete("oauth_pkce_google");
+  response.cookies.delete("oauth_redirect_uri_google");
   response.cookies.delete("oauth_redirect");
   response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
