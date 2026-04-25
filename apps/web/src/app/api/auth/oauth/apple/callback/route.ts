@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
-import { exchangeAppleCode, getAppleOAuthCredentials, getOAuthRedirectUri } from "@/lib/oauth";
+import {
+  exchangeAppleCode,
+  getAppleOAuthCredentials,
+  getOAuthRedirectUri,
+  getOAuthResponseUrl,
+  normalizeOAuthRedirectPath,
+} from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
 import {
   OAUTH_LEGAL_ACCEPTANCE_COOKIE,
@@ -31,27 +37,27 @@ async function readFormField(request: NextRequest, field: string): Promise<strin
 export async function POST(request: NextRequest) {
   const { clientId, teamId, keyId, privateKeyPem } = await getAppleOAuthCredentials();
   if (!clientId || !teamId || !keyId || !privateKeyPem) {
-    return NextResponse.redirect(new URL("/sign-in?error=apple-not-configured", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-not-configured"));
   }
 
   // form_post can only be consumed once — clone so we can read multiple fields.
   const fd = await request.formData().catch(() => null);
-  if (!fd) return NextResponse.redirect(new URL("/sign-in?error=apple-bad-body", request.url));
+  if (!fd) return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-bad-body"));
 
   const code = fd.get("code");
   const state = fd.get("state");
   const userField = fd.get("user"); // only present on first sign-in
 
   if (typeof code !== "string" || typeof state !== "string") {
-    return NextResponse.redirect(new URL("/sign-in?error=apple-missing-fields", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-missing-fields"));
   }
 
   const cookieState = request.cookies.get("oauth_state_apple")?.value;
   const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_apple")?.value;
-  const redirectPath = request.cookies.get("oauth_redirect")?.value || "/dashboard";
+  const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
   const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || cookieState !== state) {
-    return NextResponse.redirect(new URL("/sign-in?error=state-mismatch", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=state-mismatch"));
   }
 
   const tokens = await exchangeAppleCode({
@@ -60,7 +66,7 @@ export async function POST(request: NextRequest) {
     clientId, teamId, keyId, privateKeyPem,
   });
   if (!tokens?.idToken) {
-    return NextResponse.redirect(new URL("/sign-in?error=token-exchange-failed", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=token-exchange-failed"));
   }
 
   let payload: { sub: string; email?: string; email_verified?: boolean | string };
@@ -72,13 +78,13 @@ export async function POST(request: NextRequest) {
     payload = verified as any;
   } catch (err) {
     console.error("[OAUTH] apple id_token verify failed:", err);
-    return NextResponse.redirect(new URL("/sign-in?error=invalid-token", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=invalid-token"));
   }
 
   if (!payload.email) {
     // Apple may withhold email if user chose "Hide My Email" and we don't have
     // the private-relay mapping. For MVP, require a real email.
-    return NextResponse.redirect(new URL("/sign-in?error=apple-no-email", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-no-email"));
   }
 
   // First-login name info.
@@ -106,7 +112,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
-      const response = NextResponse.redirect(new URL("/sign-up?error=legal-acceptance-required", request.url));
+      const response = NextResponse.redirect(
+        await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-required"),
+      );
       response.cookies.delete("oauth_state_apple");
       response.cookies.delete("oauth_redirect_uri_apple");
       response.cookies.delete("oauth_redirect");
@@ -132,7 +140,7 @@ export async function POST(request: NextRequest) {
     userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
   });
 
-  const response = NextResponse.redirect(new URL(redirectPath, request.url));
+  const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
   response.cookies.delete("oauth_state_apple");
   response.cookies.delete("oauth_redirect_uri_apple");
   response.cookies.delete("oauth_redirect");

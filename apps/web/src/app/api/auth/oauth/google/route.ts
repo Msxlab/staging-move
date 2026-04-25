@@ -5,6 +5,7 @@ import {
   generatePkce,
   getGoogleOAuthCredentials,
   getOAuthRedirectUri,
+  normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
@@ -31,8 +32,7 @@ export async function GET(request: NextRequest) {
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
   const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
-  // Only allow same-site relative redirects.
-  const safeRedirect = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/dashboard";
+  const safeRedirect = normalizeOAuthRedirectPath(rawRedirect);
 
   const url = googleAuthorizeUrl({
     clientId,
