@@ -120,19 +120,19 @@ function SignInForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 space-y-6">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card/85 p-8 shadow-lg backdrop-blur-xl space-y-6">
         <div className="space-y-3 text-center">
           <div className="flex justify-center">
             <Wordmark href="/" animated={false} />
           </div>
           <div className="space-y-1.5">
-            <h1 className="text-2xl font-bold text-white">{tCommon("signIn")}</h1>
-            <p className="text-sm text-white/50">Sign in to your LocateFlow account.</p>
+            <h1 className="text-2xl font-bold text-foreground">{tCommon("signIn")}</h1>
+            <p className="text-sm text-muted-foreground">Sign in to your LocateFlow account.</p>
           </div>
         </div>
 
         {error && (
-          <div className="flex gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <div className="flex gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
@@ -143,8 +143,9 @@ function SignInForm() {
             <button
               type="button"
               aria-disabled={googleUnavailable}
+              disabled={googleUnavailable}
               onClick={startGoogleOAuth}
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition aria-disabled:opacity-60"
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-border bg-background hover:bg-muted px-4 py-2.5 text-sm font-medium text-foreground transition disabled:cursor-not-allowed disabled:opacity-60"
             >
               {/* Google G logo */}
               <svg className="h-4 w-4" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -158,8 +159,9 @@ function SignInForm() {
             <button
               type="button"
               aria-disabled={appleUnavailable}
+              disabled={appleUnavailable}
               onClick={startAppleOAuth}
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-black hover:bg-black/80 px-4 py-2.5 text-sm font-medium text-white transition aria-disabled:opacity-60"
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-border bg-foreground hover:bg-foreground/90 px-4 py-2.5 text-sm font-medium text-background transition disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
@@ -168,15 +170,15 @@ function SignInForm() {
             </button>
 
             {showOAuthReadinessNote && (
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+              <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-xs text-foreground">
                 Password sign-in is available now. Social sign-in will be enabled after admin OAuth credentials are added.
               </div>
             )}
 
             <div className="flex items-center gap-3 py-1">
-              <div className="flex-1 h-px bg-white/10" />
-              <span className="text-[11px] uppercase tracking-wider text-white/30">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
-              <div className="flex-1 h-px bg-white/10" />
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{tAuth("orContinueWith").replace(/.*\s/, "")}</span>
+              <div className="flex-1 h-px bg-border" />
             </div>
           </div>
         )}
@@ -185,21 +187,21 @@ function SignInForm() {
           {!requiresMfa && (
             <>
               <div>
-                <label htmlFor="email" className="text-xs font-medium text-white/60 block mb-1">{tAuth("email")}</label>
+                <label htmlFor="email" className="text-xs font-medium text-muted-foreground block mb-1">{tAuth("email")}</label>
                 <input
                   id="email" type="email" required autoComplete="email"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   value={email} onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="password" className="text-xs font-medium text-white/60">{tAuth("password")}</label>
-                  <Link href="/forgot-password" className="text-xs text-orange-400 hover:underline">{tAuth("forgotPassword")}</Link>
+                  <label htmlFor="password" className="text-xs font-medium text-muted-foreground">{tAuth("password")}</label>
+                  <Link href="/forgot-password" className="text-xs text-primary hover:underline">{tAuth("forgotPassword")}</Link>
                 </div>
                 <input
                   id="password" type="password" required autoComplete="current-password"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   value={password} onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
@@ -208,17 +210,17 @@ function SignInForm() {
 
           {requiresMfa && (
             <div>
-              <label htmlFor="mfaCode" className="text-xs font-medium text-white/60 block mb-1">
+              <label htmlFor="mfaCode" className="text-xs font-medium text-muted-foreground block mb-1">
                 {tAuth("mfaCode")}
               </label>
               <input
                 id="mfaCode" type="text" inputMode="numeric" maxLength={6} required autoComplete="one-time-code"
                 placeholder="123456"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 font-mono text-center tracking-[0.4em]"
+                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring font-mono text-center tracking-[0.4em]"
                 value={mfaCode} onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ""))}
                 autoFocus
               />
-              <p className="text-[11px] text-white/40 mt-1.5">
+              <p className="text-[11px] text-muted-foreground mt-1.5">
                 {tAuth("mfaRequired_subtitle")}
               </p>
             </div>
@@ -226,7 +228,7 @@ function SignInForm() {
 
           <button
             type="submit" disabled={loading}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary/90 px-4 py-2.5 text-sm font-semibold text-primary-foreground transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {requiresMfa ? tCommon("confirm") : tCommon("signIn")}
@@ -234,17 +236,17 @@ function SignInForm() {
         </form>
 
         {!requiresMfa && (
-          <p className="text-center text-xs text-white/40">
+          <p className="text-center text-xs text-muted-foreground">
             {tAuth("noAccount")}{" "}
-            <Link href="/sign-up" className="text-orange-400 hover:underline">{tCommon("signUp")}</Link>
+            <Link href="/sign-up" className="text-primary hover:underline">{tCommon("signUp")}</Link>
           </p>
         )}
 
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-white/35">
-          <Link href="/terms" className="underline hover:text-white/60">{tCommon("terms")}</Link>
-          <Link href="/privacy" className="underline hover:text-white/60">{tCommon("privacy")}</Link>
-          <Link href="/disclaimer" className="underline hover:text-white/60">Legal Disclaimer</Link>
-          <Link href="/contact" className="underline hover:text-white/60">Support</Link>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+          <Link href="/terms" className="underline hover:text-primary">{tCommon("terms")}</Link>
+          <Link href="/privacy" className="underline hover:text-primary">{tCommon("privacy")}</Link>
+          <Link href="/disclaimer" className="underline hover:text-primary">Legal Disclaimer</Link>
+          <Link href="/contact" className="underline hover:text-primary">Support</Link>
         </div>
       </div>
     </div>
