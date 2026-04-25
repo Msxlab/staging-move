@@ -19,6 +19,19 @@ function resolveStoredValue(entry: RuntimeConfigEntryRecord | null | undefined) 
   return entry.valuePlain;
 }
 
+function normalizeConfigValue(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim() || null;
+  }
+  return trimmed;
+}
+
 export async function getRuntimeConfigValue(key: string): Promise<string | null> {
   const definition = getRuntimeConfigDefinition(key);
   const entry = await prisma.runtimeConfigEntry.findUnique({
@@ -33,14 +46,14 @@ export async function getRuntimeConfigValue(key: string): Promise<string | null>
     },
   }).catch(() => null as RuntimeConfigEntryRecord | null);
 
-  const storedValue = resolveStoredValue(entry);
+  const storedValue = normalizeConfigValue(resolveStoredValue(entry));
   if (storedValue) return storedValue;
 
-  const envValue = process.env[key];
+  const envValue = normalizeConfigValue(process.env[key]);
   if (envValue) return envValue;
 
   if (definition?.key === "GOOGLE_MAPS_API_KEY") {
-    return process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
+    return normalizeConfigValue(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
   }
 
   return null;

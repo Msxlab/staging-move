@@ -3,7 +3,6 @@ import {
   appleAuthorizeUrl,
   generateState,
   getAppleOAuthCredentials,
-  getRuntimeBaseUrl,
 } from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   const state = generateState();
-  const redirectUri = `${await getRuntimeBaseUrl()}/api/auth/oauth/apple/callback`;
+  const redirectUri = `${request.nextUrl.origin}/api/auth/oauth/apple/callback`;
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
   const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
