@@ -4,8 +4,6 @@ import {
   exchangeGoogleCode,
   getGoogleOAuthCredentials,
   getOAuthRedirectUri,
-  getOAuthResponseUrl,
-  normalizeOAuthRedirectPath,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
@@ -40,7 +38,7 @@ export async function GET(request: NextRequest) {
   const cookieState = request.cookies.get("oauth_state_google")?.value;
   const pkceVerifier = request.cookies.get("oauth_pkce_google")?.value;
   const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_google")?.value;
-  const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
+  const redirectPath = request.cookies.get("oauth_redirect")?.value || "/dashboard";
   const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || !pkceVerifier || cookieState !== state) {
     return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=state-mismatch"));

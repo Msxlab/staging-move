@@ -5,7 +5,6 @@ import {
   generatePkce,
   getGoogleOAuthCredentials,
   getOAuthRedirectUri,
-  normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 

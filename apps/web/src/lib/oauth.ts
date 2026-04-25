@@ -53,49 +53,32 @@ function originFromHost(host: string | null, proto: string | null): string | nul
   return `${scheme}://${host}`.replace(/\/+$/, "");
 }
 
-export async function getOAuthRequestOrigin(request: NextRequest): Promise<string> {
+export async function getOAuthRedirectUri(request: NextRequest, callbackPath: string): Promise<string> {
   const forwardedProto = firstHeaderValue(request.headers.get("x-forwarded-proto"));
   const forwardedHost =
     firstHeaderValue(request.headers.get("x-forwarded-host")) ||
     firstHeaderValue(request.headers.get("x-original-host"));
   const forwardedOrigin = originFromHost(forwardedHost, forwardedProto);
-  if (forwardedOrigin) return forwardedOrigin;
+  if (forwardedOrigin) return `${forwardedOrigin}${callbackPath}`;
 
   const hostOrigin = originFromHost(
     firstHeaderValue(request.headers.get("host")),
     forwardedProto || request.nextUrl.protocol.replace(":", ""),
   );
-  if (hostOrigin) return hostOrigin;
+  if (hostOrigin) return `${hostOrigin}${callbackPath}`;
 
   try {
     const referer = request.headers.get("referer");
     if (referer) {
       const origin = new URL(referer).origin;
-      if (!isInternalHost(new URL(origin).host)) return origin;
+      if (!isInternalHost(new URL(origin).host)) return `${origin}${callbackPath}`;
     }
   } catch {
     // Ignore malformed referers and fall back to runtime config.
   }
 
-  return getRuntimeBaseUrl();
-}
-
-export async function getOAuthRedirectUri(request: NextRequest, callbackPath: string): Promise<string> {
-  const origin = await getOAuthRequestOrigin(request);
-  return `${origin}${callbackPath}`;
-}
-
-export async function getOAuthResponseUrl(request: NextRequest, path: string): Promise<URL> {
-  const origin = await getOAuthRequestOrigin(request);
-  return new URL(path, origin);
-}
-
-export function normalizeOAuthRedirectPath(
-  value: string | null | undefined,
-  fallback = "/dashboard",
-): string {
-  const path = value || fallback;
-  return path.startsWith("/") && !path.startsWith("//") ? path : fallback;
+  const runtimeOrigin = await getRuntimeBaseUrl();
+  return `${runtimeOrigin}${callbackPath}`;
 }
 
 export async function getGoogleOAuthCredentials() {

@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
-import {
-  exchangeAppleCode,
-  getAppleOAuthCredentials,
-  getOAuthRedirectUri,
-  getOAuthResponseUrl,
-  normalizeOAuthRedirectPath,
-} from "@/lib/oauth";
+import { exchangeAppleCode, getAppleOAuthCredentials, getOAuthRedirectUri } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
 import {
   OAUTH_LEGAL_ACCEPTANCE_COOKIE,
@@ -54,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   const cookieState = request.cookies.get("oauth_state_apple")?.value;
   const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_apple")?.value;
-  const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
+  const redirectPath = request.cookies.get("oauth_redirect")?.value || "/dashboard";
   const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || cookieState !== state) {
     return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=state-mismatch"));
