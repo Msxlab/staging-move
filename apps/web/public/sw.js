@@ -1,6 +1,6 @@
-const CACHE_NAME = "locateflow-v2";
-const STATIC_CACHE = "locateflow-static-v2";
-const DYNAMIC_CACHE = "locateflow-dynamic-v2";
+const CACHE_NAME = "locateflow-v3";
+const STATIC_CACHE = "locateflow-static-v3";
+const DYNAMIC_CACHE = "locateflow-dynamic-v3";
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -9,7 +9,7 @@ const STATIC_ASSETS = [
   "/icons/icon-512.png",
 ];
 
-const CACHED_PAGES = [
+const AUTHENTICATED_NAV_PREFIXES = [
   "/dashboard",
   "/addresses",
   "/services",
@@ -17,7 +17,11 @@ const CACHED_PAGES = [
   "/budget",
   "/documents",
   "/community",
+  "/providers",
+  "/notifications",
+  "/support",
   "/settings",
+  "/onboarding",
 ];
 
 self.addEventListener("install", (event) => {
@@ -47,6 +51,14 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/_next/")) return;
+
+  if (
+    request.mode === "navigate" &&
+    AUTHENTICATED_NAV_PREFIXES.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`))
+  ) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   // Static assets: cache-first
   if (STATIC_ASSETS.some((a) => url.pathname === a) || url.pathname.match(/\.(png|jpg|svg|ico|woff2?)$/)) {
