@@ -154,15 +154,16 @@ export async function POST(request: NextRequest) {
     if (mfaCode) {
       mfaValid = verifyTOTP(secret, mfaCode);
     } else if (backupCode) {
-      const storedHashes: string[] = user.mfaBackupCodes ? JSON.parse(user.mfaBackupCodes) : [];
+      const originalBackupCodes = user.mfaBackupCodes || "[]";
+      const storedHashes: string[] = JSON.parse(originalBackupCodes);
       const matchIndex = await verifyBackupCode(backupCode, storedHashes);
       if (matchIndex >= 0) {
-        mfaValid = true;
         storedHashes.splice(matchIndex, 1);
-        await prisma.user.update({
-          where: { id: user.id },
+        const consumed = await prisma.user.updateMany({
+          where: { id: user.id, mfaBackupCodes: originalBackupCodes },
           data: { mfaBackupCodes: JSON.stringify(storedHashes) },
         });
+        mfaValid = consumed.count === 1;
       }
     }
 
