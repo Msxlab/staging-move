@@ -41,4 +41,47 @@ describe("buildOnboardingProfilePayload", () => {
     expect(payload).not.toHaveProperty("sensitiveOptIn");
     expect(profileSchema.safeParse(payload).success).toBe(true);
   });
+
+  it("strips browser-only legal metadata before profile POST", () => {
+    const payload = buildOnboardingProfilePayload(
+      {
+        firstName: "Taylor",
+        lastName: "Mover",
+        ageRange: "",
+        familyStatus: "SINGLE",
+        hasChildren: false,
+        childrenCount: 0,
+        hasPets: false,
+        petTypes: [],
+        carCount: 0,
+        hasSenior: false,
+        hasDisability: false,
+        needsStorage: false,
+        hasMotorcycle: false,
+        hasBoatRV: false,
+      },
+      {
+        ...createAcceptedLegalConsents({
+          termsVersion: "2026-03-13",
+          disclaimerVersion: "2026-03-13",
+          acceptedAt: "2026-04-25T12:00:00.000Z",
+        }),
+        source: "browser",
+        ipAddress: "203.0.113.1",
+        userAgent: "Browser UA",
+      } as any,
+    );
+
+    expect(payload.legalConsents).toEqual({
+      termsAccepted: true,
+      disclaimerAccepted: true,
+      termsVersion: "2026-03-13",
+      disclaimerVersion: "2026-03-13",
+      acceptedAt: "2026-04-25T12:00:00.000Z",
+    });
+    expect(payload.legalConsents).not.toHaveProperty("source");
+    expect(payload.legalConsents).not.toHaveProperty("ipAddress");
+    expect(payload.legalConsents).not.toHaveProperty("userAgent");
+    expect(profileSchema.safeParse(payload).success).toBe(true);
+  });
 });

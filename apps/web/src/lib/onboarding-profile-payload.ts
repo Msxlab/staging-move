@@ -19,7 +19,7 @@ export interface OnboardingProfileState {
 
 export function buildOnboardingProfilePayload(
   profile: OnboardingProfileState,
-  legalConsents: LegalConsentState,
+  legalConsents: Partial<LegalConsentState>,
 ) {
   return {
     firstName: profile.firstName,
@@ -36,6 +36,24 @@ export function buildOnboardingProfilePayload(
     needsStorage: profile.needsStorage,
     hasMotorcycle: profile.hasMotorcycle,
     hasBoatRV: profile.hasBoatRV,
-    legalConsents,
+    legalConsents: sanitizeProfileLegalConsents(legalConsents),
+  };
+}
+
+function sanitizeProfileLegalConsents(
+  legalConsents: Partial<LegalConsentState>,
+) {
+  return {
+    termsAccepted: Boolean(legalConsents.termsAccepted),
+    disclaimerAccepted: Boolean(legalConsents.disclaimerAccepted),
+    ...(typeof legalConsents.termsVersion === "string"
+      ? { termsVersion: legalConsents.termsVersion }
+      : {}),
+    ...(typeof legalConsents.disclaimerVersion === "string"
+      ? { disclaimerVersion: legalConsents.disclaimerVersion }
+      : {}),
+    ...(typeof legalConsents.acceptedAt === "string"
+      ? { acceptedAt: legalConsents.acceptedAt }
+      : {}),
   };
 }
