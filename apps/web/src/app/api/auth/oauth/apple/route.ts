@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { appleAuthorizeUrl, generateState, getRuntimeBaseUrl } from "@/lib/oauth";
+import {
+  appleAuthorizeUrl,
+  generateState,
+  getAppleOAuthCredentials,
+  getRuntimeBaseUrl,
+} from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
@@ -9,7 +14,7 @@ export const runtime = "nodejs";
  * Apple posts back to the callback with form_post; state is checked via cookie.
  */
 export async function GET(request: NextRequest) {
-  const clientId = process.env.APPLE_OAUTH_CLIENT_ID;
+  const { clientId } = await getAppleOAuthCredentials();
   if (!clientId) {
     return NextResponse.json({ error: "Apple sign-in is not configured." }, { status: 503 });
   }

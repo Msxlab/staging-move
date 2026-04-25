@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
-import { exchangeAppleCode, getRuntimeBaseUrl } from "@/lib/oauth";
+import { exchangeAppleCode, getAppleOAuthCredentials, getRuntimeBaseUrl } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
 import {
   OAUTH_LEGAL_ACCEPTANCE_COOKIE,
@@ -29,10 +29,7 @@ async function readFormField(request: NextRequest, field: string): Promise<strin
 }
 
 export async function POST(request: NextRequest) {
-  const clientId = process.env.APPLE_OAUTH_CLIENT_ID;
-  const teamId = process.env.APPLE_OAUTH_TEAM_ID;
-  const keyId = process.env.APPLE_OAUTH_KEY_ID;
-  const privateKeyPem = process.env.APPLE_OAUTH_PRIVATE_KEY;
+  const { clientId, teamId, keyId, privateKeyPem } = await getAppleOAuthCredentials();
   if (!clientId || !teamId || !keyId || !privateKeyPem) {
     return NextResponse.redirect(new URL("/sign-in?error=apple-not-configured", request.url));
   }

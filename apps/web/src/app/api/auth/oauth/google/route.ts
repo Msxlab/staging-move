@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { googleAuthorizeUrl, generateState, generatePkce, getRuntimeBaseUrl } from "@/lib/oauth";
+import {
+  googleAuthorizeUrl,
+  generateState,
+  generatePkce,
+  getGoogleOAuthCredentials,
+  getRuntimeBaseUrl,
+} from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
@@ -14,8 +20,7 @@ export const runtime = "nodejs";
  * specific after successful login.
  */
 export async function GET(request: NextRequest) {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const { clientId, clientSecret } = await getGoogleOAuthCredentials();
   if (!clientId || !clientSecret) {
     return NextResponse.json({ error: "Google sign-in is not configured." }, { status: 503 });
   }

@@ -28,6 +28,24 @@ export async function getRuntimeBaseUrl(): Promise<string> {
   return (value || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
 }
 
+export async function getGoogleOAuthCredentials() {
+  const [clientId, clientSecret] = await Promise.all([
+    getRuntimeConfigValue("GOOGLE_OAUTH_CLIENT_ID"),
+    getRuntimeConfigValue("GOOGLE_OAUTH_CLIENT_SECRET"),
+  ]);
+  return { clientId, clientSecret };
+}
+
+export async function getAppleOAuthCredentials() {
+  const [clientId, teamId, keyId, privateKeyPem] = await Promise.all([
+    getRuntimeConfigValue("APPLE_OAUTH_CLIENT_ID"),
+    getRuntimeConfigValue("APPLE_OAUTH_TEAM_ID"),
+    getRuntimeConfigValue("APPLE_OAUTH_KEY_ID"),
+    getRuntimeConfigValue("APPLE_OAUTH_PRIVATE_KEY"),
+  ]);
+  return { clientId, teamId, keyId, privateKeyPem };
+}
+
 // ── Google ─────────────────────────────────────────────────────
 
 export interface GoogleIdTokenPayload {
