@@ -26,11 +26,11 @@ import {
   BILLING_PLAN_DEFINITIONS,
   TRIAL_DURATION_DAYS,
 } from "@locateflow/shared";
-import { LogoMark, Wordmark } from "@/components/marketing/logo";
-import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { AppStoreCTA } from "@/components/marketing/app-store-cta";
 import { MobileMockup } from "@/components/marketing/mobile-mockup";
+import { MarketingFooter } from "@/components/marketing/marketing-footer";
+import { MarketingHeader } from "@/components/marketing/marketing-header";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -68,7 +68,14 @@ export default async function LandingPage() {
   // the request config and returns a synchronous `t()`. The landing is
   // a server component so we never ship translations to the client.
   const t = await getTranslations("landing");
-  const tCommon = await getTranslations("common");
+  const tErrors = await getTranslations("errors");
+  const tPricing = await getTranslations("pricing");
+  const faqs = [
+    { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
+    { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
+    { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
+    { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
+  ];
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -99,48 +106,7 @@ export default async function LandingPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container flex h-16 items-center justify-between">
-          <Wordmark />
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t("section_features_title").split("—")[0].trim() || "Features"}
-            </Link>
-            <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {(await getTranslations("pricing"))("title").split(".")[0]}
-            </Link>
-            <Link href="/how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t("section_how_title")}
-            </Link>
-            <Link href="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              FAQ
-            </Link>
-          </nav>
-          <div className="flex items-center gap-1 md:gap-2">
-            <LandingThemeToggle />
-            {userId ? (
-              <>
-                <Link href="/dashboard" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">{(await getTranslations("nav"))("dashboard")}</Button>
-                </Link>
-                <Link href="/dashboard">
-                  <Button size="sm">{(await getTranslations("nav"))("dashboard")}</Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/sign-in" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">{tCommon("signIn")}</Button>
-                </Link>
-                <Link href="/sign-up">
-                  <Button size="sm">{t("heroCta")}</Button>
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <MarketingHeader userId={userId} />
 
       {/* Hero Section */}
       <section className="container py-20 md:py-28">
@@ -160,7 +126,7 @@ export default async function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href={primaryHref}>
               <Button size="lg" className="w-full sm:w-auto text-base px-8">
-                {userId ? (await getTranslations("errors"))("goToDashboard") : t("heroCta")}
+                {userId ? tErrors("goToDashboard") : t("heroCta")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -289,37 +255,26 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* FAQ — pulls directly from the pricing FAQ keys so the landing and
+      {/* FAQ - pulls directly from the pricing FAQ keys so the landing and
           pricing pages stay in sync when the copy is edited. */}
-      {await (async () => {
-        const tPricing = await getTranslations("pricing");
-        const faqs = [
-          { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
-          { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
-          { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
-          { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
-        ];
-        return (
-          <section id="faq" className="bg-muted/50 py-20">
-            <div className="container max-w-3xl">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold mb-4">{tPricing("faq_title")}</h2>
-              </div>
-              <div className="space-y-3">
-                {faqs.map((faq) => (
-                  <details key={faq.q} className="group rounded-xl border bg-card">
-                    <summary className="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium">
-                      {faq.q}
-                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
-                    </summary>
-                    <div className="px-6 pb-4 text-sm text-muted-foreground">{faq.a}</div>
-                  </details>
-                ))}
-              </div>
-            </div>
-          </section>
-        );
-      })()}
+      <section id="faq" className="bg-muted/50 py-20">
+        <div className="container max-w-3xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">{tPricing("faq_title")}</h2>
+          </div>
+          <div className="space-y-3">
+            {faqs.map((faq) => (
+              <details key={faq.q} className="group rounded-xl border bg-card">
+                <summary className="flex items-center justify-between cursor-pointer px-6 py-4 text-sm font-medium">
+                  {faq.q}
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="px-6 pb-4 text-sm text-muted-foreground">{faq.a}</div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Mobile App CTA */}
       <section className="container py-20 border-t">
@@ -343,7 +298,7 @@ export default async function LandingPage() {
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
-                Push reminders before auto-renew, snooze with one tap.
+                Email and in-app reminders before auto-renew, ready to check off on any device.
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
@@ -368,64 +323,14 @@ export default async function LandingPage() {
           </p>
           <Link href={primaryHref}>
             <Button size="lg" variant="secondary" className="text-base px-8">
-              {userId ? (await getTranslations("errors"))("goToDashboard") : t("heroCta")}
+              {userId ? tErrors("goToDashboard") : t("heroCta")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-12">
-        <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <LogoMark size={24} />
-                <span className="font-semibold">LocateFlow</span>
-              </div>
-              <p className="text-sm text-muted-foreground">{tCommon("tagline")}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-3">{t("section_features_title").split(" ")[0]}</h4>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="#features" className="block hover:text-foreground transition">{t("section_features_title")}</Link>
-                <Link href="#pricing" className="block hover:text-foreground transition">{(await getTranslations("pricing"))("title")}</Link>
-                <Link href="/how-it-works" className="block hover:text-foreground transition">{t("section_how_title")}</Link>
-                <Link href="/faq" className="block hover:text-foreground transition">FAQ</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-3">{tCommon("privacy")} / {tCommon("terms")}</h4>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="/privacy" className="block hover:text-foreground transition">{(await getTranslations("legal"))("privacy_title")}</Link>
-                <Link href="/terms" className="block hover:text-foreground transition">{(await getTranslations("legal"))("terms_title")}</Link>
-                <Link href="/cookie-policy" className="block hover:text-foreground transition">{(await getTranslations("legal"))("cookie_title")}</Link>
-                <Link href="/disclaimer" className="block hover:text-foreground transition">{(await getTranslations("legal"))("disclaimer_title")}</Link>
-                <Link href="/refund" className="block hover:text-foreground transition">Refund policy</Link>
-                <Link href="/acceptable-use" className="block hover:text-foreground transition">Acceptable use</Link>
-                <Link href="/dpa" className="block hover:text-foreground transition">DPA</Link>
-                <Link href="/security" className="block hover:text-foreground transition">Security</Link>
-                <Link href="/ccpa-privacy-notice" className="block hover:text-foreground transition">California privacy</Link>
-              </div>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold mb-3">{tCommon("help")}</h4>
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <Link href="/help" className="block hover:text-foreground transition">{(await getTranslations("help"))("title")}</Link>
-                <Link href="/faq" className="block hover:text-foreground transition">FAQ</Link>
-                <Link href="/contact" className="block hover:text-foreground transition">{tCommon("contact")}</Link>
-              </div>
-            </div>
-          </div>
-          <div className="border-t pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} LocateFlow. {tCommon("privacy")}.
-            </p>
-            <p className="text-xs text-muted-foreground">{t("footer_tagline")}</p>
-          </div>
-        </div>
-      </footer>
+      <MarketingFooter />
     </div>
   );
 }

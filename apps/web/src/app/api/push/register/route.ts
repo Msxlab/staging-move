@@ -5,7 +5,7 @@ import { requireDbUserId } from "@/lib/auth";
 
 const registerSchema = z.object({
   token: z.string().min(10).max(255),
-  platform: z.enum(["ios", "android"]),
+  platform: z.enum(["ios", "android", "web"]),
   deviceName: z.string().max(100).optional(),
 }).strict();
 

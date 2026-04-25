@@ -66,8 +66,8 @@ const groups: Array<{ title: string; items: Faq[] }> = [
         a: "Anything that sends you a bill or statement tied to an address. Utility (power, water, gas, internet), bank accounts, insurance, streaming, gym, HOA, alarm monitoring — all count.",
       },
       {
-        q: "Do reminders reach me by email or push?",
-        a: "Both, by default. You can turn off either in settings. Reminders fire a few days before the auto-renew window so you have time to act.",
+        q: "Do reminders reach me by email?",
+        a: "Yes. Reminders appear in the app and can be sent by email. Push delivery is not enabled until the mobile push provider integration is connected.",
       },
       {
         q: "Does the moving checklist work in every state?",

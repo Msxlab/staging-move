@@ -12,7 +12,9 @@ export interface NotificationPayload {
 
 /**
  * Send a notification via the configured channel.
- * Email uses Resend; SMS and Push are placeholders.
+ * Email uses Resend. SMS and push deliberately fail closed until provider
+ * credentials/integrations are configured so callers never get a false
+ * "sent" signal.
  */
 export async function sendNotification(payload: NotificationPayload): Promise<boolean> {
   try {
@@ -54,19 +56,23 @@ async function sendEmailNotification(payload: NotificationPayload): Promise<bool
 }
 
 async function sendSms(payload: NotificationPayload): Promise<boolean> {
-  // TODO: Replace with Twilio integration
-  // import twilio from "twilio";
-  // const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
-  // await client.messages.create({ to: userPhone, from: process.env.TWILIO_PHONE, body });
+  if (process.env.NOTIFICATION_SMS_ENABLED !== "true") {
+    console.warn(`[SMS] skipped for userId=${payload.userId}; SMS notifications are not configured.`);
+    return false;
+  }
 
-  console.log(`[SMS] To userId: ${payload.userId} | Body: ${payload.body.slice(0, 160)}`);
-  return true;
+  console.error("[SMS] NOTIFICATION_SMS_ENABLED is true, but no SMS provider is implemented.");
+  return false;
 }
 
 async function sendPush(payload: NotificationPayload): Promise<boolean> {
-  // TODO: Replace with web push or Firebase Cloud Messaging
-  console.log(`[PUSH] To userId: ${payload.userId} | Title: ${payload.subject}`);
-  return true;
+  if (process.env.NOTIFICATION_PUSH_ENABLED !== "true") {
+    console.warn(`[PUSH] skipped for userId=${payload.userId}; push notifications are not configured.`);
+    return false;
+  }
+
+  console.error("[PUSH] NOTIFICATION_PUSH_ENABLED is true, but no push provider is implemented.");
+  return false;
 }
 
 /**

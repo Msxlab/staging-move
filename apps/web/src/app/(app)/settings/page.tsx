@@ -12,7 +12,7 @@ const appSections = [
 
 const accountSections = [
   { title: "Profile", description: "Manage your personal info and preferences", icon: User, href: "/settings/profile" },
-  { title: "Notifications", description: "Configure email and push notifications", icon: Bell, href: "/settings/notifications" },
+  { title: "Notifications", description: "Configure in-app and email reminders", icon: Bell, href: "/settings/notifications" },
   { title: "Subscription", description: "Manage your plan and billing", icon: CreditCard, href: "/settings/subscription" },
   { title: "Data Export", description: "Export your data as PDF or CSV", icon: Download, href: "/settings/export" },
   { title: "Privacy & Security", description: "Password, 2FA, and data privacy", icon: Shield, href: "/settings/privacy" },
