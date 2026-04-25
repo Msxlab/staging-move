@@ -7,6 +7,11 @@ test.describe("public pages load", () => {
     await expect(page).toHaveTitle(/LocateFlow/);
   });
 
+  test("home page sign-in link routes to sign-in", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: /^sign in$/i }).first()).toHaveAttribute("href", "/sign-in");
+  });
+
   test("sign-in page shows email + password fields", async ({ page }) => {
     await page.goto("/sign-in");
     await expect(page.getByLabel(/email/i)).toBeVisible();

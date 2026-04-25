@@ -55,6 +55,10 @@ const nextConfig = {
     const csp = [
       "default-src 'self'",
       scriptSrc,
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       // Images are non-executable so a broad `https:` source is the

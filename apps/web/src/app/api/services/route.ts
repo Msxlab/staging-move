@@ -52,6 +52,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ services: decryptedServices, ...buildPaginatedResponse(decryptedServices, total, pagination) });
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Failed to fetch services:", error);
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 });
   }

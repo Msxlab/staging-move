@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { processPendingAccountDeletionRequests } from "@/lib/account-deletion";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { LEGAL_CONSENT_EVENT, ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 
 /**
  * Data retention cron endpoint.
@@ -36,7 +37,10 @@ export async function POST(request: NextRequest) {
     // Delete UserEvent records older than 90 days
     const eventCutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     const deletedEvents = await prisma.userEvent.deleteMany({
-      where: { createdAt: { lt: eventCutoff } },
+      where: {
+        createdAt: { lt: eventCutoff },
+        event: { notIn: [LEGAL_CONSENT_EVENT, ONBOARDING_COMPLETED_EVENT] },
+      },
     });
     results.userEvents = deletedEvents.count;
 

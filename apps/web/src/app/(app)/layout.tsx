@@ -20,16 +20,25 @@ async function checkOnboardingNeeded(): Promise<boolean> {
   try {
     const { requireDbUserId } = await import("@/lib/auth");
     const userId = await requireDbUserId();
-    const [profile, consentEvent, address] = await Promise.all([
+    const [profile, consentEvents, address] = await Promise.all([
       prisma.profile.findUnique({ where: { userId } }),
-      prisma.userEvent.findFirst({ where: { userId, event: LEGAL_CONSENT_EVENT } }),
+      prisma.userEvent.findMany({
+        where: { userId, event: LEGAL_CONSENT_EVENT },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
       prisma.address.findFirst({ where: { userId, deletedAt: null }, select: { id: true } }),
     ]);
-    const legalConsents = parseStoredLegalConsents(consentEvent?.metadata);
-    return !(profile && hasRequiredLegalConsents(legalConsents) && address);
+    const hasLegalConsents = consentEvents.some((event) =>
+      hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
+    );
+    return !(profile && hasLegalConsents && address);
   } catch (error: any) {
     if (error?.message === "ACCOUNT_DELETED") {
       redirect("/");
+    }
+    if (error?.message === "UNAUTHORIZED") {
+      redirect("/sign-in");
     }
     return false;
   }

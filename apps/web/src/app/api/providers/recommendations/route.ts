@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
       prisma.profile.findUnique({ where: { userId } }).catch(() => null),
       prisma.address.findMany({ where: { userId } }),
       prisma.service.findMany({ where: { userId, isActive: true }, select: { providerName: true, category: true, providerId: true } }),
-      prisma.movingPlan.findFirst({ where: { userId, status: { not: "CANCELLED" } }, orderBy: { moveDate: "asc" } }),
+      prisma.movingPlan.findFirst({ where: { userId, status: { not: "CANCELED" } }, orderBy: { moveDate: "asc" } }),
     ]);
 
     const selectedAddress = addresses.find((a) => a.id === requestedAddressId);

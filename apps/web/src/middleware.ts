@@ -38,6 +38,7 @@ const PUBLIC_API_PREFIXES = [
 const PUBLIC_API_EXACT = [
   "/api/auth/login",
   "/api/auth/register",
+  "/api/auth/me",
   "/api/auth/verify-email",
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
@@ -340,6 +341,12 @@ export default async function middleware(request: NextRequest) {
 
   // Page routes.
   if (isPublicPath(pathname)) {
+    if ((pathname === "/sign-in" || pathname === "/sign-up") && (await hasValidSession(request))) {
+      return applyStagingNoIndex(
+        request,
+        applyLocaleCookie(request, NextResponse.redirect(new URL("/dashboard", request.url))),
+      );
+    }
     return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
   }
   if (await hasValidSession(request)) {

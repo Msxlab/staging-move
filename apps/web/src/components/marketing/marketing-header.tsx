@@ -48,7 +48,7 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
             </>
           ) : (
             <>
-              <Link href="/sign-in" className="hidden sm:block">
+              <Link href="/sign-in">
                 <Button variant="ghost" size="sm">{tCommon("signIn")}</Button>
               </Link>
               <Link href="/sign-up">

@@ -231,7 +231,7 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
     const record = await prisma.userLoginSession
       .findFirst({
         where: { tokenHash, isActive: true },
-        select: { id: true, userId: true, expiresAt: true },
+        select: { id: true, userId: true, expiresAt: true, userAgent: true },
       })
       .catch(() => null);
 
@@ -254,7 +254,13 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
               ),
               userAgent,
             ).catch(() => null);
-      if (!currentFp || currentFp !== payload.fp) {
+      // DigitalOcean/proxy chains can present a different forwarding IP
+      // between OAuth callback and later app/API requests. Keep the DB-backed
+      // session valid when the browser UA is unchanged; still reject device
+      // swaps where both IP-bound fingerprint and UA differ.
+      const proxyIpChangedButSameBrowser =
+        fpMode === "web" && record.userAgent === userAgent;
+      if (!currentFp || (currentFp !== payload.fp && !proxyIpChangedButSameBrowser)) {
         await invalidateSession();
         await clearIfCookie();
         return null;
@@ -323,8 +329,8 @@ export async function requireDbUserId(): Promise<string> {
   const session = await getUserSession();
   if (!session) throw new Error("UNAUTHORIZED");
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
+  const user = await prisma.user.findFirst({
+    where: { id: session.userId, deletedAt: null },
     select: { id: true },
   });
   if (!user) {
