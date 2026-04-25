@@ -40,6 +40,11 @@ const fraunces = Fraunces({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app";
+const APP_ENV = (process.env.APP_ENV || "").toLowerCase();
+const BLOCK_INDEXING =
+  APP_ENV === "staging" ||
+  APP_ENV === "preview" ||
+  /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i.test(SITE_URL);
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -80,16 +85,25 @@ export const metadata: Metadata = {
       "Track every utility, bank, insurance, and subscription tied to each of your homes.",
     images: ["/og-image.svg"],
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  robots: BLOCK_INDEXING
+    ? {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
+      }
+    : {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
+      },
 };
 
 export default async function RootLayout({

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Wordmark } from "@/components/marketing/logo";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -15,7 +16,7 @@ interface OAuthProviderStatus {
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const redirectTo = normalizeSignInRedirect(searchParams.get("redirect"));
   const oauthErrorKey = searchParams.get("error");
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
@@ -120,9 +121,14 @@ function SignInForm() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 space-y-6">
-        <div className="text-center space-y-1.5">
-          <h1 className="text-2xl font-bold text-white">{tCommon("signIn")}</h1>
-          <p className="text-sm text-white/50">{tAuth("signIn_title")}</p>
+        <div className="space-y-3 text-center">
+          <div className="flex justify-center">
+            <Wordmark href="/" animated={false} />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="text-2xl font-bold text-white">{tCommon("signIn")}</h1>
+            <p className="text-sm text-white/50">Sign in to your LocateFlow account.</p>
+          </div>
         </div>
 
         {error && (
@@ -233,9 +239,21 @@ function SignInForm() {
             <Link href="/sign-up" className="text-orange-400 hover:underline">{tCommon("signUp")}</Link>
           </p>
         )}
+
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-white/35">
+          <Link href="/terms" className="underline hover:text-white/60">{tCommon("terms")}</Link>
+          <Link href="/privacy" className="underline hover:text-white/60">{tCommon("privacy")}</Link>
+          <Link href="/disclaimer" className="underline hover:text-white/60">Legal Disclaimer</Link>
+          <Link href="/contact" className="underline hover:text-white/60">Support</Link>
+        </div>
       </div>
     </div>
   );
+}
+
+function normalizeSignInRedirect(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
 }
 
 export default function SignInPage() {

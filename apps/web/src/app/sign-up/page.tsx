@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Wordmark } from "@/components/marketing/logo";
 import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
 import {
   createAcceptedLegalConsents,
@@ -116,6 +117,9 @@ export default function SignUpPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
         <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 space-y-4 text-center">
+          <div className="flex justify-center">
+            <Wordmark href="/" animated={false} />
+          </div>
           <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto" />
           <h1 className="text-2xl font-bold text-white">{tAuth("checkEmail")}</h1>
           <p className="text-sm text-white/60">
@@ -135,9 +139,14 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--surface)" }}>
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 space-y-6">
-        <div className="text-center space-y-1.5">
-          <h1 className="text-2xl font-bold text-white">{tAuth("signUp_title")}</h1>
-          <p className="text-sm text-white/50">{tLanding("noCreditCard")}</p>
+        <div className="space-y-3 text-center">
+          <div className="flex justify-center">
+            <Wordmark href="/" animated={false} />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="text-2xl font-bold text-white">{tAuth("signUp_title")}</h1>
+            <p className="text-sm text-white/50">Create your LocateFlow account. {tLanding("noCreditCard")}</p>
+          </div>
         </div>
 
         {error && (
@@ -249,30 +258,12 @@ export default function SignUpPage() {
           <Link href="/sign-in" className="text-orange-400 hover:underline">{tCommon("signIn")}</Link>
         </p>
 
-        <p className="text-[10px] text-white/30 text-center">
-          {tAuth("agreeToTerms", {
-            terms: "__TERMS__",
-            privacy: "__PRIVACY__",
-          }).split("__TERMS__").map((seg, i, arr) => {
-            if (i === arr.length - 1) {
-              return <span key={i}>{seg}</span>;
-            }
-            return (
-              <span key={i}>
-                {seg}
-                <Link href="/terms" className="underline">{tCommon("terms")}</Link>
-                {i === 0 && ""}
-              </span>
-            );
-          })}
-          {/* The agreeToTerms string is: "I agree to the {terms} and {privacy}." — we
-              stitch the terms + privacy links back in with proper Link components. */}
-        </p>
-        <p className="text-[10px] text-white/30 text-center">
-          <Link href="/terms" className="underline">{tCommon("terms")}</Link>
-          {" · "}
-          <Link href="/privacy" className="underline">{tCommon("privacy")}</Link>
-        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-white/35">
+          <Link href="/terms" className="underline hover:text-white/60">{tCommon("terms")}</Link>
+          <Link href="/privacy" className="underline hover:text-white/60">{tCommon("privacy")}</Link>
+          <Link href="/disclaimer" className="underline hover:text-white/60">Legal Disclaimer</Link>
+          <Link href="/contact" className="underline hover:text-white/60">Support</Link>
+        </div>
       </div>
     </div>
   );

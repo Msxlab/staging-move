@@ -3,9 +3,16 @@ const path = require("path");
 
 const isDev = process.env.NODE_ENV !== "production";
 const sentryConnectSrc = "https://errors.locateflow.com";
+const appEnv = (process.env.APP_ENV || "").toLowerCase();
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+const isStagingLike =
+  appEnv === "staging" ||
+  appEnv === "preview" ||
+  /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i.test(appUrl);
 
 const nextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   transpilePackages: ["@locateflow/db", "@locateflow/shared"],
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
   turbopack: {
@@ -60,26 +67,31 @@ const nextConfig = {
       "worker-src 'self' blob:",
     ].join("; ");
 
+    const headers = [
+      { key: "X-Frame-Options", value: "DENY" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=()",
+      },
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      },
+      { key: "X-DNS-Prefetch-Control", value: "off" },
+      { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
+      { key: "X-Download-Options", value: "noopen" },
+      { key: "Content-Security-Policy", value: csp },
+    ];
+    if (isStagingLike) {
+      headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" });
+    }
+
     return [
       {
         source: "/(.*)",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
-          { key: "X-DNS-Prefetch-Control", value: "off" },
-          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
-          { key: "X-Download-Options", value: "noopen" },
-          { key: "Content-Security-Policy", value: csp },
-        ],
+        headers,
       },
     ];
   },

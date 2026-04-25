@@ -263,6 +263,35 @@ function applyLocaleCookie(
   return response;
 }
 
+function hostLooksLikeStaging(host: string | null): boolean {
+  if (!host) return false;
+  const normalized = host.toLowerCase();
+  return (
+    normalized.includes("staging") ||
+    normalized.endsWith(".ondigitalocean.app") ||
+    normalized.endsWith(".vercel.app")
+  );
+}
+
+function applyStagingNoIndex(request: NextRequest, response: NextResponse): NextResponse {
+  const appEnv = (process.env.APP_ENV || "").toLowerCase();
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || null;
+  const host = request.headers.get("host")?.split(",")[0]?.trim() || null;
+  const shouldNoIndex =
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i.test(configuredUrl) ||
+    hostLooksLikeStaging(forwardedHost) ||
+    hostLooksLikeStaging(host) ||
+    hostLooksLikeStaging(request.nextUrl.hostname);
+
+  if (shouldNoIndex) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  }
+  return response;
+}
+
 // ── Main middleware ────────────────────────────────────────────
 export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl?.pathname || "";
@@ -278,42 +307,48 @@ export default async function middleware(request: NextRequest) {
     const baseUrl = request.nextUrl.origin;
     const ipCheck = await checkIPAccess(ip, baseUrl);
     if (ipCheck.blocked) {
-      return NextResponse.json(
-        { error: ipCheck.reason || "Access denied" },
-        { status: 403 },
+      return applyStagingNoIndex(
+        request,
+        NextResponse.json(
+          { error: ipCheck.reason || "Access denied" },
+          { status: 403 },
+        ),
       );
     }
   }
 
   const bodySizeBlocked = applyBodySizeLimit(request);
-  if (bodySizeBlocked) return bodySizeBlocked;
+  if (bodySizeBlocked) return applyStagingNoIndex(request, bodySizeBlocked);
 
   const csrfBlocked = applyCsrfCheck(request);
-  if (csrfBlocked) return csrfBlocked;
+  if (csrfBlocked) return applyStagingNoIndex(request, csrfBlocked);
 
   const rateLimited = await applyRateLimit(request);
-  if (rateLimited) return rateLimited;
+  if (rateLimited) return applyStagingNoIndex(request, rateLimited);
 
   // Skip auth for public endpoints.
   if (pathname.startsWith("/api/")) {
-    if (isPublicApi(pathname, request.method)) return NextResponse.next();
+    if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, NextResponse.next());
     if (!(await hasValidSession(request))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return applyStagingNoIndex(
+        request,
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      );
     }
-    return NextResponse.next();
+    return applyStagingNoIndex(request, NextResponse.next());
   }
 
   // Page routes.
   if (isPublicPath(pathname)) {
-    return applyLocaleCookie(request, NextResponse.next());
+    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
   }
   if (await hasValidSession(request)) {
-    return applyLocaleCookie(request, NextResponse.next());
+    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
   }
 
   const signInUrl = new URL("/sign-in", request.url);
   signInUrl.searchParams.set("redirect", pathname);
-  return applyLocaleCookie(request, NextResponse.redirect(signInUrl));
+  return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.redirect(signInUrl)));
 }
 
 export const config = {
