@@ -4,6 +4,7 @@ import {
   generateState,
   generatePkce,
   getGoogleOAuthCredentials,
+  getOAuthRedirectUri,
 } from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
 
   const state = generateState();
   const pkce = generatePkce();
-  const redirectUri = `${request.nextUrl.origin}/api/auth/oauth/google/callback`;
+  const redirectUri = await getOAuthRedirectUri(request, "/api/auth/oauth/google/callback");
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
   const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
   };
   res.cookies.set("oauth_state_google", state, cookieOpts);
   res.cookies.set("oauth_pkce_google", pkce.verifier, cookieOpts);
+  res.cookies.set("oauth_redirect_uri_google", redirectUri, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
   if (acceptedLegal) {
     res.cookies.set(OAUTH_LEGAL_ACCEPTANCE_COOKIE, "accepted", cookieOpts);
