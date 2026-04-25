@@ -27,6 +27,7 @@ import {
   type ProviderCoverageConfidence,
   type ProviderTrustSummary,
 } from "@locateflow/shared";
+import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 
 export interface AddressOption {
   id: string;
@@ -190,6 +191,11 @@ export function ProvidersClient({
     ...(criticalCluster?.providers || []).slice(0, 3),
     ...(importantCluster?.providers || []).slice(0, 3),
   ].slice(0, 6);
+  const emptyStateCopy = getProviderEmptyStateCopy({
+    state: selectedState,
+    search,
+    hasCategoryFilter: Boolean(categoryFilter),
+  });
 
   const onAddressChange = (addressId: string) => {
     const match = addresses.find((a) => a.id === addressId) || null;
@@ -210,7 +216,7 @@ export function ProvidersClient({
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white">Providers</h1>
           <p className="text-white/40 mt-1 text-sm">
-            Browse listed directory entries for banks, utilities, healthcare, and government services.
+            Browse listed directory entries. Providers are not your active accounts until you add them as Services.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -241,11 +247,11 @@ export function ProvidersClient({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex gap-3">
-        <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0 mt-0.5" />
+      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 flex gap-3">
+        <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
         <div>
-          <p className="text-xs font-semibold text-amber-200">Listed providers, manual tracking only</p>
-          <p className="text-[11px] text-amber-100/75 mt-1 leading-relaxed">
+          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
+          <p className="text-[11px] text-amber-900/80 dark:text-amber-100/75 mt-1 leading-relaxed">
             Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding a provider creates a service record in LocateFlow and does not update your address with that provider.
           </p>
         </div>
@@ -362,14 +368,8 @@ export function ProvidersClient({
       ) : providers.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title="No providers found"
-          description={
-            search
-              ? `Nothing matched “${search}”. Try a different term or clear the state filter.`
-              : selectedState
-                ? `No active providers in ${selectedState} for this category.`
-                : "No providers available right now."
-          }
+          title={emptyStateCopy.title}
+          description={emptyStateCopy.description}
           actionLabel={search || categoryFilter ? "Clear filters" : undefined}
           onAction={
             search || categoryFilter

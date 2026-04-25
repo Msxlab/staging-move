@@ -52,8 +52,10 @@ function generatePDF(address: AddressInfo, userName: string) {
     .page { max-width: 800px; margin: 0 auto; padding: 40px; }
     .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
     .logo { display: flex; align-items: center; gap: 12px; }
-    .logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; }
-    .logo-text { font-size: 20px; font-weight: 700; background: linear-gradient(90deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-icon { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+    .logo-mark { width: 42px; height: 42px; display: block; }
+    .logo-text { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; font-weight: 500; color: #2a1f18; letter-spacing: -0.02em; }
+    .logo-flow { font-style: italic; color: #b8936c; }
     .report-date { text-align: right; color: #64748b; font-size: 13px; }
     .report-title { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
     .report-subtitle { font-size: 14px; color: #64748b; margin-bottom: 24px; }
@@ -94,8 +96,16 @@ function generatePDF(address: AddressInfo, userName: string) {
   <div class="page">
     <div class="header">
       <div class="logo">
-        <div class="logo-icon">L</div>
-        <div class="logo-text">LocateFlow</div>
+        <div class="logo-icon">
+          <svg class="logo-mark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+            <path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="#B8936C" stroke-width="3.25" fill="none" stroke-linecap="round" />
+            <circle cx="20" cy="65" r="4.5" fill="#E5C9A8" />
+            <circle cx="20" cy="65" r="1.5" fill="#2A1F18" />
+            <circle cx="80" cy="40" r="7.25" fill="#D4846A" />
+            <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
+          </svg>
+        </div>
+        <div class="logo-text">Locate<span class="logo-flow">flow</span></div>
       </div>
       <div class="report-date">
         <div style="font-weight: 600; color: #1e293b;">Monthly Expense Report</div>

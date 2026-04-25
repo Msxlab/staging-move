@@ -26,6 +26,7 @@ import {
 } from "@/lib/legal";
 import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
 import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
+import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/shared-address-autocomplete";
 
 const STEPS = [
@@ -44,6 +45,17 @@ function GlassCard({ children, className = "" }: { children: React.ReactNode; cl
   );
 }
 
+function parsePetTypes(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -52,20 +64,88 @@ export default function OnboardingPage() {
   const [showCategories, setShowCategories] = useState(false);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
 
-  // Redirect to dashboard if user already completed onboarding
+  // Resume the server-derived onboarding step. Profile, address, service
+  // skip, and moving skip decisions are persisted server-side so refreshes do
+  // not accidentally fall through to the dashboard.
   useEffect(() => {
-    fetch("/api/profile").then((r) => r.json()).then((data) => {
-      if (data.onboardingCompleted === true) {
-        router.replace("/dashboard");
-        return;
+    let cancelled = false;
+
+    async function loadOnboardingState() {
+      try {
+        const data = await fetch("/api/profile").then((r) => r.json());
+        if (cancelled) return;
+
+        if (data.onboardingCompleted === true) {
+          router.replace("/dashboard");
+          return;
+        }
+
+        const nextStep = typeof data.onboardingStepIndex === "number"
+          ? Math.max(0, Math.min(3, data.onboardingStepIndex))
+          : 0;
+        setStep(nextStep);
+
+        if (data.user || data.profile) {
+          setProfile((prev) => ({
+            ...prev,
+            firstName: data.user?.firstName || prev.firstName,
+            lastName: data.user?.lastName || prev.lastName,
+            ageRange: data.profile?.ageRange || prev.ageRange,
+            familyStatus: data.profile?.familyStatus || prev.familyStatus,
+            hasChildren: data.profile?.hasChildren ?? prev.hasChildren,
+            childrenCount: data.profile?.childrenCount ?? prev.childrenCount,
+            hasPets: data.profile?.hasPets ?? prev.hasPets,
+            petTypes: data.profile?.petTypes ? parsePetTypes(data.profile.petTypes) : prev.petTypes,
+            carCount: data.profile?.carCount ?? prev.carCount,
+            hasSenior: data.profile?.hasSenior ?? prev.hasSenior,
+            hasDisability: data.profile?.hasDisability ?? prev.hasDisability,
+            needsStorage: data.profile?.needsStorage ?? prev.needsStorage,
+            hasMotorcycle: data.profile?.hasMotorcycle ?? prev.hasMotorcycle,
+            hasBoatRV: data.profile?.hasBoatRV ?? prev.hasBoatRV,
+          }));
+        }
+
+        if (nextStep >= 1) {
+          const addressData = await fetch("/api/addresses").then((r) => r.json()).catch(() => null);
+          if (cancelled) return;
+          const addresses = addressData?.addresses || [];
+          const primary = addresses.find((item: any) => item.isPrimary) || addresses[0];
+          if (primary) {
+            setCreatedAddressId(primary.id);
+            setAddress((prev) => ({
+              ...prev,
+              nickname: primary.nickname || prev.nickname,
+              street: primary.street || prev.street,
+              city: primary.city || prev.city,
+              state: primary.state || prev.state,
+              zip: primary.zip || prev.zip,
+              country: primary.country || prev.country,
+              type: primary.type || prev.type,
+              ownership: primary.ownership || prev.ownership,
+              startDate: primary.startDate ? String(primary.startDate).slice(0, 10) : prev.startDate,
+              formattedAddress: primary.formattedAddress ?? prev.formattedAddress,
+              placeId: primary.placeId ?? prev.placeId,
+              latitude: primary.latitude ?? prev.latitude,
+              longitude: primary.longitude ?? prev.longitude,
+            }));
+          }
+        }
+
+        if (data.legalConsents) {
+          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
+          return;
+        }
+        const pending = readPendingLegalConsentsFromSession();
+        if (pending) setLegalConsents(pending);
+      } catch {
+        // Keep the current step visible; individual saves still surface errors.
       }
-      if (data.legalConsents) {
-        setLegalConsents(getDefaultLegalConsents(data.legalConsents));
-        return;
-      }
-      const pending = readPendingLegalConsentsFromSession();
-      if (pending) setLegalConsents(pending);
-    }).catch(() => {});
+    }
+
+    loadOnboardingState();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   // Step 0 – Profile
@@ -354,11 +434,25 @@ export default function OnboardingPage() {
     }
   };
 
+  const recordOnboardingProgress = async (event: "SERVICES_SKIPPED" | "MOVING_SKIPPED" | "COMPLETED") => {
+    await fetch("/api/onboarding/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event }),
+    }).catch(() => null);
+  };
+
   const next = async () => {
     let ok = true;
     if (step === 0) ok = await saveProfile();
     else if (step === 1) ok = await saveAddress();
-    else if (step === 2) ok = await saveServices();
+    else if (step === 2) {
+      const selectedCount = selectedProviders.size;
+      ok = await saveServices();
+      if (ok && selectedCount === 0) {
+        await recordOnboardingProgress("SERVICES_SKIPPED");
+      }
+    }
     if (!ok) return;
     if (step < 3) { setStep(step + 1); setError(""); }
     else router.push("/dashboard");
@@ -368,9 +462,12 @@ export default function OnboardingPage() {
     const planId = await saveMovingPlan();
     if (planId === false) return;
     if (typeof planId === "string") {
+      await recordOnboardingProgress("COMPLETED");
       router.push(`/moving/${planId}`);
       return;
     }
+    await recordOnboardingProgress("MOVING_SKIPPED");
+    await recordOnboardingProgress("COMPLETED");
     router.push("/dashboard");
   };
 
@@ -396,10 +493,15 @@ export default function OnboardingPage() {
   const allCategories = [...new Set(providers.map((p) => getMergedDisplayCategoryKey(p.category)))].sort(
     (a, b) => getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b)
   );
+  const providerEmptyState = getProviderEmptyStateCopy({
+    state: address.state || null,
+    search: providerSearch,
+    hasCategoryFilter: Boolean(activeCategory),
+  });
 
   // --- Common input styles for glass theme ---
   const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition";
-  const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-slate-800 [&>option]:text-white";
+  const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
   const labelCls = "block text-xs font-medium text-white/60 mb-1.5";
   const checkboxCls = "w-4 h-4 rounded border-white/20 bg-white/5 accent-orange-500 cursor-pointer";
 
@@ -840,7 +942,26 @@ export default function OnboardingPage() {
               <span className="ml-2 text-white/40 text-sm">Loading providers...</span>
             </div>
           ) : sortedCategories.length === 0 ? (
-            <div className="text-center py-12 text-white/40 text-sm">No providers found.</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+              <Building2 className="mx-auto mb-3 h-9 w-9 text-white/30" />
+              <h3 className="text-sm font-semibold text-white">{providerEmptyState.title}</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
+                {providerEmptyState.description}
+              </p>
+              <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={next}
+                  disabled={saving}
+                  className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+                >
+                  Continue without providers <ArrowRight className="h-4 w-4" />
+                </button>
+                <p className="text-xs text-white/45">
+                  Add local/custom providers later from Services &gt; Add Service.
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-2">
               {sortedCategories.map((cat) => {

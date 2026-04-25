@@ -18,6 +18,7 @@ import {
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
+import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 
 const BILLING_CYCLES = [
   { value: "MONTHLY", label: "Monthly" },
@@ -146,6 +147,11 @@ export default function NewServicePage() {
   const allCategories = [...new Set(allProviders.map((p) => getMergedDisplayCategoryKey(p.category)))].sort(
     (a, b) => getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b)
   );
+  const providerEmptyState = getProviderEmptyStateCopy({
+    state: addr?.state || null,
+    search: providerSearch,
+    hasCategoryFilter: Boolean(activeCategory),
+  });
 
   // Toggle provider in multi-select
   const toggleProvider = useCallback((provider: ScoredProvider) => {
@@ -295,7 +301,7 @@ export default function NewServicePage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-white">Add Services</h1>
-          <p className="text-sm text-white/40">Select providers and register them to your address</p>
+          <p className="text-sm text-white/40">Choose an address, then select a listed provider or add a local/custom provider to create a tracked service.</p>
         </div>
       </div>
 
@@ -554,7 +560,18 @@ export default function NewServicePage() {
               <span className="ml-2 text-white/40 text-sm">Loading providers...</span>
             </div>
           ) : sortedCategories.length === 0 ? (
-            <div className="text-center py-12 text-white/40 text-sm">No providers found.</div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+              <Building2 className="mx-auto mb-3 h-9 w-9 text-white/30" />
+              <h3 className="text-sm font-semibold text-white">{providerEmptyState.title}</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-white/60">{providerEmptyState.description}</p>
+              <button
+                type="button"
+                onClick={() => setShowCustomProvider(true)}
+                className="mt-4 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+              >
+                Add local/custom provider
+              </button>
+            </div>
           ) : (
             <div className="space-y-2">
               {sortedCategories.map((cat) => {

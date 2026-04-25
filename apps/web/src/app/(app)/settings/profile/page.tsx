@@ -45,10 +45,11 @@ export default function ProfileSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const { email: _email, ...profilePayload } = form;
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(profilePayload),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Failed to save");
       toast.success("Profile saved!");
@@ -66,7 +67,7 @@ export default function ProfileSettingsPage() {
   );
 
   const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
-  const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/60 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+  const selectCls = "w-full rounded-xl border border-white/10 bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
@@ -108,7 +109,7 @@ export default function ProfileSettingsPage() {
       {/* Household */}
       <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <Home className="h-4 w-4 text-cyan-400" />
+          <Home className="h-4 w-4 text-info" />
           <h2 className="text-sm font-semibold text-white">Household</h2>
         </div>
         <div className="grid grid-cols-2 gap-4">

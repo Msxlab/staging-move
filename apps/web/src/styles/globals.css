@@ -410,6 +410,26 @@
     @apply outline-none;
     box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--border-focus);
   }
+
+  select {
+    color-scheme: dark;
+  }
+
+  select option,
+  select optgroup {
+    color: hsl(var(--popover-foreground));
+    background-color: hsl(var(--popover));
+  }
+
+  .light select {
+    color-scheme: light;
+  }
+
+  .light select option,
+  .light select optgroup {
+    color: hsl(var(--popover-foreground));
+    background-color: hsl(var(--popover));
+  }
 }
 
 /* =========================================================================

@@ -5,6 +5,8 @@ import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
 import { profileSchema } from "@/lib/validators";
 import { LEGAL_CONSENT_EVENT, LEGAL_CONSENT_VERSION, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
+import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 
 function parseStoredLegalConsents(metadata: string | null | undefined) {
   if (!metadata) return null;
@@ -20,18 +22,28 @@ export async function GET() {
   try {
     const userId = await requireDbUserId();
 
-    const [user, consentEvent, address] = await Promise.all([
+    const [user, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         include: { profile: true, subscription: true },
       }),
-      prisma.userEvent.findFirst({
+      prisma.userEvent.findMany({
         where: { userId, event: LEGAL_CONSENT_EVENT },
         orderBy: { createdAt: "desc" },
+        take: 10,
       }),
-      prisma.address.findFirst({
-        where: { userId, deletedAt: null },
-        select: { id: true, isPrimary: true },
+      prisma.address.count({ where: { userId, deletedAt: null } }),
+      prisma.service.count({ where: { userId, deletedAt: null, isActive: true } }),
+      prisma.movingPlan.count({
+        where: {
+          userId,
+          status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] },
+        },
+      }),
+      prisma.userEvent.findMany({
+        where: { userId, event: { in: [...ONBOARDING_PROGRESS_EVENTS] } },
+        select: { event: true },
+        orderBy: { createdAt: "desc" },
       }),
     ]);
 
@@ -39,9 +51,22 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const legalConsents = parseStoredLegalConsents(consentEvent?.metadata);
+    const legalConsents = consentEvents
+      .map((event) => parseStoredLegalConsents(event.metadata))
+      .find((consents) => hasRequiredLegalConsents(consents))
+      || parseStoredLegalConsents(consentEvents[0]?.metadata);
+    const hasLegal = consentEvents.some((event) =>
+      hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
+    );
+    const onboardingProgress = getOnboardingProgress({
+      hasProfile: Boolean(user.profile),
+      hasRequiredLegalConsents: hasLegal,
+      addressCount,
+      serviceCount,
+      movingPlanCount,
+      ...summarizeOnboardingEvents(onboardingEvents),
+    });
     const entitlement = buildUnifiedEntitlementSnapshot(user.subscription);
-    const onboardingCompleted = Boolean(user.profile && hasRequiredLegalConsents(legalConsents) && address);
 
     return NextResponse.json({
       user: {
@@ -54,7 +79,9 @@ export async function GET() {
       subscription: user.subscription,
       entitlement,
       legalConsents,
-      onboardingCompleted,
+      onboardingCompleted: onboardingProgress.completed,
+      onboardingStep: onboardingProgress.step,
+      onboardingStepIndex: onboardingProgress.stepIndex,
     });
   } catch (error) {
     console.error("Failed to fetch profile:", error);
