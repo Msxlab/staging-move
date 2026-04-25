@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import {
   exchangeGoogleCode,
+  getGoogleOAuthCredentials,
   getRuntimeBaseUrl,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
@@ -17,8 +18,7 @@ const GOOGLE_ISSUER = "https://accounts.google.com";
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
 export async function GET(request: NextRequest) {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const { clientId, clientSecret } = await getGoogleOAuthCredentials();
   if (!clientId || !clientSecret) {
     return NextResponse.redirect(new URL("/sign-in?error=google-not-configured", request.url));
   }
