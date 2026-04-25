@@ -323,8 +323,8 @@ export async function requireDbUserId(): Promise<string> {
   const session = await getUserSession();
   if (!session) throw new Error("UNAUTHORIZED");
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
+  const user = await prisma.user.findFirst({
+    where: { id: session.userId, deletedAt: null },
     select: { id: true },
   });
   if (!user) {
