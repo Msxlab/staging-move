@@ -5,6 +5,8 @@ import { InstallPrompt } from "@/components/shared/install-prompt";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
+import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
+import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import type { ReactNode } from "react";
 
 function parseStoredLegalConsents(metadata: string | null | undefined) {
@@ -20,19 +22,39 @@ async function checkOnboardingNeeded(): Promise<boolean> {
   try {
     const { requireDbUserId } = await import("@/lib/auth");
     const userId = await requireDbUserId();
-    const [profile, consentEvents, address] = await Promise.all([
+    const [profile, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
       prisma.profile.findUnique({ where: { userId } }),
       prisma.userEvent.findMany({
         where: { userId, event: LEGAL_CONSENT_EVENT },
         orderBy: { createdAt: "desc" },
         take: 10,
       }),
-      prisma.address.findFirst({ where: { userId, deletedAt: null }, select: { id: true } }),
+      prisma.address.count({ where: { userId, deletedAt: null } }),
+      prisma.service.count({ where: { userId, deletedAt: null, isActive: true } }),
+      prisma.movingPlan.count({
+        where: {
+          userId,
+          status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] },
+        },
+      }),
+      prisma.userEvent.findMany({
+        where: { userId, event: { in: [...ONBOARDING_PROGRESS_EVENTS] } },
+        select: { event: true },
+        orderBy: { createdAt: "desc" },
+      }),
     ]);
     const hasLegalConsents = consentEvents.some((event) =>
       hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
     );
-    return !(profile && hasLegalConsents && address);
+    const progress = getOnboardingProgress({
+      hasProfile: Boolean(profile),
+      hasRequiredLegalConsents: hasLegalConsents,
+      addressCount,
+      serviceCount,
+      movingPlanCount,
+      ...summarizeOnboardingEvents(onboardingEvents),
+    });
+    return !progress.completed;
   } catch (error: any) {
     if (error?.message === "ACCOUNT_DELETED") {
       redirect("/");

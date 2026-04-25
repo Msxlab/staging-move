@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { LogoMark } from "@/components/marketing/logo";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -55,12 +56,10 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 h-14 border-b border-white/5 shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-cyan-500 flex items-center justify-center shrink-0">
-            <Home className="h-4 w-4 text-white" />
-          </div>
+          <LogoMark size={32} animated={false} className="shrink-0" />
           {!collapsed && (
-            <span className="text-base font-bold bg-gradient-to-r from-orange-400 to-cyan-400 bg-clip-text text-transparent">
-              LocateFlow
+            <span className="text-base font-semibold text-white">
+              Locate<span className="italic foil-text">flow</span>
             </span>
           )}
         </Link>

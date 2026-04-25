@@ -1,9 +1,8 @@
 # Staging Environment Inventory
 
-Current branch: `pr/current-product-readiness-epic`
-Current PR: `#15 Current product readiness epic`
+Current branch: `pr/staging-qa-fixes`
 
-This inventory is for protected Vercel staging and mobile preview builds. It does not add product scope. Leave vendor-backed features disabled until credentials are provided.
+This inventory was originally written for protected Vercel staging and mobile preview builds. The current active web staging target is DigitalOcean App Platform at `https://locateflow-staging-owew7.ondigitalocean.app`; keep Vercel references below as legacy/historical unless staging is intentionally moved back.
 
 ## Vercel Projects
 

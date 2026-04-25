@@ -255,6 +255,9 @@ export function ServicesClient({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white">{t("title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-white/45">
+            Services are the actual accounts you track at an address. They can link to listed providers or private local/custom providers.
+          </p>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-white/40 text-sm">
               {filtered.length}

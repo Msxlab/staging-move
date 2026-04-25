@@ -405,7 +405,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       {w("stats") && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <StatsCard title="Addresses" value={stats.addressCount} icon={MapPin} description={stats.addressCount > 0 ? `${addresses.filter(a => a.isPrimary).length} primary` : undefined} />
         <StatsCard title="Active Services" value={stats.serviceCount} description={stats.monthlyExpenses > 0 ? `${formatCurrency(stats.monthlyExpenses)}/mo total` : "Across all addresses"} icon={Zap} />
-        <Link href="/expenses"><StatsCard title="Monthly Expenses" value={formatCurrency(stats.monthlyExpenses)} icon={DollarSign} description={sortedCats.length > 0 ? `${sortedCats.length} categories` : undefined} /></Link>
+        <Link href="/budget"><StatsCard title="Monthly Expenses" value={formatCurrency(stats.monthlyExpenses)} icon={DollarSign} description={sortedCats.length > 0 ? `${sortedCats.length} categories` : undefined} /></Link>
       </div>}
 
       {/* Main Content Grid */}
