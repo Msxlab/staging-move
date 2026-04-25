@@ -35,11 +35,12 @@ const nextConfig = {
     ],
   },
   async headers() {
-    // In development, Next.js HMR requires 'unsafe-eval' and 'unsafe-inline'
-    // In production, remove 'unsafe-inline' to strengthen XSS protection
+    // Next.js App Router emits inline bootstrap/RSC hydration scripts. Until
+    // the web app moves to a per-request nonce CSP like the admin app, keeping
+    // 'unsafe-inline' here is required for production interactivity.
     const scriptSrc = isDev
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-      : "script-src 'self'";
+      : "script-src 'self' 'unsafe-inline'";
     const connectSrc = isDev
       ? "connect-src 'self' ws: http: https: https://api.stripe.com"
       : `connect-src 'self' https://api.stripe.com ${sentryConnectSrc}`;
