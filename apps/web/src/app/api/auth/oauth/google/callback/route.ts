@@ -19,6 +19,19 @@ export const runtime = "nodejs";
 const GOOGLE_ISSUER = "https://accounts.google.com";
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
 
+function clearGoogleOAuthCookies(response: NextResponse) {
+  response.cookies.delete("oauth_state_google");
+  response.cookies.delete("oauth_pkce_google");
+  response.cookies.delete("oauth_redirect_uri_google");
+  response.cookies.delete("oauth_redirect");
+  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
+  return response;
+}
+
+function logGoogleOAuthFailure(stage: string, err: unknown) {
+  console.error(`[OAUTH] google ${stage} failed:`, err);
+}
+
 export async function GET(request: NextRequest) {
   const { clientId, clientSecret } = await getGoogleOAuthCredentials();
   if (!clientId || !clientSecret) {
@@ -87,37 +100,44 @@ export async function GET(request: NextRequest) {
       const response = NextResponse.redirect(
         await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-required"),
       );
-      response.cookies.delete("oauth_state_google");
-      response.cookies.delete("oauth_pkce_google");
-      response.cookies.delete("oauth_redirect_uri_google");
-      response.cookies.delete("oauth_redirect");
-      response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
-      return response;
+      return clearGoogleOAuthCookies(response);
     }
-    throw err;
+    logGoogleOAuthFailure("user link", err);
+    return clearGoogleOAuthCookies(
+      NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),
+    );
   }
 
   if (acceptedLegal) {
-    await recordLegalAcceptance({
-      userId,
-      request,
-      page: "/sign-up",
-      source: "google_oauth_signup",
-    });
+    try {
+      await recordLegalAcceptance({
+        userId,
+        request,
+        page: "/sign-up",
+        source: "google_oauth_signup",
+      });
+    } catch (err) {
+      logGoogleOAuthFailure("legal acceptance", err);
+      return clearGoogleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-failed")),
+      );
+    }
   }
 
   const ua = request.headers.get("user-agent") || "";
   const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
   const fp = await generateFingerprint(ip, ua);
-  await createUserSession({
-    userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
-  });
+  try {
+    await createUserSession({
+      userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
+    });
+  } catch (err) {
+    logGoogleOAuthFailure("session create", err);
+    return clearGoogleOAuthCookies(
+      NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=session-create-failed")),
+    );
+  }
 
   const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
-  response.cookies.delete("oauth_state_google");
-  response.cookies.delete("oauth_pkce_google");
-  response.cookies.delete("oauth_redirect_uri_google");
-  response.cookies.delete("oauth_redirect");
-  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
-  return response;
+  return clearGoogleOAuthCookies(response);
 }

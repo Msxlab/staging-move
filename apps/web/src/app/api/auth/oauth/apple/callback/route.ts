@@ -18,6 +18,18 @@ export const runtime = "nodejs";
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
 
+function clearAppleOAuthCookies(response: NextResponse) {
+  response.cookies.delete("oauth_state_apple");
+  response.cookies.delete("oauth_redirect_uri_apple");
+  response.cookies.delete("oauth_redirect");
+  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
+  return response;
+}
+
+function logAppleOAuthFailure(stage: string, err: unknown) {
+  console.error(`[OAUTH] apple ${stage} failed:`, err);
+}
+
 /**
  * Apple calls back with POST form_post when scope was requested.
  * On the FIRST login only, Apple includes a `user` JSON field with
@@ -115,35 +127,44 @@ export async function POST(request: NextRequest) {
       const response = NextResponse.redirect(
         await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-required"),
       );
-      response.cookies.delete("oauth_state_apple");
-      response.cookies.delete("oauth_redirect_uri_apple");
-      response.cookies.delete("oauth_redirect");
-      response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
-      return response;
+      return clearAppleOAuthCookies(response);
     }
-    throw err;
+    logAppleOAuthFailure("user link", err);
+    return clearAppleOAuthCookies(
+      NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),
+    );
   }
 
   if (acceptedLegal) {
-    await recordLegalAcceptance({
-      userId,
-      request,
-      page: "/sign-up",
-      source: "apple_oauth_signup",
-    });
+    try {
+      await recordLegalAcceptance({
+        userId,
+        request,
+        page: "/sign-up",
+        source: "apple_oauth_signup",
+      });
+    } catch (err) {
+      logAppleOAuthFailure("legal acceptance", err);
+      return clearAppleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-failed")),
+      );
+    }
   }
 
   const ua = request.headers.get("user-agent") || "";
   const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
   const fp = await generateFingerprint(ip, ua);
-  await createUserSession({
-    userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
-  });
+  try {
+    await createUserSession({
+      userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
+    });
+  } catch (err) {
+    logAppleOAuthFailure("session create", err);
+    return clearAppleOAuthCookies(
+      NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=session-create-failed")),
+    );
+  }
 
   const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
-  response.cookies.delete("oauth_state_apple");
-  response.cookies.delete("oauth_redirect_uri_apple");
-  response.cookies.delete("oauth_redirect");
-  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
-  return response;
+  return clearAppleOAuthCookies(response);
 }
