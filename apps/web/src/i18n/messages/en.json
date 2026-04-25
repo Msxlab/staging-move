@@ -290,6 +290,8 @@
     "error_invalid": "Invalid email or password.",
     "error_locked": "Too many failed attempts. Please wait and try again.",
     "error_unavailable": "Login temporarily unavailable. Please try again later.",
+    "error_account_setup": "We could not finish setting up your social sign-in account. Please try again in a minute.",
+    "error_session_create": "Your account was found, but we could not start a session. Please try again.",
     "error_generic": "Sign in failed. Please try again.",
     "agreeToTerms": "I agree to the {terms} and {privacy}.",
     "mustAgree": "You must accept the terms to continue."

@@ -5,6 +5,7 @@
   "scripts": {
     "postinstall": "pnpm --filter @locateflow/db generate",
     "dev": "turbo dev",
+    "start": "pnpm db:migrate:deploy && pnpm --filter @locateflow/web start",
     "build": "turbo build",
     "lint": "turbo lint",
     "audit:providers": "pnpm exec tsx scripts/audit-provider-seed.ts",
@@ -28,6 +29,7 @@
     "docker:db:init": "docker compose run --rm db-init",
     "db:generate": "pnpm --filter @locateflow/db generate",
     "db:migrate": "pnpm --filter @locateflow/db migrate",
+    "db:migrate:deploy": "pnpm --filter @locateflow/db exec prisma migrate deploy",
     "db:push": "pnpm --filter @locateflow/db push",
     "db:seed": "pnpm --filter @locateflow/db seed",
     "db:seed:all": "pnpm --filter @locateflow/db seed:all",

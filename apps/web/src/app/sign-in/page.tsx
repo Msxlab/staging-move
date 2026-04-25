@@ -35,6 +35,8 @@ function SignInForm() {
     "apple-no-email": "error_generic",
     "apple-bad-body": "error_generic",
     "apple-missing-fields": "error_generic",
+    "oauth-account-failed": "error_account_setup",
+    "session-create-failed": "error_session_create",
   };
 
   const [email, setEmail] = useState("");

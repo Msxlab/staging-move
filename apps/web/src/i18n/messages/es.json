@@ -290,6 +290,8 @@
     "error_invalid": "Correo o contraseña incorrectos.",
     "error_locked": "Demasiados intentos fallidos. Espera y reintenta.",
     "error_unavailable": "Inicio de sesión no disponible. Reintenta más tarde.",
+    "error_account_setup": "No pudimos terminar de preparar tu cuenta de inicio social. Reintenta en un minuto.",
+    "error_session_create": "Encontramos tu cuenta, pero no pudimos iniciar una sesión. Reintenta.",
     "error_generic": "Error al iniciar sesión. Reintenta.",
     "agreeToTerms": "Acepto los {terms} y la {privacy}.",
     "mustAgree": "Debes aceptar los términos para continuar."
