@@ -30,6 +30,7 @@ import { LogoMark, Wordmark } from "@/components/marketing/logo";
 import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { AppStoreCTA } from "@/components/marketing/app-store-cta";
+import { MobileMockup } from "@/components/marketing/mobile-mockup";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -322,23 +323,37 @@ export default async function LandingPage() {
 
       {/* Mobile App CTA */}
       <section className="container py-20 border-t">
-        <div className="grid md:grid-cols-2 gap-10 items-center max-w-5xl mx-auto">
-          <div className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
+          <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
               Mobile companion
             </div>
             <h2 className="text-3xl font-bold tracking-tight">Your service list in your pocket</h2>
             <p className="text-muted-foreground">
-              Add services, providers, and move tasks on the go. iOS and
-              Android availability depends on store release status.
+              Add services, providers, and move tasks on the go. Snap a bill,
+              get a renewal nudge, and check your monthly spend without
+              leaving the couch. iOS and Android availability depends on
+              store release status.
             </p>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+                Same data as the web — addresses, services, providers in sync.
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+                Push reminders before auto-renew, snooze with one tap.
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
+                Document scanning for bills, receipts, and proof-of-address.
+              </li>
+            </ul>
             <AppStoreCTA />
           </div>
-          <div className="relative">
-            <div className="aspect-[3/4] rounded-3xl border bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center">
-              <LogoMark size={96} className="opacity-90" />
-            </div>
+          <div className="relative flex justify-center">
+            <MobileMockup />
           </div>
         </div>
       </section>
