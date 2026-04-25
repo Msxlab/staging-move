@@ -40,7 +40,7 @@ echo "  health.status = ${health_status:-unknown}"
 
 echo ""
 echo "== admin ($ADMIN_URL) =="
-check "admin health"        "$ADMIN_URL/api/health"              "200"
+check "admin health auth gate" "$ADMIN_URL/api/health"           "401"
 check "admin login page"    "$ADMIN_URL/login"                   "200"
 check "unauth admin root"   "$ADMIN_URL/"                        "307"
 
