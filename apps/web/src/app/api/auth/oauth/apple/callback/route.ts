@@ -5,6 +5,7 @@ import {
   getAppleOAuthCredentials,
   getOAuthRedirectUri,
   getOAuthResponseUrl,
+  isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
 import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
@@ -97,6 +98,9 @@ export async function POST(request: NextRequest) {
     // Apple may withhold email if user chose "Hide My Email" and we don't have
     // the private-relay mapping. For MVP, require a real email.
     return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-no-email"));
+  }
+  if (!isAppleEmailVerifiedClaim(payload.email_verified)) {
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-email-not-verified"));
   }
 
   // First-login name info.

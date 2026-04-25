@@ -66,29 +66,24 @@ export async function POST(request: NextRequest) {
   // Is email taken?
   const existing = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, passwordHash: true },
+    select: { id: true, deletedAt: true },
   });
 
-  if (existing && existing.passwordHash) {
-    // Generic message to avoid user enumeration; frontend treats both
-    // "taken" and "invalid" as "Try signing in instead".
-    return NextResponse.json({ error: "Unable to create account. Try signing in instead." }, { status: 409 });
+  if (existing) {
+    // Deliberately reject both active and soft-deleted rows. Public signup
+    // must never attach a password to, or revive, an existing account.
+    return NextResponse.json({ error: "Account already exists." }, { status: 409 });
   }
 
   const passwordHash = await hashPassword(password);
-  const user = existing
-    ? await prisma.user.update({
-        where: { id: existing.id },
-        data: { passwordHash, firstName: firstName ?? null, lastName: lastName ?? null },
-      })
-    : await prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          firstName: firstName ?? null,
-          lastName: lastName ?? null,
-        },
-      });
+  const user = await prisma.user.create({
+    data: {
+      email,
+      passwordHash,
+      firstName: firstName ?? null,
+      lastName: lastName ?? null,
+    },
+  });
 
   // Email verification token (24h).
   const { token, hash } = generateOpaqueToken();

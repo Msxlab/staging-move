@@ -9,14 +9,9 @@ import { cookies, headers } from "next/headers";
 import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 
 // ── Secret / constants ──────────────────────────────────────
-
-const userJwtSecret = process.env.USER_JWT_SECRET;
-if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
-}
-const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
 
 const COOKIE_NAME = "user_session";
 const SESSION_TTL_DAYS = 30;
@@ -150,7 +145,7 @@ export async function createUserSession(input: {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_TTL_DAYS}d`)
-    .sign(JWT_SECRET);
+    .sign(getUserJwtSecretKey());
 
   const tokenHash = await hashSessionToken(token);
   await prisma.userLoginSession.create({
@@ -226,7 +221,7 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
   };
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getUserJwtSecretKey());
 
     const record = await prisma.userLoginSession
       .findFirst({

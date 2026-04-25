@@ -6,6 +6,7 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { canCreateAddress, canCreateMovingPlan } from "@/lib/plan-limits";
 import { encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 function normalizeAddressValue(value?: string | null) {
   return (value || "").trim().toUpperCase();
@@ -33,7 +34,9 @@ export async function GET() {
       },
       orderBy: { moveDate: "desc" },
     });
-    return NextResponse.json({ plans });
+    return NextResponse.json({
+      plans: plans.map((plan) => ({ ...plan, status: normalizeMovingPlanStatus(plan.status) })),
+    });
   } catch (error) {
     console.error("Failed to fetch moving plans:", error);
     return NextResponse.json({ error: "Failed to fetch moving plans" }, { status: 500 });

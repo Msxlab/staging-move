@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { hashSessionToken } from "@/lib/user-auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 
 export const runtime = "nodejs";
 
@@ -24,11 +25,6 @@ export const runtime = "nodejs";
  */
 
 const MAX_TTL_MINUTES = 15;
-const userJwtSecret = process.env.USER_JWT_SECRET;
-if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
-}
-const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
 
 const bodySchema = z.object({
   userId: z.string().min(1).max(40),
@@ -73,7 +69,7 @@ export async function POST(request: NextRequest) {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${ttlSeconds}s`)
-    .sign(JWT_SECRET);
+    .sign(getUserJwtSecretKey());
 
   const tokenHash = await hashSessionToken(token);
   const expiresAt = new Date(Date.now() + ttlSeconds * 1000);

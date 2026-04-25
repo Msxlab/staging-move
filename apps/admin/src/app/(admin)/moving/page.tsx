@@ -72,14 +72,14 @@ const STATUS_COLORS: Record<string, string> = {
   PLANNING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   IN_PROGRESS: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   COMPLETED: "bg-green-500/10 text-green-500 border-green-500/20",
-  CANCELLED: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  CANCELED: "bg-gray-500/10 text-gray-400 border-gray-500/20",
 };
 
 const STATUS_ICONS: Record<string, any> = {
   PLANNING: Clock,
   IN_PROGRESS: Truck,
   COMPLETED: CheckCircle2,
-  CANCELLED: XCircle,
+  CANCELED: XCircle,
 };
 
 const US_STATES = [
@@ -240,7 +240,7 @@ export default function MovingPage() {
             bg: "bg-green-500/5",
           },
           {
-            label: "Cancelled",
+            label: "Canceled",
             value: stats.cancelled,
             icon: XCircle,
             color: "text-gray-400",
@@ -261,6 +261,8 @@ export default function MovingPage() {
                 setFilterStatus(
                   s.label === "In Progress"
                     ? "IN_PROGRESS"
+                    : s.label === "Canceled"
+                      ? "CANCELED"
                     : s.label.toUpperCase(),
                 );
             }}
@@ -335,7 +337,7 @@ export default function MovingPage() {
                 <option value="PLANNING">Planning</option>
                 <option value="IN_PROGRESS">In Progress</option>
                 <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="CANCELED">Canceled</option>
               </select>
             </div>
             <div>

@@ -23,11 +23,13 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
   PLANNING: "neutral",
   IN_PROGRESS: "primary",
   COMPLETED: "success",
+  CANCELED: "error",
   CANCELLED: "error",
 };
 
@@ -91,6 +93,7 @@ export default function MovingScreen() {
         ) : (
           <View style={styles.list}>
             {plans.map((plan: any) => {
+              const normalizedStatus = normalizeMovingPlanStatus(plan.status);
               const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
               return (
@@ -113,7 +116,7 @@ export default function MovingScreen() {
                         )}
                       </View>
                     </View>
-                    <UiBadge label={plan.status.replace("_", " ")} variant={statusVariant[plan.status] || "neutral"} />
+                    <UiBadge label={normalizedStatus.replace("_", " ")} variant={statusVariant[normalizedStatus] || "neutral"} />
                   </View>
 
                   {/* Addresses */}

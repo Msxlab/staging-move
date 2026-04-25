@@ -2,14 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 import { prisma } from "@/lib/db";
 import { hashSessionToken } from "@/lib/user-auth";
+import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 
 export const runtime = "nodejs";
-
-const userJwtSecret = process.env.USER_JWT_SECRET;
-if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
-}
-const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
 
 /**
  * One-shot GET handler that accepts an impersonation token from the admin
@@ -37,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   let payload: Record<string, unknown>;
   try {
-    const verified = await jwtVerify(token, JWT_SECRET);
+    const verified = await jwtVerify(token, getUserJwtSecretKey());
     payload = verified.payload as Record<string, unknown>;
   } catch {
     return NextResponse.redirect(

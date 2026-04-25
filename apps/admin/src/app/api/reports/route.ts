@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,6 +46,11 @@ export async function GET(req: NextRequest) {
         where: { createdAt: { gte: start, lte: end } },
         _count: true,
       });
+      const movingStatusCounts = new Map<string, number>();
+      movingByStatus.forEach((m) => {
+        const status = normalizeMovingPlanStatus(m.status);
+        movingStatusCounts.set(status, (movingStatusCounts.get(status) || 0) + m._count);
+      });
 
       const [topStates, topProviders] = await Promise.all([
         prisma.address.groupBy({
@@ -71,7 +77,7 @@ export async function GET(req: NextRequest) {
           { label: "Active Providers", current: providersTotal, previous: providersTotal, change: 0 },
         ],
         dailyUsers,
-        movingByStatus: movingByStatus.map((m) => ({ status: m.status, count: m._count })),
+        movingByStatus: Array.from(movingStatusCounts, ([status, count]) => ({ status, count })),
         topProviders: topProviders.map((p) => ({ name: p.name, popularityScore: p.popularityScore })),
         topStates: topStates.map((s) => ({ state: s.state, count: s._count })),
       });

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import {
   getOAuthRedirectUri,
   getOAuthResponseUrl,
+  isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
 } from "./oauth";
 
@@ -49,5 +50,18 @@ describe("OAuth URL helpers", () => {
     await expect(
       getOAuthResponseUrl(request, "/sign-in?error=missing-code").then((url) => url.toString()),
     ).resolves.toBe("https://app.locateflow.com/sign-in?error=missing-code");
+  });
+});
+
+describe("Apple OAuth email verification claim", () => {
+  it("allows boolean true and string true claims", () => {
+    expect(isAppleEmailVerifiedClaim(true)).toBe(true);
+    expect(isAppleEmailVerifiedClaim("true")).toBe(true);
+  });
+
+  it("rejects false, string false, and missing claims", () => {
+    expect(isAppleEmailVerifiedClaim(false)).toBe(false);
+    expect(isAppleEmailVerifiedClaim("false")).toBe(false);
+    expect(isAppleEmailVerifiedClaim(undefined)).toBe(false);
   });
 });

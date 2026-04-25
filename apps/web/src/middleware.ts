@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { checkIPAccess } from "@/lib/ip-rules";
+import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
 
 // ── Public routes (no auth required) ───────────────────────────
 const PUBLIC_PATHS = [
@@ -202,12 +203,6 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
 }
 
 // ── Session check ──────────────────────────────────────────────
-const userJwtSecret = process.env.USER_JWT_SECRET;
-if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
-}
-const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
-
 function readBearerToken(request: NextRequest): string | null {
   const auth =
     request.headers.get("authorization") ||
@@ -225,8 +220,10 @@ async function hasValidSession(request: NextRequest): Promise<boolean> {
   const token =
     request.cookies.get("user_session")?.value || readBearerToken(request);
   if (!token) return false;
+  const jwtSecret = tryGetUserJwtSecretKey();
+  if (!jwtSecret) return false;
   try {
-    await jwtVerify(token, JWT_SECRET);
+    await jwtVerify(token, jwtSecret);
     return true;
   } catch {
     return false;
