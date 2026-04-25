@@ -58,8 +58,26 @@ function SignInForm() {
 
   const googleReady = oauthProviders?.google?.configured ?? true;
   const appleReady = oauthProviders?.apple?.configured ?? true;
+  const googleUnavailable = oauthProviders?.google?.configured === false;
+  const appleUnavailable = oauthProviders?.apple?.configured === false;
   const showOAuthReadinessNote =
     Boolean(oauthProviders) && (!googleReady || !appleReady);
+
+  function startGoogleOAuth() {
+    if (googleUnavailable) {
+      setError(oauthProviders?.google?.message || "Google sign-in is not configured.");
+      return;
+    }
+    window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(redirectTo)}`;
+  }
+
+  function startAppleOAuth() {
+    if (appleUnavailable) {
+      setError(oauthProviders?.apple?.message || "Apple sign-in is not configured.");
+      return;
+    }
+    window.location.href = `/api/auth/oauth/apple?redirect=${encodeURIComponent(redirectTo)}`;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,11 +134,9 @@ function SignInForm() {
           <div className="space-y-2">
             <button
               type="button"
-              disabled={!googleReady}
-              onClick={() => {
-                window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(redirectTo)}`;
-              }}
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white/5"
+              aria-disabled={googleUnavailable}
+              onClick={startGoogleOAuth}
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition aria-disabled:opacity-60"
             >
               {/* Google G logo */}
               <svg className="h-4 w-4" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -133,11 +149,9 @@ function SignInForm() {
             </button>
             <button
               type="button"
-              disabled={!appleReady}
-              onClick={() => {
-                window.location.href = `/api/auth/oauth/apple?redirect=${encodeURIComponent(redirectTo)}`;
-              }}
-              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-black hover:bg-black/80 px-4 py-2.5 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-black"
+              aria-disabled={appleUnavailable}
+              onClick={startAppleOAuth}
+              className="flex items-center justify-center gap-3 w-full rounded-xl border border-white/10 bg-black hover:bg-black/80 px-4 py-2.5 text-sm font-medium text-white transition aria-disabled:opacity-60"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>

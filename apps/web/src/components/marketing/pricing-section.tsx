@@ -60,6 +60,7 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
           className="inline-flex items-center rounded-full border bg-card p-1 shadow-sm"
         >
           <button
+            type="button"
             role="tab"
             aria-selected={cycle === "monthly"}
             onClick={() => setCycle("monthly")}
@@ -72,6 +73,7 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
             {tBilling("cycle_monthly")}
           </button>
           <button
+            type="button"
             role="tab"
             aria-selected={cycle === "yearly"}
             onClick={() => setCycle("yearly")}
