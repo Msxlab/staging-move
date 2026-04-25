@@ -20,17 +20,19 @@ const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth
 export async function GET(request: NextRequest) {
   const { clientId, clientSecret } = await getGoogleOAuthCredentials();
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(new URL("/sign-in?error=google-not-configured", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=google-not-configured"));
   }
 
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const errorParam = request.nextUrl.searchParams.get("error");
   if (errorParam) {
-    return NextResponse.redirect(new URL(`/sign-in?error=${encodeURIComponent(errorParam)}`, request.url));
+    return NextResponse.redirect(
+      await getOAuthResponseUrl(request, `/sign-in?error=${encodeURIComponent(errorParam)}`),
+    );
   }
   if (!code || !state) {
-    return NextResponse.redirect(new URL("/sign-in?error=missing-code", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=missing-code"));
   }
 
   const cookieState = request.cookies.get("oauth_state_google")?.value;
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest) {
   const redirectPath = request.cookies.get("oauth_redirect")?.value || "/dashboard";
   const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || !pkceVerifier || cookieState !== state) {
-    return NextResponse.redirect(new URL("/sign-in?error=state-mismatch", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=state-mismatch"));
   }
 
   const redirectUri = cookieRedirectUri || await getOAuthRedirectUri(request, "/api/auth/oauth/google/callback");
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest) {
     code, clientId, clientSecret, redirectUri, pkceVerifier,
   });
   if (!tokens?.idToken) {
-    return NextResponse.redirect(new URL("/sign-in?error=token-exchange-failed", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=token-exchange-failed"));
   }
 
   // Verify id_token signature + iss + aud.
@@ -60,11 +62,11 @@ export async function GET(request: NextRequest) {
     payload = verified as unknown as GoogleIdTokenPayload;
   } catch (err) {
     console.error("[OAUTH] google id_token verify failed:", err);
-    return NextResponse.redirect(new URL("/sign-in?error=invalid-token", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=invalid-token"));
   }
 
   if (!payload.email || !payload.email_verified) {
-    return NextResponse.redirect(new URL("/sign-in?error=email-unverified", request.url));
+    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=email-unverified"));
   }
 
   let userId: string;
@@ -80,7 +82,9 @@ export async function GET(request: NextRequest) {
     });
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
-      const response = NextResponse.redirect(new URL("/sign-up?error=legal-acceptance-required", request.url));
+      const response = NextResponse.redirect(
+        await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-required"),
+      );
       response.cookies.delete("oauth_state_google");
       response.cookies.delete("oauth_pkce_google");
       response.cookies.delete("oauth_redirect_uri_google");
@@ -107,7 +111,7 @@ export async function GET(request: NextRequest) {
     userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
   });
 
-  const response = NextResponse.redirect(new URL(redirectPath, request.url));
+  const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
   response.cookies.delete("oauth_state_google");
   response.cookies.delete("oauth_pkce_google");
   response.cookies.delete("oauth_redirect_uri_google");
