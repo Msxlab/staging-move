@@ -538,7 +538,7 @@ export default function OnboardingPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+        <div role="alert" className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -553,11 +553,11 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>First Name *</label>
-                <input className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
+                <input aria-required="true" className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
               </div>
               <div>
                 <label className={labelCls}>Last Name *</label>
-                <input className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
+                <input aria-required="true" className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -783,15 +783,15 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>City *</label>
-                <input className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
+                <input aria-required="true" className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
               </div>
               <div>
                 <label className={labelCls}>State *</label>
-                <input className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
+                <input aria-required="true" className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
               </div>
               <div>
                 <label className={labelCls}>ZIP *</label>
-                <input className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
+                <input aria-required="true" className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -1138,22 +1138,22 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
                   <label className={labelCls}>City *</label>
-                  <input className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
+                  <input aria-required="true" className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
                 </div>
                 <div>
                   <label className={labelCls}>State *</label>
-                  <input className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
+                  <input aria-required="true" className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
                 </div>
                 <div>
                   <label className={labelCls}>ZIP *</label>
-                  <input className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
+                  <input aria-required="true" className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
                 </div>
               </div>
               <div>
                 <label className={labelCls}>Move Date *</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
-                  <input type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
+                  <input aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">

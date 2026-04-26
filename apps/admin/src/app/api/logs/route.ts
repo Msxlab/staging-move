@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { parsePaginationParams } from "@/lib/pagination";
 
 export async function GET(request: NextRequest) {
   try {
     await requirePermission("audit_logs", "canRead", { minimumRole: "ADMIN", fallbackResources: ["settings"] });
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const perPage = parseInt(searchParams.get("perPage") || "30");
+    const { page, perPage, skip } = parsePaginationParams(searchParams, {
+      defaultPerPage: 30,
+    });
     const tab = searchParams.get("tab") || "admin";
     const search = searchParams.get("search") || "";
     const action = searchParams.get("action") || "";
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
           include: { adminUser: { select: { email: true, firstName: true, lastName: true } } },
           orderBy: { createdAt: "desc" },
           take: perPage,
-          skip: (page - 1) * perPage,
+          skip,
         }),
         prisma.adminAuditLog.count({ where }),
         prisma.adminAuditLog.groupBy({ by: ["action"], _count: { id: true }, orderBy: { _count: { id: "desc" } } }),
@@ -78,7 +80,7 @@ export async function GET(request: NextRequest) {
           where,
           orderBy: { createdAt: "desc" },
           take: perPage,
-          skip: (page - 1) * perPage,
+          skip,
         }),
         prisma.auditLog.count({ where }),
         prisma.auditLog.groupBy({ by: ["action"], _count: { id: true }, orderBy: { _count: { id: "desc" } } }),

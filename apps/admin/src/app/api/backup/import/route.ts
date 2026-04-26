@@ -313,6 +313,25 @@ export async function POST(request: NextRequest) {
         totalSkipped += wouldSkip;
       }
 
+      await prisma.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "IMPORT_BACKUP_DRY_RUN",
+          entityType: "BackupRecord",
+          entityId: "import",
+          changes: JSON.stringify({
+            mode,
+            tables: selectedTables,
+            totalImported,
+            totalSkipped,
+            signatureVerified,
+            encryptedArchive,
+            dependencyWarnings,
+          }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+
       return NextResponse.json({
         success: true,
         mode: "DRY_RUN",

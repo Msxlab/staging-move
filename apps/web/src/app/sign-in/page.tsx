@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -16,10 +17,11 @@ interface OAuthProviderStatus {
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = normalizeSignInRedirect(searchParams.get("redirect"));
+  const redirectTo = normalizeAppRedirectPath(searchParams.get("redirect"));
   const oauthErrorKey = searchParams.get("error");
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
+  const tLegal = useTranslations("legal");
   const tToast = useTranslations("toast");
 
   // OAuth error codes are a fixed enum from the OAuth callback routes.
@@ -68,7 +70,7 @@ function SignInForm() {
 
   function startGoogleOAuth() {
     if (googleUnavailable) {
-      setError(oauthProviders?.google?.message || "Google sign-in is not configured.");
+      setError(oauthProviders?.google?.message || tAuth("error_unavailable"));
       return;
     }
     window.location.href = `/api/auth/oauth/google?redirect=${encodeURIComponent(redirectTo)}`;
@@ -76,7 +78,7 @@ function SignInForm() {
 
   function startAppleOAuth() {
     if (appleUnavailable) {
-      setError(oauthProviders?.apple?.message || "Apple sign-in is not configured.");
+      setError(oauthProviders?.apple?.message || tAuth("error_unavailable"));
       return;
     }
     window.location.href = `/api/auth/oauth/apple?redirect=${encodeURIComponent(redirectTo)}`;
@@ -127,7 +129,7 @@ function SignInForm() {
           </div>
           <div className="space-y-1.5">
             <h1 className="text-2xl font-bold text-foreground">{tCommon("signIn")}</h1>
-            <p className="text-sm text-muted-foreground">Sign in to your LocateFlow account.</p>
+            <p className="text-sm text-muted-foreground">{tAuth("signIn_subtitle")}</p>
           </div>
         </div>
 
@@ -154,7 +156,7 @@ function SignInForm() {
                 <path fill="#4CAF50" d="M24 44c5.3 0 10-2 13.6-5.3l-6.3-5.3A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/>
                 <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3A12 12 0 0 1 31.3 33.4l6.3 5.3C37.2 39.8 44 34.7 44 24c0-1.2-.1-2.4-.4-3.5z"/>
               </svg>
-              {googleReady ? tAuth("continueWithGoogle") : "Google sign-in unavailable"}
+              {googleReady ? tAuth("continueWithGoogle") : tAuth("error_unavailable")}
             </button>
             <button
               type="button"
@@ -166,7 +168,7 @@ function SignInForm() {
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
               </svg>
-              {appleReady ? tAuth("continueWithApple") : "Apple sign-in unavailable"}
+              {appleReady ? tAuth("continueWithApple") : tAuth("error_unavailable")}
             </button>
 
             {showOAuthReadinessNote && (
@@ -245,17 +247,12 @@ function SignInForm() {
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
           <Link href="/terms" className="underline hover:text-primary">{tCommon("terms")}</Link>
           <Link href="/privacy" className="underline hover:text-primary">{tCommon("privacy")}</Link>
-          <Link href="/disclaimer" className="underline hover:text-primary">Legal Disclaimer</Link>
-          <Link href="/contact" className="underline hover:text-primary">Support</Link>
+          <Link href="/disclaimer" className="underline hover:text-primary">{tLegal("disclaimer_title")}</Link>
+          <Link href="/contact" className="underline hover:text-primary">{tCommon("contact")}</Link>
         </div>
       </div>
     </div>
   );
-}
-
-function normalizeSignInRedirect(value: string | null): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard";
-  return value;
 }
 
 export default function SignInPage() {

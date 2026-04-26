@@ -294,7 +294,11 @@
     "error_session_create": "Your account was found, but we could not start a session. Please try again.",
     "error_generic": "Sign in failed. Please try again.",
     "agreeToTerms": "I agree to the {terms} and {privacy}.",
-    "mustAgree": "You must accept the terms to continue."
+    "mustAgree": "You must accept the terms to continue.",
+    "legalAcceptanceRequired": "Review and accept the Terms of Use and Legal Disclaimer before creating an account.",
+    "legalAcknowledgementsTitle": "Required acknowledgements",
+    "legalAcknowledgementsDescription": "Accept these before creating your LocateFlow account.",
+    "oauthReadinessNote": "Email and password sign-up is ready now. Social sign-in will be enabled after admin OAuth credentials are added."
   },
   "dashboard": {
     "welcome": "Welcome back",

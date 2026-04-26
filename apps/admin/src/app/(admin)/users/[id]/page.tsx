@@ -5,6 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { maskEmail } from "@/lib/privacy";
 
 async function readAdminApiError(response: Response, fallback: string) {
   const data = await response.json().catch(() => ({}));
@@ -51,6 +53,9 @@ export default function UserDetailPage() {
   const [newAdminNote, setNewAdminNote] = useState("");
   const [savingAdminNote, setSavingAdminNote] = useState(false);
   const [revokingLoginSessions, setRevokingLoginSessions] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -89,11 +94,14 @@ export default function UserDetailPage() {
 
   async function handleDelete() {
     if (!user) return;
-    if (!confirm(`Queue staged deletion for user ${user.email}? This cannot be undone.`)) return;
-    const confirmPassword = window.prompt(
-      "Confirm your admin password to queue this deletion.",
-    );
-    if (!confirmPassword) return;
+    setDeleteError(null);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete(confirmPassword: string) {
+    if (!user) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "DELETE",
@@ -101,10 +109,21 @@ export default function UserDetailPage() {
         body: JSON.stringify({ confirmPassword }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(data.error || "Failed to delete"); return; }
+      if (!res.ok) {
+        const message = data.error || "Failed to delete";
+        setDeleteError(message);
+        toast.error(message);
+        return;
+      }
       toast.success(data.message || "User deletion queued");
+      setShowDeleteConfirm(false);
       router.push("/users");
-    } catch { toast.error("Failed to delete user"); }
+    } catch {
+      setDeleteError("Failed to delete user");
+      toast.error("Failed to delete user");
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
   async function handleAddAdminNote() {
@@ -1270,6 +1289,21 @@ export default function UserDetailPage() {
           </div>
         </div>
       )}
+      <PasswordConfirmModal
+        open={showDeleteConfirm}
+        title="Queue user deletion"
+        description={`This queues staged deletion for ${maskEmail(user.email)}. Enter your admin password to continue.`}
+        confirmLabel="Queue deletion"
+        busy={deleteBusy}
+        error={deleteError}
+        onClose={() => {
+          if (!deleteBusy) {
+            setShowDeleteConfirm(false);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

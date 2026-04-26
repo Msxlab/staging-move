@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { useBulkSelection } from "@/hooks/use-bulk-selection";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { ColumnSettingsMenu } from "@/components/column-settings-menu";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { maskEmail } from "@/lib/privacy";
 
 const USER_COLUMNS = [
   { key: "user", label: "User", alwaysOn: true },
@@ -68,6 +70,13 @@ export default function UsersPage() {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
   const [filters, setFilters] = useState({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", dateFrom: "", dateTo: "" });
+  const [pendingDelete, setPendingDelete] = useState<
+    | { type: "single"; userId: string; email: string }
+    | { type: "bulk"; count: number }
+    | null
+  >(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const perPage = 20;
 
   const fetchUsers = useCallback(async () => {
@@ -108,45 +117,51 @@ export default function UsersPage() {
     return sortDir === "asc" ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />;
   }
 
-  async function handleDelete(userId: string, email: string) {
-    if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
-    const confirmPassword = window.prompt(
-      "Enter your admin password to confirm this deletion:",
-    );
-    if (!confirmPassword) return;
-    try {
-      const res = await fetch(`/api/users/${userId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(data.error || "Failed to delete user"); return; }
-      toast.success(data.message || "User deletion queued");
-      bulk.clear();
-      fetchUsers();
-    } catch { toast.error("Failed to delete user"); }
+  function handleDelete(userId: string, email: string) {
+    setDeleteError(null);
+    setPendingDelete({ type: "single", userId, email });
   }
 
-  async function handleBulkDelete() {
+  function handleBulkDelete() {
     if (bulk.count === 0) return;
-    if (!confirm(`Delete ${bulk.count} users? This cannot be undone.`)) return;
-    const confirmPassword = window.prompt(
-      "Enter your admin password to confirm this bulk deletion:",
-    );
-    if (!confirmPassword) return;
+    setDeleteError(null);
+    setPendingDelete({ type: "bulk", count: bulk.count });
+  }
+
+  async function confirmDelete(confirmPassword: string) {
+    if (!pendingDelete) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
     try {
-      const res = await fetch("/api/users", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: bulk.selectedIds, confirmPassword }),
-      });
+      const res =
+        pendingDelete.type === "single"
+          ? await fetch(`/api/users/${pendingDelete.userId}`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ confirmPassword }),
+            })
+          : await fetch("/api/users", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ids: bulk.selectedIds, confirmPassword }),
+            });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(data.error || "Bulk delete failed"); return; }
-      toast.success(data.message || `${bulk.count} user deletion request(s) queued`);
+      if (!res.ok) {
+        const message = data.error || "Delete failed";
+        setDeleteError(message);
+        toast.error(message);
+        return;
+      }
+      toast.success(data.message || "User deletion request queued");
+      setPendingDelete(null);
       bulk.clear();
       fetchUsers();
-    } catch { toast.error("Bulk delete failed"); }
+    } catch {
+      setDeleteError("Delete failed");
+      toast.error("Delete failed");
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
   function exportCSV() {
@@ -373,7 +388,7 @@ export default function UsersPage() {
                   <td className="px-3 py-3">
                     <div className="min-w-0">
                       <p className="font-medium text-foreground text-sm truncate">{user.firstName} {user.lastName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
                     </div>
                   </td>
                   {cols.isVisible("plan") && (
@@ -427,6 +442,27 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+      <PasswordConfirmModal
+        open={Boolean(pendingDelete)}
+        title={pendingDelete?.type === "bulk" ? "Queue user deletions" : "Queue user deletion"}
+        description={
+          pendingDelete?.type === "bulk"
+            ? `This queues staged deletion for ${pendingDelete.count} selected users. Enter your admin password to continue.`
+            : pendingDelete
+            ? `This queues staged deletion for ${maskEmail(pendingDelete.email)}. Enter your admin password to continue.`
+            : ""
+        }
+        confirmLabel="Queue deletion"
+        busy={deleteBusy}
+        error={deleteError}
+        onClose={() => {
+          if (!deleteBusy) {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

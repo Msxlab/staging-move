@@ -2,12 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
-
-function maskProviderIdentifier(value: string | null | undefined) {
-  if (!value) return null;
-  if (value.length <= 10) return value;
-  return `${value.slice(0, 4)}...${value.slice(-4)}`;
-}
+import { maskProviderIdentifier } from "@/lib/privacy";
 
 export async function GET(
   _request: NextRequest,
@@ -138,7 +133,6 @@ export async function GET(
           orderBy: { createdAt: "desc" },
           take: 10,
           select: {
-            id: true,
             email: true,
             expiresAt: true,
             consumedAt: true,
@@ -149,7 +143,6 @@ export async function GET(
           orderBy: { createdAt: "desc" },
           take: 10,
           select: {
-            id: true,
             expiresAt: true,
             usedAt: true,
             createdAt: true,

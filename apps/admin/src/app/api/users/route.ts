@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { parsePaginationParams } from "@/lib/pagination";
 
 export async function GET(request: NextRequest) {
   try {
     await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const perPage = parseInt(searchParams.get("perPage") || "20");
+    const { page, perPage, skip } = parsePaginationParams(searchParams, {
+      defaultPerPage: 20,
+    });
     const search = searchParams.get("search") || "";
     const plan = searchParams.get("plan") || "";
     const subStatus = searchParams.get("subStatus") || "";
@@ -54,7 +56,13 @@ export async function GET(request: NextRequest) {
     const [users, total, totalAll, newThisWeek, newPrevWeek, activeSubCount, planCounts] = await Promise.all([
       prisma.user.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          createdAt: true,
+          deletedAt: true,
           subscription: { select: { plan: true, status: true, trialEndsAt: true } },
           profile: { select: { familyStatus: true, hasChildren: true } },
           _count: {
@@ -68,7 +76,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy,
         take: perPage,
-        skip: (page - 1) * perPage,
+        skip,
       }),
       prisma.user.count({ where }),
       prisma.user.count(),
@@ -138,6 +146,9 @@ export async function DELETE(request: NextRequest) {
     });
 
     let queued = 0;
+    let alreadyQueued = 0;
+    let skippedProcessing = 0;
+    const skipped: Array<{ id: string; reason: string }> = [];
 
     for (const user of users) {
       const existingRequest = await prisma.gDPRRequest.findFirst({
@@ -149,7 +160,12 @@ export async function DELETE(request: NextRequest) {
         orderBy: { createdAt: "desc" },
       });
 
-      if (!existingRequest) {
+      if (existingRequest?.status === "PROCESSING") {
+        skippedProcessing += 1;
+        skipped.push({ id: user.id, reason: "DELETE request already processing" });
+      } else if (existingRequest) {
+        alreadyQueued += 1;
+      } else {
         await prisma.gDPRRequest.create({
           data: {
             userId: user.id,
@@ -181,7 +197,11 @@ export async function DELETE(request: NextRequest) {
           action: "BULK_DELETE_USER",
           entityType: "User",
           entityId: user.id,
-          changes: JSON.stringify({ email: user.email, queued: !existingRequest }),
+          changes: JSON.stringify({
+            email: user.email,
+            queued: !existingRequest,
+            skippedReason: existingRequest?.status === "PROCESSING" ? "processing" : undefined,
+          }),
           ipAddress: request.headers.get("x-forwarded-for") || "unknown",
         },
       });
@@ -189,10 +209,15 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       queued,
+      alreadyQueued,
+      skippedProcessing,
+      skipped,
       total: users.length,
       message: queued > 0
         ? `${queued} user deletion request(s) queued for staged processing.`
-        : "Selected users already have deletion requests in progress.",
+        : skippedProcessing > 0
+        ? "Selected users already have deletion requests processing."
+        : "Selected users already have deletion requests queued.",
     }, { status: 202 });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
