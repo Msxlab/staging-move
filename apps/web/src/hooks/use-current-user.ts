@@ -36,6 +36,10 @@ async function clearServiceWorkerAuthState() {
       );
     }
     navigator.serviceWorker?.controller?.postMessage({ type: "LOGOUT_CLEAR_CACHES" });
+    if (navigator.serviceWorker?.getRegistrations) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+    }
   } catch {
     /* best effort */
   }

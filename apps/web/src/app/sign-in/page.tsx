@@ -28,19 +28,23 @@ function SignInForm() {
   // We map each to an `auth.*` key so the user sees a localized message
   // instead of the raw query string.
   const OAUTH_ERROR_KEYS: Record<string, string> = {
-    "google-not-configured": "error_unavailable",
-    "apple-not-configured": "error_unavailable",
+    "google-not-configured": "error_provider_disabled",
+    "apple-not-configured": "error_provider_disabled",
+    "oauth-provider-disabled": "error_provider_disabled",
     "missing-code": "error_generic",
     "state-mismatch": "error_generic",
     "token-exchange-failed": "error_generic",
     "invalid-token": "error_invalid",
-    "email-unverified": "error_invalid",
+    "email-unverified": "error_oauth_email_unverified",
+    "apple-email-not-verified": "error_oauth_email_unverified",
     "apple-no-email": "error_generic",
     "apple-bad-body": "error_generic",
     "apple-missing-fields": "error_generic",
+    "apple-bad-user": "error_generic",
     "oauth-account-failed": "error_account_setup",
     "oauth-account-create-failed": "error_account_setup",
     "oauth-account-unavailable": "error_account_unavailable",
+    "oauth-account-deleted": "error_account_unavailable",
     "session-create-failed": "error_session_create",
   };
 

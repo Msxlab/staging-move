@@ -50,7 +50,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { DELETE } from "./route";
+import { DELETE, GET } from "./route";
 
 describe("admin users API", () => {
   beforeEach(() => {
@@ -78,6 +78,54 @@ describe("admin users API", () => {
       .mockResolvedValueOnce(null);
     mocks.gdprCreate.mockResolvedValue({ id: "req_new", status: "PENDING" });
     mocks.adminAuditCreate.mockResolvedValue({});
+  });
+
+  it("lists only active users by default", async () => {
+    mocks.userFindMany.mockResolvedValue([]);
+    mocks.userCount.mockResolvedValue(0);
+    mocks.subscriptionCount.mockResolvedValue(0);
+    mocks.subscriptionGroupBy.mockResolvedValue([]);
+
+    const response = await GET(
+      new NextRequest("https://admin.locateflow.com/api/users", { method: "GET" }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.userFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ deletedAt: null }),
+    }));
+  });
+
+  it("lists deleted users with the deleted account-state filter", async () => {
+    mocks.userFindMany.mockResolvedValue([]);
+    mocks.userCount.mockResolvedValue(0);
+    mocks.subscriptionCount.mockResolvedValue(0);
+    mocks.subscriptionGroupBy.mockResolvedValue([]);
+
+    const response = await GET(
+      new NextRequest("https://admin.locateflow.com/api/users?status=deleted", { method: "GET" }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.userFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ deletedAt: { not: null } }),
+    }));
+  });
+
+  it("keeps the legacy includeDeleted query as an all-users view", async () => {
+    mocks.userFindMany.mockResolvedValue([]);
+    mocks.userCount.mockResolvedValue(0);
+    mocks.subscriptionCount.mockResolvedValue(0);
+    mocks.subscriptionGroupBy.mockResolvedValue([]);
+
+    const response = await GET(
+      new NextRequest("https://admin.locateflow.com/api/users?includeDeleted=true", { method: "GET" }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.userFindMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: {},
+    }));
   });
 
   it("skips users with PROCESSING deletion requests during bulk delete", async () => {

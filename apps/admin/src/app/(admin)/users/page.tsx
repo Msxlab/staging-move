@@ -23,6 +23,7 @@ const USER_COLUMNS = [
   { key: "reviews", label: "Reviews", defaultVisible: false },
   { key: "moves", label: "Moves", defaultVisible: true },
   { key: "joined", label: "Joined" },
+  { key: "deletedAt", label: "Deleted", defaultVisible: true },
   { key: "actions", label: "Actions", alwaysOn: true },
 ];
 
@@ -32,6 +33,7 @@ interface User {
   firstName: string | null;
   lastName: string | null;
   createdAt: string;
+  deletedAt: string | null;
   subscription: { plan: string; status: string; trialEndsAt: string | null } | null;
   profile: { familyStatus: string | null; hasChildren: boolean } | null;
   _count: { addresses: number; services: number; providerReviews: number; movingPlans: number };
@@ -48,6 +50,7 @@ const STATUS_COLORS: Record<string, string> = {
   TRIALING: "bg-cyan-500/10 text-cyan-500",
   CANCELED: "bg-red-500/10 text-red-500",
   EXPIRED: "bg-gray-500/10 text-gray-400",
+  DELETED: "bg-red-500/10 text-red-500",
 };
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -61,14 +64,16 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const bulk = useBulkSelection(users);
+  const selectableUsers = users.filter((user) => !user.deletedAt);
+  const bulk = useBulkSelection(selectableUsers);
   const cols = useColumnVisibility({
     storageKey: "admin.users.cols",
-    version: 1,
+    version: 2,
     columns: USER_COLUMNS,
   });
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
+  const [accountStatus, setAccountStatus] = useState<"active" | "deleted" | "all">("active");
   const [filters, setFilters] = useState({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", dateFrom: "", dateTo: "" });
   const [pendingDelete, setPendingDelete] = useState<
     | { type: "single"; userId: string; email: string }
@@ -85,6 +90,7 @@ export default function UsersPage() {
       const params = new URLSearchParams({
         page: String(page), perPage: String(perPage),
         search, sortBy, sortDir,
+        status: accountStatus,
       });
       if (filters.plan) params.set("plan", filters.plan);
       if (filters.subStatus) params.set("subStatus", filters.subStatus);
@@ -100,11 +106,11 @@ export default function UsersPage() {
       if (data.stats) setStats(data.stats);
     } catch { toast.error("Failed to fetch users"); }
     finally { setLoading(false); }
-  }, [page, search, sortBy, sortDir, filters]);
+  }, [page, search, sortBy, sortDir, accountStatus, filters]);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const activeFilterCount = Object.values(filters).filter(Boolean).length + (accountStatus !== "active" ? 1 : 0);
 
   function toggleSort(col: string) {
     if (sortBy === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -185,6 +191,8 @@ export default function UsersPage() {
 
   function clearFilters() {
     setFilters({ plan: "", subStatus: "", hasReviews: "", hasMoving: "", dateFrom: "", dateTo: "" });
+    setAccountStatus("active");
+    bulk.clear();
     setPage(1);
   }
 
@@ -286,6 +294,22 @@ export default function UsersPage() {
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Account State</label>
+              <select
+                value={accountStatus}
+                onChange={(e) => {
+                  setAccountStatus(e.target.value as "active" | "deleted" | "all");
+                  bulk.clear();
+                  setPage(1);
+                }}
+                className={inputCls}
+              >
+                <option value="active">Active</option>
+                <option value="deleted">Deleted</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+            <div>
               <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Plan</label>
               <select value={filters.plan} onChange={(e) => { setFilters({ ...filters, plan: e.target.value }); setPage(1); }} className={inputCls}>
                 <option value="">All Plans</option>
@@ -368,6 +392,7 @@ export default function UsersPage() {
                   Joined <SortIcon col="createdAt" />
                 </th>
               )}
+              {cols.isVisible("deletedAt") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Deleted</th>}
               <th className="px-3 py-3 text-right text-xs font-medium uppercase text-muted-foreground">Actions</th>
             </tr>
           </thead>
@@ -388,7 +413,11 @@ export default function UsersPage() {
               users.map((user) => (
                 <tr key={user.id} className={`bg-card transition-colors ${bulk.isSelected(user.id) ? "bg-primary/5" : "hover:bg-accent/50"}`}>
                   <td className="px-3 py-3">
-                    <button onClick={() => bulk.toggle(user.id)} className="text-muted-foreground hover:text-foreground">
+                    <button
+                      onClick={() => !user.deletedAt && bulk.toggle(user.id)}
+                      disabled={Boolean(user.deletedAt)}
+                      className="text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                    >
                       {bulk.isSelected(user.id) ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
                     </button>
                   </td>
@@ -407,8 +436,8 @@ export default function UsersPage() {
                   )}
                   {cols.isVisible("status") && (
                     <td className="px-3 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
-                        {user.subscription?.status || "—"}
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "DELETED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
+                        {user.deletedAt ? "DELETED" : user.subscription?.status || "—"}
                       </span>
                     </td>
                   )}
@@ -417,14 +446,21 @@ export default function UsersPage() {
                   {cols.isVisible("reviews") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.providerReviews}</td>}
                   {cols.isVisible("moves") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.movingPlans}</td>}
                   {cols.isVisible("joined") && <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</td>}
+                  {cols.isVisible("deletedAt") && (
+                    <td className="px-3 py-3 text-xs text-muted-foreground">
+                      {user.deletedAt ? new Date(user.deletedAt).toLocaleString() : "—"}
+                    </td>
+                  )}
                   <td className="px-3 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => router.push(`/users/${user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button onClick={() => handleDelete(user.id, user.email)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete user">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {!user.deletedAt && (
+                        <button onClick={() => handleDelete(user.id, user.email)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete user">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

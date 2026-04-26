@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       );
       return clearAppleOAuthCookies(response);
     }
-    if (err?.message === "OAUTH_EXISTING_DELETED_USER_BLOCKED") {
+    if (["OAUTH_EXISTING_DELETED_USER_BLOCKED", "OAUTH_ACCOUNT_UNAVAILABLE", "OAUTH_ACCOUNT_DELETED"].includes(err?.message)) {
       return clearAppleOAuthCookies(
         NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-unavailable")),
       );

@@ -1,5 +1,5 @@
-const CACHE_NAME = "locateflow-v4";
-const STATIC_CACHE = "locateflow-static-v4";
+const CACHE_NAME = "locateflow-v5";
+const STATIC_CACHE = "locateflow-static-v5";
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -23,6 +23,38 @@ const AUTHENTICATED_NAV_PREFIXES = [
   "/onboarding",
 ];
 
+const AUTH_NAV_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/verify-email",
+];
+
+const SAFE_OFFLINE_NAV_PATHS = [
+  "/",
+  "/help",
+  "/privacy",
+  "/terms",
+  "/disclaimer",
+  "/cookie-policy",
+  "/contact",
+  "/pricing",
+  "/how-it-works",
+  "/faq",
+  "/security",
+  "/refund",
+  "/dpa",
+  "/acceptable-use",
+  "/ccpa-privacy-notice",
+];
+
+function pathMatchesPrefix(pathname, prefixes) {
+  return prefixes.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function isSafeOfflineNavigation(pathname) {
+  return SAFE_OFFLINE_NAV_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -35,7 +67,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== STATIC_CACHE)
+          .filter((k) => k.indexOf("locateflow-") === 0 && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
     )
@@ -53,7 +85,8 @@ self.addEventListener("fetch", (event) => {
 
   if (
     request.mode === "navigate" &&
-    AUTHENTICATED_NAV_PREFIXES.some((path) => url.pathname === path || url.pathname.startsWith(`${path}/`))
+    (pathMatchesPrefix(url.pathname, AUTHENTICATED_NAV_PREFIXES) ||
+      pathMatchesPrefix(url.pathname, AUTH_NAV_PREFIXES))
   ) {
     event.respondWith(fetch(request));
     return;
@@ -76,7 +109,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages: network-first with offline fallback. Do not cache HTML pages:
+  if (request.mode === "navigate" && !isSafeOfflineNavigation(url.pathname)) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Safe public pages: network-first with offline fallback. Do not cache HTML:
   // marketing pages can vary by auth state, and app pages must never survive logout.
   event.respondWith(
     fetch(request)
@@ -102,7 +140,7 @@ self.addEventListener("message", (event) => {
       caches.keys().then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key.indexOf("locateflow-") === 0 && key !== STATIC_CACHE)
+            .filter((key) => key.indexOf("locateflow-") === 0)
             .map((key) => caches.delete(key))
         )
       )
