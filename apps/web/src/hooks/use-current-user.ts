@@ -20,6 +20,10 @@ export interface UseCurrentUserResult {
   signOut: () => Promise<void>;
 }
 
+export interface UseCurrentUserOptions {
+  enabled?: boolean;
+}
+
 async function clearServiceWorkerAuthState() {
   if (typeof window === "undefined") return;
   try {
@@ -41,11 +45,18 @@ async function clearServiceWorkerAuthState() {
  * Client-side hook: reads /api/auth/me and keeps a single in-flight request.
  * This replaces Clerk's useUser/useAuth.
  */
-export function useCurrentUser(): UseCurrentUserResult {
+export function useCurrentUser(options: UseCurrentUserOptions = {}): UseCurrentUserResult {
+  const enabled = options.enabled ?? true;
   const [user, setUser] = useState<CurrentUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   const refresh = useCallback(async () => {
+    if (!enabled) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const res = await fetch("/api/auth/me", { cache: "no-store" });
       if (!res.ok) {
@@ -59,11 +70,16 @@ export function useCurrentUser(): UseCurrentUserResult {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
+    if (!enabled) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     refresh();
-  }, [refresh]);
+  }, [enabled, refresh]);
 
   const signOut = useCallback(async () => {
     await fetch("/api/auth/logout", {

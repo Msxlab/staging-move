@@ -6,7 +6,6 @@ import {
   getOAuthRedirectUri,
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
-import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
 import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 
 export const runtime = "nodejs";
@@ -25,7 +24,6 @@ export async function GET(request: NextRequest) {
   const redirectUri = await getOAuthRedirectUri(request, "/api/auth/oauth/apple/callback");
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
-  const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
   const safeRedirect = normalizeOAuthRedirectPath(rawRedirect);
 
   const url = appleAuthorizeUrl({ clientId, redirectUri, state });
@@ -45,8 +43,5 @@ export async function GET(request: NextRequest) {
   res.cookies.set("oauth_state_apple", state, cookieOpts);
   res.cookies.set("oauth_redirect_uri_apple", redirectUri, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
-  if (acceptedLegal) {
-    res.cookies.set(OAUTH_LEGAL_ACCEPTANCE_COOKIE, "accepted", cookieOpts);
-  }
   return res;
 }

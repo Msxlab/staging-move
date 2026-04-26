@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -39,6 +39,8 @@ function SignInForm() {
     "apple-bad-body": "error_generic",
     "apple-missing-fields": "error_generic",
     "oauth-account-failed": "error_account_setup",
+    "oauth-account-create-failed": "error_account_setup",
+    "oauth-account-unavailable": "error_account_unavailable",
     "session-create-failed": "error_session_create",
   };
 
@@ -53,6 +55,7 @@ function SignInForm() {
       : null,
   );
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+  const authCheckStarted = useRef(false);
 
   useEffect(() => {
     fetch("/api/auth/oauth/providers", { cache: "no-store" })
@@ -62,6 +65,9 @@ function SignInForm() {
   }, []);
 
   useEffect(() => {
+    if (authCheckStarted.current) return;
+    authCheckStarted.current = true;
+
     let cancelled = false;
     fetch("/api/auth/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
