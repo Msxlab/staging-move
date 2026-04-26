@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { compareCoverageConfidence } from "@locateflow/shared";
 import {
   getProviderCoverageConfidenceFromDb,
   getProviderMatchLevelFromDb,
@@ -120,5 +121,34 @@ describe("tierProvidersFromDb", () => {
     expect(getProviderCoverageConfidenceFromDb(provider, { state: "TX", zip: "78759" })).toBe(
       "ADDRESS_CHECK_REQUIRED",
     );
+  });
+
+  it("sorts high-confidence local providers above broad national providers", () => {
+    const providers = [
+      {
+        id: "national",
+        scope: "FEDERAL",
+        coverageModel: "live_address" as const,
+        coverages: [],
+        popularityScore: 999,
+      },
+      {
+        id: "pseg",
+        scope: "STATE",
+        coverageModel: "zip_prefix" as const,
+        coverages: [{ state: "NJ", zipPrefix: "070", zipExact: null }],
+        popularityScore: 1,
+      },
+    ];
+
+    const sorted = [...providers].sort((a, b) => {
+      const rank = compareCoverageConfidence(
+        getProviderCoverageConfidenceFromDb(a, { state: "NJ", zip: "07030" }),
+        getProviderCoverageConfidenceFromDb(b, { state: "NJ", zip: "07030" }),
+      );
+      return rank || b.popularityScore - a.popularityScore;
+    });
+
+    expect(sorted.map((provider) => provider.id)).toEqual(["pseg", "national"]);
   });
 });

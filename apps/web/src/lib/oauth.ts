@@ -128,6 +128,15 @@ export function normalizeOAuthRedirectPath(
   return normalizeAppRedirectPath(value, fallback);
 }
 
+export function resolveOAuthPostAuthRedirectPath(input: {
+  isNewUser: boolean;
+  redirectPath?: string | null;
+  fallback?: string;
+}): string {
+  if (input.isNewUser) return "/onboarding";
+  return normalizeOAuthRedirectPath(input.redirectPath, input.fallback || "/dashboard");
+}
+
 export async function getGoogleOAuthCredentials() {
   const [clientId, clientSecret] = await Promise.all([
     getRuntimeConfigValue("GOOGLE_OAUTH_CLIENT_ID"),

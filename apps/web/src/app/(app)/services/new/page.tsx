@@ -210,6 +210,7 @@ export default function NewServicePage() {
     setError(null);
     let success = 0;
     let failed = 0;
+    let firstError: string | null = null;
     for (const [id, p] of selectedProviders) {
       const b = billingData[id] || {};
       const payload: any = {
@@ -235,8 +236,17 @@ export default function NewServicePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (res.ok) success++; else failed++;
-      } catch { failed++; }
+        if (res.ok) {
+          success++;
+        } else {
+          failed++;
+          const next = await res.json().catch(() => null);
+          firstError ||= next?.error || "A selected provider could not be added.";
+        }
+      } catch {
+        failed++;
+        firstError ||= "A selected provider could not be added.";
+      }
     }
     // If user arrived via a SWITCH flow, mark the old service accordingly
     if (success > 0 && fromServiceId) {
@@ -254,7 +264,7 @@ export default function NewServicePage() {
       router.push("/services");
     }
     if (failed > 0) {
-      setError(`${failed} service${failed > 1 ? "s" : ""} failed to save.`);
+      setError(firstError || `${failed} service${failed > 1 ? "s" : ""} failed to save.`);
     }
   };
 

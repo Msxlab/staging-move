@@ -5,6 +5,10 @@ import { InstallPrompt } from "@/components/shared/install-prompt";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
+import {
+  buildEmailVerificationGateRedirect,
+  needsEmailVerificationGate,
+} from "@/lib/email-verification-gate";
 import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import type { ReactNode } from "react";
@@ -19,10 +23,30 @@ function parseStoredLegalConsents(metadata: string | null | undefined) {
 }
 
 async function checkOnboardingNeeded(): Promise<boolean> {
+  const { requireDbUserId } = await import("@/lib/auth");
+  let userId: string;
   try {
-    const { requireDbUserId } = await import("@/lib/auth");
-    const userId = await requireDbUserId();
-    const [profile, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
+    userId = await requireDbUserId();
+  } catch (error: any) {
+    if (error?.message === "ACCOUNT_DELETED") {
+      redirect("/");
+    }
+    if (error?.message === "UNAUTHORIZED") {
+      redirect("/sign-in");
+    }
+    return false;
+  }
+
+  const [user, profile, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          emailVerifiedAt: true,
+          passwordHash: true,
+          oauthAccounts: { select: { id: true }, take: 1 },
+        },
+      }),
       prisma.profile.findUnique({ where: { userId } }),
       prisma.userEvent.findMany({
         where: { userId, event: LEGAL_CONSENT_EVENT },
@@ -43,27 +67,27 @@ async function checkOnboardingNeeded(): Promise<boolean> {
         orderBy: { createdAt: "desc" },
       }),
     ]);
-    const hasLegalConsents = consentEvents.some((event) =>
-      hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
-    );
-    const progress = getOnboardingProgress({
-      hasProfile: Boolean(profile),
-      hasRequiredLegalConsents: hasLegalConsents,
-      addressCount,
-      serviceCount,
-      movingPlanCount,
-      ...summarizeOnboardingEvents(onboardingEvents),
-    });
-    return !progress.completed;
-  } catch (error: any) {
-    if (error?.message === "ACCOUNT_DELETED") {
-      redirect("/");
-    }
-    if (error?.message === "UNAUTHORIZED") {
-      redirect("/sign-in");
-    }
-    return false;
+
+  if (!user) {
+    redirect("/sign-in");
   }
+
+  if (needsEmailVerificationGate(user)) {
+    redirect(buildEmailVerificationGateRedirect("/onboarding"));
+  }
+
+  const hasLegalConsents = consentEvents.some((event) =>
+    hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
+  );
+  const progress = getOnboardingProgress({
+    hasProfile: Boolean(profile),
+    hasRequiredLegalConsents: hasLegalConsents,
+    addressCount,
+    serviceCount,
+    movingPlanCount,
+    ...summarizeOnboardingEvents(onboardingEvents),
+  });
+  return !progress.completed;
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
