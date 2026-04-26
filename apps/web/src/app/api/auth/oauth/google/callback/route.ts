@@ -5,8 +5,10 @@ import {
   getGoogleOAuthCredentials,
   getOAuthRedirectUri,
   getOAuthResponseUrl,
+  hashForOAuthLog,
+  logSafeOAuthEvent,
   normalizeOAuthRedirectPath,
-  resolveOAuthPostAuthRedirectPath,
+  summarizeOAuthError,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
 import {
@@ -14,29 +16,27 @@ import {
   findOrLinkOAuthUserWithStatus,
   generateFingerprint,
 } from "@/lib/user-auth";
-import {
-  OAUTH_LEGAL_ACCEPTANCE_COOKIE,
-  recordLegalAcceptance,
-} from "@/lib/legal-acceptance";
 import { sendWelcomeEmail } from "@/lib/email-service";
 import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
+import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
 export const runtime = "nodejs";
 
 const GOOGLE_ISSUER = "https://accounts.google.com";
 const GOOGLE_JWKS = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
+const LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE = "oauth_legal_acceptance";
 
 function clearGoogleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_state_google");
   response.cookies.delete("oauth_pkce_google");
   response.cookies.delete("oauth_redirect_uri_google");
   response.cookies.delete("oauth_redirect");
-  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
+  response.cookies.delete(LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }
 
 function logGoogleOAuthFailure(stage: string, err: unknown) {
-  console.error(`[OAUTH] google ${stage} failed:`, err);
+  logSafeOAuthEvent(`google_${stage}_failed`, summarizeOAuthError(err));
 }
 
 async function redirectWithClearedGoogleCookies(request: NextRequest, path: string) {
@@ -72,7 +72,6 @@ export async function GET(request: NextRequest) {
   const pkceVerifier = request.cookies.get("oauth_pkce_google")?.value;
   const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_google")?.value;
   const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
-  const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || !pkceVerifier || cookieState !== state) {
     return redirectWithClearedGoogleCookies(request, "/sign-in?error=state-mismatch");
   }
@@ -99,6 +98,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (!payload.email || !payload.email_verified) {
+    logSafeOAuthEvent("oauth_email_unverified", {
+      provider: "google",
+      emailHash: hashForOAuthLog(payload.email),
+    });
     return redirectWithClearedGoogleCookies(request, "/sign-in?error=email-unverified");
   }
 
@@ -123,26 +126,20 @@ export async function GET(request: NextRequest) {
       );
       return clearGoogleOAuthCookies(response);
     }
-    logGoogleOAuthFailure("user link", err);
+    if (err?.message === "OAUTH_EXISTING_DELETED_USER_BLOCKED") {
+      return clearGoogleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-unavailable")),
+      );
+    }
+    if (err?.message === "OAUTH_ACCOUNT_CREATE_FAILED") {
+      return clearGoogleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-create-failed")),
+      );
+    }
+    logGoogleOAuthFailure("user_link", err);
     return clearGoogleOAuthCookies(
       NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),
     );
-  }
-
-  if (acceptedLegal) {
-    try {
-      await recordLegalAcceptance({
-        userId,
-        request,
-        page: "/sign-up",
-        source: "google_oauth_signup",
-      });
-    } catch (err) {
-      logGoogleOAuthFailure("legal acceptance", err);
-      return clearGoogleOAuthCookies(
-        NextResponse.redirect(await getOAuthResponseUrl(request, "/onboarding?step=legal&error=legal-acceptance-failed")),
-      );
-    }
   }
 
   const ua = request.headers.get("user-agent") || "";
@@ -153,16 +150,36 @@ export async function GET(request: NextRequest) {
       userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
     });
   } catch (err) {
-    logGoogleOAuthFailure("session create", err);
+    logSafeOAuthEvent("oauth_session_create_failed", {
+      provider: "google",
+      userId,
+      ...summarizeOAuthError(err),
+    });
     return clearGoogleOAuthCookies(
       NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=session-create-failed")),
+    );
+  }
+
+  let finalRedirectPath: string;
+  try {
+    const userState = await getPostAuthUserState(userId);
+    finalRedirectPath = resolvePostAuthRedirect(userState, redirectPath);
+    if (!userState.hasRequiredLegalConsents) {
+      logSafeOAuthEvent("oauth_legal_redirect", { provider: "google", userId });
+    } else if (!userState.onboardingCompleted) {
+      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "google", userId });
+    }
+  } catch (err) {
+    logGoogleOAuthFailure("post_auth_redirect", err);
+    return clearGoogleOAuthCookies(
+      NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),
     );
   }
 
   const response = NextResponse.redirect(
     await getOAuthResponseUrl(
       request,
-      resolveOAuthPostAuthRedirectPath({ isNewUser, redirectPath }),
+      finalRedirectPath,
     ),
   );
   if (isNewUser) {

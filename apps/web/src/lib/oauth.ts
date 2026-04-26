@@ -21,6 +21,30 @@ export function generatePkce() {
   return { verifier, challenge };
 }
 
+export function hashForOAuthLog(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  return createHash("sha256").update(value.toLowerCase()).digest("hex").slice(0, 16);
+}
+
+export function summarizeOAuthError(err: unknown): Record<string, string> {
+  if (!err || typeof err !== "object") return {};
+  const maybeError = err as { name?: unknown; code?: unknown };
+  return {
+    ...(typeof maybeError.name === "string" ? { name: maybeError.name } : {}),
+    ...(typeof maybeError.code === "string" ? { code: maybeError.code } : {}),
+  };
+}
+
+export function logSafeOAuthEvent(
+  event: string,
+  details: Record<string, string | boolean | number | null | undefined> = {},
+) {
+  const sanitized = Object.fromEntries(
+    Object.entries(details).filter(([, value]) => value !== undefined),
+  );
+  console.info("[OAUTH]", event, sanitized);
+}
+
 export function getBaseUrl(): string {
   return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") || "http://localhost:3000";
 }

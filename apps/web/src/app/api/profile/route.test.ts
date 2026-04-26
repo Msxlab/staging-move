@@ -53,7 +53,13 @@ function makeRequest(body: unknown) {
 describe("profile route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUserEvent.findFirst.mockResolvedValue(null);
+    mockUserEvent.findFirst.mockResolvedValue({
+      metadata: JSON.stringify(createAcceptedLegalConsents({
+        termsVersion: "2026-03-13",
+        disclaimerVersion: "2026-03-13",
+        acceptedAt: "2026-04-25T12:00:00.000Z",
+      })),
+    });
     mockUserEvent.create.mockResolvedValue({});
     mockUser.update.mockResolvedValue({});
     mockProfile.upsert.mockResolvedValue({ id: "profile-1", userId: "user-1" });
@@ -77,7 +83,6 @@ describe("profile route", () => {
         hasMotorcycle: false,
         hasBoatRV: false,
       },
-      createAcceptedLegalConsents(),
     );
 
     const response = await POST(makeRequest(payload));
@@ -102,83 +107,50 @@ describe("profile route", () => {
     expect(upsertArg.create).not.toHaveProperty("sensitiveOptIn");
   });
 
-  it("persists legal acknowledgement fields accepted by the current schema", async () => {
-    const payload = buildOnboardingProfilePayload(
-      {
-        firstName: "Taylor",
-        lastName: "Mover",
-        ageRange: "",
-        familyStatus: "SINGLE",
-        hasChildren: false,
-        childrenCount: 0,
-        hasPets: false,
-        petTypes: [],
-        carCount: 0,
-        hasSenior: false,
-        hasDisability: false,
-        needsStorage: false,
-        hasMotorcycle: false,
-        hasBoatRV: false,
-      },
-      createAcceptedLegalConsents({
-        termsVersion: "2026-03-13",
-        disclaimerVersion: "2026-03-13",
-        acceptedAt: "2026-04-25T12:00:00.000Z",
-      }),
-    );
+  it("rejects profile save until the onboarding legal gate is accepted", async () => {
+    mockUserEvent.findFirst.mockResolvedValue(null);
+    const payload = buildOnboardingProfilePayload({
+      firstName: "Taylor",
+      lastName: "Mover",
+      ageRange: "",
+      familyStatus: "SINGLE",
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      petTypes: [],
+      carCount: 0,
+      hasSenior: false,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+    });
 
     const response = await POST(makeRequest(payload));
+    const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(mockUserEvent.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
-        userId: "user-1",
-        event: "LEGAL_CONSENT_ACCEPTED",
-        page: "/api/profile",
-        metadata: JSON.stringify({
-          termsAccepted: true,
-          disclaimerAccepted: true,
-          termsVersion: "2026-03-13",
-          disclaimerVersion: "2026-03-13",
-          acceptedAt: "2026-04-25T12:00:00.000Z",
-        }),
-      }),
-    });
+    expect(response.status).toBe(400);
+    expect(body.error).toContain("Terms of Use");
+    expect(mockProfile.upsert).not.toHaveBeenCalled();
   });
 
-  it("does not duplicate legal acknowledgement rows for the same current versions", async () => {
-    mockUserEvent.findFirst.mockResolvedValue({
-      metadata: JSON.stringify({
-        termsAccepted: true,
-        disclaimerAccepted: true,
-        termsVersion: "2026-03-13",
-        disclaimerVersion: "2026-03-13",
-        acceptedAt: "2026-04-25T12:00:00.000Z",
-      }),
+  it("does not create legal acknowledgement rows while saving profile", async () => {
+    const payload = buildOnboardingProfilePayload({
+      firstName: "Taylor",
+      lastName: "Mover",
+      ageRange: "",
+      familyStatus: "SINGLE",
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      petTypes: [],
+      carCount: 0,
+      hasSenior: false,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
     });
-    const payload = buildOnboardingProfilePayload(
-      {
-        firstName: "Taylor",
-        lastName: "Mover",
-        ageRange: "",
-        familyStatus: "SINGLE",
-        hasChildren: false,
-        childrenCount: 0,
-        hasPets: false,
-        petTypes: [],
-        carCount: 0,
-        hasSenior: false,
-        hasDisability: false,
-        needsStorage: false,
-        hasMotorcycle: false,
-        hasBoatRV: false,
-      },
-      createAcceptedLegalConsents({
-        termsVersion: "2026-03-13",
-        disclaimerVersion: "2026-03-13",
-        acceptedAt: "2026-04-26T12:00:00.000Z",
-      }),
-    );
 
     const response = await POST(makeRequest(payload));
 

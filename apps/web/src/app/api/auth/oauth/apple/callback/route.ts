@@ -5,27 +5,27 @@ import {
   getAppleOAuthCredentials,
   getOAuthRedirectUri,
   getOAuthResponseUrl,
+  hashForOAuthLog,
   isAppleEmailVerifiedClaim,
+  logSafeOAuthEvent,
   normalizeOAuthRedirectPath,
-  resolveOAuthPostAuthRedirectPath,
+  summarizeOAuthError,
 } from "@/lib/oauth";
 import {
   createUserSession,
   findOrLinkOAuthUserWithStatus,
   generateFingerprint,
 } from "@/lib/user-auth";
-import {
-  OAUTH_LEGAL_ACCEPTANCE_COOKIE,
-  recordLegalAcceptance,
-} from "@/lib/legal-acceptance";
 import { sendWelcomeEmail } from "@/lib/email-service";
 import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
+import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import { z } from "zod";
 
 export const runtime = "nodejs";
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
+const LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE = "oauth_legal_acceptance";
 
 const appleUserFieldSchema = z.object({
   name: z
@@ -41,12 +41,12 @@ function clearAppleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_state_apple");
   response.cookies.delete("oauth_redirect_uri_apple");
   response.cookies.delete("oauth_redirect");
-  response.cookies.delete(OAUTH_LEGAL_ACCEPTANCE_COOKIE);
+  response.cookies.delete(LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }
 
 function logAppleOAuthFailure(stage: string, err: unknown) {
-  console.error(`[OAUTH] apple ${stage} failed:`, err);
+  logSafeOAuthEvent(`apple_${stage}_failed`, summarizeOAuthError(err));
 }
 
 async function redirectWithClearedAppleCookies(request: NextRequest, path: string) {
@@ -99,7 +99,6 @@ export async function POST(request: NextRequest) {
   const cookieState = request.cookies.get("oauth_state_apple")?.value;
   const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_apple")?.value;
   const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
-  const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || cookieState !== state) {
     return redirectWithClearedAppleCookies(request, "/sign-in?error=state-mismatch");
   }
@@ -131,6 +130,10 @@ export async function POST(request: NextRequest) {
     return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-no-email");
   }
   if (!isAppleEmailVerifiedClaim(payload.email_verified)) {
+    logSafeOAuthEvent("oauth_email_unverified", {
+      provider: "apple",
+      emailHash: hashForOAuthLog(payload.email),
+    });
     return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-email-not-verified");
   }
 
@@ -171,26 +174,20 @@ export async function POST(request: NextRequest) {
       );
       return clearAppleOAuthCookies(response);
     }
-    logAppleOAuthFailure("user link", err);
+    if (err?.message === "OAUTH_EXISTING_DELETED_USER_BLOCKED") {
+      return clearAppleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-unavailable")),
+      );
+    }
+    if (err?.message === "OAUTH_ACCOUNT_CREATE_FAILED") {
+      return clearAppleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-create-failed")),
+      );
+    }
+    logAppleOAuthFailure("user_link", err);
     return clearAppleOAuthCookies(
       NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),
     );
-  }
-
-  if (acceptedLegal) {
-    try {
-      await recordLegalAcceptance({
-        userId,
-        request,
-        page: "/sign-up",
-        source: "apple_oauth_signup",
-      });
-    } catch (err) {
-      logAppleOAuthFailure("legal acceptance", err);
-      return clearAppleOAuthCookies(
-        NextResponse.redirect(await getOAuthResponseUrl(request, "/onboarding?step=legal&error=legal-acceptance-failed")),
-      );
-    }
   }
 
   const ua = request.headers.get("user-agent") || "";
@@ -201,16 +198,36 @@ export async function POST(request: NextRequest) {
       userId, email: payload.email, fingerprint: fp, ipAddress: ip, userAgent: ua,
     });
   } catch (err) {
-    logAppleOAuthFailure("session create", err);
+    logSafeOAuthEvent("oauth_session_create_failed", {
+      provider: "apple",
+      userId,
+      ...summarizeOAuthError(err),
+    });
     return clearAppleOAuthCookies(
       NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=session-create-failed")),
+    );
+  }
+
+  let finalRedirectPath: string;
+  try {
+    const userState = await getPostAuthUserState(userId);
+    finalRedirectPath = resolvePostAuthRedirect(userState, redirectPath);
+    if (!userState.hasRequiredLegalConsents) {
+      logSafeOAuthEvent("oauth_legal_redirect", { provider: "apple", userId });
+    } else if (!userState.onboardingCompleted) {
+      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "apple", userId });
+    }
+  } catch (err) {
+    logAppleOAuthFailure("post_auth_redirect", err);
+    return clearAppleOAuthCookies(
+      NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),
     );
   }
 
   const response = NextResponse.redirect(
     await getOAuthResponseUrl(
       request,
-      resolveOAuthPostAuthRedirectPath({ isNewUser, redirectPath }),
+      finalRedirectPath,
     ),
   );
   if (isNewUser) {

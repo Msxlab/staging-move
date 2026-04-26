@@ -293,13 +293,14 @@
     "error_locked": "Too many failed attempts. Please wait and try again.",
     "error_unavailable": "Login temporarily unavailable. Please try again later.",
     "error_account_setup": "We could not finish setting up your social sign-in account. Please try again in a minute.",
+    "error_account_unavailable": "This sign-in account is not available. Please contact support if you think this is a mistake.",
     "error_session_create": "Your account was found, but we could not start a session. Please try again.",
     "error_generic": "Sign in failed. Please try again.",
     "agreeToTerms": "I agree to the {terms} and {privacy}.",
     "mustAgree": "You must accept the terms to continue.",
-    "legalAcceptanceRequired": "Review and accept the Terms of Use and Legal Disclaimer before creating an account.",
-    "legalAcknowledgementsTitle": "Required acknowledgements",
-    "legalAcknowledgementsDescription": "Accept these before creating your LocateFlow account.",
+    "legalAcceptanceRequired": "You will review and accept the Terms of Use and Legal Disclaimer during onboarding.",
+    "legalAcknowledgementsTitle": "Onboarding legal review",
+    "legalAcknowledgementsDescription": "You will review these before using LocateFlow.",
     "oauthReadinessNote": "Email and password sign-up is ready now. Social sign-in will be enabled after admin OAuth credentials are added."
   },
   "dashboard": {

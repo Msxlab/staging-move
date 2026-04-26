@@ -11,6 +11,7 @@ import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
+import { hashForOAuthLog, logSafeOAuthEvent, summarizeOAuthError } from "@/lib/oauth";
 
 // ── Secret / constants ──────────────────────────────────────
 
@@ -449,7 +450,11 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   });
   if (existingLink) {
     if (existingLink.user?.deletedAt) {
-      throw new Error("OAUTH_ACCOUNT_UNAVAILABLE");
+      logSafeOAuthEvent("oauth_existing_deleted_user_blocked", {
+        provider: input.provider,
+        userId: existingLink.userId,
+      });
+      throw new Error("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     }
     return { userId: existingLink.userId, isNewUser: false };
   }
@@ -461,15 +466,30 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   });
   if (userByEmail) {
     if (userByEmail.deletedAt) {
-      throw new Error("OAUTH_ACCOUNT_UNAVAILABLE");
-    }
-    await prisma.oAuthAccount.create({
-      data: {
-        userId: userByEmail.id,
+      logSafeOAuthEvent("oauth_existing_deleted_user_blocked", {
         provider: input.provider,
-        providerId: input.providerId,
-      },
-    });
+        userId: userByEmail.id,
+        emailHash: hashForOAuthLog(input.email),
+      });
+      throw new Error("OAUTH_EXISTING_DELETED_USER_BLOCKED");
+    }
+    try {
+      await prisma.oAuthAccount.create({
+        data: {
+          userId: userByEmail.id,
+          provider: input.provider,
+          providerId: input.providerId,
+        },
+      });
+    } catch (err) {
+      logSafeOAuthEvent("oauth_account_create_failed", {
+        provider: input.provider,
+        userId: userByEmail.id,
+        emailHash: hashForOAuthLog(input.email),
+        ...summarizeOAuthError(err),
+      });
+      throw new Error("OAUTH_ACCOUNT_CREATE_FAILED");
+    }
     // OAuth providers have already verified the email — mark verified if not already.
     if (!userByEmail.emailVerifiedAt) {
       await prisma.user.update({
@@ -485,18 +505,28 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   }
 
   // 3) Brand new account
-  const created = await prisma.user.create({
-    data: {
-      email: input.email.toLowerCase(),
-      firstName: input.firstName ?? null,
-      lastName: input.lastName ?? null,
-      imageUrl: input.imageUrl ?? null,
-      emailVerifiedAt: new Date(),
-      oauthAccounts: {
-        create: { provider: input.provider, providerId: input.providerId },
+  let created: { id: string };
+  try {
+    created = await prisma.user.create({
+      data: {
+        email: input.email.toLowerCase(),
+        firstName: input.firstName ?? null,
+        lastName: input.lastName ?? null,
+        imageUrl: input.imageUrl ?? null,
+        emailVerifiedAt: new Date(),
+        oauthAccounts: {
+          create: { provider: input.provider, providerId: input.providerId },
+        },
       },
-    },
-  });
+    });
+  } catch (err) {
+    logSafeOAuthEvent("oauth_account_create_failed", {
+      provider: input.provider,
+      emailHash: hashForOAuthLog(input.email),
+      ...summarizeOAuthError(err),
+    });
+    throw new Error("OAUTH_ACCOUNT_CREATE_FAILED");
+  }
 
   return { userId: created.id, isNewUser: true };
 }
