@@ -40,6 +40,7 @@ import {
   sendEmailVerificationEmail,
   sendLoggedEmail,
   sendPasswordResetEmail,
+  sendWelcomeEmail,
 } from "./email-service";
 
 describe("email-service logging", () => {
@@ -47,6 +48,15 @@ describe("email-service logging", () => {
     vi.clearAllMocks();
     mocks.getRuntimeConfigValue.mockResolvedValue("https://locateflow.com");
     mocks.emailTemplateFindUnique.mockImplementation(({ where }: any) => {
+      if (where.slug === "welcome") {
+        return Promise.resolve({
+          id: "tpl_welcome",
+          slug: "welcome",
+          subject: "Welcome to LocateFlow",
+          body: '<p>Hi <strong>{{firstName}}</strong></p><a href="{{dashboardLink}}">Open Dashboard</a>',
+          isActive: true,
+        });
+      }
       if (where.slug === "email-verify") return Promise.resolve({ id: "tpl_verify" });
       if (where.slug === "password-reset") return Promise.resolve({ id: "tpl_reset" });
       return Promise.resolve(null);
@@ -117,6 +127,29 @@ describe("email-service logging", () => {
     expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
       expect.objectContaining({
         text: expect.stringContaining("Reset Password: https://locateflow.com/reset-password/reset-token"),
+      }),
+    );
+  });
+
+  it("links welcome sends to the Welcome template with a text fallback", async () => {
+    const result = await sendWelcomeEmail({
+      email: "new@example.com",
+      firstName: "New",
+      dedupeKey: "welcome:user-new",
+    });
+
+    expect(result).toBe(true);
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: "tpl_welcome",
+        to: "new@example.com",
+        subject: "Welcome to LocateFlow",
+        status: "PENDING",
+      }),
+    });
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: expect.stringContaining("Open Dashboard: https://locateflow.com/dashboard"),
       }),
     );
   });

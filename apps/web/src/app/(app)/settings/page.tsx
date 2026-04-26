@@ -52,7 +52,12 @@ export default function SettingsPage() {
       if (res.ok) {
         // Local session cookie is invalidated server-side when the account is
         // fully processed; log out on this device immediately.
-        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          cache: "no-store",
+        }).catch(() => {});
         toast.success(data.message || "Account deletion initiated. Redirecting...");
         setTimeout(() => { window.location.href = "/"; }, 1500);
       } else {

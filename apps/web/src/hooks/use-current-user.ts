@@ -20,6 +20,23 @@ export interface UseCurrentUserResult {
   signOut: () => Promise<void>;
 }
 
+async function clearServiceWorkerAuthState() {
+  if (typeof window === "undefined") return;
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key.startsWith("locateflow-"))
+          .map((key) => caches.delete(key)),
+      );
+    }
+    navigator.serviceWorker?.controller?.postMessage({ type: "LOGOUT_CLEAR_CACHES" });
+  } catch {
+    /* best effort */
+  }
+}
+
 /**
  * Client-side hook: reads /api/auth/me and keeps a single in-flight request.
  * This replaces Clerk's useUser/useAuth.
@@ -49,7 +66,13 @@ export function useCurrentUser(): UseCurrentUserResult {
   }, [refresh]);
 
   const signOut = useCallback(async () => {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+      cache: "no-store",
+    }).catch(() => {});
+    await clearServiceWorkerAuthState();
     setUser(null);
     // Hard-redirect so the middleware re-runs and we leave any protected page.
     if (typeof window !== "undefined") window.location.href = "/";

@@ -38,6 +38,7 @@ const PUBLIC_API_PREFIXES = [
 ];
 const PUBLIC_API_EXACT = [
   "/api/auth/login",
+  "/api/auth/logout",
   "/api/auth/register",
   "/api/auth/me",
   "/api/auth/verify-email",
@@ -118,9 +119,11 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   if (!isMutation) return null;
 
   const contentType = req.headers.get("content-type") || "";
+  const isLogout = pathname === "/api/auth/logout";
   if (
     !contentType.includes("application/json") &&
-    !contentType.includes("multipart/form-data")
+    !contentType.includes("multipart/form-data") &&
+    !isLogout
   ) {
     return NextResponse.json(
       {
@@ -132,6 +135,19 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   }
 
   const secFetchSite = req.headers.get("sec-fetch-site");
+  if (isLogout && !contentType && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    const origin = req.headers.get("origin");
+    const referer = req.headers.get("referer");
+    if (!origin && !referer) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid Origin. API mutations must originate from the same site.",
+        },
+        { status: 403 },
+      );
+    }
+  }
   if (secFetchSite === "same-origin" || secFetchSite === "none") {
     return null;
   }

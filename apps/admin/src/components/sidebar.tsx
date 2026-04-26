@@ -146,7 +146,12 @@ export function Sidebar() {
   };
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+      cache: "no-store",
+    });
     toast.success(tCommon("signOut"));
     router.push("/login");
     router.refresh();

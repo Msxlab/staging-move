@@ -210,7 +210,8 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   if (!isMutation) return null;
 
   const contentType = req.headers.get("content-type") || "";
-  if (!contentType.includes("application/json") && !contentType.includes("multipart/form-data")) {
+  const isLogout = pathname === "/api/auth/logout";
+  if (!contentType.includes("application/json") && !contentType.includes("multipart/form-data") && !isLogout) {
     return NextResponse.json(
       { error: "Invalid Content-Type. API mutations require application/json or multipart/form-data." },
       { status: 403 }
@@ -218,6 +219,16 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   }
 
   const secFetchSite = req.headers.get("sec-fetch-site");
+  if (isLogout && !contentType && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    const origin = req.headers.get("origin");
+    const referer = req.headers.get("referer");
+    if (!origin && !referer) {
+      return NextResponse.json(
+        { error: "Invalid Origin. API mutations must originate from the same site." },
+        { status: 403 }
+      );
+    }
+  }
   if (secFetchSite === "same-origin" || secFetchSite === "none") {
     return null;
   }
@@ -322,6 +333,10 @@ export async function middleware(request: NextRequest) {
   // SEC-008: CSRF check on API mutations
   const csrfBlocked = applyCsrfCheck(request);
   if (csrfBlocked) return hardenEarlyResponse(csrfBlocked);
+
+  if (pathname === "/api/auth/logout") {
+    return nextWithCsp(request);
+  }
 
   // Check session cookie
   const token = request.cookies.get("admin_session")?.value;

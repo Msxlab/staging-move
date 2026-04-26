@@ -11,7 +11,10 @@ export const runtime = "nodejs";
 export async function GET() {
   const session = await getUserSession();
   if (!session) {
-    return NextResponse.json({ user: null }, { status: 200 });
+    return NextResponse.json(
+      { error: "Unauthorized", user: null },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   const user = await prisma.user.findUnique({
@@ -28,19 +31,25 @@ export async function GET() {
     },
   });
   if (!user) {
-    return NextResponse.json({ user: null }, { status: 200 });
+    return NextResponse.json(
+      { error: "Unauthorized", user: null },
+      { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
-  return NextResponse.json({
-    user: {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      imageUrl: user.imageUrl,
-      emailVerified: Boolean(user.emailVerifiedAt),
-      mfaEnabled: user.mfaEnabled,
-      createdAt: user.createdAt,
+  return NextResponse.json(
+    {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        imageUrl: user.imageUrl,
+        emailVerified: Boolean(user.emailVerifiedAt),
+        mfaEnabled: user.mfaEnabled,
+        createdAt: user.createdAt,
+      },
     },
-  });
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }

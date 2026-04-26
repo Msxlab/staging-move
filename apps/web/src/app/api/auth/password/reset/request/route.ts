@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
   const rlKey = getRateLimitKey(request, "auth:pwreset");
   const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60 });
   if (!rl.success) {
-    return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    console.info("[AUTH] password reset skipped", { reason: "rate_limited" });
+    return genericResponse();
   }
 
   let body: unknown;
@@ -48,18 +49,33 @@ export async function POST(request: NextRequest) {
       firstName: true,
       passwordHash: true,
       emailVerifiedAt: true,
+      deletedAt: true,
       oauthAccounts: { select: { id: true, provider: true } },
     },
   });
 
   // Always respond success; never reveal whether the account exists.
   if (!user) {
+    console.info("[AUTH] password reset skipped", { reason: "unknown_email" });
+    return genericResponse();
+  }
+  if (user.deletedAt) {
+    console.info("[AUTH] password reset skipped", {
+      reason: "deleted_user",
+      userId: user.id,
+    });
     return genericResponse();
   }
 
   const hasPasswordLogin = !!user.passwordHash;
   const hasOAuthLogin = user.oauthAccounts.length > 0;
   const canSendSetPasswordLink = !hasPasswordLogin && hasOAuthLogin && !!user.emailVerifiedAt;
+  console.info("[AUTH] password reset user branch", {
+    userId: user.id,
+    hasPasswordLogin,
+    hasOAuthLogin,
+    emailVerified: !!user.emailVerifiedAt,
+  });
 
   if (!hasPasswordLogin && !canSendSetPasswordLink) {
     console.info("[AUTH] password reset skipped", {
@@ -80,13 +96,24 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  await sendPasswordResetEmail({
+  const sent = await sendPasswordResetEmail({
     userEmail: user.email,
     userName: user.firstName || "there",
     resetToken: token,
     mode: hasPasswordLogin ? "reset" : "set-password",
     dedupeKey: `pwreset:${user.id}:${hash.slice(0, 12)}`,
-  }).catch((err) => console.error("[EMAIL] password reset send failed:", err));
+  }).catch((err) => {
+    console.error("[EMAIL] password reset send threw:", {
+      userId: user.id,
+      message: err instanceof Error ? err.message : "SEND_FAILED",
+    });
+    return false;
+  });
+  console.info("[AUTH] password reset email processed", {
+    userId: user.id,
+    mode: hasPasswordLogin ? "reset" : "set-password",
+    sent,
+  });
 
   return genericResponse();
 }

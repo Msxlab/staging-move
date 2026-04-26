@@ -1,6 +1,5 @@
-const CACHE_NAME = "locateflow-v3";
-const STATIC_CACHE = "locateflow-static-v3";
-const DYNAMIC_CACHE = "locateflow-dynamic-v3";
+const CACHE_NAME = "locateflow-v4";
+const STATIC_CACHE = "locateflow-static-v4";
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -36,7 +35,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== STATIC_CACHE && k !== DYNAMIC_CACHE)
+          .filter((k) => k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
     )
@@ -77,19 +76,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages: network-first with offline fallback
+  // Pages: network-first with offline fallback. Do not cache HTML pages:
+  // marketing pages can vary by auth state, and app pages must never survive logout.
   event.respondWith(
     fetch(request)
-      .then((response) => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      })
+      .then((response) => response)
       .catch(async () => {
-        const cached = await caches.match(request);
-        if (cached) return cached;
         // Return offline page for navigation requests
         if (request.mode === "navigate") {
           const offlinePage = await caches.match("/offline");
@@ -104,5 +96,16 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === "LOGOUT_CLEAR_CACHES") {
+    event.waitUntil(
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.indexOf("locateflow-") === 0 && key !== STATIC_CACHE)
+            .map((key) => caches.delete(key))
+        )
+      )
+    );
   }
 });

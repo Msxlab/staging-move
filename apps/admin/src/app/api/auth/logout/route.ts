@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
-import { destroySession } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { destroySession, expireAdminSessionCookies } from "@/lib/auth";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   await destroySession();
-  return NextResponse.json({ success: true });
+  const response = NextResponse.json(
+    { success: true },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+  return expireAdminSessionCookies(response, request.headers.get("host"));
 }

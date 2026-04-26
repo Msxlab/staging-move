@@ -54,11 +54,23 @@ describe("email templates admin API", () => {
         isActive: true,
         createdAt: new Date("2026-04-26T12:01:00Z"),
       },
+      {
+        id: "tpl_welcome",
+        slug: "welcome",
+        name: "Welcome Email",
+        subject: "Welcome to LocateFlow",
+        body: "<p>Welcome</p>",
+        category: "TRANSACTIONAL",
+        variables: null,
+        isActive: true,
+        createdAt: new Date("2026-04-26T12:02:00Z"),
+      },
     ]);
     mocks.emailLogGroupBy.mockResolvedValue([
       { templateId: "tpl_verify", status: "SENT", _count: { _all: 1 } },
       { templateId: "tpl_reset", status: "SENT", _count: { _all: 2 } },
       { templateId: "tpl_reset", status: "FAILED", _count: { _all: 1 } },
+      { templateId: "tpl_welcome", status: "SENT", _count: { _all: 1 } },
       { templateId: null, status: "SENT", _count: { _all: 1 } },
     ]);
     mocks.emailLogFindMany.mockResolvedValue([
@@ -82,9 +94,19 @@ describe("email templates admin API", () => {
         providerMessageId: "resend_reset",
         template: { name: "Password Reset", slug: "password-reset" },
       },
+      {
+        id: "log_welcome",
+        to: "new@example.com",
+        subject: "Welcome to LocateFlow",
+        status: "SENT",
+        sentAt: new Date("2026-04-26T12:04:00Z"),
+        createdAt: new Date("2026-04-26T12:04:00Z"),
+        providerMessageId: "resend_welcome",
+        template: { name: "Welcome Email", slug: "welcome" },
+      },
     ]);
     mocks.emailLogCount
-      .mockResolvedValueOnce(3)
+      .mockResolvedValueOnce(4)
       .mockResolvedValueOnce(1);
   });
 
@@ -104,6 +126,11 @@ describe("email templates admin API", () => {
         sendCounts: { sent: 2, failed: 1, total: 3 },
         _count: { emailLogs: 2 },
       }),
+      expect.objectContaining({
+        slug: "welcome",
+        sendCounts: { sent: 1, failed: 0, total: 1 },
+        _count: { emailLogs: 1 },
+      }),
     ]);
     expect(body.logs).toEqual([
       expect.objectContaining({
@@ -116,11 +143,16 @@ describe("email templates admin API", () => {
         providerMessageId: "resend_reset",
         template: { name: "Password Reset", slug: "password-reset" },
       }),
+      expect.objectContaining({
+        to: "new@example.com",
+        providerMessageId: "resend_welcome",
+        template: { name: "Welcome Email", slug: "welcome" },
+      }),
     ]);
     expect(body.stats).toEqual({
-      totalTemplates: 2,
-      activeTemplates: 2,
-      totalSent: 3,
+      totalTemplates: 3,
+      activeTemplates: 3,
+      totalSent: 4,
       totalFailed: 1,
     });
   });

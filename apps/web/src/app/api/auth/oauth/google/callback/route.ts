@@ -8,11 +8,16 @@ import {
   normalizeOAuthRedirectPath,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
-import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
+import {
+  createUserSession,
+  findOrLinkOAuthUserWithStatus,
+  generateFingerprint,
+} from "@/lib/user-auth";
 import {
   OAUTH_LEGAL_ACCEPTANCE_COOKIE,
   recordLegalAcceptance,
 } from "@/lib/legal-acceptance";
+import { sendWelcomeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -85,8 +90,9 @@ export async function GET(request: NextRequest) {
   }
 
   let userId: string;
+  let isNewUser = false;
   try {
-    userId = await findOrLinkOAuthUser({
+    const oauthUser = await findOrLinkOAuthUserWithStatus({
       provider: "google",
       providerId: payload.sub,
       email: payload.email,
@@ -95,6 +101,8 @@ export async function GET(request: NextRequest) {
       imageUrl: payload.picture,
       allowNewAccount: acceptedLegal,
     });
+    userId = oauthUser.userId;
+    isNewUser = oauthUser.isNewUser;
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
       const response = NextResponse.redirect(
@@ -139,5 +147,17 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
+  if (isNewUser) {
+    const welcomeSent = await sendWelcomeEmail({
+      email: payload.email,
+      firstName: payload.given_name,
+      dedupeKey: `welcome:${userId}`,
+    })
+      .catch((err) => console.error("[EMAIL] welcome after google signup failed:", {
+        userId,
+        message: err instanceof Error ? err.message : "SEND_FAILED",
+      }));
+    console.info("[EMAIL] welcome after google signup", { userId, sent: Boolean(welcomeSent) });
+  }
   return clearGoogleOAuthCookies(response);
 }

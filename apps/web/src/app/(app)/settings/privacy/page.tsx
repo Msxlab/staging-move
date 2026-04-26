@@ -272,7 +272,12 @@ export default function PrivacyPage() {
       const res = await fetch("/api/account/delete", { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          cache: "no-store",
+        }).catch(() => {});
         toast.success(data.message || "Account deletion initiated.");
         setTimeout(() => { window.location.href = "/"; }, 1500);
       } else {
