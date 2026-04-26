@@ -22,7 +22,7 @@ function genericResponse() {
 
 export async function POST(request: NextRequest) {
   const rlKey = getRateLimitKey(request, "auth:pwreset");
-  const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60 });
+  const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60, failClosed: true });
   if (!rl.success) {
     console.info("[AUTH] password reset skipped", { reason: "rate_limited" });
     return genericResponse();

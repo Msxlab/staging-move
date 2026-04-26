@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   // General per-IP rate limit for the register/login cluster — absorbs
   // bursty clients without punishing individual accounts.
   const ipKey = getRateLimitKey(request, "auth:login:ip");
-  const ipRl = await rateLimit(ipKey, { limit: 10, windowSeconds: 15 * 60 });
+  const ipRl = await rateLimit(ipKey, { limit: 10, windowSeconds: 15 * 60, failClosed: true });
   if (!ipRl.success) {
     return NextResponse.json(
       { error: "Too many login attempts. Please wait and try again." },

@@ -1,6 +1,8 @@
 export const BACKUP_TABLES = {
   users: { model: "user", label: "Users" },
+  oauthAccounts: { model: "oAuthAccount", label: "OAuth Accounts" },
   profiles: { model: "profile", label: "Profiles" },
+  dataConsents: { model: "dataConsent", label: "Data Consents" },
   providers: { model: "serviceProvider", label: "Service Providers" },
   providerCoverages: { model: "serviceProviderCoverage", label: "Provider Coverage" },
   addresses: { model: "address", label: "Addresses" },
@@ -11,18 +13,25 @@ export const BACKUP_TABLES = {
   budgets: { model: "budget", label: "Budgets" },
   subscriptions: { model: "subscription", label: "Subscriptions" },
   notifications: { model: "notification", label: "Notifications" },
+  emailLogs: { model: "emailLog", label: "Email Logs" },
   auditLogs: { model: "auditLog", label: "Audit Logs" },
   providerGovernanceIssues: {
     model: "providerGovernanceIssue",
     label: "Provider Governance Issues",
   },
+  adminUsers: { model: "adminUser", label: "Admin Users" },
+  adminPermissions: { model: "adminPermission", label: "Admin Permissions" },
+  adminLoginLogs: { model: "adminLoginLog", label: "Admin Login Logs" },
+  adminAuditLogs: { model: "adminAuditLog", label: "Admin Audit Logs" },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;
 
 export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "users",
+  "oauthAccounts",
   "profiles",
+  "dataConsents",
   "providers",
   "providerCoverages",
   "addresses",
@@ -33,14 +42,21 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "budgets",
   "subscriptions",
   "notifications",
+  "emailLogs",
   "auditLogs",
   "providerGovernanceIssues",
+  "adminUsers",
+  "adminPermissions",
+  "adminLoginLogs",
+  "adminAuditLogs",
 ];
 
 const BACKUP_TABLE_DEPENDENCIES: Partial<
   Record<BackupTableName, BackupTableName[]>
 > = {
+  oauthAccounts: ["users"],
   profiles: ["users"],
+  dataConsents: ["users"],
   providerCoverages: ["providers"],
   addresses: ["users"],
   movingPlans: ["users", "addresses"],
@@ -57,15 +73,21 @@ const BACKUP_TABLE_DEPENDENCIES: Partial<
   budgets: ["users"],
   subscriptions: ["users"],
   notifications: ["users"],
+  emailLogs: [],
   auditLogs: ["users"],
   providerGovernanceIssues: ["providers", "customProviders"],
+  adminPermissions: ["adminUsers"],
+  adminLoginLogs: ["adminUsers"],
+  adminAuditLogs: ["adminUsers"],
 };
 
 const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
   Record<BackupTableName, BackupTableName[]>
 > = {
   users: [
+    "oauthAccounts",
     "profiles",
+    "dataConsents",
     "addresses",
     "movingPlans",
     "customProviders",
@@ -82,6 +104,7 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
   movingPlans: ["moveTasks"],
   customProviders: ["services", "moveTasks", "providerGovernanceIssues"],
   services: ["moveTasks"],
+  adminUsers: ["adminPermissions", "adminLoginLogs", "adminAuditLogs"],
 };
 
 export function isSupportedBackupTable(

@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 vi.mock("@/lib/db", () => ({
   prisma: {
@@ -24,7 +24,9 @@ vi.mock("@/lib/shared-encryption", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: vi.fn(() => "auth:mfa:confirm:ip:203.0.113.10"),
-  rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
+  rateLimit: vi.fn(() =>
+    Promise.resolve({ success: true, resetAt: Date.now() + 60_000 }),
+  ),
 }));
 
 import { prisma } from "@/lib/db";
@@ -45,8 +47,14 @@ function makeRequest() {
 describe("mfa confirm route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    rateLimitMock.mockResolvedValue({ success: true, resetAt: Date.now() + 60_000 });
-    userMock.findUnique.mockResolvedValue({ mfaSecret: "encrypted", mfaEnabled: false });
+    rateLimitMock.mockResolvedValue({
+      success: true,
+      resetAt: Date.now() + 60_000,
+    });
+    userMock.findUnique.mockResolvedValue({
+      mfaSecret: "encrypted",
+      mfaEnabled: false,
+    });
     userMock.update.mockResolvedValue({});
   });
 
@@ -56,11 +64,11 @@ describe("mfa confirm route", () => {
     expect(response.status).toBe(200);
     expect(rateLimitMock).toHaveBeenCalledWith(
       "auth:mfa:confirm:ip:203.0.113.10",
-      { limit: 50, windowSeconds: 60 * 60 },
+      { limit: 50, windowSeconds: 60 * 60, failClosed: true },
     );
     expect(rateLimitMock).toHaveBeenCalledWith(
       "auth:mfa:confirm:user:user_1",
-      { limit: 5, windowSeconds: 60 },
+      { limit: 5, windowSeconds: 60, failClosed: true },
     );
   });
 

@@ -16,11 +16,23 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) => prisma.user.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.user.create({ data }),
   },
+  oauthAccounts: {
+    count: () => prisma.oAuthAccount.count(),
+    findUniqueById: (id: string) =>
+      prisma.oAuthAccount.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.oAuthAccount.create({ data }),
+  },
   profiles: {
     count: () => prisma.profile.count(),
     findUniqueById: (id: string) =>
       prisma.profile.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.profile.create({ data }),
+  },
+  dataConsents: {
+    count: () => prisma.dataConsent.count(),
+    findUniqueById: (id: string) =>
+      prisma.dataConsent.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.dataConsent.create({ data }),
   },
   providers: {
     count: () => prisma.serviceProvider.count(),
@@ -81,6 +93,12 @@ const IMPORT_MODEL_OPS = {
       prisma.notification.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.notification.create({ data }),
   },
+  emailLogs: {
+    count: () => prisma.emailLog.count(),
+    findUniqueById: (id: string) =>
+      prisma.emailLog.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.emailLog.create({ data }),
+  },
   auditLogs: {
     count: () => prisma.auditLog.count(),
     findUniqueById: (id: string) =>
@@ -92,6 +110,30 @@ const IMPORT_MODEL_OPS = {
     findUniqueById: (id: string) =>
       prisma.providerGovernanceIssue.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.providerGovernanceIssue.create({ data }),
+  },
+  adminUsers: {
+    count: () => prisma.adminUser.count(),
+    findUniqueById: (id: string) =>
+      prisma.adminUser.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.adminUser.create({ data }),
+  },
+  adminPermissions: {
+    count: () => prisma.adminPermission.count(),
+    findUniqueById: (id: string) =>
+      prisma.adminPermission.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.adminPermission.create({ data }),
+  },
+  adminLoginLogs: {
+    count: () => prisma.adminLoginLog.count(),
+    findUniqueById: (id: string) =>
+      prisma.adminLoginLog.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.adminLoginLog.create({ data }),
+  },
+  adminAuditLogs: {
+    count: () => prisma.adminAuditLog.count(),
+    findUniqueById: (id: string) =>
+      prisma.adminAuditLog.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.adminAuditLog.create({ data }),
   },
 } as const;
 
@@ -153,14 +195,22 @@ function getTransactionModel(tx: any, tableName: keyof typeof BACKUP_TABLES) {
   return tx[BACKUP_TABLES[tableName].model];
 }
 
+const TABLES_WITH_EVIDENCE_TIMESTAMPS = new Set<keyof typeof BACKUP_TABLES>([
+  "oauthAccounts",
+  "dataConsents",
+  "emailLogs",
+  "auditLogs",
+  "adminLoginLogs",
+  "adminAuditLogs",
+]);
+
 function cleanImportRecord(tableName: keyof typeof BACKUP_TABLES, record: any) {
   const cleanRecord = { ...record };
-  delete cleanRecord.createdAt;
+  if (!TABLES_WITH_EVIDENCE_TIMESTAMPS.has(tableName)) {
+    delete cleanRecord.createdAt;
+  }
   delete cleanRecord.updatedAt;
 
-  // Admin users are intentionally outside the app-level backup archive, so a
-  // restored governance issue cannot safely retain reviewer FKs from another
-  // environment. The issue itself remains restorable and auditable.
   if (tableName === "providerGovernanceIssues") {
     cleanRecord.reviewedByAdminId = null;
   }

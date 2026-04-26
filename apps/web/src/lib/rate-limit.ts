@@ -16,14 +16,21 @@ const hasRedis = Boolean(
     !redisUrl.includes("REPLACE") &&
     !redisToken.includes("REPLACE"),
 );
-const isProduction = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+const isProduction =
+  process.env.NODE_ENV === "production" ||
+  appEnv === "production" ||
+  appEnv === "staging" ||
+  Boolean(process.env.DIGITALOCEAN_APP_ID);
 const REDIS_DEGRADE_WINDOW_MS = 60 * 1000;
+const REDIS_REWARN_WINDOW_MS = 5 * 60 * 1000;
 
 let readLimiter: Ratelimit | null = null;
 let writeLimiter: Ratelimit | null = null;
 let redisDegradedUntil = 0;
 let missingRedisWarned = false;
 let redisFailureWarned = false;
+let lastRedisFailureWarningAt = 0;
 
 if (hasRedis) {
   const redis = new Redis({
@@ -85,6 +92,7 @@ function memoryRateLimit(key: string, limit: number, windowSeconds: number): Rat
 interface RateLimitConfig {
   limit: number;
   windowSeconds: number;
+  failClosed?: boolean;
 }
 
 interface RateLimitResult {
@@ -95,8 +103,11 @@ interface RateLimitResult {
 
 function enterRedisDegradedMode(reason: string, err?: unknown) {
   redisDegradedUntil = Date.now() + REDIS_DEGRADE_WINDOW_MS;
-  if (isProduction && !redisFailureWarned) {
+  const shouldWarnAgain =
+    Date.now() - lastRedisFailureWarningAt >= REDIS_REWARN_WINDOW_MS;
+  if (isProduction && (!redisFailureWarned || shouldWarnAgain)) {
     redisFailureWarned = true;
+    lastRedisFailureWarningAt = Date.now();
     console.error("[RATE-LIMIT] Redis unavailable, switching to in-memory degraded mode:", reason, err);
   } else if (!isProduction) {
     console.warn("[RATE-LIMIT] Redis unavailable, switching to in-memory degraded mode:", reason, err);
@@ -116,6 +127,14 @@ export async function rateLimit(
     console.error("[RATE-LIMIT] Redis is not configured in production, using in-memory degraded mode");
   }
 
+  if (!hasRedis && isProduction && config.failClosed) {
+    return {
+      success: false,
+      remaining: 0,
+      resetAt: Date.now() + Math.max(config.windowSeconds, 60) * 1000,
+    };
+  }
+
   // Use Redis if available and not in degraded mode
   if (shouldUseRedis()) {
     try {
@@ -129,7 +148,22 @@ export async function rateLimit(
       };
     } catch (err) {
       enterRedisDegradedMode((err as Error)?.message || "Unknown Redis error", err);
+      if (isProduction && config.failClosed) {
+        return {
+          success: false,
+          remaining: 0,
+          resetAt: Date.now() + REDIS_DEGRADE_WINDOW_MS,
+        };
+      }
     }
+  }
+
+  if (hasRedis && isProduction && config.failClosed && Date.now() < redisDegradedUntil) {
+    return {
+      success: false,
+      remaining: 0,
+      resetAt: redisDegradedUntil,
+    };
   }
 
   // Controlled degrade fallback to in-memory

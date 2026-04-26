@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
   const rl = await rateLimit(getRateLimitKey(request, "auth:oauth:google:callback"), {
     limit: 30,
     windowSeconds: 60,
+    failClosed: true,
   });
   if (!rl.success) {
     return redirectWithClearedGoogleCookies(request, "/sign-in?error=oauth-rate-limited");

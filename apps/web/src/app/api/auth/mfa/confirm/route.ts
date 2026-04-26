@@ -26,8 +26,16 @@ export async function POST(request: NextRequest) {
   }
 
   const [ipRl, userRl] = await Promise.all([
-    rateLimit(getRateLimitKey(request, "auth:mfa:confirm:ip"), { limit: 50, windowSeconds: 60 * 60 }),
-    rateLimit(`auth:mfa:confirm:user:${userId}`, { limit: 5, windowSeconds: 60 }),
+    rateLimit(getRateLimitKey(request, "auth:mfa:confirm:ip"), {
+      limit: 50,
+      windowSeconds: 60 * 60,
+      failClosed: true,
+    }),
+    rateLimit(`auth:mfa:confirm:user:${userId}`, {
+      limit: 5,
+      windowSeconds: 60,
+      failClosed: true,
+    }),
   ]);
   if (!ipRl.success || !userRl.success) {
     return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });

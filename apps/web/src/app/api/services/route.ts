@@ -71,8 +71,11 @@ export async function POST(request: NextRequest) {
 
     // Rate limit: 30 writes per minute
     const rlKey = getRateLimitKey(request, "svc:create");
-    const rl = await rateLimit(rlKey, { limit: 30, windowSeconds: 60 });
-    if (!rl.success) {
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(rlKey, { limit: 30, windowSeconds: 60 }),
+      rateLimit(`svc:create:user:${userId}`, { limit: 30, windowSeconds: 60 }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 

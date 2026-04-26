@@ -42,8 +42,8 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
 
   // Check if trial expired
   let isTrialExpired = false;
-  if (plan === "FREE_TRIAL" && subscription?.trialEndsAt) {
-    isTrialExpired = new Date() > subscription.trialEndsAt;
+  if (plan === "FREE_TRIAL") {
+    isTrialExpired = !subscription?.trialEndsAt || new Date() > subscription.trialEndsAt;
   }
 
   const isActive = ["ACTIVE", "TRIALING"].includes(status) && !isTrialExpired;

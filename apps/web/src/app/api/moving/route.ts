@@ -54,8 +54,11 @@ export async function POST(request: NextRequest) {
 
     // Rate limit: 10 plans per minute
     const rlKey = getRateLimitKey(request, "moving:create");
-    const rl = await rateLimit(rlKey, { limit: 10, windowSeconds: 60 });
-    if (!rl.success) {
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(rlKey, { limit: 10, windowSeconds: 60 }),
+      rateLimit(`moving:create:user:${userId}`, { limit: 10, windowSeconds: 60 }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
