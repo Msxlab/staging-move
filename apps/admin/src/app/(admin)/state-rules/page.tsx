@@ -39,6 +39,9 @@ export default function StateRulesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; code: string } | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { fetchRules(); }, []);
 
@@ -87,14 +90,23 @@ export default function StateRulesPage() {
     finally { setSaving(false); }
   }
 
-  async function handleDelete(id: string, code: string) {
-    if (!confirm(`Delete state rule for ${code}?`)) return;
+  function handleDelete(id: string, code: string) {
+    setDeleteConfirmation("");
+    setDeleteTarget({ id, code });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || deleteConfirmation !== deleteTarget.code) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/state-rules/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/state-rules/${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) { toast.error("Failed to delete"); return; }
       toast.success("State rule deleted");
+      setDeleteTarget(null);
+      setDeleteConfirmation("");
       fetchRules();
     } catch { toast.error("Failed"); }
+    finally { setDeleting(false); }
   }
 
   return (
@@ -183,6 +195,55 @@ export default function StateRulesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Delete state rule</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Type {deleteTarget.code} to delete this state rule.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-lg p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-5 space-y-4">
+              <input
+                value={deleteConfirmation}
+                onChange={(event) => setDeleteConfirmation(event.target.value.toUpperCase().slice(0, 2))}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setDeleteTarget(null)}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting || deleteConfirmation !== deleteTarget.code}
+                  onClick={() => void confirmDelete()}
+                  className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { getCategoryIcon, getCategoryLabel, getCategoryOrder } from "@/lib/recommendation-engine";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { validateCsvFileMetadata } from "@/lib/privacy";
 
 interface Provider {
   id: string; name: string; slug: string; category: string; subCategory: string | null;
@@ -55,6 +57,13 @@ export default function ProvidersPage() {
   const [showImport, setShowImport] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<
+    | { type: "single"; id: string; name: string }
+    | { type: "bulk"; ids: string[] }
+    | null
+  >(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const activeFilters = [filterScope, filterStatus, filterCategory, filterState, scoreMin, scoreMax].filter(Boolean).length;
 
@@ -120,7 +129,11 @@ export default function ProvidersPage() {
     if (!bulkAction || selected.size === 0) return;
     const ids = Array.from(selected);
 
-    if (bulkAction === "delete" && !confirm(`Delete ${ids.length} providers?`)) return;
+    if (bulkAction === "delete") {
+      setDeleteError(null);
+      setPendingDelete({ type: "bulk", ids });
+      return;
+    }
 
     let body: any = { action: bulkAction, ids };
     if (bulkAction === "change_category") {
@@ -133,14 +146,6 @@ export default function ProvidersPage() {
       if (!score) return;
       body.data = { score: parseInt(score) };
     }
-    if (bulkAction === "delete") {
-      const confirmPassword = window.prompt(
-        "Enter your admin password to confirm this bulk provider deletion:",
-      );
-      if (!confirmPassword) return;
-      body.confirmPassword = confirmPassword;
-    }
-
     try {
       const res = await fetch("/api/providers/bulk", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -155,23 +160,50 @@ export default function ProvidersPage() {
     } catch { toast.error("Bulk operation failed"); }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Delete "${name}"?`)) return;
-    const confirmPassword = window.prompt(
-      "Enter your admin password to confirm this provider deletion:",
-    );
-    if (!confirmPassword) return;
+  function handleDelete(id: string, name: string) {
+    setDeleteError(null);
+    setPendingDelete({ type: "single", id, name });
+  }
+
+  async function confirmProviderDelete(confirmPassword: string) {
+    if (!pendingDelete) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
     try {
-      const res = await fetch(`/api/providers/${id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword }),
-      });
+      const res =
+        pendingDelete.type === "single"
+          ? await fetch(`/api/providers/${pendingDelete.id}`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ confirmPassword }),
+            })
+          : await fetch("/api/providers/bulk", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "delete",
+                ids: pendingDelete.ids,
+                confirmPassword,
+              }),
+            });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(data.error || "Failed"); return; }
-      toast.success("Deleted");
+      if (!res.ok) {
+        const message = data.error || "Delete failed";
+        setDeleteError(message);
+        toast.error(message);
+        return;
+      }
+      toast.success(pendingDelete.type === "single" ? "Deleted" : `${data.affected || pendingDelete.ids.length} providers deleted`);
+      setPendingDelete(null);
+      setSelected(new Set());
+      setBulkAction("");
       fetchProviders();
-    } catch { toast.error("Failed"); }
+    } catch {
+      setDeleteError("Delete failed");
+      toast.error("Delete failed");
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
   function parseJSON(str: string): string[] {
@@ -185,6 +217,15 @@ export default function ProvidersPage() {
 
   async function handleImport() {
     if (!importFile) return;
+    const validation = validateCsvFileMetadata({
+      name: importFile.name,
+      size: importFile.size,
+      type: importFile.type,
+    });
+    if (!validation.ok) {
+      toast.error(validation.error);
+      return;
+    }
     setImporting(true);
     try {
       const text = await importFile.text();
@@ -200,7 +241,14 @@ export default function ProvidersPage() {
       const res = await fetch("/api/providers", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ providers: rows }),
+        body: JSON.stringify({
+          providers: rows,
+          sourceFile: {
+            name: importFile.name,
+            size: importFile.size,
+            type: importFile.type,
+          },
+        }),
       });
       const data = await res.json();
       if (!res.ok) { toast.error(data.error || "Import failed"); return; }
@@ -268,8 +316,18 @@ export default function ProvidersPage() {
           <div className="flex items-center gap-3">
             <input
               type="file"
-              accept=".csv"
-              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              accept=".csv,text/csv"
+              onChange={(e) => {
+                const file = e.target.files?.[0] || null;
+                const validation = validateCsvFileMetadata(file);
+                if (!validation.ok) {
+                  toast.error(validation.error);
+                  e.currentTarget.value = "";
+                  setImportFile(null);
+                  return;
+                }
+                setImportFile(file);
+              }}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1 file:text-xs file:font-medium file:text-primary"
             />
             <button
@@ -609,6 +667,27 @@ export default function ProvidersPage() {
           </table>
         </div>
       )}
+      <PasswordConfirmModal
+        open={Boolean(pendingDelete)}
+        title={pendingDelete?.type === "bulk" ? "Delete providers" : "Delete provider"}
+        description={
+          pendingDelete?.type === "bulk"
+            ? `This deletes ${pendingDelete.ids.length} selected providers. Enter your admin password to continue.`
+            : pendingDelete
+            ? `This deletes "${pendingDelete.name}". Enter your admin password to continue.`
+            : ""
+        }
+        confirmLabel="Delete"
+        busy={deleteBusy}
+        error={deleteError}
+        onClose={() => {
+          if (!deleteBusy) {
+            setPendingDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={confirmProviderDelete}
+      />
     </div>
   );
 }

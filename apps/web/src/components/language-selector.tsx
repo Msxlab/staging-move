@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
 import { Languages, Check } from "lucide-react";
 import { locales, localeNames, type Locale } from "@/i18n/config";
@@ -22,6 +22,7 @@ export function LanguageSelector({
   variant?: "inline" | "icon";
 }) {
   const currentLocale = useLocale() as Locale;
+  const t = useTranslations("language");
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
@@ -46,7 +47,7 @@ export function LanguageSelector({
     <div className="relative">
       <button
         type="button"
-        aria-label={`Language: ${localeNames[currentLocale]}`}
+        aria-label={`${t("label")}: ${localeNames[currentLocale]}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -74,7 +75,7 @@ export function LanguageSelector({
           />
           <ul
             role="listbox"
-            aria-label="Select language"
+            aria-label={t("select")}
             className="absolute right-0 top-full z-50 mt-1 min-w-[160px] overflow-hidden rounded-xl border border-border bg-popover py-1 shadow-xl"
           >
             {locales.map((loc) => (

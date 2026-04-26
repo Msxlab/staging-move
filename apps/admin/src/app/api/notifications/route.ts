@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { parsePaginationParams } from "@/lib/pagination";
 
 const SUPPORTED_ADMIN_SEND_CHANNELS = ["IN_APP"] as const;
 
@@ -10,8 +11,10 @@ export async function GET(req: NextRequest) {
   try {
     await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
     const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get("page") || "1");
-    const limit = parseInt(url.searchParams.get("limit") || "50");
+    const { page, perPage: limit, skip } = parsePaginationParams(url.searchParams, {
+      perPageParam: "limit",
+      defaultPerPage: 50,
+    });
     const type = url.searchParams.get("type");
     const channel = url.searchParams.get("channel");
 
@@ -23,7 +26,7 @@ export async function GET(req: NextRequest) {
       prisma.notification.findMany({
         where,
         orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
+        skip,
         take: limit,
         include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
       }),

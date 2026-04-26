@@ -33,6 +33,9 @@ describe("OAuth URL helpers", () => {
 
   it("keeps post-login redirects same-site and relative", () => {
     expect(normalizeOAuthRedirectPath("/dashboard")).toBe("/dashboard");
+    expect(normalizeOAuthRedirectPath("/providers/provider_123")).toBe("/providers/provider_123");
+    expect(normalizeOAuthRedirectPath("/api/auth/me")).toBe("/dashboard");
+    expect(normalizeOAuthRedirectPath("/login")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("//evil.example")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("https://evil.example")).toBe("/dashboard");
   });

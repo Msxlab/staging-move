@@ -17,6 +17,7 @@ import {
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 import Link from "next/link";
 import { HealthCard } from "./health-card";
+import { maskEmail } from "@/lib/privacy";
 
 async function getStats() {
   const now = new Date();
@@ -224,7 +225,7 @@ export default async function DashboardPage() {
                   <p className="font-medium text-foreground text-sm truncate">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
                 </div>
                 <p className="text-[11px] text-muted-foreground flex-shrink-0">
                   {new Date(user.createdAt).toLocaleDateString()}
@@ -256,7 +257,7 @@ export default async function DashboardPage() {
                     <span className="text-foreground font-medium truncate">{move.toAddress?.city}, {move.toAddress?.state}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[11px] text-muted-foreground truncate">{move.user?.email}</span>
+                    <span className="text-[11px] text-muted-foreground truncate">{maskEmail(move.user?.email)}</span>
                     <span className={`text-[11px] font-medium ${days <= 3 ? "text-destructive" : days <= 7 ? "text-tone-honey-fg" : "text-muted-foreground"}`}>
                       {days}d left
                     </span>

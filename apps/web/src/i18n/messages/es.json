@@ -294,7 +294,11 @@
     "error_session_create": "Encontramos tu cuenta, pero no pudimos iniciar una sesión. Reintenta.",
     "error_generic": "Error al iniciar sesión. Reintenta.",
     "agreeToTerms": "Acepto los {terms} y la {privacy}.",
-    "mustAgree": "Debes aceptar los términos para continuar."
+    "mustAgree": "Debes aceptar los términos para continuar.",
+    "legalAcceptanceRequired": "Revisa y acepta los Términos de uso y el Aviso legal antes de crear una cuenta.",
+    "legalAcknowledgementsTitle": "Reconocimientos obligatorios",
+    "legalAcknowledgementsDescription": "Acéptalos antes de crear tu cuenta de LocateFlow.",
+    "oauthReadinessNote": "El registro con correo y contraseña ya está listo. El inicio social se activará cuando se agreguen las credenciales OAuth de administración."
   },
   "dashboard": {
     "welcome": "Bienvenido de vuelta",

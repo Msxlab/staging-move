@@ -7,6 +7,7 @@ import { randomBytes, createHash, createPrivateKey } from "crypto";
 import { SignJWT } from "jose";
 import type { NextRequest } from "next/server";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
 // ── State + PKCE ──────────────────────────────────────────────
 
@@ -124,8 +125,7 @@ export function normalizeOAuthRedirectPath(
   value: string | null | undefined,
   fallback = "/dashboard",
 ): string {
-  const path = value || fallback;
-  return path.startsWith("/") && !path.startsWith("//") ? path : fallback;
+  return normalizeAppRedirectPath(value, fallback);
 }
 
 export async function getGoogleOAuthCredentials() {
