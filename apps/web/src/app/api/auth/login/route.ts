@@ -7,7 +7,7 @@ import {
   generateFingerprint,
   generateMobileFingerprint,
 } from "@/lib/user-auth";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { rateLimit, getRateLimitKey, resolveClientIP } from "@/lib/rate-limit";
 import {
   isLoginLocked,
   recordLoginFailure,
@@ -43,22 +43,6 @@ function parseUA(ua: string) {
   return r;
 }
 
-function resolveLoginIP(request: NextRequest): string {
-  const vercelIp = request.headers.get("x-vercel-forwarded-for");
-  if (vercelIp) return vercelIp.split(",")[0].trim();
-
-  const cfIp = request.headers.get("cf-connecting-ip");
-  if (cfIp) return cfIp.trim();
-
-  const realIp = request.headers.get("x-real-ip");
-  if (realIp) return realIp.trim();
-
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-
-  return "unknown";
-}
-
 export async function POST(request: NextRequest) {
   // General per-IP rate limit for the register/login cluster — absorbs
   // bursty clients without punishing individual accounts.
@@ -76,7 +60,7 @@ export async function POST(request: NextRequest) {
   // rate-limit above — a legitimate user typing the wrong password once
   // on a NATed network won't lock out their neighbors because the
   // counter is reset on successful login (see clearLoginFailures).
-  const ip = resolveLoginIP(request);
+  const ip = resolveClientIP(request);
 
   const lockState = await isLoginLocked(ip);
   if (lockState.locked) {
@@ -108,7 +92,7 @@ export async function POST(request: NextRequest) {
   const { email, password, mfaCode, backupCode } = parsed.data;
   const ua = request.headers.get("user-agent") || "";
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findFirst({ where: { email, deletedAt: null } });
 
   // SEC: single generic error — no user enumeration. A missing account
   // still consumes a lockout slot so an attacker cannot probe email

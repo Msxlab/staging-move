@@ -16,9 +16,31 @@ import {
 } from "@/lib/email";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
+const SAFE_METADATA_KEYS = new Set([
+  "kind",
+  "templateSlug",
+  "slug",
+  "userId",
+  "serviceId",
+  "subscriptionId",
+  "movingPlanId",
+  "daysUntilDue",
+  "daysRemaining",
+  "weekStart",
+  "weekEnd",
+]);
+const SENSITIVE_METADATA_KEY = /password|token|otp|secret|jwt|cookie/i;
+
 function buildEmailMetadata(metadata?: Record<string, unknown>) {
   if (!metadata) return null;
-  return JSON.stringify(metadata);
+  const safe: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (!SAFE_METADATA_KEYS.has(key) || SENSITIVE_METADATA_KEY.test(key)) continue;
+    if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      safe[key] = typeof value === "string" ? value.slice(0, 191) : value;
+    }
+  }
+  return JSON.stringify(safe);
 }
 
 function isUniqueConstraintError(error: any) {

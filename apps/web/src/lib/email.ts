@@ -15,6 +15,17 @@ const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
 export const DEFAULT_APP_URL = "https://locateflow.com";
 export const DEFAULT_SUPPORT_EMAIL = "support@locateflow.com";
 
+function isProductionLikeEmailRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    Boolean(process.env.DIGITALOCEAN_APP_ID)
+  );
+}
+
 const COLORS = {
   background: "#f5f7fb",
   card: "#ffffff",
@@ -58,14 +69,33 @@ async function resolveEmailConfig() {
 
   const supportEmail =
     values.SUPPORT_EMAIL || values.EMAIL_REPLY_TO || DEFAULT_SUPPORT_EMAIL;
+  const appUrl = values.NEXT_PUBLIC_APP_URL
+    ? normalizeBaseUrl(values.NEXT_PUBLIC_APP_URL)
+    : DEFAULT_APP_URL;
 
   return {
     resendApiKey: values.RESEND_API_KEY,
     fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
-    appUrl: normalizeBaseUrl(values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL),
+    appUrl,
     supportEmail,
     replyTo: values.EMAIL_REPLY_TO || supportEmail,
+    configured: {
+      resendApiKey: Boolean(values.RESEND_API_KEY),
+      fromEmail: Boolean(values.EMAIL_FROM),
+      appUrl: Boolean(values.NEXT_PUBLIC_APP_URL),
+      supportEmail: Boolean(values.SUPPORT_EMAIL || values.EMAIL_REPLY_TO),
+    },
   };
+}
+
+function validateEmailConfig(config: Awaited<ReturnType<typeof resolveEmailConfig>>): string | null {
+  if (!isProductionLikeEmailRuntime()) return null;
+  if (!config.configured.resendApiKey) return "RESEND_API_KEY missing";
+  if (!/^re_[A-Za-z0-9_-]+$/.test(config.resendApiKey || "")) return "RESEND_API_KEY invalid";
+  if (!config.configured.fromEmail) return "EMAIL_FROM missing";
+  if (!config.configured.appUrl) return "NEXT_PUBLIC_APP_URL missing";
+  if (!config.configured.supportEmail) return "SUPPORT_EMAIL or EMAIL_REPLY_TO missing";
+  return null;
 }
 
 function redactKnownSecrets(value: string): string {
@@ -74,7 +104,9 @@ function redactKnownSecrets(value: string): string {
   for (const secret of knownSecrets) {
     redacted = redacted.split(secret).join("[redacted]");
   }
-  return redacted.replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]");
+  return redacted
+    .replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]")
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[redacted]");
 }
 
 function safeEmailError(error: unknown): string {
@@ -90,7 +122,13 @@ function safeEmailError(error: unknown): string {
 export async function sendEmailWithResult(
   options: EmailOptions,
 ): Promise<SendEmailResult> {
-  const { resendApiKey, fromEmail, replyTo } = await resolveEmailConfig();
+  const config = await resolveEmailConfig();
+  const configError = validateEmailConfig(config);
+  if (configError) {
+    console.error("[EMAIL] Configuration error:", { message: configError });
+    return { success: false, providerMessageId: null, error: configError };
+  }
+  const { resendApiKey, fromEmail, replyTo } = config;
   const text = options.text || htmlToPlainText(options.html);
 
   if (!resendApiKey) {

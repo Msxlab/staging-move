@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { expireAdminSessionCookies, requireAdmin } from "@/lib/auth";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -35,6 +35,10 @@ export async function PATCH(request: NextRequest) {
       where: { id: session.adminId },
       data: { password: hashedPassword },
     });
+    await prisma.adminSession.updateMany({
+      where: { adminUserId: session.adminId, isActive: true },
+      data: { isActive: false, lastActivity: new Date() },
+    });
 
     await prisma.adminAuditLog.create({
       data: {
@@ -47,7 +51,17 @@ export async function PATCH(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json(
+      { success: true },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      },
+    );
+    return expireAdminSessionCookies(response, request.headers.get("host"));
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

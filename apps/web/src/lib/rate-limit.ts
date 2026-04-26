@@ -141,7 +141,7 @@ export async function rateLimit(
  * Priority: x-vercel-forwarded-for on Vercel only > x-real-ip > x-forwarded-for > cf-connecting-ip > fallback.
  * Each platform sets its trusted header — we check the most reliable first.
  */
-function resolveClientIP(request: Request): string {
+export function resolveClientIP(request: Request): string {
   if (process.env.VERCEL_ENV) {
     const vercelIp = request.headers.get("x-vercel-forwarded-for");
     if (vercelIp) return vercelIp.split(",")[0].trim();

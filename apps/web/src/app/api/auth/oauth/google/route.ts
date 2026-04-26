@@ -8,6 +8,7 @@ import {
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 
 export const runtime = "nodejs";
 
@@ -44,7 +45,7 @@ export async function GET(request: NextRequest) {
   const res = NextResponse.redirect(url);
   const cookieOpts = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     sameSite: "lax" as const,
     path: "/",
     maxAge: 10 * 60, // 10 min

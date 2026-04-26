@@ -31,6 +31,18 @@ export interface UserSessionClaims {
   sessionId?: string;
 }
 
+export function shouldUseSecureSessionCookies(): boolean {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    appUrl.startsWith("https://")
+  );
+}
+
 // ── Fingerprint + token hashing ─────────────────────────────
 
 async function sha256Hex(raw: string): Promise<string> {
@@ -114,7 +126,7 @@ export function hashOpaqueToken(token: string): string {
 function sessionCookieBaseOptions() {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     sameSite: "lax" as const,
     path: "/",
   };
@@ -123,7 +135,7 @@ function sessionCookieBaseOptions() {
 function sessionCookieDomainCandidates(host?: string | null): Array<string | undefined> {
   const configured = (process.env.USER_SESSION_COOKIE_DOMAIN || process.env.SESSION_COOKIE_DOMAIN || "").trim();
   const normalizedHost = (host || "").split(":")[0].toLowerCase();
-  const candidates: Array<string | undefined> = [undefined];
+  const candidates: Array<string | undefined> = [undefined, ".locateflow.com"];
   if (configured) candidates.push(configured);
   if (normalizedHost === "locateflow.com" || normalizedHost.endsWith(".locateflow.com")) {
     candidates.push(".locateflow.com");
@@ -261,7 +273,9 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
   };
 
   try {
-    const { payload } = await jwtVerify(token, getUserJwtSecretKey());
+    const { payload } = await jwtVerify(token, getUserJwtSecretKey(), {
+      algorithms: ["HS256"],
+    });
 
     const record = await prisma.userLoginSession
       .findFirst({
@@ -428,16 +442,27 @@ export async function findOrLinkOAuthUserWithStatus(input: {
         providerId: input.providerId,
       },
     },
-    select: { userId: true },
+    select: {
+      userId: true,
+      user: { select: { deletedAt: true } },
+    },
   });
-  if (existingLink) return { userId: existingLink.userId, isNewUser: false };
+  if (existingLink) {
+    if (existingLink.user?.deletedAt) {
+      throw new Error("OAUTH_ACCOUNT_UNAVAILABLE");
+    }
+    return { userId: existingLink.userId, isNewUser: false };
+  }
 
   // 2) Existing user by email → link
   const userByEmail = await prisma.user.findUnique({
     where: { email: input.email.toLowerCase() },
-    select: { id: true, emailVerifiedAt: true },
+    select: { id: true, emailVerifiedAt: true, deletedAt: true },
   });
   if (userByEmail) {
+    if (userByEmail.deletedAt) {
+      throw new Error("OAUTH_ACCOUNT_UNAVAILABLE");
+    }
     await prisma.oAuthAccount.create({
       data: {
         userId: userByEmail.id,

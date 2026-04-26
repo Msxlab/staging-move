@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId, verifyPassword } from "@/lib/user-auth";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,14 @@ const schema = z.object({
  * POST /api/auth/mfa/disable — turn off MFA (requires password confirmation).
  */
 export async function POST(request: NextRequest) {
+  const rl = await rateLimit(getRateLimitKey(request, "auth:mfa:disable"), {
+    limit: 5,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   let userId: string;
   try {
     userId = await requireDbUserId();

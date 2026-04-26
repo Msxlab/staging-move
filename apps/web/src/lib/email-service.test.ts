@@ -182,4 +182,30 @@ describe("email-service logging", () => {
       }),
     });
   });
+
+  it("allowlists EmailLog metadata and strips sensitive keys", async () => {
+    await sendLoggedEmail({
+      to: "alice@example.com",
+      subject: "Reset your LocateFlow password",
+      html: "<p>Reset</p>",
+      text: "Reset",
+      templateSlug: "password-reset",
+      metadata: {
+        kind: "password-reset",
+        userId: "user_1",
+        serviceId: "svc_1",
+        resetToken: "secret-reset-token",
+        cookie: "session-cookie",
+        arbitrary: "drop-me",
+      },
+    });
+
+    const metadata = JSON.parse(mocks.emailLogCreate.mock.calls[0][0].data.metadata);
+    expect(metadata).toEqual({
+      kind: "password-reset",
+      userId: "user_1",
+      serviceId: "svc_1",
+      templateSlug: "password-reset",
+    });
+  });
 });

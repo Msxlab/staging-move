@@ -54,7 +54,7 @@ export default function SettingsPage() {
         // fully processed; log out on this device immediately.
         await fetch("/api/auth/logout", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
           body: "{}",
           cache: "no-store",
         }).catch(() => {});

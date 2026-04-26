@@ -47,8 +47,8 @@ const PUBLIC_API_EXACT = [
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
   // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated
-  // session cookie enters the browser. The token in the query string is
-  // HMAC-signed + DB-validated inside the route itself, so auth here.
+  // session cookie enters the browser. The route validates a short-lived
+  // HMAC-signed token delivered by POST body, not by URL query string.
   "/api/auth/impersonate-handoff",
 ];
 const PUBLIC_API_GET = ["/api/providers"];
@@ -135,7 +135,17 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   }
 
   const secFetchSite = req.headers.get("sec-fetch-site");
-  if (isLogout && !contentType && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+  const requestedWith = req.headers.get("x-requested-with");
+  if (isLogout && secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    return NextResponse.json(
+      {
+        error:
+          "Invalid Origin. API mutations must originate from the same site.",
+      },
+      { status: 403 },
+    );
+  }
+  if (isLogout && requestedWith !== "locateflow" && secFetchSite !== "same-origin" && secFetchSite !== "none") {
     const origin = req.headers.get("origin");
     const referer = req.headers.get("referer");
     if (!origin && !referer) {
@@ -241,7 +251,7 @@ async function hasValidSession(request: NextRequest): Promise<boolean> {
   const jwtSecret = tryGetUserJwtSecretKey();
   if (!jwtSecret) return false;
   try {
-    await jwtVerify(token, jwtSecret);
+    await jwtVerify(token, jwtSecret, { algorithms: ["HS256"] });
     return true;
   } catch {
     return false;
@@ -305,6 +315,26 @@ function applyStagingNoIndex(request: NextRequest, response: NextResponse): Next
   if (shouldNoIndex) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
+  return applySecurityHeaders(request, response);
+}
+
+function applySecurityHeaders(request: NextRequest, response: NextResponse): NextResponse {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  const isHttps =
+    request.nextUrl.protocol === "https:" ||
+    forwardedProto === "https" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    process.env.NODE_ENV === "production";
+
+  if (isHttps) {
+    response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  }
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
   return response;
 }
 
