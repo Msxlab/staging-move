@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { getProviderTrustSummary } from "@locateflow/shared";
-import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
+import { compareCoverageConfidence, getProviderTrustSummary } from "@locateflow/shared";
+import { getProviderCoverageConfidenceFromDb, getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 const fetchProvidersForState = unstable_cache(
@@ -124,6 +124,21 @@ export async function GET(request: NextRequest) {
     }
 
     filtered.sort((a, b) => {
+      const confidenceRank = compareCoverageConfidence(
+        getProviderCoverageConfidenceFromDb(a, {
+          state,
+          zip,
+          latitude: normalizedLatitude,
+          longitude: normalizedLongitude,
+        }),
+        getProviderCoverageConfidenceFromDb(b, {
+          state,
+          zip,
+          latitude: normalizedLatitude,
+          longitude: normalizedLongitude,
+        }),
+      );
+      if (confidenceRank !== 0) return confidenceRank;
       const da = a.displayOrder > 0 ? a.displayOrder : Number.MAX_SAFE_INTEGER;
       const db = b.displayOrder > 0 ? b.displayOrder : Number.MAX_SAFE_INTEGER;
       if (da !== db) return da - db;

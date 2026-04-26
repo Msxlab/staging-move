@@ -7,6 +7,7 @@ import {
   getOAuthResponseUrl,
   isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
+  resolveOAuthPostAuthRedirectPath,
 } from "@/lib/oauth";
 import {
   createUserSession,
@@ -205,7 +206,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
+  const response = NextResponse.redirect(
+    await getOAuthResponseUrl(
+      request,
+      resolveOAuthPostAuthRedirectPath({ isNewUser, redirectPath }),
+    ),
+  );
   if (isNewUser) {
     const welcomeSent = await sendWelcomeEmail({
       email: payload.email,

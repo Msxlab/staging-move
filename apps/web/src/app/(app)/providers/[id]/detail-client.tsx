@@ -152,6 +152,11 @@ export function ProviderDetailClient({
                 </span>
               )}
             </div>
+            {!provider.logoUrl && (
+              <p className="mt-1 text-[11px] text-white/40">
+                Logo unavailable; category icon shown.
+              </p>
+            )}
           </div>
         </div>
 

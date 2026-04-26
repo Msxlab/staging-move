@@ -5,6 +5,10 @@ import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { encrypt, decrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
+import {
+  duplicateServiceError,
+  findDuplicateTrackedService,
+} from "@/lib/service-duplicate-guard";
 
 // GET /api/services/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -54,6 +58,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const body = await request.json();
     const validated = serviceSchema.partial().parse(body);
+    const normalizedCategory =
+      validated.category !== undefined
+        ? validated.category.trim().toUpperCase()
+        : existing.category;
 
     if (validated.providerId && validated.customProviderId) {
       return NextResponse.json({ error: "Choose either a listed provider or a custom provider, not both" }, { status: 400 });
@@ -61,7 +69,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (validated.addressId) {
       const address = await prisma.address.findUnique({ where: { id: validated.addressId } });
-      if (!address || address.userId !== userId) {
+      if (!address || address.userId !== userId || address.deletedAt) {
         return NextResponse.json({ error: "Address not found" }, { status: 404 });
       }
     }
@@ -82,9 +90,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    const duplicate = await findDuplicateTrackedService(prisma, {
+      userId,
+      addressId: validated.addressId || existing.addressId,
+      category: normalizedCategory,
+      providerName: validated.providerName || existing.providerName,
+      providerId: validated.providerId ?? existing.providerId,
+      customProviderId: validated.customProviderId ?? existing.customProviderId,
+      ignoreServiceId: existing.id,
+    });
+    if (duplicate) {
+      return NextResponse.json(duplicateServiceError(duplicate), { status: 409 });
+    }
+
     // Encrypt sensitive fields if provided
     const encryptedData = {
       ...validated,
+      ...(validated.category !== undefined && { category: normalizedCategory }),
       ...(validated.accountNumber !== undefined && { accountNumber: validated.accountNumber ? encrypt(validated.accountNumber) : validated.accountNumber }),
       ...(validated.username !== undefined && { username: validated.username ? encrypt(validated.username) : validated.username }),
       ...((validated as any).phone !== undefined && { phone: (validated as any).phone ? encrypt((validated as any).phone) : (validated as any).phone }),

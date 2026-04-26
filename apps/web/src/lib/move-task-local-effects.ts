@@ -1,4 +1,7 @@
-import { buildMoveTaskLifecyclePatch } from "@locateflow/shared";
+import {
+  buildMoveTaskLifecyclePatch,
+  parseMoveTaskLocalEffect,
+} from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 
 export interface CompleteMoveTaskOptions {
@@ -81,7 +84,7 @@ export async function completeMoveTaskWithLocalEffect(
   );
   const lifecyclePatch = buildMoveTaskLifecyclePatch(task as any, "COMPLETE", now);
   const localEffect = {
-    ...(task.localEffect && typeof task.localEffect === "object" ? (task.localEffect as any) : {}),
+    ...(parseMoveTaskLocalEffect(task.localEffect) || {}),
     appliedAt: now.toISOString(),
     appliedBy: userId,
     localOnly: true,

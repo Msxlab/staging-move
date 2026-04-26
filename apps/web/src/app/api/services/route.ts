@@ -8,6 +8,10 @@ import { encrypt, decrypt } from "@/lib/shared-encryption";
 import { canCreateService } from "@/lib/plan-limits";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
+import {
+  duplicateServiceError,
+  findDuplicateTrackedService,
+} from "@/lib/service-duplicate-guard";
 
 // GET /api/services
 export async function GET(request: NextRequest) {
@@ -80,6 +84,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validated = serviceSchema.parse(body);
+    const normalizedCategory = validated.category.trim().toUpperCase();
 
     if (validated.providerId && validated.customProviderId) {
       return NextResponse.json({ error: "Choose either a listed provider or a custom provider, not both" }, { status: 400 });
@@ -92,11 +97,14 @@ export async function POST(request: NextRequest) {
     if (address.userId !== userId) {
       return NextResponse.json({ error: "You don't have permission to add services to this address" }, { status: 403 });
     }
+    if (address.deletedAt) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
 
     // Validate providerId if supplied
     if (validated.providerId) {
       const providerExists = await prisma.serviceProvider.findUnique({ where: { id: validated.providerId } });
-      if (!providerExists) {
+      if (!providerExists || providerExists.deletedAt) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 });
       }
     }
@@ -110,9 +118,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const duplicate = await findDuplicateTrackedService(prisma, {
+      userId,
+      addressId: validated.addressId,
+      category: normalizedCategory,
+      providerName: validated.providerName,
+      providerId: validated.providerId || null,
+      customProviderId: validated.customProviderId || null,
+    });
+    if (duplicate) {
+      return NextResponse.json(duplicateServiceError(duplicate), { status: 409 });
+    }
+
     // Encrypt sensitive fields before storage
     const encryptedData = {
       ...validated,
+      category: normalizedCategory,
       accountNumber: validated.accountNumber ? encrypt(validated.accountNumber) : validated.accountNumber,
       username: validated.username ? encrypt(validated.username) : validated.username,
       phone: validated.phone ? encrypt(validated.phone) : validated.phone,
@@ -136,7 +157,7 @@ export async function POST(request: NextRequest) {
       entityId: service.id,
       changes: {
         provider: validated.providerName,
-        category: validated.category,
+        category: normalizedCategory,
         providerId: validated.providerId || null,
         customProviderId: validated.customProviderId || null,
       },

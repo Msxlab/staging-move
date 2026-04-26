@@ -6,6 +6,7 @@ import {
   getOAuthRedirectUri,
   getOAuthResponseUrl,
   normalizeOAuthRedirectPath,
+  resolveOAuthPostAuthRedirectPath,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
 import {
@@ -157,7 +158,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
+  const response = NextResponse.redirect(
+    await getOAuthResponseUrl(
+      request,
+      resolveOAuthPostAuthRedirectPath({ isNewUser, redirectPath }),
+    ),
+  );
   if (isNewUser) {
     const welcomeSent = await sendWelcomeEmail({
       email: payload.email,
