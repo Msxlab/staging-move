@@ -68,7 +68,7 @@ export function useCurrentUser(): UseCurrentUserResult {
   const signOut = useCallback(async () => {
     await fetch("/api/auth/logout", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
       body: "{}",
       cache: "no-store",
     }).catch(() => {});

@@ -18,11 +18,23 @@ import {
   recordLegalAcceptance,
 } from "@/lib/legal-acceptance";
 import { sendWelcomeEmail } from "@/lib/email-service";
+import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
+import { z } from "zod";
 
 export const runtime = "nodejs";
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
+
+const appleUserFieldSchema = z.object({
+  name: z
+    .object({
+      firstName: z.string().max(100).nullable().optional(),
+      lastName: z.string().max(100).nullable().optional(),
+    })
+    .nullable()
+    .optional(),
+});
 
 function clearAppleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_state_apple");
@@ -34,6 +46,10 @@ function clearAppleOAuthCookies(response: NextResponse) {
 
 function logAppleOAuthFailure(stage: string, err: unknown) {
   console.error(`[OAUTH] apple ${stage} failed:`, err);
+}
+
+async function redirectWithClearedAppleCookies(request: NextRequest, path: string) {
+  return clearAppleOAuthCookies(NextResponse.redirect(await getOAuthResponseUrl(request, path)));
 }
 
 /**
@@ -53,21 +69,29 @@ async function readFormField(request: NextRequest, field: string): Promise<strin
 }
 
 export async function POST(request: NextRequest) {
+  const rl = await rateLimit(getRateLimitKey(request, "auth:oauth:apple:callback"), {
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=oauth-rate-limited");
+  }
+
   const { clientId, teamId, keyId, privateKeyPem } = await getAppleOAuthCredentials();
   if (!clientId || !teamId || !keyId || !privateKeyPem) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-not-configured"));
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-not-configured");
   }
 
   // form_post can only be consumed once — clone so we can read multiple fields.
   const fd = await request.formData().catch(() => null);
-  if (!fd) return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-bad-body"));
+  if (!fd) return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-bad-body");
 
   const code = fd.get("code");
   const state = fd.get("state");
   const userField = fd.get("user"); // only present on first sign-in
 
   if (typeof code !== "string" || typeof state !== "string") {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-missing-fields"));
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-missing-fields");
   }
 
   const cookieState = request.cookies.get("oauth_state_apple")?.value;
@@ -75,7 +99,7 @@ export async function POST(request: NextRequest) {
   const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
   const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || cookieState !== state) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=state-mismatch"));
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=state-mismatch");
   }
 
   const tokens = await exchangeAppleCode({
@@ -84,7 +108,7 @@ export async function POST(request: NextRequest) {
     clientId, teamId, keyId, privateKeyPem,
   });
   if (!tokens?.idToken) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=token-exchange-failed"));
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=token-exchange-failed");
   }
 
   let payload: { sub: string; email?: string; email_verified?: boolean | string };
@@ -96,16 +120,16 @@ export async function POST(request: NextRequest) {
     payload = verified as any;
   } catch (err) {
     console.error("[OAUTH] apple id_token verify failed:", err);
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=invalid-token"));
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=invalid-token");
   }
 
   if (!payload.email) {
     // Apple may withhold email if user chose "Hide My Email" and we don't have
     // the private-relay mapping. For MVP, require a real email.
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-no-email"));
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-no-email");
   }
   if (!isAppleEmailVerifiedClaim(payload.email_verified)) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=apple-email-not-verified"));
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-email-not-verified");
   }
 
   // First-login name info.
@@ -114,10 +138,14 @@ export async function POST(request: NextRequest) {
   if (typeof userField === "string") {
     try {
       const parsedUser = JSON.parse(userField);
-      firstName = parsedUser?.name?.firstName ?? null;
-      lastName = parsedUser?.name?.lastName ?? null;
+      const validatedUser = appleUserFieldSchema.safeParse(parsedUser);
+      if (!validatedUser.success) {
+        return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-bad-user");
+      }
+      firstName = validatedUser.data.name?.firstName ?? null;
+      lastName = validatedUser.data.name?.lastName ?? null;
     } catch {
-      /* ignore malformed */
+      return redirectWithClearedAppleCookies(request, "/sign-in?error=apple-bad-user");
     }
   }
 
@@ -164,7 +192,7 @@ export async function POST(request: NextRequest) {
   }
 
   const ua = request.headers.get("user-agent") || "";
-  const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+  const ip = resolveClientIP(request);
   const fp = await generateFingerprint(ip, ua);
   try {
     await createUserSession({

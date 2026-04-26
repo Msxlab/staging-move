@@ -10,6 +10,17 @@ interface HealthCheck {
   details?: string;
 }
 
+function isProductionLikeRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    Boolean(process.env.DIGITALOCEAN_APP_ID)
+  );
+}
+
 export async function GET(request: NextRequest) {
   try {
     await requirePermission("settings", "canRead", { minimumRole: "ADMIN" });
@@ -18,6 +29,9 @@ export async function GET(request: NextRequest) {
       "UPSTASH_REDIS_REST_URL",
       "UPSTASH_REDIS_REST_TOKEN",
       "RESEND_API_KEY",
+      "EMAIL_FROM",
+      "ALERT_EMAIL_FROM",
+      "ALERT_EMAIL_TO",
       "BACKUP_STORAGE_BUCKET",
       "BACKUP_STORAGE_PROVIDER",
       "NEXT_PUBLIC_SENTRY_DSN",
@@ -104,17 +118,32 @@ export async function GET(request: NextRequest) {
 
     // ── Email (Resend) ──────────────────────────────────────
     const resendKey = runtimeValues.RESEND_API_KEY;
-    if (resendKey && !resendKey.includes("REPLACE")) {
+    const alertRecipients = runtimeValues.ALERT_EMAIL_TO;
+    const alertFrom = runtimeValues.ALERT_EMAIL_FROM || runtimeValues.EMAIL_FROM;
+    const validRecipients = Boolean(
+      alertRecipients &&
+        alertRecipients
+          .split(",")
+          .map((email) => email.trim())
+          .every((email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)),
+    );
+    const missingEmailConfig = [
+      !resendKey || resendKey.includes("REPLACE") ? "RESEND_API_KEY" : null,
+      !runtimeValues.EMAIL_FROM ? "EMAIL_FROM" : null,
+      !alertFrom ? "ALERT_EMAIL_FROM or EMAIL_FROM" : null,
+      !validRecipients ? "ALERT_EMAIL_TO" : null,
+    ].filter(Boolean);
+    if (missingEmailConfig.length === 0) {
       checks.push({
         name: "Email (Resend)",
         status: "healthy",
-        details: "API key configured",
+        details: "API key, senders, and alert recipients configured",
       });
     } else {
       checks.push({
         name: "Email (Resend)",
-        status: "unknown",
-        details: "Not configured",
+        status: isProductionLikeRuntime() ? "degraded" : "unknown",
+        details: `Missing or invalid: ${missingEmailConfig.join(", ")}`,
       });
     }
 

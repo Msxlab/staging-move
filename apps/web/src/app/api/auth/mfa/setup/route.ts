@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId, verifyPassword } from "@/lib/user-auth";
 import { generateSecret, generateProvisioningURI, generateBackupCodes } from "@/lib/totp";
 import { encrypt } from "@/lib/shared-encryption";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -20,6 +21,14 @@ const schema = z.object({
  * call /api/auth/mfa/confirm with a fresh TOTP code to complete setup.
  */
 export async function POST(request: NextRequest) {
+  const rl = await rateLimit(getRateLimitKey(request, "auth:mfa:setup"), {
+    limit: 5,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   let userId: string;
   try {
     userId = await requireDbUserId();

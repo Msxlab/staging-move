@@ -7,6 +7,7 @@ import {
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
 import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 
 export const runtime = "nodejs";
 
@@ -30,13 +31,14 @@ export async function GET(request: NextRequest) {
   const url = appleAuthorizeUrl({ clientId, redirectUri, state });
 
   const res = NextResponse.redirect(url);
+  const secureCookie = shouldUseSecureSessionCookies();
   const cookieOpts = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookie,
     // Apple posts back cross-site — must be "none" + secure for the state cookie
     // to survive the form_post redirect. In dev we relax to "lax" so http://
     // localhost works without HTTPS.
-    sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
+    sameSite: (secureCookie ? "none" : "lax") as "none" | "lax",
     path: "/",
     maxAge: 10 * 60,
   };

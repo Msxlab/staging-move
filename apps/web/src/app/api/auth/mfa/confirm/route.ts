@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/user-auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,14 @@ export async function POST(request: NextRequest) {
     userId = await requireDbUserId();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const [ipRl, userRl] = await Promise.all([
+    rateLimit(getRateLimitKey(request, "auth:mfa:confirm:ip"), { limit: 50, windowSeconds: 60 * 60 }),
+    rateLimit(`auth:mfa:confirm:user:${userId}`, { limit: 5, windowSeconds: 60 }),
+  ]);
+  if (!ipRl.success || !userRl.success) {
+    return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
   }
 
   let body: unknown;

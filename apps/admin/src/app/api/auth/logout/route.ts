@@ -5,7 +5,13 @@ export async function POST(request: NextRequest) {
   await destroySession();
   const response = NextResponse.json(
     { success: true },
-    { headers: { "Cache-Control": "no-store" } },
+    {
+      headers: {
+        "Cache-Control": "no-store",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    },
   );
   return expireAdminSessionCookies(response, request.headers.get("host"));
 }

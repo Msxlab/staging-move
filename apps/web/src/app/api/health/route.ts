@@ -10,6 +10,17 @@ interface Check {
   detail?: string;
 }
 
+function isProductionLikeRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    Boolean(process.env.DIGITALOCEAN_APP_ID)
+  );
+}
+
 async function timed<T>(
   fn: () => Promise<T>,
 ): Promise<{ ok: boolean; ms: number; err?: unknown }> {
@@ -28,6 +39,9 @@ export async function GET() {
     "UPSTASH_REDIS_REST_TOKEN",
     "STRIPE_SECRET_KEY",
     "RESEND_API_KEY",
+    "EMAIL_FROM",
+    "SUPPORT_EMAIL",
+    "EMAIL_REPLY_TO",
     "FIELD_ENCRYPTION_KEY",
     "R2_BUCKET",
     "R2_ENDPOINT",
@@ -69,12 +83,20 @@ export async function GET() {
       : "STRIPE_SECRET_KEY not set",
   };
 
+  const productionLike = isProductionLikeRuntime();
+  const missingEmailConfig = [
+    !runtimeValues.RESEND_API_KEY ? "RESEND_API_KEY" : null,
+    !runtimeValues.EMAIL_FROM ? "EMAIL_FROM" : null,
+    !(runtimeValues.SUPPORT_EMAIL || runtimeValues.EMAIL_REPLY_TO) ? "SUPPORT_EMAIL or EMAIL_REPLY_TO" : null,
+  ].filter(Boolean);
   checks.email = {
-    status: runtimeValues.RESEND_API_KEY ? "ok" : "skip",
-    detail: runtimeValues.RESEND_API_KEY
-      ? undefined
-      : "RESEND_API_KEY not set (logs only)",
+    status: missingEmailConfig.length === 0 ? "ok" : productionLike ? "fail" : "skip",
+    detail:
+      missingEmailConfig.length === 0
+        ? undefined
+        : `Missing email config: ${missingEmailConfig.join(", ")}`,
   };
+  if (productionLike && missingEmailConfig.length > 0) healthy = false;
 
   const encOk = runtimeValues.FIELD_ENCRYPTION_KEY?.length === 64;
   checks.encryption = {

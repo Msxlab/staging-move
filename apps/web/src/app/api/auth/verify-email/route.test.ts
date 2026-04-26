@@ -35,8 +35,14 @@ vi.mock("@/lib/email-service", () => ({
   sendWelcomeEmail: vi.fn(() => Promise.resolve(true)),
 }));
 
+vi.mock("@/lib/rate-limit", () => ({
+  getRateLimitKey: vi.fn(() => "rate-key"),
+  rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
+}));
+
 import { prisma } from "@/lib/db";
 import { sendWelcomeEmail } from "@/lib/email-service";
+import { rateLimit } from "@/lib/rate-limit";
 import { POST } from "./route";
 
 const tokenMock = prisma.emailVerificationToken as unknown as {
@@ -48,6 +54,7 @@ const userMock = prisma.user as unknown as {
   update: Mock;
 };
 const sendWelcomeEmailMock = sendWelcomeEmail as unknown as Mock;
+const rateLimitMock = rateLimit as unknown as Mock;
 
 function makeRequest(token = "verify-token") {
   return new NextRequest("http://localhost/api/auth/verify-email", {
@@ -88,6 +95,7 @@ describe("verify-email route", () => {
       firstName: "New",
     });
     sendWelcomeEmailMock.mockResolvedValue(true);
+    rateLimitMock.mockResolvedValue({ success: true, resetAt: Date.now() + 60_000 });
   });
 
   it("marks the token used, verifies the user, and sends welcome once", async () => {
@@ -121,6 +129,16 @@ describe("verify-email route", () => {
     const response = await POST(makeRequest());
 
     expect(response.status).toBe(400);
+    expect(sendWelcomeEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("rate limits verification attempts before token lookup", async () => {
+    rateLimitMock.mockResolvedValue({ success: false, resetAt: Date.now() + 60_000 });
+
+    const response = await POST(makeRequest());
+
+    expect(response.status).toBe(429);
+    expect(mocks.emailVerificationTokenFindUnique).not.toHaveBeenCalled();
     expect(sendWelcomeEmailMock).not.toHaveBeenCalled();
   });
 });

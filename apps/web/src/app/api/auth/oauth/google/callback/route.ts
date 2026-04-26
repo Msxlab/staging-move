@@ -18,6 +18,7 @@ import {
   recordLegalAcceptance,
 } from "@/lib/legal-acceptance";
 import { sendWelcomeEmail } from "@/lib/email-service";
+import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -37,22 +38,32 @@ function logGoogleOAuthFailure(stage: string, err: unknown) {
   console.error(`[OAUTH] google ${stage} failed:`, err);
 }
 
+async function redirectWithClearedGoogleCookies(request: NextRequest, path: string) {
+  return clearGoogleOAuthCookies(NextResponse.redirect(await getOAuthResponseUrl(request, path)));
+}
+
 export async function GET(request: NextRequest) {
+  const rl = await rateLimit(getRateLimitKey(request, "auth:oauth:google:callback"), {
+    limit: 30,
+    windowSeconds: 60,
+  });
+  if (!rl.success) {
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=oauth-rate-limited");
+  }
+
   const { clientId, clientSecret } = await getGoogleOAuthCredentials();
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=google-not-configured"));
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=google-not-configured");
   }
 
   const code = request.nextUrl.searchParams.get("code");
   const state = request.nextUrl.searchParams.get("state");
   const errorParam = request.nextUrl.searchParams.get("error");
   if (errorParam) {
-    return NextResponse.redirect(
-      await getOAuthResponseUrl(request, `/sign-in?error=${encodeURIComponent(errorParam)}`),
-    );
+    return redirectWithClearedGoogleCookies(request, `/sign-in?error=${encodeURIComponent(errorParam)}`);
   }
   if (!code || !state) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=missing-code"));
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=missing-code");
   }
 
   const cookieState = request.cookies.get("oauth_state_google")?.value;
@@ -61,7 +72,7 @@ export async function GET(request: NextRequest) {
   const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
   const acceptedLegal = request.cookies.get(OAUTH_LEGAL_ACCEPTANCE_COOKIE)?.value === "accepted";
   if (!cookieState || !pkceVerifier || cookieState !== state) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=state-mismatch"));
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=state-mismatch");
   }
 
   const redirectUri = cookieRedirectUri || await getOAuthRedirectUri(request, "/api/auth/oauth/google/callback");
@@ -69,7 +80,7 @@ export async function GET(request: NextRequest) {
     code, clientId, clientSecret, redirectUri, pkceVerifier,
   });
   if (!tokens?.idToken) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=token-exchange-failed"));
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=token-exchange-failed");
   }
 
   // Verify id_token signature + iss + aud.
@@ -82,11 +93,11 @@ export async function GET(request: NextRequest) {
     payload = verified as unknown as GoogleIdTokenPayload;
   } catch (err) {
     console.error("[OAUTH] google id_token verify failed:", err);
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=invalid-token"));
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=invalid-token");
   }
 
   if (!payload.email || !payload.email_verified) {
-    return NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=email-unverified"));
+    return redirectWithClearedGoogleCookies(request, "/sign-in?error=email-unverified");
   }
 
   let userId: string;
@@ -133,7 +144,7 @@ export async function GET(request: NextRequest) {
   }
 
   const ua = request.headers.get("user-agent") || "";
-  const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+  const ip = resolveClientIP(request);
   const fp = await generateFingerprint(ip, ua);
   try {
     await createUserSession({

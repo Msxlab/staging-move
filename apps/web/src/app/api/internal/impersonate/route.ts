@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
   const { userId, adminId, ttlMinutes } = parsed.data;
   const ttlSeconds = Math.min(ttlMinutes, MAX_TTL_MINUTES) * 60;
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
     select: { id: true, email: true },
   });
   if (!user) {
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
     (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||
     process.env.NEXT_PUBLIC_APP_URL ||
     request.nextUrl.origin;
-  const handoffUrl = `${appUrl}/api/auth/impersonate-handoff?token=${encodeURIComponent(token)}`;
+  const handoffUrl = `${appUrl}/api/auth/impersonate-handoff`;
 
   return NextResponse.json({
     token,

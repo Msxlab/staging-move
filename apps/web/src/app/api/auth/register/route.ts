@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     userEmail: email,
     userName: firstName || "there",
     verifyToken: token,
-    dedupeKey: `verify:${user.id}:${hash.slice(0, 12)}`,
+    dedupeKey: `verify:${user.id}:${hash}`,
   }).catch((err) => console.error("[EMAIL] verification send failed:", err));
 
   return NextResponse.json({ success: true, userId: user.id }, { status: 201 });

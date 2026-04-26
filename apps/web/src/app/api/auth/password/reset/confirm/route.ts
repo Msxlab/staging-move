@@ -7,6 +7,7 @@ import {
   validatePasswordPolicy,
   destroyAllUserSessions,
 } from "@/lib/user-auth";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,14 @@ function invalidResetLink() {
 }
 
 export async function POST(request: NextRequest) {
+  const rl = await rateLimit(getRateLimitKey(request, "auth:pwreset:confirm"), {
+    limit: 5,
+    windowSeconds: 10 * 60,
+  });
+  if (!rl.success) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
