@@ -8,11 +8,16 @@ import {
   isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
-import { createUserSession, findOrLinkOAuthUser, generateFingerprint } from "@/lib/user-auth";
+import {
+  createUserSession,
+  findOrLinkOAuthUserWithStatus,
+  generateFingerprint,
+} from "@/lib/user-auth";
 import {
   OAUTH_LEGAL_ACCEPTANCE_COOKIE,
   recordLegalAcceptance,
 } from "@/lib/legal-acceptance";
+import { sendWelcomeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -117,8 +122,9 @@ export async function POST(request: NextRequest) {
   }
 
   let userId: string;
+  let isNewUser = false;
   try {
-    userId = await findOrLinkOAuthUser({
+    const oauthUser = await findOrLinkOAuthUserWithStatus({
       provider: "apple",
       providerId: payload.sub,
       email: payload.email,
@@ -126,6 +132,8 @@ export async function POST(request: NextRequest) {
       lastName,
       allowNewAccount: acceptedLegal,
     });
+    userId = oauthUser.userId;
+    isNewUser = oauthUser.isNewUser;
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
       const response = NextResponse.redirect(
@@ -170,5 +178,19 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
+  if (isNewUser) {
+    const welcomeSent = await sendWelcomeEmail({
+      email: payload.email,
+      firstName,
+      dedupeKey: `welcome:${userId}`,
+    }).catch((err) => {
+      console.error("[EMAIL] welcome after apple signup failed:", {
+        userId,
+        message: err instanceof Error ? err.message : "SEND_FAILED",
+      });
+      return false;
+    });
+    console.info("[EMAIL] welcome after apple signup", { userId, sent: welcomeSent });
+  }
   return clearAppleOAuthCookies(response);
 }

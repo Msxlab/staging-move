@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 import { prisma } from "./db";
 import bcrypt from "bcryptjs";
 import { trackFailedPasswordConfirm, trackSensitiveOp } from "./security-monitor";
@@ -12,13 +13,51 @@ if (!adminJwtSecret || adminJwtSecret.length < 32) {
 
 const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
-const COOKIE_NAME = "admin_session";
+export const ADMIN_SESSION_COOKIE_NAME = "admin_session";
+const COOKIE_NAME = ADMIN_SESSION_COOKIE_NAME;
 
 function clearSessionCookie(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   try {
     cookieStore.delete(COOKIE_NAME);
   } catch {
   }
+  try {
+    cookieStore.set(COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  } catch {
+  }
+}
+
+function adminCookieDomainCandidates(host?: string | null): Array<string | undefined> {
+  const configured = (process.env.ADMIN_SESSION_COOKIE_DOMAIN || process.env.SESSION_COOKIE_DOMAIN || "").trim();
+  const normalizedHost = (host || "").split(":")[0].toLowerCase();
+  const candidates: Array<string | undefined> = [undefined];
+  if (configured) candidates.push(configured);
+  if (normalizedHost === "admin.locateflow.com" || normalizedHost.endsWith(".locateflow.com")) {
+    candidates.push(".locateflow.com");
+  }
+  return Array.from(new Set(candidates));
+}
+
+export function expireAdminSessionCookies(response: NextResponse, host?: string | null): NextResponse {
+  for (const domain of adminCookieDomainCandidates(host)) {
+    response.cookies.set(COOKIE_NAME, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      ...(domain ? { domain } : {}),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+  return response;
 }
 
 export interface AdminSession {

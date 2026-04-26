@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashOpaqueToken } from "@/lib/user-auth";
+import { sendWelcomeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findFirst({
     where: { id: record.userId, deletedAt: null },
-    select: { id: true },
+    select: { id: true, email: true, firstName: true },
   });
   if (!user) {
     return invalidVerificationLink();
@@ -74,6 +75,22 @@ export async function POST(request: NextRequest) {
     }
     throw error;
   }
+
+  const welcomeSent = await sendWelcomeEmail({
+    email: user.email,
+    firstName: user.firstName,
+    dedupeKey: `welcome:${user.id}`,
+  }).catch((err) => {
+    console.error("[EMAIL] welcome send after verification failed:", {
+      userId: user.id,
+      message: err instanceof Error ? err.message : "SEND_FAILED",
+    });
+    return false;
+  });
+  console.info("[EMAIL] welcome after verification", {
+    userId: user.id,
+    sent: welcomeSent,
+  });
 
   return NextResponse.json({ success: true });
 }

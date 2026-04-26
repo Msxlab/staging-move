@@ -27,11 +27,13 @@ vi.mock("@/lib/email-service", () => ({
 
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/email-service";
+import { rateLimit } from "@/lib/rate-limit";
 import { GENERIC_FORGOT_PASSWORD_MESSAGE, POST } from "./route";
 
 const userMock = prisma.user as unknown as { findUnique: Mock };
 const tokenMock = prisma.passwordResetToken as unknown as { create: Mock };
 const sendPasswordResetEmailMock = sendPasswordResetEmail as unknown as Mock;
+const rateLimitMock = rateLimit as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/auth/password/reset/request", {
@@ -52,6 +54,7 @@ describe("password reset request route", () => {
     vi.clearAllMocks();
     tokenMock.create.mockResolvedValue({});
     sendPasswordResetEmailMock.mockResolvedValue(true);
+    rateLimitMock.mockResolvedValue({ success: true });
   });
 
   it("sends a password reset email for an existing password user", async () => {
@@ -87,6 +90,35 @@ describe("password reset request route", () => {
     userMock.findUnique.mockResolvedValue(null);
 
     const response = await POST(makeRequest({ email: "missing@example.com" }));
+
+    await expectGenericSuccess(response);
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("returns generic success when rate-limited and sends nothing", async () => {
+    rateLimitMock.mockResolvedValue({ success: false });
+
+    const response = await POST(makeRequest({ email: "alice@example.com" }));
+
+    await expectGenericSuccess(response);
+    expect(userMock.findUnique).not.toHaveBeenCalled();
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("returns generic success and sends nothing for a deleted user", async () => {
+    userMock.findUnique.mockResolvedValue({
+      id: "user-deleted",
+      email: "deleted@example.com",
+      firstName: "Deleted",
+      passwordHash: "hash",
+      emailVerifiedAt: new Date("2026-04-26T12:00:00Z"),
+      deletedAt: new Date("2026-04-26T12:01:00Z"),
+      oauthAccounts: [],
+    });
+
+    const response = await POST(makeRequest({ email: "deleted@example.com" }));
 
     await expectGenericSuccess(response);
     expect(tokenMock.create).not.toHaveBeenCalled();

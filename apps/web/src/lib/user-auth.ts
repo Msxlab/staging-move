@@ -6,6 +6,7 @@
 
 import { SignJWT, jwtVerify } from "jose";
 import { cookies, headers } from "next/headers";
+import type { NextResponse } from "next/server";
 import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
@@ -13,7 +14,8 @@ import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 
 // ── Secret / constants ──────────────────────────────────────
 
-const COOKIE_NAME = "user_session";
+export const USER_SESSION_COOKIE_NAME = "user_session";
+const COOKIE_NAME = USER_SESSION_COOKIE_NAME;
 const SESSION_TTL_DAYS = 30;
 const SESSION_TTL_SEC = SESSION_TTL_DAYS * 24 * 60 * 60;
 
@@ -109,12 +111,53 @@ export function hashOpaqueToken(token: string): string {
 
 // ── Session lifecycle ──────────────────────────────────────
 
+function sessionCookieBaseOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax" as const,
+    path: "/",
+  };
+}
+
+function sessionCookieDomainCandidates(host?: string | null): Array<string | undefined> {
+  const configured = (process.env.USER_SESSION_COOKIE_DOMAIN || process.env.SESSION_COOKIE_DOMAIN || "").trim();
+  const normalizedHost = (host || "").split(":")[0].toLowerCase();
+  const candidates: Array<string | undefined> = [undefined];
+  if (configured) candidates.push(configured);
+  if (normalizedHost === "locateflow.com" || normalizedHost.endsWith(".locateflow.com")) {
+    candidates.push(".locateflow.com");
+  }
+  return Array.from(new Set(candidates));
+}
+
 function clearSessionCookie(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   try {
     cookieStore.delete(COOKIE_NAME);
   } catch {
     /* ignore */
   }
+  try {
+    cookieStore.set(COOKIE_NAME, "", {
+      ...sessionCookieBaseOptions(),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+export function expireUserSessionCookies(response: NextResponse, host?: string | null): NextResponse {
+  for (const domain of sessionCookieDomainCandidates(host)) {
+    response.cookies.set(COOKIE_NAME, "", {
+      ...sessionCookieBaseOptions(),
+      ...(domain ? { domain } : {}),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+  return response;
 }
 
 /**
@@ -163,11 +206,8 @@ export async function createUserSession(input: {
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    ...sessionCookieBaseOptions(),
     maxAge: SESSION_TTL_SEC,
-    path: "/",
   });
 
   return token;
@@ -367,6 +407,19 @@ export async function findOrLinkOAuthUser(input: {
   imageUrl?: string | null;
   allowNewAccount?: boolean;
 }): Promise<string> {
+  const result = await findOrLinkOAuthUserWithStatus(input);
+  return result.userId;
+}
+
+export async function findOrLinkOAuthUserWithStatus(input: {
+  provider: "google" | "apple";
+  providerId: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  imageUrl?: string | null;
+  allowNewAccount?: boolean;
+}): Promise<{ userId: string; isNewUser: boolean }> {
   // 1) Existing OAuth link
   const existingLink = await prisma.oAuthAccount.findUnique({
     where: {
@@ -377,7 +430,7 @@ export async function findOrLinkOAuthUser(input: {
     },
     select: { userId: true },
   });
-  if (existingLink) return existingLink.userId;
+  if (existingLink) return { userId: existingLink.userId, isNewUser: false };
 
   // 2) Existing user by email → link
   const userByEmail = await prisma.user.findUnique({
@@ -399,7 +452,7 @@ export async function findOrLinkOAuthUser(input: {
         data: { emailVerifiedAt: new Date() },
       });
     }
-    return userByEmail.id;
+    return { userId: userByEmail.id, isNewUser: false };
   }
 
   if (input.allowNewAccount === false) {
@@ -420,5 +473,5 @@ export async function findOrLinkOAuthUser(input: {
     },
   });
 
-  return created.id;
+  return { userId: created.id, isNewUser: true };
 }

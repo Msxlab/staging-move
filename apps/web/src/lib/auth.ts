@@ -16,4 +16,5 @@ export {
   hashPassword,
   validatePasswordPolicy,
   findOrLinkOAuthUser,
+  findOrLinkOAuthUserWithStatus,
 } from "@/lib/user-auth";
