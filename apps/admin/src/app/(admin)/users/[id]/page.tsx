@@ -115,7 +115,7 @@ export default function UserDetailPage() {
         toast.error(message);
         return;
       }
-      toast.success(data.message || "User deletion queued");
+      toast.success(data.message || "User deleted");
       setShowDeleteConfirm(false);
       router.push("/users");
     } catch {
@@ -1291,9 +1291,9 @@ export default function UserDetailPage() {
       )}
       <PasswordConfirmModal
         open={showDeleteConfirm}
-        title="Queue user deletion"
-        description={`This queues staged deletion for ${maskEmail(user.email)}. Enter your admin password to continue.`}
-        confirmLabel="Queue deletion"
+        title="Delete user"
+        description={`This removes ${maskEmail(user.email)} from the active list and queues staged GDPR cleanup. Enter your admin password to continue.`}
+        confirmLabel="Delete"
         busy={deleteBusy}
         error={deleteError}
         onClose={() => {

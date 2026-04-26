@@ -39,6 +39,9 @@ describe("email verification gate", () => {
     expect(buildEmailVerificationGateRedirect("/onboarding")).toBe(
       "/verify-email?redirect=%2Fonboarding",
     );
+    expect(buildEmailVerificationGateRedirect("/dashboard")).toBe(
+      "/verify-email?redirect=%2Fdashboard",
+    );
     expect(buildEmailVerificationGateRedirect("//evil.example")).toBe(
       "/verify-email?redirect=%2Fonboarding",
     );

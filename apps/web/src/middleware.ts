@@ -318,6 +318,16 @@ function applyStagingNoIndex(request: NextRequest, response: NextResponse): Next
   return applySecurityHeaders(request, response);
 }
 
+function nextWithCurrentPath(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-locateflow-pathname", request.nextUrl.pathname);
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
+
 function applySecurityHeaders(request: NextRequest, response: NextResponse): NextResponse {
   const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
   const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
@@ -374,28 +384,22 @@ export default async function middleware(request: NextRequest) {
 
   // Skip auth for public endpoints.
   if (pathname.startsWith("/api/")) {
-    if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, NextResponse.next());
+    if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, nextWithCurrentPath(request));
     if (!(await hasValidSession(request))) {
       return applyStagingNoIndex(
         request,
         NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
       );
     }
-    return applyStagingNoIndex(request, NextResponse.next());
+    return applyStagingNoIndex(request, nextWithCurrentPath(request));
   }
 
   // Page routes.
   if (isPublicPath(pathname)) {
-    if ((pathname === "/sign-in" || pathname === "/sign-up") && (await hasValidSession(request))) {
-      return applyStagingNoIndex(
-        request,
-        applyLocaleCookie(request, NextResponse.redirect(new URL("/dashboard", request.url))),
-      );
-    }
-    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
+    return applyStagingNoIndex(request, applyLocaleCookie(request, nextWithCurrentPath(request)));
   }
   if (await hasValidSession(request)) {
-    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
+    return applyStagingNoIndex(request, applyLocaleCookie(request, nextWithCurrentPath(request)));
   }
 
   const signInUrl = new URL("/sign-in", request.url);

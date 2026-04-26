@@ -146,6 +146,46 @@ describe("profile route", () => {
     });
   });
 
+  it("does not duplicate legal acknowledgement rows for the same current versions", async () => {
+    mockUserEvent.findFirst.mockResolvedValue({
+      metadata: JSON.stringify({
+        termsAccepted: true,
+        disclaimerAccepted: true,
+        termsVersion: "2026-03-13",
+        disclaimerVersion: "2026-03-13",
+        acceptedAt: "2026-04-25T12:00:00.000Z",
+      }),
+    });
+    const payload = buildOnboardingProfilePayload(
+      {
+        firstName: "Taylor",
+        lastName: "Mover",
+        ageRange: "",
+        familyStatus: "SINGLE",
+        hasChildren: false,
+        childrenCount: 0,
+        hasPets: false,
+        petTypes: [],
+        carCount: 0,
+        hasSenior: false,
+        hasDisability: false,
+        needsStorage: false,
+        hasMotorcycle: false,
+        hasBoatRV: false,
+      },
+      createAcceptedLegalConsents({
+        termsVersion: "2026-03-13",
+        disclaimerVersion: "2026-03-13",
+        acceptedAt: "2026-04-26T12:00:00.000Z",
+      }),
+    );
+
+    const response = await POST(makeRequest(payload));
+
+    expect(response.status).toBe(200);
+    expect(mockUserEvent.create).not.toHaveBeenCalled();
+  });
+
   it("still rejects unknown root and legal fields when callers bypass the sanitizer", async () => {
     const response = await POST(makeRequest({
       firstName: "Taylor",

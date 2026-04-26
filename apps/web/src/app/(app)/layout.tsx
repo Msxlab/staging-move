@@ -2,14 +2,16 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { InstallPrompt } from "@/components/shared/install-prompt";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 import {
   buildEmailVerificationGateRedirect,
   needsEmailVerificationGate,
 } from "@/lib/email-verification-gate";
-import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
+import { getOnboardingGateRedirect, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import type { ReactNode } from "react";
 
@@ -22,7 +24,16 @@ function parseStoredLegalConsents(metadata: string | null | undefined) {
   }
 }
 
-async function checkOnboardingNeeded(): Promise<boolean> {
+async function getCurrentAppPath() {
+  const headerStore = await headers();
+  return normalizeAppRedirectPath(
+    headerStore.get("x-locateflow-pathname"),
+    "/dashboard",
+  );
+}
+
+async function getAppGateRedirect(): Promise<string | null> {
+  const currentPath = await getCurrentAppPath();
   const { requireDbUserId } = await import("@/lib/auth");
   let userId: string;
   try {
@@ -32,9 +43,9 @@ async function checkOnboardingNeeded(): Promise<boolean> {
       redirect("/");
     }
     if (error?.message === "UNAUTHORIZED") {
-      redirect("/sign-in");
+      redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
     }
-    return false;
+    return null;
   }
 
   const [user, profile, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] =
@@ -69,17 +80,17 @@ async function checkOnboardingNeeded(): Promise<boolean> {
     ]);
 
   if (!user) {
-    redirect("/sign-in");
+    redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
   }
 
   if (needsEmailVerificationGate(user)) {
-    redirect(buildEmailVerificationGateRedirect("/onboarding"));
+    redirect(buildEmailVerificationGateRedirect(currentPath));
   }
 
   const hasLegalConsents = consentEvents.some((event) =>
     hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
   );
-  const progress = getOnboardingProgress({
+  return getOnboardingGateRedirect({
     hasProfile: Boolean(profile),
     hasRequiredLegalConsents: hasLegalConsents,
     addressCount,
@@ -87,13 +98,12 @@ async function checkOnboardingNeeded(): Promise<boolean> {
     movingPlanCount,
     ...summarizeOnboardingEvents(onboardingEvents),
   });
-  return !progress.completed;
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const needsOnboarding = await checkOnboardingNeeded();
-  if (needsOnboarding) {
-    redirect("/onboarding");
+  const gateRedirect = await getAppGateRedirect();
+  if (gateRedirect) {
+    redirect(gateRedirect);
   }
 
   return (

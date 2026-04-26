@@ -152,7 +152,14 @@ export default function UsersPage() {
         toast.error(message);
         return;
       }
-      toast.success(data.message || "User deletion request queued");
+      toast.success(data.message || "User deleted");
+      if (Array.isArray(data.skipped) && data.skipped.length > 0) {
+        const preview = data.skipped
+          .slice(0, 2)
+          .map((item: any) => item.reason)
+          .join("; ");
+        toast.warning(`${data.skipped.length} skipped${preview ? `: ${preview}` : ""}`);
+      }
       setPendingDelete(null);
       bulk.clear();
       fetchUsers();
@@ -444,15 +451,15 @@ export default function UsersPage() {
       )}
       <PasswordConfirmModal
         open={Boolean(pendingDelete)}
-        title={pendingDelete?.type === "bulk" ? "Queue user deletions" : "Queue user deletion"}
+        title={pendingDelete?.type === "bulk" ? "Delete users" : "Delete user"}
         description={
           pendingDelete?.type === "bulk"
-            ? `This queues staged deletion for ${pendingDelete.count} selected users. Enter your admin password to continue.`
+            ? `This removes ${pendingDelete.count} selected users from the active list and queues staged GDPR cleanup. Enter your admin password to continue.`
             : pendingDelete
-            ? `This queues staged deletion for ${maskEmail(pendingDelete.email)}. Enter your admin password to continue.`
+            ? `This removes ${maskEmail(pendingDelete.email)} from the active list and queues staged GDPR cleanup. Enter your admin password to continue.`
             : ""
         }
-        confirmLabel="Queue deletion"
+        confirmLabel="Delete"
         busy={deleteBusy}
         error={deleteError}
         onClose={() => {

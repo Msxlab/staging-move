@@ -181,7 +181,6 @@ export async function POST(request: NextRequest) {
 
     if (hasRequiredLegalConsents(incomingLegalConsents)) {
       const shouldRecordConsent = !existingLegalConsents
-        || existingLegalConsents.acceptedAt !== incomingLegalConsents.acceptedAt
         || existingLegalConsents.termsVersion !== incomingLegalConsents.termsVersion
         || existingLegalConsents.disclaimerVersion !== incomingLegalConsents.disclaimerVersion;
 

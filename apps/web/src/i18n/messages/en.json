@@ -262,6 +262,8 @@
     "orContinueWith": "Or continue with",
     "continueWithGoogle": "Continue with Google",
     "continueWithApple": "Continue with Apple",
+    "googleUnavailable": "Google sign-in unavailable",
+    "appleUnavailable": "Apple sign-in unavailable",
     "checkEmail": "Check your email",
     "checkEmailDescription": "We sent a verification link to {email}. Click it to finish creating your account.",
     "verifying": "Verifying your email…",
