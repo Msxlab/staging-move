@@ -7,7 +7,28 @@ import { requirePermission } from "@/lib/auth";
 export async function GET() {
   try {
     await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const templates = await prisma.emailTemplate.findMany({ orderBy: { createdAt: "desc" }, include: { _count: { select: { emailLogs: true } } } });
+    const templates = await prisma.emailTemplate.findMany({ orderBy: { createdAt: "desc" } });
+    const groupedCounts = await prisma.emailLog.groupBy({
+      by: ["templateId", "status"],
+      _count: { _all: true },
+    });
+    const countsByTemplate = new Map<string, { sent: number; failed: number; total: number }>();
+    for (const row of groupedCounts) {
+      if (!row.templateId) continue;
+      const current = countsByTemplate.get(row.templateId) || { sent: 0, failed: 0, total: 0 };
+      current.total += row._count._all;
+      if (row.status === "SENT") current.sent += row._count._all;
+      if (row.status === "FAILED") current.failed += row._count._all;
+      countsByTemplate.set(row.templateId, current);
+    }
+    const templatesWithCounts = templates.map((template: any) => {
+      const sendCounts = countsByTemplate.get(template.id) || { sent: 0, failed: 0, total: 0 };
+      return {
+        ...template,
+        sendCounts,
+        _count: { emailLogs: sendCounts.sent },
+      };
+    });
     const logs = await prisma.emailLog.findMany({ orderBy: { createdAt: "desc" }, take: 50, include: { template: { select: { name: true, slug: true } } } });
     const stats = {
       totalTemplates: templates.length,
@@ -15,7 +36,7 @@ export async function GET() {
       totalSent: await prisma.emailLog.count({ where: { status: "SENT" } }),
       totalFailed: await prisma.emailLog.count({ where: { status: "FAILED" } }),
     };
-    return NextResponse.json({ templates, logs, stats });
+    return NextResponse.json({ templates: templatesWithCounts, logs, stats });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

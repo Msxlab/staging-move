@@ -35,6 +35,7 @@ vi.mock("@/lib/legal-acceptance", () => ({
 }));
 
 import { prisma } from "@/lib/db";
+import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as {
@@ -43,6 +44,7 @@ const userMock = prisma.user as unknown as {
   update: Mock;
 };
 const tokenMock = prisma.emailVerificationToken as unknown as { create: Mock };
+const sendEmailVerificationEmailMock = sendEmailVerificationEmail as unknown as Mock;
 
 const validBody = {
   email: "new@example.com",
@@ -111,6 +113,12 @@ describe("register route", () => {
       },
     });
     expect(tokenMock.create).toHaveBeenCalled();
+    expect(sendEmailVerificationEmailMock).toHaveBeenCalledWith({
+      userEmail: "new@example.com",
+      userName: "New",
+      verifyToken: "verify-token",
+      dedupeKey: "verify:user-new:verify-hash",
+    });
     expect(userMock.update).not.toHaveBeenCalled();
   });
 

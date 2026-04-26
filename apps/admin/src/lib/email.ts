@@ -13,18 +13,22 @@ function getResend(apiKey: string): Resend {
 
 const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
 const DEFAULT_APP_URL = "http://localhost:3000";
+const DEFAULT_REPLY_TO = "support@locateflow.com";
 
 async function resolveEmailConfig() {
   const values = await getAdminRuntimeConfigValues([
     "RESEND_API_KEY",
     "EMAIL_FROM",
     "NEXT_PUBLIC_APP_URL",
+    "EMAIL_REPLY_TO",
+    "SUPPORT_EMAIL",
   ]);
 
   return {
     resendApiKey: values.RESEND_API_KEY,
     fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
     appUrl: values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL,
+    replyTo: values.EMAIL_REPLY_TO || values.SUPPORT_EMAIL || DEFAULT_REPLY_TO,
   };
 }
 
@@ -32,8 +36,9 @@ export async function sendEmail(opts: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
 }): Promise<boolean> {
-  const { resendApiKey, fromEmail } = await resolveEmailConfig();
+  const { resendApiKey, fromEmail, replyTo } = await resolveEmailConfig();
 
   if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${opts.to} | Subject: ${opts.subject}`);
@@ -45,16 +50,47 @@ export async function sendEmail(opts: {
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
+      text: opts.text || htmlToPlainText(opts.html),
+      replyTo,
     });
     if (error) {
-      console.error("[EMAIL] Send failed:", error);
+      console.error("[EMAIL] Send failed:", { message: safeEmailError(error) });
       return false;
     }
     return true;
   } catch (err) {
-    console.error("[EMAIL] Error:", err);
+    console.error("[EMAIL] Error:", { message: safeEmailError(err) });
     return false;
   }
+}
+
+function safeEmailError(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message?: unknown }).message || "SEND_FAILED")
+        : String(error || "SEND_FAILED");
+  return raw.replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]").slice(0, 500);
+}
+
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, label: string) => `${label.replace(/<[^>]*>/g, "").trim()}: ${href}`)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h1|h2|h3|tr|table|li)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function esc(str: string): string {

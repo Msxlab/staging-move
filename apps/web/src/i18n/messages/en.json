@@ -274,7 +274,7 @@
     "forgotPassword_subtitle": "Enter the email you used to sign up. We'll send you a link to set a new password.",
     "forgotPassword_submit": "Send reset link",
     "forgotPassword_sent": "Reset link sent",
-    "forgotPassword_sentDescription": "If an account exists for {email}, you'll receive a password reset email shortly.",
+    "forgotPassword_sentDescription": "If an account exists, we sent password reset instructions.",
     "resetPassword_title": "Set a new password",
     "resetPassword_subtitle": "Pick a password with at least 12 characters, one uppercase, one lowercase, one digit, and one special character.",
     "resetPassword_submit": "Update password",

@@ -15,9 +15,20 @@ const schema = z.object({
   newPassword: z.string().max(200),
 });
 
+function invalidResetLink() {
+  return NextResponse.json(
+    { error: "This reset link is invalid or already used." },
+    { status: 400 },
+  );
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid body" }, { status: 400 }); }
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
 
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -26,29 +37,60 @@ export async function POST(request: NextRequest) {
   if (policyError) return NextResponse.json({ error: policyError }, { status: 400 });
 
   const tokenHash = hashOpaqueToken(parsed.data.token);
-  const record = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+  });
 
   if (!record || record.usedAt) {
-    return NextResponse.json({ error: "This reset link is invalid or already used." }, { status: 400 });
+    return invalidResetLink();
   }
   if (record.expiresAt.getTime() < Date.now()) {
-    return NextResponse.json({ error: "This reset link has expired. Please request a new one." }, { status: 400 });
+    return NextResponse.json(
+      { error: "This reset link has expired. Please request a new one." },
+      { status: 400 },
+    );
+  }
+
+  const user = await prisma.user.findFirst({
+    where: { id: record.userId, deletedAt: null },
+    select: { id: true },
+  });
+  if (!user) {
+    return invalidResetLink();
   }
 
   const newHash = await hashPassword(parsed.data.newPassword);
+  const now = new Date();
 
-  await prisma.$transaction([
-    prisma.passwordResetToken.update({
-      where: { id: record.id },
-      data: { usedAt: new Date() },
-    }),
-    prisma.user.update({
-      where: { id: record.userId },
-      data: { passwordHash: newHash, emailVerifiedAt: new Date() }, // reset flow implicitly verifies email
-    }),
-  ]);
+  try {
+    await prisma.$transaction(async (tx) => {
+      const claimed = await tx.passwordResetToken.updateMany({
+        where: {
+          id: record.id,
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: { usedAt: now },
+      });
+      if (claimed.count !== 1) {
+        throw new Error("RESET_TOKEN_NOT_CLAIMED");
+      }
 
-  // Invalidate all prior sessions so a compromised session cannot persist.
+      await tx.user.update({
+        where: { id: record.userId },
+        data: {
+          passwordHash: newHash,
+          emailVerifiedAt: now,
+        },
+      });
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "RESET_TOKEN_NOT_CLAIMED") {
+      return invalidResetLink();
+    }
+    throw error;
+  }
+
   await destroyAllUserSessions(record.userId);
 
   return NextResponse.json({ success: true });
