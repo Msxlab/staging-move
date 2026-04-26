@@ -18,7 +18,10 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   getMergedDisplayCategoryIcon,
+  getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
+  getMergedDisplayCategoryOrder,
+  getMergedDisplaySubcategoryLabel,
   type ScoredProvider,
   type UrgencyTier,
 } from "@/lib/recommendation-engine";
@@ -131,14 +134,13 @@ export function ProvidersClient({
   const [recsLoading, setRecsLoading] = useState(false);
 
   // Load providers for selected state/zip via the public API (cached/revalidated server-side)
-  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string, category: string | null) => {
+  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (state) params.set("state", state);
       if (zip) params.set("zip", zip);
       if (q) params.set("q", q);
-      if (category) params.set("category", category);
       const res = await fetch(`/api/providers?${params.toString()}`);
       if (!res.ok) return;
       const data = await res.json();
@@ -172,18 +174,28 @@ export function ProvidersClient({
 
   // Debounced server-side search when q or category or state/zip change
   useEffect(() => {
-    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim(), categoryFilter), 250);
+    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim()), 250);
     return () => clearTimeout(t);
-  }, [selectedState, selectedZip, search, categoryFilter, fetchProviders]);
+  }, [selectedState, selectedZip, search, fetchProviders]);
 
   // Build distinct categories from visible providers, sorted by provider count
   const categoryCounts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const p of providers) {
-      map[p.category] = (map[p.category] || 0) + 1;
+      const key = getMergedDisplayCategoryKey(p.category);
+      map[key] = (map[key] || 0) + 1;
     }
-    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+    return Object.entries(map).sort(
+      (a, b) =>
+        getMergedDisplayCategoryOrder(a[0]) - getMergedDisplayCategoryOrder(b[0]) ||
+        b[1] - a[1],
+    );
   }, [providers]);
+
+  const visibleProviders = useMemo(() => {
+    if (!categoryFilter) return providers;
+    return providers.filter((provider) => getMergedDisplayCategoryKey(provider.category) === categoryFilter);
+  }, [providers, categoryFilter]);
 
   const criticalCluster = recs?.clusters.find((c) => c.tier === "CRITICAL");
   const importantCluster = recs?.clusters.find((c) => c.tier === "IMPORTANT");
@@ -216,7 +228,7 @@ export function ProvidersClient({
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white">Providers</h1>
           <p className="text-white/40 mt-1 text-sm">
-            Browse listed directory entries. Providers are not your active accounts until you add them as Services.
+            Browse listed providers. Providers are directory entries and are not your tracked services until you add them.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -252,7 +264,7 @@ export function ProvidersClient({
         <div>
           <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
           <p className="text-[11px] text-amber-900/80 dark:text-amber-100/75 mt-1 leading-relaxed">
-            Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding a provider creates a service record in LocateFlow and does not update your address with that provider.
+            Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding this provider creates a LocateFlow service record; it does not update your address with the provider.
           </p>
         </div>
       </div>
@@ -292,7 +304,9 @@ export function ProvidersClient({
                     </span>
                   </div>
                   <p className="text-xs text-white/40 mt-0.5 truncate">
-                    {getMergedDisplayCategoryLabel(p.category)}
+                    {[getMergedDisplayCategoryLabel(p.category), getMergedDisplaySubcategoryLabel(p.category)]
+                      .filter(Boolean)
+                      .join(" - ")}
                   </p>
                   {p.explanation?.reason && (
                     <p className="text-[11px] text-white/50 mt-1 line-clamp-2">{p.explanation.reason}</p>
@@ -312,7 +326,7 @@ export function ProvidersClient({
         <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
         <input
           type="text"
-          placeholder="Search providers, tags, or descriptions…"
+          placeholder="Search listed providers, tags, or descriptions..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500/50"
@@ -365,7 +379,7 @@ export function ProvidersClient({
         <div className="flex items-center justify-center py-20 text-white/40 gap-2">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading providers…
         </div>
-      ) : providers.length === 0 ? (
+      ) : visibleProviders.length === 0 ? (
         <EmptyState
           icon={Building2}
           title={emptyStateCopy.title}
@@ -382,7 +396,7 @@ export function ProvidersClient({
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {providers.map((p) => (
+          {visibleProviders.map((p) => (
             <Link
               key={p.id}
               href={`/providers/${p.id}`}
@@ -412,7 +426,9 @@ export function ProvidersClient({
                   </span>
                 </div>
                 <p className="text-xs text-white/40 mt-0.5">
-                  {getMergedDisplayCategoryLabel(p.category)}
+                  {[getMergedDisplayCategoryLabel(p.category), getMergedDisplaySubcategoryLabel(p.category)]
+                    .filter(Boolean)
+                    .join(" - ")}
                 </p>
                 {p.description && (
                   <p className="text-xs text-white/50 mt-1.5 line-clamp-2">{p.description}</p>

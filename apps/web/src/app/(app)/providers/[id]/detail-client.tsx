@@ -16,6 +16,7 @@ import {
 import {
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryLabel,
+  getMergedDisplaySubcategoryLabel,
 } from "@/lib/recommendation-engine";
 import type {
   ProviderCoverageConfidence,
@@ -112,6 +113,10 @@ export function ProviderDetailClient({
         : stateRule.dmvRules
     : null;
   const coverageConfidence = provider.trust?.coverageConfidence || provider.coverageConfidence;
+  const categoryLabel = [
+    getMergedDisplayCategoryLabel(provider.category),
+    getMergedDisplaySubcategoryLabel(provider.category),
+  ].filter(Boolean).join(" - ");
 
   return (
     <div className="space-y-6">
@@ -136,9 +141,7 @@ export function ProviderDetailClient({
           <div className="flex-1 min-w-0">
             <h1 className="text-xl md:text-2xl font-bold text-white">{provider.name}</h1>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className="text-xs text-white/50">
-                {getMergedDisplayCategoryLabel(provider.category)}
-              </span>
+              <span className="text-xs text-white/50">{categoryLabel}</span>
               {provider.scope === "FEDERAL" ? (
                 <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 flex items-center gap-1">
                   <Flag className="h-2.5 w-2.5" /> Federal
@@ -153,8 +156,8 @@ export function ProviderDetailClient({
         </div>
 
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-xs font-semibold text-amber-200">Listed provider</p>
-          <p className="text-[11px] text-amber-100/75 mt-1 leading-relaxed">
+          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed provider, manual tracking only</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-100/75">
             This is unverified directory data, not an official partnership or integration. Confirm details with the official provider before acting.
           </p>
         </div>
@@ -210,7 +213,7 @@ export function ProviderDetailClient({
       </div>
 
       {/* Community signal */}
-      {provider.userCount && provider.userCount > 0 && (
+      {(provider.userCount ?? 0) > 0 && (
         <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex items-center gap-3">
           <div className="h-10 w-10 shrink-0 rounded-xl bg-cyan-500/15 border border-cyan-500/20 flex items-center justify-center">
             <Users className="h-5 w-5 text-cyan-300" />

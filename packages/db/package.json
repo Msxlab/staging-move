@@ -10,7 +10,7 @@
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "push": "prisma db push",
-    "seed": "tsx prisma/seed.ts",
+    "seed": "tsx prisma/seed-master.ts",
     "seed:providers": "tsx prisma/seed-providers.ts",
     "seed:all-states": "tsx prisma/seed-providers-all-states.ts",
     "seed:expanded": "tsx prisma/seed-providers-expanded.ts",

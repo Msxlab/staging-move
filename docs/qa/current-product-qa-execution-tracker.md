@@ -25,7 +25,7 @@ Startup:
 - [ ] Install: `pnpm install --frozen-lockfile`
 - [ ] Prisma generate: `pnpm --filter @locateflow/db generate`
 - [ ] Local migration: `pnpm --filter @locateflow/db prisma migrate dev`
-- [ ] Seed: `pnpm db:seed` or `pnpm db:seed:all`
+- [ ] Seed: `pnpm db:seed:master` for current product data; use `pnpm db:seed:all` only when local admin seed data is also needed
 - [ ] Start web: `pnpm --filter @locateflow/web dev`
 - [ ] Start admin: `pnpm --filter @locateflow/admin dev`
 - [ ] Start mobile: `cd apps/mobile && pnpm exec expo start`

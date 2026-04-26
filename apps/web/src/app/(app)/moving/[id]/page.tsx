@@ -16,6 +16,14 @@ const STATUS_BADGE_CLASSES: Record<string, { cls: string }> = {
   CANCELED: { cls: "bg-red-500/10 text-red-400 border-red-500/20" },
 };
 
+const STATUS_LABEL_KEYS: Record<string, "status_planning" | "status_inProgress" | "status_complete" | "status_canceled"> = {
+  PLANNING: "status_planning",
+  IN_PROGRESS: "status_inProgress",
+  COMPLETED: "status_complete",
+  CANCELED: "status_canceled",
+  CANCELLED: "status_canceled",
+};
+
 interface PlanDetail {
   id: string;
   moveDate: string;
@@ -192,7 +200,7 @@ export default function MovingPlanDetailPage() {
 
   const daysUntilMove = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const statusClasses = STATUS_BADGE_CLASSES[plan.status] || STATUS_BADGE_CLASSES.PLANNING;
-  const statusLabel = t(`status_${plan.status.toLowerCase()}` as any);
+  const statusLabel = t(STATUS_LABEL_KEYS[plan.status] || "status_planning");
   const isInterstateMove = plan.fromAddress.state !== plan.toAddress.state;
   const moveScopeLabel = isInterstateMove ? t("interstateMove") : t("intrastateMove");
   const focusLabel = isInterstateMove
