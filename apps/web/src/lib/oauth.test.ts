@@ -41,13 +41,13 @@ describe("OAuth URL helpers", () => {
     expect(normalizeOAuthRedirectPath("https://evil.example")).toBe("/dashboard");
   });
 
-  it("sends fresh OAuth signups directly to onboarding", () => {
+  it("sends fresh OAuth signups directly to the onboarding legal step", () => {
     expect(
       resolveOAuthPostAuthRedirectPath({
         isNewUser: true,
         redirectPath: "/dashboard",
       }),
-    ).toBe("/onboarding");
+    ).toBe("/onboarding?step=legal");
     expect(
       resolveOAuthPostAuthRedirectPath({
         isNewUser: false,

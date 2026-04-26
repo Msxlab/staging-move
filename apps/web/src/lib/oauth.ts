@@ -133,7 +133,7 @@ export function resolveOAuthPostAuthRedirectPath(input: {
   redirectPath?: string | null;
   fallback?: string;
 }): string {
-  if (input.isNewUser) return "/onboarding";
+  if (input.isNewUser) return "/onboarding?step=legal";
   return normalizeOAuthRedirectPath(input.redirectPath, input.fallback || "/dashboard");
 }
 
