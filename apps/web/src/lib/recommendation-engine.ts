@@ -13,6 +13,7 @@ export {
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryIcon,
   getMergedDisplayCategoryOrder,
+  getMergedDisplaySubcategoryLabel,
   groupByMergedDisplayCategory,
   CATEGORY_META,
   PROVIDER_CATEGORY_VALUES,

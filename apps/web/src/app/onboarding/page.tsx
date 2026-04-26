@@ -14,6 +14,7 @@ import {
   getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
+  getMergedDisplaySubcategoryLabel,
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
@@ -498,6 +499,10 @@ export default function OnboardingPage() {
     search: providerSearch,
     hasCategoryFilter: Boolean(activeCategory),
   });
+  const providerCategoryLabel = (category: string) =>
+    [getMergedDisplayCategoryLabel(category), getMergedDisplaySubcategoryLabel(category)]
+      .filter(Boolean)
+      .join(" - ");
 
   // --- Common input styles for glass theme ---
   const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition";
@@ -825,9 +830,12 @@ export default function OnboardingPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">Choose Your Providers</h2>
-              <p className="text-sm text-white/40">
-                Showing for <span className="text-orange-400 font-medium">{address.state || "all states"}</span>
+              <h2 className="text-lg font-semibold text-white">Choose Listed Providers</h2>
+              <p className="text-sm text-white/50">
+                Choose a listed provider or add a local/custom provider later to create a tracked service.
+              </p>
+              <p className="mt-1 text-xs text-white/45">
+                Showing unverified directory entries for <span className="text-orange-400 font-medium">{address.state || "all states"}</span>.
               </p>
             </div>
             {selectedProviders.size > 0 && (
@@ -835,6 +843,13 @@ export default function OnboardingPage() {
                 {selectedProviders.size} selected
               </span>
             )}
+          </div>
+
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+            <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-100/75">
+              Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
+            </p>
           </div>
 
           {/* Selected chips */}
@@ -851,10 +866,10 @@ export default function OnboardingPage() {
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
             <input
               className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
-              placeholder="Search providers..."
+              placeholder="Search listed providers..."
               value={providerSearch}
               onChange={(e) => setProviderSearch(e.target.value)}
             />
@@ -868,7 +883,7 @@ export default function OnboardingPage() {
             >
               {showCategories ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               {showCategories ? "Hide categories" : "Browse by category"}
-              <span className="text-white/30">({allCategories.length})</span>
+              <span className="text-white/45">({allCategories.length})</span>
             </button>
             {showCategories && (
               <div className="flex flex-wrap gap-1.5 mt-2">
@@ -898,8 +913,8 @@ export default function OnboardingPage() {
             <GlassCard className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-amber-400" />
-                <h3 className="text-sm font-semibold text-white">Recommended for You</h3>
-                <span className="text-[10px] text-white/30 ml-auto">Based on your profile</span>
+                <h3 className="text-sm font-semibold text-white">Recommended Listed Providers</h3>
+                <span className="text-[10px] text-white/45 ml-auto">Manual tracking</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {recommended.map((provider) => {
@@ -920,8 +935,8 @@ export default function OnboardingPage() {
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm text-white truncate pr-6">{provider.name}</p>
                           <div className="flex flex-wrap gap-1 mt-0.5">
-                            {(provider.matchReasons.length > 0 ? provider.matchReasons : [getMergedDisplayCategoryLabel(provider.category)]).slice(0, 2).map((reason, i) => (
-                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-300/60 border border-orange-500/10">
+                            {(provider.matchReasons.length > 0 ? provider.matchReasons : [providerCategoryLabel(provider.category)]).slice(0, 2).map((reason, i) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/10">
                                 {reason}
                               </span>
                             ))}
@@ -955,7 +970,7 @@ export default function OnboardingPage() {
                   disabled={saving}
                   className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
                 >
-                  Continue without providers <ArrowRight className="h-4 w-4" />
+                  Continue without listed providers <ArrowRight className="h-4 w-4" />
                 </button>
                 <p className="text-xs text-white/45">
                   Add local/custom providers later from Services &gt; Add Service.
@@ -976,7 +991,7 @@ export default function OnboardingPage() {
                     >
                       <span className="text-base">{getMergedDisplayCategoryIcon(cat)}</span>
                       <span className="text-sm font-medium text-white/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
-                      <span className="text-[10px] text-white/30">{items.length}</span>
+                      <span className="text-[10px] text-white/45">{items.length}</span>
                       {selectedInCat > 0 && (
                         <span className="px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[10px] font-medium">{selectedInCat}</span>
                       )}
@@ -1003,8 +1018,11 @@ export default function OnboardingPage() {
                                   }`}>{provider.name.charAt(0)}</div>
                                   <div className="min-w-0 flex-1">
                                     <p className="font-medium text-sm text-white truncate pr-5">{provider.name}</p>
+                                    {getMergedDisplaySubcategoryLabel(provider.category) && (
+                                      <p className="text-[10px] text-white/45 truncate">{getMergedDisplaySubcategoryLabel(provider.category)}</p>
+                                    )}
                                     {provider.description && (
-                                      <p className="text-[11px] text-white/30 truncate">{provider.description}</p>
+                                      <p className="text-[11px] text-white/45 truncate">{provider.description}</p>
                                     )}
                                     <div className="flex items-center gap-1.5 mt-1">
                                       <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
@@ -1013,7 +1031,7 @@ export default function OnboardingPage() {
                                         {provider.scope === "FEDERAL" ? "Federal" : provider.states.join(", ")}
                                       </span>
                                       {provider.website && (
-                                        <span className="text-[9px] text-white/20 flex items-center gap-0.5">
+                                        <span className="text-[9px] text-white/45 flex items-center gap-0.5">
                                           <Globe className="h-2.5 w-2.5" />
                                           {provider.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}
                                         </span>
@@ -1030,7 +1048,7 @@ export default function OnboardingPage() {
                               {isSelected && (
                                 <div className="flex items-center gap-2 px-3 pb-2.5 pt-0" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center gap-1.5 flex-1">
-                                    <span className="text-[10px] text-white/30 shrink-0">$</span>
+                                    <span className="text-[10px] text-white/45 shrink-0">$</span>
                                     <input
                                       type="number" step="0.01" placeholder="Monthly cost"
                                       className="h-7 w-full text-xs rounded-lg border border-white/10 bg-white/5 px-2 text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
@@ -1039,7 +1057,7 @@ export default function OnboardingPage() {
                                     />
                                   </div>
                                   <select
-                                    className="h-7 text-[10px] rounded-lg border border-white/10 bg-white/5 px-1 text-white/60 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                                    className="h-7 text-[10px] rounded-lg border border-white/10 bg-white/5 px-1 text-white/70 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                                     value={bd?.billingCycle || "MONTHLY"}
                                     onChange={(e) => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: prev[provider.id]?.monthlyCost || "", billingCycle: e.target.value } }))}
                                   >

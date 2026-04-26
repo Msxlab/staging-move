@@ -15,7 +15,9 @@ import {
   getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
+  getMergedDisplaySubcategoryLabel,
   groupByMergedDisplayCategory,
+  PROVIDER_CATEGORY_OPTIONS,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
@@ -26,6 +28,11 @@ const BILLING_CYCLES = [
   { value: "YEARLY", label: "Yearly" },
   { value: "ONE_TIME", label: "One-time" },
 ];
+
+const CUSTOM_PROVIDER_CATEGORY_OPTIONS = [
+  { value: "OTHER", label: "Other", icon: "", order: 999 },
+  ...PROVIDER_CATEGORY_OPTIONS,
+].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -152,6 +159,10 @@ export default function NewServicePage() {
     search: providerSearch,
     hasCategoryFilter: Boolean(activeCategory),
   });
+  const providerCategoryLabel = (category: string) =>
+    [getMergedDisplayCategoryLabel(category), getMergedDisplaySubcategoryLabel(category)]
+      .filter(Boolean)
+      .join(" - ");
 
   // Toggle provider in multi-select
   const toggleProvider = useCallback((provider: ScoredProvider) => {
@@ -301,7 +312,9 @@ export default function NewServicePage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-white">Add Services</h1>
-          <p className="text-sm text-white/40">Choose an address, then select a listed provider or add a local/custom provider to create a tracked service.</p>
+          <p className="text-sm text-white/50">
+            Choose a listed provider or add a local/custom provider to create a tracked service.
+          </p>
         </div>
       </div>
 
@@ -377,9 +390,9 @@ export default function NewServicePage() {
           {/* Header with selected count */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">Choose Your Providers</h2>
-              <p className="text-sm text-white/40">
-                Showing for <span className="text-orange-400 font-medium">{addr?.state || "all states"}</span>
+              <h2 className="text-lg font-semibold text-white">Choose Listed Providers</h2>
+              <p className="text-sm text-white/50">
+                Showing unverified directory entries for <span className="text-orange-400 font-medium">{addr?.state || "all states"}</span>
               </p>
             </div>
             {selectedCount > 0 && (
@@ -387,6 +400,13 @@ export default function NewServicePage() {
                 {selectedCount} selected
               </span>
             )}
+          </div>
+
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+            <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-100/75">
+              Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
+            </p>
           </div>
 
           {/* Selected chips */}
@@ -403,10 +423,10 @@ export default function NewServicePage() {
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
             <input
               className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
-              placeholder="Search providers..."
+              placeholder="Search listed providers..."
               value={providerSearch}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProviderSearch(e.target.value)}
             />
@@ -415,9 +435,9 @@ export default function NewServicePage() {
           <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-white">Add a local or custom provider</p>
-                <p className="text-xs text-white/40 mt-1">
-                  For dentists, gyms, law offices, local utilities, healthcare, and other private provider records. Manual tracking only.
+                <p className="text-sm font-semibold text-white">Add a local/custom provider</p>
+                <p className="text-xs text-white/50 mt-1">
+                  For dentists, gyms, local utilities, healthcare, and other private records. This creates a tracked service for manual follow-up only.
                 </p>
               </div>
               <button
@@ -425,20 +445,26 @@ export default function NewServicePage() {
                 onClick={() => setShowCustomProvider((value) => !value)}
                 className="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-200 text-xs hover:bg-cyan-500/30"
               >
-                {showCustomProvider ? "Hide" : "Add local provider"}
+                {showCustomProvider ? "Hide" : "Add local/custom"}
               </button>
             </div>
             {showCustomProvider && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Provider name"
+                <input className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30" placeholder="Provider name"
                   value={customProvider.name}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, name: e.target.value }))}
                 />
-                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Category, e.g. HEALTHCARE_DENTIST"
+                <select className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
                   value={customProvider.category}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, category: e.target.value }))}
-                />
-                <select className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+                >
+                  {CUSTOM_PROVIDER_CATEGORY_OPTIONS.map((category) => (
+                    <option key={category.value} value={category.value}>
+                      {category.icon ? `${category.icon} ` : ""}{category.label}
+                    </option>
+                  ))}
+                </select>
+                <select className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white"
                   value={customProvider.providerType}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, providerType: e.target.value }))}
                 >
@@ -446,24 +472,24 @@ export default function NewServicePage() {
                     <option key={type} value={type}>{type.replace(/_/g, " ")}</option>
                   ))}
                 </select>
-                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Phone"
+                <input className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30" placeholder="Phone"
                   value={customProvider.phone}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, phone: e.target.value }))}
                 />
-                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Website"
+                <input className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30" placeholder="Website"
                   value={customProvider.website}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, website: e.target.value }))}
                 />
-                <input className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Email"
+                <input className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30" placeholder="Email"
                   value={customProvider.email}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, email: e.target.value }))}
                 />
-                <textarea className="sm:col-span-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white" placeholder="Notes"
+                <textarea className="sm:col-span-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30" placeholder="Notes"
                   value={customProvider.notes}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, notes: e.target.value }))}
                 />
                 <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <p className="text-[11px] text-white/35">This creates a private user-added provider and a local service record. It does not update any external account.</p>
+                  <p className="text-[11px] text-white/50">This creates a private user-added provider and a LocateFlow service record. It does not update any external account.</p>
                   <button type="button" disabled={saving} onClick={handleAddCustomProvider}
                     className="px-3 py-2 rounded-xl bg-cyan-500 text-white text-xs font-medium hover:bg-cyan-600 disabled:opacity-50">
                     {saving ? "Adding..." : "Add custom provider"}
@@ -481,7 +507,7 @@ export default function NewServicePage() {
             >
               {showCategories ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               {showCategories ? "Hide categories" : "Browse by category"}
-              <span className="text-white/30">({allCategories.length})</span>
+              <span className="text-white/45">({allCategories.length})</span>
             </button>
             {showCategories && (
               <div className="flex flex-wrap gap-1.5 mt-2">
@@ -511,8 +537,8 @@ export default function NewServicePage() {
             <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-amber-400" />
-                <h3 className="text-sm font-semibold text-white">Recommended for You</h3>
-                <span className="text-[10px] text-white/30 ml-auto">Based on your profile</span>
+                <h3 className="text-sm font-semibold text-white">Recommended Listed Providers</h3>
+                <span className="text-[10px] text-white/45 ml-auto">Manual tracking</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {recommended.map((provider) => {
@@ -541,8 +567,8 @@ export default function NewServicePage() {
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm text-white truncate pr-6">{provider.name}</p>
-                          <p className="text-[11px] text-white/40 truncate">
-                            {provider.matchReasons?.[0] || getMergedDisplayCategoryLabel(provider.category)}
+                          <p className="text-[11px] text-white/50 truncate">
+                            {provider.matchReasons?.[0] || providerCategoryLabel(provider.category)}
                           </p>
                         </div>
                       </div>
@@ -586,7 +612,7 @@ export default function NewServicePage() {
                     >
                       <span className="text-base">{getMergedDisplayCategoryIcon(cat)}</span>
                       <span className="text-sm font-medium text-white/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
-                      <span className="text-[10px] text-white/30">{items.length}</span>
+                      <span className="text-[10px] text-white/45">{items.length}</span>
                       {selectedInCat > 0 && (
                         <span className="px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-[10px] font-medium">{selectedInCat}</span>
                       )}
@@ -620,8 +646,11 @@ export default function NewServicePage() {
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <p className="font-medium text-sm text-white truncate pr-5">{provider.name}</p>
+                                  {getMergedDisplaySubcategoryLabel(provider.category) && (
+                                    <p className="text-[10px] text-white/45 truncate">{getMergedDisplaySubcategoryLabel(provider.category)}</p>
+                                  )}
                                   {provider.description && (
-                                    <p className="text-[11px] text-white/30 truncate">{provider.description}</p>
+                                    <p className="text-[11px] text-white/45 truncate">{provider.description}</p>
                                   )}
                                   <div className="flex items-center gap-1.5 mt-1">
                                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
@@ -630,7 +659,7 @@ export default function NewServicePage() {
                                       {provider.scope === "FEDERAL" ? "Federal" : provider.states.join(", ")}
                                     </span>
                                     {provider.website && (
-                                      <span className="text-[9px] text-white/20 flex items-center gap-0.5">
+                                      <span className="text-[9px] text-white/45 flex items-center gap-0.5">
                                         <Globe className="h-2.5 w-2.5" />
                                         {provider.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}
                                       </span>
@@ -653,38 +682,45 @@ export default function NewServicePage() {
 
       {/* ── Floating bottom bar ── */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0a0a1a]/90 backdrop-blur-xl border-t border-white/10 shadow-2xl">
-          <div className="max-w-4xl mx-auto p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm text-white">{selectedCount} provider{selectedCount > 1 ? "s" : ""} selected</h3>
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-popover/95 text-popover-foreground shadow-2xl backdrop-blur-xl">
+          <div className="mx-auto max-w-4xl space-y-3 p-3 sm:p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white">
+                  {selectedCount} listed provider{selectedCount > 1 ? "s" : ""} selected
+                </h3>
+                <p className="text-[11px] text-white/55">
+                  Adding creates LocateFlow service records only.
+                </p>
+              </div>
               <button
                 onClick={handleSaveAll}
                 disabled={saving || !selectedAddress}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
               >
-                {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><CheckCircle2 className="h-4 w-4" />Register {selectedCount > 1 ? "All" : ""}</>}
+                {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><CheckCircle2 className="h-4 w-4" />Add as service{selectedCount > 1 ? "s" : ""}</>}
               </button>
             </div>
-            <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+            <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
               {Array.from(selectedProviders.entries()).map(([id, p]) => (
-                <div key={id} className="flex items-center gap-0 bg-white/5 border border-white/10 rounded-lg pl-3 pr-1 py-1">
-                  <span className="text-sm font-medium truncate max-w-[200px] text-white/80">{p.name}</span>
+                <div key={id} className="flex min-w-0 flex-wrap items-center gap-1 rounded-lg border border-white/10 bg-white/5 py-1 pl-3 pr-1">
+                  <span className="max-w-[180px] truncate text-sm font-medium text-white/85 sm:max-w-[220px]">{p.name}</span>
                   <button type="button" onClick={(e) => { e.stopPropagation(); toggleBilling(id); }}
-                    className="p-1 hover:bg-white/5 rounded ml-1" title="Add billing details">
-                    <DollarSign className={`h-3.5 w-3.5 ${billingExpanded.has(id) ? "text-orange-400" : "text-white/30"}`} />
+                    className="rounded p-1 hover:bg-white/5" title="Add billing details">
+                    <DollarSign className={`h-3.5 w-3.5 ${billingExpanded.has(id) ? "text-orange-400" : "text-white/45"}`} />
                   </button>
                   <button type="button"
                     onClick={(e) => { e.stopPropagation(); setSelectedProviders((prev) => { const n = new Map(prev); n.delete(id); return n; }); }}
-                    className="p-1 hover:bg-red-500/10 rounded">
-                    <Minus className="h-3.5 w-3.5 text-white/30 hover:text-red-400" />
+                    className="rounded p-1 hover:bg-red-500/10">
+                    <Minus className="h-3.5 w-3.5 text-white/45 hover:text-red-400" />
                   </button>
                   {billingExpanded.has(id) && (
-                    <div className="flex items-center gap-1.5 ml-2 border-l border-white/10 pl-2">
+                    <div className="flex min-w-full items-center gap-1.5 border-t border-white/10 pt-1 sm:ml-1 sm:min-w-0 sm:border-l sm:border-t-0 sm:pl-2 sm:pt-0">
                       <input className="h-7 w-20 text-xs rounded-lg border border-white/10 bg-white/5 px-2 text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                         type="number" step="0.01" placeholder="$/mo" value={billingData[id]?.monthlyCost || ""}
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBilling(id, "monthlyCost", e.target.value)} />
-                      <select className="h-7 text-xs w-24 rounded-lg border border-white/10 bg-white/5 px-1 text-white/60 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                      <select className="h-7 w-24 rounded-lg border border-white/10 bg-white/5 px-1 text-xs text-white/70 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                         value={billingData[id]?.billingCycle || "MONTHLY"}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBilling(id, "billingCycle", e.target.value)}
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}>

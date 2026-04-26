@@ -31,6 +31,37 @@ Do not use generic SEO pages, reseller directories, or search snippets as proof.
 6. Validate official source URLs before adding or changing providers.
 7. Keep records listed/unverified unless source metadata storage has been approved.
 
+## Repeatable Expansion Pipeline
+
+Use this workflow for each state or national category pass. The goal is coverage quality, not raw count growth.
+
+1. Create an inventory row for each coverage bucket:
+   - DMV / state government / tax / voter / benefits.
+   - Electric, gas, water, sewer, and municipal utility.
+   - Internet, mobile, cable, and phone.
+   - Banks, credit unions, credit cards, fintech, and loans.
+   - Renters, auto, home, health, flood, pet, and life insurance.
+   - Postal, shipping, mailbox, and package services.
+   - Home services, moving, storage, security, and parking.
+   - Pharmacy, telehealth, doctors, dentists, veterinary, and senior care.
+   - Retail, grocery, delivery, subscriptions, wellness, and other address-relevant accounts.
+2. Prefer official provider, regulator, or state agency sources. Record the source URL in review notes when a source is used.
+3. Normalize candidates before adding them:
+   - `name`: consumer-facing brand or agency name.
+   - `slug`: lowercase, stable, hyphenated identity; do not change existing slugs unless merging duplicates.
+   - `category`: precise backend category, such as `FINANCIAL_CREDIT_CARD` or `HEALTHCARE_PHARMACY`.
+   - `description`: neutral service description; no partnership, sync, or activation claims.
+   - `scope`: `FEDERAL` for national listings, `STATE` with `states` for state-specific listings.
+   - `tags`: short search terms that help discovery without keyword stuffing.
+4. Add national/manual directory records to `packages/db/prisma/seed-data/providers.ts`.
+5. Add state-scoped coverage candidates to `packages/db/prisma/seed-data/state-provider-catalog.ts` when they are part of state completeness work and have a safe `seedRecord`.
+6. Keep separate entries only when users would reasonably track them as separate services, such as a bank account and the same brand's credit-card product. Otherwise, prefer one identity.
+7. Run dedupe and coverage checks before shipping:
+   - `pnpm audit:providers`
+   - `pnpm audit:providers:coverage`
+   - `pnpm audit:providers:state-completeness`
+8. Treat all new rows as listed/unverified/manual-tracking until a future schema-backed verification workflow exists.
+
 ## Logo And Contact Rules
 
 - Missing logo is not a blocker; use the category fallback icon.
