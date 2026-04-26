@@ -4,7 +4,9 @@ const mocks = vi.hoisted(() => {
   const count = vi.fn().mockResolvedValue(0);
   const prisma = {
     user: { count },
+    oAuthAccount: { count: vi.fn().mockResolvedValue(4) },
     profile: { count },
+    dataConsent: { count: vi.fn().mockResolvedValue(6) },
     address: { count },
     service: { count },
     serviceProvider: { count },
@@ -14,9 +16,14 @@ const mocks = vi.hoisted(() => {
     moveTask: { count: vi.fn().mockResolvedValue(5) },
     budget: { count },
     subscription: { count },
+    emailLog: { count: vi.fn().mockResolvedValue(8) },
     auditLog: { count },
     notification: { count },
     providerGovernanceIssue: { count: vi.fn().mockResolvedValue(2) },
+    adminUser: { count: vi.fn().mockResolvedValue(1) },
+    adminPermission: { count: vi.fn().mockResolvedValue(2) },
+    adminLoginLog: { count: vi.fn().mockResolvedValue(9) },
+    adminAuditLog: { count: vi.fn().mockResolvedValue(10) },
   };
 
   return {
@@ -102,5 +109,33 @@ describe("backup verify catalog validation", () => {
     expect(body.tableStats.customProviders).toMatchObject({ count: 1, dbCount: 3 });
     expect(body.tableStats.moveTasks).toMatchObject({ count: 1, dbCount: 5 });
     expect(body.tableStats.providerGovernanceIssues).toMatchObject({ count: 1, dbCount: 2 });
+  });
+
+  it("recognizes admin, consent, email, and OAuth backup tables", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        data: {
+          adminUsers: [{ id: "admin_1", email: "admin@example.com" }],
+          adminPermissions: [{ id: "perm_1", adminUserId: "admin_1" }],
+          adminLoginLogs: [{ id: "login_1", email: "admin@example.com" }],
+          adminAuditLogs: [{ id: "audit_1", adminUserId: "admin_1" }],
+          dataConsents: [{ id: "consent_1", userId: "user_1" }],
+          emailLogs: [{ id: "email_1", to: "user@example.com" }],
+          oauthAccounts: [{ id: "oauth_1", userId: "user_1", provider: "google" }],
+        },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.tableStats.adminUsers).toMatchObject({ count: 1, dbCount: 1 });
+    expect(body.tableStats.adminPermissions).toMatchObject({ count: 1, dbCount: 2 });
+    expect(body.tableStats.adminLoginLogs).toMatchObject({ count: 1, dbCount: 9 });
+    expect(body.tableStats.adminAuditLogs).toMatchObject({ count: 1, dbCount: 10 });
+    expect(body.tableStats.dataConsents).toMatchObject({ count: 1, dbCount: 6 });
+    expect(body.tableStats.emailLogs).toMatchObject({ count: 1, dbCount: 8 });
+    expect(body.tableStats.oauthAccounts).toMatchObject({ count: 1, dbCount: 4 });
   });
 });

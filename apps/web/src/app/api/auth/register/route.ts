@@ -32,7 +32,7 @@ const registerSchema = z.object({
 export async function POST(request: NextRequest) {
   // Rate limit: 5 registrations per minute per IP
   const rlKey = getRateLimitKey(request, "auth:register");
-  const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60 });
+  const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
   if (!rl.success) {
     return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
   }

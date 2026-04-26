@@ -78,8 +78,11 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
     const rlKey = getRateLimitKey(request, "custom-provider:create");
-    const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
-    if (!rl.success) {
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(rlKey, { limit: 20, windowSeconds: 60 }),
+      rateLimit(`custom-provider:create:user:${userId}`, { limit: 20, windowSeconds: 60 }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 

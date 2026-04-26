@@ -19,6 +19,7 @@
 import { X509Certificate, verify as cryptoVerify } from "crypto";
 import { SignJWT, importPKCS8 } from "jose";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { requireAppleEnvironmentForBilling } from "@/lib/billing-config";
 
 // Apple root CA — G3. Embedded to avoid runtime fetches.
 // Source: https://www.apple.com/certificateauthority/ (AppleRootCA-G3.cer, base64-encoded DER).
@@ -238,11 +239,38 @@ async function mintAppleBearerToken(creds: AppleApiCreds): Promise<string> {
     .sign(key);
 }
 
+let appleBearerCache:
+  | { cacheKey: string; token: string; expiresAtMs: number }
+  | null = null;
+
+function getAppleBearerCacheKey(creds: AppleApiCreds) {
+  return [creds.issuerId, creds.keyId, creds.bundleId].join(":");
+}
+
+async function getAppleBearerToken(creds: AppleApiCreds): Promise<string> {
+  const cacheKey = getAppleBearerCacheKey(creds);
+  if (
+    appleBearerCache &&
+    appleBearerCache.cacheKey === cacheKey &&
+    appleBearerCache.expiresAtMs > Date.now()
+  ) {
+    return appleBearerCache.token;
+  }
+
+  const token = await mintAppleBearerToken(creds);
+  appleBearerCache = {
+    cacheKey,
+    token,
+    expiresAtMs: Date.now() + 18 * 60 * 1000,
+  };
+  return token;
+}
+
 type AppleEnvironment = "Production" | "Sandbox";
 
 async function getDefaultEnvironment(): Promise<AppleEnvironment> {
-  const raw = (await getRuntimeConfigValue("APPLE_APP_STORE_ENVIRONMENT"))?.toLowerCase();
-  return raw === "sandbox" ? "Sandbox" : "Production";
+  const raw = await getRuntimeConfigValue("APPLE_APP_STORE_ENVIRONMENT");
+  return requireAppleEnvironmentForBilling(raw);
 }
 
 function appleApiBase(env: AppleEnvironment): string {
@@ -273,7 +301,7 @@ export async function getAppleSubscriptionStatus(
     ? ["Sandbox", "Production"]
     : ["Production", "Sandbox"];
 
-  const bearer = await mintAppleBearerToken(creds);
+  const bearer = await getAppleBearerToken(creds);
 
   for (const env of envOrder) {
     const url = `${appleApiBase(env)}/inApps/v1/subscriptions/${encodeURIComponent(originalTransactionId)}`;

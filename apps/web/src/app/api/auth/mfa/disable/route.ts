@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
   const rl = await rateLimit(getRateLimitKey(request, "auth:mfa:disable"), {
     limit: 5,
     windowSeconds: 60,
+    failClosed: true,
   });
   if (!rl.success) {
     return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
@@ -27,6 +28,15 @@ export async function POST(request: NextRequest) {
     userId = await requireDbUserId();
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userRl = await rateLimit(`auth:mfa:disable:user:${userId}`, {
+    limit: 3,
+    windowSeconds: 60,
+    failClosed: true,
+  });
+  if (!userRl.success) {
+    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
 
   let body: unknown;

@@ -7,6 +7,7 @@ import {
 } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageConfidenceFromDb, resolveEffectiveState } from "@/lib/provider-matching";
+import { canGenerateMoveTasks } from "@/lib/plan-limits";
 
 function safeParseJSON(value: unknown, fallback: string[]): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
@@ -196,6 +197,11 @@ function buildIdempotencyKey(movingPlanId: string, plan: MoveServiceTransitionPl
 }
 
 export async function syncSuggestedMoveTasks(userId: string, movingPlanId: string) {
+  const entitlement = await canGenerateMoveTasks(userId);
+  if (!entitlement.allowed) {
+    throw new Error("MOVE_TASK_GENERATION_NOT_ENTITLED");
+  }
+
   const context = await buildMoveTransitionContext(userId, movingPlanId);
   const generated = [];
   const skipped = [];

@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
   const rl = await rateLimit(getRateLimitKey(request, "auth:oauth:apple:callback"), {
     limit: 30,
     windowSeconds: 60,
+    failClosed: true,
   });
   if (!rl.success) {
     return redirectWithClearedAppleCookies(request, "/sign-in?error=oauth-rate-limited");

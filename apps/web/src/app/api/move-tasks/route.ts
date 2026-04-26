@@ -128,6 +128,9 @@ export async function POST(request: NextRequest) {
     if (error?.message === "Plan addresses must have state info") {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+    if (error?.message === "MOVE_TASK_GENERATION_NOT_ENTITLED") {
+      return NextResponse.json({ error: "Subscription required to generate move tasks", upgradeRequired: true }, { status: 403 });
+    }
     console.error("Failed to generate move tasks:", error);
     return NextResponse.json({ error: "Failed to generate move tasks" }, { status: 500 });
   }

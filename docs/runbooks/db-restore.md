@@ -19,21 +19,28 @@ Do not run these steps against production unless there is an approved incident o
 The current app-level backup catalog includes these tables:
 
 1. `users`
-2. `profiles`
-3. `providers`
-4. `providerCoverages`
-5. `addresses`
-6. `movingPlans`
-7. `customProviders`
-8. `services`
-9. `moveTasks`
-10. `budgets`
-11. `subscriptions`
-12. `notifications`
-13. `auditLogs`
-14. `providerGovernanceIssues`
+2. `oauthAccounts`
+3. `profiles`
+4. `dataConsents`
+5. `providers`
+6. `providerCoverages`
+7. `addresses`
+8. `movingPlans`
+9. `customProviders`
+10. `services`
+11. `moveTasks`
+12. `budgets`
+13. `subscriptions`
+14. `notifications`
+15. `emailLogs`
+16. `auditLogs`
+17. `providerGovernanceIssues`
+18. `adminUsers`
+19. `adminPermissions`
+20. `adminLoginLogs`
+21. `adminAuditLogs`
 
-This archive is not a full managed database snapshot. It does not cover every database table, object storage file, runtime secret, database role, index outside Prisma, or provider-managed PITR record.
+This archive is not a full managed database snapshot. It does not cover every database table, object storage file, runtime secret, database role, index outside Prisma, provider-managed PITR record, active admin sessions, active user sessions, password reset tokens, email verification tokens, or runtime configuration entries. `RuntimeConfigEntry` is intentionally excluded because it can contain operational secrets.
 
 ## Clean Staging Restore Drill
 
@@ -108,7 +115,9 @@ Expected dependency order:
 
 ```text
 users
+oauthAccounts
 profiles
+dataConsents
 providers
 providerCoverages
 addresses
@@ -119,8 +128,13 @@ moveTasks
 budgets
 subscriptions
 notifications
+emailLogs
 auditLogs
 providerGovernanceIssues
+adminUsers
+adminPermissions
+adminLoginLogs
+adminAuditLogs
 ```
 
 Stop if:
@@ -138,6 +152,9 @@ Use `REPLACE` only when intentionally testing replacement behavior and when the 
 Admin route behavior:
 
 - MERGE and REPLACE require password confirmation.
+- MERGE and REPLACE require a valid backup signature and raw signed content.
+- Production backup archives are required to be encrypted, HMAC-signed, and stored offsite.
+- Start with DRY_RUN. Do not execute MERGE or REPLACE against production unless an approved incident/change ticket explicitly authorizes it.
 - MERGE and REPLACE require a valid backup signature.
 - Write imports run in a transaction.
 - A failed row import rolls back the transaction.
@@ -281,3 +298,15 @@ After the first successful drill, record:
 - Smoke-test results.
 - Measured RPO.
 - Measured RTO.
+
+## Offsite Storage Operator Checks
+
+Verify these in Cloudflare R2 or the chosen S3-compatible provider before launch and monthly thereafter:
+
+- Lifecycle retention rule exists and removes old backup objects after the approved retention period.
+- Versioning or equivalent object history is enabled when supported by the provider.
+- Object lock or governance retention is enabled when supported and approved.
+- Backup credentials are scoped to the backup bucket and cannot administer unrelated buckets.
+- A monthly inventory compares R2 backup objects against `BackupRecord` rows and flags orphan objects.
+
+Do not store `FIELD_ENCRYPTION_KEY`, storage secret keys, runtime config values, or session tokens in app-level backup archives.

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
+import {
+  isBillingProductionLike,
+  requireAppleEnvironmentForBilling,
+  validateStripeSecretKeyForEnv,
+} from "@/lib/billing-config";
 
 export const dynamic = "force-dynamic";
 
@@ -23,11 +28,11 @@ function isProductionLikeRuntime() {
 
 async function timed<T>(
   fn: () => Promise<T>,
-): Promise<{ ok: boolean; ms: number; err?: unknown }> {
+): Promise<{ ok: boolean; ms: number; value?: T; err?: unknown }> {
   const t0 = Date.now();
   try {
-    await fn();
-    return { ok: true, ms: Date.now() - t0 };
+    const value = await fn();
+    return { ok: true, ms: Date.now() - t0, value };
   } catch (err) {
     return { ok: false, ms: Date.now() - t0, err };
   }
@@ -38,6 +43,13 @@ export async function GET() {
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
     "STRIPE_SECRET_KEY",
+    "STRIPE_PRICE_INDIVIDUAL",
+    "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+    "STRIPE_WEBHOOK_SECRET",
+    "APPLE_APP_STORE_ENVIRONMENT",
+    "MOBILE_IOS_PRODUCT_INDIVIDUAL",
+    "GOOGLE_PLAY_RTDN_AUDIENCE",
+    "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
     "RESEND_API_KEY",
     "EMAIL_FROM",
     "SUPPORT_EMAIL",
@@ -55,6 +67,12 @@ export async function GET() {
   const db = await timed(() => prisma.$queryRaw`SELECT 1`);
   checks.database = { status: db.ok ? "ok" : "fail", durationMs: db.ms };
   if (!db.ok) healthy = false;
+
+  const nullTrialExpiry = await timed(() =>
+    prisma.subscription.count({
+      where: { plan: "FREE_TRIAL", trialEndsAt: null },
+    }),
+  );
 
   if (
     runtimeValues.UPSTASH_REDIS_REST_URL &&
@@ -76,11 +94,81 @@ export async function GET() {
     };
   }
 
+  const stripeKeyValidation = validateStripeSecretKeyForEnv(runtimeValues.STRIPE_SECRET_KEY);
+  const billingProductionLike = isBillingProductionLike();
+  const missingBillingConfig = [
+    !runtimeValues.STRIPE_PRICE_INDIVIDUAL ? "STRIPE_PRICE_INDIVIDUAL" : null,
+    !runtimeValues.STRIPE_PRICE_INDIVIDUAL_YEARLY ? "STRIPE_PRICE_INDIVIDUAL_YEARLY" : null,
+    !runtimeValues.STRIPE_WEBHOOK_SECRET ? "STRIPE_WEBHOOK_SECRET" : null,
+  ].filter(Boolean);
+  const stripeStatus =
+    stripeKeyValidation.ok && missingBillingConfig.length === 0
+      ? "ok"
+      : billingProductionLike
+        ? "fail"
+        : "skip";
   checks.stripe = {
-    status: runtimeValues.STRIPE_SECRET_KEY ? "ok" : "skip",
-    detail: runtimeValues.STRIPE_SECRET_KEY
-      ? undefined
-      : "STRIPE_SECRET_KEY not set",
+    status: stripeStatus,
+    detail:
+      stripeStatus === "ok"
+        ? undefined
+        : [
+            stripeKeyValidation.reason,
+            missingBillingConfig.length > 0
+              ? `Missing billing config: ${missingBillingConfig.join(", ")}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" "),
+  };
+  if (billingProductionLike && stripeStatus === "fail") healthy = false;
+
+  const iosIapEnabled = Boolean(runtimeValues.MOBILE_IOS_PRODUCT_INDIVIDUAL);
+  if (!iosIapEnabled) {
+    checks.appleIap = { status: "skip", detail: "iOS IAP product is not configured." };
+  } else {
+    try {
+      requireAppleEnvironmentForBilling(runtimeValues.APPLE_APP_STORE_ENVIRONMENT);
+      checks.appleIap = { status: "ok" };
+    } catch (err) {
+      checks.appleIap = {
+        status: billingProductionLike ? "fail" : "skip",
+        detail: err instanceof Error ? err.message : "Apple IAP is misconfigured",
+      };
+      if (billingProductionLike) healthy = false;
+    }
+  }
+
+  const androidIapEnabled = Boolean(runtimeValues.MOBILE_ANDROID_PRODUCT_INDIVIDUAL);
+  const googleIapDetail = runtimeValues.GOOGLE_PLAY_RTDN_AUDIENCE
+    ? undefined
+    : !androidIapEnabled
+      ? "Android IAP product is not configured."
+      : billingProductionLike
+        ? "GOOGLE_PLAY_RTDN_AUDIENCE missing for production Android IAP webhook verification"
+        : "GOOGLE_PLAY_RTDN_AUDIENCE not set";
+  checks.googleIap = {
+    status: runtimeValues.GOOGLE_PLAY_RTDN_AUDIENCE || !androidIapEnabled
+      ? "ok"
+      : billingProductionLike
+        ? "fail"
+        : "skip",
+    detail: googleIapDetail,
+  };
+  if (billingProductionLike && checks.googleIap.status === "fail") healthy = false;
+
+  checks.trialExpiry = {
+    status:
+      nullTrialExpiry.ok && nullTrialExpiry.value === 0
+        ? "ok"
+        : billingProductionLike
+          ? "fail"
+          : "skip",
+    detail: nullTrialExpiry.ok
+      ? nullTrialExpiry.value === 0
+        ? undefined
+        : "Free-trial subscriptions with null trialEndsAt are present and are treated as inactive."
+      : "Could not audit trial expiry configuration.",
   };
 
   const productionLike = isProductionLikeRuntime();
