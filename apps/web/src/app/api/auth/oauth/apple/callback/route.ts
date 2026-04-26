@@ -7,6 +7,7 @@ import {
   getOAuthResponseUrl,
   isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
+  resolveOAuthPostAuthRedirectPath,
 } from "@/lib/oauth";
 import {
   createUserSession,
@@ -159,14 +160,14 @@ export async function POST(request: NextRequest) {
       email: payload.email,
       firstName,
       lastName,
-      allowNewAccount: acceptedLegal,
+      allowNewAccount: true,
     });
     userId = oauthUser.userId;
     isNewUser = oauthUser.isNewUser;
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
       const response = NextResponse.redirect(
-        await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-required"),
+        await getOAuthResponseUrl(request, "/onboarding?step=legal"),
       );
       return clearAppleOAuthCookies(response);
     }
@@ -187,7 +188,7 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       logAppleOAuthFailure("legal acceptance", err);
       return clearAppleOAuthCookies(
-        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-failed")),
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/onboarding?step=legal&error=legal-acceptance-failed")),
       );
     }
   }
@@ -206,7 +207,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
+  const response = NextResponse.redirect(
+    await getOAuthResponseUrl(
+      request,
+      resolveOAuthPostAuthRedirectPath({ isNewUser, redirectPath }),
+    ),
+  );
   if (isNewUser) {
     const welcomeSent = await sendWelcomeEmail({
       email: payload.email,

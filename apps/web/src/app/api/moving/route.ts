@@ -7,6 +7,10 @@ import { canCreateAddress, canCreateMovingPlan } from "@/lib/plan-limits";
 import { encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import {
+  normalizeMovingState,
+  validateMovingAddressStates,
+} from "@/lib/moving-address-validation";
 
 function normalizeAddressValue(value?: string | null) {
   return (value || "").trim().toUpperCase();
@@ -110,6 +114,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Destination address not found" }, { status: 404 });
     }
 
+    const stateValidation = validateMovingAddressStates({
+      fromAddress,
+      toAddress,
+      destinationField: validated.toAddressId ? "toAddressId" : "destinationAddress.state",
+    });
+    if (!stateValidation.ok) {
+      return NextResponse.json(
+        { error: stateValidation.error, field: stateValidation.field },
+        { status: 400 },
+      );
+    }
+
     const { plan, destinationAddressId } = await prisma.$transaction(async (tx: any) => {
       let destinationAddressId = validated.toAddressId;
 
@@ -117,6 +133,7 @@ export async function POST(request: NextRequest) {
         const destinationAddress = await tx.address.create({
           data: {
             ...validated.destinationAddress,
+            state: normalizeMovingState(validated.destinationAddress.state),
             formattedAddress: validated.destinationAddress.formattedAddress
               ? encrypt(validated.destinationAddress.formattedAddress)
               : validated.destinationAddress.formattedAddress,

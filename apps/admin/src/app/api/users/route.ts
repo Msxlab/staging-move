@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortDir = searchParams.get("sortDir") || "desc";
 
-    const where: any = {};
+    const includeDeleted = searchParams.get("includeDeleted") === "true";
+    const where: any = includeDeleted ? {} : { deletedAt: null };
     if (search) {
       where.OR = [
         { email: { contains: search } },
@@ -79,9 +80,9 @@ export async function GET(request: NextRequest) {
         skip,
       }),
       prisma.user.count({ where }),
-      prisma.user.count(),
-      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-      prisma.user.count({ where: { createdAt: { gte: prevWeek, lt: sevenDaysAgo } } }),
+      prisma.user.count({ where: includeDeleted ? {} : { deletedAt: null } }),
+      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo }, ...(includeDeleted ? {} : { deletedAt: null }) } }),
+      prisma.user.count({ where: { createdAt: { gte: prevWeek, lt: sevenDaysAgo }, ...(includeDeleted ? {} : { deletedAt: null }) } }),
       prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
       prisma.subscription.groupBy({ by: ["plan"], _count: { id: true } }),
     ]);
@@ -127,7 +128,10 @@ export async function DELETE(request: NextRequest) {
   try {
     const session = await requirePermission("users", "canDelete", { minimumRole: "ADMIN" });
     const { ids, confirmPassword } = await request.json();
-    if (!Array.isArray(ids) || ids.length === 0) {
+    const requestedIds = Array.isArray(ids)
+      ? Array.from(new Set(ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0)))
+      : [];
+    if (requestedIds.length === 0) {
       return NextResponse.json({ error: "No user IDs provided" }, { status: 400 });
     }
 
@@ -141,16 +145,34 @@ export async function DELETE(request: NextRequest) {
     }
 
     const users = await prisma.user.findMany({
-      where: { id: { in: ids } },
+      where: { id: { in: requestedIds } },
       include: { subscription: true },
     });
+    const usersById = new Map(users.map((user: any) => [user.id, user]));
 
+    let deleted = 0;
     let queued = 0;
     let alreadyQueued = 0;
     let skippedProcessing = 0;
     const skipped: Array<{ id: string; reason: string }> = [];
+    const deletedIds: string[] = [];
 
-    for (const user of users) {
+    for (const id of requestedIds) {
+      if (id === session.adminId) {
+        skipped.push({ id, reason: "Self-delete is not allowed from this screen" });
+        continue;
+      }
+
+      const user = usersById.get(id);
+      if (!user) {
+        skipped.push({ id, reason: "User not found" });
+        continue;
+      }
+      if (user.deletedAt) {
+        skipped.push({ id, reason: "User is already deleted" });
+        continue;
+      }
+
       const existingRequest = await prisma.gDPRRequest.findFirst({
         where: {
           userId: user.id,
@@ -163,62 +185,90 @@ export async function DELETE(request: NextRequest) {
       if (existingRequest?.status === "PROCESSING") {
         skippedProcessing += 1;
         skipped.push({ id: user.id, reason: "DELETE request already processing" });
-      } else if (existingRequest) {
-        alreadyQueued += 1;
-      } else {
-        await prisma.gDPRRequest.create({
-          data: {
-            userId: user.id,
-            type: "DELETE",
-            status: "PENDING",
-            requestData: JSON.stringify({
-              source: "admin_bulk",
-              initiatedByAdminId: session.adminId,
-              email: user.email,
-              stripeSubscriptionId: user.subscription?.stripeSubscriptionId || null,
-              initiatedAt: new Date().toISOString(),
-              cleanup: {
-                stripeCanceled: false,
-                clerkDeleted: false,
-                userDeleted: false,
-                attempts: 0,
-                lastAttemptAt: null,
-                lastError: null,
-              },
-            }),
-          },
-        });
-        queued += 1;
+        continue;
       }
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "BULK_DELETE_USER",
-          entityType: "User",
-          entityId: user.id,
-          changes: JSON.stringify({
-            email: user.email,
-            queued: !existingRequest,
-            skippedReason: existingRequest?.status === "PROCESSING" ? "processing" : undefined,
+      const now = new Date();
+      await prisma.$transaction(async (tx: any) => {
+        const softDelete = await tx.user.updateMany({
+          where: { id: user.id, deletedAt: null },
+          data: { deletedAt: now },
+        });
+        if (softDelete.count !== 1) {
+          throw new Error("USER_DELETE_SKIPPED");
+        }
+
+        await Promise.all([
+          tx.userLoginSession.updateMany({
+            where: { userId: user.id, isActive: true },
+            data: { isActive: false, lastActivity: now },
           }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-        },
+          tx.userSession.updateMany({
+            where: { userId: user.id, isActive: true },
+            data: { isActive: false, sessionEnd: now, lastActivity: now },
+          }),
+        ]);
+
+        if (!existingRequest) {
+          await tx.gDPRRequest.create({
+            data: {
+              userId: user.id,
+              type: "DELETE",
+              status: "PENDING",
+              requestData: JSON.stringify({
+                source: "admin_bulk",
+                initiatedByAdminId: session.adminId,
+                email: user.email,
+                stripeSubscriptionId: user.subscription?.stripeSubscriptionId || null,
+                initiatedAt: now.toISOString(),
+                cleanup: {
+                  stripeCanceled: false,
+                  userDeleted: false,
+                  attempts: 0,
+                  lastAttemptAt: null,
+                  lastError: null,
+                },
+              }),
+            },
+          });
+        }
+
+        await tx.adminAuditLog.create({
+          data: {
+            adminUserId: session.adminId,
+            action: "BULK_DELETE_USER",
+            entityType: "User",
+            entityId: user.id,
+            changes: JSON.stringify({
+              email: user.email,
+              softDeletedAt: now.toISOString(),
+              gdprRequestStatus: existingRequest?.status || "PENDING",
+              queuedCleanup: !existingRequest,
+            }),
+            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+          },
+        });
       });
+
+      deleted += 1;
+      deletedIds.push(user.id);
+      if (existingRequest) alreadyQueued += 1;
+      else queued += 1;
     }
 
     return NextResponse.json({
+      deleted,
       queued,
       alreadyQueued,
       skippedProcessing,
+      skippedCount: skipped.length,
       skipped,
-      total: users.length,
-      message: queued > 0
-        ? `${queued} user deletion request(s) queued for staged processing.`
-        : skippedProcessing > 0
-        ? "Selected users already have deletion requests processing."
-        : "Selected users already have deletion requests queued.",
-    }, { status: 202 });
+      deletedIds,
+      total: requestedIds.length,
+      message: deleted > 0
+        ? `${deleted} user${deleted === 1 ? "" : "s"} deleted from the active list. GDPR cleanup is queued for staged processing.`
+        : "No users were deleted.",
+    });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -226,6 +276,10 @@ export async function DELETE(request: NextRequest) {
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (error?.message === "USER_DELETE_SKIPPED") {
+      return NextResponse.json({ error: "User could not be deleted because its state changed. Refresh and try again." }, { status: 409 });
+    }
+    console.error("Failed to delete users:", error);
     return NextResponse.json({ error: "Failed to delete users" }, { status: 500 });
   }
 }

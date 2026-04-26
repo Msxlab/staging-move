@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Truck, Trash2, MapPin, C
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
-import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { normalizeMovingPlanStatus, type MoveTaskLocalEffect } from "@locateflow/shared";
 
 const STATUS_BADGE_CLASSES: Record<string, { cls: string }> = {
   PLANNING: { cls: "bg-white/5 text-white/40 border-white/10" },
@@ -41,7 +41,7 @@ interface MoveTaskItem {
   confidence: string;
   reason?: string | null;
   caveats?: string[] | null;
-  localEffect?: { effectType?: string; localOnly?: boolean } | null;
+  localEffect?: MoveTaskLocalEffect | null;
   destinationProvider?: { name: string } | null;
   customProvider?: { name: string } | null;
 }

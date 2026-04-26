@@ -6,6 +6,7 @@ import {
   getOAuthRedirectUri,
   getOAuthResponseUrl,
   normalizeOAuthRedirectPath,
+  resolveOAuthPostAuthRedirectPath,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
 import {
@@ -111,14 +112,14 @@ export async function GET(request: NextRequest) {
       firstName: payload.given_name,
       lastName: payload.family_name,
       imageUrl: payload.picture,
-      allowNewAccount: acceptedLegal,
+      allowNewAccount: true,
     });
     userId = oauthUser.userId;
     isNewUser = oauthUser.isNewUser;
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
       const response = NextResponse.redirect(
-        await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-required"),
+        await getOAuthResponseUrl(request, "/onboarding?step=legal"),
       );
       return clearGoogleOAuthCookies(response);
     }
@@ -139,7 +140,7 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       logGoogleOAuthFailure("legal acceptance", err);
       return clearGoogleOAuthCookies(
-        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-up?error=legal-acceptance-failed")),
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/onboarding?step=legal&error=legal-acceptance-failed")),
       );
     }
   }
@@ -158,7 +159,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
+  const response = NextResponse.redirect(
+    await getOAuthResponseUrl(
+      request,
+      resolveOAuthPostAuthRedirectPath({ isNewUser, redirectPath }),
+    ),
+  );
   if (isNewUser) {
     const welcomeSent = await sendWelcomeEmail({
       email: payload.email,

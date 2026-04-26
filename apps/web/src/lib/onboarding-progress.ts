@@ -46,6 +46,13 @@ export function getOnboardingProgress(input: OnboardingProgressInput): Onboardin
   return { completed: true, step: "complete", stepIndex: 4 };
 }
 
+export function getOnboardingGateRedirect(input: OnboardingProgressInput): string | null {
+  const progress = getOnboardingProgress(input);
+  if (progress.completed) return null;
+  if (!input.hasRequiredLegalConsents) return "/onboarding?step=legal";
+  return "/onboarding";
+}
+
 export function summarizeOnboardingEvents(events: Array<{ event: string }>) {
   const names = new Set(events.map((item) => item.event));
   return {

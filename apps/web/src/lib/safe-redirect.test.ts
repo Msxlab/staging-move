@@ -12,6 +12,7 @@ describe("normalizeAppRedirectPath", () => {
     expect(normalizeAppRedirectPath("//evil.example")).toBe("/dashboard");
     expect(normalizeAppRedirectPath("https://evil.example")).toBe("/dashboard");
     expect(normalizeAppRedirectPath("/api/auth/me")).toBe("/dashboard");
+    expect(normalizeAppRedirectPath("/api/auth/oauth/google/callback")).toBe("/dashboard");
     expect(normalizeAppRedirectPath("/auth/callback")).toBe("/dashboard");
     expect(normalizeAppRedirectPath("/login")).toBe("/dashboard");
     expect(normalizeAppRedirectPath("/dashboard%0aSet-Cookie:bad=1")).toBe("/dashboard");

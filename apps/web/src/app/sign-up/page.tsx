@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
@@ -19,6 +20,7 @@ interface OAuthProviderStatus {
 }
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -42,6 +44,22 @@ export default function SignUpPage() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.user) {
+          router.replace("/dashboard");
+          router.refresh();
+        }
+      })
+      .catch(() => null);
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "legal-acceptance-required") {
       setError(tAuth("legalAcceptanceRequired"));
@@ -57,27 +75,19 @@ export default function SignUpPage() {
     Boolean(oauthProviders) && (!googleReady || !appleReady);
 
   function startGoogleOAuth() {
-    if (!legalAccepted) {
-      setError(tAuth("legalAcceptanceRequired"));
-      return;
-    }
     if (googleUnavailable) {
       setError(oauthProviders?.google?.message || tAuth("error_unavailable"));
       return;
     }
-    window.location.href = "/api/auth/oauth/google?acceptLegal=true";
+    window.location.href = "/api/auth/oauth/google?redirect=/onboarding";
   }
 
   function startAppleOAuth() {
-    if (!legalAccepted) {
-      setError(tAuth("legalAcceptanceRequired"));
-      return;
-    }
     if (appleUnavailable) {
       setError(oauthProviders?.apple?.message || tAuth("error_unavailable"));
       return;
     }
-    window.location.href = "/api/auth/oauth/apple?acceptLegal=true";
+    window.location.href = "/api/auth/oauth/apple?redirect=/onboarding";
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,7 +173,7 @@ export default function SignUpPage() {
             aria-disabled={googleUnavailable}
             disabled={googleUnavailable}
             onClick={startGoogleOAuth}
-            className="flex items-center justify-center gap-3 w-full rounded-xl border border-border bg-background hover:bg-muted px-4 py-2.5 text-sm font-medium text-foreground transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-input bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-sm transition hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100"
           >
             <svg className="h-4 w-4" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6 8-11.3 8a12 12 0 1 1 0-24c3 0 5.8 1.1 7.9 3l5.7-5.7A20 20 0 1 0 24 44c11 0 20-8.1 20-20 0-1.2-.1-2.4-.4-3.5z"/>
@@ -171,19 +181,19 @@ export default function SignUpPage() {
               <path fill="#4CAF50" d="M24 44c5.3 0 10-2 13.6-5.3l-6.3-5.3A12 12 0 0 1 12.7 28l-6.5 5A20 20 0 0 0 24 44z"/>
               <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3A12 12 0 0 1 31.3 33.4l6.3 5.3C37.2 39.8 44 34.7 44 24c0-1.2-.1-2.4-.4-3.5z"/>
             </svg>
-            {googleReady ? tAuth("continueWithGoogle") : tAuth("error_unavailable")}
+            {googleReady ? tAuth("continueWithGoogle") : tAuth("googleUnavailable")}
           </button>
           <button
             type="button"
             aria-disabled={appleUnavailable}
             disabled={appleUnavailable}
             onClick={startAppleOAuth}
-            className="flex items-center justify-center gap-3 w-full rounded-xl border border-border bg-foreground hover:bg-foreground/90 px-4 py-2.5 text-sm font-medium text-background transition disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-transparent bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-200"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
             </svg>
-            {appleReady ? tAuth("continueWithApple") : tAuth("error_unavailable")}
+            {appleReady ? tAuth("continueWithApple") : tAuth("appleUnavailable")}
           </button>
 
           {showOAuthReadinessNote && (

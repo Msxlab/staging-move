@@ -5,6 +5,7 @@ import {
   getOAuthResponseUrl,
   isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
+  resolveOAuthPostAuthRedirectPath,
 } from "./oauth";
 
 describe("OAuth URL helpers", () => {
@@ -38,6 +39,21 @@ describe("OAuth URL helpers", () => {
     expect(normalizeOAuthRedirectPath("/login")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("//evil.example")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("https://evil.example")).toBe("/dashboard");
+  });
+
+  it("sends fresh OAuth signups directly to the onboarding legal step", () => {
+    expect(
+      resolveOAuthPostAuthRedirectPath({
+        isNewUser: true,
+        redirectPath: "/dashboard",
+      }),
+    ).toBe("/onboarding?step=legal");
+    expect(
+      resolveOAuthPostAuthRedirectPath({
+        isNewUser: false,
+        redirectPath: "/providers/provider_123",
+      }),
+    ).toBe("/providers/provider_123");
   });
 
   it("falls back to configured origin when the request host is not trusted", async () => {

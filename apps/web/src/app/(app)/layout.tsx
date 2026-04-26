@@ -2,10 +2,16 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { InstallPrompt } from "@/components/shared/install-prompt";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
-import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
+import {
+  buildEmailVerificationGateRedirect,
+  needsEmailVerificationGate,
+} from "@/lib/email-verification-gate";
+import { getOnboardingGateRedirect, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import type { ReactNode } from "react";
 
@@ -18,11 +24,40 @@ function parseStoredLegalConsents(metadata: string | null | undefined) {
   }
 }
 
-async function checkOnboardingNeeded(): Promise<boolean> {
+async function getCurrentAppPath() {
+  const headerStore = await headers();
+  return normalizeAppRedirectPath(
+    headerStore.get("x-locateflow-pathname"),
+    "/dashboard",
+  );
+}
+
+async function getAppGateRedirect(): Promise<string | null> {
+  const currentPath = await getCurrentAppPath();
+  const { requireDbUserId } = await import("@/lib/auth");
+  let userId: string;
   try {
-    const { requireDbUserId } = await import("@/lib/auth");
-    const userId = await requireDbUserId();
-    const [profile, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
+    userId = await requireDbUserId();
+  } catch (error: any) {
+    if (error?.message === "ACCOUNT_DELETED") {
+      redirect("/");
+    }
+    if (error?.message === "UNAUTHORIZED") {
+      redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
+    }
+    return null;
+  }
+
+  const [user, profile, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          emailVerifiedAt: true,
+          passwordHash: true,
+          oauthAccounts: { select: { id: true }, take: 1 },
+        },
+      }),
       prisma.profile.findUnique({ where: { userId } }),
       prisma.userEvent.findMany({
         where: { userId, event: LEGAL_CONSENT_EVENT },
@@ -43,33 +78,32 @@ async function checkOnboardingNeeded(): Promise<boolean> {
         orderBy: { createdAt: "desc" },
       }),
     ]);
-    const hasLegalConsents = consentEvents.some((event) =>
-      hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
-    );
-    const progress = getOnboardingProgress({
-      hasProfile: Boolean(profile),
-      hasRequiredLegalConsents: hasLegalConsents,
-      addressCount,
-      serviceCount,
-      movingPlanCount,
-      ...summarizeOnboardingEvents(onboardingEvents),
-    });
-    return !progress.completed;
-  } catch (error: any) {
-    if (error?.message === "ACCOUNT_DELETED") {
-      redirect("/");
-    }
-    if (error?.message === "UNAUTHORIZED") {
-      redirect("/sign-in");
-    }
-    return false;
+
+  if (!user) {
+    redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
   }
+
+  if (needsEmailVerificationGate(user)) {
+    redirect(buildEmailVerificationGateRedirect(currentPath));
+  }
+
+  const hasLegalConsents = consentEvents.some((event) =>
+    hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
+  );
+  return getOnboardingGateRedirect({
+    hasProfile: Boolean(profile),
+    hasRequiredLegalConsents: hasLegalConsents,
+    addressCount,
+    serviceCount,
+    movingPlanCount,
+    ...summarizeOnboardingEvents(onboardingEvents),
+  });
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const needsOnboarding = await checkOnboardingNeeded();
-  if (needsOnboarding) {
-    redirect("/onboarding");
+  const gateRedirect = await getAppGateRedirect();
+  if (gateRedirect) {
+    redirect(gateRedirect);
   }
 
   return (

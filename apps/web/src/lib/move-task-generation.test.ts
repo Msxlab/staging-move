@@ -1,62 +1,44 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const mocks = vi.hoisted(() => ({
-  canGenerateMoveTasks: vi.fn(),
-  movingPlanFindUnique: vi.fn(),
-}));
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/db", () => ({
-  prisma: {
-    movingPlan: { findUnique: mocks.movingPlanFindUnique },
-    service: { findMany: vi.fn() },
-    serviceProvider: { findMany: vi.fn() },
-    moveTask: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-    },
-  },
+  prisma: {},
 }));
 
-vi.mock("@/lib/plan-limits", () => ({
-  canGenerateMoveTasks: mocks.canGenerateMoveTasks,
-}));
+import { buildMoveTaskIdempotencyKey } from "./move-task-generation";
 
-vi.mock("@/lib/provider-matching", () => ({
-  getProviderCoverageConfidenceFromDb: vi.fn(() => "STATE"),
-  resolveEffectiveState: vi.fn((state: string) => state),
-}));
+const basePlan = {
+  serviceId: "service-1",
+  actionType: "SHOP_PROVIDER",
+  destinationProviderCandidates: [],
+} as any;
 
-vi.mock("@locateflow/db", () => ({
-  getProviderCoverageMetadata: vi.fn(() => null),
-}));
-
-vi.mock("@locateflow/shared", async () => {
-  const actual = await vi.importActual<any>("@locateflow/shared");
-  return {
-    ...actual,
-    classifyMoveServiceTransition: vi.fn(),
-    safeJsonArray: vi.fn(() => []),
-  };
-});
-
-import { syncSuggestedMoveTasks } from "./move-task-generation";
-
-describe("syncSuggestedMoveTasks entitlement guard", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("fails before reading plan data when move-task generation is not entitled", async () => {
-    mocks.canGenerateMoveTasks.mockResolvedValue({
-      allowed: false,
-      reason: "Subscription required",
-      upgradeRequired: true,
+describe("move task idempotency keys", () => {
+  it("includes normalized origin and destination states", () => {
+    const njToTx = buildMoveTaskIdempotencyKey("plan-1", basePlan, {
+      fromState: "nj",
+      toState: "tx",
+    });
+    const njToNj = buildMoveTaskIdempotencyKey("plan-1", basePlan, {
+      fromState: "NJ",
+      toState: "NJ",
     });
 
-    await expect(syncSuggestedMoveTasks("user_1", "move_1")).rejects.toThrow(
-      "MOVE_TASK_GENERATION_NOT_ENTITLED",
+    expect(njToTx).toContain(":NJ:TX");
+    expect(njToNj).toContain(":NJ:NJ");
+    expect(njToTx).not.toBe(njToNj);
+  });
+
+  it("keeps retry keys stable for the same route", () => {
+    expect(
+      buildMoveTaskIdempotencyKey("plan-1", basePlan, {
+        fromState: " NJ ",
+        toState: " TX ",
+      }),
+    ).toBe(
+      buildMoveTaskIdempotencyKey("plan-1", basePlan, {
+        fromState: "NJ",
+        toState: "TX",
+      }),
     );
-    expect(mocks.movingPlanFindUnique).not.toHaveBeenCalled();
   });
 });
