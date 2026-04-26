@@ -41,6 +41,8 @@ const PUBLIC_API_EXACT = [
   "/api/auth/register",
   "/api/auth/me",
   "/api/auth/verify-email",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
   // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated

@@ -58,7 +58,9 @@ export default function ForgotPasswordScreen() {
             <CheckCircle2 size={48} color={theme.colors.primary} />
             <Text style={styles.title}>{t("auth.checkEmail", "Check your email")}</Text>
             <Text style={styles.subtitle}>
-              {t("auth.forgotPassword_sentDescription", { email: email.trim(), defaultValue: "A reset link has been sent." })}
+              {t("auth.forgotPassword_sentDescription", {
+                defaultValue: "If an account exists, we sent password reset instructions.",
+              })}
             </Text>
             <Button
               title={t("auth.signIn")}

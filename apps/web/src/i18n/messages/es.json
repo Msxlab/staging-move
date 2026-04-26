@@ -274,7 +274,7 @@
     "forgotPassword_subtitle": "Introduce el correo con el que te registraste. Te enviaremos un enlace para elegir una nueva contraseña.",
     "forgotPassword_submit": "Enviar enlace",
     "forgotPassword_sent": "Enlace enviado",
-    "forgotPassword_sentDescription": "Si existe una cuenta para {email}, recibirás un correo de restablecimiento en breve.",
+    "forgotPassword_sentDescription": "Si existe una cuenta, enviamos instrucciones para restablecer la contraseña.",
     "resetPassword_title": "Nueva contraseña",
     "resetPassword_subtitle": "Elige una contraseña con al menos 12 caracteres, una mayúscula, una minúscula, un dígito y un carácter especial.",
     "resetPassword_submit": "Actualizar contraseña",

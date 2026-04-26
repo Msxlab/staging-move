@@ -1,5 +1,47 @@
-import { describe, it, expect } from "vitest";
-import { billReminderHtml, contractReminderHtml, weeklyDigestHtml } from "../email";
+import { beforeEach, describe, it, expect, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  resendSend: vi.fn(),
+  runtimeConfigValues: vi.fn(),
+}));
+
+vi.mock("resend", () => ({
+  Resend: vi.fn(function Resend() {
+    return {
+      emails: {
+        send: (...args: unknown[]) => mocks.resendSend(...args),
+      },
+    };
+  }),
+}));
+
+vi.mock("@/lib/runtime-config", () => ({
+  getRequiredRuntimeConfigValues: (...args: unknown[]) => mocks.runtimeConfigValues(...args),
+}));
+
+import {
+  billReminderHtml,
+  contractReminderHtml,
+  emailVerificationContent,
+  sendEmailWithResult,
+  weeklyDigestHtml,
+} from "../email";
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  process.env.RESEND_API_KEY = "test-resend-api-key-for-redaction";
+  mocks.runtimeConfigValues.mockImplementation(async (keys: string[]) => {
+    const values: Record<string, string | null> = {
+      RESEND_API_KEY: "test-resend-api-key-for-redaction",
+      EMAIL_FROM: "LocateFlow <noreply@locateflow.com>",
+      NEXT_PUBLIC_APP_URL: "https://locateflow.com",
+      SUPPORT_EMAIL: "support@locateflow.com",
+      EMAIL_REPLY_TO: null,
+    };
+    return Object.fromEntries(keys.map((key) => [key, values[key] || null]));
+  });
+  mocks.resendSend.mockResolvedValue({ data: { id: "resend_123" }, error: null });
+});
 
 describe("billReminderHtml", () => {
   const data = {
@@ -135,5 +177,57 @@ describe("contractReminderHtml", () => {
   it("should contain the service review link", () => {
     const html = contractReminderHtml(data);
     expect(html).toContain("/services/abc123");
+  });
+});
+
+describe("transactional email layout", () => {
+  it("includes LocateFlow branding, CTA, support footer, and security copy", () => {
+    const content = emailVerificationContent({
+      userName: "Alice",
+      verifyLink: "https://locateflow.com/verify-email/token",
+    });
+
+    expect(content.html).toContain("LocateFlow");
+    expect(content.html).toContain("Verify Email");
+    expect(content.html).toContain("support@locateflow.com");
+    expect(content.html).toContain("You're receiving this email because you used LocateFlow.");
+    expect(content.html).toContain("If this wasn't you, ignore this email or contact support.");
+    expect(content.text).toContain("Verify Email: https://locateflow.com/verify-email/token");
+    expect(content.text).toContain("support@locateflow.com");
+  });
+
+  it("sends a plain text fallback and reply-to through Resend", async () => {
+    const result = await sendEmailWithResult({
+      to: "alice@example.com",
+      subject: "Test",
+      html: '<p>Hello Alice</p><a href="https://locateflow.com">Open</a>',
+    });
+
+    expect(result).toEqual({ success: true, providerMessageId: "resend_123", error: null });
+    expect(mocks.resendSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: "LocateFlow <noreply@locateflow.com>",
+        to: "alice@example.com",
+        replyTo: "support@locateflow.com",
+        text: expect.stringContaining("Hello Alice"),
+      }),
+    );
+  });
+
+  it("redacts API-looking secrets from Resend failure details", async () => {
+    mocks.resendSend.mockResolvedValue({
+      data: null,
+      error: { message: "Invalid API key test-resend-api-key-for-redaction" },
+    });
+
+    const result = await sendEmailWithResult({
+      to: "alice@example.com",
+      subject: "Test",
+      html: "<p>Hello</p>",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain("[redacted]");
+    expect(result.error).not.toContain("test-resend-api-key-for-redaction");
   });
 });

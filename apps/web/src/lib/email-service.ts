@@ -1,9 +1,18 @@
 import { prisma } from "@/lib/db";
 import {
   billReminderHtml,
+  billReminderText,
   contractReminderHtml,
+  contractReminderText,
+  DEFAULT_APP_URL,
+  emailVerificationContent,
+  type EmailContent,
+  htmlToPlainText,
+  normalizeBaseUrl,
+  passwordResetContent,
   sendEmailWithResult,
   weeklyDigestHtml,
+  weeklyDigestText,
 } from "@/lib/email";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
@@ -17,27 +26,46 @@ function isUniqueConstraintError(error: any) {
 }
 
 async function resolveAppUrl() {
-  return (
-    (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||
-    "http://localhost:3000"
+  return normalizeBaseUrl(
+    (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) || DEFAULT_APP_URL,
   );
+}
+
+async function resolveTemplateId(
+  templateId?: string | null,
+  templateSlug?: string | null,
+): Promise<string | null> {
+  if (templateId) return templateId;
+  if (!templateSlug) return null;
+
+  const template = await prisma.emailTemplate.findUnique({
+    where: { slug: templateSlug },
+    select: { id: true },
+  });
+  return template?.id || null;
 }
 
 export async function sendLoggedEmail(opts: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   templateId?: string | null;
+  templateSlug?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<{ success: boolean; skipped: boolean }> {
-  const metadata = buildEmailMetadata(opts.metadata);
+  const templateId = await resolveTemplateId(opts.templateId, opts.templateSlug);
+  const metadata = buildEmailMetadata({
+    ...(opts.metadata || {}),
+    templateSlug: opts.templateSlug || null,
+  });
   let logId: string;
 
   try {
     const log = await prisma.emailLog.create({
       data: {
-        templateId: opts.templateId ?? null,
+        templateId,
         dedupeKey: opts.dedupeKey ?? null,
         to: opts.to,
         subject: opts.subject,
@@ -58,7 +86,16 @@ export async function sendLoggedEmail(opts: {
       if (existing.status === "FAILED") {
         const claimed = await prisma.emailLog.updateMany({
           where: { id: existing.id, status: "FAILED" },
-          data: { status: "PENDING", error: null, sentAt: null },
+          data: {
+            status: "PENDING",
+            error: null,
+            sentAt: null,
+            providerMessageId: null,
+            templateId,
+            to: opts.to,
+            subject: opts.subject,
+            metadata,
+          },
         });
         if (claimed.count === 0) {
           return { success: false, skipped: true };
@@ -77,6 +114,7 @@ export async function sendLoggedEmail(opts: {
     to: opts.to,
     subject: opts.subject,
     html: opts.html,
+    text: opts.text,
   });
 
   try {
@@ -99,12 +137,11 @@ export async function sendLoggedEmail(opts: {
 
 /**
  * Renders an email template from the DB by replacing {{variable}} placeholders.
- * Falls back to raw body if template not found.
  */
 export async function renderTemplate(
   slug: string,
   variables: Record<string, string>,
-): Promise<{ subject: string; html: string } | null> {
+): Promise<(EmailContent & { templateId: string; slug: string }) | null> {
   const template = await prisma.emailTemplate.findUnique({
     where: { slug },
   });
@@ -115,17 +152,23 @@ export async function renderTemplate(
   let html = template.body;
 
   for (const [key, value] of Object.entries(variables)) {
-    const escaped = escapeHtml(value);
+    const escaped = escapeTemplateHtml(value);
     const pattern = new RegExp(`\\{\\{${key}\\}\\}`, "g");
-    subject = subject.replace(pattern, value); // Subject: plain text
-    html = html.replace(pattern, escaped); // Body: escaped for XSS
+    subject = subject.replace(pattern, value);
+    html = html.replace(pattern, escaped);
   }
 
-  return { subject, html };
+  return {
+    subject,
+    html,
+    text: htmlToPlainText(html),
+    templateId: template.id,
+    slug: template.slug,
+  };
 }
 
 /**
- * Send a templated email and log it.
+ * Send a DB-templated email and log it against the template row.
  */
 export async function sendTemplatedEmail(opts: {
   to: string;
@@ -141,14 +184,13 @@ export async function sendTemplatedEmail(opts: {
     return false;
   }
 
-  const template = await prisma.emailTemplate.findUnique({
-    where: { slug: opts.slug },
-  });
   const result = await sendLoggedEmail({
     to: opts.to,
     subject: rendered.subject,
     html: rendered.html,
-    templateId: template?.id,
+    text: rendered.text,
+    templateId: rendered.templateId,
+    templateSlug: opts.slug,
     dedupeKey: opts.dedupeKey,
     metadata: {
       slug: opts.slug,
@@ -160,10 +202,8 @@ export async function sendTemplatedEmail(opts: {
   return result.success;
 }
 
-// ── Specific email triggers ──────────────────────────────────
-
 /**
- * Welcome email — sent when a new user signs up
+ * Welcome email, sent when a new user signs up.
  */
 export async function sendWelcomeEmail(user: {
   email: string;
@@ -184,7 +224,7 @@ export async function sendWelcomeEmail(user: {
 }
 
 /**
- * Email verification — sent after registration.
+ * Email verification, sent after registration.
  */
 export async function sendEmailVerificationEmail(opts: {
   userEmail: string;
@@ -194,29 +234,17 @@ export async function sendEmailVerificationEmail(opts: {
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
   const verifyLink = `${appUrl}/verify-email/${encodeURIComponent(opts.verifyToken)}`;
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#f97316,#06b6d4);padding:32px 24px;text-align:center;">
-      <h1 style="color:#fff;margin:0;font-size:22px;">Verify your email</h1>
-    </div>
-    <div style="padding:24px;">
-      <p style="color:#334155;font-size:15px;">Hi <strong>${escapeHtml(opts.userName)}</strong>,</p>
-      <p style="color:#334155;font-size:15px;line-height:1.5;">
-        Thanks for creating a LocateFlow account. Confirm your email to finish setup:
-      </p>
-      <a href="${verifyLink}" style="display:block;text-align:center;background:#f97316;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin:20px 0;">
-        Verify Email
-      </a>
-      <p style="color:#64748b;font-size:12px;">This link expires in 24 hours. If you didn't sign up, you can ignore this email.</p>
-    </div>
-  </div>
-</body></html>`;
+  const content = emailVerificationContent({
+    userName: opts.userName,
+    verifyLink,
+  });
 
   const result = await sendLoggedEmail({
     to: opts.userEmail,
-    subject: "Verify your LocateFlow email",
-    html,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "email-verify",
     dedupeKey: opts.dedupeKey,
     metadata: { kind: "email-verification" },
   });
@@ -224,47 +252,38 @@ export async function sendEmailVerificationEmail(opts: {
 }
 
 /**
- * Password reset — sent when user requests reset.
+ * Password reset or set-password link.
  */
 export async function sendPasswordResetEmail(opts: {
   userEmail: string;
   userName: string;
   resetToken: string;
+  mode?: "reset" | "set-password";
   dedupeKey?: string;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
   const resetLink = `${appUrl}/reset-password/${encodeURIComponent(opts.resetToken)}`;
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:520px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#f97316,#06b6d4);padding:32px 24px;text-align:center;">
-      <h1 style="color:#fff;margin:0;font-size:22px;">Reset your password</h1>
-    </div>
-    <div style="padding:24px;">
-      <p style="color:#334155;font-size:15px;">Hi <strong>${escapeHtml(opts.userName)}</strong>,</p>
-      <p style="color:#334155;font-size:15px;line-height:1.5;">
-        We received a request to reset your LocateFlow password.
-        This link is valid for 1 hour.
-      </p>
-      <a href="${resetLink}" style="display:block;text-align:center;background:#f97316;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;margin:20px 0;">
-        Reset Password
-      </a>
-      <p style="color:#64748b;font-size:12px;">If you didn't request a reset, you can safely ignore this email — your password won't change.</p>
-    </div>
-  </div>
-</body></html>`;
+  const content = passwordResetContent({
+    userName: opts.userName,
+    resetLink,
+    mode: opts.mode || "reset",
+  });
 
   const result = await sendLoggedEmail({
     to: opts.userEmail,
-    subject: "Reset your LocateFlow password",
-    html,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "password-reset",
     dedupeKey: opts.dedupeKey,
-    metadata: { kind: "password-reset" },
+    metadata: {
+      kind: opts.mode === "set-password" ? "set-password" : "password-reset",
+    },
   });
   return result.success;
 }
 
-function escapeHtml(str: string): string {
+function escapeTemplateHtml(str: string): string {
   const map: Record<string, string> = {
     "&": "&amp;",
     "<": "&lt;",
@@ -287,19 +306,22 @@ export async function sendBillReminderEmail(opts: {
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
-  const subject = `Bill Reminder: ${opts.serviceName} — $${opts.amount.toFixed(2)} due in ${opts.daysUntilDue} day${opts.daysUntilDue !== 1 ? "s" : ""}`;
+  const subject = `Bill reminder: ${opts.serviceName} - $${opts.amount.toFixed(2)} due in ${opts.daysUntilDue} day${opts.daysUntilDue !== 1 ? "s" : ""}`;
+  const emailData = {
+    userName: opts.userName,
+    serviceName: opts.serviceName,
+    category: opts.category,
+    amount: opts.amount,
+    dueDate: opts.dueDate,
+    daysUntilDue: opts.daysUntilDue,
+    appUrl,
+  };
   const result = await sendLoggedEmail({
     to: opts.userEmail,
     subject,
-    html: billReminderHtml({
-      userName: opts.userName,
-      serviceName: opts.serviceName,
-      category: opts.category,
-      amount: opts.amount,
-      dueDate: opts.dueDate,
-      daysUntilDue: opts.daysUntilDue,
-      appUrl,
-    }),
+    html: billReminderHtml(emailData),
+    text: billReminderText(emailData),
+    templateSlug: "bill-reminder",
     dedupeKey: opts.dedupeKey,
     metadata: {
       kind: "bill-reminder",
@@ -323,18 +345,21 @@ export async function sendWeeklyDigestEmail(opts: {
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const emailData = {
+    userName: opts.userName,
+    weekStart: opts.weekStart,
+    weekEnd: opts.weekEnd,
+    upcomingBills: opts.upcomingBills,
+    totalExpenses: opts.totalExpenses,
+    newServices: opts.newServices,
+    appUrl,
+  };
   const result = await sendLoggedEmail({
     to: opts.userEmail,
-    subject: `Your Weekly Digest — ${opts.weekStart} to ${opts.weekEnd}`,
-    html: weeklyDigestHtml({
-      userName: opts.userName,
-      weekStart: opts.weekStart,
-      weekEnd: opts.weekEnd,
-      upcomingBills: opts.upcomingBills,
-      totalExpenses: opts.totalExpenses,
-      newServices: opts.newServices,
-      appUrl,
-    }),
+    subject: `Your weekly digest - ${opts.weekStart} to ${opts.weekEnd}`,
+    html: weeklyDigestHtml(emailData),
+    text: weeklyDigestText(emailData),
+    templateSlug: "weekly-digest",
     dedupeKey: opts.dedupeKey,
     metadata: {
       kind: "weekly-digest",
@@ -358,16 +383,19 @@ export async function sendContractReminderEmail(opts: {
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const subject = `${opts.serviceName} contract ends in ${opts.daysRemaining} day${opts.daysRemaining === 1 ? "" : "s"}`;
+  const emailData = {
+    userName: opts.userName || "there",
+    serviceName: opts.serviceName,
+    contractEndDate: opts.contractEndDate,
+    daysRemaining: opts.daysRemaining,
+    serviceLink: opts.serviceLink,
+  };
   const result = await sendLoggedEmail({
     to: opts.userEmail,
     subject,
-    html: contractReminderHtml({
-      userName: opts.userName || "there",
-      serviceName: opts.serviceName,
-      contractEndDate: opts.contractEndDate,
-      daysRemaining: opts.daysRemaining,
-      serviceLink: opts.serviceLink,
-    }),
+    html: contractReminderHtml(emailData),
+    text: contractReminderText(emailData),
+    templateSlug: "contract-reminder",
     dedupeKey: opts.dedupeKey,
     metadata: {
       kind: "contract-reminder",
@@ -380,7 +408,7 @@ export async function sendContractReminderEmail(opts: {
 }
 
 /**
- * Trial expiring email — sent 7, 3, 1 days before trial ends
+ * Trial expiring email, sent before a free trial ends.
  */
 export async function sendTrialExpiringEmail(opts: {
   userEmail: string;
@@ -403,12 +431,13 @@ export async function sendTrialExpiringEmail(opts: {
       firstName: opts.userName || "there",
       daysLeft: String(opts.daysRemaining),
       upgradeLink: `${appUrl}/settings/subscription`,
+      appUrl,
     },
   });
 }
 
 /**
- * Move reminder email — sent 7, 3, 1 days before move date
+ * Move reminder email, sent before moving day.
  */
 export async function sendMoveReminderEmail(opts: {
   userEmail: string;

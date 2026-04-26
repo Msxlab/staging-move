@@ -12,12 +12,27 @@ function getResend(apiKey: string): Resend {
 }
 
 const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
-const DEFAULT_APP_URL = "http://localhost:3000";
+export const DEFAULT_APP_URL = "https://locateflow.com";
+export const DEFAULT_SUPPORT_EMAIL = "support@locateflow.com";
+
+const COLORS = {
+  background: "#f5f7fb",
+  card: "#ffffff",
+  text: "#172033",
+  muted: "#5f6b7a",
+  border: "#d9e1ea",
+  panel: "#eef3f8",
+  primary: "#f97316",
+  primaryDark: "#c2410c",
+  accent: "#0f766e",
+};
 
 export interface EmailOptions {
   to: string;
   subject: string;
   html: string;
+  text?: string;
+  replyTo?: string | string[];
 }
 
 export interface SendEmailResult {
@@ -26,24 +41,57 @@ export interface SendEmailResult {
   error: string | null;
 }
 
+export interface EmailContent {
+  subject: string;
+  html: string;
+  text: string;
+}
+
 async function resolveEmailConfig() {
   const values = await getRequiredRuntimeConfigValues([
     "RESEND_API_KEY",
     "EMAIL_FROM",
     "NEXT_PUBLIC_APP_URL",
+    "SUPPORT_EMAIL",
+    "EMAIL_REPLY_TO",
   ]);
+
+  const supportEmail =
+    values.SUPPORT_EMAIL || values.EMAIL_REPLY_TO || DEFAULT_SUPPORT_EMAIL;
 
   return {
     resendApiKey: values.RESEND_API_KEY,
     fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
-    appUrl: values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL,
+    appUrl: normalizeBaseUrl(values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL),
+    supportEmail,
+    replyTo: values.EMAIL_REPLY_TO || supportEmail,
   };
+}
+
+function redactKnownSecrets(value: string): string {
+  let redacted = value;
+  const knownSecrets = [process.env.RESEND_API_KEY].filter(Boolean) as string[];
+  for (const secret of knownSecrets) {
+    redacted = redacted.split(secret).join("[redacted]");
+  }
+  return redacted.replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]");
+}
+
+function safeEmailError(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message?: unknown }).message || "SEND_FAILED")
+        : String(error || "SEND_FAILED");
+  return redactKnownSecrets(raw).slice(0, 500);
 }
 
 export async function sendEmailWithResult(
   options: EmailOptions,
 ): Promise<SendEmailResult> {
-  const { resendApiKey, fromEmail } = await resolveEmailConfig();
+  const { resendApiKey, fromEmail, replyTo } = await resolveEmailConfig();
+  const text = options.text || htmlToPlainText(options.html);
 
   if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${options.to} | Subject: ${options.subject}`);
@@ -56,23 +104,27 @@ export async function sendEmailWithResult(
       to: options.to,
       subject: options.subject,
       html: options.html,
+      text,
+      replyTo: options.replyTo || replyTo,
     });
 
     if (error) {
-      console.error("[EMAIL] Send failed:", error);
+      const safeError = safeEmailError(error);
+      console.error("[EMAIL] Send failed:", { message: safeError });
       return {
         success: false,
         providerMessageId: null,
-        error: error.message || "SEND_FAILED",
+        error: safeError,
       };
     }
     return { success: true, providerMessageId: data?.id || null, error: null };
   } catch (err) {
-    console.error("[EMAIL] Error:", err);
+    const safeError = safeEmailError(err);
+    console.error("[EMAIL] Error:", { message: safeError });
     return {
       success: false,
       providerMessageId: null,
-      error: err instanceof Error ? err.message : "SEND_ERROR",
+      error: safeError,
     };
   }
 }
@@ -82,7 +134,6 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   return result.success;
 }
 
-// SEC-012: HTML escape helper to prevent injection in email templates
 const htmlEscapeMap: Record<string, string> = {
   "&": "&amp;",
   "<": "&lt;",
@@ -90,11 +141,236 @@ const htmlEscapeMap: Record<string, string> = {
   '"': "&quot;",
   "'": "&#39;",
 };
-function esc(str: string): string {
-  return str.replace(/[&<>"']/g, (c) => htmlEscapeMap[c] || c);
+
+export function escapeHtml(str: string): string {
+  return String(str || "").replace(/[&<>"']/g, (c) => htmlEscapeMap[c] || c);
 }
 
-// ── Email Templates ──────────────────────────────────────────
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&middot;/g, "-");
+}
+
+export function htmlToPlainText(html: string): string {
+  return decodeHtmlEntities(
+    html
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(
+        /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+        (_match, href: string, label: string) =>
+          `${label.replace(/<[^>]*>/g, "").trim()}: ${href}`,
+      )
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(p|div|h1|h2|h3|tr|table|li)>/gi, "\n")
+      .replace(/<li[^>]*>/gi, "- ")
+      .replace(/<[^>]+>/g, "")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim(),
+  );
+}
+
+export function normalizeBaseUrl(value?: string | null): string {
+  if (!value) return DEFAULT_APP_URL;
+  try {
+    const parsed = new URL(value);
+    return parsed.origin;
+  } catch {
+    return DEFAULT_APP_URL;
+  }
+}
+
+function absoluteUrl(pathOrUrl: string, baseUrl = DEFAULT_APP_URL): string {
+  try {
+    return new URL(pathOrUrl, normalizeBaseUrl(baseUrl)).toString();
+  } catch {
+    return DEFAULT_APP_URL;
+  }
+}
+
+function detailRows(rows: Array<[string, string]>): string {
+  return rows
+    .map(
+      ([label, value]) => `
+        <tr>
+          <td style="padding:10px 0;border-bottom:1px solid ${COLORS.border};font-size:14px;line-height:20px;color:${COLORS.muted};">${escapeHtml(label)}</td>
+          <td align="right" style="padding:10px 0;border-bottom:1px solid ${COLORS.border};font-size:14px;line-height:20px;color:${COLORS.text};font-weight:600;">${value}</td>
+        </tr>`,
+    )
+    .join("");
+}
+
+function ctaButton(href: string, label: string): string {
+  return `
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:24px 0 8px;">
+      <tr>
+        <td bgcolor="${COLORS.primary}" style="border-radius:6px;">
+          <a href="${escapeHtml(href)}" style="display:inline-block;padding:13px 20px;font-size:15px;line-height:18px;color:#ffffff;text-decoration:none;font-weight:700;border-radius:6px;">${escapeHtml(label)}</a>
+        </td>
+      </tr>
+    </table>`;
+}
+
+export function renderLocateFlowEmail(opts: {
+  preheader: string;
+  title: string;
+  bodyHtml: string;
+  cta?: { href: string; label: string };
+  supportEmail?: string;
+  securityNote?: boolean;
+}): string {
+  const supportEmail = opts.supportEmail || DEFAULT_SUPPORT_EMAIL;
+  const cta = opts.cta ? ctaButton(opts.cta.href, opts.cta.label) : "";
+  const securityNote = opts.securityNote
+    ? `<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:${COLORS.muted};">If this wasn't you, ignore this email or contact support.</p>`
+    : "";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>${escapeHtml(opts.title)}</title>
+</head>
+<body style="margin:0;padding:0;background:${COLORS.background};font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:${COLORS.text};">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(opts.preheader)}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.background}" style="border-collapse:collapse;background:${COLORS.background};">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;">
+          <tr>
+            <td style="padding:0 0 12px;">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+                <tr>
+                  <td bgcolor="${COLORS.primary}" style="width:34px;height:34px;border-radius:8px;text-align:center;color:#ffffff;font-weight:700;font-size:13px;line-height:34px;">LF</td>
+                  <td style="padding-left:10px;font-size:20px;line-height:24px;font-weight:700;color:${COLORS.text};">LocateFlow</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td bgcolor="${COLORS.card}" style="background:${COLORS.card};border:1px solid ${COLORS.border};border-radius:8px;padding:32px 28px;">
+              <h1 style="margin:0 0 16px;font-size:24px;line-height:31px;color:${COLORS.text};font-weight:700;">${escapeHtml(opts.title)}</h1>
+              ${opts.bodyHtml}
+              ${cta}
+              ${securityNote}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 4px 0;text-align:left;">
+              <p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${COLORS.muted};font-weight:700;">LocateFlow</p>
+              <p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${COLORS.muted};">
+                <a href="${DEFAULT_APP_URL}" style="color:${COLORS.primaryDark};text-decoration:underline;">${DEFAULT_APP_URL}</a>
+                &nbsp;|&nbsp;
+                <a href="mailto:${escapeHtml(supportEmail)}" style="color:${COLORS.primaryDark};text-decoration:underline;">${escapeHtml(supportEmail)}</a>
+              </p>
+              <p style="margin:0;font-size:12px;line-height:18px;color:${COLORS.muted};">You're receiving this email because you used LocateFlow.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+function textFooter(security = false, supportEmail = DEFAULT_SUPPORT_EMAIL): string {
+  return [
+    "",
+    "LocateFlow",
+    DEFAULT_APP_URL,
+    supportEmail,
+    "You're receiving this email because you used LocateFlow.",
+    security ? "If this wasn't you, ignore this email or contact support." : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function emailVerificationContent(data: {
+  userName: string;
+  verifyLink: string;
+  supportEmail?: string;
+}): EmailContent {
+  const subject = "Verify your LocateFlow email";
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Thanks for creating a LocateFlow account. Confirm your email address to finish setting up your account.</p>
+    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">This link expires in 24 hours.</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: "Confirm your email address to finish setting up LocateFlow.",
+    title: "Verify your email",
+    bodyHtml,
+    cta: { href: data.verifyLink, label: "Verify Email" },
+    supportEmail: data.supportEmail,
+    securityNote: true,
+  });
+  const text = [
+    `Hi ${data.userName},`,
+    "",
+    "Thanks for creating a LocateFlow account. Confirm your email address to finish setting up your account.",
+    "",
+    `Verify Email: ${data.verifyLink}`,
+    "",
+    "This link expires in 24 hours.",
+    textFooter(true, data.supportEmail),
+  ].join("\n");
+  return { subject, html, text };
+}
+
+export function passwordResetContent(data: {
+  userName: string;
+  resetLink: string;
+  mode?: "reset" | "set-password";
+  supportEmail?: string;
+}): EmailContent {
+  const isSetPassword = data.mode === "set-password";
+  const subject = isSetPassword
+    ? "Set your LocateFlow password"
+    : "Reset your LocateFlow password";
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${
+      isSetPassword
+        ? "Use this secure link to add password sign-in to your LocateFlow account."
+        : "We received a request to reset your LocateFlow password."
+    }</p>
+    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">This link expires in 1 hour and can only be used once.</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: isSetPassword
+      ? "Use this secure link to set a LocateFlow password."
+      : "Use this secure link to reset your LocateFlow password.",
+    title: isSetPassword ? "Set your password" : "Reset your password",
+    bodyHtml,
+    cta: { href: data.resetLink, label: isSetPassword ? "Set Password" : "Reset Password" },
+    supportEmail: data.supportEmail,
+    securityNote: true,
+  });
+  const text = [
+    `Hi ${data.userName},`,
+    "",
+    isSetPassword
+      ? "Use this secure link to add password sign-in to your LocateFlow account."
+      : "We received a request to reset your LocateFlow password.",
+    "",
+    `${isSetPassword ? "Set Password" : "Reset Password"}: ${data.resetLink}`,
+    "",
+    "This link expires in 1 hour and can only be used once.",
+    textFooter(true, data.supportEmail),
+  ].join("\n");
+  return { subject, html, text };
+}
 
 export function billReminderHtml(data: {
   userName: string;
@@ -105,42 +381,63 @@ export function billReminderHtml(data: {
   daysUntilDue: number;
   appUrl?: string;
 }): string {
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:520px;margin:40px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:32px 24px;text-align:center;">
-      <h1 style="color:#fff;margin:0;font-size:20px;">Bill Reminder</h1>
-    </div>
-    <div style="padding:24px;">
-      <p style="color:#334155;font-size:15px;line-height:1.6;margin:0 0 16px;">
-        Hi <strong>${esc(data.userName)}</strong>,
-      </p>
-      <p style="color:#334155;font-size:15px;line-height:1.6;margin:0 0 20px;">
-        Your <strong>${esc(data.serviceName)}</strong> (${esc(data.category)}) bill of
-        <strong style="color:#7c3aed;">$${data.amount.toFixed(2)}</strong>
-        is due ${data.daysUntilDue === 0 ? "today" : `in <strong>${data.daysUntilDue} day${data.daysUntilDue > 1 ? "s" : ""}</strong>`}.
-      </p>
-      <div style="background:#f1f5f9;border-radius:12px;padding:16px;margin-bottom:20px;">
-        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#475569;">
-          <tr><td style="padding:6px 0;">Service</td><td style="text-align:right;font-weight:600;">${esc(data.serviceName)}</td></tr>
-          <tr><td style="padding:6px 0;">Category</td><td style="text-align:right;">${esc(data.category)}</td></tr>
-          <tr><td style="padding:6px 0;">Amount</td><td style="text-align:right;font-weight:600;color:#7c3aed;">$${data.amount.toFixed(2)}</td></tr>
-          <tr><td style="padding:6px 0;">Due Date</td><td style="text-align:right;">${esc(data.dueDate)}</td></tr>
-        </table>
-      </div>
-      <a href="${data.appUrl || DEFAULT_APP_URL}/services" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
-        View Services
-      </a>
-    </div>
-    <div style="padding:16px 24px;text-align:center;border-top:1px solid #f1f5f9;">
-      <p style="color:#94a3b8;font-size:11px;margin:0;">LocateFlow · Manage your relocation with ease</p>
-    </div>
-  </div>
-</body>
-</html>`;
+  const dueText =
+    data.daysUntilDue === 0
+      ? "today"
+      : `in ${data.daysUntilDue} day${data.daysUntilDue === 1 ? "" : "s"}`;
+  const dashboardUrl = absoluteUrl("/services", data.appUrl);
+  const amount = `$${data.amount.toFixed(2)}`;
+  const html = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 18px;font-size:15px;line-height:24px;color:${COLORS.text};">Your <strong>${escapeHtml(data.serviceName)}</strong> bill is due ${dueText}.</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.panel}" style="width:100%;border-collapse:collapse;background:${COLORS.panel};border-radius:8px;margin:0 0 4px;">
+      <tr>
+        <td style="padding:14px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">
+            ${detailRows([
+              ["Service", escapeHtml(data.serviceName)],
+              ["Category", escapeHtml(data.category)],
+              ["Amount", `<span style="color:${COLORS.primaryDark};">${escapeHtml(amount)}</span>`],
+              ["Due Date", escapeHtml(data.dueDate)],
+            ])}
+          </table>
+        </td>
+      </tr>
+    </table>`;
+
+  return renderLocateFlowEmail({
+    preheader: `${data.serviceName} is due ${dueText}.`,
+    title: "Bill reminder",
+    bodyHtml: html,
+    cta: { href: dashboardUrl, label: "View Services" },
+  });
+}
+
+export function billReminderText(data: {
+  userName: string;
+  serviceName: string;
+  category: string;
+  amount: number;
+  dueDate: string;
+  daysUntilDue: number;
+  appUrl?: string;
+}): string {
+  const dueText =
+    data.daysUntilDue === 0
+      ? "today"
+      : `in ${data.daysUntilDue} day${data.daysUntilDue === 1 ? "" : "s"}`;
+  return [
+    `Hi ${data.userName},`,
+    "",
+    `Your ${data.serviceName} bill is due ${dueText}.`,
+    `Service: ${data.serviceName}`,
+    `Category: ${data.category}`,
+    `Amount: $${data.amount.toFixed(2)}`,
+    `Due Date: ${data.dueDate}`,
+    "",
+    `View Services: ${absoluteUrl("/services", data.appUrl)}`,
+    textFooter(),
+  ].join("\n");
 }
 
 export function contractReminderHtml(data: {
@@ -150,39 +447,49 @@ export function contractReminderHtml(data: {
   daysRemaining: number;
   serviceLink: string;
 }): string {
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:520px;margin:40px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:32px 24px;text-align:center;">
-      <h1 style="color:#fff;margin:0;font-size:20px;">Contract Reminder</h1>
-    </div>
-    <div style="padding:24px;">
-      <p style="color:#334155;font-size:15px;line-height:1.6;margin:0 0 16px;">
-        Hi <strong>${esc(data.userName)}</strong>,
-      </p>
-      <p style="color:#334155;font-size:15px;line-height:1.6;margin:0 0 20px;">
-        Your <strong>${esc(data.serviceName)}</strong> contract ends in <strong>${data.daysRemaining} day${data.daysRemaining === 1 ? "" : "s"}</strong> on <strong>${esc(data.contractEndDate)}</strong>.
-      </p>
-      <div style="background:#f1f5f9;border-radius:12px;padding:16px;margin-bottom:20px;">
-        <table style="width:100%;border-collapse:collapse;font-size:14px;color:#475569;">
-          <tr><td style="padding:6px 0;">Service</td><td style="text-align:right;font-weight:600;">${esc(data.serviceName)}</td></tr>
-          <tr><td style="padding:6px 0;">Ends On</td><td style="text-align:right;">${esc(data.contractEndDate)}</td></tr>
-          <tr><td style="padding:6px 0;">Time Remaining</td><td style="text-align:right;">${data.daysRemaining} day${data.daysRemaining === 1 ? "" : "s"}</td></tr>
-        </table>
-      </div>
-      <a href="${data.serviceLink}" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
-        Review Service
-      </a>
-    </div>
-    <div style="padding:16px 24px;text-align:center;border-top:1px solid #f1f5f9;">
-      <p style="color:#94a3b8;font-size:11px;margin:0;">LocateFlow · Manage your relocation with ease</p>
-    </div>
-  </div>
-</body>
-</html>`;
+  const dayText = `${data.daysRemaining} day${data.daysRemaining === 1 ? "" : "s"}`;
+  const html = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 18px;font-size:15px;line-height:24px;color:${COLORS.text};">Your <strong>${escapeHtml(data.serviceName)}</strong> contract ends in <strong>${escapeHtml(dayText)}</strong>.</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${COLORS.panel}" style="width:100%;border-collapse:collapse;background:${COLORS.panel};border-radius:8px;margin:0 0 4px;">
+      <tr>
+        <td style="padding:14px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">
+            ${detailRows([
+              ["Service", escapeHtml(data.serviceName)],
+              ["Ends On", escapeHtml(data.contractEndDate)],
+              ["Time Remaining", escapeHtml(dayText)],
+            ])}
+          </table>
+        </td>
+      </tr>
+    </table>`;
+
+  return renderLocateFlowEmail({
+    preheader: `${data.serviceName} contract ends in ${dayText}.`,
+    title: "Contract reminder",
+    bodyHtml: html,
+    cta: { href: absoluteUrl(data.serviceLink), label: "Review Service" },
+  });
+}
+
+export function contractReminderText(data: {
+  userName: string;
+  serviceName: string;
+  contractEndDate: string;
+  daysRemaining: number;
+  serviceLink: string;
+}): string {
+  const dayText = `${data.daysRemaining} day${data.daysRemaining === 1 ? "" : "s"}`;
+  return [
+    `Hi ${data.userName},`,
+    "",
+    `Your ${data.serviceName} contract ends in ${dayText}.`,
+    `Ends On: ${data.contractEndDate}`,
+    "",
+    `Review Service: ${absoluteUrl(data.serviceLink)}`,
+    textFooter(),
+  ].join("\n");
 }
 
 export function weeklyDigestHtml(data: {
@@ -196,57 +503,81 @@ export function weeklyDigestHtml(data: {
 }): string {
   const billRows = data.upcomingBills
     .map(
-      (b) =>
-        `<tr><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;">${esc(b.name)}</td><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;">$${b.amount.toFixed(2)}</td><td style="padding:8px 0;border-bottom:1px solid #f1f5f9;text-align:right;color:#64748b;">${esc(b.dueDate)}</td></tr>`,
+      (bill) => `
+        <tr>
+          <td style="padding:10px 0;border-bottom:1px solid ${COLORS.border};font-size:14px;line-height:20px;color:${COLORS.text};">${escapeHtml(bill.name)}</td>
+          <td align="right" style="padding:10px 0;border-bottom:1px solid ${COLORS.border};font-size:14px;line-height:20px;color:${COLORS.text};font-weight:600;">$${bill.amount.toFixed(2)}</td>
+          <td align="right" style="padding:10px 0;border-bottom:1px solid ${COLORS.border};font-size:13px;line-height:20px;color:${COLORS.muted};">${escapeHtml(bill.dueDate)}</td>
+        </tr>`,
     )
     .join("");
 
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:520px;margin:40px auto;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
-    <div style="background:linear-gradient(135deg,#7c3aed,#06b6d4);padding:32px 24px;text-align:center;">
-      <h1 style="color:#fff;margin:0;font-size:20px;">Weekly Digest</h1>
-      <p style="color:rgba(255,255,255,0.8);margin:8px 0 0;font-size:13px;">${data.weekStart} – ${data.weekEnd}</p>
-    </div>
-    <div style="padding:24px;">
-      <p style="color:#334155;font-size:15px;line-height:1.6;margin:0 0 20px;">
-        Hi <strong>${esc(data.userName)}</strong>, here's your weekly summary:
-      </p>
-
-      <!-- Stats -->
-      <div style="display:flex;gap:12px;margin-bottom:20px;">
-        <div style="flex:1;background:#f1f5f9;border-radius:12px;padding:16px;text-align:center;">
-          <p style="margin:0;font-size:24px;font-weight:700;color:#7c3aed;">$${data.totalExpenses.toFixed(0)}</p>
-          <p style="margin:4px 0 0;font-size:11px;color:#64748b;">Monthly Cost</p>
-        </div>
-        <div style="flex:1;background:#f1f5f9;border-radius:12px;padding:16px;text-align:center;">
-          <p style="margin:0;font-size:24px;font-weight:700;color:#7c3aed;">${data.newServices}</p>
-          <p style="margin:4px 0 0;font-size:11px;color:#64748b;">New Services</p>
-        </div>
-      </div>
-
-      ${
-        data.upcomingBills.length > 0
-          ? `
-      <h3 style="color:#334155;font-size:14px;margin:0 0 12px;">Upcoming Bills</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;color:#334155;margin-bottom:20px;">
-        <thead><tr><td style="padding:8px 0;border-bottom:2px solid #e2e8f0;font-weight:600;">Service</td><td style="padding:8px 0;border-bottom:2px solid #e2e8f0;text-align:right;font-weight:600;">Amount</td><td style="padding:8px 0;border-bottom:2px solid #e2e8f0;text-align:right;font-weight:600;">Due</td></tr></thead>
-        <tbody>${billRows}</tbody>
+  const billsTable = data.upcomingBills.length
+    ? `
+      <h2 style="margin:22px 0 8px;font-size:16px;line-height:22px;color:${COLORS.text};">Upcoming bills</h2>
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;margin-bottom:4px;">
+        <tr>
+          <td style="padding:8px 0;border-bottom:2px solid ${COLORS.border};font-size:12px;line-height:16px;color:${COLORS.muted};font-weight:700;">Service</td>
+          <td align="right" style="padding:8px 0;border-bottom:2px solid ${COLORS.border};font-size:12px;line-height:16px;color:${COLORS.muted};font-weight:700;">Amount</td>
+          <td align="right" style="padding:8px 0;border-bottom:2px solid ${COLORS.border};font-size:12px;line-height:16px;color:${COLORS.muted};font-weight:700;">Due</td>
+        </tr>
+        ${billRows}
       </table>`
-          : ""
-      }
+    : "";
 
-      <a href="${data.appUrl || DEFAULT_APP_URL}/dashboard" style="display:block;text-align:center;background:#7c3aed;color:#fff;text-decoration:none;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;">
-        Open Dashboard
-      </a>
-    </div>
-    <div style="padding:16px 24px;text-align:center;border-top:1px solid #f1f5f9;">
-      <p style="color:#94a3b8;font-size:11px;margin:0;">LocateFlow · Manage your relocation with ease</p>
-    </div>
-  </div>
-</body>
-</html>`;
+  const html = `
+    <p style="margin:0 0 16px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>, here is your LocateFlow summary for ${escapeHtml(data.weekStart)} to ${escapeHtml(data.weekEnd)}.</p>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td width="50%" bgcolor="${COLORS.panel}" style="padding:16px;border-radius:8px;background:${COLORS.panel};">
+          <p style="margin:0;font-size:24px;line-height:30px;color:${COLORS.primaryDark};font-weight:700;">$${data.totalExpenses.toFixed(0)}</p>
+          <p style="margin:4px 0 0;font-size:12px;line-height:16px;color:${COLORS.muted};">Monthly cost</p>
+        </td>
+        <td width="12" style="font-size:1px;line-height:1px;">&nbsp;</td>
+        <td width="50%" bgcolor="${COLORS.panel}" style="padding:16px;border-radius:8px;background:${COLORS.panel};">
+          <p style="margin:0;font-size:24px;line-height:30px;color:${COLORS.primaryDark};font-weight:700;">${data.newServices}</p>
+          <p style="margin:4px 0 0;font-size:12px;line-height:16px;color:${COLORS.muted};">New services</p>
+        </td>
+      </tr>
+    </table>
+    ${billsTable}`;
+
+  return renderLocateFlowEmail({
+    preheader: `Your LocateFlow weekly summary for ${data.weekStart} to ${data.weekEnd}.`,
+    title: "Weekly digest",
+    bodyHtml: html,
+    cta: { href: absoluteUrl("/dashboard", data.appUrl), label: "Open Dashboard" },
+  });
+}
+
+export function weeklyDigestText(data: {
+  userName: string;
+  weekStart: string;
+  weekEnd: string;
+  upcomingBills: { name: string; amount: number; dueDate: string }[];
+  totalExpenses: number;
+  newServices: number;
+  appUrl?: string;
+}): string {
+  const upcoming = data.upcomingBills.length
+    ? [
+        "",
+        "Upcoming bills:",
+        ...data.upcomingBills.map(
+          (bill) => `- ${bill.name}: $${bill.amount.toFixed(2)} due ${bill.dueDate}`,
+        ),
+      ]
+    : [];
+
+  return [
+    `Hi ${data.userName},`,
+    "",
+    `Here is your LocateFlow summary for ${data.weekStart} to ${data.weekEnd}.`,
+    `Monthly cost: $${data.totalExpenses.toFixed(0)}`,
+    `New services: ${data.newServices}`,
+    ...upcoming,
+    "",
+    `Open Dashboard: ${absoluteUrl("/dashboard", data.appUrl)}`,
+    textFooter(),
+  ].join("\n");
 }
