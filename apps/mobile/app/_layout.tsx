@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { Linking } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
@@ -12,6 +13,11 @@ import { AnimatedSplash } from "@/components/AnimatedSplash";
 import { SessionTracker } from "@/components/SessionTracker";
 import { initI18n } from "@/i18n/config";
 import { initMobileSentry } from "@/lib/sentry";
+import {
+  getPendingLegalConsents,
+  hasRequiredLegalConsents,
+  setPendingLegalConsents,
+} from "@/lib/legal";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,13 +37,47 @@ const i18nReady = initI18n().catch(() => undefined);
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
-  const { token, user, loading, hydrate, refreshUser } = useAuthStore();
+  const { token, user, loading, hydrate, refreshUser, setSession } = useAuthStore();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  const handledOAuthCodes = useRef<Set<string>>(new Set());
 
   // 1) On mount, load the persisted token from SecureStore.
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    const readCode = (url: string | null) => {
+      if (!url || !url.startsWith("locateflow://oauth")) return null;
+      const queryStart = url.indexOf("?");
+      if (queryStart < 0) return null;
+      const params = new URLSearchParams(url.slice(queryStart + 1).split("#")[0]);
+      return params.get("code");
+    };
+
+    const handleOAuthUrl = async (url: string | null) => {
+      const code = readCode(url);
+      if (!code || handledOAuthCodes.current.has(code)) return;
+      handledOAuthCodes.current.add(code);
+
+      const res = await api.post<{ token?: string; user?: any }>("/api/mobile/auth/exchange", { code });
+      if (res.error || !res.data?.token || !res.data.user) return;
+
+      await setSession(res.data.token, res.data.user);
+      const pendingLegalConsents = getPendingLegalConsents();
+      if (hasRequiredLegalConsents(pendingLegalConsents)) {
+        await api.post("/api/legal/acceptance", { legalConsents: pendingLegalConsents }).catch(() => null);
+        setPendingLegalConsents(null);
+      }
+      router.replace("/onboarding");
+    };
+
+    Linking.getInitialURL().then((url) => void handleOAuthUrl(url)).catch(() => {});
+    const subscription = Linking.addEventListener("url", ({ url }) => {
+      void handleOAuthUrl(url);
+    });
+    return () => subscription.remove();
+  }, [router, setSession]);
 
   // 2) When a token appears, fetch /api/auth/me to hydrate the user.
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { buildDefaultPermissionMatrix } from "@/lib/admin-permissions";
 
 export async function GET() {
@@ -88,6 +88,14 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requirePermission("admin_users", "canCreate", { minimumRole: "SUPER_ADMIN" });
     const body = await request.json();
+
+    const confirm = await requirePasswordConfirm(
+      session,
+      typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+    );
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
 
     if (!body.email || !body.password || !body.firstName || !body.lastName) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });

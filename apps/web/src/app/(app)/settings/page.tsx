@@ -46,6 +46,7 @@ function SectionList({ items }: { items: typeof accountSections }) {
 export default function SettingsPage() {
   const [deleteStep, setDeleteStep] = useState<"idle" | "confirm" | "deleting">("idle");
   const [confirmText, setConfirmText] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showBudget, setShowBudget] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -64,10 +65,14 @@ export default function SettingsPage() {
   }, []);
 
   const handleDeleteAccount = async () => {
-    if (confirmText !== "DELETE") return;
+    if (confirmText !== "DELETE" || !confirmPassword) return;
     setDeleteStep("deleting");
     try {
-      const res = await fetch("/api/account/delete", { method: "POST" });
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword }),
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         // Local session cookie is invalidated server-side when the account is
@@ -160,16 +165,28 @@ export default function SettingsPage() {
                   disabled={deleteStep === "deleting"}
                 />
               </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-white/40">Confirm your password</label>
+                <input
+                  className="w-full rounded-xl border border-red-500/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={deleteStep === "deleting"}
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleDeleteAccount}
-                  disabled={confirmText !== "DELETE" || deleteStep === "deleting"}
+                  disabled={confirmText !== "DELETE" || !confirmPassword || deleteStep === "deleting"}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {deleteStep === "deleting" ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : "Permanently Delete My Account"}
                 </button>
                 <button
-                  onClick={() => { setDeleteStep("idle"); setConfirmText(""); }}
+                  onClick={() => { setDeleteStep("idle"); setConfirmText(""); setConfirmPassword(""); }}
                   disabled={deleteStep === "deleting"}
                   className="px-4 py-2 rounded-xl text-sm text-white/40 hover:text-white hover:bg-white/5 transition"
                 >

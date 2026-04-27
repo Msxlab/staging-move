@@ -5,11 +5,12 @@ import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { createAccountDeletionRequest, getActiveAccountDeletionRequest, processAccountDeletionRequest } from "@/lib/account-deletion";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
+import { verifyUserStepUp } from "@/lib/user-step-up";
 
 // POST /api/account/delete — GDPR right to erasure
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireDbUserId({ distinguishDeleted: true });
 
     // Rate limit: 3 per minute (destructive action)
     const rlKey = getRateLimitKey(request, "account:delete");
@@ -23,6 +24,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const body: any = await request.json().catch(() => ({}));
+    const stepUp = await verifyUserStepUp({
+      userId,
+      confirmPassword: typeof body?.confirmPassword === "string" ? body.confirmPassword : null,
+      mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : null,
+      backupCode: typeof body?.backupCode === "string" ? body.backupCode : null,
+    });
+    if (!stepUp.ok) {
+      return NextResponse.json(
+        { error: stepUp.message, code: stepUp.code },
+        { status: stepUp.code === "STEP_UP_REQUIRED" ? 403 : 401 },
+      );
+    }
+
     const existingRequest = await getActiveAccountDeletionRequest(userId);
     const deleteRequest = existingRequest || await (async () => {
       const subscription = await prisma.subscription.findUnique({ where: { userId } });
@@ -33,7 +48,7 @@ export async function POST(request: NextRequest) {
         action: "ACCOUNT_DELETE",
         entityType: "User",
         entityId: userId,
-        changes: { email: user.email },
+        changes: { email: user.email, stepUpMethod: stepUp.method },
         ...meta,
       });
 
@@ -61,6 +76,14 @@ export async function POST(request: NextRequest) {
     }
 
     const processed = await processAccountDeletionRequest(deleteRequest.id);
+    await createAuditLog({
+      userId,
+      action: "ACCOUNT_DEL_PROC",
+      entityType: "GDPRRequest",
+      entityId: deleteRequest.id,
+      changes: { status: processed.status, cleanup: "cleanup" in processed ? processed.cleanup : null },
+      ...extractRequestMeta(request),
+    });
     const completed = processed.status === "COMPLETED";
 
     return NextResponse.json(

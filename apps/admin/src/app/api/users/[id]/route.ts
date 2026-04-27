@@ -555,8 +555,23 @@ export async function PATCH(
       await prisma.user.update({ where: { id }, data: updateData });
     }
 
+    const hasBillingChange =
+      body.plan ||
+      body.premiumUntil !== undefined ||
+      body.subscriptionStatus ||
+      body.trialEndsAt !== undefined ||
+      body.premiumNote !== undefined;
+
     // Update subscription plan + premium management
-    if (body.plan || body.premiumUntil !== undefined || body.subscriptionStatus || body.trialEndsAt !== undefined || body.premiumNote !== undefined) {
+    if (hasBillingChange) {
+      const confirm = await requirePasswordConfirm(
+        session,
+        typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+      );
+      if (!confirm.confirmed) {
+        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      }
+
       const subData: any = {};
       if (body.plan) {
         changes.plan = { from: user.subscription?.plan, to: body.plan };

@@ -131,7 +131,50 @@ describe("profile route", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toContain("Terms of Use");
+    expect(body.code).toBe("LEGAL_ACCEPTANCE_REQUIRED");
     expect(mockProfile.upsert).not.toHaveBeenCalled();
+  });
+
+  it("records valid mobile fallback legal consent before saving the profile", async () => {
+    mockUserEvent.findFirst.mockResolvedValue(null);
+    const accepted = createAcceptedLegalConsents({
+      termsVersion: "2026-03-13",
+      disclaimerVersion: "2026-03-13",
+      acceptedAt: "2026-04-27T12:00:00.000Z",
+    });
+    const payload = {
+      ...buildOnboardingProfilePayload({
+        firstName: "Taylor",
+        lastName: "Mover",
+        ageRange: "",
+        familyStatus: "SINGLE",
+        hasChildren: false,
+        childrenCount: 0,
+        hasPets: false,
+        petTypes: [],
+        carCount: 0,
+        hasSenior: false,
+        hasDisability: false,
+        needsStorage: false,
+        hasMotorcycle: false,
+        hasBoatRV: false,
+      }),
+      legalConsents: accepted,
+    };
+
+    const response = await POST(makeRequest(payload));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.legalConsents).toEqual(accepted);
+    expect(mockUserEvent.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        event: "LEGAL_CONSENT_ACCEPTED",
+        page: "/onboarding",
+      }),
+    });
+    expect(mockProfile.upsert).toHaveBeenCalled();
   });
 
   it("does not create legal acknowledgement rows while saving profile", async () => {
@@ -158,7 +201,7 @@ describe("profile route", () => {
     expect(mockUserEvent.create).not.toHaveBeenCalled();
   });
 
-  it("still rejects unknown root and legal fields when callers bypass the sanitizer", async () => {
+  it("still rejects unknown root fields when callers bypass the sanitizer", async () => {
     const response = await POST(makeRequest({
       firstName: "Taylor",
       lastName: "Mover",

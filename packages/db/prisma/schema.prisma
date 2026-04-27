@@ -55,6 +55,7 @@ model User {
   moveTasks               MoveTask[]
   customProviders         UserCustomProvider[]
   loginSessions           UserLoginSession[]
+  mobileOAuthCodes        MobileOAuthCode[]
   sessions                UserSession[]
   events                  UserEvent[]
   passwordResetTokens     PasswordResetToken[]
@@ -101,6 +102,22 @@ model OAuthAccount {
 
   @@unique([provider, providerId])
   @@index([userId])
+}
+
+model MobileOAuthCode {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  userId      String    @db.VarChar(30)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash    String    @unique @db.VarChar(64)
+  provider    String    @db.VarChar(20)
+  redirectUri String    @db.VarChar(500)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
 }
 
 model UserLoginSession {

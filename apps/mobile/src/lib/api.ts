@@ -73,6 +73,7 @@ async function getToken(): Promise<string | null> {
 export const api = new ApiClient({
   baseUrl: API_URL,
   getToken,
+  clientType: "mobile",
   onUnauthorized: async () => {
     // Token invalid — wipe it so the user is routed back to sign-in.
     await clearStoreToken().catch(() => {});

@@ -23,20 +23,21 @@ export default function DeleteAccountScreen() {
   const { t } = useTranslation();
   const clearSession = useAuthStore((s) => s.clearSession);
   const [confirmText, setConfirmText] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   // The confirmation phrase has to match ONE of the localized strings so
   // Spanish users can type ELIMINAR and English users can type DELETE.
   const confirmPhrases = [t("settings.delete_confirmInput"), "DELETE"];
 
   const handleDelete = async () => {
-    if (!confirmPhrases.includes(confirmText)) {
+    if (!confirmPhrases.includes(confirmText) || !confirmPassword) {
       Alert.alert(t("settings.delete_confirmTitle"), t("settings.delete_confirmDescription"));
       return;
     }
 
     hapticWarning();
     setDeleting(true);
-    const res = await api.post("/api/account/delete");
+    const res = await api.post("/api/account/delete", { confirmPassword });
     setDeleting(false);
 
     if (res.error) {
@@ -96,15 +97,28 @@ export default function DeleteAccountScreen() {
           accessibilityHint='Type DELETE exactly to enable permanent account deletion'
         />
 
+        <TextInput
+          style={[styles.input, { marginTop: 12 }]}
+          placeholder={t("auth.password")}
+          placeholderTextColor={theme.colors.textMuted}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel="Current password"
+          accessibilityHint="Confirms your identity before account deletion"
+        />
+
         <TouchableOpacity
-          style={[styles.deleteBtn, (!confirmPhrases.includes(confirmText) || deleting) && { opacity: 0.6 }]}
+          style={[styles.deleteBtn, (!confirmPhrases.includes(confirmText) || !confirmPassword || deleting) && { opacity: 0.6 }]}
           onPress={handleDelete}
-          disabled={!confirmPhrases.includes(confirmText) || deleting}
+          disabled={!confirmPhrases.includes(confirmText) || !confirmPassword || deleting}
           activeOpacity={0.7}
           accessibilityRole="button"
           accessibilityLabel="Permanently delete account"
           accessibilityHint="Deletes your account and all associated data"
-          accessibilityState={{ disabled: !confirmPhrases.includes(confirmText) || deleting }}
+          accessibilityState={{ disabled: !confirmPhrases.includes(confirmText) || !confirmPassword || deleting }}
         >
           {deleting ? (
             <ActivityIndicator color="#fff" />
