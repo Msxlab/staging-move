@@ -22,7 +22,37 @@ import {
 
 const MAX_LOGO_BYTES = 1_000_000; // 1 MB hard cap — real logos are well under
 const MIN_LOGO_BYTES = 256;       // anything smaller is a 1x1 placeholder
-const FETCH_TIMEOUT_MS = 5_000;
+const FETCH_TIMEOUT_MS = 1_500;
+const R2_PUT_TIMEOUT_DETAILS = "3000ms";
+
+export type LogoIngestFailureStage =
+  | "fetch_homepage"
+  | "parse_logo"
+  | "download_asset"
+  | "upload_storage"
+  | "create_candidate";
+
+export class LogoIngestError extends Error {
+  code: string;
+  stage: LogoIngestFailureStage;
+  status: number;
+  details?: string;
+
+  constructor(input: {
+    code: string;
+    message: string;
+    stage: LogoIngestFailureStage;
+    status?: number;
+    details?: string;
+  }) {
+    super(input.message);
+    this.name = "LogoIngestError";
+    this.code = input.code;
+    this.stage = input.stage;
+    this.status = input.status ?? 500;
+    this.details = input.details;
+  }
+}
 
 export interface IngestedLogo {
   publicUrl: string;
@@ -35,14 +65,71 @@ export interface IngestedLogo {
 }
 
 export interface IngestFailure {
-  attempted: Array<{ source: LogoCandidate["source"]; reason: string }>;
+  attempted: Array<{
+    source: LogoCandidate["source"];
+    reason: string;
+    status?: number;
+    message?: string;
+  }>;
 }
 
-async function fetchWithTimeout(url: string): Promise<Response> {
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+function mapStorageError(error: unknown): LogoIngestError | null {
+  const message = errorMessage(error);
+  if (message === "R2_ASSET_STORAGE_NOT_CONFIGURED") {
+    return new LogoIngestError({
+      code: "LOGO_STORAGE_NOT_CONFIGURED",
+      message: "Logo storage is not configured",
+      stage: "upload_storage",
+      status: 503,
+      details:
+        "Missing R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, or R2_SECRET_ACCESS_KEY",
+    });
+  }
+  if (message === "R2_PUBLIC_BASE_URL_MISSING") {
+    return new LogoIngestError({
+      code: "LOGO_STORAGE_PUBLIC_URL_MISSING",
+      message: "Logo storage public base URL is not configured",
+      stage: "upload_storage",
+      status: 503,
+      details: "Missing R2_PUBLIC_BASE_URL",
+    });
+  }
+  if (message === "R2_PUT_TIMEOUT") {
+    return new LogoIngestError({
+      code: "LOGO_STORAGE_UPLOAD_TIMEOUT",
+      message: "Logo storage upload timed out",
+      stage: "upload_storage",
+      status: 504,
+      details: `R2 PUT exceeded ${R2_PUT_TIMEOUT_DETAILS}`,
+    });
+  }
+  if (message.startsWith("R2_PUT_FAILED:")) {
+    return new LogoIngestError({
+      code: "LOGO_STORAGE_UPLOAD_FAILED",
+      message: "Logo storage upload failed",
+      stage: "upload_storage",
+      status: 502,
+      details: message.slice(0, 500),
+    });
+  }
+  return null;
+}
+
+async function fetchLogoAsset(url: string): Promise<{
+  status: number;
+  contentType: string | null;
+  rawContentType: string | null;
+  bytes: Buffer | null;
+}> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    return await fetch(url, {
+    const res = await fetch(url, {
       signal: controller.signal,
       redirect: "follow",
       headers: {
@@ -54,6 +141,36 @@ async function fetchWithTimeout(url: string): Promise<Response> {
         Accept: "image/*",
       },
     });
+    if (!res.ok) {
+      return {
+        status: res.status,
+        contentType: null,
+        rawContentType: res.headers.get("content-type"),
+        bytes: null,
+      };
+    }
+    const rawContentType = res.headers.get("content-type");
+    const contentType = normalizeContentType(rawContentType);
+    if (!contentType) {
+      return { status: res.status, contentType: null, rawContentType, bytes: null };
+    }
+    return {
+      status: res.status,
+      contentType,
+      rawContentType,
+      bytes: Buffer.from(await res.arrayBuffer()),
+    };
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      throw new LogoIngestError({
+        code: "LOGO_DOWNLOAD_TIMEOUT",
+        message: "Logo asset download timed out",
+        stage: "download_asset",
+        status: 504,
+        details: `${url} exceeded ${FETCH_TIMEOUT_MS}ms`,
+      });
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }
@@ -89,18 +206,25 @@ async function tryCandidates(
   const attempted: IngestFailure["attempted"] = [];
   for (const candidate of candidates) {
     try {
-      const res = await fetchWithTimeout(candidate.url);
-      if (!res.ok) {
-        attempted.push({ source: candidate.source, reason: `http_${res.status}` });
+      const res = await fetchLogoAsset(candidate.url);
+      if (res.status < 200 || res.status >= 300) {
+        attempted.push({
+          source: candidate.source,
+          reason: `http_${res.status}`,
+          status: res.status,
+        });
         continue;
       }
-      const contentType = normalizeContentType(res.headers.get("content-type"));
-      if (!contentType) {
-        attempted.push({ source: candidate.source, reason: "unsupported_content_type" });
+      if (!res.contentType || !res.bytes) {
+        attempted.push({
+          source: candidate.source,
+          reason: "unsupported_content_type",
+          message: (res.rawContentType || "missing").slice(0, 120),
+        });
         continue;
       }
 
-      const buf = Buffer.from(await res.arrayBuffer());
+      const buf = res.bytes;
       if (buf.byteLength > MAX_LOGO_BYTES) {
         attempted.push({ source: candidate.source, reason: "too_large" });
         continue;
@@ -113,10 +237,17 @@ async function tryCandidates(
         continue;
       }
 
-      return { candidate, contentType, bytes: buf };
+      return { candidate, contentType: res.contentType, bytes: buf };
     } catch (err: any) {
-      const reason = err?.name === "AbortError" ? "timeout" : "fetch_error";
-      attempted.push({ source: candidate.source, reason });
+      const reason =
+        err instanceof LogoIngestError && err.code === "LOGO_DOWNLOAD_TIMEOUT"
+          ? "timeout"
+          : "fetch_error";
+      attempted.push({
+        source: candidate.source,
+        reason,
+        message: errorMessage(err).slice(0, 160),
+      });
     }
   }
   return { error: { attempted } };
@@ -141,18 +272,34 @@ export async function ingestLogoFromWebsite(input: {
   if ("error" in result) return { failed: result.error };
 
   const objectKey = buildLogoObjectKey(input.providerId, result.contentType);
-  await putAssetObject({
-    objectKey,
-    body: result.bytes,
-    contentType: result.contentType,
-  });
+  try {
+    await putAssetObject({
+      objectKey,
+      body: result.bytes,
+      contentType: result.contentType,
+    });
+  } catch (error) {
+    const mapped = mapStorageError(error);
+    if (mapped) throw mapped;
+    throw error;
+  }
 
-  const publicUrl = await rawAssetUrl(objectKey);
+  const publicUrl = await rawAssetUrl(objectKey).catch((error) => {
+    const mapped = mapStorageError(error);
+    if (mapped) throw mapped;
+    throw error;
+  });
   if (!publicUrl) {
     // The bytes are stored, but without R2_PUBLIC_BASE_URL we can't surface
     // a viewable URL. Treat as misconfiguration — operator should set the
     // public base before backfilling.
-    throw new Error("R2_PUBLIC_BASE_URL_MISSING");
+    throw new LogoIngestError({
+      code: "LOGO_STORAGE_PUBLIC_URL_MISSING",
+      message: "Logo storage public base URL is not configured",
+      stage: "upload_storage",
+      status: 503,
+      details: "Missing R2_PUBLIC_BASE_URL",
+    });
   }
 
   return {

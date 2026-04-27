@@ -14,6 +14,11 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  apiErrorMessage,
+  PROVIDER_LOGO_AUTO_FETCH_BULK_CONCURRENCY,
+  readApiResponsePayload,
+} from "@/lib/provider-logo-auto-fetch";
 
 interface LogoCandidate {
   id: string;
@@ -102,16 +107,24 @@ export default function NeedsLogoPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
-      const data = await res.json();
+      const data = await readApiResponsePayload(res);
       if (!res.ok) {
         const message =
           res.status === 422
             ? "No logo source returned a usable image"
-            : data.error || "Auto-fetch failed";
+            : apiErrorMessage(data, `Auto-fetch failed (${res.status})`);
         setRowStatus(providerId, { kind: "error", message });
         return false;
       }
-      setRowStatus(providerId, { kind: "candidate", candidate: data.candidate });
+      const candidate = data.candidate as LogoCandidate | undefined;
+      if (!candidate) {
+        setRowStatus(providerId, {
+          kind: "error",
+          message: "Auto-fetch succeeded but did not return a logo candidate",
+        });
+        return false;
+      }
+      setRowStatus(providerId, { kind: "candidate", candidate });
       return true;
     } catch (err: any) {
       setRowStatus(providerId, {
@@ -200,10 +213,9 @@ export default function NeedsLogoPage() {
 
     setBulkProgress({ done: 0, total: batchIds.length, ok: 0, failed: 0 });
 
-    // Limited concurrency. Sequential is too slow at ~3-5s per fetch
-    // (~12 minutes for 231); 4-way parallel cuts it to ~3 minutes without
-    // tripping any of the upstream logo CDNs' rate limits.
-    const CONCURRENCY = 4;
+    // Limited concurrency keeps upstream logo CDNs and the admin API from
+    // turning a bulk run into many long-running requests at once.
+    const CONCURRENCY = PROVIDER_LOGO_AUTO_FETCH_BULK_CONCURRENCY;
     let success = 0;
     let failed = 0;
     let done = 0;

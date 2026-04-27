@@ -32,6 +32,8 @@ const R2_ASSET_KEYS = [
   "R2_PUBLIC_BASE_URL",
 ] as const;
 
+const R2_PUT_TIMEOUT_MS = 3_000;
+
 export const ALLOWED_LOGO_CONTENT_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -190,20 +192,32 @@ export async function putAssetObject(input: {
     contentType,
   });
 
-  const res = await fetch(signed.url, {
-    method: "PUT",
-    headers: {
-      Authorization: signed.authorization,
-      "Content-Type": contentType,
-      "x-amz-content-sha256": payloadHash,
-      "x-amz-date": signed.amzDate,
-    },
-    body: new Uint8Array(input.body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), R2_PUT_TIMEOUT_MS);
+  try {
+    const res = await fetch(signed.url, {
+      method: "PUT",
+      signal: controller.signal,
+      headers: {
+        Authorization: signed.authorization,
+        "Content-Type": contentType,
+        "x-amz-content-sha256": payloadHash,
+        "x-amz-date": signed.amzDate,
+      },
+      body: new Uint8Array(input.body),
+    });
 
-  if (!res.ok) {
-    const detail = (await res.text().catch(() => "")).slice(0, 300);
-    throw new Error(`R2_PUT_FAILED:${res.status}:${detail}`);
+    if (!res.ok) {
+      const detail = (await res.text().catch(() => "")).slice(0, 300);
+      throw new Error(`R2_PUT_FAILED:${res.status}:${detail}`);
+    }
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      throw new Error("R2_PUT_TIMEOUT");
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
