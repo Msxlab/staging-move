@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       );
       return clearGoogleOAuthCookies(response);
     }
-    if (["OAUTH_EXISTING_DELETED_USER_BLOCKED", "OAUTH_ACCOUNT_UNAVAILABLE", "OAUTH_ACCOUNT_DELETED"].includes(err?.message)) {
+    if (err?.message === "OAUTH_EXISTING_DELETED_USER_BLOCKED") {
       return clearGoogleOAuthCookies(
         NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-unavailable")),
       );

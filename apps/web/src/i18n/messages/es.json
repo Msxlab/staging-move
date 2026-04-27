@@ -295,7 +295,7 @@
     "error_provider_disabled": "Este método de inicio de sesión no está disponible en este momento.",
     "error_oauth_email_unverified": "No pudimos verificar el correo de tu cuenta de Google. Prueba otro método de inicio de sesión.",
     "error_account_setup": "No pudimos terminar de preparar tu cuenta de inicio social. Reintenta en un minuto.",
-    "error_account_unavailable": "Esta cuenta no está disponible. Contacta a soporte si crees que es un error.",
+    "error_account_unavailable": "Esta cuenta de inicio de sesión no está disponible. Contacta a soporte si crees que es un error.",
     "error_session_create": "Encontramos tu cuenta, pero no pudimos iniciar una sesión. Reintenta.",
     "error_generic": "Error al iniciar sesión. Reintenta.",
     "agreeToTerms": "Acepto los {terms} y la {privacy}.",

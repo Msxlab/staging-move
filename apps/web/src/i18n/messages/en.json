@@ -295,7 +295,7 @@
     "error_provider_disabled": "This sign-in method is currently unavailable.",
     "error_oauth_email_unverified": "Your Google account email could not be verified. Try another sign-in method.",
     "error_account_setup": "We could not finish setting up your social sign-in account. Please try again in a minute.",
-    "error_account_unavailable": "This account is unavailable. Contact support if you believe this is a mistake.",
+    "error_account_unavailable": "This sign-in account is not available. Please contact support if you think this is a mistake.",
     "error_session_create": "Your account was found, but we could not start a session. Please try again.",
     "error_generic": "Sign in failed. Please try again.",
     "agreeToTerms": "I agree to the {terms} and {privacy}.",

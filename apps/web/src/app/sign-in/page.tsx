@@ -44,7 +44,6 @@ function SignInForm() {
     "oauth-account-failed": "error_account_setup",
     "oauth-account-create-failed": "error_account_setup",
     "oauth-account-unavailable": "error_account_unavailable",
-    "oauth-account-deleted": "error_account_unavailable",
     "session-create-failed": "error_session_create",
   };
 

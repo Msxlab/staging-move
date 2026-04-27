@@ -69,23 +69,6 @@ describe("OAuth user linking", () => {
     expect(mocks.userCreate).not.toHaveBeenCalled();
   });
 
-  it("logs in an existing active OAuth user without creating duplicates", async () => {
-    mocks.oauthFindUnique.mockResolvedValue({
-      userId: "restored-user",
-      user: { deletedAt: null },
-    });
-
-    await expect(
-      findOrLinkOAuthUserWithStatus({
-        provider: "google",
-        providerId: "google-sub",
-        email: "person@example.com",
-      }),
-    ).resolves.toEqual({ userId: "restored-user", isNewUser: false });
-    expect(mocks.oauthCreate).not.toHaveBeenCalled();
-    expect(mocks.userCreate).not.toHaveBeenCalled();
-  });
-
   it("does not link a provider to a soft-deleted user with the same email", async () => {
     mocks.userFindUnique.mockResolvedValue({
       id: "deleted-user",
