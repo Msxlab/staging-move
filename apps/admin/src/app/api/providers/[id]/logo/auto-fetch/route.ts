@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { ingestLogoFromWebsite } from "@/lib/logo-ingest";
@@ -8,11 +7,11 @@ export const runtime = "nodejs";
 
 /**
  * Try to auto-discover and ingest a logo for the given provider, using its
- * `website` field. Writes the resulting public URL to `logoUrl` on success.
+ * `website` field. Stores the resulting asset as a pending candidate; a
+ * separate admin review step publishes it to `ServiceProvider.logoUrl`.
  *
- * Returns 200 with `{ logoUrl, source }` on success, 422 with `{ attempted }`
- * when no candidate produced a usable image, 503 when storage isn't
- * configured.
+ * Returns 200 with `{ candidate }` on success, 422 with `{ attempted }` when
+ * no candidate produced a usable image, 503 when storage isn't configured.
  */
 export async function POST(
   request: NextRequest,
@@ -26,7 +25,7 @@ export async function POST(
 
     const provider = await prisma.serviceProvider.findUnique({
       where: { id },
-      select: { id: true, website: true, logoUrl: true, name: true },
+      select: { id: true, website: true },
     });
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
@@ -69,34 +68,94 @@ export async function POST(
       );
     }
 
-    await prisma.serviceProvider.update({
-      where: { id },
-      data: { logoUrl: result.publicUrl },
+    const existingCandidate = result.sourceUrl
+      ? await prisma.providerLogoCandidate.findFirst({
+          where: {
+            providerId: id,
+            status: "PENDING",
+            OR: [
+              { contentHash: result.contentHash },
+              { source: result.source, sourceUrl: result.sourceUrl },
+            ],
+          },
+          select: {
+            id: true,
+            source: true,
+            sourceUrl: true,
+            publicUrl: true,
+            contentType: true,
+            contentHash: true,
+            bytes: true,
+            status: true,
+            createdAt: true,
+          },
+        })
+      : null;
+
+    if (existingCandidate) {
+      return NextResponse.json({
+        logoUrl: existingCandidate.publicUrl,
+        candidate: existingCandidate,
+        source: existingCandidate.source,
+        contentType: existingCandidate.contentType,
+        bytes: existingCandidate.bytes,
+        status: "PENDING",
+        duplicate: true,
+      });
+    }
+
+    const candidate = await prisma.providerLogoCandidate.create({
+      data: {
+        providerId: id,
+        source: result.source,
+        sourceUrl: result.sourceUrl,
+        publicUrl: result.publicUrl,
+        objectKey: result.objectKey,
+        contentType: result.contentType,
+        contentHash: result.contentHash,
+        bytes: result.bytes,
+        status: "PENDING",
+        createdByAdminId: session.adminId,
+      },
+      select: {
+        id: true,
+        source: true,
+        sourceUrl: true,
+        publicUrl: true,
+        contentType: true,
+        contentHash: true,
+        bytes: true,
+        status: true,
+        createdAt: true,
+      },
     });
 
     await prisma.adminAuditLog.create({
       data: {
         adminUserId: session.adminId,
-        action: "UPDATE_PROVIDER_LOGO",
-        entityType: "ServiceProvider",
-        entityId: id,
+        action: "CREATE_PROVIDER_LOGO_CANDIDATE",
+        entityType: "ProviderLogoCandidate",
+        entityId: candidate.id,
         changes: JSON.stringify({
+          providerId: id,
           source: result.source,
+          sourceUrl: result.sourceUrl,
           objectKey: result.objectKey,
           bytes: result.bytes,
           contentType: result.contentType,
+          contentHash: result.contentHash,
         }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
 
-    revalidateTag("providers", "default");
-
     return NextResponse.json({
       logoUrl: result.publicUrl,
+      candidate,
       source: result.source,
       contentType: result.contentType,
       bytes: result.bytes,
+      status: "PENDING",
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {

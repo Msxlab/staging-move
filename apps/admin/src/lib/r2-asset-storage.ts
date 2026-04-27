@@ -37,7 +37,6 @@ export const ALLOWED_LOGO_CONTENT_TYPES = new Set([
   "image/png",
   "image/webp",
   "image/gif",
-  "image/svg+xml",
   "image/x-icon",
   "image/vnd.microsoft.icon",
 ]);
@@ -47,7 +46,6 @@ export type LogoContentType =
   | "image/png"
   | "image/webp"
   | "image/gif"
-  | "image/svg+xml"
   | "image/x-icon";
 
 const CONTENT_TYPE_TO_EXT: Record<string, string> = {
@@ -55,7 +53,6 @@ const CONTENT_TYPE_TO_EXT: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
-  "image/svg+xml": "svg",
   "image/x-icon": "ico",
   "image/vnd.microsoft.icon": "ico",
 };

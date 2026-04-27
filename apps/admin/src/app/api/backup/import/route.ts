@@ -40,6 +40,12 @@ const IMPORT_MODEL_OPS = {
       prisma.serviceProvider.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.serviceProvider.create({ data }),
   },
+  providerLogoCandidates: {
+    count: () => prisma.providerLogoCandidate.count(),
+    findUniqueById: (id: string) =>
+      prisma.providerLogoCandidate.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.providerLogoCandidate.create({ data }),
+  },
   providerCoverages: {
     count: () => prisma.serviceProviderCoverage.count(),
     findUniqueById: (id: string) =>
@@ -198,6 +204,7 @@ function getTransactionModel(tx: any, tableName: keyof typeof BACKUP_TABLES) {
 const TABLES_WITH_EVIDENCE_TIMESTAMPS = new Set<keyof typeof BACKUP_TABLES>([
   "oauthAccounts",
   "dataConsents",
+  "providerLogoCandidates",
   "emailLogs",
   "auditLogs",
   "adminLoginLogs",

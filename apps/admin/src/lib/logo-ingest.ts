@@ -5,11 +5,13 @@
  *      reject obviously-bad responses (HTML 200s, oversized payloads,
  *      transparent-pixel "always returns success" placeholders).
  *   3. PUT bytes to R2 under `provider-logo/<providerId>/<uuid>.<ext>`.
- *   4. Return the final public CDN URL the caller should write to
+ *   4. Return the final public CDN URL and provenance. Callers should store
+ *      this as a reviewable ProviderLogoCandidate before publishing it to
  *      `ServiceProvider.logoUrl`.
  *
  * All network I/O lives here; logo-fetcher.ts stays pure.
  */
+import { createHash } from "crypto";
 import { buildLogoCandidates, type LogoCandidate, type LogoSource } from "@/lib/logo-fetcher";
 import {
   buildLogoObjectKey,
@@ -26,7 +28,9 @@ export interface IngestedLogo {
   publicUrl: string;
   objectKey: string;
   source: LogoSource;
+  sourceUrl: string | null;
   contentType: string;
+  contentHash: string;
   bytes: number;
 }
 
@@ -62,6 +66,10 @@ function normalizeContentType(headerValue: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+function sha256Hex(value: Buffer): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 /**
@@ -151,7 +159,9 @@ export async function ingestLogoFromWebsite(input: {
     publicUrl,
     objectKey,
     source: result.candidate.source,
+    sourceUrl: result.candidate.url,
     contentType: result.contentType,
+    contentHash: sha256Hex(result.bytes),
     bytes: result.bytes.byteLength,
   };
 }
@@ -182,7 +192,9 @@ export async function ingestLogoFromUpload(input: {
     publicUrl,
     objectKey,
     source: "manual-upload",
+    sourceUrl: null,
     contentType,
+    contentHash: sha256Hex(input.body),
     bytes: input.body.byteLength,
   };
 }

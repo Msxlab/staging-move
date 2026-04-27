@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { ingestLogoFromUpload } from "@/lib/logo-ingest";
@@ -11,7 +10,8 @@ const MAX_UPLOAD_BYTES = 1_000_000;
 /**
  * Manual logo upload (multipart/form-data, single field "file"). Used when
  * the auto-fetch endpoint can't find a usable logo or when ops have a
- * specific brand asset to use.
+ * specific brand asset to use. Uploads are still stored as reviewable
+ * candidates so the publish step is audited and reversible.
  */
 export async function POST(
   request: NextRequest,
@@ -25,7 +25,7 @@ export async function POST(
 
     const provider = await prisma.serviceProvider.findUnique({
       where: { id },
-      select: { id: true, name: true },
+      select: { id: true },
     });
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
@@ -64,7 +64,7 @@ export async function POST(
       const message = String(err?.message ?? err);
       if (message.startsWith("UNSUPPORTED_LOGO_CONTENT_TYPE")) {
         return NextResponse.json(
-          { error: "Unsupported file type. Use PNG, JPEG, WEBP, GIF, SVG, or ICO." },
+          { error: "Unsupported file type. Use PNG, JPEG, WEBP, GIF, or ICO." },
           { status: 415 },
         );
       }
@@ -86,33 +86,86 @@ export async function POST(
       throw err;
     }
 
-    await prisma.serviceProvider.update({
-      where: { id },
-      data: { logoUrl: result.publicUrl },
+    const existingCandidate = await prisma.providerLogoCandidate.findFirst({
+      where: {
+        providerId: id,
+        status: "PENDING",
+        contentHash: result.contentHash,
+      },
+      select: {
+        id: true,
+        source: true,
+        sourceUrl: true,
+        publicUrl: true,
+        contentType: true,
+        contentHash: true,
+        bytes: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    if (existingCandidate) {
+      return NextResponse.json({
+        logoUrl: existingCandidate.publicUrl,
+        candidate: existingCandidate,
+        contentType: existingCandidate.contentType,
+        bytes: existingCandidate.bytes,
+        status: "PENDING",
+        duplicate: true,
+      });
+    }
+
+    const candidate = await prisma.providerLogoCandidate.create({
+      data: {
+        providerId: id,
+        source: result.source,
+        sourceUrl: result.sourceUrl,
+        publicUrl: result.publicUrl,
+        objectKey: result.objectKey,
+        contentType: result.contentType,
+        contentHash: result.contentHash,
+        bytes: result.bytes,
+        status: "PENDING",
+        createdByAdminId: session.adminId,
+      },
+      select: {
+        id: true,
+        source: true,
+        sourceUrl: true,
+        publicUrl: true,
+        contentType: true,
+        contentHash: true,
+        bytes: true,
+        status: true,
+        createdAt: true,
+      },
     });
 
     await prisma.adminAuditLog.create({
       data: {
         adminUserId: session.adminId,
-        action: "UPDATE_PROVIDER_LOGO",
-        entityType: "ServiceProvider",
-        entityId: id,
+        action: "CREATE_PROVIDER_LOGO_CANDIDATE",
+        entityType: "ProviderLogoCandidate",
+        entityId: candidate.id,
         changes: JSON.stringify({
+          providerId: id,
           source: "manual-upload",
           objectKey: result.objectKey,
           bytes: result.bytes,
           contentType: result.contentType,
+          contentHash: result.contentHash,
         }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
 
-    revalidateTag("providers", "default");
-
     return NextResponse.json({
       logoUrl: result.publicUrl,
+      candidate,
       contentType: result.contentType,
       bytes: result.bytes,
+      status: "PENDING",
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {

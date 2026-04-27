@@ -32,7 +32,6 @@ import {
   TRIAL_DURATION_DAYS,
 } from "@locateflow/shared";
 import { PricingSection } from "@/components/marketing/pricing-section";
-import { StorySection } from "@/components/marketing/story-section";
 import { AppStoreCTA } from "@/components/marketing/app-store-cta";
 import { MobileMockup } from "@/components/marketing/mobile-mockup";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
@@ -301,11 +300,6 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Story — cinematic 5-scene narrative arc, dark break to interrupt
-          the light page rhythm and land the value emotionally before
-          pricing. */}
-      <StorySection ctaHref={primaryHref} ctaLabelLoggedIn={!!userId} />
 
       {/* Bilingual showcase — the wedge */}
       <BilingualShowcase />

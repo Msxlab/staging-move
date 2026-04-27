@@ -15,6 +15,7 @@ const BACKUP_TABLE_COUNTERS = {
   addresses: () => prisma.address.count(),
   services: () => prisma.service.count(),
   providers: () => prisma.serviceProvider.count(),
+  providerLogoCandidates: () => prisma.providerLogoCandidate.count(),
   providerCoverages: () => prisma.serviceProviderCoverage.count(),
   movingPlans: () => prisma.movingPlan.count(),
   customProviders: () => prisma.userCustomProvider.count(),
@@ -196,6 +197,44 @@ export async function POST(request: NextRequest) {
         ? "All record IDs are unique"
         : `${duplicateIds} duplicate ID(s) found — MERGE mode may skip these`,
     });
+
+    // ── Relation checks ─────────────────────────────────────
+    const logoCandidates = backupData.providerLogoCandidates;
+    if (Array.isArray(logoCandidates)) {
+      const missingProviderIds = logoCandidates.filter(
+        (record: any) => !record?.providerId,
+      ).length;
+      if (missingProviderIds > 0) {
+        checks.push({
+          name: "Provider Logo Candidate Relations",
+          status: "fail",
+          detail: `${missingProviderIds} candidate(s) are missing providerId.`,
+        });
+      } else if (Array.isArray(backupData.providers)) {
+        const providerIds = new Set(
+          backupData.providers.map((record: any) => record?.id).filter(Boolean),
+        );
+        const orphanedCandidates = logoCandidates.filter(
+          (record: any) =>
+            record?.providerId && !providerIds.has(record.providerId),
+        ).length;
+        checks.push({
+          name: "Provider Logo Candidate Relations",
+          status: orphanedCandidates === 0 ? "pass" : "fail",
+          detail:
+            orphanedCandidates === 0
+              ? "All logo candidates reference providers present in this backup."
+              : `${orphanedCandidates} logo candidate(s) reference providers missing from this backup.`,
+        });
+      } else {
+        checks.push({
+          name: "Provider Logo Candidate Relations",
+          status: "warn",
+          detail:
+            "Provider logo candidates are present without providers; import requires matching ServiceProvider rows already in the target database.",
+        });
+      }
+    }
 
     // ── Overall verdict ─────────────────────────────────────
     const hasFail = checks.some((c) => c.status === "fail");
