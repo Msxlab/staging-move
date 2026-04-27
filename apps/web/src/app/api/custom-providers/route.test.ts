@@ -36,6 +36,7 @@ vi.mock("@/lib/plan-limits", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { canCreateService } from "@/lib/plan-limits";
 import { POST } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -46,6 +47,10 @@ const mockCustomProvider = prisma.userCustomProvider as unknown as {
 const mockServiceProvider = prisma.serviceProvider as unknown as {
   findMany: Mock;
 };
+const mockUserEvent = prisma.userEvent as unknown as {
+  create: Mock;
+};
+const mockCanCreateService = canCreateService as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new Request("http://localhost/api/custom-providers", {
@@ -67,6 +72,7 @@ describe("custom providers route", () => {
       providerType: "GYM",
     });
     mockServiceProvider.findMany.mockResolvedValue([]);
+    mockUserEvent.create.mockResolvedValue({});
   });
 
   it("blocks duplicate custom providers for the same user and category", async () => {
@@ -105,5 +111,21 @@ describe("custom providers route", () => {
     expect(response.status).toBe(409);
     expect(body.listedProviderSlug).toBe("pseg");
     expect(mockCustomProvider.create).not.toHaveBeenCalled();
+  });
+
+  it("does not check service quota for custom-provider-only creation", async () => {
+    mockCanCreateService.mockResolvedValue({ allowed: false, code: "SERVICE_LIMIT_REACHED" });
+
+    const response = await POST(
+      makeRequest({
+        name: "Private Tutor",
+        category: "EDUCATION",
+        providerType: "PROFESSIONAL_SERVICE",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(mockCanCreateService).not.toHaveBeenCalled();
+    expect(mockCustomProvider.create).toHaveBeenCalled();
   });
 });

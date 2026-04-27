@@ -21,6 +21,14 @@ import { sendSecurityNoticeEmail, sendWelcomeEmail } from "@/lib/email-service";
 import { prisma } from "@/lib/db";
 import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
+import {
+  MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_REDIRECT_COOKIE,
+  buildMobileOAuthRedirectUrl,
+  createMobileOAuthExchangeCode,
+  isMobileOAuthClient,
+  normalizeMobileOAuthRedirectUri,
+} from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
 
@@ -33,6 +41,8 @@ function clearGoogleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_pkce_google");
   response.cookies.delete("oauth_redirect_uri_google");
   response.cookies.delete("oauth_redirect");
+  response.cookies.delete(MOBILE_OAUTH_CLIENT_COOKIE);
+  response.cookies.delete(MOBILE_OAUTH_REDIRECT_COOKIE);
   response.cookies.delete(LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }
@@ -144,6 +154,37 @@ export async function GET(request: NextRequest) {
     return clearGoogleOAuthCookies(
       NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=oauth-account-failed")),
     );
+  }
+
+  const isMobileClient = isMobileOAuthClient(request.cookies.get(MOBILE_OAUTH_CLIENT_COOKIE)?.value);
+  if (isMobileClient) {
+    const mobileRedirectUri = normalizeMobileOAuthRedirectUri(
+      request.cookies.get(MOBILE_OAUTH_REDIRECT_COOKIE)?.value,
+    );
+    if (!mobileRedirectUri) {
+      return clearGoogleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=mobile-oauth-redirect-invalid")),
+      );
+    }
+    try {
+      const handoffCode = await createMobileOAuthExchangeCode({
+        userId,
+        provider: "google",
+        redirectUri: mobileRedirectUri,
+      });
+      return clearGoogleOAuthCookies(
+        NextResponse.redirect(buildMobileOAuthRedirectUrl({
+          redirectUri: mobileRedirectUri,
+          code: handoffCode,
+          provider: "google",
+        })),
+      );
+    } catch (err) {
+      logGoogleOAuthFailure("mobile_handoff", err);
+      return clearGoogleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=mobile-oauth-handoff-failed")),
+      );
+    }
   }
 
   const ua = request.headers.get("user-agent") || "";

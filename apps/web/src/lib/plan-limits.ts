@@ -3,7 +3,7 @@ import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 
 /**
  * Plan limits configuration.
- * FREE_TRIAL: 7-day full-feature trial
+ * FREE_TRIAL: source-of-truth trial created in Subscription rows
  * INDIVIDUAL: Full features for single user
  */
 const PLAN_LIMITS: Record<string, {
@@ -55,15 +55,23 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
     where: { userId },
   });
 
-  const plan = subscription?.plan || "FREE_TRIAL";
-  const status = subscription?.status || "TRIALING";
+  if (!subscription) {
+    return {
+      plan: "FREE_TRIAL",
+      status: "MISSING_SUBSCRIPTION",
+      isActive: false,
+      isTrialExpired: true,
+      limits: PLAN_LIMITS.FREE_TRIAL,
+    };
+  }
+
+  const plan = subscription.plan || "FREE_TRIAL";
+  const status = subscription.status || "TRIALING";
 
   // Check if trial expired
   let isTrialExpired = false;
   if (plan === "FREE_TRIAL") {
-    isTrialExpired = subscription
-      ? !subscription.trialEndsAt || new Date() > subscription.trialEndsAt
-      : false;
+    isTrialExpired = !subscription.trialEndsAt || new Date() > subscription.trialEndsAt;
   }
 
   const isActive = ["ACTIVE", "TRIALING"].includes(status) && !isTrialExpired;
@@ -211,6 +219,14 @@ export async function canCreateMovingPlan(userId: string): Promise<PlanLimitChec
   }
 
   return { allowed: true };
+}
+
+export async function canCreateMovingDestinationAddress(userId: string): Promise<PlanLimitCheck> {
+  const existingMovingPlanCount = await prisma.movingPlan.count({ where: { userId, deletedAt: null } });
+  if (existingMovingPlanCount === 0 && await isInSetupGrace(userId)) {
+    return { allowed: true, setupGrace: true, current: existingMovingPlanCount, limit: SETUP_GRACE_LIMITS.maxMovingPlans };
+  }
+  return canCreateAddress(userId);
 }
 
 /**

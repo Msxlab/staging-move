@@ -17,6 +17,7 @@ import {
   oauthUserIdHint,
   summarizeOAuthError,
 } from "@/lib/oauth";
+import { ensureSubscriptionDefaults } from "@/lib/billing";
 
 // ── Secret / constants ──────────────────────────────────────
 
@@ -480,6 +481,7 @@ export async function findOrLinkOAuthUserWithStatus(input: {
       oauthAccountUserDeleted: false,
       activeOAuthMatch: true,
     });
+    await ensureSubscriptionDefaults(existingLink.userId);
     return { userId: existingLink.userId, isNewUser: false, wasLinkedNow: false };
   }
 
@@ -537,6 +539,7 @@ export async function findOrLinkOAuthUserWithStatus(input: {
         data: { emailVerifiedAt: new Date() },
       });
     }
+    await ensureSubscriptionDefaults(userByEmail.id);
     return { userId: userByEmail.id, isNewUser: false, wasLinkedNow: true };
   }
 
@@ -575,5 +578,6 @@ export async function findOrLinkOAuthUserWithStatus(input: {
     throw new Error("OAUTH_ACCOUNT_CREATE_FAILED");
   }
 
+  await ensureSubscriptionDefaults(created.id);
   return { userId: created.id, isNewUser: true, wasLinkedNow: false };
 }

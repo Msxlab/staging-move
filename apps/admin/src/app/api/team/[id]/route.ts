@@ -54,6 +54,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (isSensitiveChange && session.role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "Only SUPER_ADMIN can change roles, passwords, activation status, or permissions" }, { status: 403 });
     }
+    if (isSensitiveChange) {
+      const confirm = await requirePasswordConfirm(
+        session,
+        typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+      );
+      if (!confirm.confirmed) {
+        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      }
+    }
 
     // Prevent self-promotion
     if (body.role !== undefined && id === session.adminId) {

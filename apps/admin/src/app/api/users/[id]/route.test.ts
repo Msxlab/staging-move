@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
   requirePasswordConfirm: vi.fn(),
   transaction: vi.fn(),
   userFindUnique: vi.fn(),
+  userUpdate: vi.fn(),
+  subscriptionUpdate: vi.fn(),
+  subscriptionCreate: vi.fn(),
   userUpdateMany: vi.fn(),
   userLoginSessionUpdateMany: vi.fn(),
   userSessionUpdateMany: vi.fn(),
@@ -25,7 +28,12 @@ vi.mock("@/lib/db", () => ({
     $transaction: (...args: unknown[]) => mocks.transaction(...args),
     user: {
       findUnique: (...args: unknown[]) => mocks.userFindUnique(...args),
+      update: (...args: unknown[]) => mocks.userUpdate(...args),
       updateMany: (...args: unknown[]) => mocks.userUpdateMany(...args),
+    },
+    subscription: {
+      update: (...args: unknown[]) => mocks.subscriptionUpdate(...args),
+      create: (...args: unknown[]) => mocks.subscriptionCreate(...args),
     },
     userLoginSession: {
       updateMany: (...args: unknown[]) => mocks.userLoginSessionUpdateMany(...args),
@@ -48,7 +56,7 @@ vi.mock("@/lib/user-notify", () => ({
   notifyUserOfAdminChange: vi.fn(),
 }));
 
-import { DELETE, POST } from "./route";
+import { DELETE, PATCH, POST } from "./route";
 
 function request(confirmPassword = "admin-password") {
   return new NextRequest("https://admin.locateflow.com/api/users/user_1", {
@@ -75,6 +83,9 @@ describe("admin user detail delete", () => {
     mocks.userLoginSessionUpdateMany.mockResolvedValue({ count: 1 });
     mocks.userSessionUpdateMany.mockResolvedValue({ count: 1 });
     mocks.adminAuditCreate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.subscriptionCreate.mockResolvedValue({});
     mocks.transaction.mockImplementation((callback) =>
       callback({
         user: { updateMany: mocks.userUpdateMany },
@@ -249,5 +260,90 @@ describe("admin user detail delete", () => {
     expect(body.skippedReason).toBe("processing_gdpr_request");
     expect(mocks.transaction).not.toHaveBeenCalled();
     expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+  });
+});
+
+describe("admin user detail billing updates", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user_1",
+      firstName: "Person",
+      lastName: "Example",
+      subscription: {
+        plan: "FREE_TRIAL",
+        status: "TRIALING",
+        premiumUntil: null,
+        trialEndsAt: null,
+      },
+    });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.subscriptionCreate.mockResolvedValue({});
+    mocks.adminAuditCreate.mockResolvedValue({});
+  });
+
+  it("requires password confirmation before admin subscription and premium edits", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "Password confirmation required for this operation.",
+    });
+
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan: "INDIVIDUAL" }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.requiresPassword).toBe(true);
+    expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+  });
+
+  it("audits admin subscription and premium edits after password confirmation", async () => {
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.10" },
+        body: JSON.stringify({
+          plan: "INDIVIDUAL",
+          subscriptionStatus: "ACTIVE",
+          premiumUntil: "2026-05-27",
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      { adminId: "admin_1" },
+      "admin-password",
+    );
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({
+        plan: "INDIVIDUAL",
+        status: "ACTIVE",
+        premiumUntil: expect.any(Date),
+        premiumGrantedBy: "admin_1",
+        premiumGrantedAt: expect.any(Date),
+      }),
+    });
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        adminUserId: "admin_1",
+        action: "UPDATE_USER",
+        entityType: "User",
+        entityId: "user_1",
+        ipAddress: "203.0.113.10",
+      }),
+    });
   });
 });
