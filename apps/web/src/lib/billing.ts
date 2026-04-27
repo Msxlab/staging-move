@@ -47,7 +47,11 @@ export async function mapStripePriceIdToPlan(priceId: string | null | undefined)
 
 export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntitlementSnapshot {
   if (!subscription) {
-    return createFallbackEntitlementSnapshot();
+    return createFallbackEntitlementSnapshot({
+      status: "UNKNOWN",
+      isActive: false,
+      trialEndsAt: null,
+    });
   }
 
   const plan = (subscription.plan || DEFAULT_BILLING_PLAN) as BillingPlan;
@@ -81,18 +85,20 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
   };
 }
 
-export async function ensureSubscriptionDefaults(userId: string) {
-  const existing = await prisma.subscription.findUnique({ where: { userId } });
-  if (existing) return existing;
-
-  return prisma.subscription.create({
-    data: {
+export async function ensureSubscriptionDefaults(
+  userId: string,
+  options: { platform?: string | null; trialEndsAt?: Date } = {},
+) {
+  return prisma.subscription.upsert({
+    where: { userId },
+    update: {},
+    create: {
       userId,
       plan: DEFAULT_BILLING_PLAN,
       status: DEFAULT_SUBSCRIPTION_STATUS,
       provider: "TRIAL",
-      platform: "web",
-      trialEndsAt: createTrialEndsAt(),
+      platform: options.platform || "web",
+      trialEndsAt: options.trialEndsAt || createTrialEndsAt(),
     },
   });
 }

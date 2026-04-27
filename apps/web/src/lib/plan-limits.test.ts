@@ -22,6 +22,7 @@ vi.mock("@/lib/db", () => ({
 
 import {
   canCreateAddress,
+  canCreateMovingDestinationAddress,
   canCreateCustomProvider,
   canCreateMovingPlan,
   canCreateService,
@@ -40,12 +41,23 @@ describe("plan limits setup grace", () => {
     mocks.userCustomProviderCount.mockResolvedValue(0);
   });
 
-  it("treats a missing subscription row as an active default trial", async () => {
+  it("treats a missing subscription row as inactive rather than an open-ended trial", async () => {
     await expect(getUserPlan("user_1")).resolves.toMatchObject({
       plan: "FREE_TRIAL",
-      status: "TRIALING",
-      isActive: true,
-      isTrialExpired: false,
+      status: "MISSING_SUBSCRIPTION",
+      isActive: false,
+      isTrialExpired: true,
+    });
+  });
+
+  it("still allows incomplete setup users with a missing subscription to use setup-limited services", async () => {
+    mocks.serviceCount.mockResolvedValue(2);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: true,
+      setupGrace: true,
+      current: 2,
+      limit: 10,
     });
   });
 
@@ -134,6 +146,39 @@ describe("plan limits setup grace", () => {
       upgradeRequired: true,
       current: 1,
       limit: 1,
+    });
+  });
+
+  it("allows the first moving-plan destination address under setup allowance even when address quota is full", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "FREE_TRIAL",
+      status: "EXPIRED",
+      trialEndsAt: new Date(Date.now() - 1000),
+    });
+    mocks.addressCount.mockResolvedValue(2);
+    mocks.movingPlanCount.mockResolvedValue(0);
+
+    await expect(canCreateMovingDestinationAddress("user_1")).resolves.toMatchObject({
+      allowed: true,
+      setupGrace: true,
+      current: 0,
+      limit: 1,
+    });
+  });
+
+  it("uses the normal address quota after the first moving-plan setup allowance is spent", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "FREE_TRIAL",
+      status: "EXPIRED",
+      trialEndsAt: new Date(Date.now() - 1000),
+    });
+    mocks.addressCount.mockResolvedValue(2);
+    mocks.movingPlanCount.mockResolvedValue(1);
+
+    await expect(canCreateMovingDestinationAddress("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "SETUP_ADDRESS_LIMIT_REACHED",
+      limit: 2,
     });
   });
 

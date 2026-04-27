@@ -34,6 +34,23 @@ function safeEmailError(value: string | null | undefined) {
     .slice(0, 500);
 }
 
+const REQUIRED_TEMPLATE_SLUGS = new Set([
+  "email-verify",
+  "password-reset",
+  "welcome",
+  "bill-reminder",
+  "weekly-digest",
+  "contract-reminder",
+  "subscription-activated",
+  "subscription-canceled",
+  "payment-failed",
+]);
+
+function isRequiredEmailTemplate(template: { slug?: string | null; isDefault?: boolean | null }) {
+  const slug = template.slug || "";
+  return Boolean(template.isDefault) || REQUIRED_TEMPLATE_SLUGS.has(slug) || slug.startsWith("security-");
+}
+
 function presentEmailLog(log: any) {
   const metadata = parseMetadata(log.metadata);
   const configError = isConfigFailure(log);
@@ -171,6 +188,15 @@ export async function DELETE(req: NextRequest) {
     const { id } = await req.json();
     const existing = await prisma.emailTemplate.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Template not found" }, { status: 404 });
+    if (isRequiredEmailTemplate(existing)) {
+      return NextResponse.json(
+        {
+          error: "Required transactional templates cannot be hard-deleted. Deactivate only after replacing the required flow.",
+          code: "REQUIRED_TEMPLATE_DELETE_BLOCKED",
+        },
+        { status: 409 },
+      );
+    }
     await prisma.emailTemplate.delete({ where: { id } });
     await prisma.adminAuditLog.create({
       data: {

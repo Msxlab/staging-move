@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
   emailLogGroupBy: vi.fn(),
   emailLogFindMany: vi.fn(),
   emailLogCount: vi.fn(),
+  emailTemplateFindUnique: vi.fn(),
+  emailTemplateDelete: vi.fn(),
+  adminAuditCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -16,16 +19,21 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     emailTemplate: {
       findMany: (...args: unknown[]) => mocks.emailTemplateFindMany(...args),
+      findUnique: (...args: unknown[]) => mocks.emailTemplateFindUnique(...args),
+      delete: (...args: unknown[]) => mocks.emailTemplateDelete(...args),
     },
     emailLog: {
       groupBy: (...args: unknown[]) => mocks.emailLogGroupBy(...args),
       findMany: (...args: unknown[]) => mocks.emailLogFindMany(...args),
       count: (...args: unknown[]) => mocks.emailLogCount(...args),
     },
+    adminAuditLog: {
+      create: (...args: unknown[]) => mocks.adminAuditCreate(...args),
+    },
   },
 }));
 
-import { GET } from "./route";
+import { DELETE, GET } from "./route";
 
 describe("email templates admin API", () => {
   beforeEach(() => {
@@ -127,6 +135,9 @@ describe("email templates admin API", () => {
     mocks.emailLogCount
       .mockResolvedValueOnce(4)
       .mockResolvedValueOnce(1);
+    mocks.emailTemplateFindUnique.mockResolvedValue(null);
+    mocks.emailTemplateDelete.mockResolvedValue({});
+    mocks.adminAuditCreate.mockResolvedValue({});
   });
 
   it("returns per-template sent counts and templated send log details", async () => {
@@ -179,5 +190,45 @@ describe("email templates admin API", () => {
       totalSent: 4,
       totalFailed: 1,
     });
+  });
+
+  it("blocks hard delete of required default transactional templates", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue({
+      id: "tpl_reset",
+      slug: "password-reset",
+      name: "Password Reset",
+      isDefault: true,
+    });
+
+    const response = await DELETE(new Request("http://localhost/api/email-templates", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "tpl_reset" }),
+    }) as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.code).toBe("REQUIRED_TEMPLATE_DELETE_BLOCKED");
+    expect(mocks.emailTemplateDelete).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+  });
+
+  it("allows hard delete of non-default optional templates", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue({
+      id: "tpl_optional",
+      slug: "optional-newsletter",
+      name: "Optional Newsletter",
+      isDefault: false,
+    });
+
+    const response = await DELETE(new Request("http://localhost/api/email-templates", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "tpl_optional" }),
+    }) as any);
+
+    expect(response.status).toBe(200);
+    expect(mocks.emailTemplateDelete).toHaveBeenCalledWith({ where: { id: "tpl_optional" } });
+    expect(mocks.adminAuditCreate).toHaveBeenCalled();
   });
 });

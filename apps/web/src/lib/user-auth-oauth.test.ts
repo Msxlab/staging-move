@@ -43,10 +43,16 @@ vi.mock("@/lib/oauth", () => ({
   summarizeOAuthError: vi.fn(() => ({})),
 }));
 
+vi.mock("@/lib/billing", () => ({
+  ensureSubscriptionDefaults: vi.fn(() => Promise.resolve({ id: "sub-1" })),
+}));
+
 import { findOrLinkOAuthUserWithStatus } from "./user-auth";
 import { logSafeOAuthEvent } from "@/lib/oauth";
+import { ensureSubscriptionDefaults } from "@/lib/billing";
 
 const logSafeOAuthEventMock = logSafeOAuthEvent as unknown as Mock;
+const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
 
 describe("OAuth user linking", () => {
   beforeEach(() => {
@@ -71,6 +77,7 @@ describe("OAuth user linking", () => {
     ).rejects.toThrow("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
+    expect(ensureSubscriptionDefaultsMock).not.toHaveBeenCalled();
     expect(logSafeOAuthEventMock).toHaveBeenCalledWith("oauth_account_link_diagnostic", {
       provider: "google",
       reason: "existing_oauth_deleted_user",
@@ -96,6 +103,7 @@ describe("OAuth user linking", () => {
 
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("restored-user");
     expect(logSafeOAuthEventMock).toHaveBeenCalledWith("oauth_account_link_diagnostic", {
       provider: "google",
       reason: "existing_oauth_active_user",
@@ -157,6 +165,7 @@ describe("OAuth user linking", () => {
       where: { id: "password-user" },
       data: { emailVerifiedAt: expect.any(Date) },
     });
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("password-user");
     expect(mocks.userCreate).not.toHaveBeenCalled();
   });
 
@@ -185,5 +194,6 @@ describe("OAuth user linking", () => {
         },
       },
     });
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("created-user");
   });
 });

@@ -59,6 +59,10 @@ export default function UserDetailPage() {
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [planConfirmError, setPlanConfirmError] = useState<string | null>(null);
+  const [showPremiumConfirm, setShowPremiumConfirm] = useState(false);
+  const [premiumConfirmError, setPremiumConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -169,6 +173,83 @@ export default function UserDetailPage() {
       toast.error("Failed to restore user");
     } finally {
       setRestoreBusy(false);
+    }
+  }
+
+  async function confirmPlanChange(confirmPassword: string) {
+    if (!user || !pendingPlan) return;
+    setChangingPlan(true);
+    setPlanConfirmError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: pendingPlan, confirmPassword }),
+      });
+      if (res.ok) {
+        setEditForm({ ...editForm, plan: pendingPlan });
+        setUser({ ...user, subscription: { ...user.subscription, plan: pendingPlan } });
+        toast.success(`Plan changed to ${pendingPlan}`);
+        setPendingPlan(null);
+      } else {
+        const message = await readAdminApiError(res, "Failed to change plan.");
+        setPlanConfirmError(message);
+        toast.error(message);
+      }
+    } catch {
+      setPlanConfirmError("Failed to change plan.");
+      toast.error("Failed to change plan.");
+    } finally {
+      setChangingPlan(false);
+    }
+  }
+
+  async function confirmPremiumUpdate(confirmPassword: string) {
+    if (!user) return;
+    setSavingPremium(true);
+    setPremiumError(null);
+    setPremiumConfirmError(null);
+    try {
+      const payload: any = {
+        subscriptionStatus: premiumForm.subscriptionStatus,
+        premiumNote: premiumForm.premiumNote,
+        confirmPassword,
+      };
+      if (premiumForm.premiumUntil) payload.premiumUntil = premiumForm.premiumUntil;
+      else payload.premiumUntil = null;
+      if (premiumForm.trialEndsAt) payload.trialEndsAt = premiumForm.trialEndsAt;
+      else payload.trialEndsAt = null;
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setUser({
+          ...user,
+          subscription: {
+            ...user.subscription,
+            status: premiumForm.subscriptionStatus,
+            premiumUntil: premiumForm.premiumUntil || null,
+            trialEndsAt: premiumForm.trialEndsAt || null,
+            premiumNote: premiumForm.premiumNote,
+            premiumGrantedAt: new Date().toISOString(),
+          },
+        });
+        setShowPremiumConfirm(false);
+        toast.success("Premium settings updated");
+      } else {
+        const message = await readAdminApiError(res, "Failed to update premium settings.");
+        setPremiumError(message);
+        setPremiumConfirmError(message);
+        toast.error(message);
+      }
+    } catch {
+      setPremiumError("Failed to update premium settings.");
+      setPremiumConfirmError("Failed to update premium settings.");
+      toast.error("Failed to update premium settings.");
+    } finally {
+      setSavingPremium(false);
     }
   }
 
@@ -416,26 +497,11 @@ export default function UserDetailPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
             <select
               value={editForm.plan}
-              onChange={async (e) => {
+              onChange={(e) => {
                 const newPlan = e.target.value;
-                setChangingPlan(true);
-                try {
-                  const res = await fetch(`/api/users/${params.id}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ plan: newPlan }),
-                  });
-                  if (res.ok) {
-                    setEditForm({ ...editForm, plan: newPlan });
-                    setUser({ ...user, subscription: { ...user.subscription, plan: newPlan } });
-                    toast.success(`Plan changed to ${newPlan}`);
-                  } else {
-                    toast.error(await readAdminApiError(res, "Failed to change plan."));
-                  }
-                } catch {
-                  toast.error("Failed to change plan.");
-                }
-                setChangingPlan(false);
+                if (newPlan === editForm.plan) return;
+                setPendingPlan(newPlan);
+                setPlanConfirmError(null);
               }}
               disabled={changingPlan || isDeleted}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
@@ -891,46 +957,10 @@ export default function UserDetailPage() {
             )}
           </div>
           <button
-            onClick={async () => {
-              setSavingPremium(true);
+            onClick={() => {
               setPremiumError(null);
-              try {
-                const payload: any = {
-                  subscriptionStatus: premiumForm.subscriptionStatus,
-                  premiumNote: premiumForm.premiumNote,
-                };
-                if (premiumForm.premiumUntil) payload.premiumUntil = premiumForm.premiumUntil;
-                else payload.premiumUntil = null;
-                if (premiumForm.trialEndsAt) payload.trialEndsAt = premiumForm.trialEndsAt;
-                else payload.trialEndsAt = null;
-                const res = await fetch(`/api/users/${params.id}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(payload),
-                });
-                if (res.ok) {
-                  setUser({
-                    ...user,
-                    subscription: {
-                      ...user.subscription,
-                      status: premiumForm.subscriptionStatus,
-                      premiumUntil: premiumForm.premiumUntil || null,
-                      trialEndsAt: premiumForm.trialEndsAt || null,
-                      premiumNote: premiumForm.premiumNote,
-                      premiumGrantedAt: new Date().toISOString(),
-                    },
-                  });
-                  toast.success("Premium settings updated");
-                } else {
-                  const message = await readAdminApiError(res, "Failed to update premium settings.");
-                  setPremiumError(message);
-                  toast.error(message);
-                }
-              } catch {
-                setPremiumError("Failed to update premium settings.");
-                toast.error("Failed to update premium settings.");
-              }
-              setSavingPremium(false);
+              setPremiumConfirmError(null);
+              setShowPremiumConfirm(true);
             }}
             disabled={savingPremium}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -1394,6 +1424,36 @@ export default function UserDetailPage() {
           }
         }}
         onConfirm={confirmRestore}
+      />
+      <PasswordConfirmModal
+        open={Boolean(pendingPlan)}
+        title="Change user plan"
+        description={`Enter your admin password to change ${maskEmail(user.email)} from ${editForm.plan || "current plan"} to ${pendingPlan || "the selected plan"}.`}
+        confirmLabel="Change Plan"
+        busy={changingPlan}
+        error={planConfirmError}
+        onClose={() => {
+          if (!changingPlan) {
+            setPendingPlan(null);
+            setPlanConfirmError(null);
+          }
+        }}
+        onConfirm={confirmPlanChange}
+      />
+      <PasswordConfirmModal
+        open={showPremiumConfirm}
+        title="Update billing entitlements"
+        description={`Enter your admin password to update subscription, premium, or trial entitlement fields for ${maskEmail(user.email)}.`}
+        confirmLabel="Save Entitlements"
+        busy={savingPremium}
+        error={premiumConfirmError}
+        onClose={() => {
+          if (!savingPremium) {
+            setShowPremiumConfirm(false);
+            setPremiumConfirmError(null);
+          }
+        }}
+        onConfirm={confirmPremiumUpdate}
       />
     </div>
   );

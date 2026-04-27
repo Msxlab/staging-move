@@ -9,6 +9,8 @@ import {
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
+import { ensureSubscriptionDefaults } from "@/lib/billing";
+import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 
 export const runtime = "nodejs";
 
@@ -17,6 +19,15 @@ const registerSchema = z.object({
   password: z.string().max(200),
   firstName: z.string().trim().max(100).optional(),
   lastName: z.string().trim().max(100).optional(),
+  legalConsents: z
+    .object({
+      termsAccepted: z.boolean().optional(),
+      disclaimerAccepted: z.boolean().optional(),
+      termsVersion: z.string().max(50).optional(),
+      disclaimerVersion: z.string().max(50).optional(),
+      acceptedAt: z.string().max(100).optional(),
+    })
+    .optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -39,7 +50,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.errors }, { status: 400 });
   }
 
-  const { email, password, firstName, lastName } = parsed.data;
+  const { email, password, firstName, lastName, legalConsents } = parsed.data;
+  const acceptedLegalConsents = legalConsents === undefined
+    ? null
+    : normalizeAcceptedLegalConsents(legalConsents);
+  if (legalConsents !== undefined && !acceptedLegalConsents) {
+    return NextResponse.json(
+      { error: "You must accept the Terms of Use and Disclaimer before continuing.", code: "LEGAL_ACCEPTANCE_REQUIRED" },
+      { status: 400 },
+    );
+  }
 
   const policyError = validatePasswordPolicy(password);
   if (policyError) {
@@ -73,6 +93,17 @@ export async function POST(request: NextRequest) {
       preferredLocale: locale,
     },
   });
+  await ensureSubscriptionDefaults(user.id);
+
+  if (acceptedLegalConsents) {
+    await recordLegalAcceptance({
+      userId: user.id,
+      request,
+      page: "/sign-up",
+      source: "mobile_register",
+      consents: acceptedLegalConsents,
+    });
+  }
 
   // Email verification token (24h).
   const { token, hash } = generateOpaqueToken();

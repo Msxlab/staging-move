@@ -8,6 +8,12 @@ import {
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
 import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
+import {
+  MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_REDIRECT_COOKIE,
+  isMobileOAuthClient,
+  normalizeMobileOAuthRedirectUri,
+} from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
 
@@ -32,6 +38,13 @@ export async function GET(request: NextRequest) {
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
   const safeRedirect = normalizeOAuthRedirectPath(rawRedirect);
+  const client = request.nextUrl.searchParams.get("client");
+  const mobileRedirectUri = isMobileOAuthClient(client)
+    ? normalizeMobileOAuthRedirectUri(request.nextUrl.searchParams.get("mobileRedirectUri"))
+    : null;
+  if (isMobileOAuthClient(client) && !mobileRedirectUri) {
+    return NextResponse.json({ error: "Invalid mobile OAuth redirect URI." }, { status: 400 });
+  }
 
   const url = googleAuthorizeUrl({
     clientId,
@@ -52,5 +65,9 @@ export async function GET(request: NextRequest) {
   res.cookies.set("oauth_pkce_google", pkce.verifier, cookieOpts);
   res.cookies.set("oauth_redirect_uri_google", redirectUri, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
+  if (mobileRedirectUri) {
+    res.cookies.set(MOBILE_OAUTH_CLIENT_COOKIE, "mobile", cookieOpts);
+    res.cookies.set(MOBILE_OAUTH_REDIRECT_COOKIE, mobileRedirectUri, cookieOpts);
+  }
   return res;
 }

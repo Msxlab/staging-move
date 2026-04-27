@@ -132,6 +132,53 @@ describe("email-service logging", () => {
     );
   });
 
+  it("does not couple password reset delivery to the DB template row", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue(null);
+    mocks.sendEmailWithResult.mockResolvedValue({
+      success: false,
+      providerMessageId: null,
+      error: "EMAIL_FROM domain is not verified",
+      configError: true,
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
+    });
+
+    const result = await sendPasswordResetEmail({
+      userEmail: "alice@example.com",
+      userName: "Alice",
+      resetToken: "reset-token",
+      dedupeKey: "pwreset:user:provider-failed",
+    });
+
+    expect(result).toBe(false);
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: "Reset your LocateFlow password",
+        text: expect.stringContaining("Reset Password: https://locateflow.com/reset-password/reset-token"),
+      }),
+    );
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: null,
+        status: "PENDING",
+        subject: "Reset your LocateFlow password",
+      }),
+    });
+    expect(mocks.emailLogUpdate).toHaveBeenCalledWith({
+      where: { id: "log_1" },
+      data: expect.objectContaining({
+        status: "FAILED",
+        error: "EMAIL_FROM domain is not verified",
+      }),
+    });
+    expect(JSON.parse(mocks.emailLogUpdate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({
+        configError: true,
+        retryAvailable: true,
+        templateSlug: "password-reset",
+      }),
+    );
+  });
+
   it("links welcome sends to the Welcome template with a text fallback", async () => {
     const result = await sendWelcomeEmail({
       email: "new@example.com",

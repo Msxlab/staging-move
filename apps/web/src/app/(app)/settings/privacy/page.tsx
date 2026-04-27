@@ -93,6 +93,7 @@ export default function PrivacyPage() {
   // ── Delete ────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteText, setDeleteText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
 
   const handlePasswordChange = async () => {
@@ -266,10 +267,14 @@ export default function PrivacyPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteText !== "DELETE") return;
+    if (deleteText !== "DELETE" || !deletePassword) return;
     setDeleting(true);
     try {
-      const res = await fetch("/api/account/delete", { method: "POST" });
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword: deletePassword }),
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         await fetch("/api/auth/logout", {
@@ -705,10 +710,18 @@ export default function PrivacyPage() {
                 value={deleteText}
                 onChange={(e) => setDeleteText(e.target.value)}
               />
+              <input
+                className={`${inputCls} border-red-500/20`}
+                type="password"
+                autoComplete="current-password"
+                placeholder="Confirm your password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+              />
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleDeleteAccount}
-                  disabled={deleteText !== "DELETE" || deleting}
+                  disabled={deleteText !== "DELETE" || !deletePassword || deleting}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50"
                 >
                   {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}

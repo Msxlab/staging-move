@@ -85,7 +85,8 @@ export default function SignInScreen() {
     // we just open the web URL — the user sees the /dashboard cookie session
     // and can return to the app manually. A tighter flow (expo-auth-session)
     // can be added post-MVP.
-    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?redirect=/dashboard`);
+    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
+    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
   };
 
   return (

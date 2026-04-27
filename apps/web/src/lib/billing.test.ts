@@ -9,6 +9,7 @@ vi.mock("@/lib/db", () => ({
     subscription: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      upsert: vi.fn(),
     },
   },
 }));
@@ -46,5 +47,16 @@ describe("billing helpers", () => {
     });
 
     expect(entitlement.isActive).toBe(false);
+  });
+
+  it("treats missing subscription rows as inactive until the canonical row exists", () => {
+    const entitlement = buildUnifiedEntitlementSnapshot(null);
+
+    expect(entitlement).toMatchObject({
+      plan: "FREE_TRIAL",
+      status: "UNKNOWN",
+      isActive: false,
+      isTrial: true,
+    });
   });
 });
