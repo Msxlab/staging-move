@@ -1,49 +1,63 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 
-/**
- * Compact single-click theme toggle for the marketing header. Reads the
- * resolved theme so even when the user is on `system` preference the icon
- * matches what's actually painted, then flips to the explicit opposite.
- * Pre-hydration we render a placeholder to avoid icon flicker.
- */
+const OPTIONS: Array<{
+  value: "system" | "light" | "dark";
+  label: string;
+  icon: LucideIcon;
+}> = [
+  { value: "system", label: "Match system", icon: Monitor },
+  { value: "light", label: "Light mode", icon: Sun },
+  { value: "dark", label: "Dark mode", icon: Moon },
+];
+
 export function LandingThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  function applyTheme(theme: "light" | "dark") {
-    document.documentElement.classList.remove("light", "dark");
-    document.documentElement.classList.add(theme);
-    window.localStorage.setItem("locateflow-theme", theme);
-    setTheme(theme);
-  }
+  const active =
+    (mounted ? (theme as "system" | "light" | "dark" | undefined) : "system") ?? "system";
 
-  if (!mounted) {
-    return (
-      <button
-        type="button"
-        aria-label="Toggle theme"
-        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
-      >
-        <Sun className="h-4 w-4" />
-      </button>
-    );
-  }
-
-  const isDark = resolvedTheme === "dark";
   return (
-    <button
-      type="button"
-      onClick={() => applyTheme(isDark ? "light" : "dark")}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground hover:bg-accent"
+    <div
+      role="radiogroup"
+      aria-label="Theme preference"
+      className="relative inline-flex items-center rounded-full border border-border/60 bg-foreground/[0.04] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
     >
-      {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-    </button>
+      {OPTIONS.map(({ value, label, icon: Icon }) => {
+        const selected = active === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            aria-label={label}
+            title={label}
+            onClick={() => setTheme(value)}
+            className="relative inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
+          >
+            {selected && mounted && (
+              <motion.span
+                layoutId="landing-theme-pill"
+                aria-hidden="true"
+                className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/10 ring-1 ring-orange-500/40 shadow-[0_0_18px_-4px_rgba(249,115,22,0.5)]"
+                transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              />
+            )}
+            <Icon
+              className={`relative z-10 h-3.5 w-3.5 transition-colors ${
+                selected ? "text-orange-500 dark:text-orange-300" : ""
+              }`}
+            />
+          </button>
+        );
+      })}
+    </div>
   );
 }
