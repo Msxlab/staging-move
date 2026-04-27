@@ -55,6 +55,7 @@ export interface EmailOptions {
   html: string;
   text?: string;
   replyTo?: string | string[];
+  headers?: Record<string, string>;
 }
 
 export interface SendEmailResult {
@@ -168,6 +169,7 @@ export async function sendEmailWithResult(
       html: options.html,
       text,
       replyTo: options.replyTo || replyTo,
+      ...(options.headers ? { headers: options.headers } : {}),
     });
 
     if (error) {
@@ -379,6 +381,52 @@ function textFooter(
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+const UNSUBSCRIBE_FOOTER_STRINGS: Record<EmailLocale, { line: string; cta: string }> = {
+  en: { line: "Don't want these emails?", cta: "Unsubscribe" },
+  es: { line: "¿No quieres recibir estos correos?", cta: "Cancelar suscripción" },
+};
+
+/**
+ * Appends an unsubscribe line to a marketing email's HTML and plain-text
+ * bodies. Pass the rendered email content + the absolute unsubscribe URL.
+ * The HTML version is wrapped in a small footer that matches the existing
+ * email shell's muted style; the plain-text version adds two new lines.
+ */
+export function appendUnsubscribeFooter(
+  content: EmailContent,
+  unsubscribeUrl: string,
+  locale: EmailLocale = "en",
+): EmailContent {
+  const strings = UNSUBSCRIBE_FOOTER_STRINGS[locale];
+  const htmlFooter = `<p style="margin:8px 0 0;font-size:12px;line-height:18px;color:${COLORS.muted};">${strings.line} <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLORS.primaryDark};text-decoration:underline;">${strings.cta}</a>.</p>`;
+  // Insert the footer right before the closing </body> so it renders inside
+  // the email shell. If for some reason the marker is missing we just
+  // append at the end.
+  const closingBody = "</body>";
+  const html = content.html.includes(closingBody)
+    ? content.html.replace(closingBody, `${htmlFooter}${closingBody}`)
+    : `${content.html}${htmlFooter}`;
+  const text = `${content.text}\n\n${strings.line} ${strings.cta}: ${unsubscribeUrl}`;
+  return { ...content, html, text };
+}
+
+/**
+ * Builds RFC 2369 + RFC 8058 compliant unsubscribe headers. Pass the
+ * absolute https URL that POSTs to /api/unsubscribe; the mailto: variant
+ * is added so older clients without one-click support still have a path.
+ */
+export function buildUnsubscribeHeaders(
+  unsubscribeUrl: string,
+  supportEmail = DEFAULT_SUPPORT_EMAIL,
+): Record<string, string> {
+  const subject = `unsubscribe`;
+  const mailto = `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}`;
+  return {
+    "List-Unsubscribe": `<${unsubscribeUrl}>, <${mailto}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
 }
 
 export function emailVerificationContent(data: {
