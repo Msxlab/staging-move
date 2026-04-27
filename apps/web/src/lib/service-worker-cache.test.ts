@@ -6,11 +6,14 @@ describe("web service worker cache policy", () => {
   it("does not cache HTML pages or authenticated app navigations", () => {
     const sw = readFileSync(join(process.cwd(), "public", "sw.js"), "utf8");
 
-    expect(sw).toContain('const CACHE_NAME = "locateflow-v6"');
-    expect(sw).toContain('const STATIC_CACHE = "locateflow-static-v6"');
+    expect(sw).toContain('const CACHE_NAME = "locateflow-v7-auth-stabilization-disabled"');
+    expect(sw).toContain('const STATIC_CACHE = "locateflow-static-v7-auth-stabilization-disabled"');
     expect(sw).toContain("const DISABLE_SERVICE_WORKER = true");
+    expect(sw).toContain("emergency-auth-state-machine-stabilization");
     expect(sw).toContain("if (DISABLE_SERVICE_WORKER)");
-    expect(sw).toContain("if (DISABLE_SERVICE_WORKER) return;");
+    expect(sw).toContain("if (DISABLE_SERVICE_WORKER) {");
+    expect(sw).toContain("event.waitUntil(unregisterDisabledWorker())");
+    expect(sw).toContain("clearLocateFlowCaches()");
     expect(sw).toContain("self.registration.unregister()");
     expect(sw).toContain('url.pathname.startsWith("/api/")');
     expect(sw).toContain('url.pathname.startsWith("/_next/")');
@@ -22,7 +25,7 @@ describe("web service worker cache policy", () => {
     expect(sw).toContain("SAFE_OFFLINE_NAV_PATHS");
     expect(sw).toContain("!isSafeOfflineNavigation(url.pathname)");
     expect(sw).toContain("LOGOUT_CLEAR_CACHES");
-    expect(sw).toContain('k.indexOf("locateflow-") === 0 && (DISABLE_SERVICE_WORKER || k !== STATIC_CACHE)');
+    expect(sw).toContain('k.indexOf("locateflow-") === 0 && k !== STATIC_CACHE');
     expect(sw).toContain('key.indexOf("locateflow-") === 0');
     expect(sw).not.toContain("DYNAMIC_CACHE");
     expect(sw.slice(sw.indexOf("// Safe public pages:"))).not.toContain("cache.put");
@@ -47,5 +50,13 @@ describe("web service worker cache policy", () => {
     expect(hook).toContain("registration.unregister()");
     expect(register).toContain("unregisterServiceWorkers()");
     expect(register).not.toContain('register("/sw.js")');
+  });
+
+  it("serves service worker files with no-store headers", () => {
+    const nextConfig = readFileSync(join(process.cwd(), "next.config.js"), "utf8");
+
+    expect(nextConfig).toContain('source: "/sw.js"');
+    expect(nextConfig).toContain('source: "/register-sw.js"');
+    expect(nextConfig).toContain("no-store, no-cache, must-revalidate, proxy-revalidate");
   });
 });

@@ -66,8 +66,8 @@ export async function getPostAuthUserState(userId: string): Promise<PostAuthUser
     movingPlanCount,
     onboardingEvents,
   ] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
+    prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: {
         emailVerifiedAt: true,
         passwordHash: true,
@@ -94,6 +94,10 @@ export async function getPostAuthUserState(userId: string): Promise<PostAuthUser
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  if (!user) {
+    throw new Error("AUTH_STATE_USER_UNAVAILABLE");
+  }
 
   const hasRequiredLegalConsentsValue = consentEvents.some((event) =>
     hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),

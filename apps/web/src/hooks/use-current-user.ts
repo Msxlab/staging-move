@@ -46,7 +46,7 @@ async function clearServiceWorkerAuthState() {
 }
 
 /**
- * Client-side hook: reads /api/auth/me and keeps a single in-flight request.
+ * Client-side hook: reads optional auth state and keeps a single in-flight request.
  * This replaces Clerk's useUser/useAuth.
  */
 export function useCurrentUser(options: UseCurrentUserOptions = {}): UseCurrentUserResult {
@@ -62,7 +62,7 @@ export function useCurrentUser(options: UseCurrentUserOptions = {}): UseCurrentU
     }
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/me", { cache: "no-store" });
+      const res = await fetch("/api/auth/me?optional=1", { cache: "no-store" });
       if (!res.ok) {
         setUser(null);
         return;

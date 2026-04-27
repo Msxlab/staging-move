@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   oauthFindUnique: vi.fn(),
@@ -39,10 +39,14 @@ vi.mock("@/lib/user-jwt-secret", () => ({
 vi.mock("@/lib/oauth", () => ({
   hashForOAuthLog: vi.fn(() => "email-hash"),
   logSafeOAuthEvent: vi.fn(),
+  oauthUserIdHint: vi.fn((value: string | null | undefined) => value?.slice(-6)),
   summarizeOAuthError: vi.fn(() => ({})),
 }));
 
 import { findOrLinkOAuthUserWithStatus } from "./user-auth";
+import { logSafeOAuthEvent } from "@/lib/oauth";
+
+const logSafeOAuthEventMock = logSafeOAuthEvent as unknown as Mock;
 
 describe("OAuth user linking", () => {
   beforeEach(() => {
@@ -67,6 +71,38 @@ describe("OAuth user linking", () => {
     ).rejects.toThrow("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
+    expect(logSafeOAuthEventMock).toHaveBeenCalledWith("oauth_account_link_diagnostic", {
+      provider: "google",
+      reason: "existing_oauth_deleted_user",
+      oauthUserIdHint: "d-user",
+      oauthAccountUserDeleted: true,
+      activeOAuthMatch: false,
+    });
+  });
+
+  it("logs in through an existing active OAuth link, including after admin restore", async () => {
+    mocks.oauthFindUnique.mockResolvedValue({
+      userId: "restored-user",
+      user: { deletedAt: null },
+    });
+
+    await expect(
+      findOrLinkOAuthUserWithStatus({
+        provider: "google",
+        providerId: "google-sub",
+        email: "restored@example.com",
+      }),
+    ).resolves.toEqual({ userId: "restored-user", isNewUser: false });
+
+    expect(mocks.oauthCreate).not.toHaveBeenCalled();
+    expect(mocks.userCreate).not.toHaveBeenCalled();
+    expect(logSafeOAuthEventMock).toHaveBeenCalledWith("oauth_account_link_diagnostic", {
+      provider: "google",
+      reason: "existing_oauth_active_user",
+      oauthUserIdHint: "d-user",
+      oauthAccountUserDeleted: false,
+      activeOAuthMatch: true,
+    });
   });
 
   it("does not link a provider to a soft-deleted user with the same email", async () => {
@@ -85,6 +121,14 @@ describe("OAuth user linking", () => {
     ).rejects.toThrow("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
+    expect(logSafeOAuthEventMock).toHaveBeenCalledWith("oauth_account_link_diagnostic", {
+      provider: "apple",
+      reason: "email_match_deleted_user",
+      emailUserIdHint: "d-user",
+      emailHash: "email-hash",
+      emailMatchDeleted: true,
+      activeEmailMatch: false,
+    });
   });
 
   it("links a verified provider to an active password user and marks email verified", async () => {

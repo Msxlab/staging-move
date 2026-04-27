@@ -8,6 +8,7 @@ import {
   hashForOAuthLog,
   logSafeOAuthEvent,
   normalizeOAuthRedirectPath,
+  oauthUserIdHint,
   summarizeOAuthError,
   type GoogleIdTokenPayload,
 } from "@/lib/oauth";
@@ -152,7 +153,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     logSafeOAuthEvent("oauth_session_create_failed", {
       provider: "google",
-      userId,
+      userIdHint: oauthUserIdHint(userId),
       ...summarizeOAuthError(err),
     });
     return clearGoogleOAuthCookies(
@@ -165,9 +166,9 @@ export async function GET(request: NextRequest) {
     const userState = await getPostAuthUserState(userId);
     finalRedirectPath = resolvePostAuthRedirect(userState, redirectPath);
     if (!userState.hasRequiredLegalConsents) {
-      logSafeOAuthEvent("oauth_legal_redirect", { provider: "google", userId });
+      logSafeOAuthEvent("oauth_legal_redirect", { provider: "google", userIdHint: oauthUserIdHint(userId) });
     } else if (!userState.onboardingCompleted) {
-      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "google", userId });
+      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "google", userIdHint: oauthUserIdHint(userId) });
     }
   } catch (err) {
     logGoogleOAuthFailure("post_auth_redirect", err);
@@ -189,10 +190,10 @@ export async function GET(request: NextRequest) {
       dedupeKey: `welcome:${userId}`,
     })
       .catch((err) => console.error("[EMAIL] welcome after google signup failed:", {
-        userId,
+        userIdHint: oauthUserIdHint(userId),
         message: err instanceof Error ? err.message : "SEND_FAILED",
       }));
-    console.info("[EMAIL] welcome after google signup", { userId, sent: Boolean(welcomeSent) });
+    console.info("[EMAIL] welcome after google signup", { userIdHint: oauthUserIdHint(userId), sent: Boolean(welcomeSent) });
   }
   return clearGoogleOAuthCookies(response);
 }

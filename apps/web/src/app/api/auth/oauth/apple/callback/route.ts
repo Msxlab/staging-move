@@ -9,6 +9,7 @@ import {
   isAppleEmailVerifiedClaim,
   logSafeOAuthEvent,
   normalizeOAuthRedirectPath,
+  oauthUserIdHint,
   summarizeOAuthError,
 } from "@/lib/oauth";
 import {
@@ -200,7 +201,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     logSafeOAuthEvent("oauth_session_create_failed", {
       provider: "apple",
-      userId,
+      userIdHint: oauthUserIdHint(userId),
       ...summarizeOAuthError(err),
     });
     return clearAppleOAuthCookies(
@@ -213,9 +214,9 @@ export async function POST(request: NextRequest) {
     const userState = await getPostAuthUserState(userId);
     finalRedirectPath = resolvePostAuthRedirect(userState, redirectPath);
     if (!userState.hasRequiredLegalConsents) {
-      logSafeOAuthEvent("oauth_legal_redirect", { provider: "apple", userId });
+      logSafeOAuthEvent("oauth_legal_redirect", { provider: "apple", userIdHint: oauthUserIdHint(userId) });
     } else if (!userState.onboardingCompleted) {
-      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "apple", userId });
+      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "apple", userIdHint: oauthUserIdHint(userId) });
     }
   } catch (err) {
     logAppleOAuthFailure("post_auth_redirect", err);
@@ -237,12 +238,12 @@ export async function POST(request: NextRequest) {
       dedupeKey: `welcome:${userId}`,
     }).catch((err) => {
       console.error("[EMAIL] welcome after apple signup failed:", {
-        userId,
+        userIdHint: oauthUserIdHint(userId),
         message: err instanceof Error ? err.message : "SEND_FAILED",
       });
       return false;
     });
-    console.info("[EMAIL] welcome after apple signup", { userId, sent: welcomeSent });
+    console.info("[EMAIL] welcome after apple signup", { userIdHint: oauthUserIdHint(userId), sent: welcomeSent });
   }
   return clearAppleOAuthCookies(response);
 }
