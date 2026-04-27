@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LocateFlow — Every provider tied to your address, in one place</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface-2: #1a1a25;
+    --surface-3: #22222f;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --fg: #ffffff;
+    --fg2: rgba(255,255,255,0.7);
+    --fg3: rgba(255,255,255,0.4);
+    --orange: #f97316;
+    --orange-light: #fb923c;
+    --amber: #fbbf24;
+    --rose: #ef4444;
+    --emerald: #10b981;
+    --sky: #38bdf8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: 'Inter', system-ui, sans-serif; line-height: 1.5; }
+  body.lang-es .en, body.lang-en .es { display: none; }
+
+  /* Top bar */
+  .topbar { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+  .topbar-inner { max-width: 1280px; margin: 0 auto; padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: var(--fg); text-decoration: none; }
+  .nav-actions { display: flex; align-items: center; gap: 8px; }
+  .lang-toggle { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; }
+  .lang-toggle button { background: none; border: none; color: var(--fg3); font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; cursor: pointer; font-family: inherit; transition: 200ms; }
+  .lang-toggle button.active { background: var(--orange); color: white; }
+  .hub-link { color: var(--fg3); text-decoration: none; font-size: 12px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); }
+  .hub-link:hover { color: var(--orange); }
+  .top-cta { padding: 8px 16px; background: var(--orange); color: white; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; }
+  .top-cta:hover { background: var(--orange-light); }
+
+  /* Sections */
+  section { padding: 120px 32px; position: relative; }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* Hero */
+  .hero { padding: 100px 32px 140px; overflow: hidden; }
+  .hero .blob1 { position: absolute; top: -200px; right: -200px; width: 700px; height: 700px; border-radius: 50%; background: var(--orange); filter: blur(120px); opacity: 0.16; pointer-events: none; }
+  .hero .blob2 { position: absolute; bottom: -300px; left: -100px; width: 600px; height: 600px; border-radius: 50%; background: var(--amber); filter: blur(120px); opacity: 0.10; pointer-events: none; }
+  .hero-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 80px; align-items: center; position: relative; }
+  .kicker { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--orange); letter-spacing: 0.25em; font-weight: 500; }
+  .hero h1 { font-size: 80px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; margin: 18px 0 28px; }
+  .hero h1 em { font-style: normal; color: var(--orange); }
+  .hero-lede { font-size: 20px; color: var(--fg2); line-height: 1.55; margin: 0 0 36px; max-width: 36ch; }
+  .hero-cta { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, var(--orange), var(--orange-light)); color: white; padding: 16px 28px; border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none; box-shadow: 0 16px 40px rgba(249,115,22,0.30); transition: 200ms; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 20px 50px rgba(249,115,22,0.40); }
+  .btn-ghost { display: inline-flex; align-items: center; gap: 6px; color: var(--fg2); padding: 16px 22px; border-radius: 12px; border: 1px solid var(--border); font-size: 14px; font-weight: 500; text-decoration: none; }
+  .btn-ghost:hover { color: var(--fg); border-color: var(--border-strong); }
+  .trust-row { display: flex; gap: 24px; margin-top: 36px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--fg3); letter-spacing: 0.1em; flex-wrap: wrap; }
+  .trust-row span { display: flex; align-items: center; gap: 6px; }
+  .trust-row svg { color: var(--emerald); }
+
+  /* Hero phone */
+  .hero-phone-wrap { display: flex; justify-content: center; align-items: center; }
+  .phone-mock { width: 320px; height: 660px; background: #000; border-radius: 42px; padding: 7px; box-shadow: 0 60px 120px rgba(0,0,0,0.6), 0 0 0 1.5px rgba(255,255,255,0.08), 0 0 80px rgba(249,115,22,0.20); transform: rotate(-3deg); }
+  .phone-screen { width: 100%; height: 100%; background: var(--bg); border-radius: 36px; padding: 50px 22px 0; overflow: hidden; position: relative; }
+  .phone-screen .greeting { font-size: 11px; color: var(--fg3); }
+  .phone-screen .addr { font-size: 12px; color: var(--fg2); display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+  .phone-screen .stats-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; }
+  .phone-screen .stats-mini .card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+  .phone-screen .stats-mini .card.gradient { background: linear-gradient(135deg, rgba(249,115,22,0.12), rgba(251,191,36,0.06)); border-color: rgba(249,115,22,0.25); }
+  .phone-screen .stats-mini .l { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg3); }
+  .phone-screen .stats-mini .gradient .l { color: var(--orange-light); }
+  .phone-screen .stats-mini .v { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .phone-screen .stats-mini .s { font-size: 9px; color: var(--fg3); margin-top: 2px; }
+  .phone-screen .section-h { font-size: 12px; font-weight: 700; margin-top: 18px; margin-bottom: 8px; }
+  .phone-screen .att-card { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.22); border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; display: flex; gap: 8px; align-items: flex-start; }
+  .phone-screen .att-card .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber); margin-top: 6px; box-shadow: 0 0 6px var(--amber); flex-shrink: 0; }
+  .phone-screen .att-card .t { font-size: 11px; font-weight: 600; }
+  .phone-screen .att-card .b { font-size: 9px; color: var(--fg3); margin-top: 1px; }
+
+  /* Recognition (chip storm) */
+  .recognition { background: var(--bg); }
+  .recognition .container { position: relative; }
+  .recognition h2 { font-size: 56px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; max-width: 18ch; margin: 0 0 28px; }
+  .recognition h2 em { color: var(--orange); font-style: normal; }
+  .recognition .sub { font-size: 18px; color: var(--fg2); max-width: 50ch; margin: 0 0 60px; line-height: 1.55; }
+  .chip-storm { position: relative; height: 360px; }
+  .chip-storm .chip { position: absolute; padding: 10px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; backdrop-filter: blur(8px); white-space: nowrap; }
+  .chip-storm .rose  { background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.28); color: #fda4af; }
+  .chip-storm .amber { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.28); color: #fcd34d; }
+  .chip-storm .sky   { background: rgba(14,165,233,0.12); border: 1px solid rgba(14,165,233,0.28); color: #7dd3fc; }
+  .chip-storm .gray  { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+
+  /* Stats */
+  .stats-section { background: var(--bg); padding: 80px 32px; }
+  .stats-section .container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .stat-block { padding: 36px 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 24px; }
+  .stat-block .v { font-size: 64px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .stat-block .v em { color: var(--orange); font-style: normal; }
+  .stat-block .l { font-size: 14px; color: var(--fg2); line-height: 1.5; margin-top: 14px; }
+  .stat-block .src { font-size: 10px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: var(--fg3); margin-top: 12px; }
+
+  /* How it works */
+  .how { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .how h2 { font-size: 48px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; max-width: 22ch; margin: 0 0 60px; }
+  .how h2 em { color: var(--orange); font-style: normal; }
+  .how-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .how-card { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
+  .how-card .num { font-size: 12px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.2em; color: var(--orange); }
+  .how-card .ic { width: 48px; height: 48px; border-radius: 12px; background: rgba(249,115,22,0.10); border: 1px solid rgba(249,115,22,0.25); color: var(--orange-light); display: flex; align-items: center; justify-content: center; margin-top: 18px; }
+  .how-card h3 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 18px 0 10px; }
+  .how-card p { font-size: 14px; color: var(--fg2); line-height: 1.6; margin: 0; }
+
+  /* Moving moment */
+  .moving { padding: 140px 32px; }
+  .moving .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+  .moving h2 { font-size: 56px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; max-width: 18ch; margin: 18px 0 24px; }
+  .moving h2 em { color: var(--orange); font-style: normal; }
+  .moving p { font-size: 18px; color: var(--fg2); line-height: 1.6; margin: 0 0 20px; max-width: 38ch; }
+  .moving .features { display: flex; flex-direction: column; gap: 12px; margin-top: 32px; }
+  .moving .feat { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--fg2); }
+  .moving .feat svg { color: var(--orange); flex-shrink: 0; margin-top: 3px; }
+  .checklist-mock { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 28px; }
+  .checklist-mock .header { display: flex; justify-content: space-between; align-items: baseline; }
+  .checklist-mock .move-line { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--fg3); letter-spacing: 0.1em; }
+  .checklist-mock .count { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 10px 0 14px; }
+  .checklist-mock .progress { height: 5px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-bottom: 22px; }
+  .checklist-mock .progress-fill { width: 60%; height: 100%; background: linear-gradient(90deg, var(--orange), var(--amber)); }
+  .checklist-mock .item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 6px; }
+  .checklist-mock .item.done { border-color: rgba(16,185,129,0.22); background: rgba(16,185,129,0.04); }
+  .checklist-mock .checkbox { width: 22px; height: 22px; border-radius: 6px; border: 1.5px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .checklist-mock .item.done .checkbox { background: var(--emerald); border-color: var(--emerald); }
+  .checklist-mock .name { font-size: 13px; font-weight: 600; flex: 1; }
+  .checklist-mock .item.done .name { color: var(--fg3); text-decoration: line-through; }
+  .checklist-mock .badge { font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; }
+  .badge-tr { background: rgba(249,115,22,0.12); color: var(--orange-light); border: 1px solid rgba(249,115,22,0.25); }
+  .badge-cn { background: rgba(244,63,94,0.12); color: #fda4af; border: 1px solid rgba(244,63,94,0.25); }
+  .badge-up { background: rgba(14,165,233,0.12); color: #7dd3fc; border: 1px solid rgba(14,165,233,0.25); }
+
+  /* Bilingual section */
+  .bilingual { background: var(--bg); }
+  .bilingual .container { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+  .bilingual h2 { font-size: 48px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.05; margin: 18px 0 24px; }
+  .bilingual h2 em { color: var(--orange); font-style: normal; }
+  .bilingual p { font-size: 17px; color: var(--fg2); line-height: 1.6; margin: 0 0 20px; }
+  .bili-side-by-side { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .bili-card { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 24px; }
+  .bili-card .lang { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--orange); letter-spacing: 0.15em; }
+  .bili-card .h { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; margin-top: 10px; }
+  .bili-card .h em { color: var(--orange); font-style: normal; }
+  .bili-card .b { font-size: 13px; color: var(--fg2); line-height: 1.5; margin-top: 12px; }
+
+  /* Quote */
+  .quote-section { background: var(--bg); padding: 140px 32px; text-align: center; position: relative; overflow: hidden; }
+  .quote-section .blob3 { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 600px; height: 600px; background: var(--amber); filter: blur(120px); opacity: 0.06; border-radius: 50%; pointer-events: none; }
+  .quote-section blockquote { font-size: 44px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; max-width: 26ch; margin: 0 auto; position: relative; }
+  .quote-section blockquote em { color: var(--orange); font-style: normal; }
+  .quote-section .who { margin-top: 32px; font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--fg3); letter-spacing: 0.18em; }
+
+  /* CTA */
+  .cta-section { padding: 140px 32px; text-align: center; position: relative; overflow: hidden; }
+  .cta-section .blob4 { position: absolute; left: 50%; top: 100%; transform: translate(-50%,-50%); width: 1100px; height: 1100px; background: var(--orange); filter: blur(140px); opacity: 0.16; border-radius: 50%; pointer-events: none; }
+  .cta-section .blob5 { position: absolute; left: -100px; top: -100px; width: 500px; height: 500px; background: var(--amber); filter: blur(120px); opacity: 0.10; border-radius: 50%; pointer-events: none; }
+  .cta-section h2 { font-size: 80px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; max-width: 18ch; margin: 18px auto 24px; position: relative; }
+  .cta-section h2 em { color: var(--orange); font-style: normal; }
+  .cta-section p { font-size: 18px; color: var(--fg2); max-width: 50ch; margin: 0 auto 40px; position: relative; }
+  .cta-section .trust-row { justify-content: center; }
+
+  /* Footer */
+  footer { padding: 50px 32px; border-top: 1px solid var(--border); }
+  footer .container { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--fg3); flex-wrap: wrap; gap: 20px; }
+
+  @media (max-width: 900px) {
+    .hero h1 { font-size: 56px; }
+    .hero-grid, .moving .grid, .bilingual .container { grid-template-columns: 1fr; }
+    .stats-section .container, .how-grid, .bili-side-by-side { grid-template-columns: 1fr; }
+    .recognition h2, .moving h2, .bilingual h2, .cta-section h2 { font-size: 40px; }
+    .quote-section blockquote { font-size: 30px; }
+    section { padding: 80px 24px; }
+  }
+</style>
+</head>
+<body class="lang-en">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a href="#" class="brand">
+        <svg width="28" height="28" viewBox="0 0 100 100"><defs><linearGradient id="lp1" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#D4A373"/><stop offset="60%" stop-color="#E8794A"/><stop offset="100%" stop-color="#C25A30"/></linearGradient></defs><path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#lp1)" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="20" cy="65" r="4.5" fill="#D4A373"/><circle cx="20" cy="65" r="1.5" fill="#0a0a0f"/><circle cx="80" cy="40" r="7" fill="#E8794A"/><circle cx="80" cy="40" r="2.5" fill="#FAF7F1"/></svg>
+        LocateFlow
+      </a>
+      <div class="nav-actions">
+        <a href="../index.html" class="hub-link">← Hub</a>
+        <div class="lang-toggle" id="langToggle">
+          <button data-lang="en" class="active">EN</button>
+          <button data-lang="es">ES</button>
+        </div>
+        <a href="#cta" class="top-cta">
+          <span class="en">Start free</span><span class="es">Empieza gratis</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="blob1"></div>
+    <div class="blob2"></div>
+    <div class="container hero-grid">
+      <div>
+        <div class="kicker">
+          <span class="en">A MOVING COMPANION</span>
+          <span class="es">UN COMPAÑERO DE MUDANZA</span>
+        </div>
+        <h1>
+          <span class="en">One address. <em>Every service.</em><br>One place.</span>
+          <span class="es">Una dirección. <em>Cada servicio.</em><br>Un solo lugar.</span>
+        </h1>
+        <p class="hero-lede">
+          <span class="en">Every utility, bank, insurance, and subscription tied to your home — in one calm dashboard. When you move, it becomes a one-tap relocation checklist.</span>
+          <span class="es">Cada servicio, banco, seguro y suscripción vinculados a tu hogar — en un panel sereno. Cuando te mudas, se convierte en una lista con un toque por tarea.</span>
+        </p>
+        <div class="hero-cta">
+          <a href="#cta" class="btn-primary">
+            <span class="en">Start free trial</span>
+            <span class="es">Empezar prueba gratis</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+          <a href="../prototype/index.html" class="btn-ghost">
+            <span class="en">See the app</span><span class="es">Ver la app</span>
+          </a>
+        </div>
+        <div class="trust-row">
+          <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="en">NO CREDIT CARD</span><span class="es">SIN TARJETA</span></span>
+          <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="en">CANCEL ANYTIME</span><span class="es">CANCELA CUANDO QUIERAS</span></span>
+          <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="en">GDPR / CCPA</span><span class="es">GDPR / CCPA</span></span>
+        </div>
+      </div>
+      <div class="hero-phone-wrap">
+        <div class="phone-mock">
+          <div class="phone-screen">
+            <div class="greeting"><span class="en">Welcome back</span><span class="es">Bienvenido de nuevo</span></div>
+            <div class="addr">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-7.5-7-12a7 7 0 1114 0c0 4.5-7 12-7 12zm0-9a3 3 0 100-6 3 3 0 000 6z"/></svg>
+              432 Oak St · Austin
+            </div>
+            <div class="stats-mini">
+              <div class="card">
+                <div class="l"><span class="en">Tracked here</span><span class="es">Rastreado</span></div>
+                <div class="v">$637<span style="font-size:10px;color:rgba(255,255,255,0.4);font-weight:500;">/mo</span></div>
+                <div class="s"><span class="en">across 12 services</span><span class="es">12 servicios</span></div>
+              </div>
+              <div class="card gradient">
+                <div class="l"><span class="en">You've saved</span><span class="es">Has ahorrado</span></div>
+                <div class="v">$847</div>
+                <div class="s"><span class="en">since you started</span><span class="es">desde que empezaste</span></div>
+              </div>
+            </div>
+            <div class="section-h"><span class="en">Needs attention</span><span class="es">Necesita atención</span></div>
+            <div class="att-card">
+              <div class="dot"></div>
+              <div>
+                <div class="t"><span class="en">ClassPass renews in 3 days</span><span class="es">ClassPass se renueva en 3 días</span></div>
+                <div class="b"><span class="en">$199 · last used 47 days ago</span><span class="es">$199 · sin uso hace 47 días</span></div>
+              </div>
+            </div>
+            <div class="att-card" style="background: rgba(244,63,94,0.06); border-color: rgba(244,63,94,0.22);">
+              <div class="dot" style="background:#fda4af;box-shadow:0 0 6px #fda4af"></div>
+              <div>
+                <div class="t"><span class="en">Comcast — past due</span><span class="es">Comcast — pago vencido</span></div>
+                <div class="b"><span class="en">$142.18 · still active at old address</span><span class="es">$142.18 · activo en dirección anterior</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Recognition (chip storm) -->
+  <section class="recognition">
+    <div class="container">
+      <div class="kicker"><span class="en">DOES THIS LOOK FAMILIAR</span><span class="es">¿TE SUENA FAMILIAR?</span></div>
+      <h2 style="margin-top:18px;">
+        <span class="en">Twelve providers. Three addresses.<br><em>One person trying to remember it all.</em></span>
+        <span class="es">Doce proveedores. Tres direcciones.<br><em>Una persona tratando de recordarlo todo.</em></span>
+      </h2>
+      <p class="sub">
+        <span class="en">It's not laziness. It's volume. The average household is in business with 30+ companies, half of them running on autopay you set up so long ago you've forgotten which credit card.</span>
+        <span class="es">No es pereza. Es volumen. El hogar promedio mantiene relación con más de 30 compañías, la mitad con cargos automáticos que configuraste hace tanto que ya no recuerdas con qué tarjeta.</span>
+      </p>
+      <div class="chip-storm">
+        <div class="chip rose"  style="left: 1%;  top: 8%;">PG&E · $142.18 past due</div>
+        <div class="chip amber" style="left: 28%; top: 4%;">Verizon · auto-renewing</div>
+        <div class="chip rose"  style="left: 60%; top: 10%;">Comcast · old address</div>
+        <div class="chip sky"   style="left: 4%;  top: 36%;">USPS forwarding · 3 days left</div>
+        <div class="chip amber" style="left: 36%; top: 38%;">Netflix · charged $19.99</div>
+        <div class="chip gray"  style="left: 70%; top: 40%;">Geico</div>
+        <div class="chip amber" style="left: 8%;  top: 68%;">ClassPass · unused 47 days</div>
+        <div class="chip rose"  style="left: 38%; top: 72%;">AT&T · disconnect failed</div>
+        <div class="chip gray"  style="left: 66%; top: 70%;">HOA</div>
+        <div class="chip amber" style="left: 18%; top: 90%;">Anytime Fitness</div>
+        <div class="chip gray"  style="left: 50%; top: 92%;">City Water</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stat-block">
+        <div class="v"><em>$273</em></div>
+        <div class="l">
+          <span class="en">Average household spend per year on subscriptions they don't use.</span>
+          <span class="es">Gasto promedio por hogar al año en suscripciones que no usan.</span>
+        </div>
+        <div class="src">C+R RESEARCH · 2024</div>
+      </div>
+      <div class="stat-block">
+        <div class="v"><em>1 in 3</em></div>
+        <div class="l">
+          <span class="en">Movers continue paying utility bills at their previous address.</span>
+          <span class="es">De cada 3 personas que se mudan, 1 sigue pagando facturas en la dirección anterior.</span>
+        </div>
+        <div class="src">USPS NCOA · 2023</div>
+      </div>
+      <div class="stat-block">
+        <div class="v"><em>30M+</em></div>
+        <div class="l">
+          <span class="en">US households move every year. Most do it three or more times.</span>
+          <span class="es">Hogares en EE.UU. se mudan cada año. La mayoría lo hace 3 o más veces.</span>
+        </div>
+        <div class="src">US CENSUS · 2024</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how">
+    <div class="container">
+      <div class="kicker"><span class="en">HOW IT WORKS</span><span class="es">CÓMO FUNCIONA</span></div>
+      <h2 style="margin-top:18px;">
+        <span class="en">Three steps. That's the <em>whole</em> product.</span>
+        <span class="es">Tres pasos. Ese es <em>todo</em> el producto.</span>
+      </h2>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="num">01</div>
+          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-7.5-7-12a7 7 0 1114 0c0 4.5-7 12-7 12zm0-9a3 3 0 100-6 3 3 0 000 6z"/></svg></div>
+          <h3><span class="en">Add your address</span><span class="es">Añade tu dirección</span></h3>
+          <p>
+            <span class="en">We pull every provider tied to it — utilities, internet, insurance, subscriptions, HOA, gym. You confirm what's yours.</span>
+            <span class="es">Encontramos cada proveedor vinculado — servicios públicos, internet, seguros, suscripciones, asociación, gimnasio. Tú confirmas lo que es tuyo.</span>
+          </p>
+        </div>
+        <div class="how-card">
+          <div class="num">02</div>
+          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+          <h3><span class="en">Live in one dashboard</span><span class="es">Vive en un solo panel</span></h3>
+          <p>
+            <span class="en">Renewal dates. Account numbers. What you pay. What you've forgotten. Smart reminders, document OCR, no spreadsheets.</span>
+            <span class="es">Fechas de renovación. Números de cuenta. Lo que pagas. Lo que olvidaste. Recordatorios inteligentes, OCR de documentos, sin hojas de cálculo.</span>
+          </p>
+        </div>
+        <div class="how-card">
+          <div class="num">03</div>
+          <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="13" height="11" rx="1"/><path d="M14 9h4l3 3v5h-7zM5 19a2 2 0 100-4 2 2 0 000 4zm12 0a2 2 0 100-4 2 2 0 000 4z"/></svg></div>
+          <h3><span class="en">When you move, it moves</span><span class="es">Cuando te mudas, se muda</span></h3>
+          <p>
+            <span class="en">Type the new address. We turn your service list into a checklist: transfer, cancel, reconnect — one tap each, state-specific rules built in.</span>
+            <span class="es">Escribe la nueva dirección. Convertimos tu lista en una lista de pendientes: transferir, cancelar, reconectar — un toque cada uno, con reglas por estado.</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Moving moment -->
+  <section class="moving">
+    <div class="container grid">
+      <div>
+        <div class="kicker"><span class="en">THE MOVING MOMENT</span><span class="es">EL MOMENTO DE LA MUDANZA</span></div>
+        <h2>
+          <span class="en">Moving is when LocateFlow pays for <em>itself.</em></span>
+          <span class="es">La mudanza es cuando LocateFlow se paga <em>solo.</em></span>
+        </h2>
+        <p>
+          <span class="en">Your service list becomes a one-tap checklist. State-specific rules for all 50 US states — what you can transfer, what you must cancel, what needs reconnecting before day one.</span>
+          <span class="es">Tu lista de servicios se convierte en una lista con un toque por tarea. Reglas específicas para los 50 estados — qué se transfiere, qué se cancela, qué se reconecta antes del primer día.</span>
+        </p>
+        <div class="features">
+          <div class="feat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><span class="en">USPS forwarding setup, automatically.</span><span class="es">Configuración del reenvío de USPS, automática.</span></span>
+          </div>
+          <div class="feat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><span class="en">Cancellation confirmations stored as PDFs.</span><span class="es">Confirmaciones de cancelación guardadas como PDFs.</span></span>
+          </div>
+          <div class="feat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><span class="en">Utility deposits tracked, refunds chased.</span><span class="es">Depósitos rastreados, reembolsos reclamados.</span></span>
+          </div>
+          <div class="feat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><span class="en">No more "wait, did I cancel that?"</span><span class="es">Se acabó el "espera, ¿cancelé eso?"</span></span>
+          </div>
+        </div>
+      </div>
+      <div class="checklist-mock">
+        <div class="header">
+          <div>
+            <div class="move-line">432 OAK ST → 88 PINE LN · JUN 15</div>
+            <div class="count">11 <span class="en">tasks · 6 done</span><span class="es">tareas · 6 listas</span></div>
+          </div>
+        </div>
+        <div class="progress"><div class="progress-fill"></div></div>
+        <div class="item done"><div class="checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="name">PG&E</div><div class="badge badge-tr"><span class="en">Transfer</span><span class="es">Transferir</span></div></div>
+        <div class="item done"><div class="checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="name">Comcast</div><div class="badge badge-cn"><span class="en">Cancel</span><span class="es">Cancelar</span></div></div>
+        <div class="item done"><div class="checkbox"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="name">Geico</div><div class="badge badge-up"><span class="en">Update</span><span class="es">Actualizar</span></div></div>
+        <div class="item"><div class="checkbox"></div><div class="name">AT&T Fiber</div><div class="badge badge-tr"><span class="en">Transfer</span><span class="es">Transferir</span></div></div>
+        <div class="item"><div class="checkbox"></div><div class="name">Netflix</div><div class="badge badge-up"><span class="en">Update</span><span class="es">Actualizar</span></div></div>
+        <div class="item"><div class="checkbox"></div><div class="name">USPS Forwarding</div><div class="badge badge-tr"><span class="en">Transfer</span><span class="es">Transferir</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bilingual -->
+  <section class="bilingual">
+    <div class="container">
+      <div>
+        <div class="kicker"><span class="en">BUILT FOR TWO LANGUAGES</span><span class="es">HECHO PARA DOS IDIOMAS</span></div>
+        <h2>
+          <span class="en">In English. <em>En español.</em><br>From day one.</span>
+          <span class="es">In English. <em>En español.</em><br>Desde el primer día.</span>
+        </h2>
+        <p>
+          <span class="en">62 million US Hispanic adults are 1.6× more likely to relocate than the general population. They're not an afterthought — they're our wedge. Every screen, every reminder, every checklist step ships in both languages.</span>
+          <span class="es">Hay 62 millones de adultos hispanos en EE.UU., 1,6× más propensos a mudarse que la población general. No son un detalle al final — son nuestra entrada al mercado. Cada pantalla, cada recordatorio, cada paso, en ambos idiomas.</span>
+        </p>
+      </div>
+      <div class="bili-side-by-side">
+        <div class="bili-card">
+          <div class="lang">EN</div>
+          <div class="h">Stop paying for things <em>you forgot about.</em></div>
+          <div class="b">Average household spends $273/year on unused subscriptions. We find them, you cancel them.</div>
+        </div>
+        <div class="bili-card">
+          <div class="lang">ES</div>
+          <div class="h">Deja de pagar por cosas <em>que olvidaste.</em></div>
+          <div class="b">El hogar promedio gasta $273 al año en suscripciones sin usar. Las encontramos, tú las cancelas.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quote -->
+  <section class="quote-section">
+    <div class="blob3"></div>
+    <blockquote>
+      <span class="en">It feels like I finally <em>cleaned out a closet</em> I didn't know I had.</span>
+      <span class="es">Se siente como si finalmente <em>vaciara un armario</em> que no sabía que tenía.</span>
+    </blockquote>
+    <div class="who">
+      <span class="en">— MARIA L · MOVED 4 TIMES IN 6 YEARS</span>
+      <span class="es">— MARÍA L · SE MUDÓ 4 VECES EN 6 AÑOS</span>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="cta">
+    <div class="blob4"></div>
+    <div class="blob5"></div>
+    <div class="container">
+      <div class="kicker"><span class="en">THE NEW GENERATION</span><span class="es">LA NUEVA GENERACIÓN</span></div>
+      <h2>
+        <span class="en">Stop paying for things<br><em>you forgot about.</em></span>
+        <span class="es">Deja de pagar por cosas<br><em>que olvidaste.</em></span>
+      </h2>
+      <p>
+        <span class="en">14-day free trial. No credit card. Cancel anytime. Made with care for movers everywhere.</span>
+        <span class="es">Prueba gratis de 14 días. Sin tarjeta. Cancela cuando quieras. Hecho con cuidado para quienes se mudan.</span>
+      </p>
+      <a href="#" class="btn-primary" style="font-size:17px; padding:18px 32px;">
+        <span class="en">Start free — no card required</span>
+        <span class="es">Empieza gratis — sin tarjeta</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <div class="trust-row" style="margin-top: 32px;">
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> 14 <span class="en">DAY TRIAL</span><span class="es">DÍAS DE PRUEBA</span></span>
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="en">CANCEL ANYTIME</span><span class="es">CANCELA CUANDO QUIERAS</span></span>
+        <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> <span class="en">DATA STAYS 30 DAYS</span><span class="es">DATOS 30 DÍAS</span></span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div>© 2026 LocateFlow · <span class="en">Made with care for movers everywhere</span><span class="es">Hecho con cuidado para quienes se mudan</span></div>
+      <div>GDPR / CCPA <span class="en">compliant</span><span class="es">conforme</span></div>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById("langToggle").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-lang]");
+      if (!btn) return;
+      const lang = btn.dataset.lang;
+      document.body.classList.remove("lang-en", "lang-es");
+      document.body.classList.add("lang-" + lang);
+      document.documentElement.setAttribute("lang", lang);
+      document.querySelectorAll("#langToggle button").forEach(b => b.classList.toggle("active", b.dataset.lang === lang));
+    });
+  </script>
+</body>
+</html>

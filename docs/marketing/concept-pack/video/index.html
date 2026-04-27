@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LocateFlow — Animated Story</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<style>
+  body { margin: 0; background: #050507; min-height: 100vh; font-family: 'Inter', system-ui, sans-serif; color: #fff; }
+  .nav { position: fixed; top: 16px; left: 16px; z-index: 100; display: flex; gap: 8px; align-items: center; font-size: 12px; }
+  .nav a { color: rgba(255,255,255,0.5); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); transition: 200ms ease; }
+  .nav a:hover { color: #f97316; border-color: rgba(249,115,22,0.3); }
+</style>
+</head>
+<body>
+  <div class="nav"><a href="../index.html">← Hub</a></div>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script src="copy.js"></script>
+  <script type="text/babel" src="animations.jsx"></script>
+  <script type="text/babel" src="../tweaks-panel.jsx"></script>
+  <script type="text/babel" src="scenes.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "lang": "en",
+      "tone": "dramatic"
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      // Push current values to globals for scenes to read
+      React.useEffect(() => {
+        window.__LF_LANG = tweaks.lang;
+        window.__LF_TONE = tweaks.tone;
+      }, [tweaks.lang, tweaks.tone]);
+
+      // Re-mount stage on lang/tone change to reset playhead and re-render copy
+      const [reloadKey, setReloadKey] = React.useState(0);
+      React.useEffect(() => { setReloadKey(k => k + 1); }, [tweaks.lang, tweaks.tone]);
+
+      return (
+        <>
+          <Stage key={reloadKey} width={1920} height={1080} duration={90} background="#0a0a0f">
+            <LocateFlowVideo />
+          </Stage>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection title="Language">
+              <TweakRadio
+                value={tweaks.lang}
+                onChange={(v) => setTweak("lang", v)}
+                options={[
+                  { value: "en", label: "English" },
+                  { value: "es", label: "Español" },
+                ]}
+              />
+            </TweakSection>
+            <TweakSection title="Tone">
+              <TweakRadio
+                value={tweaks.tone}
+                onChange={(v) => setTweak("tone", v)}
+                options={[
+                  { value: "dramatic", label: "Dramatic" },
+                  { value: "warm", label: "Warm" },
+                  { value: "calm", label: "Calm" },
+                ]}
+              />
+            </TweakSection>
+          </TweaksPanel>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
