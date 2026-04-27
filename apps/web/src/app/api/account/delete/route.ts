@@ -48,12 +48,14 @@ export async function POST(request: NextRequest) {
     // Email the user only on initial request — re-clicks of "delete my
     // account" while a request is pending shouldn't spam.
     if (!existingRequest) {
+      const isEs = (user.preferredLocale || "").toLowerCase().startsWith("es");
       void sendSecurityNoticeEmail({
         userEmail: user.email,
         userName: user.firstName || "there",
         kind: "account-deletion-requested",
-        detail: "Your data will be removed shortly.",
+        detail: isEs ? "Tus datos se eliminarán pronto." : "Your data will be removed shortly.",
         occurredAt: new Date(),
+        locale: user.preferredLocale,
         dedupeKey: `account-deletion:${deleteRequest.id}`,
       }).catch((err) => console.error("[ACCOUNT] deletion-confirm email failed:", err));
     }

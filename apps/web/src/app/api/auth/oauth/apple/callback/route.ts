@@ -252,7 +252,7 @@ export async function POST(request: NextRequest) {
   } else if (wasLinkedNow) {
     const recipient = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, firstName: true },
+      select: { email: true, firstName: true, preferredLocale: true },
     }).catch(() => null);
     if (recipient?.email) {
       void sendSecurityNoticeEmail({
@@ -261,6 +261,7 @@ export async function POST(request: NextRequest) {
         kind: "oauth-linked",
         detail: "Apple",
         occurredAt: new Date(),
+        locale: recipient.preferredLocale,
         dedupeKey: `oauth-linked:apple:${userId}`,
       }).catch((err) => console.error("[EMAIL] oauth-linked notice failed:", {
         userIdHint: oauthUserIdHint(userId),
