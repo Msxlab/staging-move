@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true, firstName: true, passwordHash: true, mfaEnabled: true },
+    select: { email: true, firstName: true, preferredLocale: true, passwordHash: true, mfaEnabled: true },
   });
   if (!user || !user.passwordHash) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
     userName: user.firstName || "there",
     kind: "mfa-disabled",
     occurredAt: new Date(),
+    locale: user.preferredLocale,
     dedupeKey: `mfa-disabled:${userId}:${Date.now()}`,
   }).catch((err) => console.error("[AUTH] mfa-disabled email failed:", err));
 

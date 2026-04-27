@@ -17,10 +17,30 @@ async function lookupUserByStripeCustomer(stripeCustomerId: string | null | unde
   if (!stripeCustomerId) return null;
   const sub = await prisma.subscription.findFirst({
     where: { stripeCustomerId },
-    select: { user: { select: { email: true, firstName: true, deletedAt: true } } },
+    select: {
+      user: {
+        select: { email: true, firstName: true, preferredLocale: true, deletedAt: true },
+      },
+    },
   });
   if (!sub?.user || sub.user.deletedAt) return null;
-  return { email: sub.user.email, firstName: sub.user.firstName || "there" };
+  return {
+    email: sub.user.email,
+    firstName: sub.user.firstName || "there",
+    locale: sub.user.preferredLocale,
+  };
+}
+
+function formatDateInLocale(unixSeconds: number | null | undefined, locale: string | null | undefined): string | null {
+  if (!unixSeconds) return null;
+  const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
+  try {
+    return new Date(unixSeconds * 1000).toLocaleDateString(lang, {
+      year: "numeric", month: "long", day: "numeric",
+    });
+  } catch {
+    return null;
+  }
 }
 
 function formatCurrency(amountMinor: number | null | undefined, currency: string | null | undefined): string | null {
@@ -35,16 +55,6 @@ function formatCurrency(amountMinor: number | null | undefined, currency: string
   }
 }
 
-function formatDate(unixSeconds: number | null | undefined): string | null {
-  if (!unixSeconds) return null;
-  try {
-    return new Date(unixSeconds * 1000).toLocaleDateString("en-US", {
-      year: "numeric", month: "long", day: "numeric",
-    });
-  } catch {
-    return null;
-  }
-}
 
 // Best-effort: never let an email failure break webhook idempotency.
 // Stripe retries the entire webhook on non-2xx, so we explicitly swallow
@@ -173,6 +183,7 @@ export async function POST(request: NextRequest) {
                 userName: recipient.firstName,
                 planLabel: plan || "subscription",
                 amountFormatted: formatCurrency(session.amount_total, session.currency),
+                locale: recipient.locale,
                 dedupeKey: `stripe:checkout-completed:${event.id}`,
               }),
               `checkout.session.completed user=${recipient.email}`,
@@ -238,7 +249,8 @@ export async function POST(request: NextRequest) {
               userEmail: recipient.email,
               userName: recipient.firstName,
               planLabel: plan || "subscription",
-              accessEndsOn: formatDate(subscription.current_period_end),
+              accessEndsOn: formatDateInLocale(subscription.current_period_end, recipient.locale),
+              locale: recipient.locale,
               dedupeKey: `stripe:subscription-deleted:${event.id}`,
             }),
             `customer.subscription.deleted user=${recipient.email}`,
@@ -294,7 +306,8 @@ export async function POST(request: NextRequest) {
               userEmail: recipient.email,
               userName: recipient.firstName,
               amountFormatted: formatCurrency(invoice.amount_due, invoice.currency),
-              nextAttemptOn: formatDate(invoice.next_payment_attempt),
+              nextAttemptOn: formatDateInLocale(invoice.next_payment_attempt, recipient.locale),
+              locale: recipient.locale,
               dedupeKey: `stripe:payment-failed:${event.id}`,
             }),
             `invoice.payment_failed user=${recipient.email}`,

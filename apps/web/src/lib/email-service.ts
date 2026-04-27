@@ -11,6 +11,7 @@ import {
   normalizeBaseUrl,
   passwordResetContent,
   paymentFailedContent,
+  resolveEmailLocale,
   securityNoticeContent,
   type SecurityNoticeKind,
   sendEmailWithResult,
@@ -648,15 +649,18 @@ export async function sendSubscriptionActivatedEmail(opts: {
   userName: string;
   planLabel: string;
   amountFormatted?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const content = subscriptionActivatedContent({
     userName: opts.userName,
     planLabel: opts.planLabel,
     amountFormatted: opts.amountFormatted,
     manageLink: `${appUrl}/settings/subscription`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,
@@ -678,15 +682,18 @@ export async function sendSubscriptionCanceledEmail(opts: {
   userName: string;
   planLabel: string;
   accessEndsOn?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const content = subscriptionCanceledContent({
     userName: opts.userName,
     planLabel: opts.planLabel,
     accessEndsOn: opts.accessEndsOn,
     reactivateLink: `${appUrl}/settings/subscription`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,
@@ -708,15 +715,18 @@ export async function sendPaymentFailedEmail(opts: {
   userName: string;
   amountFormatted?: string | null;
   nextAttemptOn?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const content = paymentFailedContent({
     userName: opts.userName,
     amountFormatted: opts.amountFormatted,
     nextAttemptOn: opts.nextAttemptOn,
     retryLink: `${appUrl}/settings/subscription`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,
@@ -743,10 +753,12 @@ export async function sendSecurityNoticeEmail(opts: {
   kind: SecurityNoticeKind;
   detail?: string | null;
   occurredAt?: Date | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const occurredAt = opts.occurredAt ? opts.occurredAt.toISOString() : null;
   const content = securityNoticeContent({
     userName: opts.userName,
@@ -754,6 +766,7 @@ export async function sendSecurityNoticeEmail(opts: {
     detail: opts.detail,
     occurredAt,
     manageLink: `${appUrl}/settings/security`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,

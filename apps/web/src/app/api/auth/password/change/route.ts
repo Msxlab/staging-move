@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, firstName: true, passwordHash: true },
+    select: { id: true, email: true, firstName: true, preferredLocale: true, passwordHash: true },
   });
   if (!user || !user.passwordHash) {
     return NextResponse.json({ error: "Password change requires an existing password." }, { status: 400 });
@@ -68,6 +68,7 @@ export async function PATCH(request: NextRequest) {
     userName: user.firstName || "there",
     kind: "password-changed",
     occurredAt: changedAt,
+    locale: user.preferredLocale,
     dedupeKey: `pwd-changed:${userId}:${changedAt.getTime()}`,
   }).catch((err) => console.error("[AUTH] password-changed email failed:", err));
 

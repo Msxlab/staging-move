@@ -205,7 +205,7 @@ export async function GET(request: NextRequest) {
     // provider can be detected by the legitimate owner.
     const recipient = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, firstName: true },
+      select: { email: true, firstName: true, preferredLocale: true },
     }).catch(() => null);
     if (recipient?.email) {
       void sendSecurityNoticeEmail({
@@ -214,6 +214,7 @@ export async function GET(request: NextRequest) {
         kind: "oauth-linked",
         detail: "Google",
         occurredAt: new Date(),
+        locale: recipient.preferredLocale,
         dedupeKey: `oauth-linked:google:${userId}`,
       }).catch((err) => console.error("[EMAIL] oauth-linked notice failed:", {
         userIdHint: oauthUserIdHint(userId),

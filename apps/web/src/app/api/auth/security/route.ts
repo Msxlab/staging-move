@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, firstName: true, passwordHash: true },
+    select: { id: true, email: true, firstName: true, preferredLocale: true, passwordHash: true },
   });
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -223,12 +223,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const isEs = (user.preferredLocale || "").toLowerCase().startsWith("es");
     void sendSecurityNoticeEmail({
       userEmail: user.email,
       userName: user.firstName || "there",
       kind: "password-changed",
-      detail: "A password was added to your account so you can sign in with email and password in addition to any social sign-in methods.",
+      detail: isEs
+        ? "Se agregó una contraseña a tu cuenta para que puedas iniciar sesión con correo y contraseña además de cualquier método de inicio de sesión social."
+        : "A password was added to your account so you can sign in with email and password in addition to any social sign-in methods.",
       occurredAt: setAt,
+      locale: user.preferredLocale,
       dedupeKey: `pwd-set:${session.userId}:${setAt.getTime()}`,
     }).catch((err) => console.error("[AUTH] set-password email failed:", err));
 
