@@ -79,6 +79,12 @@ export async function GET(request: NextRequest) {
           deletedAt: true,
           subscription: { select: { plan: true, status: true, trialEndsAt: true } },
           profile: { select: { familyStatus: true, hasChildren: true } },
+          // Most recent session activity feeds the Users-table health pill.
+          loginSessions: {
+            select: { lastActivity: true },
+            orderBy: { lastActivity: "desc" },
+            take: 1,
+          },
           _count: {
             select: {
               addresses: true,
@@ -104,9 +110,11 @@ export async function GET(request: NextRequest) {
       const reviewCount = user.services.filter((service: any) =>
         Boolean(service.personalReview),
       ).length;
-      const { services, ...rest } = user;
+      const { services, loginSessions, ...rest } = user;
+      const lastActivityAt = loginSessions?.[0]?.lastActivity ?? null;
       return {
         ...rest,
+        lastActivityAt,
         _count: {
           ...rest._count,
           providerReviews: reviewCount,

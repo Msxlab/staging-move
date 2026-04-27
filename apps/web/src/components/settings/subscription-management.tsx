@@ -2,12 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Crown, Sparkles } from "lucide-react";
 import {
   BILLING_PLAN_ORDER,
   BILLING_PLAN_DEFINITIONS,
   type UnifiedEntitlementSnapshot,
 } from "@/lib/shared-billing";
+import { RevealModal } from "@/components/premium/reveal-modal";
+import { planToStickerTier } from "@/components/premium/premium-sticker";
 
 type Cycle = "monthly" | "yearly";
 
@@ -56,6 +59,14 @@ export default function SubscriptionManagementPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cycle, setCycle] = useState<Cycle>("yearly");
+  // Reveal modal — fires once per Stripe Checkout success redirect.
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const justUpgradedPlan = searchParams.get("success") === "true"
+    ? searchParams.get("plan")
+    : null;
+  const justUpgradedTier = planToStickerTier(justUpgradedPlan);
+  const [revealOpen, setRevealOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -78,6 +89,17 @@ export default function SubscriptionManagementPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  // Stripe Checkout success → fire reveal modal once. We strip the query
+  // string after triggering so a refresh doesn't replay the celebration.
+  useEffect(() => {
+    if (!justUpgradedTier) return;
+    setRevealOpen(true);
+    router.replace("/settings/subscription", { scroll: false });
+    // We deliberately depend only on the boolean — once we've fired we
+    // don't want to re-trigger if the same query somehow reappears.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [Boolean(justUpgradedTier)]);
 
   const currentPlanKey = entitlement?.plan || subscription?.plan || "FREE_TRIAL";
   const currentStatus = entitlement?.status || subscription?.status || "TRIALING";
@@ -300,6 +322,17 @@ export default function SubscriptionManagementPage() {
             })}
           </div>
         </>
+      )}
+
+      {/* Pro / Family / Individual upgrade celebration. The tier is captured
+          from the Stripe Checkout success redirect query string. */}
+      {justUpgradedTier && (
+        <RevealModal
+          open={revealOpen}
+          tier={justUpgradedTier}
+          stickerStyle="medal"
+          onClose={() => setRevealOpen(false)}
+        />
       )}
     </div>
   );

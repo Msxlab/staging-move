@@ -10,6 +10,9 @@ describe("backup table catalog", () => {
     expect(BACKUP_TABLES.dataConsents.model).toBe("dataConsent");
     expect(BACKUP_TABLES.emailLogs.model).toBe("emailLog");
     expect(BACKUP_TABLES.oauthAccounts.model).toBe("oAuthAccount");
+    expect(BACKUP_TABLES.providerLogoCandidates.model).toBe(
+      "providerLogoCandidate",
+    );
   });
 
   it("keeps runtime secrets and active sessions out of app-level backups", () => {

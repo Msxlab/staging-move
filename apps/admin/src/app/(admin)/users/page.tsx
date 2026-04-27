@@ -12,12 +12,19 @@ import { useBulkSelection } from "@/hooks/use-bulk-selection";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { ColumnSettingsMenu } from "@/components/column-settings-menu";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { TierStamp } from "@/components/premium/tier-stamp";
+import { HealthPill } from "@/components/premium/health-pill";
+import { computeUserHealth } from "@/lib/user-health";
 import { maskEmail } from "@/lib/privacy";
 
+// Health column is on by default — support team's #1 ask. Sticker is part
+// of the "user" cell, not its own column, so it always rides next to the
+// user's name.
 const USER_COLUMNS = [
   { key: "user", label: "User", alwaysOn: true },
   { key: "plan", label: "Plan" },
   { key: "status", label: "Status" },
+  { key: "health", label: "Health", defaultVisible: true },
   { key: "addresses", label: "Addresses", defaultVisible: true },
   { key: "services", label: "Services", defaultVisible: true },
   { key: "reviews", label: "Reviews", defaultVisible: false },
@@ -34,6 +41,9 @@ interface User {
   lastName: string | null;
   createdAt: string;
   deletedAt: string | null;
+  // Most recent UserLoginSession.lastActivity, surfaced by /api/users so
+  // the health column can flag idle accounts without a separate fetch.
+  lastActivityAt: string | null;
   subscription: { plan: string; status: string; trialEndsAt: string | null } | null;
   profile: { familyStatus: string | null; hasChildren: boolean } | null;
   _count: { addresses: number; services: number; providerReviews: number; movingPlans: number };
@@ -68,7 +78,8 @@ export default function UsersPage() {
   const bulk = useBulkSelection(selectableUsers);
   const cols = useColumnVisibility({
     storageKey: "admin.users.cols",
-    version: 2,
+    // Bump version when adding columns so the saved defaults migrate.
+    version: 3,
     columns: USER_COLUMNS,
   });
   const [sortBy, setSortBy] = useState("createdAt");
@@ -383,6 +394,7 @@ export default function UsersPage() {
               </th>
               {cols.isVisible("plan") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Plan</th>}
               {cols.isVisible("status") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Status</th>}
+              {cols.isVisible("health") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Health</th>}
               {cols.isVisible("addresses") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Addr</th>}
               {cols.isVisible("services") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Svc</th>}
               {cols.isVisible("reviews") && <th className="px-3 py-3 text-center text-xs font-medium uppercase text-muted-foreground">Rev</th>}
@@ -422,9 +434,14 @@ export default function UsersPage() {
                     </button>
                   </td>
                   <td className="px-3 py-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-foreground text-sm truncate">{user.firstName} {user.lastName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
+                    <div className="min-w-0 flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-foreground text-sm truncate">{user.firstName} {user.lastName}</p>
+                          <TierStamp plan={user.subscription?.plan} />
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
+                      </div>
                     </div>
                   </td>
                   {cols.isVisible("plan") && (
@@ -439,6 +456,20 @@ export default function UsersPage() {
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "BLOCKED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
                         {user.deletedAt ? "BLOCKED" : user.subscription?.status || "—"}
                       </span>
+                    </td>
+                  )}
+                  {cols.isVisible("health") && (
+                    <td className="px-3 py-3">
+                      {(() => {
+                        const h = computeUserHealth({
+                          lastLoginAt: user.lastActivityAt,
+                          subscriptionStatus: user.subscription?.status ?? null,
+                          addresses: user._count.addresses,
+                          services: user._count.services,
+                          blocked: Boolean(user.deletedAt),
+                        });
+                        return <HealthPill tone={h.tone} label={h.label} title={h.detail} />;
+                      })()}
                     </td>
                   )}
                   {cols.isVisible("addresses") && <td className="px-3 py-3 text-center text-sm text-foreground">{user._count.addresses}</td>}

@@ -13,6 +13,12 @@ type TierId = "INDIVIDUAL" | "FAMILY" | "PRO";
 interface PricingSectionProps {
   ctaHref: string;
   ctaLabelLoggedIn: boolean;
+  /**
+   * When true, render the side-by-side feature comparison table below the
+   * three plan cards. We keep this off on the homepage (the cards alone
+   * carry the message) and turn it on for the dedicated /pricing page.
+   */
+  showComparison?: boolean;
 }
 
 // Yearly savings label is computed from INDIVIDUAL — the only live plan.
@@ -192,7 +198,11 @@ const ROWS: ComparisonRow[] = [
   },
 ];
 
-export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProps) {
+export function PricingSection({
+  ctaHref,
+  ctaLabelLoggedIn,
+  showComparison = false,
+}: PricingSectionProps) {
   const [cycle, setCycle] = useState<Cycle>("yearly");
   const tPricing = useTranslations("pricing");
   const tBilling = useTranslations("billing");
@@ -394,7 +404,9 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
         </div>
       </div>
 
-      {/* Comparison table */}
+      {/* Comparison table — only on the dedicated /pricing page. The
+          homepage shows the three cards alone so the section stays light. */}
+      {showComparison && (
       <div className="mt-16 max-w-5xl mx-auto">
         <div className="text-center mb-8">
           <h3 className="text-2xl font-bold">{tPricing("compareTitle")}</h3>
@@ -558,6 +570,7 @@ export function PricingSection({ ctaHref, ctaLabelLoggedIn }: PricingSectionProp
           {tPricing("compareDisclaimer")}
         </p>
       </div>
+      )}
     </section>
   );
 }

@@ -37,7 +37,11 @@ export default async function PricingPage() {
   return (
     <div className="min-h-screen bg-background">
       <MarketingHeader userId={userId} />
-      <PricingSection ctaHref={ctaHref} ctaLabelLoggedIn={!!userId} />
+      <PricingSection
+        ctaHref={ctaHref}
+        ctaLabelLoggedIn={!!userId}
+        showComparison
+      />
 
       <section className="container pb-4">
         <div className="mx-auto max-w-3xl rounded-2xl border bg-card/60 p-5 text-center">

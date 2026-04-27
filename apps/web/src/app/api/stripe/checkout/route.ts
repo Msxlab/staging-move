@@ -84,7 +84,9 @@ export async function POST(request: NextRequest) {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
-      success_url: `${appUrl}/settings/subscription?success=true`,
+      // The plan query param is read by subscription-management to decide
+      // which tier sticker to celebrate in the reveal modal.
+      success_url: `${appUrl}/settings/subscription?success=true&plan=${encodeURIComponent(plan)}`,
       cancel_url: `${appUrl}/settings/subscription?canceled=true`,
       metadata: { userId, plan, cycle, provider: "STRIPE", platform: "web" },
     });
