@@ -278,7 +278,7 @@ export default function ReportsPage() {
                   data.movingByStatus.map((m) => {
                     const colors: Record<string, string> = {
                       PLANNING: "bg-blue-500", IN_PROGRESS: "bg-amber-500",
-                      COMPLETED: "bg-green-500", CANCELLED: "bg-red-500",
+                      COMPLETED: "bg-green-500", CANCELED: "bg-red-500",
                     };
                     const total = data.movingByStatus.reduce((s, x) => s + x.count, 0) || 1;
                     return (

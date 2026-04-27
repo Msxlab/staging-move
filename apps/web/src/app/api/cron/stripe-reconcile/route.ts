@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
             .update({
               where: { id: sub.id },
               data: {
-                status: "canceled",
+                status: "CANCELED",
                 canceledAt: sub.canceledAt ?? new Date(),
                 lastSyncedAt: new Date(),
               },
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       const livePeriodEnd = (live as any).current_period_end
         ? new Date((live as any).current_period_end * 1000)
         : null;
-      const liveStatus = live.status;
+      const liveStatus = mapStripeSubscriptionStatus(live.status);
       const liveCanceledAt = live.canceled_at
         ? new Date(live.canceled_at * 1000)
         : null;
@@ -249,4 +249,18 @@ export async function POST(request: NextRequest) {
   void prisma;
 
   return NextResponse.json({ success: true, ...report });
+}
+
+function mapStripeSubscriptionStatus(stripeStatus: string): string {
+  const map: Record<string, string> = {
+    trialing: "TRIALING",
+    active: "ACTIVE",
+    past_due: "PAST_DUE",
+    canceled: "CANCELED",
+    unpaid: "UNPAID",
+    incomplete: "INCOMPLETE",
+    incomplete_expired: "EXPIRED",
+    paused: "PAST_DUE",
+  };
+  return map[stripeStatus] || "UNKNOWN";
 }

@@ -6,7 +6,13 @@ import {
   getOAuthRedirectUri,
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
-import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
+import {
+  MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_REDIRECT_COOKIE,
+  isMobileOAuthClient,
+  normalizeMobileOAuthRedirectUri,
+} from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
 
@@ -24,27 +30,35 @@ export async function GET(request: NextRequest) {
   const redirectUri = await getOAuthRedirectUri(request, "/api/auth/oauth/apple/callback");
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
-  const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
   const safeRedirect = normalizeOAuthRedirectPath(rawRedirect);
+  const client = request.nextUrl.searchParams.get("client");
+  const mobileRedirectUri = isMobileOAuthClient(client)
+    ? normalizeMobileOAuthRedirectUri(request.nextUrl.searchParams.get("mobileRedirectUri"))
+    : null;
+  if (isMobileOAuthClient(client) && !mobileRedirectUri) {
+    return NextResponse.json({ error: "Invalid mobile OAuth redirect URI." }, { status: 400 });
+  }
 
   const url = appleAuthorizeUrl({ clientId, redirectUri, state });
 
   const res = NextResponse.redirect(url);
+  const secureCookie = shouldUseSecureSessionCookies();
   const cookieOpts = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookie,
     // Apple posts back cross-site — must be "none" + secure for the state cookie
     // to survive the form_post redirect. In dev we relax to "lax" so http://
     // localhost works without HTTPS.
-    sameSite: (process.env.NODE_ENV === "production" ? "none" : "lax") as "none" | "lax",
+    sameSite: (secureCookie ? "none" : "lax") as "none" | "lax",
     path: "/",
     maxAge: 10 * 60,
   };
   res.cookies.set("oauth_state_apple", state, cookieOpts);
   res.cookies.set("oauth_redirect_uri_apple", redirectUri, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
-  if (acceptedLegal) {
-    res.cookies.set(OAUTH_LEGAL_ACCEPTANCE_COOKIE, "accepted", cookieOpts);
+  if (mobileRedirectUri) {
+    res.cookies.set(MOBILE_OAUTH_CLIENT_COOKIE, "mobile", cookieOpts);
+    res.cookies.set(MOBILE_OAUTH_REDIRECT_COOKIE, mobileRedirectUri, cookieOpts);
   }
   return res;
 }

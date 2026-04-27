@@ -62,7 +62,7 @@ async function sendEmailAlert(payload: AlertPayload): Promise<void> {
     const subject = `${severityEmoji} [LocateFlow] ${payload.severity} Security Alert: ${payload.type}`;
 
     await resend.emails.send({
-      from: from || "security@locateflow.com",
+      from: from || "LocateFlow Alerts <alerts@locateflow.com>",
       to: to.split(",").map((e) => e.trim()),
       subject,
       html: `

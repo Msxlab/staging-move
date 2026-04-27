@@ -144,39 +144,38 @@ async function checkLoginRateLimitRedis(ip: string): Promise<{ allowed: boolean;
   try {
     const lockKey = `admin:lock:${ip}`;
     const countKey = `admin:login:${ip}`;
-
-    // Check lockout first
-    const lockRes = await fetch(`${url}/get/${lockKey}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const lockData = await lockRes.json();
-    if (lockData.result) {
-      const ttlRes = await fetch(`${url}/ttl/${lockKey}`, {
+    const redisGet = async (path: string) => {
+      const res = await fetch(`${url}${path}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const ttlData = await ttlRes.json();
+      if (!res.ok) throw new Error(`UPSTASH_${res.status}`);
+      return res.json();
+    };
+
+    // Check lockout first
+    const lockData = await redisGet(`/get/${encodeURIComponent(lockKey)}`);
+    if (lockData.result) {
+      const ttlData = await redisGet(`/ttl/${encodeURIComponent(lockKey)}`);
       return { allowed: false, retryAfterSec: Math.max(ttlData.result || LOCKOUT_SECONDS, 1) };
     }
 
     // Increment counter
-    const incrRes = await fetch(`${url}/incr/${countKey}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const incrData = await incrRes.json();
+    const incrData = await redisGet(`/incr/${encodeURIComponent(countKey)}`);
     const count = incrData.result || 1;
 
     // Set TTL on first attempt
     if (count === 1) {
-      await fetch(`${url}/expire/${countKey}/${WINDOW_SECONDS}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        await redisGet(`/expire/${encodeURIComponent(countKey)}/${WINDOW_SECONDS}`);
+      } catch (err) {
+        await redisGet(`/del/${encodeURIComponent(countKey)}`).catch(() => null);
+        throw err;
+      }
     }
 
     if (count > MAX_ATTEMPTS) {
       // Lock the IP
-      await fetch(`${url}/set/${lockKey}/locked/EX/${LOCKOUT_SECONDS}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await redisGet(`/set/${encodeURIComponent(lockKey)}/locked/EX/${LOCKOUT_SECONDS}`);
       return { allowed: false, retryAfterSec: LOCKOUT_SECONDS };
     }
 
@@ -293,18 +292,17 @@ export async function POST(request: NextRequest) {
         mfaValid = verifyTOTP(secret, mfaCode);
       } else if (backupCode) {
         // Verify and consume backup code
-        const storedHashes: string[] = (admin as any).mfaBackupCodes
-          ? JSON.parse((admin as any).mfaBackupCodes)
-          : [];
+        const originalBackupCodes = (admin as any).mfaBackupCodes || "[]";
+        const storedHashes: string[] = JSON.parse(originalBackupCodes);
         const matchIndex = await verifyBackupCode(backupCode, storedHashes);
         if (matchIndex >= 0) {
-          mfaValid = true;
           // Remove used backup code
           storedHashes.splice(matchIndex, 1);
-          await prisma.adminUser.update({
-            where: { id: admin.id },
+          const consumed = await prisma.adminUser.updateMany({
+            where: { id: admin.id, mfaBackupCodes: originalBackupCodes },
             data: { mfaBackupCodes: JSON.stringify(storedHashes) },
           });
+          mfaValid = consumed.count === 1;
         }
       }
 

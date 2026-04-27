@@ -59,6 +59,7 @@ async function handleCron(request: NextRequest) {
           contractEndDate: service.contractEndDate!.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
           daysRemaining: days,
           serviceLink: `${appUrl}/services/${service.id}`,
+          userId: service.user.id,
           dedupeKey: `cron:contract-reminder:${service.id}:${service.contractEndDate!.toISOString().slice(0, 10)}:${days}`,
           metadata: {
             userId: service.user.id,

@@ -2,10 +2,69 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlan } from "@/lib/billing";
+import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
+import {
+  sendPaymentFailedEmail,
+  sendSubscriptionActivatedEmail,
+  sendSubscriptionCanceledEmail,
+} from "@/lib/email-service";
 import Stripe from "stripe";
 
 export const runtime = "nodejs";
+
+async function lookupUserByStripeCustomer(stripeCustomerId: string | null | undefined) {
+  if (!stripeCustomerId) return null;
+  const sub = await prisma.subscription.findFirst({
+    where: { stripeCustomerId },
+    select: {
+      user: {
+        select: { email: true, firstName: true, preferredLocale: true, deletedAt: true },
+      },
+    },
+  });
+  if (!sub?.user || sub.user.deletedAt) return null;
+  return {
+    email: sub.user.email,
+    firstName: sub.user.firstName || "there",
+    locale: sub.user.preferredLocale,
+  };
+}
+
+function formatDateInLocale(unixSeconds: number | null | undefined, locale: string | null | undefined): string | null {
+  if (!unixSeconds) return null;
+  const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
+  try {
+    return new Date(unixSeconds * 1000).toLocaleDateString(lang, {
+      year: "numeric", month: "long", day: "numeric",
+    });
+  } catch {
+    return null;
+  }
+}
+
+function formatCurrency(amountMinor: number | null | undefined, currency: string | null | undefined): string | null {
+  if (amountMinor == null || !currency) return null;
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(amountMinor / 100);
+  } catch {
+    return `${(amountMinor / 100).toFixed(2)} ${currency.toUpperCase()}`;
+  }
+}
+
+
+// Best-effort: never let an email failure break webhook idempotency.
+// Stripe retries the entire webhook on non-2xx, so we explicitly swallow
+// here instead of bubbling and forcing a redelivery for an unrelated reason.
+function fireAndLogEmail(promise: Promise<unknown>, context: string): void {
+  void promise.catch((err) => {
+    console.error(`[WEBHOOK] Email dispatch failed (${context}):`, err);
+    captureMessage(`[WEBHOOK] Email dispatch failed (${context})`, "warning");
+  });
+}
 
 // POST /api/webhooks/stripe — Stripe webhook handler
 export async function POST(request: NextRequest) {
@@ -23,9 +82,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
     }
 
-    const stripeSecretKey = await getRuntimeConfigValue("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      console.error("STRIPE_SECRET_KEY not configured");
+    let stripeSecretKey: string;
+    try {
+      stripeSecretKey = requireStripeSecretKeyForMutation(
+        await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
+      );
+    } catch (configErr: any) {
+      // In production, a non-`sk_live_` key (or missing key) means real
+      // payments will never settle. Fail loudly so Stripe retries while
+      // ops investigates instead of silently 200-OK'ing dropped events.
+      const reason = configErr?.message || "Stripe not configured";
+      console.error("[WEBHOOK] Stripe config rejected webhook:", reason);
+      captureMessage(`[WEBHOOK] Stripe config rejected webhook: ${reason}`, "error");
       return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
     }
 
@@ -106,6 +174,21 @@ export async function POST(request: NextRequest) {
             where: { stripeCustomerId },
             data: updateData,
           });
+
+          const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
+          if (recipient) {
+            fireAndLogEmail(
+              sendSubscriptionActivatedEmail({
+                userEmail: recipient.email,
+                userName: recipient.firstName,
+                planLabel: plan || "subscription",
+                amountFormatted: formatCurrency(session.amount_total, session.currency),
+                locale: recipient.locale,
+                dedupeKey: `stripe:checkout-completed:${event.id}`,
+              }),
+              `checkout.session.completed user=${recipient.email}`,
+            );
+          }
         }
         break;
       }
@@ -145,6 +228,8 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const stripeCustomerId = String(subscription.customer);
+        const stripePriceId = subscription.items?.data?.[0]?.price?.id;
+        const plan = await mapStripePriceIdToPlan(stripePriceId);
 
         await prisma.subscription.updateMany({
           where: { stripeCustomerId },
@@ -156,6 +241,21 @@ export async function POST(request: NextRequest) {
             lastSyncedAt: new Date(),
           },
         });
+
+        const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
+        if (recipient) {
+          fireAndLogEmail(
+            sendSubscriptionCanceledEmail({
+              userEmail: recipient.email,
+              userName: recipient.firstName,
+              planLabel: plan || "subscription",
+              accessEndsOn: formatDateInLocale(subscription.current_period_end, recipient.locale),
+              locale: recipient.locale,
+              dedupeKey: `stripe:subscription-deleted:${event.id}`,
+            }),
+            `customer.subscription.deleted user=${recipient.email}`,
+          );
+        }
         break;
       }
 
@@ -198,6 +298,21 @@ export async function POST(request: NextRequest) {
             lastSyncedAt: new Date(),
           },
         });
+
+        const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
+        if (recipient) {
+          fireAndLogEmail(
+            sendPaymentFailedEmail({
+              userEmail: recipient.email,
+              userName: recipient.firstName,
+              amountFormatted: formatCurrency(invoice.amount_due, invoice.currency),
+              nextAttemptOn: formatDateInLocale(invoice.next_payment_attempt, recipient.locale),
+              locale: recipient.locale,
+              dedupeKey: `stripe:payment-failed:${event.id}`,
+            }),
+            `invoice.payment_failed user=${recipient.email}`,
+          );
+        }
         break;
       }
 

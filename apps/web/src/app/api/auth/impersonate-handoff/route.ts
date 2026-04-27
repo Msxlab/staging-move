@@ -1,43 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { hashSessionToken } from "@/lib/user-auth";
+import { hashSessionToken, shouldUseSecureSessionCookies } from "@/lib/user-auth";
+import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 
 export const runtime = "nodejs";
 
-const userJwtSecret = process.env.USER_JWT_SECRET;
-if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
-}
-const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
+const handoffSchema = z.object({
+  token: z.string().min(20).max(4096),
+});
 
 /**
- * One-shot GET handler that accepts an impersonation token from the admin
- * UI and exchanges it for the `user_session` cookie on this origin. This
- * is the only path by which an impersonation session enters the browser —
- * `/api/auth/login` never issues one.
- *
- * Checks:
- *  - Token must verify against USER_JWT_SECRET and carry the
- *    `impersonatedByAdminId` claim.
- *  - A DB row must exist with the same tokenHash, be active, not expired,
- *    and carry a non-null `impersonatedByAdminId`.
- *  - On success we set the cookie and redirect to /dashboard.
- *
- * Failure cases redirect to /sign-in with an explanatory query param so
- * the operator sees what went wrong in the URL bar.
+ * Exchanges a short-lived admin impersonation JWT for a user_session cookie.
+ * The token is accepted only in a POST body so it does not land in browser
+ * history, Referer headers, proxy URLs, or access logs.
  */
-export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get("token");
-  if (!token) {
-    return NextResponse.redirect(
-      new URL("/sign-in?err=impersonation-missing-token", request.url),
-    );
-  }
-
+async function exchangeImpersonationToken(request: NextRequest, token: string) {
   let payload: Record<string, unknown>;
   try {
-    const verified = await jwtVerify(token, JWT_SECRET);
+    const verified = await jwtVerify(token, getUserJwtSecretKey(), {
+      algorithms: ["HS256"],
+    });
     payload = verified.payload as Record<string, unknown>;
   } catch {
     return NextResponse.redirect(
@@ -76,18 +60,33 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(new URL("/dashboard", request.url));
-  // Cookie lifetime mirrors the DB session so the browser and server
-  // agree on when the impersonation window ends.
   const maxAgeSec = Math.max(
     1,
     Math.floor((session.expiresAt.getTime() - Date.now()) / 1000),
   );
   response.cookies.set("user_session", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     sameSite: "lax",
     maxAge: maxAgeSec,
     path: "/",
   });
   return response;
+}
+
+export async function POST(request: NextRequest) {
+  const parsed = handoffSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.redirect(
+      new URL("/sign-in?err=impersonation-missing-token", request.url),
+    );
+  }
+
+  return exchangeImpersonationToken(request, parsed.data.token);
+}
+
+export async function GET(request: NextRequest) {
+  return NextResponse.redirect(
+    new URL("/sign-in?err=impersonation-post-required", request.url),
+  );
 }

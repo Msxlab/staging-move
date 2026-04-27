@@ -1,12 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import {
   getOAuthRedirectUri,
   getOAuthResponseUrl,
+  isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
+  resolveOAuthPostAuthRedirectPath,
 } from "./oauth";
 
 describe("OAuth URL helpers", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("builds callback and response URLs from forwarded host behind a proxy", async () => {
     const request = new NextRequest("https://localhost:8080/api/auth/oauth/google/callback", {
       headers: {
@@ -28,7 +34,53 @@ describe("OAuth URL helpers", () => {
 
   it("keeps post-login redirects same-site and relative", () => {
     expect(normalizeOAuthRedirectPath("/dashboard")).toBe("/dashboard");
+    expect(normalizeOAuthRedirectPath("/providers/provider_123")).toBe("/providers/provider_123");
+    expect(normalizeOAuthRedirectPath("/api/auth/me")).toBe("/dashboard");
+    expect(normalizeOAuthRedirectPath("/login")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("//evil.example")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("https://evil.example")).toBe("/dashboard");
+  });
+
+  it("sends fresh OAuth signups directly to the onboarding legal step", () => {
+    expect(
+      resolveOAuthPostAuthRedirectPath({
+        isNewUser: true,
+        redirectPath: "/dashboard",
+      }),
+    ).toBe("/onboarding?step=legal");
+    expect(
+      resolveOAuthPostAuthRedirectPath({
+        isNewUser: false,
+        redirectPath: "/providers/provider_123",
+      }),
+    ).toBe("/providers/provider_123");
+  });
+
+  it("falls back to configured origin when the request host is not trusted", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://app.locateflow.com");
+
+    const request = new NextRequest("https://evil.example/api/auth/oauth/google/callback", {
+      headers: {
+        host: "evil.example",
+        "x-forwarded-proto": "https",
+      },
+    });
+
+    await expect(
+      getOAuthResponseUrl(request, "/sign-in?error=missing-code").then((url) => url.toString()),
+    ).resolves.toBe("https://app.locateflow.com/sign-in?error=missing-code");
+  });
+});
+
+describe("Apple OAuth email verification claim", () => {
+  it("allows boolean true and string true claims", () => {
+    expect(isAppleEmailVerifiedClaim(true)).toBe(true);
+    expect(isAppleEmailVerifiedClaim("true")).toBe(true);
+  });
+
+  it("rejects false, string false, and missing claims", () => {
+    expect(isAppleEmailVerifiedClaim(false)).toBe(false);
+    expect(isAppleEmailVerifiedClaim("false")).toBe(false);
+    expect(isAppleEmailVerifiedClaim(undefined)).toBe(false);
   });
 });

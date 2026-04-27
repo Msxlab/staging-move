@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
+import { maskProviderIdentifier } from "@/lib/privacy";
 
-function maskProviderIdentifier(value: string | null | undefined) {
-  if (!value) return null;
-  if (value.length <= 10) return value;
-  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+const RESTORABLE_GDPR_DELETE_SOURCES = new Set(["admin", "admin_bulk"]);
+
+function parseGdprRequestData(raw: string | null | undefined): Record<string, any> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 export async function GET(
@@ -30,6 +37,7 @@ export async function GET(
         mfaEnabled: true,
         preferredLocale: true,
         dashboardWidgetPrefs: true,
+        showBudget: true,
         createdAt: true,
         updatedAt: true,
         deletedAt: true,
@@ -138,7 +146,6 @@ export async function GET(
           orderBy: { createdAt: "desc" },
           take: 10,
           select: {
-            id: true,
             email: true,
             expiresAt: true,
             consumedAt: true,
@@ -149,7 +156,6 @@ export async function GET(
           orderBy: { createdAt: "desc" },
           take: 10,
           select: {
-            id: true,
             expiresAt: true,
             usedAt: true,
             createdAt: true,
@@ -291,10 +297,134 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
 
+    if (body?.action === "restore_user") {
+      const session = await requirePermission("users", "canDelete", { minimumRole: "SUPER_ADMIN" });
+      const confirm = await requirePasswordConfirm(
+        session,
+        typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+      );
+      if (!confirm.confirmed) {
+        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: { id: true, email: true, deletedAt: true },
+      });
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      if (!user.deletedAt) {
+        return NextResponse.json({ error: "User is already active", skippedReason: "already_active" }, { status: 409 });
+      }
+      const previousDeletedAt = user.deletedAt;
+
+      const existingRequest = await prisma.gDPRRequest.findFirst({
+        where: {
+          userId: id,
+          type: "DELETE",
+          status: { in: ["PENDING", "PROCESSING"] },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (existingRequest?.status === "PROCESSING") {
+        return NextResponse.json(
+          {
+            error: "Deletion cleanup is already processing. Do not restore from this screen.",
+            skippedReason: "processing_gdpr_request",
+            requestId: existingRequest.id,
+          },
+          { status: 409 },
+        );
+      }
+
+      const requestData = parseGdprRequestData(existingRequest?.requestData);
+      const requestSource = typeof requestData.source === "string" ? requestData.source : "unknown";
+      const requestCleanup =
+        requestData.cleanup && typeof requestData.cleanup === "object" && !Array.isArray(requestData.cleanup)
+          ? requestData.cleanup
+          : {};
+      if (existingRequest && !RESTORABLE_GDPR_DELETE_SOURCES.has(requestSource)) {
+        return NextResponse.json(
+          {
+            error: "This delete request was not admin-initiated. Review privacy policy obligations before restoring.",
+            skippedReason: "non_admin_gdpr_request",
+            requestId: existingRequest.id,
+          },
+          { status: 409 },
+        );
+      }
+
+      const now = new Date();
+      const restoredRequest = await prisma.$transaction(async (tx: any) => {
+        const restore = await tx.user.updateMany({
+          where: { id, deletedAt: { not: null } },
+          data: { deletedAt: null },
+        });
+        if (restore.count !== 1) {
+          throw new Error("USER_RESTORE_SKIPPED");
+        }
+
+        let rejectedRequest: any = null;
+        if (existingRequest) {
+          rejectedRequest = await tx.gDPRRequest.update({
+            where: { id: existingRequest.id },
+            data: {
+              status: "REJECTED",
+              completedAt: now,
+              requestData: JSON.stringify({
+                ...requestData,
+                cleanup: {
+                  ...requestCleanup,
+                  userDeleted: false,
+                  lastAttemptAt: now.toISOString(),
+                  lastError: "ADMIN_RESTORED_BEFORE_PURGE",
+                },
+                restore: {
+                  canceledByAdminRestore: true,
+                  restoredByAdminId: session.adminId,
+                  restoredAt: now.toISOString(),
+                  previousDeletedAt: previousDeletedAt.toISOString(),
+                },
+              }),
+            },
+          });
+        }
+
+        await tx.adminAuditLog.create({
+          data: {
+            adminUserId: session.adminId,
+            action: "RESTORE_USER",
+            entityType: "User",
+            entityId: id,
+            changes: JSON.stringify({
+              email: user.email,
+              previousDeletedAt: previousDeletedAt.toISOString(),
+              restoredAt: now.toISOString(),
+              gdprRequestId: rejectedRequest?.id || null,
+              gdprRequestStatus: rejectedRequest?.status || null,
+              sessionsRemainRevoked: true,
+            }),
+            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+          },
+        });
+
+        return rejectedRequest;
+      });
+
+      return NextResponse.json({
+        success: true,
+        restored: true,
+        requestId: restoredRequest?.id || null,
+        message: "User restored/unblocked. Existing sessions remain revoked; the user must sign in again or reset their password.",
+      });
+    }
+
+    const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
     const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -393,6 +523,9 @@ export async function POST(
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+    if (error?.message === "USER_RESTORE_SKIPPED") {
+      return NextResponse.json({ error: "User could not be restored because its state changed. Refresh and try again." }, { status: 409 });
+    }
     console.error("Failed to perform user admin action:", error);
     return NextResponse.json({ error: "Failed to perform user admin action" }, { status: 500 });
   }
@@ -422,8 +555,23 @@ export async function PATCH(
       await prisma.user.update({ where: { id }, data: updateData });
     }
 
+    const hasBillingChange =
+      body.plan ||
+      body.premiumUntil !== undefined ||
+      body.subscriptionStatus ||
+      body.trialEndsAt !== undefined ||
+      body.premiumNote !== undefined;
+
     // Update subscription plan + premium management
-    if (body.plan || body.premiumUntil !== undefined || body.subscriptionStatus || body.trialEndsAt !== undefined || body.premiumNote !== undefined) {
+    if (hasBillingChange) {
+      const confirm = await requirePasswordConfirm(
+        session,
+        typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+      );
+      if (!confirm.confirmed) {
+        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      }
+
       const subData: any = {};
       if (body.plan) {
         changes.plan = { from: user.subscription?.plan, to: body.plan };
@@ -513,17 +661,12 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "DELETE_USER",
-        entityType: "User",
-        entityId: id,
-        changes: JSON.stringify({ email: user.email }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
+    if (id === session.adminId) {
+      return NextResponse.json({ error: "Self-delete is not allowed from this screen" }, { status: 400 });
+    }
+    if (user.deletedAt) {
+      return NextResponse.json({ error: "User is already deleted", skippedReason: "already_deleted" }, { status: 409 });
+    }
 
     const existingRequest = await prisma.gDPRRequest.findFirst({
       where: {
@@ -534,40 +677,91 @@ export async function DELETE(
       orderBy: { createdAt: "desc" },
     });
 
-    const deleteRequest = existingRequest || await prisma.gDPRRequest.create({
-      data: {
-        userId: id,
-        type: "DELETE",
-        status: "PENDING",
-        requestData: JSON.stringify({
-          source: "admin",
-          initiatedByAdminId: session.adminId,
-          email: user.email,
-          stripeSubscriptionId: user.subscription?.stripeSubscriptionId || null,
-          initiatedAt: new Date().toISOString(),
-          cleanup: {
-            stripeCanceled: false,
-            cloudinaryDeletedCount: 0,
-            clerkDeleted: false,
-            userDeleted: false,
-            attempts: 0,
-            lastAttemptAt: null,
-            lastError: null,
-          },
+    if (existingRequest?.status === "PROCESSING") {
+      return NextResponse.json(
+        {
+          error: "User deletion is already processing",
+          skippedReason: "processing_gdpr_request",
+          requestId: existingRequest.id,
+        },
+        { status: 409 },
+      );
+    }
+
+    const now = new Date();
+    const deleteRequest = await prisma.$transaction(async (tx: any) => {
+      const softDelete = await tx.user.updateMany({
+        where: { id, deletedAt: null },
+        data: { deletedAt: now },
+      });
+      if (softDelete.count !== 1) {
+        throw new Error("USER_DELETE_SKIPPED");
+      }
+
+      await Promise.all([
+        tx.userLoginSession.updateMany({
+          where: { userId: id, isActive: true },
+          data: { isActive: false, lastActivity: now },
         }),
-      },
+        tx.userSession.updateMany({
+          where: { userId: id, isActive: true },
+          data: { isActive: false, sessionEnd: now, lastActivity: now },
+        }),
+      ]);
+
+      const requestRecord = existingRequest || await tx.gDPRRequest.create({
+        data: {
+          userId: id,
+          type: "DELETE",
+          status: "PENDING",
+          requestData: JSON.stringify({
+            source: "admin",
+            initiatedByAdminId: session.adminId,
+            email: user.email,
+            stripeSubscriptionId: user.subscription?.stripeSubscriptionId || null,
+            initiatedAt: now.toISOString(),
+            cleanup: {
+              stripeCanceled: false,
+              userDeleted: false,
+              attempts: 0,
+              lastAttemptAt: null,
+              lastError: null,
+            },
+          }),
+        },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "DELETE_USER",
+          entityType: "User",
+          entityId: id,
+          changes: JSON.stringify({
+            email: user.email,
+            softDeletedAt: now.toISOString(),
+            gdprRequestStatus: requestRecord.status,
+            queuedCleanup: !existingRequest,
+          }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+
+      return requestRecord;
     });
 
     return NextResponse.json(
       {
         success: true,
+        deleted: true,
         status: deleteRequest.status,
         requestId: deleteRequest.id,
+        skipped: [],
         message: existingRequest
-          ? "User deletion is already queued."
-          : "User deletion has been queued for staged processing.",
+          ? "User was deleted from the active list. Existing GDPR cleanup request will continue."
+          : "User was deleted from the active list. GDPR cleanup has been queued for staged processing.",
       },
-      { status: 202 }
+      { status: 200 }
     );
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
@@ -575,6 +769,9 @@ export async function DELETE(
     }
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (error?.message === "USER_DELETE_SKIPPED") {
+      return NextResponse.json({ error: "User could not be deleted because its state changed. Refresh and try again." }, { status: 409 });
     }
     console.error("Failed to delete user:", error);
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });

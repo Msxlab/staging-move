@@ -40,11 +40,28 @@ export const BILLING_CYCLES = [
 
 // ==================== MOVING PLAN ====================
 
+export const MOVING_PLAN_STATUS = {
+  PLANNING: "PLANNING",
+  IN_PROGRESS: "IN_PROGRESS",
+  COMPLETED: "COMPLETED",
+  CANCELED: "CANCELED",
+} as const;
+
+export const CANCELED_MOVING_PLAN_STATUSES = ["CANCELED", "CANCELLED"] as const;
+
+export function normalizeMovingPlanStatus(status: string): string {
+  return status === "CANCELLED" ? "CANCELED" : status;
+}
+
+export function isCanceledMovingPlanStatus(status: string | null | undefined): boolean {
+  return status === "CANCELED" || status === "CANCELLED";
+}
+
 export const MOVING_STATUSES = [
   { value: "PLANNING", label: "Planning", color: "#6b7280" },
   { value: "IN_PROGRESS", label: "In Progress", color: "#3b82f6" },
   { value: "COMPLETED", label: "Completed", color: "#10b981" },
-  { value: "CANCELLED", label: "Cancelled", color: "#ef4444" },
+  { value: "CANCELED", label: "Canceled", color: "#ef4444" },
 ] as const;
 
 // ==================== DOCUMENT ====================

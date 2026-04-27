@@ -52,8 +52,10 @@ function generatePDF(address: AddressInfo, userName: string) {
     .page { max-width: 800px; margin: 0 auto; padding: 40px; }
     .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
     .logo { display: flex; align-items: center; gap: 12px; }
-    .logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #8b5cf6, #06b6d4); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; }
-    .logo-text { font-size: 20px; font-weight: 700; background: linear-gradient(90deg, #8b5cf6, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .logo-icon { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
+    .logo-mark { width: 42px; height: 42px; display: block; }
+    .logo-text { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; font-weight: 500; color: #2a1f18; letter-spacing: -0.02em; }
+    .logo-flow { font-style: italic; color: #b8936c; }
     .report-date { text-align: right; color: #64748b; font-size: 13px; }
     .report-title { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
     .report-subtitle { font-size: 14px; color: #64748b; margin-bottom: 24px; }
@@ -94,8 +96,16 @@ function generatePDF(address: AddressInfo, userName: string) {
   <div class="page">
     <div class="header">
       <div class="logo">
-        <div class="logo-icon">L</div>
-        <div class="logo-text">LocateFlow</div>
+        <div class="logo-icon">
+          <svg class="logo-mark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+            <path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="#B8936C" stroke-width="3.25" fill="none" stroke-linecap="round" />
+            <circle cx="20" cy="65" r="4.5" fill="#E5C9A8" />
+            <circle cx="20" cy="65" r="1.5" fill="#2A1F18" />
+            <circle cx="80" cy="40" r="7.25" fill="#D4846A" />
+            <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
+          </svg>
+        </div>
+        <div class="logo-text">Locate<span class="logo-flow">flow</span></div>
       </div>
       <div class="report-date">
         <div style="font-weight: 600; color: #1e293b;">Monthly Expense Report</div>
@@ -248,24 +258,25 @@ export default function ExportPage() {
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
         <Link href="/settings">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/5 transition">
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
             <ArrowLeft className="h-4 w-4" />Back
           </button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Export & Reports</h1>
-          <p className="text-sm text-white/40">Download reports and export your data</p>
+          <h1 className="text-2xl font-bold text-foreground">Export & Reports</h1>
+          <p className="text-sm text-muted-foreground">Download reports and export your data</p>
         </div>
       </div>
 
       {/* PDF Monthly Reports */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
           <FileText className="h-4 w-4 text-orange-400" />
-          <h3 className="text-sm font-semibold text-white">Monthly Expense Reports (PDF)</h3>
+          <h3 className="text-sm font-semibold text-foreground">Monthly Expense Reports (PDF)</h3>
         </div>
-        <p className="text-xs text-white/30 px-5 pb-3">
+        <p className="text-xs text-foreground/40 px-5 pb-3">
           Generate a professional PDF report for any address with company branding, category breakdown, and full service details.
+          Exports use a print-friendly light layout.
         </p>
         <div className="px-5 pb-5 space-y-2">
           {loadingAddresses ? (
@@ -273,7 +284,7 @@ export default function ExportPage() {
               <Loader2 className="h-4 w-4 animate-spin text-orange-400" />
             </div>
           ) : addresses.length === 0 ? (
-            <p className="text-xs text-white/30 text-center py-4">No addresses to generate reports for</p>
+            <p className="text-xs text-foreground/40 text-center py-4">No addresses to generate reports for</p>
           ) : (
             addresses.map((addr) => {
               const TypeIcon = typeIcons[addr.type] || MapPin;
@@ -281,16 +292,16 @@ export default function ExportPage() {
               const monthlyCost = addr.services?.reduce((sum, s) => sum + (s.monthlyCost || 0), 0) || 0;
               const isGenerating = generatingPdf === addr.id;
               return (
-                <div key={addr.id} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] transition">
+                <div key={addr.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02] hover:bg-foreground/[0.05] transition">
                   <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 shrink-0">
                     <TypeIcon className="h-4 w-4 text-orange-400" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-white truncate">{addr.nickname || addr.street}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{addr.nickname || addr.street}</p>
                       {addr.isPrimary && <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />}
                     </div>
-                    <p className="text-[10px] text-white/25">{svcCount} services · {formatCurrency(monthlyCost)}/mo</p>
+                    <p className="text-[10px] text-foreground/35">{svcCount} services · {formatCurrency(monthlyCost)}/mo</p>
                   </div>
                   <button
                     onClick={() => handlePdfReport(addr)}
@@ -308,22 +319,22 @@ export default function ExportPage() {
       </div>
 
       {/* Data Exports */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
           <Download className="h-4 w-4 text-cyan-400" />
-          <h3 className="text-sm font-semibold text-white">Data Exports</h3>
+          <h3 className="text-sm font-semibold text-foreground">Data Exports</h3>
         </div>
         <div className="px-5 pb-5 space-y-2">
           {exportOptions.map((opt) => {
             const OptIcon = opt.icon;
             return (
-              <div key={opt.title} className="flex items-center gap-3 p-3 rounded-xl border border-white/5 bg-white/[0.02]">
-                <div className="p-2 rounded-lg bg-white/5 shrink-0">
-                  <OptIcon className="h-4 w-4 text-white/40" />
+              <div key={opt.title} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02]">
+                <div className="p-2 rounded-lg bg-foreground/5 shrink-0">
+                  <OptIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white/70">{opt.title}</p>
-                  <p className="text-[10px] text-white/25">{opt.description}</p>
+                  <p className="text-sm font-medium text-foreground/80">{opt.title}</p>
+                  <p className="text-[10px] text-foreground/35">{opt.description}</p>
                 </div>
                 <div className="flex gap-1.5 shrink-0">
                   {opt.formats.map((fmt) => {
@@ -331,7 +342,7 @@ export default function ExportPage() {
                     const isLoading = downloading === key;
                     return (
                       <button key={fmt} disabled={isLoading} onClick={() => handleExport(opt.type, fmt)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-white/10 text-[11px] font-medium text-white/40 hover:text-white hover:bg-white/5 transition disabled:opacity-50">
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition disabled:opacity-50">
                         {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}{fmt}
                       </button>
                     );

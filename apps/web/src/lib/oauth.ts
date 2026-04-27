@@ -7,6 +7,7 @@ import { randomBytes, createHash, createPrivateKey } from "crypto";
 import { SignJWT } from "jose";
 import type { NextRequest } from "next/server";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
 // ── State + PKCE ──────────────────────────────────────────────
 
@@ -18,6 +19,35 @@ export function generatePkce() {
   const verifier = randomBytes(32).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
   return { verifier, challenge };
+}
+
+export function hashForOAuthLog(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  return createHash("sha256").update(value.toLowerCase()).digest("hex").slice(0, 16);
+}
+
+export function oauthUserIdHint(userId: string | null | undefined): string | undefined {
+  if (!userId) return undefined;
+  return userId.slice(-6);
+}
+
+export function summarizeOAuthError(err: unknown): Record<string, string> {
+  if (!err || typeof err !== "object") return {};
+  const maybeError = err as { name?: unknown; code?: unknown };
+  return {
+    ...(typeof maybeError.name === "string" ? { name: maybeError.name } : {}),
+    ...(typeof maybeError.code === "string" ? { code: maybeError.code } : {}),
+  };
+}
+
+export function logSafeOAuthEvent(
+  event: string,
+  details: Record<string, string | boolean | number | null | undefined> = {},
+) {
+  const sanitized = Object.fromEntries(
+    Object.entries(details).filter(([, value]) => value !== undefined),
+  );
+  console.info("[OAUTH]", event, sanitized);
 }
 
 export function getBaseUrl(): string {
@@ -53,31 +83,61 @@ function originFromHost(host: string | null, proto: string | null): string | nul
   return `${scheme}://${host}`.replace(/\/+$/, "");
 }
 
-export async function getOAuthRequestOrigin(request: NextRequest): Promise<string> {
-  const forwardedProto = firstHeaderValue(request.headers.get("x-forwarded-proto"));
-  const forwardedHost =
-    firstHeaderValue(request.headers.get("x-forwarded-host")) ||
-    firstHeaderValue(request.headers.get("x-original-host"));
-  const forwardedOrigin = originFromHost(forwardedHost, forwardedProto);
-  if (forwardedOrigin) return forwardedOrigin;
+function hostnameFromHost(host: string | null): string | null {
+  if (!host) return null;
+  try {
+    return new URL(`https://${host}`).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
 
-  const hostOrigin = originFromHost(
-    firstHeaderValue(request.headers.get("host")),
+function hostnameFromOrigin(origin: string): string | null {
+  try {
+    return new URL(origin).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+function isTrustedOAuthHost(host: string | null, configuredOrigin: string): boolean {
+  const hostname = hostnameFromHost(host);
+  if (!hostname) return false;
+
+  const configuredHostname = hostnameFromOrigin(configuredOrigin);
+  if (configuredHostname && hostname === configuredHostname) return true;
+
+  return (
+    hostname === "locateflow.app" ||
+    hostname.endsWith(".locateflow.app") ||
+    hostname === "locateflow.com" ||
+    hostname.endsWith(".locateflow.com") ||
+    (hostname.startsWith("locateflow-") && hostname.endsWith(".ondigitalocean.app"))
+  );
+}
+
+export async function getOAuthRequestOrigin(request: NextRequest): Promise<string> {
+  const runtimeBaseUrl = await getRuntimeBaseUrl();
+  const forwardedProto = firstHeaderValue(request.headers.get("x-forwarded-proto"));
+  const originFromTrustedHost = (host: string | null, proto: string | null): string | null => {
+    if (!isTrustedOAuthHost(host, runtimeBaseUrl)) return null;
+    return originFromHost(host, proto);
+  };
+
+  const directHost = firstHeaderValue(request.headers.get("host"));
+  const hostOrigin = originFromTrustedHost(
+    directHost,
     forwardedProto || request.nextUrl.protocol.replace(":", ""),
   );
   if (hostOrigin) return hostOrigin;
 
-  try {
-    const referer = request.headers.get("referer");
-    if (referer) {
-      const origin = new URL(referer).origin;
-      if (!isInternalHost(new URL(origin).host)) return origin;
-    }
-  } catch {
-    // Ignore malformed referers and fall back to runtime config.
-  }
+  const forwardedHost =
+    firstHeaderValue(request.headers.get("x-forwarded-host")) ||
+    firstHeaderValue(request.headers.get("x-original-host"));
+  const forwardedOrigin = originFromTrustedHost(forwardedHost, forwardedProto);
+  if (forwardedOrigin) return forwardedOrigin;
 
-  return getRuntimeBaseUrl();
+  return runtimeBaseUrl;
 }
 
 export async function getOAuthRedirectUri(request: NextRequest, callbackPath: string): Promise<string> {
@@ -94,8 +154,16 @@ export function normalizeOAuthRedirectPath(
   value: string | null | undefined,
   fallback = "/dashboard",
 ): string {
-  const path = value || fallback;
-  return path.startsWith("/") && !path.startsWith("//") ? path : fallback;
+  return normalizeAppRedirectPath(value, fallback);
+}
+
+export function resolveOAuthPostAuthRedirectPath(input: {
+  isNewUser: boolean;
+  redirectPath?: string | null;
+  fallback?: string;
+}): string {
+  if (input.isNewUser) return "/onboarding?step=legal";
+  return normalizeOAuthRedirectPath(input.redirectPath, input.fallback || "/dashboard");
 }
 
 export async function getGoogleOAuthCredentials() {
@@ -194,6 +262,10 @@ export function appleAuthorizeUrl(opts: {
     response_mode: "form_post", // Apple requires form_post when scope is requested
   });
   return `https://appleid.apple.com/auth/authorize?${params.toString()}`;
+}
+
+export function isAppleEmailVerifiedClaim(value: boolean | string | null | undefined): boolean {
+  return value === true || value === "true";
 }
 
 /**

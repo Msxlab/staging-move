@@ -6,19 +6,23 @@
 
 import { SignJWT, jwtVerify } from "jose";
 import { cookies, headers } from "next/headers";
+import type { NextResponse } from "next/server";
 import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
+import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
+import {
+  hashForOAuthLog,
+  logSafeOAuthEvent,
+  oauthUserIdHint,
+  summarizeOAuthError,
+} from "@/lib/oauth";
+import { ensureSubscriptionDefaults } from "@/lib/billing";
 
 // ── Secret / constants ──────────────────────────────────────
 
-const userJwtSecret = process.env.USER_JWT_SECRET;
-if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
-}
-const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
-
-const COOKIE_NAME = "user_session";
+export const USER_SESSION_COOKIE_NAME = "user_session";
+const COOKIE_NAME = USER_SESSION_COOKIE_NAME;
 const SESSION_TTL_DAYS = 30;
 const SESSION_TTL_SEC = SESSION_TTL_DAYS * 24 * 60 * 60;
 
@@ -32,6 +36,18 @@ export interface UserSessionClaims {
   fp?: string;
   fpMode?: SessionClientType;
   sessionId?: string;
+}
+
+export function shouldUseSecureSessionCookies(): boolean {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    appUrl.startsWith("https://")
+  );
 }
 
 // ── Fingerprint + token hashing ─────────────────────────────
@@ -114,12 +130,53 @@ export function hashOpaqueToken(token: string): string {
 
 // ── Session lifecycle ──────────────────────────────────────
 
+function sessionCookieBaseOptions() {
+  return {
+    httpOnly: true,
+    secure: shouldUseSecureSessionCookies(),
+    sameSite: "lax" as const,
+    path: "/",
+  };
+}
+
+function sessionCookieDomainCandidates(host?: string | null): Array<string | undefined> {
+  const configured = (process.env.USER_SESSION_COOKIE_DOMAIN || process.env.SESSION_COOKIE_DOMAIN || "").trim();
+  const normalizedHost = (host || "").split(":")[0].toLowerCase();
+  const candidates: Array<string | undefined> = [undefined, ".locateflow.com"];
+  if (configured) candidates.push(configured);
+  if (normalizedHost === "locateflow.com" || normalizedHost.endsWith(".locateflow.com")) {
+    candidates.push(".locateflow.com");
+  }
+  return Array.from(new Set(candidates));
+}
+
 function clearSessionCookie(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   try {
     cookieStore.delete(COOKIE_NAME);
   } catch {
     /* ignore */
   }
+  try {
+    cookieStore.set(COOKIE_NAME, "", {
+      ...sessionCookieBaseOptions(),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+export function expireUserSessionCookies(response: NextResponse, host?: string | null): NextResponse {
+  for (const domain of sessionCookieDomainCandidates(host)) {
+    response.cookies.set(COOKIE_NAME, "", {
+      ...sessionCookieBaseOptions(),
+      ...(domain ? { domain } : {}),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+  return response;
 }
 
 /**
@@ -150,7 +207,7 @@ export async function createUserSession(input: {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_TTL_DAYS}d`)
-    .sign(JWT_SECRET);
+    .sign(getUserJwtSecretKey());
 
   const tokenHash = await hashSessionToken(token);
   await prisma.userLoginSession.create({
@@ -168,11 +225,8 @@ export async function createUserSession(input: {
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    ...sessionCookieBaseOptions(),
     maxAge: SESSION_TTL_SEC,
-    path: "/",
   });
 
   return token;
@@ -226,12 +280,14 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
   };
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getUserJwtSecretKey(), {
+      algorithms: ["HS256"],
+    });
 
     const record = await prisma.userLoginSession
       .findFirst({
         where: { tokenHash, isActive: true },
-        select: { id: true, userId: true, expiresAt: true },
+        select: { id: true, userId: true, expiresAt: true, userAgent: true },
       })
       .catch(() => null);
 
@@ -254,7 +310,13 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
               ),
               userAgent,
             ).catch(() => null);
-      if (!currentFp || currentFp !== payload.fp) {
+      // DigitalOcean/proxy chains can present a different forwarding IP
+      // between OAuth callback and later app/API requests. Keep the DB-backed
+      // session valid when the browser UA is unchanged; still reject device
+      // swaps where both IP-bound fingerprint and UA differ.
+      const proxyIpChangedButSameBrowser =
+        fpMode === "web" && record.userAgent === userAgent;
+      if (!currentFp || (currentFp !== payload.fp && !proxyIpChangedButSameBrowser)) {
         await invalidateSession();
         await clearIfCookie();
         return null;
@@ -317,19 +379,24 @@ export async function destroyAllUserSessions(userId: string): Promise<void> {
 
 /**
  * Throw UNAUTHORIZED if no valid session cookie / DB row.
- * Also verifies the ACCOUNT_DELETED GDPR flag.
+ * Also destroys stale soft-deleted sessions. Callers that need a distinct
+ * user-facing deleted-account branch can opt into ACCOUNT_DELETED.
  */
-export async function requireDbUserId(): Promise<string> {
+export async function requireDbUserId(options: { distinguishDeleted?: boolean } = {}): Promise<string> {
   const session = await getUserSession();
   if (!session) throw new Error("UNAUTHORIZED");
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true },
+    select: { id: true, deletedAt: true },
   });
   if (!user) {
     await destroyUserSession();
     throw new Error("UNAUTHORIZED");
+  }
+  if (user.deletedAt) {
+    await destroyUserSession();
+    throw new Error(options.distinguishDeleted ? "ACCOUNT_DELETED" : "UNAUTHORIZED");
   }
 
   // Update lastActivity (non-blocking).
@@ -366,6 +433,19 @@ export async function findOrLinkOAuthUser(input: {
   imageUrl?: string | null;
   allowNewAccount?: boolean;
 }): Promise<string> {
+  const result = await findOrLinkOAuthUserWithStatus(input);
+  return result.userId;
+}
+
+export async function findOrLinkOAuthUserWithStatus(input: {
+  provider: "google" | "apple";
+  providerId: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  imageUrl?: string | null;
+  allowNewAccount?: boolean;
+}): Promise<{ userId: string; isNewUser: boolean; wasLinkedNow: boolean }> {
   // 1) Existing OAuth link
   const existingLink = await prisma.oAuthAccount.findUnique({
     where: {
@@ -374,23 +454,84 @@ export async function findOrLinkOAuthUser(input: {
         providerId: input.providerId,
       },
     },
-    select: { userId: true },
+    select: {
+      userId: true,
+      user: { select: { deletedAt: true } },
+    },
   });
-  if (existingLink) return existingLink.userId;
+  if (existingLink) {
+    if (existingLink.user?.deletedAt) {
+      logSafeOAuthEvent("oauth_account_link_diagnostic", {
+        provider: input.provider,
+        reason: "existing_oauth_deleted_user",
+        oauthUserIdHint: oauthUserIdHint(existingLink.userId),
+        oauthAccountUserDeleted: true,
+        activeOAuthMatch: false,
+      });
+      logSafeOAuthEvent("oauth_existing_deleted_user_blocked", {
+        provider: input.provider,
+        userIdHint: oauthUserIdHint(existingLink.userId),
+      });
+      throw new Error("OAUTH_EXISTING_DELETED_USER_BLOCKED");
+    }
+    logSafeOAuthEvent("oauth_account_link_diagnostic", {
+      provider: input.provider,
+      reason: "existing_oauth_active_user",
+      oauthUserIdHint: oauthUserIdHint(existingLink.userId),
+      oauthAccountUserDeleted: false,
+      activeOAuthMatch: true,
+    });
+    await ensureSubscriptionDefaults(existingLink.userId);
+    return { userId: existingLink.userId, isNewUser: false, wasLinkedNow: false };
+  }
 
   // 2) Existing user by email → link
   const userByEmail = await prisma.user.findUnique({
     where: { email: input.email.toLowerCase() },
-    select: { id: true, emailVerifiedAt: true },
+    select: { id: true, emailVerifiedAt: true, deletedAt: true },
   });
   if (userByEmail) {
-    await prisma.oAuthAccount.create({
-      data: {
-        userId: userByEmail.id,
+    if (userByEmail.deletedAt) {
+      logSafeOAuthEvent("oauth_account_link_diagnostic", {
         provider: input.provider,
-        providerId: input.providerId,
-      },
+        reason: "email_match_deleted_user",
+        emailUserIdHint: oauthUserIdHint(userByEmail.id),
+        emailHash: hashForOAuthLog(input.email),
+        emailMatchDeleted: true,
+        activeEmailMatch: false,
+      });
+      logSafeOAuthEvent("oauth_existing_deleted_user_blocked", {
+        provider: input.provider,
+        userIdHint: oauthUserIdHint(userByEmail.id),
+        emailHash: hashForOAuthLog(input.email),
+      });
+      throw new Error("OAUTH_EXISTING_DELETED_USER_BLOCKED");
+    }
+    logSafeOAuthEvent("oauth_account_link_diagnostic", {
+      provider: input.provider,
+      reason: "email_match_active_user",
+      emailUserIdHint: oauthUserIdHint(userByEmail.id),
+      emailHash: hashForOAuthLog(input.email),
+      emailMatchDeleted: false,
+      activeEmailMatch: true,
     });
+    try {
+      await prisma.oAuthAccount.create({
+        data: {
+          userId: userByEmail.id,
+          provider: input.provider,
+          providerId: input.providerId,
+        },
+      });
+    } catch (err) {
+      logSafeOAuthEvent("oauth_account_create_failed", {
+        provider: input.provider,
+        userIdHint: oauthUserIdHint(userByEmail.id),
+        emailHash: hashForOAuthLog(input.email),
+        ...summarizeOAuthError(err),
+      });
+      throw new Error("OAUTH_ACCOUNT_CREATE_FAILED");
+    }
     // OAuth providers have already verified the email — mark verified if not already.
     if (!userByEmail.emailVerifiedAt) {
       await prisma.user.update({
@@ -398,7 +539,8 @@ export async function findOrLinkOAuthUser(input: {
         data: { emailVerifiedAt: new Date() },
       });
     }
-    return userByEmail.id;
+    await ensureSubscriptionDefaults(userByEmail.id);
+    return { userId: userByEmail.id, isNewUser: false, wasLinkedNow: true };
   }
 
   if (input.allowNewAccount === false) {
@@ -406,18 +548,36 @@ export async function findOrLinkOAuthUser(input: {
   }
 
   // 3) Brand new account
-  const created = await prisma.user.create({
-    data: {
-      email: input.email.toLowerCase(),
-      firstName: input.firstName ?? null,
-      lastName: input.lastName ?? null,
-      imageUrl: input.imageUrl ?? null,
-      emailVerifiedAt: new Date(),
-      oauthAccounts: {
-        create: { provider: input.provider, providerId: input.providerId },
-      },
-    },
+  logSafeOAuthEvent("oauth_account_link_diagnostic", {
+    provider: input.provider,
+    reason: "no_match_create_new_user",
+    emailHash: hashForOAuthLog(input.email),
+    activeEmailMatch: false,
+    activeOAuthMatch: false,
   });
+  let created: { id: string };
+  try {
+    created = await prisma.user.create({
+      data: {
+        email: input.email.toLowerCase(),
+        firstName: input.firstName ?? null,
+        lastName: input.lastName ?? null,
+        imageUrl: input.imageUrl ?? null,
+        emailVerifiedAt: new Date(),
+        oauthAccounts: {
+          create: { provider: input.provider, providerId: input.providerId },
+        },
+      },
+    });
+  } catch (err) {
+    logSafeOAuthEvent("oauth_account_create_failed", {
+      provider: input.provider,
+      emailHash: hashForOAuthLog(input.email),
+      ...summarizeOAuthError(err),
+    });
+    throw new Error("OAUTH_ACCOUNT_CREATE_FAILED");
+  }
 
-  return created.id;
+  await ensureSubscriptionDefaults(created.id);
+  return { userId: created.id, isNewUser: true, wasLinkedNow: false };
 }

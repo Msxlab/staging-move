@@ -17,13 +17,6 @@ export const profileSchema = z.strictObject({
   needsStorage: z.boolean().default(false),
   hasSenior: z.boolean().default(false),
   hasDisability: z.boolean().default(false),
-  legalConsents: z.strictObject({
-    termsAccepted: z.boolean().default(false),
-    disclaimerAccepted: z.boolean().default(false),
-    termsVersion: z.string().optional(),
-    disclaimerVersion: z.string().optional(),
-    acceptedAt: z.string().optional(),
-  }).optional(),
 });
 
 export type ProfileFormData = z.infer<typeof profileSchema>;

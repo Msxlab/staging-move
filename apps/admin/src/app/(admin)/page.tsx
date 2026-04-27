@@ -17,6 +17,7 @@ import {
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 import Link from "next/link";
 import { HealthCard } from "./health-card";
+import { maskEmail } from "@/lib/privacy";
 
 async function getStats() {
   const now = new Date();
@@ -126,12 +127,12 @@ export default async function DashboardPage() {
     }).format(n);
 
   const kpiCards = [
-    { label: "Total Users", value: stats.totalUsers.toLocaleString(), icon: Users, color: "text-blue-500", bg: "bg-blue-500/10", href: "/users" },
-    { label: "Active Subscriptions", value: stats.activeSubscriptions.toLocaleString(), icon: CreditCard, color: "text-green-500", bg: "bg-green-500/10", href: "/subscriptions" },
-    { label: "MRR", value: fmtUsd(stats.mrrUsd), icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10", href: "/subscriptions", sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid` },
-    { label: "Churn (30d)", value: `${stats.churnPct.toFixed(1)}%`, icon: TrendingDown, color: stats.churnPct > 5 ? "text-red-500" : "text-amber-500", bg: stats.churnPct > 5 ? "bg-red-500/10" : "bg-amber-500/10", href: "/subscriptions", sub: stats.churnPct > 5 ? "Above 5% target" : "Within target" },
-    { label: "Active Moves", value: stats.activeMovingPlans.toLocaleString(), icon: Truck, color: "text-purple-500", bg: "bg-purple-500/10", href: "/moving" },
-    { label: "Providers", value: stats.totalProviders.toLocaleString(), icon: Building2, color: "text-cyan-500", bg: "bg-cyan-500/10", href: "/providers" },
+    { label: "Total Users", value: stats.totalUsers.toLocaleString(), icon: Users, color: "text-tone-slate-fg", bg: "bg-tone-slate-bg", href: "/users" },
+    { label: "Active Subscriptions", value: stats.activeSubscriptions.toLocaleString(), icon: CreditCard, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg", href: "/subscriptions" },
+    { label: "MRR", value: fmtUsd(stats.mrrUsd), icon: DollarSign, color: "text-tone-honey-fg", bg: "bg-tone-honey-bg", href: "/subscriptions", sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid` },
+    { label: "Churn (30d)", value: `${stats.churnPct.toFixed(1)}%`, icon: TrendingDown, color: stats.churnPct > 5 ? "text-destructive" : "text-tone-honey-fg", bg: stats.churnPct > 5 ? "bg-destructive/10" : "bg-tone-honey-bg", href: "/subscriptions", sub: stats.churnPct > 5 ? "Above 5% target" : "Within target" },
+    { label: "Active Moves", value: stats.activeMovingPlans.toLocaleString(), icon: Truck, color: "text-tone-rose-fg", bg: "bg-tone-rose-bg", href: "/moving" },
+    { label: "Providers", value: stats.totalProviders.toLocaleString(), icon: Building2, color: "text-tone-umber-fg", bg: "bg-tone-umber-bg", href: "/providers" },
   ];
 
   return (
@@ -148,7 +149,7 @@ export default async function DashboardPage() {
             <div className="flex items-center gap-1.5">
               <span className="text-lg font-bold text-foreground">{stats.newUsersThisWeek}</span>
               {stats.weeklyTrend !== 0 && (
-                <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-green-500" : "text-red-500"}`}>
+                <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
                   {stats.weeklyTrend > 0 ? "+" : ""}{stats.weeklyTrend}%
                 </span>
               )}
@@ -157,7 +158,7 @@ export default async function DashboardPage() {
           <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
             <p className="text-xs text-muted-foreground">Active Sessions</p>
             <div className="flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5 text-green-500" />
+              <Activity className="h-3.5 w-3.5 text-tone-sage-fg" />
               <span className="text-lg font-bold text-foreground">{stats.activeSessions}</span>
             </div>
           </div>
@@ -188,9 +189,9 @@ export default async function DashboardPage() {
       {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Add Provider", desc: "New service provider", href: "/providers/new", icon: Building2, color: "text-cyan-500" },
-          { label: "User Analytics", desc: `${stats.totalSessions} sessions`, href: "/analytics", icon: BarChart3, color: "text-purple-500" },
-          { label: "Upcoming Moves", desc: `${stats.upcomingMoves.length} in 2 weeks`, href: "/moving", icon: Truck, color: "text-blue-500" },
+          { label: "Add Provider", desc: "New service provider", href: "/providers/new", icon: Building2, color: "text-tone-umber-fg" },
+          { label: "User Analytics", desc: `${stats.totalSessions} sessions`, href: "/analytics", icon: BarChart3, color: "text-tone-slate-fg" },
+          { label: "Upcoming Moves", desc: `${stats.upcomingMoves.length} in 2 weeks`, href: "/moving", icon: Truck, color: "text-tone-rose-fg" },
         ].map((action) => (
           <Link key={action.label} href={action.href}
             className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-md hover:border-primary/20">
@@ -224,7 +225,7 @@ export default async function DashboardPage() {
                   <p className="font-medium text-foreground text-sm truncate">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{maskEmail(user.email)}</p>
                 </div>
                 <p className="text-[11px] text-muted-foreground flex-shrink-0">
                   {new Date(user.createdAt).toLocaleDateString()}
@@ -249,15 +250,15 @@ export default async function DashboardPage() {
               return (
                 <div key={move.id} className="rounded-lg border border-border p-2.5">
                   <div className="flex items-center gap-1.5 text-xs">
-                    <MapPin className="h-3 w-3 text-orange-500" />
+                    <MapPin className="h-3 w-3 text-tone-rose-fg" />
                     <span className="text-foreground font-medium truncate">{move.fromAddress?.city}, {move.fromAddress?.state}</span>
                     <ArrowRight className="h-2.5 w-2.5 text-muted-foreground" />
-                    <MapPin className="h-3 w-3 text-green-500" />
+                    <MapPin className="h-3 w-3 text-tone-sage-fg" />
                     <span className="text-foreground font-medium truncate">{move.toAddress?.city}, {move.toAddress?.state}</span>
                   </div>
                   <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[11px] text-muted-foreground truncate">{move.user?.email}</span>
-                    <span className={`text-[11px] font-medium ${days <= 3 ? "text-red-500" : days <= 7 ? "text-yellow-500" : "text-muted-foreground"}`}>
+                    <span className="text-[11px] text-muted-foreground truncate">{maskEmail(move.user?.email)}</span>
+                    <span className={`text-[11px] font-medium ${days <= 3 ? "text-destructive" : days <= 7 ? "text-tone-honey-fg" : "text-muted-foreground"}`}>
                       {days}d left
                     </span>
                   </div>

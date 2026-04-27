@@ -3,8 +3,15 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
-import { encrypt, decrypt } from "@/lib/shared-encryption";
-import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
+import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
+import {
+  decryptServiceSensitiveFields,
+  encryptServiceSensitiveFields,
+} from "@/lib/service-sensitive-fields";
+import {
+  duplicateServiceError,
+  findDuplicateTrackedService,
+} from "@/lib/service-duplicate-guard";
 
 // GET /api/services/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -26,13 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Decrypt sensitive fields
-    const decrypted = {
-      ...service,
-      accountNumber: service.accountNumber ? decrypt(service.accountNumber) : service.accountNumber,
-      username: service.username ? decrypt(service.username) : service.username,
-      phone: (service as any).phone ? decrypt((service as any).phone) : (service as any).phone,
-      notes: (service as any).notes ? decrypt((service as any).notes) : (service as any).notes,
-    };
+    const decrypted = decryptServiceSensitiveFields(service as any);
 
     return NextResponse.json({ service: decrypted });
   } catch (error) {
@@ -54,6 +55,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const body = await request.json();
     const validated = serviceSchema.partial().parse(body);
+    const normalizedCategory =
+      validated.category !== undefined
+        ? validated.category.trim().toUpperCase()
+        : existing.category;
 
     if (validated.providerId && validated.customProviderId) {
       return NextResponse.json({ error: "Choose either a listed provider or a custom provider, not both" }, { status: 400 });
@@ -61,7 +66,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (validated.addressId) {
       const address = await prisma.address.findUnique({ where: { id: validated.addressId } });
-      if (!address || address.userId !== userId) {
+      if (!address || address.userId !== userId || address.deletedAt) {
         return NextResponse.json({ error: "Address not found" }, { status: 404 });
       }
     }
@@ -82,14 +87,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    const duplicate = await findDuplicateTrackedService(prisma, {
+      userId,
+      addressId: validated.addressId || existing.addressId,
+      category: normalizedCategory,
+      providerName: validated.providerName || existing.providerName,
+      providerId: validated.providerId ?? existing.providerId,
+      customProviderId: validated.customProviderId ?? existing.customProviderId,
+      ignoreServiceId: existing.id,
+    });
+    if (duplicate) {
+      return NextResponse.json(duplicateServiceError(duplicate), { status: 409 });
+    }
+
     // Encrypt sensitive fields if provided
-    const encryptedData = {
+    const encryptedData = encryptServiceSensitiveFields({
       ...validated,
-      ...(validated.accountNumber !== undefined && { accountNumber: validated.accountNumber ? encrypt(validated.accountNumber) : validated.accountNumber }),
-      ...(validated.username !== undefined && { username: validated.username ? encrypt(validated.username) : validated.username }),
-      ...((validated as any).phone !== undefined && { phone: (validated as any).phone ? encrypt((validated as any).phone) : (validated as any).phone }),
-      ...((validated as any).notes !== undefined && { notes: (validated as any).notes ? encrypt((validated as any).notes) : (validated as any).notes }),
-    };
+      ...(validated.category !== undefined && { category: normalizedCategory }),
+    });
 
     const service = await prisma.service.update({
       where: { id },
@@ -110,12 +125,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       addressIdsToSync.length > 0
         ? await Promise.all(
             [...new Set(addressIdsToSync)].map((addressId) =>
-              syncMoveTasksForAddress(userId, addressId),
+              safeSyncMoveTasksForAddress(userId, addressId),
             ),
           )
         : [];
 
-    return NextResponse.json({ service, moveTaskSync });
+    return NextResponse.json({ service: decryptServiceSensitiveFields(service as any), moveTaskSync });
   } catch (error: any) {
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });

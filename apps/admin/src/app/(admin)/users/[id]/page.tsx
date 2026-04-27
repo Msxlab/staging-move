@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { maskEmail } from "@/lib/privacy";
 
 async function readAdminApiError(response: Response, fallback: string) {
   const data = await response.json().catch(() => ({}));
@@ -51,6 +53,16 @@ export default function UserDetailPage() {
   const [newAdminNote, setNewAdminNote] = useState("");
   const [savingAdminNote, setSavingAdminNote] = useState(false);
   const [revokingLoginSessions, setRevokingLoginSessions] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [planConfirmError, setPlanConfirmError] = useState<string | null>(null);
+  const [showPremiumConfirm, setShowPremiumConfirm] = useState(false);
+  const [premiumConfirmError, setPremiumConfirmError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -89,11 +101,14 @@ export default function UserDetailPage() {
 
   async function handleDelete() {
     if (!user) return;
-    if (!confirm(`Queue staged deletion for user ${user.email}? This cannot be undone.`)) return;
-    const confirmPassword = window.prompt(
-      "Confirm your admin password to queue this deletion.",
-    );
-    if (!confirmPassword) return;
+    setDeleteError(null);
+    setShowDeleteConfirm(true);
+  }
+
+  async function confirmDelete(confirmPassword: string) {
+    if (!user) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "DELETE",
@@ -101,10 +116,141 @@ export default function UserDetailPage() {
         body: JSON.stringify({ confirmPassword }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) { toast.error(data.error || "Failed to delete"); return; }
-      toast.success(data.message || "User deletion queued");
+      if (!res.ok) {
+        const message = data.error || "Failed to delete";
+        setDeleteError(message);
+        toast.error(message);
+        return;
+      }
+      toast.success(data.message || "User deleted");
+      setShowDeleteConfirm(false);
       router.push("/users");
-    } catch { toast.error("Failed to delete user"); }
+    } catch {
+      setDeleteError("Failed to delete user");
+      toast.error("Failed to delete user");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
+  async function handleRestore() {
+    if (!user?.deletedAt) return;
+    setRestoreError(null);
+    setShowRestoreConfirm(true);
+  }
+
+  async function confirmRestore(confirmPassword: string) {
+    if (!user) return;
+    setRestoreBusy(true);
+    setRestoreError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore_user", confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error || "Failed to restore user";
+        setRestoreError(message);
+        toast.error(message);
+        return;
+      }
+      setUser({ ...user, deletedAt: null });
+      if (data.requestId) {
+        setGdprRequests((prev) =>
+          prev.map((request: any) =>
+            request.id === data.requestId
+              ? { ...request, status: "REJECTED", completedAt: new Date().toISOString() }
+              : request,
+          ),
+        );
+      }
+      setShowRestoreConfirm(false);
+      toast.success(data.message || "User restored");
+    } catch {
+      setRestoreError("Failed to restore user");
+      toast.error("Failed to restore user");
+    } finally {
+      setRestoreBusy(false);
+    }
+  }
+
+  async function confirmPlanChange(confirmPassword: string) {
+    if (!user || !pendingPlan) return;
+    setChangingPlan(true);
+    setPlanConfirmError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: pendingPlan, confirmPassword }),
+      });
+      if (res.ok) {
+        setEditForm({ ...editForm, plan: pendingPlan });
+        setUser({ ...user, subscription: { ...user.subscription, plan: pendingPlan } });
+        toast.success(`Plan changed to ${pendingPlan}`);
+        setPendingPlan(null);
+      } else {
+        const message = await readAdminApiError(res, "Failed to change plan.");
+        setPlanConfirmError(message);
+        toast.error(message);
+      }
+    } catch {
+      setPlanConfirmError("Failed to change plan.");
+      toast.error("Failed to change plan.");
+    } finally {
+      setChangingPlan(false);
+    }
+  }
+
+  async function confirmPremiumUpdate(confirmPassword: string) {
+    if (!user) return;
+    setSavingPremium(true);
+    setPremiumError(null);
+    setPremiumConfirmError(null);
+    try {
+      const payload: any = {
+        subscriptionStatus: premiumForm.subscriptionStatus,
+        premiumNote: premiumForm.premiumNote,
+        confirmPassword,
+      };
+      if (premiumForm.premiumUntil) payload.premiumUntil = premiumForm.premiumUntil;
+      else payload.premiumUntil = null;
+      if (premiumForm.trialEndsAt) payload.trialEndsAt = premiumForm.trialEndsAt;
+      else payload.trialEndsAt = null;
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setUser({
+          ...user,
+          subscription: {
+            ...user.subscription,
+            status: premiumForm.subscriptionStatus,
+            premiumUntil: premiumForm.premiumUntil || null,
+            trialEndsAt: premiumForm.trialEndsAt || null,
+            premiumNote: premiumForm.premiumNote,
+            premiumGrantedAt: new Date().toISOString(),
+          },
+        });
+        setShowPremiumConfirm(false);
+        toast.success("Premium settings updated");
+      } else {
+        const message = await readAdminApiError(res, "Failed to update premium settings.");
+        setPremiumError(message);
+        setPremiumConfirmError(message);
+        toast.error(message);
+      }
+    } catch {
+      setPremiumError("Failed to update premium settings.");
+      setPremiumConfirmError("Failed to update premium settings.");
+      toast.error("Failed to update premium settings.");
+    } finally {
+      setSavingPremium(false);
+    }
   }
 
   async function handleAddAdminNote() {
@@ -172,6 +318,7 @@ export default function UserDetailPage() {
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
   if (!user) return <div className="py-12 text-center text-muted-foreground">User not found</div>;
 
+  const isDeleted = Boolean(user.deletedAt);
   const addressList = user.addresses || [];
   const movingPlans = user.movingPlans || [];
   const moveTasks = user.moveTasks || [];
@@ -324,14 +471,24 @@ export default function UserDetailPage() {
           ) : (
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
-              <button onClick={() => setEditing(true)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit name">
-                <Edit className="h-4 w-4" />
-              </button>
+              {isDeleted && (
+                <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-500">
+                  Blocked / Deleted
+                </span>
+              )}
+              {!isDeleted && (
+                <button onClick={() => setEditing(true)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit name">
+                  <Edit className="h-4 w-4" />
+                </button>
+              )}
             </div>
           )}
           <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {user.email}</span>
             <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+            {isDeleted && (
+              <span className="flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Blocked / deleted {new Date(user.deletedAt).toLocaleString()}</span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -340,39 +497,42 @@ export default function UserDetailPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
             <select
               value={editForm.plan}
-              onChange={async (e) => {
+              onChange={(e) => {
                 const newPlan = e.target.value;
-                setChangingPlan(true);
-                try {
-                  const res = await fetch(`/api/users/${params.id}`, {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ plan: newPlan }),
-                  });
-                  if (res.ok) {
-                    setEditForm({ ...editForm, plan: newPlan });
-                    setUser({ ...user, subscription: { ...user.subscription, plan: newPlan } });
-                    toast.success(`Plan changed to ${newPlan}`);
-                  } else {
-                    toast.error(await readAdminApiError(res, "Failed to change plan."));
-                  }
-                } catch {
-                  toast.error("Failed to change plan.");
-                }
-                setChangingPlan(false);
+                if (newPlan === editForm.plan) return;
+                setPendingPlan(newPlan);
+                setPlanConfirmError(null);
               }}
-              disabled={changingPlan}
+              disabled={changingPlan || isDeleted}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
             >
               <option value="FREE_TRIAL">Free Trial</option>
               <option value="INDIVIDUAL">Individual</option>
             </select>
           </div>
-          <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
-            <Trash2 className="h-4 w-4" /> Delete
-          </button>
+          {isDeleted ? (
+            <button onClick={handleRestore} className="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+              <RotateCcw className="h-4 w-4" /> Restore / Unblock
+            </button>
+          ) : (
+            <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-4 w-4" /> Delete
+            </button>
+          )}
         </div>
       </div>
+
+      {isDeleted && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-medium">This account is blocked by soft deletion.</p>
+            <p className="mt-1 text-xs text-red-500/90">
+              OAuth and password login remain blocked until a SUPER_ADMIN restores/unblocks it. Existing sessions stay revoked after restore.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
@@ -458,6 +618,7 @@ export default function UserDetailPage() {
           <InfoCard label="Linked Providers" value={linkedProviders.length} />
           <InfoCard label="Active Login Sessions" value={activeLoginSessions.length} />
           <InfoCard label="Locale" value={user.preferredLocale || "System"} />
+          <InfoCard label="Budget UI" value={user.showBudget === false ? "Hidden" : "Visible"} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
@@ -796,46 +957,10 @@ export default function UserDetailPage() {
             )}
           </div>
           <button
-            onClick={async () => {
-              setSavingPremium(true);
+            onClick={() => {
               setPremiumError(null);
-              try {
-                const payload: any = {
-                  subscriptionStatus: premiumForm.subscriptionStatus,
-                  premiumNote: premiumForm.premiumNote,
-                };
-                if (premiumForm.premiumUntil) payload.premiumUntil = premiumForm.premiumUntil;
-                else payload.premiumUntil = null;
-                if (premiumForm.trialEndsAt) payload.trialEndsAt = premiumForm.trialEndsAt;
-                else payload.trialEndsAt = null;
-                const res = await fetch(`/api/users/${params.id}`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(payload),
-                });
-                if (res.ok) {
-                  setUser({
-                    ...user,
-                    subscription: {
-                      ...user.subscription,
-                      status: premiumForm.subscriptionStatus,
-                      premiumUntil: premiumForm.premiumUntil || null,
-                      trialEndsAt: premiumForm.trialEndsAt || null,
-                      premiumNote: premiumForm.premiumNote,
-                      premiumGrantedAt: new Date().toISOString(),
-                    },
-                  });
-                  toast.success("Premium settings updated");
-                } else {
-                  const message = await readAdminApiError(res, "Failed to update premium settings.");
-                  setPremiumError(message);
-                  toast.error(message);
-                }
-              } catch {
-                setPremiumError("Failed to update premium settings.");
-                toast.error("Failed to update premium settings.");
-              }
-              setSavingPremium(false);
+              setPremiumConfirmError(null);
+              setShowPremiumConfirm(true);
             }}
             disabled={savingPremium}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -1270,6 +1395,66 @@ export default function UserDetailPage() {
           </div>
         </div>
       )}
+      <PasswordConfirmModal
+        open={showDeleteConfirm}
+        title="Delete user"
+        description={`This removes ${maskEmail(user.email)} from the active list and queues staged GDPR cleanup. Enter your admin password to continue.`}
+        confirmLabel="Delete"
+        busy={deleteBusy}
+        error={deleteError}
+        onClose={() => {
+          if (!deleteBusy) {
+            setShowDeleteConfirm(false);
+            setDeleteError(null);
+          }
+        }}
+        onConfirm={confirmDelete}
+      />
+      <PasswordConfirmModal
+        open={showRestoreConfirm}
+        title="Restore / unblock user"
+        description={`This restores ${maskEmail(user.email)} to the active user list. Existing sessions remain revoked; the user must sign in again or reset their password.`}
+        confirmLabel="Restore / Unblock"
+        busy={restoreBusy}
+        error={restoreError}
+        onClose={() => {
+          if (!restoreBusy) {
+            setShowRestoreConfirm(false);
+            setRestoreError(null);
+          }
+        }}
+        onConfirm={confirmRestore}
+      />
+      <PasswordConfirmModal
+        open={Boolean(pendingPlan)}
+        title="Change user plan"
+        description={`Enter your admin password to change ${maskEmail(user.email)} from ${editForm.plan || "current plan"} to ${pendingPlan || "the selected plan"}.`}
+        confirmLabel="Change Plan"
+        busy={changingPlan}
+        error={planConfirmError}
+        onClose={() => {
+          if (!changingPlan) {
+            setPendingPlan(null);
+            setPlanConfirmError(null);
+          }
+        }}
+        onConfirm={confirmPlanChange}
+      />
+      <PasswordConfirmModal
+        open={showPremiumConfirm}
+        title="Update billing entitlements"
+        description={`Enter your admin password to update subscription, premium, or trial entitlement fields for ${maskEmail(user.email)}.`}
+        confirmLabel="Save Entitlements"
+        busy={savingPremium}
+        error={premiumConfirmError}
+        onClose={() => {
+          if (!savingPremium) {
+            setShowPremiumConfirm(false);
+            setPremiumConfirmError(null);
+          }
+        }}
+        onConfirm={confirmPremiumUpdate}
+      />
     </div>
   );
 }

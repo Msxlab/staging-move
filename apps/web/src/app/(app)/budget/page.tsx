@@ -8,8 +8,8 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { toast } from "sonner";
 import Link from "next/link";
 
-const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
-const labelCls = "text-xs font-medium text-white/50";
+const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+const labelCls = "text-xs font-medium text-muted-foreground";
 
 interface Budget {
   id: string;
@@ -38,7 +38,7 @@ const catColors: Record<string, string> = {
   Transportation: "bg-emerald-500", Groceries: "bg-lime-500", Healthcare: "bg-rose-500",
   Subscriptions: "bg-indigo-500", Entertainment: "bg-pink-500", "Dining Out": "bg-orange-500",
   Shopping: "bg-teal-500", Education: "bg-blue-500", Savings: "bg-emerald-400",
-  "Debt Payments": "bg-red-500", Other: "bg-white/30",
+  "Debt Payments": "bg-red-500", Other: "bg-foreground/30",
 };
 
 export default function BudgetPage() {
@@ -155,13 +155,13 @@ export default function BudgetPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/settings">
-            <button className="p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/5 transition">
+            <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
               <ArrowLeft className="h-4 w-4" />
             </button>
           </Link>
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">Budget</h1>
-            <p className="text-white/40 mt-1">Monthly expense tracking & planning</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Budget</h1>
+            <p className="text-muted-foreground mt-1">Monthly expense tracking & planning</p>
           </div>
         </div>
         <button
@@ -173,13 +173,13 @@ export default function BudgetPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-white/5 w-fit">
+      <div className="flex gap-1 p-1 rounded-xl bg-foreground/5 w-fit">
         {(["overview", "history"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
-              tab === t ? "bg-orange-500 text-white" : "text-white/40 hover:text-white"
+              tab === t ? "bg-orange-500 text-white" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t === "overview" ? "Overview" : "History"}
@@ -189,8 +189,8 @@ export default function BudgetPage() {
 
       {/* Add/Edit Form */}
       {showForm && (
-        <div className="rounded-2xl border border-orange-500/20 bg-white/5 backdrop-blur-xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-white">{editingId ? "Edit Budget" : "New Monthly Budget"}</h3>
+        <div className="rounded-2xl border border-orange-500/20 bg-foreground/5 backdrop-blur-xl p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">{editingId ? "Edit Budget" : "New Monthly Budget"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <label className={labelCls}>Month *</label>
@@ -215,7 +215,7 @@ export default function BudgetPage() {
               <div key={field.key} className="space-y-1.5">
                 <label className={labelCls}>{field.label}</label>
                 <div className="relative">
-                  <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/20" />
+                  <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/30" />
                   <input
                     className={`${inputCls} pl-8`}
                     type="number" step="0.01" placeholder="0.00"
@@ -233,8 +233,8 @@ export default function BudgetPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
               {BUDGET_CATEGORIES.map((cat) => (
                 <div key={cat} className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${catColors[cat] || "bg-white/20"}`} />
-                  <span className="text-[11px] w-20 truncate text-white/40">{cat}</span>
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${catColors[cat] || "bg-foreground/20"}`} />
+                  <span className="text-[11px] w-20 truncate text-muted-foreground">{cat}</span>
                   <input
                     className={`${inputCls} h-7 text-xs flex-1`}
                     type="number" step="0.01" placeholder="0"
@@ -272,28 +272,28 @@ export default function BudgetPage() {
               { label: "Actual Spent", value: formatCurrency(totalActual), sub: totalPlanned > 0 ? `${Math.round((totalActual / totalPlanned) * 100)}% of budget` : "No budget set", icon: totalActual > totalPlanned && totalPlanned > 0 ? TrendingUp : TrendingDown, color: totalActual > totalPlanned && totalPlanned > 0 ? "red" : "emerald" },
               { label: "Net Savings", value: formatCurrency(totalIncome - totalActual), sub: totalIncome > 0 ? `${Math.round(((totalIncome - totalActual) / totalIncome) * 100)}% saved` : "No income data", icon: PiggyBank, color: "amber" },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+              <div key={stat.label} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`p-1.5 rounded-lg bg-${stat.color}-500/10 border border-${stat.color}-500/20`}>
                     <stat.icon className={`h-3.5 w-3.5 text-${stat.color}-400`} />
                   </div>
-                  <span className="text-[11px] text-white/40">{stat.label}</span>
+                  <span className="text-[11px] text-muted-foreground">{stat.label}</span>
                 </div>
-                <p className="text-xl font-bold text-white">{stat.value}</p>
-                <p className="text-[10px] text-white/30 mt-0.5">{stat.sub}</p>
+                <p className="text-xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-[10px] text-foreground/40 mt-0.5">{stat.sub}</p>
               </div>
             ))}
           </div>
 
           {/* Spending by Category (from services) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5">
+            <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <BarChart3 className="h-4 w-4 text-orange-400" />
-                <h3 className="text-sm font-semibold text-white">Spending by Category</h3>
+                <h3 className="text-sm font-semibold text-foreground">Spending by Category</h3>
               </div>
               {svcCats.length === 0 ? (
-                <p className="text-xs text-white/30 text-center py-6">No services registered yet</p>
+                <p className="text-xs text-foreground/40 text-center py-6">No services registered yet</p>
               ) : (
                 <div className="space-y-3">
                   {svcCats.map(([cat, amt]) => {
@@ -301,10 +301,10 @@ export default function BudgetPage() {
                     return (
                       <div key={cat}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-white/50">{cat}</span>
-                          <span className="text-xs font-semibold text-white/70">{formatCurrency(amt)}/mo</span>
+                          <span className="text-xs text-muted-foreground">{cat}</span>
+                          <span className="text-xs font-semibold text-foreground/80">{formatCurrency(amt)}/mo</span>
                         </div>
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${catColors[cat] || "bg-orange-500"}`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
@@ -315,13 +315,13 @@ export default function BudgetPage() {
             </div>
 
             {/* Budget vs Actual Chart */}
-            <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5">
+            <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Target className="h-4 w-4 text-cyan-400" />
-                <h3 className="text-sm font-semibold text-white">Budget vs Actual</h3>
+                <h3 className="text-sm font-semibold text-foreground">Budget vs Actual</h3>
               </div>
               {budgets.length === 0 ? (
-                <p className="text-xs text-white/30 text-center py-6">Add a budget to see comparison</p>
+                <p className="text-xs text-foreground/40 text-center py-6">Add a budget to see comparison</p>
               ) : (
                 <div className="space-y-4">
                   {budgets.slice(0, 6).map((b) => {
@@ -333,17 +333,17 @@ export default function BudgetPage() {
                     return (
                       <div key={b.id}>
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-white/50">{label} {b.year}</span>
+                          <span className="text-xs font-medium text-muted-foreground">{label} {b.year}</span>
                           <span className={`text-[10px] font-medium ${overBudget ? "text-red-400" : "text-emerald-400"}`}>
                             {planned > 0 ? `${Math.round((actual / planned) * 100)}%` : "—"}
                           </span>
                         </div>
                         <div className="flex gap-1">
                           <div className="flex-1 space-y-1">
-                            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
                               <div className="h-full bg-cyan-500/60 rounded-full" style={{ width: `${(planned / maxVal) * 100}%` }} />
                             </div>
-                            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
                               <div className={`h-full rounded-full ${overBudget ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${(actual / maxVal) * 100}%` }} />
                             </div>
                           </div>
@@ -355,9 +355,9 @@ export default function BudgetPage() {
                       </div>
                     );
                   })}
-                  <div className="flex items-center gap-4 pt-2 border-t border-white/5">
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-cyan-500/60" /><span className="text-[10px] text-white/30">Planned</span></div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-emerald-500" /><span className="text-[10px] text-white/30">Actual</span></div>
+                  <div className="flex items-center gap-4 pt-2 border-t border-border">
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-cyan-500/60" /><span className="text-[10px] text-foreground/40">Planned</span></div>
+                    <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-emerald-500" /><span className="text-[10px] text-foreground/40">Actual</span></div>
                   </div>
                 </div>
               )}
@@ -384,15 +384,15 @@ export default function BudgetPage() {
                 const maxCat = cats.length > 0 ? Math.max(...cats.map(([, v]) => v)) : 1;
 
                 return (
-                  <div key={b.id} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 space-y-3">
+                  <div key={b.id} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
                           <Calendar className="h-5 w-5 text-orange-400" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-semibold text-white">{monthLabel}</h3>
-                          <p className="text-xs text-white/40">
+                          <h3 className="text-sm font-semibold text-foreground">{monthLabel}</h3>
+                          <p className="text-xs text-muted-foreground">
                             {b.actualIncome ? `Income: ${formatCurrency(b.actualIncome)}` : ""}
                             {b.actualIncome && b.actualExpenses ? " · " : ""}
                             Expenses: {formatCurrency(b.actualExpenses)}
@@ -414,34 +414,34 @@ export default function BudgetPage() {
                     {/* Progress bar */}
                     {b.plannedExpenses ? (
                       <div className="space-y-1">
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${overBudget ? "bg-red-500" : "bg-emerald-500"}`}
                             style={{ width: `${Math.min((b.actualExpenses / b.plannedExpenses) * 100, 100)}%` }}
                           />
                         </div>
-                        <p className="text-[10px] text-white/25 text-right">
+                        <p className="text-[10px] text-foreground/35 text-right">
                           {Math.round((b.actualExpenses / b.plannedExpenses) * 100)}% used
                         </p>
                       </div>
                     ) : null}
 
                     {cats.length > 0 && (
-                      <div className="space-y-1.5 pt-2 border-t border-white/5">
+                      <div className="space-y-1.5 pt-2 border-t border-border">
                         {cats.slice(0, 5).map(([cat, amt]) => (
                           <div key={cat} className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${catColors[cat] || "bg-white/20"}`} />
-                            <span className="text-[11px] w-24 truncate text-white/40">{cat}</span>
-                            <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                            <div className={`w-2 h-2 rounded-full shrink-0 ${catColors[cat] || "bg-foreground/20"}`} />
+                            <span className="text-[11px] w-24 truncate text-muted-foreground">{cat}</span>
+                            <div className="flex-1 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
                               <div className={`h-full rounded-full ${catColors[cat] || "bg-orange-500"}`} style={{ width: `${(amt / maxCat) * 100}%` }} />
                             </div>
-                            <span className="text-[11px] font-medium w-16 text-right text-white/60">{formatCurrency(amt)}</span>
+                            <span className="text-[11px] font-medium w-16 text-right text-muted-foreground">{formatCurrency(amt)}</span>
                           </div>
                         ))}
-                        {cats.length > 5 && <p className="text-[10px] text-white/25">+{cats.length - 5} more</p>}
+                        {cats.length > 5 && <p className="text-[10px] text-foreground/35">+{cats.length - 5} more</p>}
                       </div>
                     )}
-                    {b.notes && <p className="text-[11px] text-white/25 italic pt-1">{b.notes}</p>}
+                    {b.notes && <p className="text-[11px] text-foreground/35 italic pt-1">{b.notes}</p>}
                   </div>
                 );
               })}

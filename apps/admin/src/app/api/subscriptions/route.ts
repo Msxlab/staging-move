@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { parsePaginationParams } from "@/lib/pagination";
 
 export async function GET(request: NextRequest) {
   try {
     await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const perPage = parseInt(searchParams.get("perPage") || "20");
+    const { page, perPage, skip } = parsePaginationParams(searchParams, {
+      defaultPerPage: 20,
+    });
     const search = searchParams.get("search") || "";
     const plan = searchParams.get("plan") || "";
     const status = searchParams.get("status") || "";
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: "desc" },
         take: perPage,
-        skip: (page - 1) * perPage,
+        skip,
       }),
       prisma.subscription.count({ where }),
       prisma.subscription.count(),

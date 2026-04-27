@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, TrendingDown, Users, CreditCard, AlertTriangle, ArrowUpRight, ArrowDownRight, Clock, Smartphone, ShieldAlert, Store } from "lucide-react";
 import { toast } from "sonner";
+import { maskEmail } from "@/lib/privacy";
 
 interface BillingData {
   mrr: number;
@@ -205,7 +206,7 @@ export default function BillingPage() {
               {data.trialExpiring.map((s: any) => (
                 <div key={s.id} className="flex items-center justify-between rounded-lg border border-border p-3">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{s.user?.email}</p>
+                    <p className="text-sm font-medium text-foreground">{maskEmail(s.user?.email)}</p>
                     <p className="text-xs text-muted-foreground">{s.plan}</p>
                   </div>
                   <span className={`text-xs font-medium ${s.daysLeft <= 2 ? "text-red-500" : "text-amber-500"}`}>{s.daysLeft}d left</span>
@@ -227,7 +228,7 @@ export default function BillingPage() {
               {data.recentCancellations.map((s: any) => (
                 <div key={s.id} className="flex items-center justify-between rounded-lg border border-border p-3">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{s.user?.email}</p>
+                    <p className="text-sm font-medium text-foreground">{maskEmail(s.user?.email)}</p>
                     <p className="text-xs text-muted-foreground">{s.plan}</p>
                   </div>
                   <span className="text-xs text-muted-foreground">{s.canceledAt ? new Date(s.canceledAt).toLocaleDateString() : ""}</span>
@@ -287,7 +288,7 @@ export default function BillingPage() {
                 <div key={subscription.id} className="rounded-lg border border-border p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-medium text-foreground">{subscription.user?.email || "Unknown user"}</p>
+                      <p className="text-sm font-medium text-foreground">{subscription.user?.email ? maskEmail(subscription.user.email) : "Unknown user"}</p>
                       <p className="mt-1 text-xs text-muted-foreground">{subscription.provider || "UNKNOWN"} · {subscription.platform || "unassigned"} · {subscription.plan || "Unknown plan"}</p>
                     </div>
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${subscription.missingReceiptIdentifier ? "bg-red-500/10 text-red-500" : "bg-amber-500/10 text-amber-500"}`}>

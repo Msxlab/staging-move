@@ -7,7 +7,7 @@ import { isEncrypted, reEncrypt, validateKeyFormat } from "@/lib/shared-encrypti
 const ENCRYPTED_FIELDS: Record<string, { model: string; fields: string[] }> = {
   services: {
     model: "service",
-    fields: ["accountNumber", "username", "phone", "notes"],
+    fields: ["accountNumber", "username", "phone", "email", "notes"],
   },
   addresses: {
     model: "address",
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
           const records = await prisma.service.findMany({
             skip,
             take: batchSize,
-            select: { id: true, accountNumber: true, username: true, phone: true, notes: true },
+            select: { id: true, accountNumber: true, username: true, phone: true, email: true, notes: true },
           });
           if (records.length < batchSize) hasMore = false;
           skip += batchSize;
@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
               accountNumber: record.accountNumber,
               username: record.username,
               phone: record.phone,
+              email: record.email,
               notes: record.notes,
             };
 
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
                     ...(updates.accountNumber ? { accountNumber: updates.accountNumber } : {}),
                     ...(updates.username ? { username: updates.username } : {}),
                     ...(updates.phone ? { phone: updates.phone } : {}),
+                    ...(updates.email ? { email: updates.email } : {}),
                     ...(updates.notes ? { notes: updates.notes } : {}),
                   },
                 });

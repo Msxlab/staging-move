@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdmin, requireRole } from "@/lib/auth";
+import { parsePaginationParams } from "@/lib/pagination";
 
 // GET /api/auth/login-history — list admin login history
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAdmin();
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const perPage = parseInt(searchParams.get("perPage") || "50");
+    const { page, perPage, skip } = parsePaginationParams(searchParams, {
+      defaultPerPage: 50,
+    });
     const all = searchParams.get("all") === "true";
     const successOnly = searchParams.get("success");
 
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { createdAt: "desc" },
         take: perPage,
-        skip: (page - 1) * perPage,
+        skip,
       }),
       prisma.adminLoginLog.count({ where }),
     ]);

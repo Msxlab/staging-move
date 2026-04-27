@@ -1,13 +1,13 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import {
+  LEGAL_CONSENT_VERSION,
   LEGAL_CONSENT_EVENT,
   createAcceptedLegalConsents,
+  getDefaultLegalConsents,
   hasRequiredLegalConsents,
   type LegalConsentState,
 } from "@/lib/legal";
-
-export const OAUTH_LEGAL_ACCEPTANCE_COOKIE = "oauth_legal_acceptance";
 
 export function getRequestIp(request: NextRequest): string | null {
   return (
@@ -32,6 +32,24 @@ export async function recordLegalAcceptance(input: {
   consents?: Partial<LegalConsentState> | null;
 }) {
   const accepted = normalizeAcceptedLegalConsents(input.consents) || createAcceptedLegalConsents();
+  const existing = await prisma.userEvent.findFirst({
+    where: { userId: input.userId, event: LEGAL_CONSENT_EVENT },
+    orderBy: { createdAt: "desc" },
+  });
+  if (existing?.metadata) {
+    try {
+      const current = getDefaultLegalConsents(JSON.parse(existing.metadata));
+      if (
+        hasRequiredLegalConsents(current) &&
+        current.termsVersion === (accepted.termsVersion || LEGAL_CONSENT_VERSION) &&
+        current.disclaimerVersion === (accepted.disclaimerVersion || LEGAL_CONSENT_VERSION)
+      ) {
+        return;
+      }
+    } catch {
+      // Malformed legacy metadata should not block recording current consent.
+    }
+  }
   const ipAddress = getRequestIp(input.request);
   const userAgent = input.request.headers.get("user-agent") || null;
 

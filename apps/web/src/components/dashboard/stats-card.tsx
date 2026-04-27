@@ -22,13 +22,13 @@ export function StatsCard({
   className,
 }: StatsCardProps) {
   return (
-    <div className={cn("glass-card p-5 hover:bg-white/[0.07] transition-all", className)}>
+    <div className={cn("glass-card p-5 hover:bg-foreground/[0.07] transition-all", className)}>
       <div className="flex items-start justify-between">
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-white/40 uppercase tracking-wider">{title}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           {description && (
-            <p className="text-[11px] text-white/30">{description}</p>
+            <p className="text-[11px] text-foreground/40">{description}</p>
           )}
           {trend && (
             <p

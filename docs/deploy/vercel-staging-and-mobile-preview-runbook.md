@@ -1,5 +1,7 @@
 # Vercel Staging And Mobile Preview Runbook
 
+> Legacy / not current: the active staging target is DigitalOcean App Platform at `https://locateflow-staging-owew7.ondigitalocean.app`. Keep this runbook only as historical Vercel reference unless staging is intentionally moved back to Vercel.
+
 Current PR: `#15 Current product readiness epic`
 Current branch: `pr/current-product-readiness-epic`
 

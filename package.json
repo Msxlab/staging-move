@@ -5,12 +5,16 @@
   "scripts": {
     "postinstall": "pnpm --filter @locateflow/db generate",
     "dev": "turbo dev",
+    "start": "pnpm db:migrate:deploy && pnpm --filter @locateflow/web start",
+    "web:prepare-standalone": "node scripts/prepare-web-standalone.mjs",
+    "admin:prepare-standalone": "node scripts/prepare-admin-standalone.mjs",
     "build": "turbo build",
     "lint": "turbo lint",
     "audit:providers": "pnpm exec tsx scripts/audit-provider-seed.ts",
     "audit:providers:write": "pnpm exec tsx scripts/audit-provider-seed.ts --write",
     "audit:providers:readiness": "pnpm exec tsx scripts/audit-provider-readiness.ts",
     "audit:providers:coverage": "pnpm exec tsx scripts/audit-provider-coverage.ts",
+    "audit:staging-provider-data": "pnpm exec tsx scripts/audit-staging-provider-data.ts",
     "audit:providers:state-completeness": "pnpm exec tsx scripts/audit-state-provider-completeness.ts --skip-fetch",
     "audit:providers:state-completeness:write": "pnpm exec tsx scripts/audit-state-provider-completeness.ts",
     "inventory:providers:coverage-surface": "pnpm exec tsx scripts/inventory-provider-coverage-surface.ts --write",
@@ -28,6 +32,7 @@
     "docker:db:init": "docker compose run --rm db-init",
     "db:generate": "pnpm --filter @locateflow/db generate",
     "db:migrate": "pnpm --filter @locateflow/db migrate",
+    "db:migrate:deploy": "pnpm --filter @locateflow/db exec prisma migrate deploy",
     "db:push": "pnpm --filter @locateflow/db push",
     "db:seed": "pnpm --filter @locateflow/db seed",
     "db:seed:all": "pnpm --filter @locateflow/db seed:all",
@@ -42,7 +47,8 @@
     "mobile:build:dev:android": "pnpm --filter @locateflow/mobile build:dev:android",
     "mobile:build:dev:ios": "pnpm --filter @locateflow/mobile build:dev:ios",
     "mobile:build:simulator:ios": "pnpm --filter @locateflow/mobile build:simulator:ios",
-    "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts"
+    "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts",
+    "backfill:subscriptions": "pnpm exec tsx scripts/backfill-missing-subscriptions.ts"
   },
   "devDependencies": {
     "turbo": "^2.9.6"

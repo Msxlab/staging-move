@@ -17,19 +17,19 @@ OAuth remains optional for staging. If credentials are missing, web and mobile s
 Google Cloud Console:
 
 - Create or reuse OAuth 2.0 Client ID for web.
-- Authorized JavaScript origin: `https://locateflow-web-staging.vercel.app`
-- Authorized redirect URI: `https://locateflow-web-staging.vercel.app/api/auth/oauth/google/callback`
+- Authorized JavaScript origin: `https://locateflow-staging-owew7.ondigitalocean.app`
+- Authorized redirect URI: `https://locateflow-staging-owew7.ondigitalocean.app/api/auth/oauth/google/callback`
 
 Production later:
 
 - Authorized JavaScript origin: production app URL.
 - Authorized redirect URI: `<production-app-url>/api/auth/oauth/google/callback`
 
-Vercel web staging env:
+DigitalOcean web staging env:
 
 - `GOOGLE_OAUTH_CLIENT_ID`
 - `GOOGLE_OAUTH_CLIENT_SECRET`
-- `NEXT_PUBLIC_APP_URL=https://locateflow-web-staging.vercel.app`
+- `NEXT_PUBLIC_APP_URL=https://locateflow-staging-owew7.ondigitalocean.app`
 
 Expected tests:
 
@@ -43,7 +43,7 @@ Expected tests:
 Apple Developer:
 
 - Create or reuse a Services ID for web sign-in.
-- Configure return URL: `https://locateflow-web-staging.vercel.app/api/auth/oauth/apple/callback`
+- Configure return URL: `https://locateflow-staging-owew7.ondigitalocean.app/api/auth/oauth/apple/callback`
 - Create Sign in with Apple key.
 - Record Team ID, Key ID, Services ID, and private key.
 
@@ -51,13 +51,13 @@ Production later:
 
 - Add production return URL: `<production-app-url>/api/auth/oauth/apple/callback`
 
-Vercel web staging env:
+DigitalOcean web staging env:
 
 - `APPLE_OAUTH_CLIENT_ID`
 - `APPLE_OAUTH_TEAM_ID`
 - `APPLE_OAUTH_KEY_ID`
 - `APPLE_OAUTH_PRIVATE_KEY`
-- `NEXT_PUBLIC_APP_URL=https://locateflow-web-staging.vercel.app`
+- `NEXT_PUBLIC_APP_URL=https://locateflow-staging-owew7.ondigitalocean.app`
 
 Expected tests:
 
@@ -72,7 +72,7 @@ Current mobile social sign-in hands off to web OAuth routes. It does not add nat
 
 Mobile preview requires:
 
-- `EXPO_PUBLIC_API_URL=https://locateflow-web-staging.vercel.app/api`
+- `EXPO_PUBLIC_API_URL=https://locateflow-staging-owew7.ondigitalocean.app/api`
 - Staging OAuth routes reachable from device.
 - Legal acknowledgement UI tested before social account creation.
 

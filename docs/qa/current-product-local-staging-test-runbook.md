@@ -87,10 +87,14 @@ Staging migration checklist:
 ## Seed
 
 ```bash
-pnpm db:seed
+pnpm db:seed:master
 ```
 
-For full local data where appropriate:
+The master seed loads the current provider catalog, provider coverage rows,
+state rules, email templates, help articles, and FAQs.
+
+For local admin data where appropriate, provide a strong
+`ADMIN_SEED_PASSWORD` and run:
 
 ```bash
 pnpm db:seed:all

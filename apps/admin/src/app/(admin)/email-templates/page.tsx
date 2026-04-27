@@ -1,11 +1,42 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { Mail, Plus, Trash2, Edit2, Eye, Send, CheckCircle2, XCircle, X } from "lucide-react";
 import { toast } from "sonner";
 
-interface Template { id: string; slug: string; name: string; subject: string; body: string; category: string; variables: string | null; isActive: boolean; createdAt: string; _count?: { emailLogs: number } }
-interface LogEntry { id: string; to: string; subject: string; status: string; sentAt: string | null; createdAt: string; template?: { name: string; slug: string } | null }
+interface Template {
+  id: string;
+  slug: string;
+  name: string;
+  subject: string;
+  body: string;
+  category: string;
+  variables: string | null;
+  isActive: boolean;
+  createdAt: string;
+  sendCounts?: { sent: number; failed: number; total: number };
+  _count?: { emailLogs: number };
+}
+interface LogEntry {
+  id: string;
+  to: string;
+  toDomain?: string | null;
+  subject: string;
+  status: string;
+  error?: string | null;
+  safeErrorReason?: string | null;
+  sentAt: string | null;
+  failedAt?: string | null;
+  createdAt: string;
+  providerMessageId: string | null;
+  templateIdPresent?: boolean;
+  fromAddress?: string | null;
+  missingConfig?: boolean;
+  dedupeConflict?: boolean;
+  resendApiError?: boolean;
+  retryAvailable?: boolean;
+  template?: { name: string; slug: string } | null;
+}
 
 const CATEGORIES = ["SYSTEM", "MARKETING", "TRANSACTIONAL", "NOTIFICATION"];
 
@@ -18,6 +49,7 @@ export default function EmailTemplatesPage() {
   const [editing, setEditing] = useState<Template | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [preview, setPreview] = useState<Template | null>(null);
+  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
   const [form, setForm] = useState({ slug: "", name: "", subject: "", body: "", category: "SYSTEM", variables: "", isActive: true });
 
   const load = () => {
@@ -105,14 +137,15 @@ export default function EmailTemplatesPage() {
       {tab === "templates" && (
         <div className="rounded-xl border border-border bg-card">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Slug</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium w-32">Actions</th></tr></thead>
+            <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">Name</th><th className="px-4 py-3 font-medium">Slug</th><th className="px-4 py-3 font-medium">Category</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Failed</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium w-32">Actions</th></tr></thead>
             <tbody>
-              {templates.length === 0 ? (<tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No templates yet</td></tr>) : templates.map((t) => (
+              {templates.length === 0 ? (<tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No templates yet</td></tr>) : templates.map((t) => (
                 <tr key={t.id} className="border-b border-border hover:bg-accent/30">
                   <td className="px-4 py-3 font-medium text-foreground">{t.name}</td>
                   <td className="px-4 py-3 font-mono text-muted-foreground text-xs">{t.slug}</td>
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{t.category}</span></td>
-                  <td className="px-4 py-3 text-muted-foreground">{(t as any)._count?.emailLogs || 0}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{t.sendCounts?.sent ?? t._count?.emailLogs ?? 0}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{t.sendCounts?.failed ?? 0}</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.isActive ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>{t.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => setPreview(t)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Eye className="h-4 w-4" /></button>
@@ -129,16 +162,47 @@ export default function EmailTemplatesPage() {
       {tab === "logs" && (
         <div className="rounded-xl border border-border bg-card">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">To</th><th className="px-4 py-3 font-medium">Template</th><th className="px-4 py-3 font-medium">Subject</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Sent</th></tr></thead>
+            <thead><tr className="border-b border-border text-left text-muted-foreground"><th className="px-4 py-3 font-medium">To</th><th className="px-4 py-3 font-medium">Template</th><th className="px-4 py-3 font-medium">Subject</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Sent</th><th className="px-4 py-3 font-medium">Provider ID</th><th className="px-4 py-3 font-medium">Details</th></tr></thead>
             <tbody>
-              {logs.length === 0 ? (<tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No emails sent yet</td></tr>) : logs.map((l) => (
-                <tr key={l.id} className="border-b border-border hover:bg-accent/30">
-                  <td className="px-4 py-3 text-foreground">{l.to}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{l.template?.name || "—"}</td>
-                  <td className="px-4 py-3 text-foreground truncate max-w-xs">{l.subject}</td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "SENT" ? "bg-green-500/10 text-green-500" : l.status === "FAILED" ? "bg-red-500/10 text-red-500" : "bg-yellow-500/10 text-yellow-500"}`}>{l.status}</span></td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.createdAt).toLocaleString()}</td>
-                </tr>
+              {logs.length === 0 ? (<tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No emails sent yet</td></tr>) : logs.map((l) => (
+                <Fragment key={l.id}>
+                  <tr className="border-b border-border hover:bg-accent/30">
+                    <td className="px-4 py-3 text-foreground">{l.to}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                      {l.template ? <span>{l.template.name} <span className="font-mono">({l.template.slug})</span></span> : "Manual"}
+                    </td>
+                    <td className="px-4 py-3 text-foreground truncate max-w-xs">{l.subject}</td>
+                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "SENT" ? "bg-green-500/10 text-green-500" : l.status === "FAILED" ? "bg-red-500/10 text-red-500" : "bg-yellow-500/10 text-yellow-500"}`}>{l.status}</span></td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs">{l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.failedAt || l.createdAt).toLocaleString()}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground text-xs">{l.providerMessageId || "-"}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedLogId(expandedLogId === l.id ? null : l.id)}
+                        className="rounded p-1 text-muted-foreground hover:bg-accent"
+                        aria-label="View failure details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                  {expandedLogId === l.id && (
+                    <tr className="border-b border-border bg-accent/20">
+                      <td colSpan={7} className="px-4 py-3">
+                        <div className="grid gap-2 text-xs text-muted-foreground md:grid-cols-2">
+                          <p><span className="font-medium text-foreground">Failure reason:</span> {l.safeErrorReason || l.error || "-"}</p>
+                          <p><span className="font-medium text-foreground">From:</span> {l.fromAddress || "-"}</p>
+                          <p><span className="font-medium text-foreground">Recipient domain:</span> {l.toDomain || "-"}</p>
+                          <p><span className="font-medium text-foreground">Template linked:</span> {l.templateIdPresent ? "Yes" : "No"}</p>
+                          <p><span className="font-medium text-foreground">Missing config:</span> {l.missingConfig ? "Yes" : "No"}</p>
+                          <p><span className="font-medium text-foreground">Resend API error:</span> {l.resendApiError ? "Yes" : "No"}</p>
+                          <p><span className="font-medium text-foreground">Dedupe conflict:</span> {l.dedupeConflict ? "Yes" : "No"}</p>
+                          <p><span className="font-medium text-foreground">Retry available:</span> {l.retryAvailable ? "Yes" : "No"}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               ))}
             </tbody>
           </table>

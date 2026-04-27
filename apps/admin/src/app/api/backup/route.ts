@@ -15,6 +15,7 @@ import {
 } from "@/lib/backup-storage";
 import {
   BackupPolicyError,
+  evaluateBackupArchiveSize,
   getBackupArchivePolicy,
   requireArchiveProtected,
   requireBackupCrypto,
@@ -28,9 +29,17 @@ const BACKUP_TABLE_OPS = {
     count: () => prisma.user.count(),
     findRecords: () => prisma.user.findMany({ take: 50000 }),
   },
+  oauthAccounts: {
+    count: () => prisma.oAuthAccount.count(),
+    findRecords: () => prisma.oAuthAccount.findMany({ take: 50000 }),
+  },
   profiles: {
     count: () => prisma.profile.count(),
     findRecords: () => prisma.profile.findMany({ take: 50000 }),
+  },
+  dataConsents: {
+    count: () => prisma.dataConsent.count(),
+    findRecords: () => prisma.dataConsent.findMany({ take: 50000 }),
   },
   providers: {
     count: () => prisma.serviceProvider.count(),
@@ -72,6 +81,10 @@ const BACKUP_TABLE_OPS = {
     count: () => prisma.notification.count(),
     findRecords: () => prisma.notification.findMany({ take: 50000 }),
   },
+  emailLogs: {
+    count: () => prisma.emailLog.count(),
+    findRecords: () => prisma.emailLog.findMany({ take: 50000 }),
+  },
   moveTasks: {
     count: () => prisma.moveTask.count(),
     findRecords: () => prisma.moveTask.findMany({ take: 50000 }),
@@ -79,6 +92,22 @@ const BACKUP_TABLE_OPS = {
   providerGovernanceIssues: {
     count: () => prisma.providerGovernanceIssue.count(),
     findRecords: () => prisma.providerGovernanceIssue.findMany({ take: 50000 }),
+  },
+  adminUsers: {
+    count: () => prisma.adminUser.count(),
+    findRecords: () => prisma.adminUser.findMany({ take: 50000 }),
+  },
+  adminPermissions: {
+    count: () => prisma.adminPermission.count(),
+    findRecords: () => prisma.adminPermission.findMany({ take: 50000 }),
+  },
+  adminLoginLogs: {
+    count: () => prisma.adminLoginLog.count(),
+    findRecords: () => prisma.adminLoginLog.findMany({ take: 50000 }),
+  },
+  adminAuditLogs: {
+    count: () => prisma.adminAuditLog.count(),
+    findRecords: () => prisma.adminAuditLog.findMany({ take: 50000 }),
   },
 } as const;
 
@@ -287,6 +316,7 @@ export async function POST(request: NextRequest) {
     });
     const downloadData = JSON.stringify(archive, null, 2);
     const fileSize = Buffer.byteLength(downloadData, "utf-8");
+    const sizeEvaluation = evaluateBackupArchiveSize(fileSize);
     const offsite = await uploadBackupArchive({
       backupId: backup.id,
       fileName,
@@ -301,6 +331,7 @@ export async function POST(request: NextRequest) {
         signature: Boolean(signature),
         totalRecords,
         tableCounts,
+        archiveSizeWarning: sizeEvaluation.warning,
       },
     });
 
@@ -333,6 +364,7 @@ export async function POST(request: NextRequest) {
           signature: !!signature,
           offsiteStatus: offsite.status,
           offsiteLocation: offsite.location,
+          archiveSizeWarning: sizeEvaluation.warning,
         }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
@@ -365,6 +397,7 @@ export async function POST(request: NextRequest) {
         archivePolicy,
         isEncrypted: !!encrypted,
         offsite,
+        archiveSizeWarning: sizeEvaluation.warning,
       },
       { status: 201 },
     );

@@ -7,7 +7,13 @@ import {
   getOAuthRedirectUri,
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
-import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
+import {
+  MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_REDIRECT_COOKIE,
+  isMobileOAuthClient,
+  normalizeMobileOAuthRedirectUri,
+} from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
 
@@ -31,8 +37,14 @@ export async function GET(request: NextRequest) {
   const redirectUri = await getOAuthRedirectUri(request, "/api/auth/oauth/google/callback");
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
-  const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
   const safeRedirect = normalizeOAuthRedirectPath(rawRedirect);
+  const client = request.nextUrl.searchParams.get("client");
+  const mobileRedirectUri = isMobileOAuthClient(client)
+    ? normalizeMobileOAuthRedirectUri(request.nextUrl.searchParams.get("mobileRedirectUri"))
+    : null;
+  if (isMobileOAuthClient(client) && !mobileRedirectUri) {
+    return NextResponse.json({ error: "Invalid mobile OAuth redirect URI." }, { status: 400 });
+  }
 
   const url = googleAuthorizeUrl({
     clientId,
@@ -44,7 +56,7 @@ export async function GET(request: NextRequest) {
   const res = NextResponse.redirect(url);
   const cookieOpts = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     sameSite: "lax" as const,
     path: "/",
     maxAge: 10 * 60, // 10 min
@@ -53,8 +65,9 @@ export async function GET(request: NextRequest) {
   res.cookies.set("oauth_pkce_google", pkce.verifier, cookieOpts);
   res.cookies.set("oauth_redirect_uri_google", redirectUri, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
-  if (acceptedLegal) {
-    res.cookies.set(OAUTH_LEGAL_ACCEPTANCE_COOKIE, "accepted", cookieOpts);
+  if (mobileRedirectUri) {
+    res.cookies.set(MOBILE_OAUTH_CLIENT_COOKIE, "mobile", cookieOpts);
+    res.cookies.set(MOBILE_OAUTH_REDIRECT_COOKIE, mobileRedirectUri, cookieOpts);
   }
   return res;
 }

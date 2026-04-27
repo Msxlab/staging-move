@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LocateFlow — Prototype</title>
+<link rel="stylesheet" href="../assets/tokens.css">
+<style>
+  body { margin: 0; min-height: 100vh; background: #050507; font-family: 'Inter', system-ui, sans-serif; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+  .nav { position: fixed; top: 16px; left: 16px; z-index: 100; display: flex; gap: 8px; align-items: center; font-size: 12px; }
+  .nav a { color: rgba(255,255,255,0.5); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); }
+  .nav a:hover { color: #f97316; }
+  .stage-wrap { display: flex; gap: 50px; align-items: center; flex-wrap: wrap; justify-content: center; }
+  .stage-side { max-width: 280px; }
+  .stage-side .kicker { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: #fb923c; letter-spacing: 0.2em; }
+  .stage-side h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin: 8px 0 12px; }
+  .stage-side p { font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.55; margin: 0 0 14px; }
+  .stage-side .step-pill { display: inline-block; font-size: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.2); color: #fb923c; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 12px; }
+  .step-nav { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  .step-nav button { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); border-radius: 8px; padding: 8px 12px; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer; transition: 200ms; }
+  .step-nav button:hover { background: rgba(249,115,22,0.1); border-color: rgba(249,115,22,0.3); color: #fb923c; }
+  .step-nav button.active { background: #f97316; border-color: #f97316; color: white; }
+</style>
+</head>
+<body>
+  <div class="nav"><a href="../index.html">← Hub</a></div>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script src="translations.js"></script>
+  <script type="text/babel" src="../tweaks-panel.jsx"></script>
+  <script type="text/babel" src="app.jsx"></script>
+  <script type="text/babel" src="screens-2.jsx"></script>
+  <script type="text/babel" src="more-screen.jsx"></script>
+
+  <script type="text/babel">
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "lang": "en"
+    }/*EDITMODE-END*/;
+
+    const STEPS = {
+      en: [
+        { id: "onboarding", kicker: "STEP 1", title: "The recognition", body: "It opens with the chaos a real mover knows. Forgotten subscriptions. Old utilities still billing. Account numbers nowhere." },
+        { id: "address",    kicker: "STEP 2", title: "One address", body: "You hand it your home — that's the whole onboarding. From here on, every service is tied to this place." },
+        { id: "home",       kicker: "STEP 3", title: "Everything in view", body: "What you pay. What you've saved. What needs attention. The dashboard is built for scanning, not scrolling." },
+        { id: "move",       kicker: "STEP 4", title: "Plan a move", body: "When relocation comes, you don't start over. Type the new address, pick the date, get a checklist." },
+        { id: "checklist",  kicker: "STEP 5", title: "One tap each", body: "Transfer. Cancel. Reconnect. Tap to mark done. The progress bar fills, and at 100% — the calm." },
+        { id: "more",       kicker: "STEP 6", title: "Everything else", body: "Profile, billing, notifications, documents with OCR, Premium, and help. The back-of-house that makes the front-of-house possible." },
+      ],
+      es: [
+        { id: "onboarding", kicker: "PASO 1", title: "El reconocimiento", body: "Empieza con el caos que conoce quien se muda de verdad. Suscripciones olvidadas. Servicios viejos que siguen cobrando. Números de cuenta perdidos." },
+        { id: "address",    kicker: "PASO 2", title: "Una dirección", body: "Le das tu hogar — ese es todo el alta. De ahí en adelante, cada servicio queda vinculado a este lugar." },
+        { id: "home",       kicker: "PASO 3", title: "Todo a la vista", body: "Lo que pagas. Lo que has ahorrado. Lo que necesita atención. El panel está hecho para mirar, no para hacer scroll." },
+        { id: "move",       kicker: "PASO 4", title: "Planea una mudanza", body: "Cuando llega la mudanza, no empiezas de cero. Escribe la nueva dirección, elige la fecha, recibe una lista." },
+        { id: "checklist",  kicker: "PASO 5", title: "Un toque cada uno", body: "Transferir. Cancelar. Reconectar. Toca para marcar listo. La barra de progreso se llena, y al 100% — la calma." },
+        { id: "more",       kicker: "PASO 6", title: "Todo lo demás", body: "Perfil, facturación, notificaciones, documentos con OCR, Premium y ayuda. La trastienda que hace posible la fachada." },
+      ],
+    };
+
+    function App() {
+      const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      const lang = tweaks.lang;
+      const [screen, setScreen] = React.useState("onboarding");
+      const [tab, setTab] = React.useState("home");
+
+      const goHome = () => { setScreen("home"); setTab("home"); };
+      const onTabChange = (t) => {
+        setTab(t);
+        if (t === "move") setScreen("move");
+        else if (t === "more") setScreen("more");
+        else if (t === "home" || t === "services") setScreen("home");
+      };
+
+      let body = null;
+      if (screen === "onboarding") body = <OnboardingScreen lang={lang} onContinue={() => setScreen("address")}/>;
+      else if (screen === "address") body = <AddressScreen lang={lang} onBack={() => setScreen("onboarding")} onContinue={goHome}/>;
+      else if (screen === "home") body = <HomeScreen lang={lang} onPlanMove={() => { setScreen("move"); setTab("move"); }}/>;
+      else if (screen === "move") body = <MoveScreen lang={lang} onBack={goHome} onContinue={() => setScreen("checklist")}/>;
+      else if (screen === "checklist") body = <ChecklistScreen lang={lang} onBack={() => { setScreen("move"); setTab("move"); }}/>;
+      else if (screen === "more") body = <MoreScreen lang={lang} onNavigate={(p) => setScreen("more_" + p)}/>;
+      else if (screen === "more_profile") body = <ProfileScreen lang={lang} onBack={() => setScreen("more")}/>;
+      else if (screen === "more_payment") body = <PaymentScreen lang={lang} onBack={() => setScreen("more")}/>;
+      else if (screen === "more_notifications") body = <NotificationsScreen lang={lang} onBack={() => setScreen("more")}/>;
+      else if (screen === "more_documents") body = <DocumentsScreen lang={lang} onBack={() => setScreen("more")}/>;
+      else if (screen === "more_premium") body = <PremiumScreen lang={lang} onBack={() => setScreen("more")}/>;
+      else if (screen === "more_help") body = <HelpScreen lang={lang} onBack={() => setScreen("more")}/>;
+
+      const showTabs = ["home", "checklist", "more", "more_profile", "more_payment", "more_notifications", "more_documents", "more_premium", "more_help"].includes(screen);
+      const stepInfo = STEPS[lang].find(s => s.id === screen) || STEPS[lang][0];
+
+      return (
+        <>
+          <div className="stage-wrap">
+            <div className="stage-side">
+              <div className="step-pill">{stepInfo.kicker}</div>
+              <h2>{stepInfo.title}</h2>
+              <p>{stepInfo.body}</p>
+              <div className="step-nav">
+                {STEPS[lang].map((s, i) => (
+                  <button key={s.id} className={s.id === screen ? "active" : ""} onClick={() => { setScreen(s.id); if (s.id === "move") setTab("move"); else if (s.id === "home") setTab("home"); else if (s.id === "more") setTab("more"); }}>
+                    {String(i+1).padStart(2,"0")} · {s.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <Phone>
+              {body}
+              {showTabs && <TabBar lang={lang} current={tab} onChange={onTabChange}/>}
+            </Phone>
+          </div>
+
+          <TweaksPanel title="Tweaks">
+            <TweakSection title="Language">
+              <TweakRadio
+                value={tweaks.lang}
+                onChange={(v) => setTweak("lang", v)}
+                options={[
+                  { value: "en", label: "English" },
+                  { value: "es", label: "Español" },
+                ]}
+              />
+            </TweakSection>
+          </TweaksPanel>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

@@ -31,6 +31,11 @@ model User {
   // UI preferences (dashboard widget visibility + order, etc.)
   dashboardWidgetPrefs Json?
 
+  // Hide the Budget / Service Costs surface for users who don't track
+  // monthly spend. Default true so existing users keep the current view;
+  // new users' onboarding flow can flip this off if they opt out.
+  showBudget Boolean @default(true)
+
   // Preferred UI locale. When set, it wins over the `NEXT_LOCALE`
   // cookie and the `Accept-Language` header so the preference follows
   // the user across devices. Null until the user picks a language
@@ -50,6 +55,7 @@ model User {
   moveTasks               MoveTask[]
   customProviders         UserCustomProvider[]
   loginSessions           UserLoginSession[]
+  mobileOAuthCodes        MobileOAuthCode[]
   sessions                UserSession[]
   events                  UserEvent[]
   passwordResetTokens     PasswordResetToken[]
@@ -96,6 +102,22 @@ model OAuthAccount {
 
   @@unique([provider, providerId])
   @@index([userId])
+}
+
+model MobileOAuthCode {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  userId      String    @db.VarChar(30)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash    String    @unique @db.VarChar(64)
+  provider    String    @db.VarChar(20)
+  redirectUri String    @db.VarChar(500)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
 }
 
 model UserLoginSession {
@@ -288,7 +310,7 @@ model Address {
   latitude         Float?
   longitude        Float?
   placeId          String? @db.VarChar(191)
-  formattedAddress String? @db.VarChar(500)
+  formattedAddress String? @db.Text
 
   services             Service[]
   budgets              Budget[]
@@ -329,12 +351,12 @@ model Service {
   subCategory  String? @db.VarChar(50)
   providerName String  @db.VarChar(200)
 
-  accountNumber String? @db.VarChar(100)
-  username      String? @db.VarChar(100)
+  accountNumber String? @db.Text
+  username      String? @db.Text
 
   website String? @db.VarChar(500)
-  phone   String? @db.VarChar(20)
-  email   String? @db.VarChar(191)
+  phone   String? @db.Text
+  email   String? @db.Text
 
   monthlyCost     Float?
   billingDay      Int?

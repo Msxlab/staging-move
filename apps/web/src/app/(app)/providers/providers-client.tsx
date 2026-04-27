@@ -18,7 +18,10 @@ import {
 import { EmptyState } from "@/components/shared/empty-state";
 import {
   getMergedDisplayCategoryIcon,
+  getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
+  getMergedDisplayCategoryOrder,
+  getMergedDisplaySubcategoryLabel,
   type ScoredProvider,
   type UrgencyTier,
 } from "@/lib/recommendation-engine";
@@ -27,6 +30,7 @@ import {
   type ProviderCoverageConfidence,
   type ProviderTrustSummary,
 } from "@locateflow/shared";
+import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 
 export interface AddressOption {
   id: string;
@@ -91,7 +95,7 @@ const TIER_BADGE: Record<UrgencyTier, { label: string; className: string }> = {
   CRITICAL: { label: "Critical", className: "bg-red-500/20 text-red-300 border-red-500/30" },
   IMPORTANT: { label: "Important", className: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
   RECOMMENDED: { label: "Recommended", className: "bg-sky-500/20 text-sky-300 border-sky-500/30" },
-  OPTIONAL: { label: "Optional", className: "bg-white/10 text-white/60 border-white/10" },
+  OPTIONAL: { label: "Optional", className: "bg-foreground/10 text-muted-foreground border-border" },
 };
 
 function formatCount(n: number | undefined): string {
@@ -130,14 +134,13 @@ export function ProvidersClient({
   const [recsLoading, setRecsLoading] = useState(false);
 
   // Load providers for selected state/zip via the public API (cached/revalidated server-side)
-  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string, category: string | null) => {
+  const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       if (state) params.set("state", state);
       if (zip) params.set("zip", zip);
       if (q) params.set("q", q);
-      if (category) params.set("category", category);
       const res = await fetch(`/api/providers?${params.toString()}`);
       if (!res.ok) return;
       const data = await res.json();
@@ -171,18 +174,28 @@ export function ProvidersClient({
 
   // Debounced server-side search when q or category or state/zip change
   useEffect(() => {
-    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim(), categoryFilter), 250);
+    const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim()), 250);
     return () => clearTimeout(t);
-  }, [selectedState, selectedZip, search, categoryFilter, fetchProviders]);
+  }, [selectedState, selectedZip, search, fetchProviders]);
 
   // Build distinct categories from visible providers, sorted by provider count
   const categoryCounts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const p of providers) {
-      map[p.category] = (map[p.category] || 0) + 1;
+      const key = getMergedDisplayCategoryKey(p.category);
+      map[key] = (map[key] || 0) + 1;
     }
-    return Object.entries(map).sort((a, b) => b[1] - a[1]);
+    return Object.entries(map).sort(
+      (a, b) =>
+        getMergedDisplayCategoryOrder(a[0]) - getMergedDisplayCategoryOrder(b[0]) ||
+        b[1] - a[1],
+    );
   }, [providers]);
+
+  const visibleProviders = useMemo(() => {
+    if (!categoryFilter) return providers;
+    return providers.filter((provider) => getMergedDisplayCategoryKey(provider.category) === categoryFilter);
+  }, [providers, categoryFilter]);
 
   const criticalCluster = recs?.clusters.find((c) => c.tier === "CRITICAL");
   const importantCluster = recs?.clusters.find((c) => c.tier === "IMPORTANT");
@@ -190,6 +203,11 @@ export function ProvidersClient({
     ...(criticalCluster?.providers || []).slice(0, 3),
     ...(importantCluster?.providers || []).slice(0, 3),
   ].slice(0, 6);
+  const emptyStateCopy = getProviderEmptyStateCopy({
+    state: selectedState,
+    search,
+    hasCategoryFilter: Boolean(categoryFilter),
+  });
 
   const onAddressChange = (addressId: string) => {
     const match = addresses.find((a) => a.id === addressId) || null;
@@ -208,9 +226,9 @@ export function ProvidersClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">Providers</h1>
-          <p className="text-white/40 mt-1 text-sm">
-            Browse listed directory entries for banks, utilities, healthcare, and government services.
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Providers</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Browse listed providers. Providers are directory entries and are not your tracked services until you add them.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -218,7 +236,7 @@ export function ProvidersClient({
             <select
               value={selectedAddressId ?? ""}
               onChange={(e) => onAddressChange(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-white/70 focus:outline-none focus:border-orange-500/50"
+              className="px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-orange-500/50"
               aria-label="Choose address"
             >
               <option value="">All locations</option>
@@ -235,18 +253,18 @@ export function ProvidersClient({
             maxLength={2}
             value={selectedState ?? ""}
             onChange={(e) => onStateChange(e.target.value.toUpperCase())}
-            className="w-24 px-3 py-2 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-white/70 focus:outline-none focus:border-orange-500/50"
+            className="w-24 px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-orange-500/50"
             aria-label="State code filter"
           />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex gap-3">
-        <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0 mt-0.5" />
+      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 flex gap-3">
+        <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
         <div>
-          <p className="text-xs font-semibold text-amber-200">Listed providers, manual tracking only</p>
-          <p className="text-[11px] text-amber-100/75 mt-1 leading-relaxed">
-            Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding a provider creates a service record in LocateFlow and does not update your address with that provider.
+          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
+          <p className="text-[11px] text-amber-900/80 dark:text-amber-100/75 mt-1 leading-relaxed">
+            Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding this provider creates a LocateFlow service record; it does not update your address with the provider.
           </p>
         </div>
       </div>
@@ -256,17 +274,17 @@ export function ProvidersClient({
         <div className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-cyan-500/5 p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-orange-400" />
-            <h2 className="text-sm font-semibold text-white">Recommended for you</h2>
-            {recsLoading && <Loader2 className="h-3 w-3 animate-spin text-white/40" />}
+            <h2 className="text-sm font-semibold text-foreground">Recommended for you</h2>
+            {recsLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {highlightProviders.map((p) => (
               <Link
                 key={p.id}
                 href={`/providers/${p.id}`}
-                className="group rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition p-3 flex items-start gap-3"
+                className="group rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 flex items-start gap-3"
               >
-                <div className="h-10 w-10 shrink-0 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xl">
+                <div className="h-10 w-10 shrink-0 rounded-lg bg-foreground/5 border border-border flex items-center justify-center text-xl">
                   {getMergedDisplayCategoryIcon(p.category)}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -275,21 +293,23 @@ export function ProvidersClient({
                     return (
                       <>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-semibold text-white truncate">{p.name}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
                     <span
                       className={`text-[10px] px-1.5 py-0.5 rounded border ${TIER_BADGE[p.urgencyTier].className}`}
                     >
                       {TIER_BADGE[p.urgencyTier].label}
                     </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-white/50">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground">
                       {trust.coverageConfidence.label}
                     </span>
                   </div>
-                  <p className="text-xs text-white/40 mt-0.5 truncate">
-                    {getMergedDisplayCategoryLabel(p.category)}
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    {[getMergedDisplayCategoryLabel(p.category), getMergedDisplaySubcategoryLabel(p.category)]
+                      .filter(Boolean)
+                      .join(" - ")}
                   </p>
                   {p.explanation?.reason && (
-                    <p className="text-[11px] text-white/50 mt-1 line-clamp-2">{p.explanation.reason}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2">{p.explanation.reason}</p>
                   )}
                       </>
                     );
@@ -303,20 +323,20 @@ export function ProvidersClient({
 
       {/* Search */}
       <div className="relative">
-        <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+        <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" />
         <input
           type="text"
-          placeholder="Search providers, tags, or descriptions…"
+          placeholder="Search listed providers, tags, or descriptions..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-orange-500/50"
+          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-orange-500/50"
         />
         {search && (
           <button
             type="button"
             onClick={() => setSearch("")}
             aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-muted-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -331,7 +351,7 @@ export function ProvidersClient({
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition ${
               categoryFilter === null
                 ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
-                : "border-white/10 text-white/50 hover:text-white/80"
+                : "border-border text-muted-foreground hover:text-foreground"
             }`}
           >
             All · {providers.length}
@@ -343,12 +363,12 @@ export function ProvidersClient({
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition flex items-center gap-1.5 ${
                 categoryFilter === cat
                   ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
-                  : "border-white/10 text-white/50 hover:text-white/80"
+                  : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>{getMergedDisplayCategoryIcon(cat)}</span>
               <span>{getMergedDisplayCategoryLabel(cat)}</span>
-              <span className="text-white/40">· {count}</span>
+              <span className="text-muted-foreground">· {count}</span>
             </button>
           ))}
         </div>
@@ -356,20 +376,14 @@ export function ProvidersClient({
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-white/40 gap-2">
+        <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading providers…
         </div>
-      ) : providers.length === 0 ? (
+      ) : visibleProviders.length === 0 ? (
         <EmptyState
           icon={Building2}
-          title="No providers found"
-          description={
-            search
-              ? `Nothing matched “${search}”. Try a different term or clear the state filter.`
-              : selectedState
-                ? `No active providers in ${selectedState} for this category.`
-                : "No providers available right now."
-          }
+          title={emptyStateCopy.title}
+          description={emptyStateCopy.description}
           actionLabel={search || categoryFilter ? "Clear filters" : undefined}
           onAction={
             search || categoryFilter
@@ -382,28 +396,28 @@ export function ProvidersClient({
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {providers.map((p) => (
+          {visibleProviders.map((p) => (
             <Link
               key={p.id}
               href={`/providers/${p.id}`}
-              className="group rounded-2xl border border-white/10 bg-white/5 hover:bg-white/[0.08] transition p-4 flex gap-3"
+              className="group rounded-2xl border border-border bg-foreground/5 hover:bg-foreground/[0.08] transition p-4 flex gap-3"
             >
               {(() => {
                 const trust = trustFor(p);
                 return (
                   <>
-              <div className="h-12 w-12 shrink-0 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
+              <div className="h-12 w-12 shrink-0 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-2xl">
                 {getMergedDisplayCategoryIcon(p.category)}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm font-semibold text-white truncate">{p.name}</h3>
+                  <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>
                   {p.scope === "FEDERAL" ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 flex items-center gap-1">
                       <Flag className="h-2.5 w-2.5" /> National listing
                     </span>
                   ) : (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-white/60 flex items-center gap-1">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground flex items-center gap-1">
                       <MapPin className="h-2.5 w-2.5" /> State-level
                     </span>
                   )}
@@ -411,16 +425,18 @@ export function ProvidersClient({
                     Listed provider
                   </span>
                 </div>
-                <p className="text-xs text-white/40 mt-0.5">
-                  {getMergedDisplayCategoryLabel(p.category)}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {[getMergedDisplayCategoryLabel(p.category), getMergedDisplaySubcategoryLabel(p.category)]
+                    .filter(Boolean)
+                    .join(" - ")}
                 </p>
                 {p.description && (
-                  <p className="text-xs text-white/50 mt-1.5 line-clamp-2">{p.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{p.description}</p>
                 )}
-                <p className="text-[11px] text-white/40 mt-2">
+                <p className="text-[11px] text-muted-foreground mt-2">
                   {trust.coverageConfidence.label}: {trust.coverageConfidence.message} Manual tracking only.
                 </p>
-                <div className="flex items-center gap-3 mt-2 text-[11px] text-white/40">
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
                   {p.userCount && p.userCount > 0 ? (
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" /> {formatCount(p.userCount)} users

@@ -8,7 +8,7 @@ Web:
 
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
-- `NEXT_PUBLIC_APP_URL=https://locateflow-web-staging.vercel.app`
+- `NEXT_PUBLIC_APP_URL=https://locateflow-staging-owew7.ondigitalocean.app`
 
 Admin:
 

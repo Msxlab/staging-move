@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight, User, MapPin, Zap, Truck, CheckCircle2, AlertCircle,
   Loader2, Globe, Phone, Search, Building2, Shield, X, ChevronDown, ChevronUp, Sparkles, Calendar,
@@ -14,17 +14,18 @@ import {
   getMergedDisplayCategoryKey,
   getMergedDisplayCategoryLabel,
   getMergedDisplayCategoryOrder,
+  getMergedDisplaySubcategoryLabel,
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 import {
-  clearPendingLegalConsentsFromSession,
   createAcceptedLegalConsents,
   getDefaultLegalConsents,
   hasRequiredLegalConsents,
-  readPendingLegalConsentsFromSession,
 } from "@/lib/legal";
 import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
+import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
+import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/shared-address-autocomplete";
 
 const STEPS = [
@@ -37,35 +38,129 @@ const STEPS = [
 // --- Glass card wrapper ---
 function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl ${className}`}>
+    <div className={`rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl shadow-2xl ${className}`}>
       {children}
     </div>
   );
 }
 
+function parsePetTypes(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
+  if (typeof value !== "string" || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showCategories, setShowCategories] = useState(false);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
+  const [legalAcceptedOnServer, setLegalAcceptedOnServer] = useState(false);
+  const legalStepRequested = searchParams.get("step") === "legal";
 
-  // Redirect to dashboard if user already completed onboarding
+  // Resume the server-derived onboarding step. Profile, address, service
+  // skip, and moving skip decisions are persisted server-side so refreshes do
+  // not accidentally fall through to the dashboard.
   useEffect(() => {
-    fetch("/api/profile").then((r) => r.json()).then((data) => {
-      if (data.onboardingCompleted === true) {
-        router.replace("/dashboard");
-        return;
+    let cancelled = false;
+
+    async function loadOnboardingState() {
+      try {
+        const data = await fetch("/api/profile").then((r) => r.json());
+        if (cancelled) return;
+
+        if (data.onboardingCompleted === true) {
+          router.replace("/dashboard");
+          return;
+        }
+
+        const hasLegal = hasRequiredLegalConsents(data.legalConsents);
+        setLegalAcceptedOnServer(hasLegal);
+        if (data.legalConsents) {
+          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
+        }
+
+        if (!hasLegal) {
+          if (!legalStepRequested) {
+            router.replace("/onboarding?step=legal");
+          }
+          return;
+        }
+
+        if (legalStepRequested) {
+          router.replace("/onboarding");
+          return;
+        }
+
+        const nextStep = typeof data.onboardingStepIndex === "number"
+          ? Math.max(0, Math.min(3, data.onboardingStepIndex))
+          : 0;
+        setStep(nextStep);
+
+        if (data.user || data.profile) {
+          setProfile((prev) => ({
+            ...prev,
+            firstName: data.user?.firstName || prev.firstName,
+            lastName: data.user?.lastName || prev.lastName,
+            ageRange: data.profile?.ageRange || prev.ageRange,
+            familyStatus: data.profile?.familyStatus || prev.familyStatus,
+            hasChildren: data.profile?.hasChildren ?? prev.hasChildren,
+            childrenCount: data.profile?.childrenCount ?? prev.childrenCount,
+            hasPets: data.profile?.hasPets ?? prev.hasPets,
+            petTypes: data.profile?.petTypes ? parsePetTypes(data.profile.petTypes) : prev.petTypes,
+            carCount: data.profile?.carCount ?? prev.carCount,
+            hasSenior: data.profile?.hasSenior ?? prev.hasSenior,
+            hasDisability: data.profile?.hasDisability ?? prev.hasDisability,
+            needsStorage: data.profile?.needsStorage ?? prev.needsStorage,
+            hasMotorcycle: data.profile?.hasMotorcycle ?? prev.hasMotorcycle,
+            hasBoatRV: data.profile?.hasBoatRV ?? prev.hasBoatRV,
+          }));
+        }
+
+        if (nextStep >= 1) {
+          const addressData = await fetch("/api/addresses").then((r) => r.json()).catch(() => null);
+          if (cancelled) return;
+          const addresses = addressData?.addresses || [];
+          const primary = addresses.find((item: any) => item.isPrimary) || addresses[0];
+          if (primary) {
+            setCreatedAddressId(primary.id);
+            setAddress((prev) => ({
+              ...prev,
+              nickname: primary.nickname || prev.nickname,
+              street: primary.street || prev.street,
+              city: primary.city || prev.city,
+              state: primary.state || prev.state,
+              zip: primary.zip || prev.zip,
+              country: primary.country || prev.country,
+              type: primary.type || prev.type,
+              ownership: primary.ownership || prev.ownership,
+              startDate: primary.startDate ? String(primary.startDate).slice(0, 10) : prev.startDate,
+              formattedAddress: primary.formattedAddress ?? prev.formattedAddress,
+              placeId: primary.placeId ?? prev.placeId,
+              latitude: primary.latitude ?? prev.latitude,
+              longitude: primary.longitude ?? prev.longitude,
+            }));
+          }
+        }
+
+      } catch {
+        // Keep the current step visible; individual saves still surface errors.
       }
-      if (data.legalConsents) {
-        setLegalConsents(getDefaultLegalConsents(data.legalConsents));
-        return;
-      }
-      const pending = readPendingLegalConsentsFromSession();
-      if (pending) setLegalConsents(pending);
-    }).catch(() => {});
-  }, [router]);
+    }
+
+    loadOnboardingState();
+    return () => {
+      cancelled = true;
+    };
+  }, [legalStepRequested, router]);
 
   // Step 0 – Profile
   // `sensitiveOptIn` gates disability + immigration fields behind an explicit
@@ -189,30 +284,57 @@ export default function OnboardingPage() {
       setError("First name and last name are required.");
       return false;
     }
-    if (!hasRequiredLegalConsents(legalConsents)) {
-      setError("You must accept the Terms of Use and Legal Disclaimer before continuing.");
-      return false;
-    }
     setError("");
     setSaving(true);
     try {
-      const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...profile, legalConsents: acceptedLegalConsents }),
+        body: JSON.stringify(buildOnboardingProfilePayload(profile)),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to save profile");
       }
-      clearPendingLegalConsentsFromSession();
       toast.success("Profile saved!");
       return true;
     } catch (e: any) {
       setError(e.message || "Failed to save profile");
       toast.error(e.message || "Failed to save profile");
       return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const acceptLegal = async () => {
+    if (!hasRequiredLegalConsents(legalConsents)) {
+      setError("You must accept the Terms of Use and Legal Disclaimer before continuing.");
+      return;
+    }
+
+    setError("");
+    setSaving(true);
+    try {
+      const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
+      const res = await fetch("/api/legal/acceptance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legalConsents: acceptedLegalConsents }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save legal acknowledgement");
+      }
+      setLegalConsents(getDefaultLegalConsents(data.legalConsents || acceptedLegalConsents));
+      setLegalAcceptedOnServer(true);
+      toast.success("Legal acknowledgements saved.");
+      router.replace("/onboarding");
+      router.refresh();
+    } catch (e: any) {
+      const message = e.message || "Failed to save legal acknowledgement";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -280,8 +402,17 @@ export default function OnboardingPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (res.ok) saved++;
+        if (res.ok) {
+          saved++;
+          continue;
+        }
+        const data = await res.json().catch(() => ({}));
+        const message = data.error || "A selected provider could not be added.";
+        if (data.upgradeRequired || typeof data.code === "string") {
+          throw new Error(message);
+        }
       }
+      if (saved === 0) throw new Error("No selected providers could be added.");
       toast.success(`${saved} service${saved !== 1 ? "s" : ""} added!`);
       return true;
     } catch (e: any) {
@@ -353,11 +484,25 @@ export default function OnboardingPage() {
     }
   };
 
+  const recordOnboardingProgress = async (event: "SERVICES_SKIPPED" | "MOVING_SKIPPED" | "COMPLETED") => {
+    await fetch("/api/onboarding/progress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event }),
+    }).catch(() => null);
+  };
+
   const next = async () => {
     let ok = true;
     if (step === 0) ok = await saveProfile();
     else if (step === 1) ok = await saveAddress();
-    else if (step === 2) ok = await saveServices();
+    else if (step === 2) {
+      const selectedCount = selectedProviders.size;
+      ok = await saveServices();
+      if (ok && selectedCount === 0) {
+        await recordOnboardingProgress("SERVICES_SKIPPED");
+      }
+    }
     if (!ok) return;
     if (step < 3) { setStep(step + 1); setError(""); }
     else router.push("/dashboard");
@@ -367,9 +512,12 @@ export default function OnboardingPage() {
     const planId = await saveMovingPlan();
     if (planId === false) return;
     if (typeof planId === "string") {
+      await recordOnboardingProgress("COMPLETED");
       router.push(`/moving/${planId}`);
       return;
     }
+    await recordOnboardingProgress("MOVING_SKIPPED");
+    await recordOnboardingProgress("COMPLETED");
     router.push("/dashboard");
   };
 
@@ -395,12 +543,73 @@ export default function OnboardingPage() {
   const allCategories = [...new Set(providers.map((p) => getMergedDisplayCategoryKey(p.category)))].sort(
     (a, b) => getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b)
   );
+  const providerEmptyState = getProviderEmptyStateCopy({
+    state: address.state || null,
+    search: providerSearch,
+    hasCategoryFilter: Boolean(activeCategory),
+  });
+  const providerCategoryLabel = (category: string) =>
+    [getMergedDisplayCategoryLabel(category), getMergedDisplaySubcategoryLabel(category)]
+      .filter(Boolean)
+      .join(" - ");
 
   // --- Common input styles for glass theme ---
-  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition";
-  const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-slate-800 [&>option]:text-white";
-  const labelCls = "block text-xs font-medium text-white/60 mb-1.5";
-  const checkboxCls = "w-4 h-4 rounded border-white/20 bg-white/5 accent-orange-500 cursor-pointer";
+  const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition";
+  const selectCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
+  const labelCls = "block text-xs font-medium text-muted-foreground mb-1.5";
+  const checkboxCls = "w-4 h-4 rounded border-foreground/20 bg-foreground/5 accent-orange-500 cursor-pointer";
+  const showLegalGate = legalStepRequested && !legalAcceptedOnServer;
+
+  if (showLegalGate) {
+    return (
+      <div className="space-y-5">
+        {error && (
+          <div role="alert" className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        <GlassCard className="p-6">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="rounded-xl bg-orange-500/15 p-2 text-orange-300">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Required legal acknowledgements</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Accept these before using LocateFlow.
+              </p>
+            </div>
+          </div>
+
+          <LegalConsentPanel
+            consents={legalConsents}
+            onChange={setLegalConsents}
+          />
+
+          <button
+            type="button"
+            onClick={acceptLegal}
+            disabled={saving || !hasRequiredLegalConsents(legalConsents)}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+        </GlassCard>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -415,13 +624,13 @@ export default function OnboardingPage() {
                   ? "bg-emerald-500/20 text-emerald-400"
                   : i === step
                   ? "bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/40"
-                  : "bg-white/5 text-white/30"
+                  : "bg-foreground/5 text-foreground/40"
               }`}>
                 {i < step ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{s.label}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-6 h-px ${i < step ? "bg-emerald-500/40" : "bg-white/10"}`} />
+                <div className={`w-6 h-px ${i < step ? "bg-emerald-500/40" : "bg-foreground/10"}`} />
               )}
             </div>
           );
@@ -430,7 +639,7 @@ export default function OnboardingPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+        <div role="alert" className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -439,17 +648,17 @@ export default function OnboardingPage() {
       {/* Step 0: Profile */}
       {step === 0 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Your Profile</h2>
-          <p className="text-white/40 text-sm mb-5">Help us personalize your experience</p>
+          <h2 className="text-lg font-semibold text-foreground mb-1">Your Profile</h2>
+          <p className="text-muted-foreground text-sm mb-5">Help us personalize your experience</p>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>First Name *</label>
-                <input className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
+                <input aria-required="true" className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
               </div>
               <div>
                 <label className={labelCls}>Last Name *</label>
-                <input className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
+                <input aria-required="true" className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -475,7 +684,7 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <p className="text-xs text-white/40 -mt-2">
+            <p className="text-xs text-muted-foreground -mt-2">
               Tap the ones that apply — all optional. We use these only to tailor your checklist.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -487,7 +696,7 @@ export default function OnboardingPage() {
                 { key: "hasMotorcycle", label: "Motorcycle" },
                 { key: "hasBoatRV", label: "Boat / RV" },
               ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                <label key={key} className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                   <input
                     type="checkbox"
                     className={checkboxCls}
@@ -502,7 +711,7 @@ export default function OnboardingPage() {
             {/* Sensitive-category opt-in (GDPR Art. 9 / CCPA sensitive PI).
                 Off by default; only unlocks the disability + immigration
                 questions when the user explicitly consents. */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+            <div className="rounded-xl border border-border bg-foreground/[0.03] p-4 space-y-3">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -520,10 +729,10 @@ export default function OnboardingPage() {
                   }}
                 />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">
-                    Share accessibility and immigration details <span className="text-white/40 font-normal">(optional)</span>
+                  <p className="text-sm font-semibold text-foreground">
+                    Share accessibility and immigration details <span className="text-muted-foreground font-normal">(optional)</span>
                   </p>
-                  <p className="mt-1 text-xs text-white/50 leading-relaxed">
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                     These fields are sensitive under US and EU privacy law. They&apos;re never required, never shared, and you can turn this off any time in Settings → Privacy.
                   </p>
                 </div>
@@ -531,7 +740,7 @@ export default function OnboardingPage() {
 
               {profile.sensitiveOptIn ? (
                 <div className="space-y-3 pl-8">
-                  <label className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                  <label className="flex items-start gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                     <input
                       type="checkbox"
                       className={checkboxCls}
@@ -540,7 +749,7 @@ export default function OnboardingPage() {
                     />
                     <div className="flex-1">
                       <p>Someone at home has a disability</p>
-                      <p className="mt-0.5 text-[11px] text-white/40">
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
                         Why we ask: so we can suggest accessibility-friendly movers and flag state-level DMV accommodations when you relocate.
                       </p>
                     </div>
@@ -577,7 +786,7 @@ export default function OnboardingPage() {
                     className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition ${
                       profile.moveType === opt.value
                         ? "border-orange-500 bg-orange-500/20 text-orange-300"
-                        : "border-white/10 bg-white/5 text-white/50 hover:bg-white/10"
+                        : "border-border bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                     }`}
                   >
                     {opt.label}
@@ -588,15 +797,15 @@ export default function OnboardingPage() {
 
             {/* Immigration Status — only shown when sensitive opt-in is on. */}
             {profile.sensitiveOptIn ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+              <div className="rounded-xl border border-border bg-foreground/[0.03] p-4 space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">Immigration status <span className="text-white/40 font-normal">(optional)</span></p>
-                  <p className="mt-1 text-xs text-white/50 leading-relaxed">
+                  <p className="text-sm font-semibold text-foreground">Immigration status <span className="text-muted-foreground font-normal">(optional)</span></p>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                     Why we ask: some states (CA, NY, WA) have different DMV document rules for new residents depending on visa status. Skip if it doesn&apos;t apply.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                  <label className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                     <input
                       type="checkbox"
                       className={checkboxCls}
@@ -623,7 +832,7 @@ export default function OnboardingPage() {
             {/* Business Owner */}
             {(profile.moveType === "BUSINESS" || profile.moveType === "PERSONAL") && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                <label className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                   <input
                     type="checkbox"
                     className={checkboxCls}
@@ -645,11 +854,6 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            <LegalConsentPanel
-              consents={legalConsents}
-              onChange={setLegalConsents}
-              className="pt-2"
-            />
           </div>
         </GlassCard>
       )}
@@ -657,8 +861,8 @@ export default function OnboardingPage() {
       {/* Step 1: Address */}
       {step === 1 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Your Primary Address</h2>
-          <p className="text-white/40 text-sm mb-5">Where do you currently live?</p>
+          <h2 className="text-lg font-semibold text-foreground mb-1">Your Primary Address</h2>
+          <p className="text-muted-foreground text-sm mb-5">Where do you currently live?</p>
           <div className="space-y-4">
             <div>
               <label className={labelCls}>Nickname</label>
@@ -675,15 +879,15 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>City *</label>
-                <input className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
+                <input aria-required="true" className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
               </div>
               <div>
                 <label className={labelCls}>State *</label>
-                <input className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
+                <input aria-required="true" className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
               </div>
               <div>
                 <label className={labelCls}>ZIP *</label>
-                <input className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
+                <input aria-required="true" className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -722,9 +926,12 @@ export default function OnboardingPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">Choose Your Providers</h2>
-              <p className="text-sm text-white/40">
-                Showing for <span className="text-orange-400 font-medium">{address.state || "all states"}</span>
+              <h2 className="text-lg font-semibold text-foreground">Choose Listed Providers</h2>
+              <p className="text-sm text-muted-foreground">
+                Choose a listed provider or add a local/custom provider later to create a tracked service.
+              </p>
+              <p className="mt-1 text-xs text-foreground/45">
+                Showing unverified directory entries for <span className="text-orange-400 font-medium">{address.state || "all states"}</span>.
               </p>
             </div>
             {selectedProviders.size > 0 && (
@@ -732,6 +939,13 @@ export default function OnboardingPage() {
                 {selectedProviders.size} selected
               </span>
             )}
+          </div>
+
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+            <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-100/75">
+              Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
+            </p>
           </div>
 
           {/* Selected chips */}
@@ -748,10 +962,10 @@ export default function OnboardingPage() {
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
-              className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
-              placeholder="Search providers..."
+              className="w-full rounded-xl border border-border bg-foreground/5 pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              placeholder="Search listed providers..."
               value={providerSearch}
               onChange={(e) => setProviderSearch(e.target.value)}
             />
@@ -761,18 +975,18 @@ export default function OnboardingPage() {
           <div>
             <button
               onClick={() => setShowCategories(!showCategories)}
-              className="flex items-center gap-2 text-xs text-white/50 hover:text-white/80 transition"
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition"
             >
               {showCategories ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               {showCategories ? "Hide categories" : "Browse by category"}
-              <span className="text-white/30">({allCategories.length})</span>
+              <span className="text-foreground/45">({allCategories.length})</span>
             </button>
             {showCategories && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <button
                   onClick={() => setActiveCategory(null)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                    !activeCategory ? "bg-orange-500 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+                    !activeCategory ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                   }`}
                 >All ({providers.length})</button>
                 {allCategories.map((cat) => {
@@ -781,7 +995,7 @@ export default function OnboardingPage() {
                     <button key={cat}
                       onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                        activeCategory === cat ? "bg-orange-500 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+                        activeCategory === cat ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                       }`}
                     >{getMergedDisplayCategoryIcon(cat)} {getMergedDisplayCategoryLabel(cat)} ({count})</button>
                   );
@@ -795,8 +1009,8 @@ export default function OnboardingPage() {
             <GlassCard className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-amber-400" />
-                <h3 className="text-sm font-semibold text-white">Recommended for You</h3>
-                <span className="text-[10px] text-white/30 ml-auto">Based on your profile</span>
+                <h3 className="text-sm font-semibold text-foreground">Recommended Listed Providers</h3>
+                <span className="text-[10px] text-foreground/45 ml-auto">Manual tracking</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {recommended.map((provider) => {
@@ -806,19 +1020,19 @@ export default function OnboardingPage() {
                       className={`group relative text-left p-3 rounded-xl border transition-all ${
                         isSelected
                           ? "border-orange-500/50 bg-orange-500/10"
-                          : "border-white/5 bg-white/[0.02] hover:bg-white/5 hover:border-white/10"
+                          : "border-border bg-foreground/[0.02] hover:bg-foreground/5 hover:border-border"
                       }`}
                     >
                       {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
                       <div className="flex items-center gap-3">
                         <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
-                          isSelected ? "bg-orange-500 text-white" : "bg-white/5 text-white/60"
+                          isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
                         }`}>{provider.name.charAt(0)}</div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm text-white truncate pr-6">{provider.name}</p>
+                          <p className="font-medium text-sm text-foreground truncate pr-6">{provider.name}</p>
                           <div className="flex flex-wrap gap-1 mt-0.5">
-                            {(provider.matchReasons.length > 0 ? provider.matchReasons : [getMergedDisplayCategoryLabel(provider.category)]).slice(0, 2).map((reason, i) => (
-                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-300/60 border border-orange-500/10">
+                            {(provider.matchReasons.length > 0 ? provider.matchReasons : [providerCategoryLabel(provider.category)]).slice(0, 2).map((reason, i) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/10">
                                 {reason}
                               </span>
                             ))}
@@ -836,10 +1050,29 @@ export default function OnboardingPage() {
           {loadingProviders ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
-              <span className="ml-2 text-white/40 text-sm">Loading providers...</span>
+              <span className="ml-2 text-muted-foreground text-sm">Loading providers...</span>
             </div>
           ) : sortedCategories.length === 0 ? (
-            <div className="text-center py-12 text-white/40 text-sm">No providers found.</div>
+            <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-center">
+              <Building2 className="mx-auto mb-3 h-9 w-9 text-foreground/40" />
+              <h3 className="text-sm font-semibold text-foreground">{providerEmptyState.title}</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+                {providerEmptyState.description}
+              </p>
+              <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={next}
+                  disabled={saving}
+                  className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+                >
+                  Continue without listed providers <ArrowRight className="h-4 w-4" />
+                </button>
+                <p className="text-xs text-foreground/45">
+                  Add local/custom providers later from Services &gt; Add Service.
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-2">
               {sortedCategories.map((cat) => {
@@ -847,18 +1080,18 @@ export default function OnboardingPage() {
                 const isOpen = expandedCats.has(cat);
                 const selectedInCat = items.filter((p: ScoredProvider) => selectedProviders.has(p.id)).length;
                 return (
-                  <div key={cat} className="rounded-xl border border-white/5 overflow-hidden">
+                  <div key={cat} className="rounded-xl border border-border overflow-hidden">
                     <button
                       onClick={() => toggleCat(cat)}
-                      className="w-full flex items-center gap-2 px-4 py-3 bg-white/[0.02] hover:bg-white/5 transition text-left"
+                      className="w-full flex items-center gap-2 px-4 py-3 bg-foreground/[0.02] hover:bg-foreground/5 transition text-left"
                     >
                       <span className="text-base">{getMergedDisplayCategoryIcon(cat)}</span>
-                      <span className="text-sm font-medium text-white/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
-                      <span className="text-[10px] text-white/30">{items.length}</span>
+                      <span className="text-sm font-medium text-foreground/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
+                      <span className="text-[10px] text-foreground/45">{items.length}</span>
                       {selectedInCat > 0 && (
                         <span className="px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[10px] font-medium">{selectedInCat}</span>
                       )}
-                      {isOpen ? <ChevronUp className="h-3.5 w-3.5 text-white/30" /> : <ChevronDown className="h-3.5 w-3.5 text-white/30" />}
+                      {isOpen ? <ChevronUp className="h-3.5 w-3.5 text-foreground/40" /> : <ChevronDown className="h-3.5 w-3.5 text-foreground/40" />}
                     </button>
                     {isOpen && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 p-3 pt-1">
@@ -869,7 +1102,7 @@ export default function OnboardingPage() {
                             <div key={provider.id} className={`rounded-xl border transition-all ${
                               isSelected
                                 ? "border-orange-500/50 bg-orange-500/10"
-                                : "border-white/5 bg-white/[0.02] hover:bg-white/5"
+                                : "border-border bg-foreground/[0.02] hover:bg-foreground/5"
                             }`}>
                               <button type="button" onClick={() => toggleProvider(provider)}
                                 className="group relative text-left p-3 w-full"
@@ -877,12 +1110,15 @@ export default function OnboardingPage() {
                                 {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
                                 <div className="flex items-center gap-3">
                                   <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                    isSelected ? "bg-orange-500 text-white" : "bg-white/5 text-white/50"
+                                    isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
                                   }`}>{provider.name.charAt(0)}</div>
                                   <div className="min-w-0 flex-1">
-                                    <p className="font-medium text-sm text-white truncate pr-5">{provider.name}</p>
+                                    <p className="font-medium text-sm text-foreground truncate pr-5">{provider.name}</p>
+                                    {getMergedDisplaySubcategoryLabel(provider.category) && (
+                                      <p className="text-[10px] text-foreground/45 truncate">{getMergedDisplaySubcategoryLabel(provider.category)}</p>
+                                    )}
                                     {provider.description && (
-                                      <p className="text-[11px] text-white/30 truncate">{provider.description}</p>
+                                      <p className="text-[11px] text-foreground/45 truncate">{provider.description}</p>
                                     )}
                                     <div className="flex items-center gap-1.5 mt-1">
                                       <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
@@ -891,7 +1127,7 @@ export default function OnboardingPage() {
                                         {provider.scope === "FEDERAL" ? "Federal" : provider.states.join(", ")}
                                       </span>
                                       {provider.website && (
-                                        <span className="text-[9px] text-white/20 flex items-center gap-0.5">
+                                        <span className="text-[9px] text-foreground/45 flex items-center gap-0.5">
                                           <Globe className="h-2.5 w-2.5" />
                                           {provider.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}
                                         </span>
@@ -908,16 +1144,16 @@ export default function OnboardingPage() {
                               {isSelected && (
                                 <div className="flex items-center gap-2 px-3 pb-2.5 pt-0" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center gap-1.5 flex-1">
-                                    <span className="text-[10px] text-white/30 shrink-0">$</span>
+                                    <span className="text-[10px] text-foreground/45 shrink-0">$</span>
                                     <input
                                       type="number" step="0.01" placeholder="Monthly cost"
-                                      className="h-7 w-full text-xs rounded-lg border border-white/10 bg-white/5 px-2 text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                                      className="h-7 w-full text-xs rounded-lg border border-border bg-foreground/5 px-2 text-foreground placeholder:text-foreground/35 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                                       value={bd?.monthlyCost || ""}
                                       onChange={(e) => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: e.target.value, billingCycle: prev[provider.id]?.billingCycle || "MONTHLY" } }))}
                                     />
                                   </div>
                                   <select
-                                    className="h-7 text-[10px] rounded-lg border border-white/10 bg-white/5 px-1 text-white/60 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                                    className="h-7 text-[10px] rounded-lg border border-border bg-foreground/5 px-1 text-foreground/80 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                                     value={bd?.billingCycle || "MONTHLY"}
                                     onChange={(e) => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: prev[provider.id]?.monthlyCost || "", billingCycle: e.target.value } }))}
                                   >
@@ -944,8 +1180,8 @@ export default function OnboardingPage() {
       {/* Step 3: Moving */}
       {step === 3 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Do you have a move planned?</h2>
-          <p className="text-white/40 text-sm mb-5">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Do you have a move planned?</h2>
+          <p className="text-muted-foreground text-sm mb-5">
             If yes, we&apos;ll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.
           </p>
 
@@ -961,7 +1197,7 @@ export default function OnboardingPage() {
                 </button>
                 <button
                   onClick={() => { setWantsToMove(false); }}
-                  className="px-5 py-3 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition"
+                  className="px-5 py-3 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
                 >Not right now</button>
               </div>
             </div>
@@ -970,8 +1206,8 @@ export default function OnboardingPage() {
           {wantsToMove === false && (
             <div className="text-center py-4">
               <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-400/50 mb-3" />
-              <p className="text-white/60 text-sm mb-1">No problem! You can create a moving plan anytime.</p>
-              <p className="text-white/30 text-xs">Go to Moving section from the sidebar when you&apos;re ready.</p>
+              <p className="text-muted-foreground text-sm mb-1">No problem! You can create a moving plan anytime.</p>
+              <p className="text-foreground/40 text-xs">Go to Moving section from the sidebar when you&apos;re ready.</p>
               <button
                 onClick={finishOnboarding}
                 disabled={saving}
@@ -986,7 +1222,7 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="h-4 w-4 text-orange-400" />
-                <h3 className="text-sm font-semibold text-white">Where are you moving to?</h3>
+                <h3 className="text-sm font-semibold text-foreground">Where are you moving to?</h3>
               </div>
               <AddressAutocompleteInput
                 label="Street Address"
@@ -998,22 +1234,22 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
                   <label className={labelCls}>City *</label>
-                  <input className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
+                  <input aria-required="true" className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
                 </div>
                 <div>
                   <label className={labelCls}>State *</label>
-                  <input className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
+                  <input aria-required="true" className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
                 </div>
                 <div>
                   <label className={labelCls}>ZIP *</label>
-                  <input className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
+                  <input aria-required="true" className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
                 </div>
               </div>
               <div>
                 <label className={labelCls}>Move Date *</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
-                  <input type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40 pointer-events-none" />
+                  <input aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
@@ -1026,7 +1262,7 @@ export default function OnboardingPage() {
                 </button>
                 <button
                   onClick={() => { setWantsToMove(null); }}
-                  className="px-4 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition"
+                  className="px-4 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
                 >Cancel</button>
               </div>
             </div>
@@ -1036,19 +1272,19 @@ export default function OnboardingPage() {
 
       {/* Sticky Navigation Footer */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="backdrop-blur-xl border-t border-white/5" style={{ background: "color-mix(in srgb, var(--surface) 80%, transparent)" }}>
+        <div className="backdrop-blur-xl border-t border-border" style={{ background: "color-mix(in srgb, var(--surface) 80%, transparent)" }}>
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
             <button
               onClick={prev}
               disabled={step === 0 || saving}
-              className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
             >Back</button>
             <div className="flex items-center gap-2">
               {step === 2 && (
                 <button
                   onClick={next}
                   disabled={saving}
-                  className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition"
+                  className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
                 >Skip</button>
               )}
               {step < 3 && (

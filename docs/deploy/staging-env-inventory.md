@@ -1,11 +1,34 @@
-# Staging Environment Inventory
+# Active Deployment Environment Inventory
 
-Current branch: `pr/current-product-readiness-epic`
-Current PR: `#15 Current product readiness epic`
+Current branch: `pr/staging-qa-fixes`
 
-This inventory is for protected Vercel staging and mobile preview builds. It does not add product scope. Leave vendor-backed features disabled until credentials are provided.
+Current active targets are DigitalOcean App Platform components on the real domains:
 
-## Vercel Projects
+- Web/user app: `https://locateflow.com`
+- www app alias: `https://www.locateflow.com`
+- Admin app: `https://admin.locateflow.com`
+
+The temporary `https://locateflow-staging-owew7.ondigitalocean.app` URL is legacy/starter-only. The old `https://locateflow-staging-owew7.ondigitalocean.app/move-main/login` admin path is deprecated and should not be used for active deployments.
+
+## DigitalOcean App Platform Components
+
+| Component | Domain | Purpose | Build command | Run command |
+|---|---|---|---|---|
+| `web-staging` | `locateflow.com`, `www.locateflow.com` | User app and API | `DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:generate && DATABASE_URL="$MYSQL_DATABASE_URL" pnpm --filter @locateflow/web build && pnpm web:prepare-standalone` | `DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:migrate:deploy && DATABASE_URL="$MYSQL_DATABASE_URL" HOSTNAME=0.0.0.0 PORT=$PORT node apps/web/.next/standalone/apps/web/server.js` |
+| `admin-staging` | `admin.locateflow.com` | Admin console | `DATABASE_URL="${MYSQL_DATABASE_URL:-$DATABASE_URL}" pnpm db:generate && DATABASE_URL="${MYSQL_DATABASE_URL:-$DATABASE_URL}" pnpm --filter @locateflow/admin build && pnpm admin:prepare-standalone` | `DATABASE_URL="${MYSQL_DATABASE_URL:-$DATABASE_URL}" HOSTNAME=0.0.0.0 PORT=$PORT node apps/admin/.next/standalone/apps/admin/server.js` |
+
+Required active URL values:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://locateflow.com
+NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+EXPO_PUBLIC_API_URL=https://locateflow.com/api
+GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore
+```
+
+## Legacy Vercel Projects
+
+These are historical references only unless staging is intentionally moved back to Vercel.
 
 | Project | Root directory | Purpose | Build command | Notes |
 |---|---|---|---|---|
@@ -39,8 +62,8 @@ Use separate values for:
 
 Place secrets in:
 
-- Vercel web project env: web/API secrets.
-- Vercel admin project env: admin, backup, alert, and shared secrets.
+- DigitalOcean `web-staging` component env: web/API secrets.
+- DigitalOcean `admin-staging` component env: admin, backup, alert, and shared secrets.
 - EAS preview env: mobile build-time public API URL only, plus EAS secrets where required.
 - Local `.env` files that are gitignored.
 
@@ -53,7 +76,7 @@ Place secrets in:
 | `ADMIN_JWT_SECRET` | Required if admin handoff validates admin JWT | Required | No | Required | Yes | Server-only | Admin auth fails. |
 | `FIELD_ENCRYPTION_KEY` | Required | Required | No | Required | Yes | Server-only | Production encryption/backup safety blocked. |
 | `NEXT_PUBLIC_APP_URL` | Required | Required for links/impersonation return URLs | No | Required | No | Public/client-safe | OAuth/email/portal links may point to wrong host. |
-| `NEXT_PUBLIC_ADMIN_URL` | Not used by current code | Optional doc-only if introduced later | No | Optional | No | Public/client-safe | No current impact. |
+| `NEXT_PUBLIC_ADMIN_URL` | Recommended for staging URL inventory | Recommended for admin staging URL inventory | No | Optional | No | Public/client-safe | Wrong or missing value can confuse operator links and future admin deep links. |
 | `NODE_ENV` | Vercel sets | Vercel sets | EAS sets build env | Vercel sets | No | Server-only | Do not override unless needed. |
 | `APP_ENV` | Not used by current code | Not used by current code | Not used | Optional future | No | Server-only | No current impact. |
 | `WEB_INTERNAL_URL` | No | Optional for admin-to-web internal calls | No | Recommended | No | Server-only | Admin impersonation may fall back to `NEXT_PUBLIC_APP_URL`. |
@@ -119,7 +142,7 @@ Place secrets in:
 
 Real staging/prod values are not available in the repo and must be provided by the operator:
 
-- Vercel project env values.
+- DigitalOcean App Platform component env values.
 - DigitalOcean staging MySQL `DATABASE_URL`.
 - OAuth client credentials.
 - Stripe test-mode keys, Price IDs, and webhook secret.
@@ -130,6 +153,7 @@ Real staging/prod values are not available in the repo and must be provided by t
 
 References:
 
+- DigitalOcean App Platform staging deploy: `docs/deploy/digitalocean-app-platform-web.md`
 - Vercel deployment protection: https://vercel.com/docs/security/deployment-protection
 - Vercel protection bypass for automation: https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation
 - Expo EAS environment variables: https://docs.expo.dev/eas/environment-variables

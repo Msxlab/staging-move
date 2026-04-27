@@ -41,6 +41,7 @@ async function handleCron(request: NextRequest) {
           userEmail: sub.user.email,
           userName: sub.user.firstName || "",
           daysRemaining: days,
+          userId: sub.userId,
           dedupeKey: `cron:trial-expiring:${sub.id}:${sub.trialEndsAt!.toISOString().slice(0, 10)}:${days}`,
           metadata: {
             userId: sub.userId,

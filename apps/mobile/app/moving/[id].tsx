@@ -33,11 +33,13 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
 const statusVariant: Record<string, "primary" | "success" | "warning" | "error" | "neutral"> = {
   PLANNING: "neutral",
   IN_PROGRESS: "primary",
   COMPLETED: "success",
+  CANCELED: "error",
   CANCELLED: "error",
 };
 
@@ -68,13 +70,14 @@ export default function MovingDetailScreen() {
     const res = await api.get<any>(`/api/moving/${id}`);
     if (res.data) {
       const p = res.data.plan || res.data;
-      setPlan(p);
-      if (p && (p.status === "PLANNING" || p.status === "IN_PROGRESS")) {
-        await fetchMigration(p.id);
-        await fetchMoveTasks(p.id);
+      const normalizedPlan = p ? { ...p, status: normalizeMovingPlanStatus(p.status) } : p;
+      setPlan(normalizedPlan);
+      if (normalizedPlan && (normalizedPlan.status === "PLANNING" || normalizedPlan.status === "IN_PROGRESS")) {
+        await fetchMigration(normalizedPlan.id);
+        await fetchMoveTasks(normalizedPlan.id);
       }
-      if (p?.toAddress?.state) {
-        const srRes = await api.get<any>(`/api/state-rules?state=${encodeURIComponent(p.toAddress.state)}`);
+      if (normalizedPlan?.toAddress?.state) {
+        const srRes = await api.get<any>(`/api/state-rules?state=${encodeURIComponent(normalizedPlan.toAddress.state)}`);
         if (srRes.data?.rules?.length) setStateRules(srRes.data.rules[0]);
       }
     }

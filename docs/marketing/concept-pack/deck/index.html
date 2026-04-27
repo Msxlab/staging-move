@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LocateFlow — Deck</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --bg-light: #fafaf7;
+    --surface: #12121a;
+    --surface-2: #1a1a25;
+    --border: rgba(255,255,255,0.08);
+    --border-light: rgba(15,23,42,0.08);
+    --fg: #ffffff;
+    --fg-light: #0a0a0f;
+    --fg2: rgba(255,255,255,0.7);
+    --fg2-light: rgba(15,23,42,0.65);
+    --fg3: rgba(255,255,255,0.4);
+    --fg3-light: rgba(15,23,42,0.45);
+    --orange: #f97316;
+    --orange-light: #fb923c;
+    --amber: #fbbf24;
+    --rose: #ef4444;
+  }
+  body { margin: 0; background: #050507; font-family: 'Inter', system-ui, sans-serif; color: var(--fg); overflow: hidden; }
+  .nav { position: fixed; top: 16px; left: 16px; z-index: 1000; display: flex; gap: 8px; }
+  .nav a, .nav button { color: rgba(255,255,255,0.5); text-decoration: none; padding: 6px 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); font-size: 12px; cursor: pointer; font-family: inherit; }
+  .nav a:hover, .nav button:hover { color: #f97316; }
+  .nav button.active { color: #f97316; border-color: rgba(249,115,22,0.3); }
+
+  /* Slide base */
+  section { position: relative; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; padding: 100px 120px; display: flex; flex-direction: column; }
+  section.dark { background: var(--bg); color: var(--fg); }
+  section.light { background: var(--bg-light); color: var(--fg-light); }
+  section.transition-mid { background: linear-gradient(180deg, #0a0a0f 0%, #1a0a05 100%); color: var(--fg); }
+
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none; }
+  .kicker { font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--orange); letter-spacing: 0.25em; font-weight: 500; }
+  section.light .kicker { color: var(--orange); }
+  h1.hero { font-size: 110px; font-weight: 800; letter-spacing: -0.035em; line-height: 0.95; margin: 0; max-width: 18ch; }
+  h1.hero em { font-style: normal; color: var(--orange); }
+  h2.title { font-size: 72px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.04; margin: 0; max-width: 20ch; }
+  h2.title em { font-style: normal; color: var(--orange); }
+  .lede { font-size: 26px; line-height: 1.5; color: var(--fg2); margin: 0; max-width: 28ch; }
+  section.light .lede { color: var(--fg2-light); }
+  .footer { position: absolute; bottom: 60px; left: 120px; right: 120px; display: flex; justify-content: space-between; font-size: 13px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.15em; color: var(--fg3); }
+  section.light .footer { color: var(--fg3-light); }
+
+  /* Slide 1 — title */
+  .s1 .center { margin: auto 0; }
+  .s1 .lede { margin-top: 32px; }
+
+  /* Slide 2 — chaos quote */
+  .s2 { padding: 100px 140px; }
+  .s2 .quote-mark { font-size: 240px; line-height: 0.5; color: var(--orange); margin-bottom: -80px; font-weight: 800; opacity: 0.6; }
+  .s2 blockquote { font-size: 64px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; margin: 40px 0 0; max-width: 22ch; }
+  .s2 blockquote em { font-style: normal; color: var(--orange); }
+  .s2 .attribution { margin-top: 40px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--fg3); letter-spacing: 0.15em; }
+
+  /* Slide 3 — stats */
+  .s3 .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 32px; margin-top: 70px; flex: 1; align-content: center; }
+  .stat { padding: 36px 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 24px; }
+  .stat .v { font-size: 84px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .stat .v em { font-style: normal; color: var(--orange); }
+  .stat .l { font-size: 16px; color: var(--fg2); margin-top: 14px; line-height: 1.45; }
+  .stat .src { font-size: 11px; color: var(--fg3); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; margin-top: 10px; }
+
+  /* Slide 4 — chip storm */
+  .s4 .canvas { position: absolute; inset: 100px 100px 200px; }
+  .chip { position: absolute; padding: 14px 22px; border-radius: 999px; font-size: 16px; font-weight: 500; backdrop-filter: blur(8px); white-space: nowrap; }
+  .chip.rose  { background: rgba(244,63,94,0.12); border: 1px solid rgba(244,63,94,0.28); color: #fda4af; }
+  .chip.amber { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.28); color: #fcd34d; }
+  .chip.sky   { background: rgba(14,165,233,0.12); border: 1px solid rgba(14,165,233,0.28); color: #7dd3fc; }
+  .chip.gray  { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+  .s4 .center-message { position: absolute; left: 50%; top: 55%; transform: translate(-50%, -50%); text-align: center; }
+
+  /* Slide 5 — turn / reveal */
+  .s5 { align-items: center; justify-content: center; text-align: center; }
+  .s5 .center { margin: auto; max-width: 28ch; }
+  .s5 h2 { font-size: 96px; font-weight: 800; letter-spacing: -0.035em; line-height: 1; }
+  .s5 h2 .l1 { display: block; }
+  .s5 h2 .l2 { display: block; color: var(--orange); }
+  .s5 h2 .l3 { display: block; }
+
+  /* Slide 6 — how it works */
+  .s6 .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 22px; margin-top: 60px; }
+  .step-card { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; padding: 30px; }
+  .step-card .num { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--orange); letter-spacing: 0.2em; }
+  .step-card .h { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin: 12px 0 8px; }
+  .step-card .b { font-size: 15px; color: var(--fg2); line-height: 1.55; }
+
+  /* Slide 7 — moving moment */
+  .s7 { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 100px 120px; align-items: center; }
+  .s7 .left h2 { font-size: 60px; }
+  .s7 .left .lede { margin-top: 24px; }
+  .s7 .right { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 32px; min-height: 580px; display: flex; flex-direction: column; }
+  .s7 .check-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; }
+  .s7 .check-row.done { border-color: rgba(16,185,129,0.25); background: rgba(16,185,129,0.04); }
+  .s7 .check-box { width: 26px; height: 26px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .s7 .check-row.done .check-box { background: #10b981; border-color: #10b981; }
+  .s7 .check-name { font-size: 15px; font-weight: 600; flex: 1; }
+  .s7 .check-row.done .check-name { color: var(--fg3); text-decoration: line-through; }
+  .s7 .check-action { font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+  .s7 .ca-transfer { background: rgba(249,115,22,0.12); color: #fb923c; border: 1px solid rgba(249,115,22,0.25); }
+  .s7 .ca-cancel   { background: rgba(244,63,94,0.12); color: #fda4af; border: 1px solid rgba(244,63,94,0.25); }
+  .s7 .ca-update   { background: rgba(14,165,233,0.12); color: #7dd3fc; border: 1px solid rgba(14,165,233,0.25); }
+  .s7 .progress { height: 4px; background: var(--surface-2); border-radius: 2px; overflow: hidden; margin-bottom: 24px; }
+  .s7 .progress-fill { width: 60%; height: 100%; background: linear-gradient(90deg, var(--orange), var(--amber)); }
+
+  /* Slide 8 — market */
+  .s8 .lead { font-size: 42px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; max-width: 20ch; margin-top: 32px; }
+  .s8 .lead em { font-style: normal; color: var(--orange); }
+  .s8 .market { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 60px; }
+  .mc { padding: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; }
+  .mc .v { font-size: 64px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--fg); }
+  .mc .v em { color: var(--orange); font-style: normal; }
+  .mc .l { font-size: 14px; color: var(--fg2); margin-top: 10px; }
+
+  /* Slide 9 — quote testimonial */
+  .s9 { align-items: center; justify-content: center; text-align: center; }
+  .s9 .quote { font-size: 56px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.18; max-width: 24ch; margin: 0 auto; }
+  .s9 .quote em { color: var(--orange); font-style: normal; }
+  .s9 .who { margin-top: 50px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--fg3); letter-spacing: 0.18em; }
+
+  /* Slide 10 — CTA */
+  .s10 { align-items: center; justify-content: center; text-align: center; padding: 100px 120px; }
+  .s10 .center { margin: auto; }
+  .s10 h2 { font-size: 96px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.0; max-width: 20ch; margin: 0 auto; }
+  .s10 h2 em { font-style: normal; color: var(--orange); }
+  .s10 .ledep { font-size: 24px; color: var(--fg2-light); margin-top: 32px; max-width: 32ch; margin-left: auto; margin-right: auto; }
+  .s10 .cta { display: inline-block; margin-top: 48px; padding: 22px 44px; background: var(--orange); color: #fff; border-radius: 16px; font-size: 20px; font-weight: 600; box-shadow: 0 24px 60px rgba(249,115,22,0.35); }
+  .s10 .trust { margin-top: 28px; font-size: 14px; font-family: 'JetBrains Mono', monospace; color: var(--fg3-light); letter-spacing: 0.15em; }
+
+  /* Logo mark */
+  .logo-row { display: flex; align-items: center; gap: 14px; }
+  .logo-row .name { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  section.light .logo-row .name { color: var(--fg-light); }
+</style>
+</head>
+<body>
+  <div class="nav">
+    <a href="../index.html">← Hub</a>
+    <button id="lang-en" class="active">EN</button>
+    <button id="lang-es">ES</button>
+  </div>
+
+  <deck-stage>
+
+    <!-- 1: Title -->
+    <section class="dark s1" data-screen-label="01 Title">
+      <div class="blob" style="background:#f97316; width:600px; height:600px; top:-200px; right:-200px; opacity:0.18;"></div>
+      <div class="blob" style="background:#fbbf24; width:500px; height:500px; bottom:-150px; left:-150px; opacity:0.10;"></div>
+
+      <div class="logo-row">
+        <svg width="48" height="48" viewBox="0 0 100 100"><defs><linearGradient id="lg1" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#D4A373"/><stop offset="60%" stop-color="#E8794A"/><stop offset="100%" stop-color="#C25A30"/></linearGradient></defs><path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#lg1)" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="20" cy="65" r="4.5" fill="#D4A373"/><circle cx="20" cy="65" r="1.5" fill="#0a0a0f"/><circle cx="80" cy="40" r="7" fill="#E8794A"/><circle cx="80" cy="40" r="2.5" fill="#FAF7F1"/></svg>
+        <span class="name">LocateFlow</span>
+      </div>
+      <div class="center" style="margin-top: 100px;">
+        <div class="kicker" data-i="title-kicker">A MOVING COMPANION</div>
+        <h1 class="hero" style="margin-top: 22px;" data-i="title-h1"><span data-i-html="title-h1-html">One address.<br><em>Every service.</em><br>One place.</span></h1>
+        <p class="lede" style="margin-top: 36px;" data-i="title-lede">A personal address OS — every utility, bank, insurance, subscription tied to your home, in one calm dashboard. When you move, it becomes a one-tap relocation checklist.</p>
+      </div>
+      <div class="footer">
+        <span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span>
+        <span>2026</span>
+      </div>
+    </section>
+
+    <!-- 2: The chaos -->
+    <section class="dark s2" data-screen-label="02 Chaos">
+      <div class="blob" style="background:#ef4444; width:700px; height:700px; top:-300px; left:-200px; opacity:0.10;"></div>
+      <div class="blob" style="background:#f97316; width:500px; height:500px; bottom:-200px; right:-100px; opacity:0.08;"></div>
+      <div class="kicker" data-i="s2-kicker">THE PROBLEM</div>
+      <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+        <div class="quote-mark">"</div>
+        <blockquote data-i-html="s2-quote">I'm still paying for the gas at <em>my old apartment.</em><br>I moved out three months ago.</blockquote>
+        <div class="attribution" data-i="s2-attr">— EVERY MOVER, EVENTUALLY</div>
+      </div>
+      <div class="footer"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>02 / 10</span></div>
+    </section>
+
+    <!-- 3: Stats -->
+    <section class="dark s3" data-screen-label="03 Stats">
+      <div class="kicker" data-i="s3-kicker">THE COST OF FORGETTING</div>
+      <h2 class="title" style="margin-top:14px;" data-i-html="s3-title">It's not laziness.<br>It's <em>volume.</em></h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="v"><em>$273</em></div>
+          <div class="l" data-i="s3-stat1-l">Average household spend per year on subscriptions they don't use.</div>
+          <div class="src">C+R RESEARCH · 2024</div>
+        </div>
+        <div class="stat">
+          <div class="v"><em>1 in 3</em></div>
+          <div class="l" data-i="s3-stat2-l">Movers continue paying utility bills at their previous address.</div>
+          <div class="src">USPS NCOA · 2023</div>
+        </div>
+        <div class="stat">
+          <div class="v"><em>30M+</em></div>
+          <div class="l" data-i="s3-stat3-l">US households move every year. Most do it three or more times.</div>
+          <div class="src">US CENSUS · 2024</div>
+        </div>
+      </div>
+      <div class="footer"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>03 / 10</span></div>
+    </section>
+
+    <!-- 4: Chip storm — recognition -->
+    <section class="dark s4" data-screen-label="04 Recognition">
+      <div class="blob" style="background:#f97316; width:600px; height:600px; top:50%; left:50%; transform:translate(-50%,-50%); opacity:0.12;"></div>
+      <div class="kicker" data-i="s4-kicker">WHAT YOUR HOME ACTUALLY HAS</div>
+      <div class="canvas">
+        <div class="chip rose"  style="left: 4%;  top: 8%;">PG&E · $142.18 past due</div>
+        <div class="chip amber" style="left: 38%; top: 4%;">Verizon · auto-renewing</div>
+        <div class="chip rose"  style="left: 70%; top: 12%;">Comcast · old address</div>
+        <div class="chip sky"   style="left: 8%;  top: 32%;">USPS forwarding · 3 days left</div>
+        <div class="chip amber" style="left: 50%; top: 38%;">Netflix · charged $19.99</div>
+        <div class="chip gray"  style="left: 80%; top: 36%;">Geico</div>
+        <div class="chip amber" style="left: 14%; top: 60%;">ClassPass · unused 47 days</div>
+        <div class="chip rose"  style="left: 46%; top: 70%;">AT&T · disconnect failed</div>
+        <div class="chip gray"  style="left: 72%; top: 64%;">HOA</div>
+        <div class="chip amber" style="left: 24%; top: 88%;">Anytime Fitness · auto-renewed</div>
+        <div class="chip gray"  style="left: 60%; top: 90%;">City Water</div>
+      </div>
+      <div class="center-message">
+        <h2 class="title" style="font-size:60px; max-width:18ch; margin: 0 auto;" data-i-html="s4-title">Twelve providers.<br>Three addresses.<br><em>One person.</em></h2>
+      </div>
+      <div class="footer" style="position:absolute;"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>04 / 10</span></div>
+    </section>
+
+    <!-- 5: Reveal -->
+    <section class="transition-mid s5" data-screen-label="05 Reveal">
+      <div class="blob" style="background:#f97316; width:1000px; height:1000px; left:50%; top:60%; transform:translate(-50%,-50%); opacity:0.20;"></div>
+      <div class="blob" style="background:#fbbf24; width:700px; height:700px; left:50%; top:70%; transform:translate(-50%,-50%); opacity:0.14;"></div>
+      <div class="center">
+        <div style="margin-bottom: 60px;">
+          <svg width="80" height="80" viewBox="0 0 100 100" style="margin: 0 auto; display:block;"><defs><linearGradient id="lg5" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#D4A373"/><stop offset="60%" stop-color="#E8794A"/><stop offset="100%" stop-color="#C25A30"/></linearGradient></defs><path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#lg5)" stroke-width="3.5" fill="none" stroke-linecap="round"/><circle cx="20" cy="65" r="4.5" fill="#D4A373"/><circle cx="20" cy="65" r="1.5" fill="#0a0a0f"/><circle cx="80" cy="40" r="7" fill="#E8794A"/><circle cx="80" cy="40" r="2.5" fill="#FAF7F1"/></svg>
+        </div>
+        <div class="kicker" data-i="s5-kicker">ENTER LOCATEFLOW</div>
+        <h2 style="margin-top: 32px;" data-i-html="s5-h2"><span class="l1">One address.</span><span class="l2">Every service.</span><span class="l3">One place.</span></h2>
+      </div>
+      <div class="footer" style="color:rgba(255,255,255,0.45);"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>05 / 10</span></div>
+    </section>
+
+    <!-- 6: How it works -->
+    <section class="dark s6" data-screen-label="06 How it works">
+      <div class="kicker" data-i="s6-kicker">HOW IT WORKS</div>
+      <h2 class="title" style="margin-top:14px;" data-i-html="s6-title">Three steps.<br>That's the <em>whole</em> product.</h2>
+      <div class="grid">
+        <div class="step-card">
+          <div class="num">01</div>
+          <div class="h" data-i="s6-card1-h">Add your address</div>
+          <div class="b" data-i="s6-card1-b">We pull every provider tied to it — utilities, internet, insurance, subscriptions, HOA, gym. You confirm what's yours.</div>
+        </div>
+        <div class="step-card">
+          <div class="num">02</div>
+          <div class="h" data-i="s6-card2-h">Live in one dashboard</div>
+          <div class="b" data-i="s6-card2-b">Renewal dates. Account numbers. What you pay. What you've forgotten. Smart reminders, document OCR, no spreadsheets.</div>
+        </div>
+        <div class="step-card">
+          <div class="num">03</div>
+          <div class="h" data-i="s6-card3-h">When you move, it moves</div>
+          <div class="b" data-i="s6-card3-b">Type the new address. We turn your service list into a checklist: transfer, cancel, reconnect — one tap each, state-specific rules built in.</div>
+        </div>
+      </div>
+      <div class="footer"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>06 / 10</span></div>
+    </section>
+
+    <!-- 7: The moving moment -->
+    <section class="dark s7" data-screen-label="07 Moving day">
+      <div class="left">
+        <div class="kicker" data-i="s7-kicker">THE MOVING MOMENT</div>
+        <h2 style="margin-top: 14px;" data-i-html="s7-h2">Moving is when<br>it pays for <em>itself.</em></h2>
+        <p class="lede" data-i="s7-lede">It's why people sign up. The dashboard is the substrate; the moving checklist is the headline. State-specific rules for all 50 US states — what you can transfer, what you must cancel, what needs reconnecting before day one.</p>
+      </div>
+      <div class="right">
+        <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--fg3); letter-spacing: 0.15em; margin-bottom: 10px;">432 OAK ST → 88 PINE LN · MOVING JUN 15</div>
+        <div style="font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 18px;">11 tasks · 6 done</div>
+        <div class="progress"><div class="progress-fill"></div></div>
+        <div class="check-row done"><div class="check-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-name">PG&E</div><div class="check-action ca-transfer">Transfer</div></div>
+        <div class="check-row done"><div class="check-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-name">Comcast</div><div class="check-action ca-cancel">Cancel</div></div>
+        <div class="check-row done"><div class="check-box"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="check-name">Geico</div><div class="check-action ca-update">Update</div></div>
+        <div class="check-row"><div class="check-box"></div><div class="check-name">AT&T Fiber</div><div class="check-action ca-transfer">Transfer</div></div>
+        <div class="check-row"><div class="check-box"></div><div class="check-name">Netflix</div><div class="check-action ca-update">Update</div></div>
+        <div class="check-row"><div class="check-box"></div><div class="check-name">USPS Forwarding</div><div class="check-action ca-transfer">Transfer</div></div>
+      </div>
+      <div class="footer"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>07 / 10</span></div>
+    </section>
+
+    <!-- 8: Market -->
+    <section class="dark s8" data-screen-label="08 Market">
+      <div class="kicker" data-i="s8-kicker">WHO IS THIS FOR</div>
+      <div class="lead" data-i-html="s8-lead">Every adult who has ever moved <em>and forgotten something.</em> The market is large because the problem is universal.</div>
+      <div class="market">
+        <div class="mc">
+          <div class="v"><em>30M+</em></div>
+          <div class="l" data-i="s8-mc1-l">US households moving every year. ~10% of the population, every year.</div>
+        </div>
+        <div class="mc">
+          <div class="v"><em>$74B</em></div>
+          <div class="l" data-i="s8-mc2-l">Annual US "moving services" market — broker, truck, storage, supplies. We sit upstream of all of it.</div>
+        </div>
+        <div class="mc">
+          <div class="v"><em>62M</em></div>
+          <div class="l" data-i="s8-mc3-l">US Hispanic adults — 1.6× more likely to relocate. We ship bilingual EN/ES from day one.</div>
+        </div>
+        <div class="mc">
+          <div class="v"><em>$8/mo</em></div>
+          <div class="l" data-i="s8-mc4-l">Pricing. The product saves the average household $400+ in year one. The math sells itself.</div>
+        </div>
+      </div>
+      <div class="footer"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>08 / 10</span></div>
+    </section>
+
+    <!-- 9: Quote -->
+    <section class="dark s9" data-screen-label="09 Quote">
+      <div class="blob" style="background:#fbbf24; width:600px; height:600px; left:50%; top:50%; transform:translate(-50%,-50%); opacity:0.08;"></div>
+      <div class="kicker" data-i="s9-kicker">FROM A USER</div>
+      <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+        <div>
+          <p class="quote" data-i-html="s9-quote">It feels like I finally <em>cleaned out a closet</em> I didn't know I had.</p>
+          <div class="who" data-i="s9-who">— MARIA L · MOVED 4 TIMES IN 6 YEARS</div>
+        </div>
+      </div>
+      <div class="footer"><span data-i="title-footer-l">CONFIDENTIAL · INVESTOR DECK</span><span>09 / 10</span></div>
+    </section>
+
+    <!-- 10: CTA -->
+    <section class="light s10" data-screen-label="10 CTA">
+      <div class="blob" style="background:#f97316; width:1000px; height:1000px; left:50%; top:120%; transform:translate(-50%,-50%); opacity:0.18;"></div>
+      <div class="blob" style="background:#fbbf24; width:600px; height:600px; left:-100px; top:-100px; opacity:0.12;"></div>
+      <div class="center">
+        <div class="kicker" data-i="s10-kicker">THE NEW GENERATION</div>
+        <h2 style="margin-top: 22px;" data-i-html="s10-h2">Stop paying for things<br><em>you forgot about.</em></h2>
+        <p class="ledep" data-i="s10-ledep">Made with care for movers everywhere — and for the next 30 million who haven't moved yet.</p>
+        <a class="cta" data-i="s10-cta">Start free — no card required →</a>
+        <div class="trust" data-i="s10-trust">14 DAY FREE TRIAL · CANCEL ANYTIME · GDPR / CCPA COMPLIANT</div>
+      </div>
+    </section>
+
+  </deck-stage>
+
+  <script type="application/json" id="speaker-notes">
+[
+  "We open with the headline and what LocateFlow is in one sentence. A personal address OS. Three beats: one address, every service, one place. Hold on the logo for a beat.",
+  "Now the wound. Everyone in the room has either said this sentence or knows someone who has. Don't sell yet. Just make the pain real.",
+  "Quantify it. Three numbers. Two-seventy-three a year on stuff people don't use. One in three movers keeps paying the old place. Thirty million households move annually. The market is everyone.",
+  "This slide is what your home actually looks like. Twelve providers, three addresses, one person trying to remember it all. Pause. Let people read the chips.",
+  "Tonal turn. Logo center. Three words. We do not over-explain. The product is the relief.",
+  "Three steps, that is the whole product. Add your address, live in one dashboard, when you move, it moves with you. Don't add a fourth step. Don't.",
+  "Why we win. Moving is the moment people sign up — when the pain is acute and the spend is large. State-specific rules for all 50 states is moat work, not feature work.",
+  "Market. 30 million movers a year. 74 billion dollar moving services market sitting downstream of us. 62 million US Hispanic adults — bilingual EN/ES from day one is not a checkbox, it's our wedge into a 1.6x more mobile audience. 8 dollars a month against 400+ in saves.",
+  "One quote. We don't pile up testimonials. Maria moved four times in six years. She is the customer.",
+  "Close light, not dark. The chaos is over. Stop paying for things you forgot about. Made with care for movers everywhere. CTA is free, no card. Walk off."
+]
+  </script>
+
+  <script>
+    // Bilingual content swap
+    const COPY = {
+      en: {
+        "title-kicker": "A MOVING COMPANION",
+        "title-h1-html": "One address.<br><em>Every service.</em><br>One place.",
+        "title-lede": "A personal address OS — every utility, bank, insurance, subscription tied to your home, in one calm dashboard. When you move, it becomes a one-tap relocation checklist.",
+        "title-footer-l": "CONFIDENTIAL · INVESTOR DECK",
+        "s2-kicker": "THE PROBLEM",
+        "s2-quote": "I'm still paying for the gas at <em>my old apartment.</em><br>I moved out three months ago.",
+        "s2-attr": "— EVERY MOVER, EVENTUALLY",
+        "s3-kicker": "THE COST OF FORGETTING",
+        "s3-title": "It's not laziness.<br>It's <em>volume.</em>",
+        "s3-stat1-l": "Average household spend per year on subscriptions they don't use.",
+        "s3-stat2-l": "Movers continue paying utility bills at their previous address.",
+        "s3-stat3-l": "US households move every year. Most do it three or more times.",
+        "s4-kicker": "WHAT YOUR HOME ACTUALLY HAS",
+        "s4-title": "Twelve providers.<br>Three addresses.<br><em>One person.</em>",
+        "s5-kicker": "ENTER LOCATEFLOW",
+        "s5-h2": "<span class='l1'>One address.</span><span class='l2'>Every service.</span><span class='l3'>One place.</span>",
+        "s6-kicker": "HOW IT WORKS",
+        "s6-title": "Three steps.<br>That's the <em>whole</em> product.",
+        "s6-card1-h": "Add your address",
+        "s6-card1-b": "We pull every provider tied to it — utilities, internet, insurance, subscriptions, HOA, gym. You confirm what's yours.",
+        "s6-card2-h": "Live in one dashboard",
+        "s6-card2-b": "Renewal dates. Account numbers. What you pay. What you've forgotten. Smart reminders, document OCR, no spreadsheets.",
+        "s6-card3-h": "When you move, it moves",
+        "s6-card3-b": "Type the new address. We turn your service list into a checklist: transfer, cancel, reconnect — one tap each, state-specific rules built in.",
+        "s7-kicker": "THE MOVING MOMENT",
+        "s7-h2": "Moving is when<br>it pays for <em>itself.</em>",
+        "s7-lede": "It's why people sign up. The dashboard is the substrate; the moving checklist is the headline. State-specific rules for all 50 US states — what you can transfer, what you must cancel, what needs reconnecting before day one.",
+        "s8-kicker": "WHO IS THIS FOR",
+        "s8-lead": "Every adult who has ever moved <em>and forgotten something.</em> The market is large because the problem is universal.",
+        "s8-mc1-l": "US households moving every year. ~10% of the population, every year.",
+        "s8-mc2-l": "Annual US \"moving services\" market — broker, truck, storage, supplies. We sit upstream of all of it.",
+        "s8-mc3-l": "US Hispanic adults — 1.6× more likely to relocate. We ship bilingual EN/ES from day one.",
+        "s8-mc4-l": "Pricing. The product saves the average household $400+ in year one. The math sells itself.",
+        "s9-kicker": "FROM A USER",
+        "s9-quote": "It feels like I finally <em>cleaned out a closet</em> I didn't know I had.",
+        "s9-who": "— MARIA L · MOVED 4 TIMES IN 6 YEARS",
+        "s10-kicker": "THE NEW GENERATION",
+        "s10-h2": "Stop paying for things<br><em>you forgot about.</em>",
+        "s10-ledep": "Made with care for movers everywhere — and for the next 30 million who haven't moved yet.",
+        "s10-cta": "Start free — no card required →",
+        "s10-trust": "14 DAY FREE TRIAL · CANCEL ANYTIME · GDPR / CCPA COMPLIANT",
+      },
+      es: {
+        "title-kicker": "UN COMPAÑERO DE MUDANZA",
+        "title-h1-html": "Una dirección.<br><em>Cada servicio.</em><br>Un solo lugar.",
+        "title-lede": "Un sistema operativo personal de tu hogar — cada servicio, banco, seguro y suscripción vinculados a tu casa, en un panel sereno. Cuando te mudas, se convierte en una lista con un toque por tarea.",
+        "title-footer-l": "CONFIDENCIAL · DECK DE INVERSORES",
+        "s2-kicker": "EL PROBLEMA",
+        "s2-quote": "Todavía pago el gas de <em>mi antiguo apartamento.</em><br>Me mudé hace tres meses.",
+        "s2-attr": "— TODA PERSONA QUE SE MUDA, TARDE O TEMPRANO",
+        "s3-kicker": "EL COSTO DE OLVIDAR",
+        "s3-title": "No es pereza.<br>Es <em>volumen.</em>",
+        "s3-stat1-l": "Gasto promedio por hogar al año en suscripciones que no usa.",
+        "s3-stat2-l": "De cada 3 personas que se mudan, 1 sigue pagando facturas en la dirección anterior.",
+        "s3-stat3-l": "Hogares en EE.UU. se mudan cada año. La mayoría lo hace 3 o más veces.",
+        "s4-kicker": "LO QUE TU CASA REALMENTE TIENE",
+        "s4-title": "Doce proveedores.<br>Tres direcciones.<br><em>Una persona.</em>",
+        "s5-kicker": "LLEGA LOCATEFLOW",
+        "s5-h2": "<span class='l1'>Una dirección.</span><span class='l2'>Cada servicio.</span><span class='l3'>Un solo lugar.</span>",
+        "s6-kicker": "CÓMO FUNCIONA",
+        "s6-title": "Tres pasos.<br>Ese es <em>todo</em> el producto.",
+        "s6-card1-h": "Añade tu dirección",
+        "s6-card1-b": "Encontramos cada proveedor vinculado — servicios públicos, internet, seguros, suscripciones, asociación, gimnasio. Tú confirmas lo que es tuyo.",
+        "s6-card2-h": "Vive en un solo panel",
+        "s6-card2-b": "Fechas de renovación. Números de cuenta. Lo que pagas. Lo que olvidaste. Recordatorios inteligentes, OCR de documentos, sin hojas de cálculo.",
+        "s6-card3-h": "Cuando te mudas, se muda",
+        "s6-card3-b": "Escribe la nueva dirección. Convertimos tu lista de servicios en una lista: transferir, cancelar, reconectar — un toque cada uno, con reglas por estado.",
+        "s7-kicker": "EL MOMENTO DE LA MUDANZA",
+        "s7-h2": "La mudanza es cuando<br>se paga <em>sola.</em>",
+        "s7-lede": "Es por lo que la gente se suscribe. El panel es la base; la lista de mudanza es el titular. Reglas específicas para los 50 estados — qué se transfiere, qué se cancela, qué se reconecta antes del primer día.",
+        "s8-kicker": "PARA QUIÉN ES",
+        "s8-lead": "Toda persona adulta que se haya mudado <em>y olvidado algo.</em> El mercado es grande porque el problema es universal.",
+        "s8-mc1-l": "Hogares en EE.UU. que se mudan cada año. ~10% de la población, cada año.",
+        "s8-mc2-l": "Mercado anual de \"servicios de mudanza\" en EE.UU. — agentes, camiones, almacenaje, suministros. Estamos aguas arriba de todo.",
+        "s8-mc3-l": "Adultos hispanos en EE.UU. — 1,6× más propensos a mudarse. Lanzamos bilingüe EN/ES desde el primer día.",
+        "s8-mc4-l": "Precio. El producto le ahorra al hogar promedio más de $400 en el primer año. La matemática se vende sola.",
+        "s9-kicker": "DE UNA USUARIA",
+        "s9-quote": "Se siente como si finalmente <em>vaciara un armario</em> que no sabía que tenía.",
+        "s9-who": "— MARÍA L. · SE MUDÓ 4 VECES EN 6 AÑOS",
+        "s10-kicker": "LA NUEVA GENERACIÓN",
+        "s10-h2": "Deja de pagar por cosas<br><em>que olvidaste.</em>",
+        "s10-ledep": "Hecho con cuidado para quienes se mudan — y para los próximos 30 millones que aún no se han mudado.",
+        "s10-cta": "Empieza gratis — sin tarjeta →",
+        "s10-trust": "PRUEBA GRATIS DE 14 DÍAS · CANCELA CUANDO QUIERAS · CUMPLE GDPR / CCPA",
+      },
+    };
+
+    function applyLang(lang) {
+      const dict = COPY[lang];
+      document.querySelectorAll("[data-i]").forEach(el => {
+        const k = el.getAttribute("data-i");
+        if (dict[k] !== undefined) el.textContent = dict[k];
+      });
+      document.querySelectorAll("[data-i-html]").forEach(el => {
+        const k = el.getAttribute("data-i-html");
+        if (dict[k] !== undefined) el.innerHTML = dict[k];
+      });
+      document.documentElement.setAttribute("lang", lang);
+      document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+      document.getElementById("lang-" + lang).classList.add("active");
+    }
+
+    document.getElementById("lang-en").addEventListener("click", () => applyLang("en"));
+    document.getElementById("lang-es").addEventListener("click", () => applyLang("es"));
+    applyLang("en");
+  </script>
+  <script src="deck-stage.js"></script>
+</body>
+</html>

@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { parsePaginationParams } from "@/lib/pagination";
+import {
+  CANCELED_MOVING_PLAN_STATUSES,
+  isCanceledMovingPlanStatus,
+  normalizeMovingPlanStatus,
+} from "@locateflow/shared";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,11 +18,17 @@ export async function GET(request: NextRequest) {
     const toState = searchParams.get("toState") || "";
     const dateFrom = searchParams.get("dateFrom") || "";
     const dateTo = searchParams.get("dateTo") || "";
-    const page = parseInt(searchParams.get("page") || "1");
-    const perPage = parseInt(searchParams.get("perPage") || "50");
+    const { page, perPage, skip } = parsePaginationParams(searchParams, {
+      defaultPerPage: 50,
+    });
 
     const where: any = {};
-    if (status) where.status = status;
+    if (status) {
+      const normalizedStatus = normalizeMovingPlanStatus(status);
+      where.status = isCanceledMovingPlanStatus(normalizedStatus)
+        ? { in: [...CANCELED_MOVING_PLAN_STATUSES] }
+        : normalizedStatus;
+    }
     if (fromState) where.fromAddress = { state: fromState };
     if (toState) where.toAddress = { state: toState };
     if (dateFrom || dateTo) {
@@ -77,7 +89,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { moveDate: "desc" },
         take: perPage,
-        skip: (page - 1) * perPage,
+        skip,
       }),
       prisma.movingPlan.count({ where }),
       prisma.movingPlan.groupBy({
@@ -99,7 +111,7 @@ export async function GET(request: NextRequest) {
     statusCounts.forEach((s: any) => { statusMap[s.status] = s._count.id; });
 
     return NextResponse.json({
-      plans,
+      plans: plans.map((plan) => ({ ...plan, status: normalizeMovingPlanStatus(plan.status) })),
       total,
       page,
       perPage,
@@ -108,7 +120,7 @@ export async function GET(request: NextRequest) {
         planning: statusMap["PLANNING"] || 0,
         inProgress: statusMap["IN_PROGRESS"] || 0,
         completed: statusMap["COMPLETED"] || 0,
-        cancelled: statusMap["CANCELLED"] || 0,
+        cancelled: (statusMap["CANCELED"] || 0) + (statusMap["CANCELLED"] || 0),
         thisMonth: thisMonthCount,
       },
     });

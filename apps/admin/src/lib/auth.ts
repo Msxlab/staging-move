@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 import { prisma } from "./db";
 import bcrypt from "bcryptjs";
 import { trackFailedPasswordConfirm, trackSensitiveOp } from "./security-monitor";
@@ -12,13 +13,62 @@ if (!adminJwtSecret || adminJwtSecret.length < 32) {
 
 const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
-const COOKIE_NAME = "admin_session";
+export const ADMIN_SESSION_COOKIE_NAME = "admin_session";
+const COOKIE_NAME = ADMIN_SESSION_COOKIE_NAME;
+
+export function shouldUseSecureAdminCookies(): boolean {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    appUrl.startsWith("https://")
+  );
+}
+
+function adminSessionCookieOptions() {
+  return {
+    httpOnly: true,
+    secure: shouldUseSecureAdminCookies(),
+    sameSite: "strict" as const,
+    path: "/",
+  };
+}
 
 function clearSessionCookie(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   try {
     cookieStore.delete(COOKIE_NAME);
   } catch {
   }
+  try {
+    cookieStore.set(COOKIE_NAME, "", {
+      ...adminSessionCookieOptions(),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  } catch {
+  }
+}
+
+function adminCookieDomainCandidates(_host?: string | null): Array<string | undefined> {
+  const configured = (process.env.ADMIN_SESSION_COOKIE_DOMAIN || process.env.SESSION_COOKIE_DOMAIN || "").trim();
+  const candidates: Array<string | undefined> = [undefined];
+  if (configured) candidates.push(configured);
+  return Array.from(new Set(candidates));
+}
+
+export function expireAdminSessionCookies(response: NextResponse, host?: string | null): NextResponse {
+  for (const domain of adminCookieDomainCandidates(host)) {
+    response.cookies.set(COOKIE_NAME, "", {
+      ...adminSessionCookieOptions(),
+      ...(domain ? { domain } : {}),
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+  return response;
 }
 
 export interface AdminSession {
@@ -79,11 +129,8 @@ export async function createSession(
 
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    ...adminSessionCookieOptions(),
     maxAge: 60 * 60 * 8, // 8 hours
-    path: "/",
   });
 
   return token;
@@ -146,7 +193,9 @@ export async function getSession(): Promise<AdminSession | null> {
   const tokenHash = await hashSessionToken(token).catch(() => null);
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
 
     if (!tokenHash) {
       clearSessionCookie(cookieStore);

@@ -45,7 +45,7 @@ const steps = [
     title: "Stay ahead of renewals",
     body: "LocateFlow watches due dates, auto-renew windows, and annual price changes. You get a gentle nudge before money leaves your account.",
     detail:
-      "Reminders arrive in the app, by email, or push. Snooze, mark handled, or jump straight to the provider login — your choice.",
+      "Reminders arrive in the app and by email. Snooze, mark handled, or jump straight to the provider login - your choice.",
   },
   {
     step: "04",

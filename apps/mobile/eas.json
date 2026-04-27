@@ -32,7 +32,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow-web-staging.vercel.app/api"
+        "EXPO_PUBLIC_API_URL": "https://locateflow-staging-owew7.ondigitalocean.app/api"
       }
     },
     "production": {

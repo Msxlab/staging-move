@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { PricingSection } from "@/components/marketing/pricing-section";
+import { MarketingFooter } from "@/components/marketing/marketing-footer";
+import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { getUserSession } from "@/lib/user-auth";
 import { absoluteUrl, SITE_NAME } from "@/lib/seo";
 
@@ -34,6 +36,7 @@ export default async function PricingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <MarketingHeader userId={userId} />
       <PricingSection ctaHref={ctaHref} ctaLabelLoggedIn={!!userId} />
 
       <section className="container pb-4">
@@ -71,6 +74,7 @@ export default async function PricingPage() {
           </p>
         </div>
       </section>
+      <MarketingFooter />
     </div>
   );
 }

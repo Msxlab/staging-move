@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { ADMIN_RESOURCES } from "@/lib/admin-permissions";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 
 interface PermissionRow {
   resource: string;
@@ -117,12 +118,16 @@ export default function TeamPage() {
   const [editAdmin, setEditAdmin] = useState<AdminUser | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<AdminUser | null>(null);
   const [archivePassword, setArchivePassword] = useState("");
+  const [activeToggleTarget, setActiveToggleTarget] = useState<AdminUser | null>(null);
+  const [activeToggleBusy, setActiveToggleBusy] = useState(false);
+  const [activeToggleError, setActiveToggleError] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
     firstName: "",
     lastName: "",
     email: "",
     role: "",
     newPassword: "",
+    confirmPassword: "",
     permissions: emptyPermissionMatrix as PermissionRow[],
   });
   const [form, setForm] = useState({
@@ -131,6 +136,7 @@ export default function TeamPage() {
     firstName: "",
     lastName: "",
     role: "MODERATOR",
+    confirmPassword: "",
   });
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -183,6 +189,7 @@ export default function TeamPage() {
         firstName: "",
         lastName: "",
         role: "MODERATOR",
+        confirmPassword: "",
       });
       await fetchAdmins();
     } catch {
@@ -200,6 +207,7 @@ export default function TeamPage() {
       email: admin.email,
       role: admin.role,
       newPassword: "",
+      confirmPassword: "",
       permissions: sortPermissions(expandPermissions(admin.permissions)),
     });
   }
@@ -219,6 +227,13 @@ export default function TeamPage() {
       if (editForm.newPassword) body.newPassword = editForm.newPassword;
       if (currentAdminRole === "SUPER_ADMIN") {
         body.permissions = editForm.permissions;
+      }
+      const isSensitiveChange =
+        editForm.role !== editAdmin.role ||
+        Boolean(editForm.newPassword) ||
+        currentAdminRole === "SUPER_ADMIN";
+      if (isSensitiveChange) {
+        body.confirmPassword = editForm.confirmPassword;
       }
 
       const res = await fetch(`/api/team/${editAdmin.id}`, {
@@ -241,22 +256,37 @@ export default function TeamPage() {
     }
   }
 
-  async function toggleActive(admin: AdminUser) {
+  function toggleActive(admin: AdminUser) {
+    setActiveToggleTarget(admin);
+    setActiveToggleError(null);
+  }
+
+  async function confirmToggleActive(confirmPassword: string) {
+    if (!activeToggleTarget) return;
+    const admin = activeToggleTarget;
+    setActiveToggleBusy(true);
+    setActiveToggleError(null);
     try {
       const res = await fetch(`/api/team/${admin.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !admin.isActive }),
+        body: JSON.stringify({ isActive: !admin.isActive, confirmPassword }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || "Failed to update admin status");
+        const message = data.error || "Failed to update admin status";
+        setActiveToggleError(message);
+        toast.error(message);
         return;
       }
       toast.success(admin.isActive ? "Admin deactivated" : "Admin reactivated");
+      setActiveToggleTarget(null);
       await fetchAdmins();
     } catch {
+      setActiveToggleError("Failed to update admin status");
       toast.error("Failed to update admin status");
+    } finally {
+      setActiveToggleBusy(false);
     }
   }
 
@@ -425,6 +455,15 @@ export default function TeamPage() {
               Passwords must be at least 12 characters and include upper, lower, and numeric characters.
             </p>
           </div>
+          <input
+            type="password"
+            placeholder="Confirm your admin password"
+            value={form.confirmPassword}
+            onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+            required
+            className={inputCls}
+            autoComplete="current-password"
+          />
           <div className="flex gap-2">
             <button
               type="submit"
@@ -742,6 +781,24 @@ export default function TeamPage() {
                 </p>
               </div>
 
+              {currentAdminRole === "SUPER_ADMIN" && (
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                    Confirm your admin password for sensitive changes
+                  </label>
+                  <input
+                    type="password"
+                    value={editForm.confirmPassword}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, confirmPassword: e.target.value })
+                    }
+                    className={inputCls}
+                    autoComplete="current-password"
+                    placeholder="Required when role, permissions, status, or password changes"
+                  />
+                </div>
+              )}
+
               <div className="rounded-xl border border-border bg-background/40 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
@@ -869,6 +926,25 @@ export default function TeamPage() {
           </div>
         </div>
       )}
+      <PasswordConfirmModal
+        open={Boolean(activeToggleTarget)}
+        title={activeToggleTarget?.isActive ? "Deactivate admin" : "Reactivate admin"}
+        description={
+          activeToggleTarget
+            ? `Enter your admin password to ${activeToggleTarget.isActive ? "deactivate" : "reactivate"} ${activeToggleTarget.email}.`
+            : "Enter your admin password to update this admin."
+        }
+        confirmLabel={activeToggleTarget?.isActive ? "Deactivate" : "Reactivate"}
+        busy={activeToggleBusy}
+        error={activeToggleError}
+        onClose={() => {
+          if (!activeToggleBusy) {
+            setActiveToggleTarget(null);
+            setActiveToggleError(null);
+          }
+        }}
+        onConfirm={confirmToggleActive}
+      />
     </div>
   );
 }
