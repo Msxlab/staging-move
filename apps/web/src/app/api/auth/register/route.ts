@@ -8,6 +8,7 @@ import {
 } from "@/lib/user-auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
+import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 
 export const runtime = "nodejs";
 
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
     userEmail: email,
     userName: firstName || "there",
     verifyToken: token,
+    locale,
     dedupeKey: `verify:${user.id}:${hash}`,
   }).catch((err) => console.error("[EMAIL] verification send failed:", err));
 

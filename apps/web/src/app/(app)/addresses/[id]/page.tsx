@@ -2,14 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   ArrowLeft, Home, Briefcase, Palmtree, Calendar, Edit, Zap, Star,
   Trash2, MapPin, Globe, Phone, DollarSign, ChevronRight, CheckCircle2,
   Loader2, Plus, X, Search, ExternalLink, Check, Truck,
 } from "lucide-react";
 import Link from "next/link";
-import { useTranslations, useLocale } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
@@ -56,7 +55,10 @@ interface AddressDetail {
 export default function AddressDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const t = useTranslations("addresses");
+  const tCommon = useTranslations("common");
   const tToast = useTranslations("toast");
+  const locale = useLocale();
   const id = params.id as string;
   const [address, setAddress] = useState<AddressDetail | null>(null);
   const [loading, setLoading] = useState(true);
