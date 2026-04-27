@@ -8,6 +8,7 @@ import {
   destroyAllUserSessions,
 } from "@/lib/user-auth";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { sendSecurityNoticeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findFirst({
     where: { id: record.userId, deletedAt: null },
-    select: { id: true },
+    select: { id: true, email: true, firstName: true },
   });
   if (!user) {
     return invalidResetLink();
@@ -102,6 +103,14 @@ export async function POST(request: NextRequest) {
   }
 
   await destroyAllUserSessions(record.userId);
+
+  void sendSecurityNoticeEmail({
+    userEmail: user.email,
+    userName: user.firstName || "there",
+    kind: "password-changed",
+    occurredAt: now,
+    dedupeKey: `pwd-changed:${record.id}`,
+  }).catch((err) => console.error("[AUTH] password-changed email failed:", err));
 
   return NextResponse.json({ success: true });
 }
