@@ -399,8 +399,17 @@ export default function OnboardingPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (res.ok) saved++;
+        if (res.ok) {
+          saved++;
+          continue;
+        }
+        const data = await res.json().catch(() => ({}));
+        const message = data.error || "A selected provider could not be added.";
+        if (data.upgradeRequired || typeof data.code === "string") {
+          throw new Error(message);
+        }
       }
+      if (saved === 0) throw new Error("No selected providers could be added.");
       toast.success(`${saved} service${saved !== 1 ? "s" : ""} added!`);
       return true;
     } catch (e: any) {

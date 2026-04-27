@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 
 /**
  * Plan limits configuration.
@@ -19,6 +20,13 @@ const PLAN_LIMITS: Record<string, {
   },
 };
 
+const SETUP_GRACE_LIMITS = {
+  maxAddresses: 2,
+  maxServices: 10,
+  maxCustomProviders: 10,
+  maxMovingPlans: 1,
+};
+
 export type PlanName = keyof typeof PLAN_LIMITS;
 
 export interface UserPlan {
@@ -27,6 +35,16 @@ export interface UserPlan {
   isActive: boolean;
   isTrialExpired: boolean;
   limits: typeof PLAN_LIMITS[string];
+}
+
+export interface PlanLimitCheck {
+  allowed: boolean;
+  code?: string;
+  reason?: string;
+  upgradeRequired?: boolean;
+  setupGrace?: boolean;
+  current?: number;
+  limit?: number;
 }
 
 /**
@@ -43,7 +61,9 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   // Check if trial expired
   let isTrialExpired = false;
   if (plan === "FREE_TRIAL") {
-    isTrialExpired = !subscription?.trialEndsAt || new Date() > subscription.trialEndsAt;
+    isTrialExpired = subscription
+      ? !subscription.trialEndsAt || new Date() > subscription.trialEndsAt
+      : false;
   }
 
   const isActive = ["ACTIVE", "TRIALING"].includes(status) && !isTrialExpired;
@@ -52,19 +72,74 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   return { plan, status, isActive, isTrialExpired, limits };
 }
 
+async function isInSetupGrace(userId: string): Promise<boolean> {
+  const completed = await prisma.userEvent.findFirst({
+    where: { userId, event: ONBOARDING_COMPLETED_EVENT },
+    select: { id: true },
+  });
+  return !completed;
+}
+
+function inactivePlanBlock(userPlan: UserPlan, action: "address" | "service" | "customProvider" | "movingPlan" | "moveTasks"): PlanLimitCheck {
+  if (userPlan.isTrialExpired) {
+    const actionText = action === "moveTasks"
+      ? "generate new move tasks"
+      : action === "customProvider"
+        ? "add new custom providers"
+        : action === "movingPlan"
+          ? "create new moving plans"
+          : action === "address"
+            ? "add more addresses"
+            : "add more services";
+    return {
+      allowed: false,
+      code: "TRIAL_EXPIRED",
+      reason: `Your trial has ended. Upgrade to ${actionText}.`,
+      upgradeRequired: true,
+    };
+  }
+
+  return {
+    allowed: false,
+    code: "SUBSCRIPTION_INACTIVE",
+    reason: "Your subscription is not active. Please upgrade to continue.",
+    upgradeRequired: true,
+  };
+}
+
 /**
  * Check if user can create a new address (enforce plan limits).
  */
-export async function canCreateAddress(userId: string): Promise<{ allowed: boolean; reason?: string; upgradeRequired?: boolean }> {
+export async function canCreateAddress(userId: string): Promise<PlanLimitCheck> {
   const userPlan = await getUserPlan(userId);
+  const count = await prisma.address.count({ where: { userId, deletedAt: null } });
 
   if (!userPlan.isActive) {
-    return { allowed: false, reason: userPlan.isTrialExpired ? "Your free trial has expired. Please upgrade to continue." : "Your subscription is not active.", upgradeRequired: true };
+    if (await isInSetupGrace(userId)) {
+      if (count < SETUP_GRACE_LIMITS.maxAddresses) {
+        return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxAddresses };
+      }
+      return {
+        allowed: false,
+        code: "SETUP_ADDRESS_LIMIT_REACHED",
+        reason: `You can add up to ${SETUP_GRACE_LIMITS.maxAddresses} addresses during setup. Upgrade to add more.`,
+        upgradeRequired: true,
+        current: count,
+        limit: SETUP_GRACE_LIMITS.maxAddresses,
+      };
+    }
+    return inactivePlanBlock(userPlan, "address");
   }
 
-  const count = await prisma.address.count({ where: { userId } });
   if (count >= userPlan.limits.maxAddresses) {
-    return { allowed: false, reason: `Your ${userPlan.plan} plan allows up to ${userPlan.limits.maxAddresses} address(es). Please upgrade to add more.`, upgradeRequired: true };
+    return {
+      allowed: false,
+      code: "ADDRESS_LIMIT_REACHED",
+      reason: `Your ${userPlan.plan} plan allows up to ${userPlan.limits.maxAddresses} address(es). Please upgrade to add more.`,
+      upgradeRequired: true,
+      current: count,
+      limit: userPlan.limits.maxAddresses,
+    };
   }
 
   return { allowed: true };
@@ -73,16 +148,36 @@ export async function canCreateAddress(userId: string): Promise<{ allowed: boole
 /**
  * Check if user can create a new service.
  */
-export async function canCreateService(userId: string): Promise<{ allowed: boolean; reason?: string; upgradeRequired?: boolean }> {
+export async function canCreateService(userId: string): Promise<PlanLimitCheck> {
   const userPlan = await getUserPlan(userId);
+  const count = await prisma.service.count({ where: { userId, deletedAt: null, isActive: true } });
 
   if (!userPlan.isActive) {
-    return { allowed: false, reason: userPlan.isTrialExpired ? "Your free trial has expired. Please upgrade to continue." : "Your subscription is not active.", upgradeRequired: true };
+    if (await isInSetupGrace(userId)) {
+      if (count < SETUP_GRACE_LIMITS.maxServices) {
+        return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxServices };
+      }
+      return {
+        allowed: false,
+        code: "SETUP_SERVICE_LIMIT_REACHED",
+        reason: `You can add up to ${SETUP_GRACE_LIMITS.maxServices} services during setup. Continue without providers or upgrade to add more.`,
+        upgradeRequired: true,
+        current: count,
+        limit: SETUP_GRACE_LIMITS.maxServices,
+      };
+    }
+    return inactivePlanBlock(userPlan, "service");
   }
 
-  const count = await prisma.service.count({ where: { userId } });
   if (count >= userPlan.limits.maxServices) {
-    return { allowed: false, reason: `Your ${userPlan.plan} plan allows up to ${userPlan.limits.maxServices} services. Please upgrade.`, upgradeRequired: true };
+    return {
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      reason: `Your ${userPlan.plan} plan allows up to ${userPlan.limits.maxServices} services. Please upgrade.`,
+      upgradeRequired: true,
+      current: count,
+      limit: userPlan.limits.maxServices,
+    };
   }
 
   return { allowed: true };
@@ -91,11 +186,17 @@ export async function canCreateService(userId: string): Promise<{ allowed: boole
 /**
  * Check if user can create a new moving plan.
  */
-export async function canCreateMovingPlan(userId: string): Promise<{ allowed: boolean; reason?: string; upgradeRequired?: boolean }> {
+export async function canCreateMovingPlan(userId: string): Promise<PlanLimitCheck> {
   const userPlan = await getUserPlan(userId);
 
   if (!userPlan.isActive) {
-    return { allowed: false, reason: userPlan.isTrialExpired ? "Your free trial has expired. Please upgrade to continue." : "Your subscription is not active.", upgradeRequired: true };
+    if (await isInSetupGrace(userId)) {
+      const count = await prisma.movingPlan.count({ where: { userId, deletedAt: null } });
+      if (count < SETUP_GRACE_LIMITS.maxMovingPlans) {
+        return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxMovingPlans };
+      }
+    }
+    return inactivePlanBlock(userPlan, "movingPlan");
   }
 
   return { allowed: true };
@@ -106,33 +207,35 @@ export async function canCreateMovingPlan(userId: string): Promise<{ allowed: bo
  * Existing data remains readable, and completing already-created move tasks
  * stays available so users are not blocked from finishing local tracking.
  */
-export async function canGenerateMoveTasks(userId: string): Promise<{ allowed: boolean; reason?: string; upgradeRequired?: boolean }> {
+export async function canGenerateMoveTasks(userId: string): Promise<PlanLimitCheck> {
   const userPlan = await getUserPlan(userId);
 
   if (!userPlan.isActive) {
-    return {
-      allowed: false,
-      reason: userPlan.isTrialExpired
-        ? "Your free trial has expired. Please upgrade to generate new move tasks."
-        : "Your subscription is not active. Please upgrade to generate new move tasks.",
-      upgradeRequired: true,
-    };
+    return inactivePlanBlock(userPlan, "moveTasks");
   }
 
   return { allowed: true };
 }
 
-export async function canCreateCustomProvider(userId: string): Promise<{ allowed: boolean; reason?: string; upgradeRequired?: boolean }> {
+export async function canCreateCustomProvider(userId: string): Promise<PlanLimitCheck> {
   const userPlan = await getUserPlan(userId);
 
   if (!userPlan.isActive) {
-    return {
-      allowed: false,
-      reason: userPlan.isTrialExpired
-        ? "Your free trial has expired. Please upgrade to add new custom providers."
-        : "Your subscription is not active. Please upgrade to add new custom providers.",
-      upgradeRequired: true,
-    };
+    if (await isInSetupGrace(userId)) {
+      const count = await prisma.userCustomProvider.count({ where: { userId, deletedAt: null } });
+      if (count < SETUP_GRACE_LIMITS.maxCustomProviders) {
+        return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxCustomProviders };
+      }
+      return {
+        allowed: false,
+        code: "SETUP_CUSTOM_PROVIDER_LIMIT_REACHED",
+        reason: `You can add up to ${SETUP_GRACE_LIMITS.maxCustomProviders} custom providers during setup. Continue without providers or upgrade to add more.`,
+        upgradeRequired: true,
+        current: count,
+        limit: SETUP_GRACE_LIMITS.maxCustomProviders,
+      };
+    }
+    return inactivePlanBlock(userPlan, "customProvider");
   }
 
   return { allowed: true };

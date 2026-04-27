@@ -8,11 +8,15 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+const PWA_INSTALL_ENABLED = false;
+
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
+    if (!PWA_INSTALL_ENABLED) return;
+
     const stored = localStorage.getItem("pwa-install-dismissed");
     if (stored) setDismissed(true);
 

@@ -1,39 +1,38 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { Wordmark } from "@/components/marketing/logo";
-import { requireDbUserId } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { destroyUserSession, requireDbUserId } from "@/lib/auth";
 import {
-  buildEmailVerificationGateRedirect,
-  needsEmailVerificationGate,
-} from "@/lib/email-verification-gate";
+  getPostAuthUserState,
+  resolveOnboardingGateRedirect,
+} from "@/lib/post-auth-redirect";
 
 async function assertOnboardingAccess() {
   let userId: string;
   try {
-    userId = await requireDbUserId();
+    userId = await requireDbUserId({ distinguishDeleted: true });
   } catch (error: any) {
+    if (error?.message === "ACCOUNT_DELETED") {
+      redirect("/sign-in?error=account-unavailable");
+    }
     if (error?.message === "UNAUTHORIZED") {
       redirect("/sign-in?redirect=/onboarding");
     }
     throw error;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      emailVerifiedAt: true,
-      passwordHash: true,
-      oauthAccounts: { select: { id: true }, take: 1 },
-    },
-  });
-
-  if (!user) {
-    redirect("/sign-in?redirect=/onboarding");
-  }
-
-  if (needsEmailVerificationGate(user)) {
-    redirect(buildEmailVerificationGateRedirect("/onboarding"));
+  try {
+    const redirectTarget = resolveOnboardingGateRedirect(
+      await getPostAuthUserState(userId),
+      "/onboarding",
+    );
+    if (redirectTarget) redirect(redirectTarget);
+  } catch (error: any) {
+    if (error?.message === "AUTH_STATE_USER_UNAVAILABLE") {
+      await destroyUserSession().catch(() => null);
+      redirect("/sign-in?redirect=/onboarding");
+    }
+    throw error;
   }
 }
 

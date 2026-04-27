@@ -56,6 +56,23 @@ export function resolvePostAuthRedirect(
   return safeRedirect;
 }
 
+export function resolveOnboardingGateRedirect(
+  userState: PostAuthUserState,
+  requestedRedirect = "/onboarding",
+): string | null {
+  const safeRedirect = normalizeAppRedirectPath(requestedRedirect, "/onboarding");
+
+  if (userState.needsEmailVerification) {
+    return buildEmailVerificationGateRedirect(safeRedirect);
+  }
+
+  if (userState.onboardingCompleted) {
+    return "/dashboard";
+  }
+
+  return null;
+}
+
 export async function getPostAuthUserState(userId: string): Promise<PostAuthUserState> {
   const [
     user,

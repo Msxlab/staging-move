@@ -8,6 +8,10 @@ const ALLOWED_APP_REDIRECT_PREFIXES = [
   "/budget",
   "/settings",
   "/support",
+  "/notifications",
+  "/help",
+  "/documents",
+  "/community",
 ] as const;
 
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/;

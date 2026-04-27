@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface CurrentUser {
   id: string;
@@ -53,6 +53,7 @@ export function useCurrentUser(options: UseCurrentUserOptions = {}): UseCurrentU
   const enabled = options.enabled ?? true;
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(enabled);
+  const signOutInFlight = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!enabled) {
@@ -86,16 +87,31 @@ export function useCurrentUser(options: UseCurrentUserOptions = {}): UseCurrentU
   }, [enabled, refresh]);
 
   const signOut = useCallback(async () => {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
-      body: "{}",
-      cache: "no-store",
-    }).catch(() => {});
+    if (signOutInFlight.current) return;
+    signOutInFlight.current = true;
+    let logoutOk = false;
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
+        body: "{}",
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      logoutOk = res.ok;
+    } catch {
+      logoutOk = false;
+    }
     await clearServiceWorkerAuthState();
     setUser(null);
+    if (typeof document !== "undefined") {
+      document.cookie = "user_session=; Path=/; Max-Age=0; SameSite=Lax";
+      document.cookie = "user_session=; Path=/; Max-Age=0; Domain=.locateflow.com; SameSite=Lax";
+    }
     // Hard-redirect so the middleware re-runs and we leave any protected page.
-    if (typeof window !== "undefined") window.location.href = "/";
+    if (typeof window !== "undefined") {
+      window.location.href = logoutOk ? "/" : "/sign-in?error=logout-failed";
+    }
   }, []);
 
   return { user, loading, refresh, signOut };

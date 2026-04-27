@@ -45,7 +45,9 @@ function SignInForm() {
     "oauth-account-create-failed": "error_account_setup",
     "oauth-account-unavailable": "error_account_unavailable",
     "oauth-account-deleted": "error_account_unavailable",
+    "account-unavailable": "error_account_unavailable",
     "session-create-failed": "error_session_create",
+    "logout-failed": "error_logout_failed",
   };
 
   const [email, setEmail] = useState("");
@@ -115,6 +117,12 @@ function SignInForm() {
       if (!res.ok) {
         setError(data.error || tAuth("error_generic"));
         setLoading(false);
+        return;
+      }
+
+      if (data.user?.emailVerified === false) {
+        router.replace(`/verify-email?redirect=${encodeURIComponent(redirectTo)}`);
+        router.refresh();
         return;
       }
 

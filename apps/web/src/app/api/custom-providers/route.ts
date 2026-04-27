@@ -5,7 +5,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
-import { canCreateCustomProvider } from "@/lib/plan-limits";
+import { canCreateCustomProvider, canCreateService } from "@/lib/plan-limits";
 import {
   findDuplicateCustomProvider,
   findListedProviderNameConflict,
@@ -96,7 +96,29 @@ export async function POST(request: NextRequest) {
 
     const entitlement = await canCreateCustomProvider(userId);
     if (!entitlement.allowed) {
-      return NextResponse.json({ error: entitlement.reason, upgradeRequired: true }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: entitlement.reason,
+          code: entitlement.code,
+          upgradeRequired: entitlement.upgradeRequired,
+          current: entitlement.current,
+          limit: entitlement.limit,
+        },
+        { status: 403 },
+      );
+    }
+    const serviceEntitlement = await canCreateService(userId);
+    if (!serviceEntitlement.allowed) {
+      return NextResponse.json(
+        {
+          error: serviceEntitlement.reason,
+          code: serviceEntitlement.code,
+          upgradeRequired: serviceEntitlement.upgradeRequired,
+          current: serviceEntitlement.current,
+          limit: serviceEntitlement.limit,
+        },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();

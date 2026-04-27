@@ -242,6 +242,9 @@ export default function NewServicePage() {
           failed++;
           const next = await res.json().catch(() => null);
           firstError ||= next?.error || "A selected provider could not be added.";
+          if (next?.upgradeRequired || typeof next?.code === "string") {
+            break;
+          }
         }
       } catch {
         failed++;
@@ -265,6 +268,9 @@ export default function NewServicePage() {
     }
     if (failed > 0) {
       setError(firstError || `${failed} service${failed > 1 ? "s" : ""} failed to save.`);
+      if (success === 0) {
+        toast.error(firstError || "Selected providers could not be added.");
+      }
     }
   };
 

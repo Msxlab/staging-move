@@ -76,9 +76,16 @@ describe("email templates admin API", () => {
     mocks.emailLogFindMany.mockResolvedValue([
       {
         id: "log_verify",
+        templateId: "tpl_verify",
         to: "new@example.com",
         subject: "Verify your LocateFlow email",
         status: "SENT",
+        error: null,
+        metadata: JSON.stringify({
+          fromAddress: "LocateFlow <noreply@locateflow.com>",
+          configError: false,
+          resendApiError: false,
+        }),
         sentAt: new Date("2026-04-26T12:02:00Z"),
         createdAt: new Date("2026-04-26T12:02:00Z"),
         providerMessageId: "resend_verify",
@@ -86,19 +93,31 @@ describe("email templates admin API", () => {
       },
       {
         id: "log_reset",
+        templateId: "tpl_reset",
         to: "alice@example.com",
         subject: "Reset your LocateFlow password",
-        status: "SENT",
-        sentAt: new Date("2026-04-26T12:03:00Z"),
+        status: "FAILED",
+        error: "RESEND_API_KEY missing",
+        metadata: JSON.stringify({
+          fromAddress: "LocateFlow <noreply@locateflow.com>",
+          configError: true,
+          retryAvailable: true,
+        }),
+        sentAt: null,
         createdAt: new Date("2026-04-26T12:03:00Z"),
-        providerMessageId: "resend_reset",
+        providerMessageId: null,
         template: { name: "Password Reset", slug: "password-reset" },
       },
       {
         id: "log_welcome",
+        templateId: "tpl_welcome",
         to: "new@example.com",
         subject: "Welcome to LocateFlow",
         status: "SENT",
+        error: null,
+        metadata: JSON.stringify({
+          fromAddress: "LocateFlow <noreply@locateflow.com>",
+        }),
         sentAt: new Date("2026-04-26T12:04:00Z"),
         createdAt: new Date("2026-04-26T12:04:00Z"),
         providerMessageId: "resend_welcome",
@@ -134,17 +153,22 @@ describe("email templates admin API", () => {
     ]);
     expect(body.logs).toEqual([
       expect.objectContaining({
-        to: "new@example.com",
+        to: "ne***@example.com",
+        toDomain: "example.com",
         providerMessageId: "resend_verify",
+        templateIdPresent: true,
         template: { name: "Email Verification", slug: "email-verify" },
       }),
       expect.objectContaining({
-        to: "alice@example.com",
-        providerMessageId: "resend_reset",
+        to: "al***@example.com",
+        safeErrorReason: "RESEND_API_KEY missing",
+        missingConfig: true,
+        retryAvailable: true,
+        providerMessageId: null,
         template: { name: "Password Reset", slug: "password-reset" },
       }),
       expect.objectContaining({
-        to: "new@example.com",
+        to: "ne***@example.com",
         providerMessageId: "resend_welcome",
         template: { name: "Welcome Email", slug: "welcome" },
       }),
