@@ -99,6 +99,8 @@ export default function NeedsLogoPage() {
     try {
       const res = await fetch(`/api/providers/${providerId}/logo/auto-fetch`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (!res.ok) {
