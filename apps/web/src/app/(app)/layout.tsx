@@ -17,7 +17,10 @@ async function getCurrentAppPath() {
   );
 }
 
-async function getAppGateRedirect(): Promise<string | null> {
+async function getAppGateState(): Promise<
+  | { redirectTo: string }
+  | { userId: string }
+> {
   const currentPath = await getCurrentAppPath();
   let userId: string;
   try {
@@ -29,7 +32,10 @@ async function getAppGateRedirect(): Promise<string | null> {
     if (error?.message === "UNAUTHORIZED") {
       redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
     }
-    return null;
+    // requireDbUserId redirects internally for unhandled cases above; fall
+    // through to a "no userId" sentinel rather than rethrow so the layout
+    // returns null cleanly.
+    return { redirectTo: "/sign-in" };
   }
 
   try {
@@ -45,10 +51,18 @@ async function getAppGateRedirect(): Promise<string | null> {
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const gateRedirect = await getAppGateRedirect();
-  if (gateRedirect) {
-    redirect(gateRedirect);
+  const gate = await getAppGateState();
+  if ("redirectTo" in gate) {
+    redirect(gate.redirectTo);
   }
+
+  const userPrefs = await prisma.user
+    .findUnique({
+      where: { id: gate.userId },
+      select: { showBudget: true },
+    })
+    .catch(() => null);
+  const showBudget = userPrefs?.showBudget ?? true;
 
   return (
     <div className="flex min-h-screen relative" style={{ background: "var(--surface)" }}>
@@ -67,7 +81,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       >
         Skip to main content
       </a>
-      <Sidebar />
+      <Sidebar showBudget={showBudget} />
       <div className="flex-1 flex flex-col min-h-screen relative z-10">
         <Header />
         <main

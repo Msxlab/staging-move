@@ -31,6 +31,11 @@ model User {
   // UI preferences (dashboard widget visibility + order, etc.)
   dashboardWidgetPrefs Json?
 
+  // Hide the Budget / Service Costs surface for users who don't track
+  // monthly spend. Default true so existing users keep the current view;
+  // new users' onboarding flow can flip this off if they opt out.
+  showBudget Boolean @default(true)
+
   // Preferred UI locale. When set, it wins over the `NEXT_LOCALE`
   // cookie and the `Accept-Language` header so the preference follows
   // the user across devices. Null until the user picks a language

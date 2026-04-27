@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { User, Bell, CreditCard, Download, Shield, DollarSign, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AppearanceCard } from "@/components/settings/appearance-card";
+import { UIPreferencesCard } from "@/components/settings/ui-preferences-card";
 
-const appSections = [
-  { title: "Budget", description: "Track monthly expenses and spending", icon: DollarSign, href: "/budget" },
-];
+const budgetFeature = {
+  title: "Budget",
+  description: "Track monthly expenses and spending",
+  icon: DollarSign,
+  href: "/budget",
+};
 
 const accountSections = [
   { title: "Profile", description: "Manage your personal info and preferences", icon: User, href: "/settings/profile" },
@@ -18,7 +22,7 @@ const accountSections = [
   { title: "Privacy & Security", description: "Password, 2FA, and data privacy", icon: Shield, href: "/settings/privacy" },
 ];
 
-function SectionList({ items }: { items: typeof appSections }) {
+function SectionList({ items }: { items: typeof accountSections }) {
   return (
     <div className="space-y-1.5">
       {items.map((section) => (
@@ -42,6 +46,22 @@ function SectionList({ items }: { items: typeof appSections }) {
 export default function SettingsPage() {
   const [deleteStep, setDeleteStep] = useState<"idle" | "confirm" | "deleting">("idle");
   const [confirmText, setConfirmText] = useState("");
+  const [showBudget, setShowBudget] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/user/preferences")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (!cancelled) setShowBudget(Boolean(data.showBudget));
+      })
+      .catch(() => {
+        if (!cancelled) setShowBudget(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleDeleteAccount = async () => {
     if (confirmText !== "DELETE") return;
@@ -77,15 +97,20 @@ export default function SettingsPage() {
         <p className="text-white/40 mt-1">Manage your account and preferences</p>
       </div>
 
-      {/* App Features */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
-        <div className="px-5 pt-5 pb-2">
-          <h2 className="text-xs font-semibold text-white/30 uppercase tracking-wider">Features</h2>
+      {/* App Features — only when at least one feature toggle is on. */}
+      {showBudget === true && (
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <div className="px-5 pt-5 pb-2">
+            <h2 className="text-xs font-semibold text-white/30 uppercase tracking-wider">Features</h2>
+          </div>
+          <div className="px-2 pb-3">
+            <SectionList items={[budgetFeature]} />
+          </div>
         </div>
-        <div className="px-2 pb-3">
-          <SectionList items={appSections} />
-        </div>
-      </div>
+      )}
+
+      {/* UI preferences (visibility toggles) */}
+      <UIPreferencesCard />
 
       {/* Appearance */}
       <AppearanceCard />

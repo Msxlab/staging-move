@@ -643,7 +643,15 @@
     "twoFactor_enable": "Activar 2FA",
     "twoFactor_disable": "Desactivar 2FA",
     "twoFactor_required": "La inscripción de dos factores es obligatoria para tu rol",
-    "twoFactor_requiredDescription": "Las cuentas SUPER_ADMIN deben inscribir MFA antes de acceder al resto del panel."
+    "twoFactor_requiredDescription": "Las cuentas SUPER_ADMIN deben inscribir MFA antes de acceder al resto del panel.",
+    "preferences": {
+      "heading": "Preferencias",
+      "saveFailed": "No se pudieron guardar las preferencias",
+      "showBudget": {
+        "label": "Mostrar presupuesto y costos",
+        "description": "Muestra la pestaña Presupuesto en la barra lateral y los campos de costo mensual"
+      }
+    }
   },
   "onboarding": {
     "step1_title": "Configuremos tu perfil",

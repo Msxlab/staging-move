@@ -643,7 +643,15 @@
     "twoFactor_enable": "Enable 2FA",
     "twoFactor_disable": "Disable 2FA",
     "twoFactor_required": "Two-factor enrollment is required for your role",
-    "twoFactor_requiredDescription": "SUPER_ADMIN accounts must enroll MFA before accessing the rest of the admin panel."
+    "twoFactor_requiredDescription": "SUPER_ADMIN accounts must enroll MFA before accessing the rest of the admin panel.",
+    "preferences": {
+      "heading": "Preferences",
+      "saveFailed": "Couldn't save your preferences",
+      "showBudget": {
+        "label": "Show budget & service costs",
+        "description": "Show the Budget tab in the sidebar and surface monthly cost fields"
+      }
+    }
   },
   "onboarding": {
     "step1_title": "Let's set up your profile",

@@ -6,6 +6,7 @@ import {
   TrendingUp, Eye, Clock, Laptop, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SpendingByRegionWidget } from "@/components/spending-by-region-widget";
 
 interface AnalyticsData {
   activeUsers: { total: number; today: number; week: number; month: number };
@@ -195,6 +196,9 @@ export default function AnalyticsPage() {
         <h2 className="text-sm font-semibold text-foreground mb-4">User Registrations (Last 30 Days)</h2>
         <SparkLine data={data.dailyRegistrations} />
       </div>
+
+      {/* User Spending Aggregate */}
+      <SpendingByRegionWidget />
 
       {/* Charts Row */}
       <div className="grid grid-cols-3 gap-4">
