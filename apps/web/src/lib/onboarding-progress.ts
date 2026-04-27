@@ -23,12 +23,12 @@ export interface OnboardingProgress {
 }
 
 export function getOnboardingProgress(input: OnboardingProgressInput): OnboardingProgress {
-  if (input.completedEvent) {
-    return { completed: true, step: "complete", stepIndex: 4 };
-  }
-
   if (!input.hasProfile || !input.hasRequiredLegalConsents) {
     return { completed: false, step: "profile", stepIndex: 0 };
+  }
+
+  if (input.completedEvent) {
+    return { completed: true, step: "complete", stepIndex: 4 };
   }
 
   if (input.addressCount <= 0) {

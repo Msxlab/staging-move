@@ -42,9 +42,14 @@ function detectPlatform() {
 }
 
 export function SessionTracker() {
-  const { user } = useCurrentUser();
-  const isSignedIn = Boolean(user);
   const pathname = usePathname();
+  const authPage =
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
+    pathname?.startsWith("/reset-password") ||
+    pathname?.startsWith("/forgot-password");
+  const { user } = useCurrentUser({ enabled: !authPage });
+  const isSignedIn = Boolean(user);
   const sessionIdRef = useRef<string | null>(null);
   const pageViewsRef = useRef(0);
   const initializedRef = useRef(false);

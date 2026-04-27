@@ -9,8 +9,6 @@ import {
   type LegalConsentState,
 } from "@/lib/legal";
 
-export const OAUTH_LEGAL_ACCEPTANCE_COOKIE = "oauth_legal_acceptance";
-
 export function getRequestIp(request: NextRequest): string | null {
   return (
     (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() ||

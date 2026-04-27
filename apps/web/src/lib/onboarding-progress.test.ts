@@ -49,7 +49,15 @@ describe("getOnboardingProgress", () => {
   });
 
   it("honors the explicit completion event", () => {
-    expect(getOnboardingProgress({ ...base, hasProfile: false, completedEvent: true }).completed).toBe(true);
+    expect(getOnboardingProgress({ ...base, addressCount: 0, completedEvent: true }).completed).toBe(true);
+  });
+
+  it("does not let a completion event bypass the legal gate", () => {
+    expect(getOnboardingProgress({
+      ...base,
+      hasRequiredLegalConsents: false,
+      completedEvent: true,
+    }).completed).toBe(false);
   });
 
   it("routes missing legal consent to the legal onboarding step", () => {

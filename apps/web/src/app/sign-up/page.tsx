@@ -1,17 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
-import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
-import {
-  createAcceptedLegalConsents,
-  getDefaultLegalConsents,
-  hasRequiredLegalConsents,
-} from "@/lib/legal";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -29,7 +23,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
-  const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
+  const authCheckStarted = useRef(false);
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
   const tLegal = useTranslations("legal");
@@ -44,6 +38,9 @@ export default function SignUpPage() {
   }, []);
 
   useEffect(() => {
+    if (authCheckStarted.current) return;
+    authCheckStarted.current = true;
+
     let cancelled = false;
     fetch("/api/auth/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -70,7 +67,6 @@ export default function SignUpPage() {
   const appleReady = oauthProviders?.apple?.configured ?? true;
   const googleUnavailable = oauthProviders?.google?.configured === false;
   const appleUnavailable = oauthProviders?.apple?.configured === false;
-  const legalAccepted = hasRequiredLegalConsents(legalConsents);
   const showOAuthReadinessNote =
     Boolean(oauthProviders) && (!googleReady || !appleReady);
 
@@ -92,10 +88,6 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!legalAccepted) {
-      setError(tAuth("legalAcceptanceRequired"));
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
@@ -107,7 +99,6 @@ export default function SignUpPage() {
           password,
           firstName: firstName.trim() || undefined,
           lastName: lastName.trim() || undefined,
-          legalConsents: createAcceptedLegalConsents(legalConsents),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -249,16 +240,16 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          <LegalConsentPanel
-            consents={legalConsents}
-            onChange={setLegalConsents}
-            title={tAuth("legalAcknowledgementsTitle")}
-            description={tAuth("legalAcknowledgementsDescription")}
-            compact
-          />
+          <p className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
+            You will review and accept LocateFlow{" "}
+            <Link href="/terms" className="underline hover:text-primary">Terms</Link>
+            {" "}and{" "}
+            <Link href="/disclaimer" className="underline hover:text-primary">Legal Disclaimer</Link>
+            {" "}before using the app.
+          </p>
 
           <button
-            type="submit" disabled={loading || !legalAccepted}
+            type="submit" disabled={loading}
             className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary hover:bg-primary/90 px-4 py-2.5 text-sm font-semibold text-primary-foreground transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}

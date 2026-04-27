@@ -36,6 +36,12 @@ vi.mock("@/lib/user-jwt-secret", () => ({
   getUserJwtSecretKey: vi.fn(() => new TextEncoder().encode("x".repeat(32))),
 }));
 
+vi.mock("@/lib/oauth", () => ({
+  hashForOAuthLog: vi.fn(() => "email-hash"),
+  logSafeOAuthEvent: vi.fn(),
+  summarizeOAuthError: vi.fn(() => ({})),
+}));
+
 import { findOrLinkOAuthUserWithStatus } from "./user-auth";
 
 describe("OAuth user linking", () => {
@@ -58,7 +64,7 @@ describe("OAuth user linking", () => {
         providerId: "google-sub",
         email: "deleted@example.com",
       }),
-    ).rejects.toThrow("OAUTH_ACCOUNT_UNAVAILABLE");
+    ).rejects.toThrow("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
   });
@@ -76,7 +82,7 @@ describe("OAuth user linking", () => {
         providerId: "apple-sub",
         email: "deleted@example.com",
       }),
-    ).rejects.toThrow("OAUTH_ACCOUNT_UNAVAILABLE");
+    ).rejects.toThrow("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
   });

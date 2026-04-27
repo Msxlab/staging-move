@@ -293,13 +293,14 @@
     "error_locked": "Demasiados intentos fallidos. Espera y reintenta.",
     "error_unavailable": "Inicio de sesión no disponible. Reintenta más tarde.",
     "error_account_setup": "No pudimos terminar de preparar tu cuenta de inicio social. Reintenta en un minuto.",
+    "error_account_unavailable": "Esta cuenta de inicio de sesión no está disponible. Contacta a soporte si crees que es un error.",
     "error_session_create": "Encontramos tu cuenta, pero no pudimos iniciar una sesión. Reintenta.",
     "error_generic": "Error al iniciar sesión. Reintenta.",
     "agreeToTerms": "Acepto los {terms} y la {privacy}.",
     "mustAgree": "Debes aceptar los términos para continuar.",
-    "legalAcceptanceRequired": "Revisa y acepta los Términos de uso y el Aviso legal antes de crear una cuenta.",
-    "legalAcknowledgementsTitle": "Reconocimientos obligatorios",
-    "legalAcknowledgementsDescription": "Acéptalos antes de crear tu cuenta de LocateFlow.",
+    "legalAcceptanceRequired": "Revisarás y aceptarás los Términos de uso y el Aviso legal durante la incorporación.",
+    "legalAcknowledgementsTitle": "Revisión legal de incorporación",
+    "legalAcknowledgementsDescription": "Revisarás estos documentos antes de usar LocateFlow.",
     "oauthReadinessNote": "El registro con correo y contraseña ya está listo. El inicio social se activará cuando se agreguen las credenciales OAuth de administración."
   },
   "dashboard": {
