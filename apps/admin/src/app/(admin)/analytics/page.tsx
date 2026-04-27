@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { SpendingByRegionWidget } from "@/components/spending-by-region-widget";
+import { EmailHealthWidget } from "@/components/email-health-widget";
 
 interface AnalyticsData {
   activeUsers: { total: number; today: number; week: number; month: number };
@@ -199,6 +200,9 @@ export default function AnalyticsPage() {
 
       {/* User Spending Aggregate */}
       <SpendingByRegionWidget />
+
+      {/* Email Pipeline Health */}
+      <EmailHealthWidget />
 
       {/* Charts Row */}
       <div className="grid grid-cols-3 gap-4">

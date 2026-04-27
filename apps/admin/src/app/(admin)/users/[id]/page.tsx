@@ -552,6 +552,7 @@ export default function UserDetailPage() {
           <InfoCard label="Linked Providers" value={linkedProviders.length} />
           <InfoCard label="Active Login Sessions" value={activeLoginSessions.length} />
           <InfoCard label="Locale" value={user.preferredLocale || "System"} />
+          <InfoCard label="Budget UI" value={user.showBudget === false ? "Hidden" : "Visible"} />
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
