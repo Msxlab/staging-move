@@ -293,7 +293,7 @@ model Address {
   latitude         Float?
   longitude        Float?
   placeId          String? @db.VarChar(191)
-  formattedAddress String? @db.VarChar(500)
+  formattedAddress String? @db.Text
 
   services             Service[]
   budgets              Budget[]
@@ -334,12 +334,12 @@ model Service {
   subCategory  String? @db.VarChar(50)
   providerName String  @db.VarChar(200)
 
-  accountNumber String? @db.VarChar(100)
-  username      String? @db.VarChar(100)
+  accountNumber String? @db.Text
+  username      String? @db.Text
 
   website String? @db.VarChar(500)
-  phone   String? @db.VarChar(20)
-  email   String? @db.VarChar(191)
+  phone   String? @db.Text
+  email   String? @db.Text
 
   monthlyCost     Float?
   billingDay      Int?

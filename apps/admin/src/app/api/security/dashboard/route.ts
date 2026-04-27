@@ -181,7 +181,7 @@ export async function GET() {
       encryption: {
         keyConfigured: encryptionKeyConfigured,
         algorithm: "AES-256-GCM",
-        encryptedTables: ["services (accountNumber, username, phone, notes)", "addresses (formattedAddress)"],
+        encryptedTables: ["services (accountNumber, username, phone, email, notes)", "addresses (formattedAddress)"],
       },
 
       backup: {

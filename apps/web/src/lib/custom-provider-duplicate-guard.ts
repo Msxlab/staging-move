@@ -32,7 +32,6 @@ export async function findDuplicateCustomProvider(
       deletedAt: null,
     },
     select: { id: true, name: true },
-    take: 100,
   });
 
   return (
@@ -56,7 +55,6 @@ export async function findListedProviderNameConflict(
       deletedAt: null,
     },
     select: { id: true, name: true, slug: true },
-    take: 100,
   });
 
   return (
