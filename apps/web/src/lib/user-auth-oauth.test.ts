@@ -86,4 +86,60 @@ describe("OAuth user linking", () => {
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
   });
+
+  it("links a verified provider to an active password user and marks email verified", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "password-user",
+      emailVerifiedAt: null,
+      deletedAt: null,
+    });
+
+    await expect(
+      findOrLinkOAuthUserWithStatus({
+        provider: "google",
+        providerId: "google-sub",
+        email: "Password@Example.com",
+      }),
+    ).resolves.toEqual({ userId: "password-user", isNewUser: false });
+
+    expect(mocks.oauthCreate).toHaveBeenCalledWith({
+      data: {
+        userId: "password-user",
+        provider: "google",
+        providerId: "google-sub",
+      },
+    });
+    expect(mocks.userUpdate).toHaveBeenCalledWith({
+      where: { id: "password-user" },
+      data: { emailVerifiedAt: expect.any(Date) },
+    });
+    expect(mocks.userCreate).not.toHaveBeenCalled();
+  });
+
+  it("creates a new provider-verified OAuth account with emailVerifiedAt set", async () => {
+    await expect(
+      findOrLinkOAuthUserWithStatus({
+        provider: "google",
+        providerId: "google-sub",
+        email: "New@Example.com",
+        firstName: "New",
+        lastName: "User",
+        imageUrl: "https://example.com/avatar.png",
+        allowNewAccount: true,
+      }),
+    ).resolves.toEqual({ userId: "created-user", isNewUser: true });
+
+    expect(mocks.userCreate).toHaveBeenCalledWith({
+      data: {
+        email: "new@example.com",
+        firstName: "New",
+        lastName: "User",
+        imageUrl: "https://example.com/avatar.png",
+        emailVerifiedAt: expect.any(Date),
+        oauthAccounts: {
+          create: { provider: "google", providerId: "google-sub" },
+        },
+      },
+    });
+  });
 });

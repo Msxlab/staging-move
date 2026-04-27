@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   userSessionUpdateMany: vi.fn(),
   gdprFindFirst: vi.fn(),
   gdprCreate: vi.fn(),
+  gdprUpdate: vi.fn(),
   adminAuditCreate: vi.fn(),
 }));
 
@@ -35,6 +36,7 @@ vi.mock("@/lib/db", () => ({
     gDPRRequest: {
       findFirst: (...args: unknown[]) => mocks.gdprFindFirst(...args),
       create: (...args: unknown[]) => mocks.gdprCreate(...args),
+      update: (...args: unknown[]) => mocks.gdprUpdate(...args),
     },
     adminAuditLog: {
       create: (...args: unknown[]) => mocks.adminAuditCreate(...args),
@@ -46,7 +48,7 @@ vi.mock("@/lib/user-notify", () => ({
   notifyUserOfAdminChange: vi.fn(),
 }));
 
-import { DELETE } from "./route";
+import { DELETE, POST } from "./route";
 
 function request(confirmPassword = "admin-password") {
   return new NextRequest("https://admin.locateflow.com/api/users/user_1", {
@@ -78,7 +80,7 @@ describe("admin user detail delete", () => {
         user: { updateMany: mocks.userUpdateMany },
         userLoginSession: { updateMany: mocks.userLoginSessionUpdateMany },
         userSession: { updateMany: mocks.userSessionUpdateMany },
-        gDPRRequest: { create: mocks.gdprCreate },
+        gDPRRequest: { create: mocks.gdprCreate, update: mocks.gdprUpdate },
         adminAuditLog: { create: mocks.adminAuditCreate },
       }),
     );
@@ -152,6 +154,99 @@ describe("admin user detail delete", () => {
     const response = await DELETE(request(), { params: Promise.resolve({ id: "user_1" }) });
 
     expect(response.status).toBe(409);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+  });
+
+  it("restores a soft-deleted user, cancels pending admin cleanup, and writes an audit log", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user_1",
+      email: "person@example.com",
+      deletedAt: new Date("2026-04-26T12:00:00Z"),
+    });
+    mocks.gdprFindFirst.mockResolvedValue({
+      id: "gdpr_pending",
+      status: "PENDING",
+      requestData: JSON.stringify({ source: "admin", cleanup: { userDeleted: false } }),
+    });
+    mocks.gdprUpdate.mockResolvedValue({ id: "gdpr_pending", status: "REJECTED" });
+
+    const response = await POST(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "restore_user", confirmPassword: "admin-password" }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.restored).toBe(true);
+    expect(mocks.requirePermission).toHaveBeenCalledWith("users", "canDelete", { minimumRole: "SUPER_ADMIN" });
+    expect(mocks.userUpdateMany).toHaveBeenCalledWith({
+      where: { id: "user_1", deletedAt: { not: null } },
+      data: { deletedAt: null },
+    });
+    expect(mocks.gdprUpdate).toHaveBeenCalledWith({
+      where: { id: "gdpr_pending" },
+      data: expect.objectContaining({
+        status: "REJECTED",
+        completedAt: expect.any(Date),
+      }),
+    });
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.userSessionUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "RESTORE_USER",
+        entityType: "User",
+        entityId: "user_1",
+      }),
+    });
+  });
+
+  it("does not restore when password confirmation fails", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "Incorrect password.",
+    });
+
+    const response = await POST(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "restore_user", confirmPassword: "wrong" }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.userFindUnique).not.toHaveBeenCalled();
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+  });
+
+  it("does not restore when GDPR deletion cleanup is already processing", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user_1",
+      email: "person@example.com",
+      deletedAt: new Date("2026-04-26T12:00:00Z"),
+    });
+    mocks.gdprFindFirst.mockResolvedValue({ id: "gdpr_processing", status: "PROCESSING" });
+
+    const response = await POST(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "restore_user", confirmPassword: "admin-password" }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.skippedReason).toBe("processing_gdpr_request");
     expect(mocks.transaction).not.toHaveBeenCalled();
     expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
   });

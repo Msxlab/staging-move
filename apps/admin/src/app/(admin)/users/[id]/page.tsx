@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { maskEmail } from "@/lib/privacy";
@@ -56,6 +56,9 @@ export default function UserDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -126,6 +129,49 @@ export default function UserDetailPage() {
     }
   }
 
+  async function handleRestore() {
+    if (!user?.deletedAt) return;
+    setRestoreError(null);
+    setShowRestoreConfirm(true);
+  }
+
+  async function confirmRestore(confirmPassword: string) {
+    if (!user) return;
+    setRestoreBusy(true);
+    setRestoreError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restore_user", confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error || "Failed to restore user";
+        setRestoreError(message);
+        toast.error(message);
+        return;
+      }
+      setUser({ ...user, deletedAt: null });
+      if (data.requestId) {
+        setGdprRequests((prev) =>
+          prev.map((request: any) =>
+            request.id === data.requestId
+              ? { ...request, status: "REJECTED", completedAt: new Date().toISOString() }
+              : request,
+          ),
+        );
+      }
+      setShowRestoreConfirm(false);
+      toast.success(data.message || "User restored");
+    } catch {
+      setRestoreError("Failed to restore user");
+      toast.error("Failed to restore user");
+    } finally {
+      setRestoreBusy(false);
+    }
+  }
+
   async function handleAddAdminNote() {
     if (!newAdminNote.trim()) {
       toast.error("Enter a note before saving.");
@@ -191,6 +237,7 @@ export default function UserDetailPage() {
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
   if (!user) return <div className="py-12 text-center text-muted-foreground">User not found</div>;
 
+  const isDeleted = Boolean(user.deletedAt);
   const addressList = user.addresses || [];
   const movingPlans = user.movingPlans || [];
   const moveTasks = user.moveTasks || [];
@@ -343,14 +390,24 @@ export default function UserDetailPage() {
           ) : (
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
-              <button onClick={() => setEditing(true)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit name">
-                <Edit className="h-4 w-4" />
-              </button>
+              {isDeleted && (
+                <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-500">
+                  Blocked / Deleted
+                </span>
+              )}
+              {!isDeleted && (
+                <button onClick={() => setEditing(true)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit name">
+                  <Edit className="h-4 w-4" />
+                </button>
+              )}
             </div>
           )}
           <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {user.email}</span>
             <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+            {isDeleted && (
+              <span className="flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Blocked / deleted {new Date(user.deletedAt).toLocaleString()}</span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -380,18 +437,36 @@ export default function UserDetailPage() {
                 }
                 setChangingPlan(false);
               }}
-              disabled={changingPlan}
+              disabled={changingPlan || isDeleted}
               className="rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
             >
               <option value="FREE_TRIAL">Free Trial</option>
               <option value="INDIVIDUAL">Individual</option>
             </select>
           </div>
-          <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
-            <Trash2 className="h-4 w-4" /> Delete
-          </button>
+          {isDeleted ? (
+            <button onClick={handleRestore} className="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+              <RotateCcw className="h-4 w-4" /> Restore / Unblock
+            </button>
+          ) : (
+            <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
+              <Trash2 className="h-4 w-4" /> Delete
+            </button>
+          )}
         </div>
       </div>
+
+      {isDeleted && (
+        <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-medium">This account is blocked by soft deletion.</p>
+            <p className="mt-1 text-xs text-red-500/90">
+              OAuth and password login remain blocked until a SUPER_ADMIN restores/unblocks it. Existing sessions stay revoked after restore.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
@@ -1303,6 +1378,21 @@ export default function UserDetailPage() {
           }
         }}
         onConfirm={confirmDelete}
+      />
+      <PasswordConfirmModal
+        open={showRestoreConfirm}
+        title="Restore / unblock user"
+        description={`This restores ${maskEmail(user.email)} to the active user list. Existing sessions remain revoked; the user must sign in again or reset their password.`}
+        confirmLabel="Restore / Unblock"
+        busy={restoreBusy}
+        error={restoreError}
+        onClose={() => {
+          if (!restoreBusy) {
+            setShowRestoreConfirm(false);
+            setRestoreError(null);
+          }
+        }}
+        onConfirm={confirmRestore}
       />
     </div>
   );

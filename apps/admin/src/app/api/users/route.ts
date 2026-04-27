@@ -21,7 +21,20 @@ export async function GET(request: NextRequest) {
     const sortDir = searchParams.get("sortDir") || "desc";
 
     const includeDeleted = searchParams.get("includeDeleted") === "true";
-    const where: any = includeDeleted ? {} : { deletedAt: null };
+    const statusFilter = searchParams.get("status");
+    const deletedScope =
+      statusFilter === "deleted" || statusFilter === "all"
+        ? statusFilter
+        : includeDeleted
+          ? "all"
+          : "active";
+    const deletedWhere =
+      deletedScope === "all"
+        ? {}
+        : deletedScope === "deleted"
+          ? { deletedAt: { not: null } }
+          : { deletedAt: null };
+    const where: any = { ...deletedWhere };
     if (search) {
       where.OR = [
         { email: { contains: search } },
@@ -80,9 +93,9 @@ export async function GET(request: NextRequest) {
         skip,
       }),
       prisma.user.count({ where }),
-      prisma.user.count({ where: includeDeleted ? {} : { deletedAt: null } }),
-      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo }, ...(includeDeleted ? {} : { deletedAt: null }) } }),
-      prisma.user.count({ where: { createdAt: { gte: prevWeek, lt: sevenDaysAgo }, ...(includeDeleted ? {} : { deletedAt: null }) } }),
+      prisma.user.count({ where: deletedWhere }),
+      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo }, ...deletedWhere } }),
+      prisma.user.count({ where: { createdAt: { gte: prevWeek, lt: sevenDaysAgo }, ...deletedWhere } }),
       prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
       prisma.subscription.groupBy({ by: ["plan"], _count: { id: true } }),
     ]);

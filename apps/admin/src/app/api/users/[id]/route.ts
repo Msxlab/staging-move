@@ -4,6 +4,18 @@ import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
 import { maskProviderIdentifier } from "@/lib/privacy";
 
+const RESTORABLE_GDPR_DELETE_SOURCES = new Set(["admin", "admin_bulk"]);
+
+function parseGdprRequestData(raw: string | null | undefined): Record<string, any> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -284,10 +296,134 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
 
+    if (body?.action === "restore_user") {
+      const session = await requirePermission("users", "canDelete", { minimumRole: "SUPER_ADMIN" });
+      const confirm = await requirePasswordConfirm(
+        session,
+        typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+      );
+      if (!confirm.confirmed) {
+        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: { id: true, email: true, deletedAt: true },
+      });
+      if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      if (!user.deletedAt) {
+        return NextResponse.json({ error: "User is already active", skippedReason: "already_active" }, { status: 409 });
+      }
+      const previousDeletedAt = user.deletedAt;
+
+      const existingRequest = await prisma.gDPRRequest.findFirst({
+        where: {
+          userId: id,
+          type: "DELETE",
+          status: { in: ["PENDING", "PROCESSING"] },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (existingRequest?.status === "PROCESSING") {
+        return NextResponse.json(
+          {
+            error: "Deletion cleanup is already processing. Do not restore from this screen.",
+            skippedReason: "processing_gdpr_request",
+            requestId: existingRequest.id,
+          },
+          { status: 409 },
+        );
+      }
+
+      const requestData = parseGdprRequestData(existingRequest?.requestData);
+      const requestSource = typeof requestData.source === "string" ? requestData.source : "unknown";
+      const requestCleanup =
+        requestData.cleanup && typeof requestData.cleanup === "object" && !Array.isArray(requestData.cleanup)
+          ? requestData.cleanup
+          : {};
+      if (existingRequest && !RESTORABLE_GDPR_DELETE_SOURCES.has(requestSource)) {
+        return NextResponse.json(
+          {
+            error: "This delete request was not admin-initiated. Review privacy policy obligations before restoring.",
+            skippedReason: "non_admin_gdpr_request",
+            requestId: existingRequest.id,
+          },
+          { status: 409 },
+        );
+      }
+
+      const now = new Date();
+      const restoredRequest = await prisma.$transaction(async (tx: any) => {
+        const restore = await tx.user.updateMany({
+          where: { id, deletedAt: { not: null } },
+          data: { deletedAt: null },
+        });
+        if (restore.count !== 1) {
+          throw new Error("USER_RESTORE_SKIPPED");
+        }
+
+        let rejectedRequest: any = null;
+        if (existingRequest) {
+          rejectedRequest = await tx.gDPRRequest.update({
+            where: { id: existingRequest.id },
+            data: {
+              status: "REJECTED",
+              completedAt: now,
+              requestData: JSON.stringify({
+                ...requestData,
+                cleanup: {
+                  ...requestCleanup,
+                  userDeleted: false,
+                  lastAttemptAt: now.toISOString(),
+                  lastError: "ADMIN_RESTORED_BEFORE_PURGE",
+                },
+                restore: {
+                  canceledByAdminRestore: true,
+                  restoredByAdminId: session.adminId,
+                  restoredAt: now.toISOString(),
+                  previousDeletedAt: previousDeletedAt.toISOString(),
+                },
+              }),
+            },
+          });
+        }
+
+        await tx.adminAuditLog.create({
+          data: {
+            adminUserId: session.adminId,
+            action: "RESTORE_USER",
+            entityType: "User",
+            entityId: id,
+            changes: JSON.stringify({
+              email: user.email,
+              previousDeletedAt: previousDeletedAt.toISOString(),
+              restoredAt: now.toISOString(),
+              gdprRequestId: rejectedRequest?.id || null,
+              gdprRequestStatus: rejectedRequest?.status || null,
+              sessionsRemainRevoked: true,
+            }),
+            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+          },
+        });
+
+        return rejectedRequest;
+      });
+
+      return NextResponse.json({
+        success: true,
+        restored: true,
+        requestId: restoredRequest?.id || null,
+        message: "User restored/unblocked. Existing sessions remain revoked; the user must sign in again or reset their password.",
+      });
+    }
+
+    const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
     const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -385,6 +521,9 @@ export async function POST(
     }
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (error?.message === "USER_RESTORE_SKIPPED") {
+      return NextResponse.json({ error: "User could not be restored because its state changed. Refresh and try again." }, { status: 409 });
     }
     console.error("Failed to perform user admin action:", error);
     return NextResponse.json({ error: "Failed to perform user admin action" }, { status: 500 });
