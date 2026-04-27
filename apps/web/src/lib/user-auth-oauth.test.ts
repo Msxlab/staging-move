@@ -92,7 +92,7 @@ describe("OAuth user linking", () => {
         providerId: "google-sub",
         email: "restored@example.com",
       }),
-    ).resolves.toEqual({ userId: "restored-user", isNewUser: false });
+    ).resolves.toEqual({ userId: "restored-user", isNewUser: false, wasLinkedNow: false });
 
     expect(mocks.oauthCreate).not.toHaveBeenCalled();
     expect(mocks.userCreate).not.toHaveBeenCalled();
@@ -144,7 +144,7 @@ describe("OAuth user linking", () => {
         providerId: "google-sub",
         email: "Password@Example.com",
       }),
-    ).resolves.toEqual({ userId: "password-user", isNewUser: false });
+    ).resolves.toEqual({ userId: "password-user", isNewUser: false, wasLinkedNow: true });
 
     expect(mocks.oauthCreate).toHaveBeenCalledWith({
       data: {
@@ -171,7 +171,7 @@ describe("OAuth user linking", () => {
         imageUrl: "https://example.com/avatar.png",
         allowNewAccount: true,
       }),
-    ).resolves.toEqual({ userId: "created-user", isNewUser: true });
+    ).resolves.toEqual({ userId: "created-user", isNewUser: true, wasLinkedNow: false });
 
     expect(mocks.userCreate).toHaveBeenCalledWith({
       data: {

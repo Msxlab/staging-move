@@ -17,7 +17,8 @@ import {
   findOrLinkOAuthUserWithStatus,
   generateFingerprint,
 } from "@/lib/user-auth";
-import { sendWelcomeEmail } from "@/lib/email-service";
+import { sendSecurityNoticeEmail, sendWelcomeEmail } from "@/lib/email-service";
+import { prisma } from "@/lib/db";
 import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 
@@ -108,6 +109,7 @@ export async function GET(request: NextRequest) {
 
   let userId: string;
   let isNewUser = false;
+  let wasLinkedNow = false;
   try {
     const oauthUser = await findOrLinkOAuthUserWithStatus({
       provider: "google",
@@ -120,6 +122,7 @@ export async function GET(request: NextRequest) {
     });
     userId = oauthUser.userId;
     isNewUser = oauthUser.isNewUser;
+    wasLinkedNow = oauthUser.wasLinkedNow;
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
       const response = NextResponse.redirect(
@@ -194,6 +197,27 @@ export async function GET(request: NextRequest) {
         message: err instanceof Error ? err.message : "SEND_FAILED",
       }));
     console.info("[EMAIL] welcome after google signup", { userIdHint: oauthUserIdHint(userId), sent: Boolean(welcomeSent) });
+  } else if (wasLinkedNow) {
+    // A new OAuth provider was just linked to a pre-existing account.
+    // Email the address-of-record so a hijacker linking their own
+    // provider can be detected by the legitimate owner.
+    const recipient = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, firstName: true },
+    }).catch(() => null);
+    if (recipient?.email) {
+      void sendSecurityNoticeEmail({
+        userEmail: recipient.email,
+        userName: recipient.firstName || "there",
+        kind: "oauth-linked",
+        detail: "Google",
+        occurredAt: new Date(),
+        dedupeKey: `oauth-linked:google:${userId}`,
+      }).catch((err) => console.error("[EMAIL] oauth-linked notice failed:", {
+        userIdHint: oauthUserIdHint(userId),
+        message: err instanceof Error ? err.message : "SEND_FAILED",
+      }));
+    }
   }
   return clearGoogleOAuthCookies(response);
 }
