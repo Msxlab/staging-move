@@ -18,6 +18,9 @@ import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 import Link from "next/link";
 import { HealthCard } from "./health-card";
 import { maskEmail } from "@/lib/privacy";
+import { AdminPageHeader } from "@/components/admin-page-header";
+import { AdminPanel } from "@/components/admin-panel";
+import { TierMedallion } from "@/components/premium/tier-medallion";
 
 async function getStats() {
   const now = new Date();
@@ -113,6 +116,9 @@ async function getStats() {
     recentUsers, newUsersThisWeek, weeklyTrend, upcomingMoves,
     activeSessions, totalSessions,
     mrrUsd, arpuUsd, churnPct, paidSubCount,
+    // Plan distribution feeds the new "Plan distribution" panel — counts
+    // by tier so we can render foil-stamped tier medallions with shares.
+    paidSubsByPlan: paidSubsByPlan as Array<{ plan: string; _count: { id: number } }>,
   };
 }
 
@@ -135,51 +141,79 @@ export default async function DashboardPage() {
     { label: "Providers", value: stats.totalProviders.toLocaleString(), icon: Building2, color: "text-tone-umber-fg", bg: "bg-tone-umber-bg", href: "/providers" },
   ];
 
+  // Plan distribution rows for the new dashboard panel. We only show the
+  // three live tiers — FREE_TRIAL counts are surfaced separately as
+  // "trials" and don't need a foil medallion.
+  const tierOrder = ["INDIVIDUAL", "FAMILY", "PRO"] as const;
+  const tierTotal = stats.paidSubsByPlan.reduce(
+    (n: number, row) => n + row._count.id,
+    0,
+  );
+  const tierRows = tierOrder.map((tier) => {
+    const row = stats.paidSubsByPlan.find((r) => r.plan === tier);
+    const count = row?._count.id ?? 0;
+    const share = tierTotal > 0 ? Math.round((count / tierTotal) * 100) : 0;
+    const def = BILLING_PLAN_DEFINITIONS[
+      tier as keyof typeof BILLING_PLAN_DEFINITIONS
+    ] as { displayName?: string; monthlyPriceUsd?: number } | undefined;
+    return {
+      tier,
+      count,
+      share,
+      label: def?.displayName ?? tier,
+      mrr: count * (def?.monthlyPriceUsd ?? 0),
+    };
+  });
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="mt-1 text-muted-foreground">System overview and key metrics</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
-            <p className="text-xs text-muted-foreground">New this week</p>
-            <div className="flex items-center gap-1.5">
-              <span className="text-lg font-bold text-foreground">{stats.newUsersThisWeek}</span>
-              {stats.weeklyTrend !== 0 && (
-                <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
-                  {stats.weeklyTrend > 0 ? "+" : ""}{stats.weeklyTrend}%
-                </span>
-              )}
+      <AdminPageHeader
+        eyebrow="Overview"
+        title="<em>Today's</em> snapshot"
+        subtitle="System health, revenue, and the people moving through LocateFlow."
+        actions={
+          <>
+            <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
+              <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
+                New this week
+              </p>
+              <div className="flex items-center justify-center gap-1.5">
+                <span className="text-lg font-semibold text-foreground">{stats.newUsersThisWeek}</span>
+                {stats.weeklyTrend !== 0 && (
+                  <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
+                    {stats.weeklyTrend > 0 ? "+" : ""}{stats.weeklyTrend}%
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
-            <p className="text-xs text-muted-foreground">Active Sessions</p>
-            <div className="flex items-center gap-1.5">
-              <Activity className="h-3.5 w-3.5 text-tone-sage-fg" />
-              <span className="text-lg font-bold text-foreground">{stats.activeSessions}</span>
+            <div className="rounded-xl border border-border bg-card px-4 py-2.5 text-center">
+              <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-muted-foreground">
+                Active sessions
+              </p>
+              <div className="flex items-center justify-center gap-1.5">
+                <Activity className="h-3.5 w-3.5 text-tone-sage-fg" />
+                <span className="text-lg font-semibold text-foreground">{stats.activeSessions}</span>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
-      {/* KPI Cards */}
+      {/* KPI Cards — same data, foil hairline + Fraunces-set values */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpiCards.map((card) => (
           <Link key={card.label} href={card.href}
-            className="rounded-xl border border-border bg-card p-6 transition-all hover:shadow-lg hover:border-primary/20">
-            <div className="flex items-center justify-between">
+            className="kpi-foil rounded-2xl border border-border bg-card p-5 block">
+            <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
-                <p className="mt-2 text-2xl font-bold text-foreground truncate">{card.value}</p>
+                <p className="kpi-label">{card.label}</p>
+                <p className="kpi-value mt-2 text-foreground truncate">{card.value}</p>
                 {card.sub ? (
                   <p className="mt-1 text-[11px] text-muted-foreground truncate">{card.sub}</p>
                 ) : null}
               </div>
-              <div className={`rounded-lg p-3 ${card.bg}`}>
-                <card.icon className={`h-6 w-6 ${card.color}`} />
+              <div className={`rounded-lg p-2.5 ${card.bg}`}>
+                <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
             </div>
           </Link>
@@ -210,14 +244,71 @@ export default async function DashboardPage() {
       {/* System Health */}
       <HealthCard />
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Recent Users */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Recent Users</h2>
-            <a href="/users" className="text-xs text-primary hover:underline">View all →</a>
+      {/* Plan distribution — foil-stamped tier breakdown of paying users */}
+      <AdminPanel
+        title="Plan distribution"
+        caption={`${tierTotal.toLocaleString()} paying ${tierTotal === 1 ? "user" : "users"}`}
+        flagship
+      >
+        {tierTotal === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No paying users yet — once people upgrade, they show up here grouped by tier.
+          </p>
+        ) : (
+          <div className="space-y-5">
+            <div className="tier-bar">
+              {tierRows.map((row) => (
+                <div
+                  key={row.tier}
+                  className={`tier-bar-seg-${row.tier.toLowerCase()}`}
+                  style={{ width: `${row.share}%` }}
+                  title={`${row.label}: ${row.share}%`}
+                />
+              ))}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {tierRows.map((row) => (
+                <div
+                  key={row.tier}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-foreground/[0.02] p-3"
+                >
+                  <TierMedallion tier={row.tier} size={48} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{row.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {row.count.toLocaleString()} {row.count === 1 ? "user" : "users"}
+                      {tierTotal > 0 ? ` · ${row.share}%` : ""}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p
+                      className="text-sm font-semibold text-foreground"
+                      style={{ fontFamily: "var(--fraunces), Georgia, serif", fontWeight: 400 }}
+                    >
+                      {fmtUsd(row.mrr)}
+                    </p>
+                    <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground">
+                      MRR
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        )}
+      </AdminPanel>
+
+      {/* Two-column layout — Recent Users + Upcoming Moves */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <AdminPanel
+          title="Recent users"
+          caption="Latest 5 sign-ups"
+          actions={
+            <Link href="/users" className="text-xs text-primary hover:underline">
+              View all →
+            </Link>
+          }
+        >
           <div className="space-y-2.5">
             {stats.recentUsers.map((user: any) => (
               <Link key={user.id} href={`/users/${user.id}`} className="flex items-center justify-between rounded-lg border border-border p-2.5 hover:bg-accent/30 transition-colors">
@@ -236,14 +327,17 @@ export default async function DashboardPage() {
               <p className="text-sm text-muted-foreground py-4 text-center">No users yet</p>
             )}
           </div>
-        </div>
+        </AdminPanel>
 
-        {/* Upcoming Moves */}
-        <div className="rounded-xl border border-border bg-card p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-foreground">Upcoming Moves</h2>
-            <a href="/moving" className="text-xs text-primary hover:underline">View all →</a>
-          </div>
+        <AdminPanel
+          title="Upcoming moves"
+          caption="Next 14 days"
+          actions={
+            <Link href="/moving" className="text-xs text-primary hover:underline">
+              View all →
+            </Link>
+          }
+        >
           <div className="space-y-2.5">
             {stats.upcomingMoves.map((move: any) => {
               const days = Math.ceil((new Date(move.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -272,7 +366,7 @@ export default async function DashboardPage() {
               </div>
             )}
           </div>
-        </div>
+        </AdminPanel>
       </div>
     </div>
   );

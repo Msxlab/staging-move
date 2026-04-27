@@ -295,3 +295,113 @@
   color: #F4E4D0;
   box-shadow: 0 0 0 1px rgba(229, 201, 168, 0.12) inset;
 }
+
+/* =========================================================================
+   Foil text — single inline span gets the rose-and-champagne gradient.
+   Used in headlines and accent words.
+   ========================================================================= */
+.foil-text {
+  font-style: italic;
+  font-weight: 400;
+  background: linear-gradient(135deg, #F4E4D0 0%, #E5C9A8 50%, #B8936C 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* =========================================================================
+   Admin panel — generic section wrapper used by AdminPanel.
+   Flagship variant adds an inset foil ring + soft top-glow to direct the
+   eye to the most important panel on a page.
+   ========================================================================= */
+.admin-panel {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  transition:
+    border-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.admin-panel:hover {
+  border-color: rgba(229, 201, 168, 0.32);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.30);
+}
+.admin-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-panel-flagship {
+  border-color: rgba(229, 201, 168, 0.30);
+  box-shadow:
+    0 0 0 1px rgba(229, 201, 168, 0.10) inset,
+    0 8px 24px rgba(0, 0, 0, 0.30);
+}
+.admin-panel-flagship::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    600px 140px at 50% 0%,
+    rgba(229, 201, 168, 0.08),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* =========================================================================
+   KPI card foil treatment — applied via the `kpi-foil` class on the
+   existing dashboard cards so we keep the structure but level up the chrome.
+   ========================================================================= */
+.kpi-foil {
+  position: relative;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+.kpi-foil:hover {
+  border-color: rgba(229, 201, 168, 0.34);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.30);
+  transform: translateY(-1px);
+}
+.kpi-foil .kpi-value {
+  font-family: var(--fraunces), Didot, Georgia, serif;
+  font-weight: 300;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+  font-variation-settings: "opsz" 48, "SOFT" 30;
+}
+.kpi-foil .kpi-label {
+  font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(245, 241, 234, 0.45);
+}
+.light .kpi-foil .kpi-label { color: rgba(42, 31, 24, 0.55); }
+
+/* Tier breakdown bar — segmented bar showing INDV / FAM / PRO share */
+.tier-bar {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(245, 241, 234, 0.06);
+}
+.light .tier-bar { background: rgba(42, 31, 24, 0.06); }
+.tier-bar-seg-individual { background: linear-gradient(90deg, #EDB99D, #A85A42); }
+.tier-bar-seg-family     { background: linear-gradient(90deg, #F4E4D0, #B8936C); }
+.tier-bar-seg-pro {
+  background: linear-gradient(90deg, #F4E4D0 0%, #D4846A 100%);
+  box-shadow: 0 0 8px rgba(229, 201, 168, 0.4);
+}
