@@ -16,6 +16,7 @@ import { TierStamp } from "@/components/premium/tier-stamp";
 import { HealthPill } from "@/components/premium/health-pill";
 import { computeUserHealth } from "@/lib/user-health";
 import { maskEmail } from "@/lib/privacy";
+import { AdminPageHeader } from "@/components/admin-page-header";
 
 // Health column is on by default — support team's #1 ask. Sticker is part
 // of the "user" cell, not its own column, so it always rides next to the
@@ -211,45 +212,45 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Users</h1>
-          <p className="mt-1 text-muted-foreground">{total} user{total !== 1 ? "s" : ""} found</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <ColumnSettingsMenu
-            columns={cols.columns}
-            onToggle={cols.toggle}
-            onReset={cols.reset}
-            hiddenCount={cols.hiddenCount}
-          />
-          <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
-            <Download className="h-3.5 w-3.5" /> Export{bulk.count > 0 ? ` (${bulk.count})` : ""}
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="People"
+        title="<em>Users</em>"
+        subtitle={`${total} user${total !== 1 ? "s" : ""} found`}
+        actions={
+          <>
+            <ColumnSettingsMenu
+              columns={cols.columns}
+              onToggle={cols.toggle}
+              onReset={cols.reset}
+              hiddenCount={cols.hiddenCount}
+            />
+            <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
+              <Download className="h-3.5 w-3.5" /> Export{bulk.count > 0 ? ` (${bulk.count})` : ""}
+            </button>
+          </>
+        }
+      />
 
-      {/* KPI Cards */}
+      {/* KPI Cards — same data, foil hairline + Fraunces values */}
       {stats && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
+          <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">Total Users</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">{stats.totalAll}</p>
+                <p className="kpi-label">Total Users</p>
+                <p className="kpi-value mt-2 text-foreground">{stats.totalAll}</p>
               </div>
               <div className="rounded-lg bg-blue-500/10 p-2.5"><Users className="h-5 w-5 text-blue-500" /></div>
             </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
+          <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">New This Week</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <span className="text-2xl font-bold text-foreground">{stats.newThisWeek}</span>
+                <p className="kpi-label">New This Week</p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="kpi-value text-foreground">{stats.newThisWeek}</span>
                   {stats.weeklyTrend !== 0 && (
-                    <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-green-500" : "text-red-500"}`}>
+                    <span className={`text-xs font-medium ${stats.weeklyTrend > 0 ? "text-tone-sage-fg" : "text-destructive"}`}>
                       {stats.weeklyTrend > 0 ? "+" : ""}{stats.weeklyTrend}%
                     </span>
                   )}
@@ -258,17 +259,17 @@ export default function UsersPage() {
               <div className="rounded-lg bg-green-500/10 p-2.5"><UserPlus className="h-5 w-5 text-green-500" /></div>
             </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
+          <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-medium text-muted-foreground">Active Subscriptions</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">{stats.activeSubCount}</p>
+                <p className="kpi-label">Active Subscriptions</p>
+                <p className="kpi-value mt-2 text-foreground">{stats.activeSubCount}</p>
               </div>
               <div className="rounded-lg bg-purple-500/10 p-2.5"><CreditCard className="h-5 w-5 text-purple-500" /></div>
             </div>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Plan Distribution</p>
+          <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
+            <p className="kpi-label mb-2">Plan Distribution</p>
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(stats.planMap || {}).map(([plan, count]) => (
                 <button key={plan} onClick={() => { setFilters({ ...filters, plan: filters.plan === plan ? "" : plan }); setPage(1); }}
@@ -379,8 +380,8 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border">
+      {/* Table — admin-panel chrome (foil hairline + warm hover) */}
+      <div className="admin-panel overflow-hidden">
         <table className="w-full">
           <thead className="bg-muted/50">
             <tr>

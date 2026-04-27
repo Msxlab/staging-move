@@ -295,6 +295,11 @@
   color: #F4E4D0;
   box-shadow: 0 0 0 1px rgba(229, 201, 168, 0.12) inset;
 }
+.tier-stamp.tier-trial {
+  background: rgba(227, 176, 75, 0.10);
+  border-color: rgba(227, 176, 75, 0.28);
+  color: #E3B04B;
+}
 
 /* =========================================================================
    Foil text — single inline span gets the rose-and-champagne gradient.

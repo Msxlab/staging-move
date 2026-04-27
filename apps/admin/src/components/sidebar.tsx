@@ -179,8 +179,8 @@ export function Sidebar() {
       {/* Logo — mirrors public/logo-mark.svg from the design system.
           Animations driven by .sb-sweep / .sb-ripple / .sb-pin-float in
           globals.css. All respect prefers-reduced-motion. */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-border px-6">
-        <svg className="h-8 w-8 shrink-0" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <div className="flex h-16 items-center gap-3 border-b border-border px-5">
+        <svg className="h-10 w-10 shrink-0 drop-shadow-[0_0_12px_rgba(229,201,168,0.18)]" viewBox="0 0 100 100" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="admin-mk-foil" x1="0" y1="1" x2="1" y2="0">
               <stop offset="0%" stopColor="#B8936C" />
@@ -219,13 +219,17 @@ export function Sidebar() {
             <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
           </g>
         </svg>
-        <span
-          className="text-lg leading-none tracking-[-0.02em] text-foreground"
-          style={{ fontFamily: "var(--fraunces), Didot, Georgia, serif", fontWeight: 400 }}
-        >
-          Locate<span className="italic">flow</span>
-        </span>
-        <span className="ml-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">Admin</span>
+        <div className="flex flex-col leading-none">
+          <span
+            className="text-[1.1rem] tracking-[-0.025em] text-foreground"
+            style={{ fontFamily: "var(--fraunces), Didot, Georgia, serif", fontWeight: 400 }}
+          >
+            Locate<span className="foil-text">flow</span>
+          </span>
+          <span className="mt-1 text-[9px] font-mono uppercase tracking-[0.22em] text-muted-foreground/70">
+            Admin
+          </span>
+        </div>
       </div>
 
       {/* Search */}
