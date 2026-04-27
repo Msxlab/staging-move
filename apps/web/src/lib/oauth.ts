@@ -26,6 +26,11 @@ export function hashForOAuthLog(value: string | null | undefined): string | unde
   return createHash("sha256").update(value.toLowerCase()).digest("hex").slice(0, 16);
 }
 
+export function oauthUserIdHint(userId: string | null | undefined): string | undefined {
+  if (!userId) return undefined;
+  return userId.slice(-6);
+}
+
 export function summarizeOAuthError(err: unknown): Record<string, string> {
   if (!err || typeof err !== "object") return {};
   const maybeError = err as { name?: unknown; code?: unknown };
