@@ -23,7 +23,7 @@ const USER_COLUMNS = [
   { key: "reviews", label: "Reviews", defaultVisible: false },
   { key: "moves", label: "Moves", defaultVisible: true },
   { key: "joined", label: "Joined" },
-  { key: "deletedAt", label: "Deleted", defaultVisible: true },
+  { key: "deletedAt", label: "Blocked/Deleted", defaultVisible: true },
   { key: "actions", label: "Actions", alwaysOn: true },
 ];
 
@@ -50,7 +50,7 @@ const STATUS_COLORS: Record<string, string> = {
   TRIALING: "bg-cyan-500/10 text-cyan-500",
   CANCELED: "bg-red-500/10 text-red-500",
   EXPIRED: "bg-gray-500/10 text-gray-400",
-  DELETED: "bg-red-500/10 text-red-500",
+  BLOCKED: "bg-red-500/10 text-red-500",
 };
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -294,7 +294,7 @@ export default function UsersPage() {
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Account State</label>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Account Access</label>
               <select
                 value={accountStatus}
                 onChange={(e) => {
@@ -305,7 +305,7 @@ export default function UsersPage() {
                 className={inputCls}
               >
                 <option value="active">Active</option>
-                <option value="deleted">Deleted</option>
+                <option value="deleted">Blocked / Deleted</option>
                 <option value="all">All</option>
               </select>
             </div>
@@ -392,7 +392,7 @@ export default function UsersPage() {
                   Joined <SortIcon col="createdAt" />
                 </th>
               )}
-              {cols.isVisible("deletedAt") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Deleted</th>}
+              {cols.isVisible("deletedAt") && <th className="px-3 py-3 text-left text-xs font-medium uppercase text-muted-foreground">Blocked / Deleted</th>}
               <th className="px-3 py-3 text-right text-xs font-medium uppercase text-muted-foreground">Actions</th>
             </tr>
           </thead>
@@ -436,8 +436,8 @@ export default function UsersPage() {
                   )}
                   {cols.isVisible("status") && (
                     <td className="px-3 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "DELETED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
-                        {user.deletedAt ? "DELETED" : user.subscription?.status || "—"}
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "BLOCKED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
+                        {user.deletedAt ? "BLOCKED" : user.subscription?.status || "—"}
                       </span>
                     </td>
                   )}

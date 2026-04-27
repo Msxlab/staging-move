@@ -392,7 +392,7 @@ export default function UserDetailPage() {
               <h1 className="text-3xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
               {isDeleted && (
                 <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-500">
-                  Deleted
+                  Blocked / Deleted
                 </span>
               )}
               {!isDeleted && (
@@ -406,7 +406,7 @@ export default function UserDetailPage() {
             <span className="flex items-center gap-1"><Mail className="h-4 w-4" /> {user.email}</span>
             <span className="flex items-center gap-1"><Calendar className="h-4 w-4" /> Joined {new Date(user.createdAt).toLocaleDateString()}</span>
             {isDeleted && (
-              <span className="flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Deleted {new Date(user.deletedAt).toLocaleString()}</span>
+              <span className="flex items-center gap-1"><AlertTriangle className="h-4 w-4" /> Blocked / deleted {new Date(user.deletedAt).toLocaleString()}</span>
             )}
           </div>
         </div>
@@ -446,7 +446,7 @@ export default function UserDetailPage() {
           </div>
           {isDeleted ? (
             <button onClick={handleRestore} className="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
-              <RotateCcw className="h-4 w-4" /> Restore
+              <RotateCcw className="h-4 w-4" /> Restore / Unblock
             </button>
           ) : (
             <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
@@ -460,9 +460,9 @@ export default function UserDetailPage() {
         <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <p className="font-medium">This account is soft-deleted.</p>
+            <p className="font-medium">This account is blocked by soft deletion.</p>
             <p className="mt-1 text-xs text-red-500/90">
-              OAuth and password login remain blocked until a SUPER_ADMIN restores it. Existing sessions stay revoked after restore.
+              OAuth and password login remain blocked until a SUPER_ADMIN restores/unblocks it. Existing sessions stay revoked after restore.
             </p>
           </div>
         </div>
@@ -1381,9 +1381,9 @@ export default function UserDetailPage() {
       />
       <PasswordConfirmModal
         open={showRestoreConfirm}
-        title="Restore user"
-        description={`This restores ${maskEmail(user.email)} to the active user list. Existing sessions remain revoked and the user must sign in again.`}
-        confirmLabel="Restore"
+        title="Restore / unblock user"
+        description={`This restores ${maskEmail(user.email)} to the active user list. Existing sessions remain revoked; the user must sign in again or reset their password.`}
+        confirmLabel="Restore / Unblock"
         busy={restoreBusy}
         error={restoreError}
         onClose={() => {

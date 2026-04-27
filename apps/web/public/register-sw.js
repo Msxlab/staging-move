@@ -1,17 +1,6 @@
 (function () {
   if (!("serviceWorker" in navigator)) return;
 
-  function isStagingLikeHost(hostname) {
-    var host = (hostname || "").toLowerCase();
-    return (
-      host.indexOf("staging") !== -1 ||
-      host.endsWith(".ondigitalocean.app") ||
-      host.endsWith(".vercel.app") ||
-      host === "localhost" ||
-      host === "127.0.0.1"
-    );
-  }
-
   function clearLocateFlowCaches() {
     if (!("caches" in window)) return Promise.resolve();
     return caches.keys().then(function (keys) {
@@ -42,11 +31,10 @@
   }
 
   window.addEventListener("load", function () {
-    if (isStagingLikeHost(window.location.hostname)) {
-      unregisterServiceWorkers();
-      return;
-    }
-
-    navigator.serviceWorker.register("/sw.js").catch(function () {});
+    // Hotfix: stale authenticated HTML/offline fallbacks have blocked auth,
+    // onboarding, and email-verification routes in production browsers.
+    // Keep service workers disabled until the app has a deliberately safe
+    // offline shell for authenticated pages.
+    unregisterServiceWorkers();
   });
 })();

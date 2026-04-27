@@ -6,8 +6,12 @@ describe("web service worker cache policy", () => {
   it("does not cache HTML pages or authenticated app navigations", () => {
     const sw = readFileSync(join(process.cwd(), "public", "sw.js"), "utf8");
 
-    expect(sw).toContain('const CACHE_NAME = "locateflow-v5"');
-    expect(sw).toContain('const STATIC_CACHE = "locateflow-static-v5"');
+    expect(sw).toContain('const CACHE_NAME = "locateflow-v6"');
+    expect(sw).toContain('const STATIC_CACHE = "locateflow-static-v6"');
+    expect(sw).toContain("const DISABLE_SERVICE_WORKER = true");
+    expect(sw).toContain("if (DISABLE_SERVICE_WORKER)");
+    expect(sw).toContain("if (DISABLE_SERVICE_WORKER) return;");
+    expect(sw).toContain("self.registration.unregister()");
     expect(sw).toContain('url.pathname.startsWith("/api/")');
     expect(sw).toContain('url.pathname.startsWith("/_next/")');
     expect(sw).toContain("AUTHENTICATED_NAV_PREFIXES");
@@ -18,7 +22,7 @@ describe("web service worker cache policy", () => {
     expect(sw).toContain("SAFE_OFFLINE_NAV_PATHS");
     expect(sw).toContain("!isSafeOfflineNavigation(url.pathname)");
     expect(sw).toContain("LOGOUT_CLEAR_CACHES");
-    expect(sw).toContain('k.indexOf("locateflow-") === 0 && k !== STATIC_CACHE');
+    expect(sw).toContain('k.indexOf("locateflow-") === 0 && (DISABLE_SERVICE_WORKER || k !== STATIC_CACHE)');
     expect(sw).toContain('key.indexOf("locateflow-") === 0');
     expect(sw).not.toContain("DYNAMIC_CACHE");
     expect(sw.slice(sw.indexOf("// Safe public pages:"))).not.toContain("cache.put");
@@ -35,10 +39,13 @@ describe("web service worker cache policy", () => {
 
   it("logout client cleanup unregisters service workers after clearing caches", () => {
     const hook = readFileSync(join(process.cwd(), "src", "hooks", "use-current-user.ts"), "utf8");
+    const register = readFileSync(join(process.cwd(), "public", "register-sw.js"), "utf8");
 
     expect(hook).toContain('key.startsWith("locateflow-")');
     expect(hook).toContain('postMessage({ type: "LOGOUT_CLEAR_CACHES" })');
     expect(hook).toContain("getRegistrations");
     expect(hook).toContain("registration.unregister()");
+    expect(register).toContain("unregisterServiceWorkers()");
+    expect(register).not.toContain('register("/sw.js")');
   });
 });

@@ -419,7 +419,7 @@ export async function POST(
         success: true,
         restored: true,
         requestId: restoredRequest?.id || null,
-        message: "User restored. Existing sessions remain revoked; the user must sign in again.",
+        message: "User restored/unblocked. Existing sessions remain revoked; the user must sign in again or reset their password.",
       });
     }
 

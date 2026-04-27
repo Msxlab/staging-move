@@ -1,5 +1,6 @@
-const CACHE_NAME = "locateflow-v5";
-const STATIC_CACHE = "locateflow-static-v5";
+const CACHE_NAME = "locateflow-v6";
+const STATIC_CACHE = "locateflow-static-v6";
+const DISABLE_SERVICE_WORKER = true;
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -56,6 +57,11 @@ function isSafeOfflineNavigation(pathname) {
 }
 
 self.addEventListener("install", (event) => {
+  if (DISABLE_SERVICE_WORKER) {
+    self.skipWaiting();
+    return;
+  }
+
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
   );
@@ -67,15 +73,17 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k.indexOf("locateflow-") === 0 && k !== STATIC_CACHE)
+          .filter((k) => k.indexOf("locateflow-") === 0 && (DISABLE_SERVICE_WORKER || k !== STATIC_CACHE))
           .map((k) => caches.delete(k))
       )
-    )
+    ).then(() => (DISABLE_SERVICE_WORKER ? self.registration.unregister() : undefined))
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
+  if (DISABLE_SERVICE_WORKER) return;
+
   const { request } = event;
   const url = new URL(request.url);
 

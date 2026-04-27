@@ -19,14 +19,26 @@ describe("auth page regressions", () => {
     expect(signUp).toContain('href="/disclaimer"');
   });
 
-  it("guards sign-in and sign-up auth-state checks against render retry loops", () => {
+  it("guards auth-page auth-state checks against render retry loops", () => {
     const signIn = read("src/app/sign-in/page.tsx");
     const signUp = read("src/app/sign-up/page.tsx");
     const sessionTracker = read("src/components/tracking/session-tracker.tsx");
 
     expect(signIn).toContain("authCheckStarted");
     expect(signUp).toContain("authCheckStarted");
+    expect(sessionTracker).toContain('pathname === "/verify-email"');
+    expect(sessionTracker).toContain('pathname?.startsWith("/verify-email/")');
     expect(sessionTracker).toContain("useCurrentUser({ enabled: !authPage })");
+  });
+
+  it("has a real pending email verification page for guarded app redirects", () => {
+    const page = read("src/app/verify-email/page.tsx");
+    const resend = read("src/app/verify-email/resend-verification-button.tsx");
+
+    expect(page).toContain("Verify your email");
+    expect(page).toContain("normalizeAppRedirectPath");
+    expect(page).toContain("ResendVerificationButton");
+    expect(resend).toContain("/api/auth/resend-verification");
   });
 
   it("maps known OAuth failures to specific safe user-facing copy", () => {
