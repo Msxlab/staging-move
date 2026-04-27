@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { resolvePostAuthRedirect, type PostAuthUserState } from "./post-auth-redirect";
+import {
+  resolveOnboardingGateRedirect,
+  resolvePostAuthRedirect,
+  type PostAuthUserState,
+} from "./post-auth-redirect";
 
 const baseState: PostAuthUserState = {
   needsEmailVerification: false,
@@ -42,5 +46,13 @@ describe("resolvePostAuthRedirect", () => {
   it("keeps completed sign-up or onboarding starts out of onboarding", () => {
     expect(resolvePostAuthRedirect(baseState, "/onboarding")).toBe("/dashboard");
     expect(resolvePostAuthRedirect(baseState, "/onboarding?step=legal")).toBe("/dashboard");
+  });
+
+  it("allows incomplete users into onboarding while still gating email verification", () => {
+    expect(resolveOnboardingGateRedirect({ ...baseState, onboardingCompleted: false }, "/onboarding")).toBeNull();
+    expect(resolveOnboardingGateRedirect({ ...baseState, needsEmailVerification: true }, "/onboarding")).toBe(
+      "/verify-email?redirect=%2Fonboarding",
+    );
+    expect(resolveOnboardingGateRedirect(baseState, "/onboarding")).toBe("/dashboard");
   });
 });

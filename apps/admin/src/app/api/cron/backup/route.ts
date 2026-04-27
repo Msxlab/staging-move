@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
     const backupData: Record<string, any[]> = {};
     const selectedTables = BACKUP_TABLE_ORDER;
     const tableCounts: Record<string, number> = {};
+    const failedTables: string[] = [];
     let totalRecords = 0;
 
     for (const tableName of selectedTables) {
@@ -101,7 +102,21 @@ export async function POST(request: NextRequest) {
         console.error(`[CRON-BACKUP] Failed to fetch ${tableName}:`, err);
         backupData[tableName] = [];
         tableCounts[tableName] = 0;
+        failedTables.push(tableName);
       }
+    }
+
+    // A per-table fetch failure used to be silently absorbed: the table
+    // ended up empty in the archive but the backup was still marked
+    // COMPLETED, so ops had no way to learn that (e.g.) the audit log or
+    // the admin user table was missing from a "successful" backup. Page
+    // the operator with the failed table list so the next restore drill
+    // can be retargeted before the gap rolls past the 30-day retention.
+    if (failedTables.length > 0) {
+      await dispatchBackupAlert(
+        "BACKUP_PARTIAL_FAILURE",
+        `Backup ${backup.id} completed with empty data for tables: ${failedTables.join(", ")}.`,
+      );
     }
 
     const createdAt = new Date();

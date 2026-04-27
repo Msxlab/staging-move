@@ -42,6 +42,7 @@ vi.mock("@/lib/move-task-sync", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { canCreateService } from "@/lib/plan-limits";
 import { GET, POST } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -53,6 +54,7 @@ const mockService = prisma.service as unknown as {
 const mockAddress = prisma.address as unknown as { findUnique: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findUnique: Mock; update: Mock };
 const mockCustomProvider = prisma.userCustomProvider as unknown as { findFirst: Mock };
+const mockCanCreateService = canCreateService as unknown as Mock;
 
 function makeRequest(search = "") {
   return new Request(`http://localhost/api/services${search}`) as any;
@@ -150,6 +152,41 @@ describe("services route", () => {
     );
 
     expect(response.status).toBe(404);
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("returns structured entitlement errors for expired complete users", async () => {
+    mockCanCreateService.mockResolvedValueOnce({
+      allowed: false,
+      code: "TRIAL_EXPIRED",
+      reason: "Your trial has ended. Upgrade to add more services.",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      code: "TRIAL_EXPIRED",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+    expect(mockAddress.findUnique).not.toHaveBeenCalled();
     expect(mockService.create).not.toHaveBeenCalled();
   });
 });

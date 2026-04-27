@@ -2,6 +2,7 @@ const CACHE_NAME = "locateflow-v7-auth-stabilization-disabled";
 const STATIC_CACHE = "locateflow-static-v7-auth-stabilization-disabled";
 const DISABLE_SERVICE_WORKER = true;
 const SERVICE_WORKER_SHUTOFF_REASON = "emergency-auth-state-machine-stabilization";
+let unregisterAttempted = false;
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -87,7 +88,11 @@ function unregisterDisabledWorker() {
 
 self.addEventListener("activate", (event) => {
   if (DISABLE_SERVICE_WORKER) {
-    event.waitUntil(unregisterDisabledWorker());
+    event.waitUntil(
+      self.clients.claim()
+        .catch(() => undefined)
+        .then(() => unregisterDisabledWorker())
+    );
     return;
   }
 
@@ -105,7 +110,10 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (DISABLE_SERVICE_WORKER) {
-    event.waitUntil(unregisterDisabledWorker());
+    if (!unregisterAttempted) {
+      unregisterAttempted = true;
+      event.waitUntil(unregisterDisabledWorker());
+    }
     return;
   }
 

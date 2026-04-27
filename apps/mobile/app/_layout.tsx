@@ -11,8 +11,14 @@ import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
 import { SessionTracker } from "@/components/SessionTracker";
 import { initI18n } from "@/i18n/config";
+import { initMobileSentry } from "@/lib/sentry";
 
 SplashScreen.preventAutoHideAsync();
+
+// Wire up the lightweight error reporter as early as possible — before
+// any module-level init that might throw — so the first crash a user
+// sees is the LAST one we miss in GlitchTip.
+initMobileSentry();
 
 // Kick off i18n resolution before the first render. Resolves:
 //   1. Stored preference (AsyncStorage) — set by the LanguageSelector.

@@ -82,7 +82,16 @@ export async function POST(request: NextRequest) {
     // Plan limit check
     const limitCheck = await canCreateService(userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json({ error: limitCheck.reason }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: limitCheck.reason,
+          code: limitCheck.code,
+          upgradeRequired: limitCheck.upgradeRequired,
+          current: limitCheck.current,
+          limit: limitCheck.limit,
+        },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();

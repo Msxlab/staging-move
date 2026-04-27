@@ -49,10 +49,39 @@ describe("auth page regressions", () => {
 
     expect(appLayout).toContain("getPostAuthUserState");
     expect(appLayout).toContain("resolvePostAuthRedirect");
+    expect(appLayout).toContain("AUTH_STATE_USER_UNAVAILABLE");
     expect(appLayout).not.toContain("LEGAL_CONSENT_EVENT");
     expect(postAuth).toContain("needsEmailVerificationGate");
+    expect(postAuth).toContain("resolveOnboardingGateRedirect");
     expect(postAuth).toContain('return "/onboarding?step=legal"');
     expect(postAuth).toContain('return "/onboarding"');
+  });
+
+  it("keeps the onboarding legal gate open until legal acceptance is saved", () => {
+    const onboarding = read("src/app/onboarding/page.tsx");
+
+    expect(onboarding).toContain("legalAcceptedOnServer");
+    expect(onboarding).toContain("setLegalAcceptedOnServer(hasLegal)");
+    expect(onboarding).toContain("setLegalAcceptedOnServer(true)");
+    expect(onboarding).toContain("const showLegalGate = legalStepRequested && !legalAcceptedOnServer");
+    expect(onboarding).not.toContain("const showLegalGate = legalStepRequested && !hasRequiredLegalConsents(legalConsents)");
+  });
+
+  it("routes unverified password users directly to verify-email after login", () => {
+    const signIn = read("src/app/sign-in/page.tsx");
+
+    expect(signIn).toContain("data.user?.emailVerified === false");
+    expect(signIn).toContain("/verify-email?redirect=");
+  });
+
+  it("does not silently swallow logout failures", () => {
+    const hook = read("src/hooks/use-current-user.ts");
+    const signIn = read("src/app/sign-in/page.tsx");
+
+    expect(hook).toContain("logoutOk");
+    expect(hook).toContain("/sign-in?error=logout-failed");
+    expect(hook).toContain("signOutInFlight");
+    expect(signIn).toContain('"logout-failed": "error_logout_failed"');
   });
 
   it("maps known OAuth failures to specific safe user-facing copy", () => {
@@ -61,6 +90,7 @@ describe("auth page regressions", () => {
 
     expect(signIn).toContain('"oauth-account-unavailable": "error_account_unavailable"');
     expect(signIn).toContain('"oauth-account-deleted": "error_account_unavailable"');
+    expect(signIn).toContain('"account-unavailable": "error_account_unavailable"');
     expect(signIn).toContain('"email-unverified": "error_oauth_email_unverified"');
     expect(signIn).toContain('"apple-email-not-verified": "error_oauth_email_unverified"');
     expect(signIn).toContain('"oauth-provider-disabled": "error_provider_disabled"');

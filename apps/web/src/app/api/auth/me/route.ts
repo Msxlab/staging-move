@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { destroyUserSession, getUserSession } from "@/lib/user-auth";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -28,6 +29,19 @@ function loggedOutResponse(optional: boolean) {
  */
 export async function GET(request?: NextRequest) {
   const optional = isOptionalAuthStateRequest(request);
+  if (optional && request) {
+    const rl = await rateLimit(getRateLimitKey(request, "auth:me:optional"), {
+      limit: 200,
+      windowSeconds: 60,
+      failClosed: false,
+    });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+  }
   const session = await getUserSession();
   if (!session) {
     return loggedOutResponse(optional);
