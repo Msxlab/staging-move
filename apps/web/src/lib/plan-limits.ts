@@ -195,6 +195,17 @@ export async function canCreateMovingPlan(userId: string): Promise<PlanLimitChec
       if (count < SETUP_GRACE_LIMITS.maxMovingPlans) {
         return { allowed: true, setupGrace: true, current: count, limit: SETUP_GRACE_LIMITS.maxMovingPlans };
       }
+      // Setup user hit their first-plan allowance. Surface the setup-specific
+      // code rather than falling through to inactivePlanBlock, which would
+      // (incorrectly) tell the user their trial has ended.
+      return {
+        allowed: false,
+        code: "SETUP_MOVING_PLAN_LIMIT_REACHED",
+        reason: `You can plan up to ${SETUP_GRACE_LIMITS.maxMovingPlans} move during setup. Upgrade to plan additional moves.`,
+        upgradeRequired: true,
+        current: count,
+        limit: SETUP_GRACE_LIMITS.maxMovingPlans,
+      };
     }
     return inactivePlanBlock(userPlan, "movingPlan");
   }
@@ -211,6 +222,14 @@ export async function canGenerateMoveTasks(userId: string): Promise<PlanLimitChe
   const userPlan = await getUserPlan(userId);
 
   if (!userPlan.isActive) {
+    // Setup users have already been allowed to create their first moving
+    // plan; gating /api/move-tasks for them would let the plan exist but
+    // refuse the very tasks the onboarding flow asks the user to act on.
+    // canCreateMovingPlan caps the *count* of plans, so there is no abuse
+    // delta in mirroring that allowance here.
+    if (await isInSetupGrace(userId)) {
+      return { allowed: true, setupGrace: true };
+    }
     return inactivePlanBlock(userPlan, "moveTasks");
   }
 

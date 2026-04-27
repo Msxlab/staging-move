@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
+import { captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
 
 // POST /api/stripe/portal — Create a Stripe Customer Portal session
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
     if (error?.name === "BILLING_CONFIG_ERROR") {
+      const reason = error?.message || "Stripe not configured";
+      console.error("[PORTAL] Stripe config rejected:", reason);
+      captureMessage(`[PORTAL] Stripe config rejected: ${reason}`, "error");
       return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
     }
     console.error("Stripe portal error:", error);
