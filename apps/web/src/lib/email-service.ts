@@ -214,12 +214,36 @@ async function logUnavailableTemplateEmail(opts: {
 /**
  * Renders an email template from the DB by replacing {{variable}} placeholders.
  */
+/**
+ * Resolve the actual template slug for a given locale. If `${baseSlug}-${locale}`
+ * exists and is active, that is used; otherwise we fall back to the base slug.
+ * "en" always returns the base slug (English is the canonical content).
+ */
+async function resolveLocalizedSlug(
+  baseSlug: string,
+  locale?: string | null,
+): Promise<string> {
+  const normalized = (locale || "").toLowerCase();
+  if (!normalized || normalized === "en" || normalized.startsWith("en-")) {
+    return baseSlug;
+  }
+  const lang = normalized.split("-")[0];
+  const candidate = `${baseSlug}-${lang}`;
+  const localized = await prisma.emailTemplate.findUnique({
+    where: { slug: candidate },
+    select: { isActive: true },
+  });
+  return localized?.isActive ? candidate : baseSlug;
+}
+
 export async function renderTemplate(
   slug: string,
   variables: Record<string, string>,
+  locale?: string | null,
 ): Promise<(EmailContent & { templateId: string; slug: string }) | null> {
+  const effectiveSlug = await resolveLocalizedSlug(slug, locale);
   const template = await prisma.emailTemplate.findUnique({
-    where: { slug },
+    where: { slug: effectiveSlug },
   });
 
   if (!template || !template.isActive) return null;
@@ -251,10 +275,11 @@ export async function sendTemplatedEmail(opts: {
   slug: string;
   variables: Record<string, string>;
   userId?: string;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
-  const rendered = await renderTemplate(opts.slug, opts.variables);
+  const rendered = await renderTemplate(opts.slug, opts.variables, opts.locale);
   if (!rendered) {
     console.warn(`[EMAIL] Template '${opts.slug}' not found or inactive`);
     await logUnavailableTemplateEmail({
@@ -273,10 +298,12 @@ export async function sendTemplatedEmail(opts: {
     html: rendered.html,
     text: rendered.text,
     templateId: rendered.templateId,
-    templateSlug: opts.slug,
+    templateSlug: rendered.slug,
     dedupeKey: opts.dedupeKey,
     metadata: {
       slug: opts.slug,
+      renderedSlug: rendered.slug,
+      locale: opts.locale || null,
       userId: opts.userId || null,
       ...(opts.metadata || {}),
     },
@@ -291,12 +318,14 @@ export async function sendTemplatedEmail(opts: {
 export async function sendWelcomeEmail(user: {
   email: string;
   firstName?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
   return sendTemplatedEmail({
     to: user.email,
     slug: "welcome",
+    locale: user.locale,
     dedupeKey: user.dedupeKey,
     variables: {
       firstName: user.firstName || "there",
@@ -309,14 +338,46 @@ export async function sendWelcomeEmail(user: {
 /**
  * Email verification, sent after registration.
  */
+function isNonEnglishLocale(locale?: string | null): boolean {
+  if (!locale) return false;
+  const normalized = locale.toLowerCase();
+  return normalized !== "en" && !normalized.startsWith("en-");
+}
+
 export async function sendEmailVerificationEmail(opts: {
   userEmail: string;
   userName: string;
   verifyToken: string;
+  locale?: string | null;
   dedupeKey?: string;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
   const verifyLink = `${appUrl}/verify-email/${encodeURIComponent(opts.verifyToken)}`;
+
+  // For non-English locales, prefer the DB-templated translation when available.
+  // English keeps the inline content path so behavior is unchanged for the
+  // dominant traffic.
+  if (isNonEnglishLocale(opts.locale)) {
+    const rendered = await renderTemplate(
+      "email-verify",
+      { firstName: opts.userName, verifyLink },
+      opts.locale,
+    );
+    if (rendered && rendered.slug !== "email-verify") {
+      const result = await sendLoggedEmail({
+        to: opts.userEmail,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        templateId: rendered.templateId,
+        templateSlug: rendered.slug,
+        dedupeKey: opts.dedupeKey,
+        metadata: { kind: "email-verification", locale: opts.locale ?? null },
+      });
+      return result.success;
+    }
+  }
+
   const content = emailVerificationContent({
     userName: opts.userName,
     verifyLink,
@@ -329,7 +390,7 @@ export async function sendEmailVerificationEmail(opts: {
     text: content.text,
     templateSlug: "email-verify",
     dedupeKey: opts.dedupeKey,
-    metadata: { kind: "email-verification" },
+    metadata: { kind: "email-verification", locale: opts.locale ?? null },
   });
   return result.success;
 }
@@ -342,14 +403,40 @@ export async function sendPasswordResetEmail(opts: {
   userName: string;
   resetToken: string;
   mode?: "reset" | "set-password";
+  locale?: string | null;
   dedupeKey?: string;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
   const resetLink = `${appUrl}/reset-password/${encodeURIComponent(opts.resetToken)}`;
+  const mode = opts.mode || "reset";
+
+  // Reset (not set-password) has a Spanish DB template. Set-password is a
+  // different flow with inline-only content.
+  if (mode === "reset" && isNonEnglishLocale(opts.locale)) {
+    const rendered = await renderTemplate(
+      "password-reset",
+      { firstName: opts.userName, resetLink },
+      opts.locale,
+    );
+    if (rendered && rendered.slug !== "password-reset") {
+      const result = await sendLoggedEmail({
+        to: opts.userEmail,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        templateId: rendered.templateId,
+        templateSlug: rendered.slug,
+        dedupeKey: opts.dedupeKey,
+        metadata: { kind: "password-reset", locale: opts.locale ?? null },
+      });
+      return result.success;
+    }
+  }
+
   const content = passwordResetContent({
     userName: opts.userName,
     resetLink,
-    mode: opts.mode || "reset",
+    mode,
   });
 
   const result = await sendLoggedEmail({
@@ -360,7 +447,8 @@ export async function sendPasswordResetEmail(opts: {
     templateSlug: "password-reset",
     dedupeKey: opts.dedupeKey,
     metadata: {
-      kind: opts.mode === "set-password" ? "set-password" : "password-reset",
+      kind: mode === "set-password" ? "set-password" : "password-reset",
+      locale: opts.locale ?? null,
     },
   });
   return result.success;

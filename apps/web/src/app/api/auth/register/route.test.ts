@@ -98,6 +98,7 @@ describe("register route", () => {
         passwordHash: "hashed-password",
         firstName: "New",
         lastName: "User",
+        preferredLocale: "en",
       },
     });
     expect(tokenMock.create).toHaveBeenCalled();
@@ -105,6 +106,7 @@ describe("register route", () => {
       userEmail: "new@example.com",
       userName: "New",
       verifyToken: "verify-token",
+      locale: "en",
       dedupeKey: "verify:user-new:verify-hash",
     });
     expect(userMock.update).not.toHaveBeenCalled();

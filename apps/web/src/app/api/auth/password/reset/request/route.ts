@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       passwordHash: true,
       emailVerifiedAt: true,
       deletedAt: true,
+      preferredLocale: true,
       oauthAccounts: { select: { id: true, provider: true } },
     },
   });

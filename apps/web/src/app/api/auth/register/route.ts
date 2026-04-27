@@ -57,6 +57,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Account already exists." }, { status: 409 });
   }
 
+  const locale = resolveLocale(
+    request.cookies.get(LOCALE_COOKIE)?.value,
+    request.headers.get("accept-language"),
+  );
+
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.create({
     data: {
@@ -64,6 +69,7 @@ export async function POST(request: NextRequest) {
       passwordHash,
       firstName: firstName ?? null,
       lastName: lastName ?? null,
+      preferredLocale: locale,
     },
   });
 

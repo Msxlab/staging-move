@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findFirst({
     where: { id: record.userId, deletedAt: null },
-    select: { id: true, email: true, firstName: true },
+    select: { id: true, email: true, firstName: true, preferredLocale: true },
   });
   if (!user) {
     return invalidVerificationLink();
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
   const welcomeSent = await sendWelcomeEmail({
     email: user.email,
     firstName: user.firstName,
+    locale: user.preferredLocale,
     dedupeKey: `welcome:${user.id}`,
   }).catch((err) => {
     console.error("[EMAIL] welcome send after verification failed:", {
