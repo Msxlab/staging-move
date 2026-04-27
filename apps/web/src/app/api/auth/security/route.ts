@@ -6,6 +6,7 @@ import {
   hashPassword,
   validatePasswordPolicy,
 } from "@/lib/user-auth";
+import { sendSecurityNoticeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, passwordHash: true },
+    select: { id: true, email: true, firstName: true, passwordHash: true },
   });
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -204,6 +205,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: policyError }, { status: 400 });
     }
 
+    const setAt = new Date();
     await prisma.user.update({
       where: { id: session.userId },
       data: { passwordHash: await hashPassword(parsed.data.newPassword) },
@@ -220,6 +222,15 @@ export async function POST(request: NextRequest) {
         userAgent,
       },
     });
+
+    void sendSecurityNoticeEmail({
+      userEmail: user.email,
+      userName: user.firstName || "there",
+      kind: "password-changed",
+      detail: "A password was added to your account so you can sign in with email and password in addition to any social sign-in methods.",
+      occurredAt: setAt,
+      dedupeKey: `pwd-set:${session.userId}:${setAt.getTime()}`,
+    }).catch((err) => console.error("[AUTH] set-password email failed:", err));
 
     const state = await loadSecurityState(session.userId, session.sessionId);
     return NextResponse.json({ success: true, ...state });
