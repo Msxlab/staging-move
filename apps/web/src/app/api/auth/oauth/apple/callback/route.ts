@@ -17,7 +17,8 @@ import {
   findOrLinkOAuthUserWithStatus,
   generateFingerprint,
 } from "@/lib/user-auth";
-import { sendWelcomeEmail } from "@/lib/email-service";
+import { sendSecurityNoticeEmail, sendWelcomeEmail } from "@/lib/email-service";
+import { prisma } from "@/lib/db";
 import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import { z } from "zod";
@@ -157,6 +158,7 @@ export async function POST(request: NextRequest) {
 
   let userId: string;
   let isNewUser = false;
+  let wasLinkedNow = false;
   try {
     const oauthUser = await findOrLinkOAuthUserWithStatus({
       provider: "apple",
@@ -168,6 +170,7 @@ export async function POST(request: NextRequest) {
     });
     userId = oauthUser.userId;
     isNewUser = oauthUser.isNewUser;
+    wasLinkedNow = oauthUser.wasLinkedNow;
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
       const response = NextResponse.redirect(
@@ -244,6 +247,24 @@ export async function POST(request: NextRequest) {
       return false;
     });
     console.info("[EMAIL] welcome after apple signup", { userIdHint: oauthUserIdHint(userId), sent: welcomeSent });
+  } else if (wasLinkedNow) {
+    const recipient = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, firstName: true },
+    }).catch(() => null);
+    if (recipient?.email) {
+      void sendSecurityNoticeEmail({
+        userEmail: recipient.email,
+        userName: recipient.firstName || "there",
+        kind: "oauth-linked",
+        detail: "Apple",
+        occurredAt: new Date(),
+        dedupeKey: `oauth-linked:apple:${userId}`,
+      }).catch((err) => console.error("[EMAIL] oauth-linked notice failed:", {
+        userIdHint: oauthUserIdHint(userId),
+        message: err instanceof Error ? err.message : "SEND_FAILED",
+      }));
+    }
   }
   return clearAppleOAuthCookies(response);
 }

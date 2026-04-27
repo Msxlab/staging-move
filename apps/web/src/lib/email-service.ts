@@ -10,7 +10,12 @@ import {
   htmlToPlainText,
   normalizeBaseUrl,
   passwordResetContent,
+  paymentFailedContent,
+  securityNoticeContent,
+  type SecurityNoticeKind,
   sendEmailWithResult,
+  subscriptionActivatedContent,
+  subscriptionCanceledContent,
   weeklyDigestHtml,
   weeklyDigestText,
 } from "@/lib/email";
@@ -545,4 +550,131 @@ export async function sendMoveReminderEmail(opts: {
       appUrl,
     },
   });
+}
+
+/**
+ * Subscription activated, sent after Stripe checkout completes.
+ */
+export async function sendSubscriptionActivatedEmail(opts: {
+  userEmail: string;
+  userName: string;
+  planLabel: string;
+  amountFormatted?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = subscriptionActivatedContent({
+    userName: opts.userName,
+    planLabel: opts.planLabel,
+    amountFormatted: opts.amountFormatted,
+    manageLink: `${appUrl}/settings/subscription`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "subscription-activated",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "subscription-activated", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Subscription canceled, sent on customer.subscription.deleted.
+ */
+export async function sendSubscriptionCanceledEmail(opts: {
+  userEmail: string;
+  userName: string;
+  planLabel: string;
+  accessEndsOn?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = subscriptionCanceledContent({
+    userName: opts.userName,
+    planLabel: opts.planLabel,
+    accessEndsOn: opts.accessEndsOn,
+    reactivateLink: `${appUrl}/settings/subscription`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "subscription-canceled",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "subscription-canceled", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Payment failed, sent on invoice.payment_failed.
+ */
+export async function sendPaymentFailedEmail(opts: {
+  userEmail: string;
+  userName: string;
+  amountFormatted?: string | null;
+  nextAttemptOn?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = paymentFailedContent({
+    userName: opts.userName,
+    amountFormatted: opts.amountFormatted,
+    nextAttemptOn: opts.nextAttemptOn,
+    retryLink: `${appUrl}/settings/subscription`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "payment-failed",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "payment-failed", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Account-security notice (password changed, MFA toggled, OAuth linked, deletion requested).
+ *
+ * Single sender that branches on `kind` so all security-event copy lives
+ * alongside each other in `securityNoticeContent` and we don't sprawl
+ * one wrapper per event into this module.
+ */
+export async function sendSecurityNoticeEmail(opts: {
+  userEmail: string;
+  userName: string;
+  kind: SecurityNoticeKind;
+  detail?: string | null;
+  occurredAt?: Date | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const occurredAt = opts.occurredAt ? opts.occurredAt.toISOString() : null;
+  const content = securityNoticeContent({
+    userName: opts.userName,
+    kind: opts.kind,
+    detail: opts.detail,
+    occurredAt,
+    manageLink: `${appUrl}/settings/security`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: `security-${opts.kind}`,
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: `security-${opts.kind}`, ...(opts.metadata || {}) },
+  });
+  return result.success;
 }

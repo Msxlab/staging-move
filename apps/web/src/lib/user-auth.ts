@@ -444,7 +444,7 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   lastName?: string | null;
   imageUrl?: string | null;
   allowNewAccount?: boolean;
-}): Promise<{ userId: string; isNewUser: boolean }> {
+}): Promise<{ userId: string; isNewUser: boolean; wasLinkedNow: boolean }> {
   // 1) Existing OAuth link
   const existingLink = await prisma.oAuthAccount.findUnique({
     where: {
@@ -480,7 +480,7 @@ export async function findOrLinkOAuthUserWithStatus(input: {
       oauthAccountUserDeleted: false,
       activeOAuthMatch: true,
     });
-    return { userId: existingLink.userId, isNewUser: false };
+    return { userId: existingLink.userId, isNewUser: false, wasLinkedNow: false };
   }
 
   // 2) Existing user by email → link
@@ -537,7 +537,7 @@ export async function findOrLinkOAuthUserWithStatus(input: {
         data: { emailVerifiedAt: new Date() },
       });
     }
-    return { userId: userByEmail.id, isNewUser: false };
+    return { userId: userByEmail.id, isNewUser: false, wasLinkedNow: true };
   }
 
   if (input.allowNewAccount === false) {
@@ -575,5 +575,5 @@ export async function findOrLinkOAuthUserWithStatus(input: {
     throw new Error("OAUTH_ACCOUNT_CREATE_FAILED");
   }
 
-  return { userId: created.id, isNewUser: true };
+  return { userId: created.id, isNewUser: true, wasLinkedNow: false };
 }

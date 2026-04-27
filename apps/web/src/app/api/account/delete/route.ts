@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { createAccountDeletionRequest, getActiveAccountDeletionRequest, processAccountDeletionRequest } from "@/lib/account-deletion";
+import { sendSecurityNoticeEmail } from "@/lib/email-service";
 
 // POST /api/account/delete — GDPR right to erasure
 export async function POST(request: NextRequest) {
@@ -43,6 +44,19 @@ export async function POST(request: NextRequest) {
         stripeSubscriptionId: subscription?.stripeSubscriptionId || null,
       });
     })();
+
+    // Email the user only on initial request — re-clicks of "delete my
+    // account" while a request is pending shouldn't spam.
+    if (!existingRequest) {
+      void sendSecurityNoticeEmail({
+        userEmail: user.email,
+        userName: user.firstName || "there",
+        kind: "account-deletion-requested",
+        detail: "Your data will be removed shortly.",
+        occurredAt: new Date(),
+        dedupeKey: `account-deletion:${deleteRequest.id}`,
+      }).catch((err) => console.error("[ACCOUNT] deletion-confirm email failed:", err));
+    }
 
     const processed = await processAccountDeletionRequest(deleteRequest.id);
     const completed = processed.status === "COMPLETED";
