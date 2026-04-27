@@ -11,6 +11,7 @@ import {
   generateFingerprint,
 } from "@/lib/user-auth";
 import { resolveClientIP } from "@/lib/rate-limit";
+import { sendSecurityNoticeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,7 @@ export async function PATCH(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, passwordHash: true },
+    select: { id: true, email: true, firstName: true, passwordHash: true },
   });
   if (!user || !user.passwordHash) {
     return NextResponse.json({ error: "Password change requires an existing password." }, { status: 400 });
@@ -50,6 +51,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const newHash = await hashPassword(parsed.data.newPassword);
+  const changedAt = new Date();
   await prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
 
   // Invalidate all sessions, then issue a fresh session for this device so the
@@ -60,6 +62,14 @@ export async function PATCH(request: NextRequest) {
   const ip = resolveClientIP(request);
   const fp = await generateFingerprint(ip, ua);
   await createUserSession({ userId, email: user.email, fingerprint: fp, ipAddress: ip, userAgent: ua });
+
+  void sendSecurityNoticeEmail({
+    userEmail: user.email,
+    userName: user.firstName || "there",
+    kind: "password-changed",
+    occurredAt: changedAt,
+    dedupeKey: `pwd-changed:${userId}:${changedAt.getTime()}`,
+  }).catch((err) => console.error("[AUTH] password-changed email failed:", err));
 
   return NextResponse.json({ success: true });
 }
