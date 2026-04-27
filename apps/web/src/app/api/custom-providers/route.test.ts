@@ -31,6 +31,7 @@ vi.mock("@/lib/rate-limit", () => ({
 
 vi.mock("@/lib/plan-limits", () => ({
   canCreateCustomProvider: vi.fn(() => Promise.resolve({ allowed: true })),
+  canCreateService: vi.fn(() => Promise.resolve({ allowed: true })),
 }));
 
 import { prisma } from "@/lib/db";

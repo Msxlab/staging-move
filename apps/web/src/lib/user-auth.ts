@@ -378,19 +378,24 @@ export async function destroyAllUserSessions(userId: string): Promise<void> {
 
 /**
  * Throw UNAUTHORIZED if no valid session cookie / DB row.
- * Also verifies the ACCOUNT_DELETED GDPR flag.
+ * Also destroys stale soft-deleted sessions. Callers that need a distinct
+ * user-facing deleted-account branch can opt into ACCOUNT_DELETED.
  */
-export async function requireDbUserId(): Promise<string> {
+export async function requireDbUserId(options: { distinguishDeleted?: boolean } = {}): Promise<string> {
   const session = await getUserSession();
   if (!session) throw new Error("UNAUTHORIZED");
 
-  const user = await prisma.user.findFirst({
-    where: { id: session.userId, deletedAt: null },
-    select: { id: true },
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, deletedAt: true },
   });
   if (!user) {
     await destroyUserSession();
     throw new Error("UNAUTHORIZED");
+  }
+  if (user.deletedAt) {
+    await destroyUserSession();
+    throw new Error(options.distinguishDeleted ? "ACCOUNT_DELETED" : "UNAUTHORIZED");
   }
 
   // Update lastActivity (non-blocking).

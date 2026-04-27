@@ -4,7 +4,7 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 import { InstallPrompt } from "@/components/shared/install-prompt";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { requireDbUserId } from "@/lib/auth";
+import { destroyUserSession, requireDbUserId } from "@/lib/auth";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 import type { ReactNode } from "react";
@@ -21,10 +21,10 @@ async function getAppGateRedirect(): Promise<string | null> {
   const currentPath = await getCurrentAppPath();
   let userId: string;
   try {
-    userId = await requireDbUserId();
+    userId = await requireDbUserId({ distinguishDeleted: true });
   } catch (error: any) {
     if (error?.message === "ACCOUNT_DELETED") {
-      redirect("/");
+      redirect("/sign-in?error=account-unavailable");
     }
     if (error?.message === "UNAUTHORIZED") {
       redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
@@ -32,8 +32,16 @@ async function getAppGateRedirect(): Promise<string | null> {
     return null;
   }
 
-  const target = resolvePostAuthRedirect(await getPostAuthUserState(userId), currentPath);
-  return target === currentPath ? null : target;
+  try {
+    const target = resolvePostAuthRedirect(await getPostAuthUserState(userId), currentPath);
+    return target === currentPath ? null : target;
+  } catch (error: any) {
+    if (error?.message === "AUTH_STATE_USER_UNAVAILABLE") {
+      await destroyUserSession().catch(() => null);
+      redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
+    }
+    throw error;
+  }
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {

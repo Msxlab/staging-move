@@ -20,6 +20,11 @@ const SAFE_METADATA_KEYS = new Set([
   "kind",
   "templateSlug",
   "slug",
+  "fromAddress",
+  "configError",
+  "resendApiError",
+  "retryAvailable",
+  "templateUnavailable",
   "userId",
   "serviceId",
   "subscriptionId",
@@ -78,10 +83,11 @@ export async function sendLoggedEmail(opts: {
   metadata?: Record<string, unknown>;
 }): Promise<{ success: boolean; skipped: boolean }> {
   const templateId = await resolveTemplateId(opts.templateId, opts.templateSlug);
-  const metadata = buildEmailMetadata({
+  const metadataInput = {
     ...(opts.metadata || {}),
     templateSlug: opts.templateSlug || null,
-  });
+  };
+  const metadata = buildEmailMetadata(metadataInput);
   let logId: string;
 
   try {
@@ -138,6 +144,13 @@ export async function sendLoggedEmail(opts: {
     html: opts.html,
     text: opts.text,
   });
+  const resultMetadata = buildEmailMetadata({
+    ...metadataInput,
+    fromAddress: result.fromEmail,
+    configError: Boolean(result.configError),
+    resendApiError: Boolean(result.error && !result.configError),
+    retryAvailable: !result.success,
+  });
 
   try {
     await prisma.emailLog.update({
@@ -147,7 +160,7 @@ export async function sendLoggedEmail(opts: {
         error: result.error,
         providerMessageId: result.providerMessageId,
         sentAt: result.success ? new Date() : null,
-        metadata,
+        metadata: resultMetadata,
       },
     });
   } catch (error) {
@@ -155,6 +168,42 @@ export async function sendLoggedEmail(opts: {
   }
 
   return { success: result.success, skipped: false };
+}
+
+async function logUnavailableTemplateEmail(opts: {
+  to: string;
+  slug: string;
+  userId?: string;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const error = `Email template '${opts.slug}' is missing or inactive.`;
+  const metadata = buildEmailMetadata({
+    ...(opts.metadata || {}),
+    kind: "template-unavailable",
+    slug: opts.slug,
+    templateSlug: opts.slug,
+    userId: opts.userId || null,
+    templateUnavailable: true,
+    retryAvailable: true,
+  });
+
+  try {
+    await prisma.emailLog.create({
+      data: {
+        templateId: null,
+        dedupeKey: opts.dedupeKey ?? null,
+        to: opts.to,
+        subject: `Email template unavailable: ${opts.slug}`.slice(0, 200),
+        status: "FAILED",
+        error,
+        metadata,
+      },
+    });
+  } catch (error) {
+    if (opts.dedupeKey && isUniqueConstraintError(error)) return;
+    console.error("[EMAIL] Failed to log unavailable email template:", error);
+  }
 }
 
 /**
@@ -203,6 +252,13 @@ export async function sendTemplatedEmail(opts: {
   const rendered = await renderTemplate(opts.slug, opts.variables);
   if (!rendered) {
     console.warn(`[EMAIL] Template '${opts.slug}' not found or inactive`);
+    await logUnavailableTemplateEmail({
+      to: opts.to,
+      slug: opts.slug,
+      userId: opts.userId,
+      dedupeKey: opts.dedupeKey,
+      metadata: opts.metadata,
+    });
     return false;
   }
 

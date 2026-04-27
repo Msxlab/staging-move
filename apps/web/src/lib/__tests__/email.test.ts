@@ -206,7 +206,12 @@ describe("transactional email layout", () => {
       html: '<p>Hello Alice</p><a href="https://locateflow.com">Open</a>',
     });
 
-    expect(result).toEqual({ success: true, providerMessageId: "resend_123", error: null });
+    expect(result).toEqual({
+      success: true,
+      providerMessageId: "resend_123",
+      error: null,
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
+    });
     expect(mocks.resendSend).toHaveBeenCalledWith(
       expect.objectContaining({
         from: "LocateFlow <noreply@locateflow.com>",
@@ -258,6 +263,8 @@ describe("transactional email layout", () => {
       success: false,
       providerMessageId: null,
       error: "RESEND_API_KEY missing",
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      configError: true,
     });
     expect(mocks.resendSend).not.toHaveBeenCalled();
   });

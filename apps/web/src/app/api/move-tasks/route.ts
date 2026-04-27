@@ -77,7 +77,10 @@ export async function POST(request: NextRequest) {
 
     const entitlement = await canGenerateMoveTasks(userId);
     if (!entitlement.allowed) {
-      return NextResponse.json({ error: entitlement.reason, upgradeRequired: true }, { status: 403 });
+      return NextResponse.json(
+        { error: entitlement.reason, code: entitlement.code, upgradeRequired: entitlement.upgradeRequired },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();

@@ -50,6 +50,8 @@ export interface SendEmailResult {
   success: boolean;
   providerMessageId: string | null;
   error: string | null;
+  fromEmail: string | null;
+  configError?: boolean;
 }
 
 export interface EmailContent {
@@ -126,14 +128,25 @@ export async function sendEmailWithResult(
   const configError = validateEmailConfig(config);
   if (configError) {
     console.error("[EMAIL] Configuration error:", { message: configError });
-    return { success: false, providerMessageId: null, error: configError };
+    return {
+      success: false,
+      providerMessageId: null,
+      error: configError,
+      fromEmail: config.fromEmail,
+      configError: true,
+    };
   }
   const { resendApiKey, fromEmail, replyTo } = config;
   const text = options.text || htmlToPlainText(options.html);
 
   if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${options.to} | Subject: ${options.subject}`);
-    return { success: true, providerMessageId: null, error: null };
+    return {
+      success: true,
+      providerMessageId: null,
+      error: null,
+      fromEmail,
+    };
   }
 
   try {
@@ -153,9 +166,10 @@ export async function sendEmailWithResult(
         success: false,
         providerMessageId: null,
         error: safeError,
+        fromEmail,
       };
     }
-    return { success: true, providerMessageId: data?.id || null, error: null };
+    return { success: true, providerMessageId: data?.id || null, error: null, fromEmail };
   } catch (err) {
     const safeError = safeEmailError(err);
     console.error("[EMAIL] Error:", { message: safeError });
@@ -163,6 +177,7 @@ export async function sendEmailWithResult(
       success: false,
       providerMessageId: null,
       error: safeError,
+      fromEmail,
     };
   }
 }

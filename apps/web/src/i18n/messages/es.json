@@ -297,6 +297,7 @@
     "error_account_setup": "No pudimos terminar de preparar tu cuenta de inicio social. Reintenta en un minuto.",
     "error_account_unavailable": "Esta cuenta de inicio de sesión no está disponible. Contacta a soporte si crees que es un error.",
     "error_session_create": "Encontramos tu cuenta, pero no pudimos iniciar una sesión. Reintenta.",
+    "error_logout_failed": "No pudimos cerrar tu sesión por completo. Reintenta.",
     "error_generic": "Error al iniciar sesión. Reintenta.",
     "agreeToTerms": "Acepto los {terms} y la {privacy}.",
     "mustAgree": "Debes aceptar los términos para continuar.",

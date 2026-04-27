@@ -69,12 +69,18 @@ export async function POST(request: NextRequest) {
     // Plan limit check
     const limitCheck = await canCreateMovingPlan(userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json({ error: limitCheck.reason }, { status: 403 });
+      return NextResponse.json(
+        { error: limitCheck.reason, code: limitCheck.code, upgradeRequired: limitCheck.upgradeRequired },
+        { status: 403 },
+      );
     }
     if (needsNewDestinationAddress) {
       const addressLimitCheck = await canCreateAddress(userId);
       if (!addressLimitCheck.allowed) {
-        return NextResponse.json({ error: addressLimitCheck.reason }, { status: 403 });
+        return NextResponse.json(
+          { error: addressLimitCheck.reason, code: addressLimitCheck.code, upgradeRequired: addressLimitCheck.upgradeRequired },
+          { status: 403 },
+        );
       }
     }
 
