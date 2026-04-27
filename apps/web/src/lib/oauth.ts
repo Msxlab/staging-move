@@ -7,6 +7,7 @@ import { randomBytes, createHash, createPrivateKey } from "crypto";
 import { SignJWT } from "jose";
 import type { NextRequest } from "next/server";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
 // ── State + PKCE ──────────────────────────────────────────────
 
@@ -18,6 +19,35 @@ export function generatePkce() {
   const verifier = randomBytes(32).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
   return { verifier, challenge };
+}
+
+export function hashForOAuthLog(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  return createHash("sha256").update(value.toLowerCase()).digest("hex").slice(0, 16);
+}
+
+export function oauthUserIdHint(userId: string | null | undefined): string | undefined {
+  if (!userId) return undefined;
+  return userId.slice(-6);
+}
+
+export function summarizeOAuthError(err: unknown): Record<string, string> {
+  if (!err || typeof err !== "object") return {};
+  const maybeError = err as { name?: unknown; code?: unknown };
+  return {
+    ...(typeof maybeError.name === "string" ? { name: maybeError.name } : {}),
+    ...(typeof maybeError.code === "string" ? { code: maybeError.code } : {}),
+  };
+}
+
+export function logSafeOAuthEvent(
+  event: string,
+  details: Record<string, string | boolean | number | null | undefined> = {},
+) {
+  const sanitized = Object.fromEntries(
+    Object.entries(details).filter(([, value]) => value !== undefined),
+  );
+  console.info("[OAUTH]", event, sanitized);
 }
 
 export function getBaseUrl(): string {
@@ -124,8 +154,16 @@ export function normalizeOAuthRedirectPath(
   value: string | null | undefined,
   fallback = "/dashboard",
 ): string {
-  const path = value || fallback;
-  return path.startsWith("/") && !path.startsWith("//") ? path : fallback;
+  return normalizeAppRedirectPath(value, fallback);
+}
+
+export function resolveOAuthPostAuthRedirectPath(input: {
+  isNewUser: boolean;
+  redirectPath?: string | null;
+  fallback?: string;
+}): string {
+  if (input.isNewUser) return "/onboarding?step=legal";
+  return normalizeOAuthRedirectPath(input.redirectPath, input.fallback || "/dashboard");
 }
 
 export async function getGoogleOAuthCredentials() {

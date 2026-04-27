@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Truck, Trash2, MapPin, C
 import Link from "next/link";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
-import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import { normalizeMovingPlanStatus, type MoveTaskLocalEffect } from "@locateflow/shared";
 
 const STATUS_BADGE_CLASSES: Record<string, { cls: string }> = {
   PLANNING: { cls: "bg-white/5 text-white/40 border-white/10" },
@@ -41,7 +41,7 @@ interface MoveTaskItem {
   confidence: string;
   reason?: string | null;
   caveats?: string[] | null;
-  localEffect?: { effectType?: string; localOnly?: boolean } | null;
+  localEffect?: MoveTaskLocalEffect | null;
   destinationProvider?: { name: string } | null;
   customProvider?: { name: string } | null;
 }
@@ -108,7 +108,10 @@ export default function MovingPlanDetailPage() {
     }
   };
 
-  const updateMoveTask = async (taskId: string, event: "ACCEPT" | "START" | "COMPLETE" | "DISMISS" | "REOPEN") => {
+  const updateMoveTask = async (
+    taskId: string,
+    event: "ACCEPT" | "START" | "COMPLETE" | "DISMISS" | "REOPEN",
+  ): Promise<boolean> => {
     setTaskBusy(taskId);
     try {
       const res = await fetch("/api/move-tasks", {
@@ -119,19 +122,52 @@ export default function MovingPlanDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update task");
       if (plan) await fetchMoveTasks(plan.id);
-      toast.success(event === "COMPLETE" ? "Completed locally in LocateFlow" : "Task updated");
+      return true;
     } catch (error: any) {
       toast.error(error?.message || "Failed to update task");
+      return false;
     } finally {
       setTaskBusy(null);
     }
   };
 
-  const confirmCompleteMoveTask = (taskId: string) => {
-    const confirmed = window.confirm(
-      "Complete this task locally in LocateFlow? This can update LocateFlow service records, but it will not update any external provider account.",
-    );
-    if (confirmed) void updateMoveTask(taskId, "COMPLETE");
+  // Single-tap "Done": replaces the old `window.confirm` modal. Completing
+  // a task is fully reversible via Reopen, so prompting the user every
+  // time is friction without a payoff. The undo toast covers the rare
+  // mis-tap path with a 5-second window — same pattern Gmail uses for
+  // archive.
+  const handleCompleteMoveTask = async (taskId: string) => {
+    const ok = await updateMoveTask(taskId, "COMPLETE");
+    if (!ok) return;
+    toast.success("Completed locally in LocateFlow", {
+      description: "Provider accounts are not updated automatically.",
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          void updateMoveTask(taskId, "REOPEN");
+        },
+      },
+    });
+  };
+
+  const handleDismissMoveTask = async (taskId: string) => {
+    const ok = await updateMoveTask(taskId, "DISMISS");
+    if (!ok) return;
+    toast("Task skipped", {
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          void updateMoveTask(taskId, "REOPEN");
+        },
+      },
+    });
+  };
+
+  const handleReopenMoveTask = async (taskId: string) => {
+    const ok = await updateMoveTask(taskId, "REOPEN");
+    if (ok) toast.success("Task reopened");
   };
 
   useEffect(() => {
@@ -276,9 +312,9 @@ export default function MovingPlanDetailPage() {
       <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-xl p-5">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-white">Move Tasks</h2>
+            <h2 className="text-sm font-semibold text-white">Your move checklist</h2>
             <p className="text-xs text-white/40 mt-1 max-w-2xl">
-              Suggested tasks are manual LocateFlow tracking. Completing a task can update local service records, but it does not update an external provider account.
+              These items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
             </p>
           </div>
           <button
@@ -286,63 +322,93 @@ export default function MovingPlanDetailPage() {
             disabled={tasksLoading}
             className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition disabled:opacity-50"
           >
-            {tasksLoading ? "Syncing..." : "Generate move tasks"}
+            {tasksLoading
+              ? "Working…"
+              : moveTasks.length === 0
+                ? "Generate checklist"
+                : "Refresh checklist"}
           </button>
         </div>
         <div className="mt-4 space-y-2">
           {moveTasks.length === 0 && !tasksLoading && (
             <div className="rounded-xl border border-white/10 bg-black/10 p-4">
-              <p className="text-sm text-white/60">No move tasks yet.</p>
-              <p className="text-xs text-white/35 mt-1">Generate tasks after adding origin services and a destination address.</p>
+              <p className="text-sm text-white/60">No items yet.</p>
+              <p className="text-xs text-white/35 mt-1">
+                Add a destination address and at least one service, then click "Generate checklist".
+              </p>
             </div>
           )}
           {moveTasks.map((task) => {
             const busy = taskBusy === task.id;
             const isDone = task.status === "COMPLETED";
             const isDismissed = task.status === "DISMISSED";
+            const statusLabel = isDone ? "Done" : isDismissed ? "Skipped" : "To do";
+            const statusCls = isDone
+              ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/25"
+              : isDismissed
+                ? "bg-white/[0.04] text-white/35 border-white/10"
+                : "bg-cyan-500/10 text-cyan-300 border-cyan-500/20";
             return (
-              <div key={task.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
+              <div
+                key={task.id}
+                className={`rounded-xl border p-4 transition ${
+                  isDone || isDismissed
+                    ? "border-white/[0.06] bg-white/[0.02] opacity-70"
+                    : "border-white/10 bg-black/10"
+                }`}
+              >
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/45">
-                        {task.status.replace(/_/g, " ")}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${statusCls}`}>
+                        {statusLabel}
                       </span>
-                      <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/35">
-                        {task.confidence} confidence
-                      </span>
-                      {task.localEffect?.localOnly && (
-                        <span className="text-[10px] px-2 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-300">
+                      {task.localEffect?.localOnly && !isDone && !isDismissed && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-300">
                           LocateFlow only
                         </span>
                       )}
                     </div>
-                    <p className="text-sm font-semibold text-white mt-2">{task.title}</p>
-                    {task.description && <p className="text-xs text-white/50 mt-1">{task.description}</p>}
-                    {task.destinationProvider?.name && (
+                    <p className={`text-sm font-semibold mt-2 ${isDone ? "text-white/70 line-through" : "text-white"}`}>
+                      {task.title}
+                    </p>
+                    {task.description && !isDone && !isDismissed && (
+                      <p className="text-xs text-white/50 mt-1">{task.description}</p>
+                    )}
+                    {task.destinationProvider?.name && !isDone && !isDismissed && (
                       <p className="text-[11px] text-emerald-300 mt-2">Candidate: {task.destinationProvider.name}</p>
                     )}
-                    {task.caveats?.[0] && <p className="text-[10px] text-white/30 mt-2">{task.caveats[0]}</p>}
+                    {task.caveats?.[0] && !isDone && !isDismissed && (
+                      <p className="text-[10px] text-white/30 mt-2">{task.caveats[0]}</p>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-1.5 shrink-0">
-                    {!isDone && !isDismissed && task.status === "SUGGESTED" && (
-                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "ACCEPT")} className="px-2 py-1 rounded-lg bg-white/5 text-white/60 text-[10px] hover:bg-white/10">
-                        Accept
-                      </button>
-                    )}
                     {!isDone && !isDismissed && (
-                      <button disabled={busy} onClick={() => confirmCompleteMoveTask(task.id)} className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10px] hover:bg-emerald-500/30">
-                        Complete locally
-                      </button>
-                    )}
-                    {!isDone && !isDismissed && (
-                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "DISMISS")} className="px-2 py-1 rounded-lg bg-white/5 text-white/40 text-[10px] hover:bg-white/10">
-                        Dismiss
-                      </button>
+                      <>
+                        <button
+                          disabled={busy}
+                          onClick={() => handleCompleteMoveTask(task.id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[11px] font-medium hover:bg-emerald-500/30 disabled:opacity-50"
+                        >
+                          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                          Done
+                        </button>
+                        <button
+                          disabled={busy}
+                          onClick={() => handleDismissMoveTask(task.id)}
+                          className="px-2 py-1 rounded-lg bg-white/5 text-white/40 text-[11px] hover:bg-white/10 disabled:opacity-50"
+                        >
+                          Skip
+                        </button>
+                      </>
                     )}
                     {(isDone || isDismissed) && (
-                      <button disabled={busy} onClick={() => updateMoveTask(task.id, "REOPEN")} className="px-2 py-1 rounded-lg bg-white/5 text-white/50 text-[10px] hover:bg-white/10">
-                        Reopen
+                      <button
+                        disabled={busy}
+                        onClick={() => handleReopenMoveTask(task.id)}
+                        className="px-2 py-1 rounded-lg bg-white/5 text-white/50 text-[11px] hover:bg-white/10 disabled:opacity-50"
+                      >
+                        {busy ? <Loader2 className="h-3 w-3 animate-spin inline" /> : "Reopen"}
                       </button>
                     )}
                   </div>

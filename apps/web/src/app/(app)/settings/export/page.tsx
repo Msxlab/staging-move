@@ -276,6 +276,7 @@ export default function ExportPage() {
         </div>
         <p className="text-xs text-white/30 px-5 pb-3">
           Generate a professional PDF report for any address with company branding, category breakdown, and full service details.
+          Exports use a print-friendly light layout.
         </p>
         <div className="px-5 pb-5 space-y-2">
           {loadingAddresses ? (

@@ -3,6 +3,64 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { maskEmail } from "@/lib/privacy";
+
+function parseMetadata(value: string | null | undefined): Record<string, unknown> {
+  if (!value) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function emailDomain(email: string | null | undefined) {
+  if (!email || !email.includes("@")) return null;
+  return email.split("@").pop() || null;
+}
+
+function isConfigFailure(log: { error?: string | null; metadata?: string | null }) {
+  const metadata = parseMetadata(log.metadata);
+  if (metadata.configError === true) return true;
+  return /RESEND_API_KEY|EMAIL_FROM|NEXT_PUBLIC_APP_URL|SUPPORT_EMAIL|EMAIL_REPLY_TO|missing|invalid/i.test(log.error || "");
+}
+
+function safeEmailError(value: string | null | undefined) {
+  if (!value) return null;
+  return value
+    .replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]")
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[redacted]")
+    .slice(0, 500);
+}
+
+function presentEmailLog(log: any) {
+  const metadata = parseMetadata(log.metadata);
+  const configError = isConfigFailure(log);
+  const error = safeEmailError(log.error);
+  const resendApiError = Boolean(metadata.resendApiError === true || (log.status === "FAILED" && error && !configError));
+  return {
+    id: log.id,
+    to: maskEmail(log.to),
+    toDomain: emailDomain(log.to),
+    subject: log.subject,
+    status: log.status,
+    error,
+    safeErrorReason: error,
+    providerMessageId: log.providerMessageId,
+    templateId: log.templateId,
+    templateIdPresent: Boolean(log.templateId),
+    template: log.template,
+    fromAddress: typeof metadata.fromAddress === "string" ? metadata.fromAddress : null,
+    missingConfig: configError,
+    dedupeConflict: false,
+    resendApiError,
+    retryAvailable: log.status === "FAILED",
+    createdAt: log.createdAt,
+    sentAt: log.sentAt,
+    failedAt: log.status === "FAILED" ? log.createdAt : null,
+  };
+}
 
 export async function GET() {
   try {
@@ -36,7 +94,7 @@ export async function GET() {
       totalSent: await prisma.emailLog.count({ where: { status: "SENT" } }),
       totalFailed: await prisma.emailLog.count({ where: { status: "FAILED" } }),
     };
-    return NextResponse.json({ templates: templatesWithCounts, logs, stats });
+    return NextResponse.json({ templates: templatesWithCounts, logs: logs.map(presentEmailLog), stats });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft, Home, Briefcase, Palmtree, Calendar, Edit, Zap, Star,
   Trash2, MapPin, Globe, Phone, DollarSign, ChevronRight, CheckCircle2,
@@ -55,9 +56,6 @@ interface AddressDetail {
 export default function AddressDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const locale = useLocale();
-  const t = useTranslations("addresses");
-  const tCommon = useTranslations("common");
   const tToast = useTranslations("toast");
   const id = params.id as string;
   const [address, setAddress] = useState<AddressDetail | null>(null);
@@ -85,8 +83,8 @@ export default function AddressDetailPage() {
   const handleDelete = async () => {
     setDeleting(true);
     const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
-    if (res.ok) { toast.success(tToast("addressDeleted")); router.push("/addresses"); }
-    else { toast.error(tToast("addressDeleteFailed")); setDeleting(false); }
+    if (res.ok) { toast.success(tToast("deleted")); router.push("/addresses"); }
+    else { toast.error(tToast("deleteFailed")); setDeleting(false); }
   };
 
   const handleBulkDelete = async () => {

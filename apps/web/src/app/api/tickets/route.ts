@@ -60,8 +60,11 @@ export async function POST(request: NextRequest) {
 
     // Rate limit: 5 tickets per hour
     const rlKey = getRateLimitKey(request, "ticket:create");
-    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 3600 });
-    if (!rl.success) {
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(rlKey, { limit: 5, windowSeconds: 3600 }),
+      rateLimit(`ticket:create:user:${userId}`, { limit: 5, windowSeconds: 3600 }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many tickets. Please wait before creating another." }, { status: 429 });
     }
 

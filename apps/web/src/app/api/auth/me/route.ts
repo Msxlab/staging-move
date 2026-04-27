@@ -1,24 +1,54 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getUserSession } from "@/lib/user-auth";
+import { destroyUserSession, getUserSession } from "@/lib/user-auth";
+import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
+
+function isOptionalAuthStateRequest(request?: NextRequest): boolean {
+  const optional = request?.nextUrl.searchParams.get("optional");
+  return optional === "1" || optional === "true";
+}
+
+function loggedOutResponse(optional: boolean) {
+  if (optional) {
+    return NextResponse.json(
+      { authenticated: false, user: null },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
+  return NextResponse.json(
+    { error: "Unauthorized", user: null },
+    { status: 401, headers: { "Cache-Control": "no-store" } },
+  );
+}
 
 /**
  * Returns the current user. Used by the web client to hydrate state.
  * Never exposes passwordHash or mfaSecret.
  */
-export async function GET() {
+export async function GET(request?: NextRequest) {
+  const optional = isOptionalAuthStateRequest(request);
+  if (optional && request) {
+    const rl = await rateLimit(getRateLimitKey(request, "auth:me:optional"), {
+      limit: 200,
+      windowSeconds: 60,
+      failClosed: false,
+    });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+  }
   const session = await getUserSession();
   if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized", user: null },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
+    return loggedOutResponse(optional);
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
+  const user = await prisma.user.findFirst({
+    where: { id: session.userId, deletedAt: null },
     select: {
       id: true,
       email: true,
@@ -31,14 +61,13 @@ export async function GET() {
     },
   });
   if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized", user: null },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
+    await destroyUserSession().catch(() => null);
+    return loggedOutResponse(optional);
   }
 
   return NextResponse.json(
     {
+      authenticated: true,
       user: {
         id: user.id,
         email: user.email,

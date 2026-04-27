@@ -29,11 +29,6 @@ vi.mock("@/lib/email-service", () => ({
   sendEmailVerificationEmail: vi.fn(() => Promise.resolve()),
 }));
 
-vi.mock("@/lib/legal-acceptance", () => ({
-  normalizeAcceptedLegalConsents: vi.fn((consents) => consents || null),
-  recordLegalAcceptance: vi.fn(() => Promise.resolve()),
-}));
-
 import { prisma } from "@/lib/db";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { POST } from "./route";
@@ -51,13 +46,6 @@ const validBody = {
   password: "Valid-Password-2026!",
   firstName: "New",
   lastName: "User",
-  legalConsents: {
-    termsAccepted: true,
-    disclaimerAccepted: true,
-    termsVersion: "2026-03-13",
-    disclaimerVersion: "2026-03-13",
-    acceptedAt: "2026-04-25T12:00:00.000Z",
-  },
 };
 
 function makeRequest(body: unknown) {
@@ -98,7 +86,7 @@ describe("register route", () => {
     expect(userMock.update).not.toHaveBeenCalled();
   });
 
-  it("creates a new account for a new email", async () => {
+  it("creates a new account for a new email without recording legal consent", async () => {
     const response = await POST(makeRequest(validBody));
     const body = await response.json();
 

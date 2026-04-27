@@ -20,8 +20,8 @@ export type BillingCycle = "monthly" | "yearly";
 /**
  * Resolve the Stripe Price ID for a plan + billing cycle. Runtime config
  * is the single source of truth so operators can rotate prices without a
- * code deploy; we fall back to the monthly key if the yearly key isn't
- * set yet (supports the pre-yearly-launch state).
+ * code deploy. Yearly checkout must fail cleanly if the yearly price is not
+ * configured; silently charging monthly for a yearly request is unsafe.
  */
 export async function getStripePriceIdForPlan(
   _plan: Extract<BillingPlan, "INDIVIDUAL">,
@@ -30,6 +30,7 @@ export async function getStripePriceIdForPlan(
   if (cycle === "yearly") {
     const yearly = await getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY");
     if (yearly) return yearly;
+    return null;
   }
   return getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL");
 }
@@ -61,7 +62,9 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
         ? new Date(subscription.premiumUntil)
         : null;
 
-  const trialExpired = plan === "FREE_TRIAL" && trialEndsAt ? Date.now() > trialEndsAt.getTime() : false;
+  const trialExpired =
+    plan === "FREE_TRIAL" &&
+    (!trialEndsAt || Date.now() > trialEndsAt.getTime());
   const isActive = isActiveSubscriptionStatus(status) && !trialExpired;
   const managementKind = provider === "STRIPE" ? "stripe" : provider === "APP_STORE" || provider === "PLAY_STORE" ? "store" : "none";
 

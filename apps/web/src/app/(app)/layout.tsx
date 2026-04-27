@@ -2,75 +2,68 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { InstallPrompt } from "@/components/shared/install-prompt";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { destroyUserSession, requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
-import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
-import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
+import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
+import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 import type { ReactNode } from "react";
 
-function parseStoredLegalConsents(metadata: string | null | undefined) {
-  if (!metadata) return null;
-  try {
-    return getDefaultLegalConsents(JSON.parse(metadata));
-  } catch {
-    return null;
-  }
+async function getCurrentAppPath() {
+  const headerStore = await headers();
+  return normalizeAppRedirectPath(
+    headerStore.get("x-locateflow-pathname"),
+    "/dashboard",
+  );
 }
 
-async function checkOnboardingNeeded(): Promise<boolean> {
+async function getAppGateState(): Promise<
+  | { redirectTo: string }
+  | { userId: string }
+> {
+  const currentPath = await getCurrentAppPath();
+  let userId: string;
   try {
-    const { requireDbUserId } = await import("@/lib/auth");
-    const userId = await requireDbUserId();
-    const [profile, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
-      prisma.profile.findUnique({ where: { userId } }),
-      prisma.userEvent.findMany({
-        where: { userId, event: LEGAL_CONSENT_EVENT },
-        orderBy: { createdAt: "desc" },
-        take: 10,
-      }),
-      prisma.address.count({ where: { userId, deletedAt: null } }),
-      prisma.service.count({ where: { userId, deletedAt: null, isActive: true } }),
-      prisma.movingPlan.count({
-        where: {
-          userId,
-          status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] },
-        },
-      }),
-      prisma.userEvent.findMany({
-        where: { userId, event: { in: [...ONBOARDING_PROGRESS_EVENTS] } },
-        select: { event: true },
-        orderBy: { createdAt: "desc" },
-      }),
-    ]);
-    const hasLegalConsents = consentEvents.some((event) =>
-      hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
-    );
-    const progress = getOnboardingProgress({
-      hasProfile: Boolean(profile),
-      hasRequiredLegalConsents: hasLegalConsents,
-      addressCount,
-      serviceCount,
-      movingPlanCount,
-      ...summarizeOnboardingEvents(onboardingEvents),
-    });
-    return !progress.completed;
+    userId = await requireDbUserId({ distinguishDeleted: true });
   } catch (error: any) {
     if (error?.message === "ACCOUNT_DELETED") {
-      redirect("/");
+      redirect("/sign-in?error=account-unavailable");
     }
     if (error?.message === "UNAUTHORIZED") {
-      redirect("/sign-in");
+      redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
     }
-    return false;
+    // requireDbUserId redirects internally for unhandled cases above; fall
+    // through to a "no userId" sentinel rather than rethrow so the layout
+    // returns null cleanly.
+    return { redirectTo: "/sign-in" };
+  }
+
+  try {
+    const target = resolvePostAuthRedirect(await getPostAuthUserState(userId), currentPath);
+    return target === currentPath ? { userId } : { redirectTo: target };
+  } catch (error: any) {
+    if (error?.message === "AUTH_STATE_USER_UNAVAILABLE") {
+      await destroyUserSession().catch(() => null);
+      redirect(`/sign-in?redirect=${encodeURIComponent(currentPath)}`);
+    }
+    throw error;
   }
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const needsOnboarding = await checkOnboardingNeeded();
-  if (needsOnboarding) {
-    redirect("/onboarding");
+  const gate = await getAppGateState();
+  if ("redirectTo" in gate) {
+    redirect(gate.redirectTo);
   }
+
+  const userPrefs = await prisma.user
+    .findUnique({
+      where: { id: gate.userId },
+      select: { showBudget: true },
+    })
+    .catch(() => null);
+  const showBudget = userPrefs?.showBudget ?? true;
 
   return (
     <div className="flex min-h-screen relative" style={{ background: "var(--surface)" }}>
@@ -89,7 +82,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       >
         Skip to main content
       </a>
-      <Sidebar />
+      <Sidebar showBudget={showBudget} />
       <div className="flex-1 flex flex-col min-h-screen relative z-10">
         <Header />
         <main

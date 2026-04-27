@@ -7,7 +7,7 @@ import {
   getOAuthRedirectUri,
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
-import { OAUTH_LEGAL_ACCEPTANCE_COOKIE } from "@/lib/legal-acceptance";
+import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 
 export const runtime = "nodejs";
 
@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
   const redirectUri = await getOAuthRedirectUri(request, "/api/auth/oauth/google/callback");
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
-  const acceptedLegal = request.nextUrl.searchParams.get("acceptLegal") === "true";
   const safeRedirect = normalizeOAuthRedirectPath(rawRedirect);
 
   const url = googleAuthorizeUrl({
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest) {
   const res = NextResponse.redirect(url);
   const cookieOpts = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: shouldUseSecureSessionCookies(),
     sameSite: "lax" as const,
     path: "/",
     maxAge: 10 * 60, // 10 min
@@ -53,8 +52,5 @@ export async function GET(request: NextRequest) {
   res.cookies.set("oauth_pkce_google", pkce.verifier, cookieOpts);
   res.cookies.set("oauth_redirect_uri_google", redirectUri, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
-  if (acceptedLegal) {
-    res.cookies.set(OAUTH_LEGAL_ACCEPTANCE_COOKIE, "accepted", cookieOpts);
-  }
   return res;
 }

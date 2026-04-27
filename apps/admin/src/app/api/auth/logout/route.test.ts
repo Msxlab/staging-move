@@ -7,7 +7,7 @@ vi.mock("@/lib/auth", () => ({
     response.cookies.set("admin_session", "", {
       httpOnly: true,
       secure: true,
-      sameSite: "lax",
+      sameSite: "strict",
       path: "/",
       maxAge: 0,
       expires: new Date(0),

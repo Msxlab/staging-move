@@ -1,54 +1,91 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => {
-  const findMany = vi.fn().mockResolvedValue([]);
-  const prisma = {
-    user: { findMany },
-    profile: { findMany },
-    serviceProvider: { findMany },
-    serviceProviderCoverage: { findMany },
-    address: { findMany },
-    service: { findMany },
-    movingPlan: { findMany },
-    userCustomProvider: { findMany },
-    moveTask: { findMany },
-    budget: { findMany },
-    subscription: { findMany },
-    notification: { findMany },
-    auditLog: { findMany },
-    providerGovernanceIssue: { findMany },
+const mocks = vi.hoisted(() => ({
+  dispatchAlert: vi.fn(),
+  verifyInternalAuth: vi.fn(),
+  backupRecordFindFirst: vi.fn(),
+  backupRecordCreate: vi.fn(),
+  backupRecordUpdate: vi.fn(),
+  backupRecordDeleteMany: vi.fn(),
+  requireBackupCrypto: vi.fn(),
+  encryptBackup: vi.fn(),
+  signBackup: vi.fn(),
+  uploadBackupArchive: vi.fn(),
+}));
+
+vi.mock("@/lib/db", () => ({
+  prisma: {
     backupRecord: {
-      create: vi.fn(),
-      update: vi.fn(),
-      deleteMany: vi.fn(),
+      findFirst: mocks.backupRecordFindFirst,
+      create: mocks.backupRecordCreate,
+      update: mocks.backupRecordUpdate,
+      deleteMany: mocks.backupRecordDeleteMany,
     },
-  };
+    user: { findMany: vi.fn().mockResolvedValue([]) },
+    oAuthAccount: { findMany: vi.fn().mockResolvedValue([]) },
+    profile: { findMany: vi.fn().mockResolvedValue([]) },
+    dataConsent: { findMany: vi.fn().mockResolvedValue([]) },
+    serviceProvider: { findMany: vi.fn().mockResolvedValue([]) },
+    serviceProviderCoverage: { findMany: vi.fn().mockResolvedValue([]) },
+    address: { findMany: vi.fn().mockResolvedValue([]) },
+    service: { findMany: vi.fn().mockResolvedValue([]) },
+    movingPlan: { findMany: vi.fn().mockResolvedValue([]) },
+    userCustomProvider: { findMany: vi.fn().mockResolvedValue([]) },
+    moveTask: { findMany: vi.fn().mockResolvedValue([]) },
+    budget: { findMany: vi.fn().mockResolvedValue([]) },
+    subscription: { findMany: vi.fn().mockResolvedValue([]) },
+    notification: { findMany: vi.fn().mockResolvedValue([]) },
+    emailLog: { findMany: vi.fn().mockResolvedValue([]) },
+    auditLog: { findMany: vi.fn().mockResolvedValue([]) },
+    providerGovernanceIssue: { findMany: vi.fn().mockResolvedValue([]) },
+    adminUser: { findMany: vi.fn().mockResolvedValue([]) },
+    adminPermission: { findMany: vi.fn().mockResolvedValue([]) },
+    adminLoginLog: { findMany: vi.fn().mockResolvedValue([]) },
+    adminAuditLog: { findMany: vi.fn().mockResolvedValue([]) },
+  },
+}));
 
-  return {
-    prisma,
-    verifyInternalAuth: vi.fn(),
-    serializeBackupRecordMetadata: vi.fn(),
-    uploadBackupArchive: vi.fn(),
-    encryptBackup: vi.fn(),
-    signBackup: vi.fn(),
-  };
-});
-
-vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
 vi.mock("@/lib/internal-secrets", () => ({
   verifyInternalAuth: mocks.verifyInternalAuth,
 }));
+vi.mock("@/lib/alert-dispatcher", () => ({
+  dispatchAlert: mocks.dispatchAlert,
+}));
+vi.mock("@/lib/backup-archive", () => ({
+  createBackupArchive: vi.fn(),
+}));
 vi.mock("@/lib/backup-storage", () => ({
-  serializeBackupRecordMetadata: mocks.serializeBackupRecordMetadata,
+  serializeBackupRecordMetadata: vi.fn((metadata) => JSON.stringify(metadata)),
   uploadBackupArchive: mocks.uploadBackupArchive,
 }));
 vi.mock("@/lib/shared-encryption", () => ({
   encryptBackup: mocks.encryptBackup,
   signBackup: mocks.signBackup,
   validateKeyFormat: (value: string) =>
-    typeof value === "string" &&
-    /^[0-9a-fA-F]{64}$/.test(value),
+    typeof value === "string" && /^[0-9a-fA-F]{64}$/.test(value),
 }));
+vi.mock("@/lib/backup-policy", () => {
+  class BackupPolicyError extends Error {
+    constructor(
+      public readonly code: string,
+      message: string,
+      public readonly status = 503,
+    ) {
+      super(message);
+      this.name = "BackupPolicyError";
+    }
+  }
+  return {
+    BackupPolicyError,
+    getBackupArchivePolicy: vi.fn(() => ({})),
+    requireBackupCrypto: mocks.requireBackupCrypto,
+    requireArchiveProtected: vi.fn(),
+    requireOffsiteStored: vi.fn(),
+    evaluateBackupArchiveSize: vi.fn(() => ({ ok: true, warning: null })),
+  };
+});
+
+import { BackupPolicyError } from "@/lib/backup-policy";
 
 function cronRequest() {
   return new Request("http://localhost/api/cron/backup", {
@@ -63,17 +100,28 @@ describe("cron backup safety policy", () => {
     vi.unstubAllEnvs();
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("FIELD_ENCRYPTION_KEY", "");
+    mocks.dispatchAlert.mockResolvedValue(undefined);
     mocks.verifyInternalAuth.mockReturnValue(true);
-    mocks.serializeBackupRecordMetadata.mockImplementation((value: unknown) =>
-      JSON.stringify(value),
-    );
-    mocks.prisma.backupRecord.create.mockResolvedValue({
+    mocks.backupRecordFindFirst.mockResolvedValue(null);
+    mocks.backupRecordCreate.mockResolvedValue({
       id: "backup_cron_1",
     });
-    mocks.prisma.backupRecord.update.mockResolvedValue({});
+    mocks.backupRecordUpdate.mockResolvedValue({});
+    mocks.backupRecordDeleteMany.mockResolvedValue({ count: 0 });
+    mocks.encryptBackup.mockReturnValue("encrypted");
+    mocks.signBackup.mockReturnValue("signature");
+    mocks.uploadBackupArchive.mockResolvedValue({ status: "stored" });
   });
 
   it("fails closed before creating a plaintext cron archive in production", async () => {
+    mocks.requireBackupCrypto.mockImplementation(() => {
+      throw new BackupPolicyError(
+        "BACKUP_CRYPTO_NOT_CONFIGURED",
+        "Production backup archives require FIELD_ENCRYPTION_KEY.",
+        503,
+      );
+    });
+
     const { POST } = await import("./route");
     const res = await POST(cronRequest());
 
@@ -83,11 +131,32 @@ describe("cron backup safety policy", () => {
     });
     expect(mocks.encryptBackup).not.toHaveBeenCalled();
     expect(mocks.uploadBackupArchive).not.toHaveBeenCalled();
-    expect(mocks.prisma.backupRecord.update).toHaveBeenCalledWith(
+    expect(mocks.backupRecordUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "backup_cron_1" },
         data: expect.objectContaining({ status: "FAILED" }),
       }),
+    );
+  });
+
+  it("dispatches a critical alert when a scheduled backup fails", async () => {
+    mocks.requireBackupCrypto.mockImplementation(() => {
+      throw new Error("crypto missing");
+    });
+
+    const { POST } = await import("./route");
+    const response = await POST(cronRequest());
+
+    expect(response.status).toBe(500);
+    expect(mocks.backupRecordUpdate).toHaveBeenCalledWith({
+      where: { id: "backup_cron_1" },
+      data: expect.objectContaining({ status: "FAILED" }),
+    });
+    expect(mocks.dispatchAlert).toHaveBeenCalledWith(
+      "BACKUP_FAILED",
+      "CRITICAL",
+      "cron",
+      expect.stringContaining("crypto missing"),
     );
   });
 });

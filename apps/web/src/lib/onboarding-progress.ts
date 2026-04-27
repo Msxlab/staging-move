@@ -23,12 +23,12 @@ export interface OnboardingProgress {
 }
 
 export function getOnboardingProgress(input: OnboardingProgressInput): OnboardingProgress {
-  if (input.completedEvent) {
-    return { completed: true, step: "complete", stepIndex: 4 };
-  }
-
   if (!input.hasProfile || !input.hasRequiredLegalConsents) {
     return { completed: false, step: "profile", stepIndex: 0 };
+  }
+
+  if (input.completedEvent) {
+    return { completed: true, step: "complete", stepIndex: 4 };
   }
 
   if (input.addressCount <= 0) {
@@ -44,6 +44,13 @@ export function getOnboardingProgress(input: OnboardingProgressInput): Onboardin
   }
 
   return { completed: true, step: "complete", stepIndex: 4 };
+}
+
+export function getOnboardingGateRedirect(input: OnboardingProgressInput): string | null {
+  const progress = getOnboardingProgress(input);
+  if (progress.completed) return null;
+  if (!input.hasRequiredLegalConsents) return "/onboarding?step=legal";
+  return "/onboarding";
 }
 
 export function summarizeOnboardingEvents(events: Array<{ event: string }>) {

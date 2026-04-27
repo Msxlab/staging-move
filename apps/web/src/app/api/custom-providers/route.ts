@@ -5,7 +5,11 @@ import { requireDbUserId } from "@/lib/auth";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
-import { canCreateCustomProvider } from "@/lib/plan-limits";
+import { canCreateCustomProvider, canCreateService } from "@/lib/plan-limits";
+import {
+  findDuplicateCustomProvider,
+  findListedProviderNameConflict,
+} from "@/lib/custom-provider-duplicate-guard";
 
 function cleanText(value: string | undefined): string | null {
   const trimmed = (value || "").trim();
@@ -16,6 +20,10 @@ function cleanText(value: string | undefined): string | null {
 function normalizeState(value: string | undefined): string | null {
   const cleaned = cleanText(value);
   return cleaned ? cleaned.toUpperCase() : null;
+}
+
+function cleanCategory(value: string | undefined): string {
+  return (cleanText(value) || "OTHER").toUpperCase();
 }
 
 function presentCustomProvider(provider: any) {
@@ -78,24 +86,81 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
     const rlKey = getRateLimitKey(request, "custom-provider:create");
-    const rl = await rateLimit(rlKey, { limit: 20, windowSeconds: 60 });
-    if (!rl.success) {
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(rlKey, { limit: 20, windowSeconds: 60 }),
+      rateLimit(`custom-provider:create:user:${userId}`, { limit: 20, windowSeconds: 60 }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
     const entitlement = await canCreateCustomProvider(userId);
     if (!entitlement.allowed) {
-      return NextResponse.json({ error: entitlement.reason, upgradeRequired: true }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: entitlement.reason,
+          code: entitlement.code,
+          upgradeRequired: entitlement.upgradeRequired,
+          current: entitlement.current,
+          limit: entitlement.limit,
+        },
+        { status: 403 },
+      );
+    }
+    const serviceEntitlement = await canCreateService(userId);
+    if (!serviceEntitlement.allowed) {
+      return NextResponse.json(
+        {
+          error: serviceEntitlement.reason,
+          code: serviceEntitlement.code,
+          upgradeRequired: serviceEntitlement.upgradeRequired,
+          current: serviceEntitlement.current,
+          limit: serviceEntitlement.limit,
+        },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();
     const validated = customProviderSchema.parse(body);
+    const providerName = cleanText(validated.name)!;
+    const category = cleanCategory(validated.category);
+
+    const duplicate = await findDuplicateCustomProvider(prisma, {
+      userId,
+      name: providerName,
+      category,
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: "You already have a private provider with this name and category.",
+          existingProviderId: duplicate.id,
+        },
+        { status: 409 },
+      );
+    }
+
+    const listedConflict = await findListedProviderNameConflict(prisma, {
+      name: providerName,
+      category,
+    });
+    if (listedConflict) {
+      return NextResponse.json(
+        {
+          error: "A listed provider already matches this name and category. Add the listed provider instead, or use a more specific private provider name.",
+          listedProviderId: listedConflict.id,
+          listedProviderSlug: listedConflict.slug,
+        },
+        { status: 409 },
+      );
+    }
 
     const provider = await prisma.userCustomProvider.create({
       data: {
         userId,
-        name: cleanText(validated.name)!,
-        category: cleanText(validated.category)!,
+        name: providerName,
+        category,
         description: cleanText(validated.description),
         website: cleanText(validated.website),
         phone: cleanText(validated.phone),

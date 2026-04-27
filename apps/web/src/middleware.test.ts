@@ -36,12 +36,48 @@ describe("web middleware auth boundaries", () => {
     const response = await middleware(
       request("https://locateflow.com/api/auth/logout", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", "x-requested-with": "locateflow" },
         body: "{}",
       }),
     );
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("lets sign-in render even when a stale session cookie is present", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/sign-in", {
+        headers: { cookie: "user_session=stale.jwt.value" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("adds baseline security headers to middleware responses", async () => {
+    const response = await middleware(request("https://locateflow.com/help"));
+
+    expect(response.headers.get("strict-transport-security")).toContain("max-age=63072000");
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(response.headers.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
+    expect(response.headers.get("permissions-policy")).toBe("camera=(), microphone=(), geolocation=(self)");
+  });
+
+  it("rejects cross-site logout attempts before they reach the route", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "sec-fetch-site": "cross-site",
+          origin: "https://attacker.example",
+        },
+        body: "{}",
+      }),
+    );
+
+    expect(response.status).toBe(403);
   });
 });

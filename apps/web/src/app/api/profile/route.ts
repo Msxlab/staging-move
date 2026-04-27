@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
 import { profileSchema } from "@/lib/validators";
-import { LEGAL_CONSENT_EVENT, LEGAL_CONSENT_VERSION, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
+import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
@@ -129,16 +129,8 @@ export async function POST(request: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
   const existingLegalConsents = parseStoredLegalConsents(existingConsentEvent?.metadata);
-  const incomingLegalConsents = validated.legalConsents
-    ? getDefaultLegalConsents({
-        ...validated.legalConsents,
-        termsVersion: validated.legalConsents.termsVersion || LEGAL_CONSENT_VERSION,
-        disclaimerVersion: validated.legalConsents.disclaimerVersion || LEGAL_CONSENT_VERSION,
-        acceptedAt: validated.legalConsents.acceptedAt || new Date().toISOString(),
-      })
-    : null;
 
-  if (!existingLegalConsents && !hasRequiredLegalConsents(incomingLegalConsents)) {
+  if (!hasRequiredLegalConsents(existingLegalConsents)) {
     return NextResponse.json({ error: "You must accept the Terms of Use and Disclaimer before continuing." }, { status: 400 });
   }
 
@@ -179,25 +171,7 @@ export async function POST(request: NextRequest) {
       update: profileData,
     });
 
-    if (hasRequiredLegalConsents(incomingLegalConsents)) {
-      const shouldRecordConsent = !existingLegalConsents
-        || existingLegalConsents.acceptedAt !== incomingLegalConsents.acceptedAt
-        || existingLegalConsents.termsVersion !== incomingLegalConsents.termsVersion
-        || existingLegalConsents.disclaimerVersion !== incomingLegalConsents.disclaimerVersion;
-
-      if (shouldRecordConsent) {
-        await prisma.userEvent.create({
-          data: {
-            userId,
-            event: LEGAL_CONSENT_EVENT,
-            page: request.nextUrl.pathname,
-            metadata: JSON.stringify(incomingLegalConsents),
-          },
-        });
-      }
-    }
-
-    return NextResponse.json({ profile, legalConsents: incomingLegalConsents || existingLegalConsents }, { status: 200 });
+    return NextResponse.json({ profile, legalConsents: existingLegalConsents }, { status: 200 });
   } catch (err: any) {
     console.error("[PROFILE POST] Profile upsert failed:", err?.message);
     return NextResponse.json({ error: `Profile save failed: ${err?.message}` }, { status: 500 });

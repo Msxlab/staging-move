@@ -9,24 +9,9 @@
  * useful during triage.
  */
 
+import { scrubObject } from "@locateflow/shared";
+
 type Runtime = "client" | "server" | "edge";
-
-const PII_FIELD_RE =
-  /(email|phone|password|hash|token|authorization|cookie|ssn|session|secret|mfa|backupCode|reset|verification|providerId|pushToken|privateKey|apiKey|accessKey|backup|archive|storageKey|objectKey|filePath|downloadUrl)/i;
-
-function scrubObject(obj: unknown): unknown {
-  if (!obj || typeof obj !== "object") return obj;
-  if (Array.isArray(obj)) return obj.map(scrubObject);
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-    if (PII_FIELD_RE.test(k)) {
-      out[k] = "[Filtered]";
-      continue;
-    }
-    out[k] = typeof v === "object" ? scrubObject(v) : v;
-  }
-  return out;
-}
 
 export function buildSentryOptions(runtime: Runtime) {
   const isProd = process.env.NODE_ENV === "production";

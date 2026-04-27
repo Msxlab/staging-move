@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { parsePaginationParams } from "@/lib/pagination";
 import {
   CANCELED_MOVING_PLAN_STATUSES,
   isCanceledMovingPlanStatus,
@@ -17,8 +18,9 @@ export async function GET(request: NextRequest) {
     const toState = searchParams.get("toState") || "";
     const dateFrom = searchParams.get("dateFrom") || "";
     const dateTo = searchParams.get("dateTo") || "";
-    const page = parseInt(searchParams.get("page") || "1");
-    const perPage = parseInt(searchParams.get("perPage") || "50");
+    const { page, perPage, skip } = parsePaginationParams(searchParams, {
+      defaultPerPage: 50,
+    });
 
     const where: any = {};
     if (status) {
@@ -87,7 +89,7 @@ export async function GET(request: NextRequest) {
         },
         orderBy: { moveDate: "desc" },
         take: perPage,
-        skip: (page - 1) * perPage,
+        skip,
       }),
       prisma.movingPlan.count({ where }),
       prisma.movingPlan.groupBy({

@@ -10,6 +10,7 @@ import {
   createUserSession,
   generateFingerprint,
 } from "@/lib/user-auth";
+import { resolveClientIP } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -56,7 +57,7 @@ export async function PATCH(request: NextRequest) {
   await destroyAllUserSessions(userId);
 
   const ua = request.headers.get("user-agent") || "";
-  const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "unknown";
+  const ip = resolveClientIP(request);
   const fp = await generateFingerprint(ip, ua);
   await createUserSession({ userId, email: user.email, fingerprint: fp, ipAddress: ip, userAgent: ua });
 

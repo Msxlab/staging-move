@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight, User, MapPin, Zap, Truck, CheckCircle2, AlertCircle,
   Loader2, Globe, Phone, Search, Building2, Shield, X, ChevronDown, ChevronUp, Sparkles, Calendar,
@@ -19,11 +19,9 @@ import {
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 import {
-  clearPendingLegalConsentsFromSession,
   createAcceptedLegalConsents,
   getDefaultLegalConsents,
   hasRequiredLegalConsents,
-  readPendingLegalConsentsFromSession,
 } from "@/lib/legal";
 import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
 import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
@@ -59,11 +57,14 @@ function parsePetTypes(value: unknown): string[] {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showCategories, setShowCategories] = useState(false);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
+  const [legalAcceptedOnServer, setLegalAcceptedOnServer] = useState(false);
+  const legalStepRequested = searchParams.get("step") === "legal";
 
   // Resume the server-derived onboarding step. Profile, address, service
   // skip, and moving skip decisions are persisted server-side so refreshes do
@@ -78,6 +79,24 @@ export default function OnboardingPage() {
 
         if (data.onboardingCompleted === true) {
           router.replace("/dashboard");
+          return;
+        }
+
+        const hasLegal = hasRequiredLegalConsents(data.legalConsents);
+        setLegalAcceptedOnServer(hasLegal);
+        if (data.legalConsents) {
+          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
+        }
+
+        if (!hasLegal) {
+          if (!legalStepRequested) {
+            router.replace("/onboarding?step=legal");
+          }
+          return;
+        }
+
+        if (legalStepRequested) {
+          router.replace("/onboarding");
           return;
         }
 
@@ -132,12 +151,6 @@ export default function OnboardingPage() {
           }
         }
 
-        if (data.legalConsents) {
-          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
-          return;
-        }
-        const pending = readPendingLegalConsentsFromSession();
-        if (pending) setLegalConsents(pending);
       } catch {
         // Keep the current step visible; individual saves still surface errors.
       }
@@ -147,7 +160,7 @@ export default function OnboardingPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [legalStepRequested, router]);
 
   // Step 0 – Profile
   // `sensitiveOptIn` gates disability + immigration fields behind an explicit
@@ -271,30 +284,57 @@ export default function OnboardingPage() {
       setError("First name and last name are required.");
       return false;
     }
-    if (!hasRequiredLegalConsents(legalConsents)) {
-      setError("You must accept the Terms of Use and Legal Disclaimer before continuing.");
-      return false;
-    }
     setError("");
     setSaving(true);
     try {
-      const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildOnboardingProfilePayload(profile, acceptedLegalConsents)),
+        body: JSON.stringify(buildOnboardingProfilePayload(profile)),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to save profile");
       }
-      clearPendingLegalConsentsFromSession();
       toast.success("Profile saved!");
       return true;
     } catch (e: any) {
       setError(e.message || "Failed to save profile");
       toast.error(e.message || "Failed to save profile");
       return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const acceptLegal = async () => {
+    if (!hasRequiredLegalConsents(legalConsents)) {
+      setError("You must accept the Terms of Use and Legal Disclaimer before continuing.");
+      return;
+    }
+
+    setError("");
+    setSaving(true);
+    try {
+      const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
+      const res = await fetch("/api/legal/acceptance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legalConsents: acceptedLegalConsents }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save legal acknowledgement");
+      }
+      setLegalConsents(getDefaultLegalConsents(data.legalConsents || acceptedLegalConsents));
+      setLegalAcceptedOnServer(true);
+      toast.success("Legal acknowledgements saved.");
+      router.replace("/onboarding");
+      router.refresh();
+    } catch (e: any) {
+      const message = e.message || "Failed to save legal acknowledgement";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -362,8 +402,17 @@ export default function OnboardingPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (res.ok) saved++;
+        if (res.ok) {
+          saved++;
+          continue;
+        }
+        const data = await res.json().catch(() => ({}));
+        const message = data.error || "A selected provider could not be added.";
+        if (data.upgradeRequired || typeof data.code === "string") {
+          throw new Error(message);
+        }
       }
+      if (saved === 0) throw new Error("No selected providers could be added.");
       toast.success(`${saved} service${saved !== 1 ? "s" : ""} added!`);
       return true;
     } catch (e: any) {
@@ -509,6 +558,58 @@ export default function OnboardingPage() {
   const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
   const labelCls = "block text-xs font-medium text-white/60 mb-1.5";
   const checkboxCls = "w-4 h-4 rounded border-white/20 bg-white/5 accent-orange-500 cursor-pointer";
+  const showLegalGate = legalStepRequested && !legalAcceptedOnServer;
+
+  if (showLegalGate) {
+    return (
+      <div className="space-y-5">
+        {error && (
+          <div role="alert" className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
+          </div>
+        )}
+
+        <GlassCard className="p-6">
+          <div className="mb-5 flex items-start gap-3">
+            <div className="rounded-xl bg-orange-500/15 p-2 text-orange-300">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Required legal acknowledgements</h2>
+              <p className="mt-1 text-sm text-white/50">
+                Accept these before using LocateFlow.
+              </p>
+            </div>
+          </div>
+
+          <LegalConsentPanel
+            consents={legalConsents}
+            onChange={setLegalConsents}
+          />
+
+          <button
+            type="button"
+            onClick={acceptLegal}
+            disabled={saving || !hasRequiredLegalConsents(legalConsents)}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+        </GlassCard>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -538,7 +639,7 @@ export default function OnboardingPage() {
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm">
+        <div role="alert" className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
@@ -553,11 +654,11 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>First Name *</label>
-                <input className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
+                <input aria-required="true" className={inputCls} value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })} placeholder="John" />
               </div>
               <div>
                 <label className={labelCls}>Last Name *</label>
-                <input className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
+                <input aria-required="true" className={inputCls} value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })} placeholder="Doe" />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -753,11 +854,6 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            <LegalConsentPanel
-              consents={legalConsents}
-              onChange={setLegalConsents}
-              className="pt-2"
-            />
           </div>
         </GlassCard>
       )}
@@ -783,15 +879,15 @@ export default function OnboardingPage() {
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>City *</label>
-                <input className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
+                <input aria-required="true" className={inputCls} placeholder="Austin" value={address.city} onChange={(e) => updateAddressField("city", e.target.value)} />
               </div>
               <div>
                 <label className={labelCls}>State *</label>
-                <input className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
+                <input aria-required="true" className={inputCls} maxLength={2} placeholder="TX" value={address.state} onChange={(e) => updateAddressField("state", e.target.value.toUpperCase())} />
               </div>
               <div>
                 <label className={labelCls}>ZIP *</label>
-                <input className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
+                <input aria-required="true" className={inputCls} maxLength={10} placeholder="78701" value={address.zip} onChange={(e) => updateAddressField("zip", e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
@@ -1138,22 +1234,22 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-1">
                   <label className={labelCls}>City *</label>
-                  <input className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
+                  <input aria-required="true" className={inputCls} value={movingForm.city} onChange={(e) => updateMovingField("city", e.target.value)} placeholder="Austin" />
                 </div>
                 <div>
                   <label className={labelCls}>State *</label>
-                  <input className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
+                  <input aria-required="true" className={inputCls} value={movingForm.state} maxLength={2} onChange={(e) => updateMovingField("state", e.target.value.toUpperCase().slice(0, 2))} placeholder="TX" />
                 </div>
                 <div>
                   <label className={labelCls}>ZIP *</label>
-                  <input className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
+                  <input aria-required="true" className={inputCls} value={movingForm.zip} onChange={(e) => updateMovingField("zip", e.target.value)} placeholder="78701" />
                 </div>
               </div>
               <div>
                 <label className={labelCls}>Move Date *</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
-                  <input type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
+                  <input aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
                 </div>
               </div>
               <div className="flex gap-3 pt-2">

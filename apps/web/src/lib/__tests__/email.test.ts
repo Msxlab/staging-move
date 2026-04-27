@@ -29,6 +29,9 @@ import {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  delete process.env.APP_ENV;
+  delete process.env.VERCEL_ENV;
+  delete process.env.DIGITALOCEAN_APP_ID;
   process.env.RESEND_API_KEY = "test-resend-api-key-for-redaction";
   mocks.runtimeConfigValues.mockImplementation(async (keys: string[]) => {
     const values: Record<string, string | null> = {
@@ -203,7 +206,12 @@ describe("transactional email layout", () => {
       html: '<p>Hello Alice</p><a href="https://locateflow.com">Open</a>',
     });
 
-    expect(result).toEqual({ success: true, providerMessageId: "resend_123", error: null });
+    expect(result).toEqual({
+      success: true,
+      providerMessageId: "resend_123",
+      error: null,
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
+    });
     expect(mocks.resendSend).toHaveBeenCalledWith(
       expect.objectContaining({
         from: "LocateFlow <noreply@locateflow.com>",
@@ -217,7 +225,7 @@ describe("transactional email layout", () => {
   it("redacts API-looking secrets from Resend failure details", async () => {
     mocks.resendSend.mockResolvedValue({
       data: null,
-      error: { message: "Invalid API key test-resend-api-key-for-redaction" },
+      error: { message: "Invalid API key test-resend-api-key-for-redaction abcdefghijklmnopqrstuvwxyz123456" },
     });
 
     const result = await sendEmailWithResult({
@@ -229,5 +237,35 @@ describe("transactional email layout", () => {
     expect(result.success).toBe(false);
     expect(result.error).toContain("[redacted]");
     expect(result.error).not.toContain("test-resend-api-key-for-redaction");
+    expect(result.error).not.toContain("abcdefghijklmnopqrstuvwxyz123456");
+  });
+
+  it("fails closed when production-like email config is missing RESEND_API_KEY", async () => {
+    process.env.APP_ENV = "staging";
+    mocks.runtimeConfigValues.mockImplementation(async (keys: string[]) => {
+      const values: Record<string, string | null> = {
+        RESEND_API_KEY: null,
+        EMAIL_FROM: "LocateFlow <noreply@locateflow.com>",
+        NEXT_PUBLIC_APP_URL: "https://locateflow.com",
+        SUPPORT_EMAIL: "support@locateflow.com",
+        EMAIL_REPLY_TO: null,
+      };
+      return Object.fromEntries(keys.map((key) => [key, values[key] || null]));
+    });
+
+    const result = await sendEmailWithResult({
+      to: "alice@example.com",
+      subject: "Test",
+      html: "<p>Hello</p>",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      providerMessageId: null,
+      error: "RESEND_API_KEY missing",
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
+      configError: true,
+    });
+    expect(mocks.resendSend).not.toHaveBeenCalled();
   });
 });

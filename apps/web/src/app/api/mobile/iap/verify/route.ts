@@ -55,15 +55,22 @@ const bodySchema = z
 export async function POST(request: NextRequest) {
   try {
     // 30 requests / min per IP — verify is cheap for us but hits the store API.
-    const rl = await rateLimit(getRateLimitKey(request, "iap-verify"), {
-      limit: 30,
-      windowSeconds: 60,
-    });
-    if (!rl.success) {
+    const userId = await requireDbUserId();
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(getRateLimitKey(request, "iap-verify"), {
+        limit: 30,
+        windowSeconds: 60,
+        failClosed: true,
+      }),
+      rateLimit(`iap-verify:user:${userId}`, {
+        limit: 10,
+        windowSeconds: 60,
+        failClosed: true,
+      }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many verification attempts" }, { status: 429 });
     }
-
-    const userId = await requireDbUserId();
 
     const json = await request.json().catch(() => null);
     const parsed = bodySchema.safeParse(json);
@@ -137,6 +144,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     if (error?.message === "APPLE_API_CREDS_MISSING" || error?.message === "GOOGLE_API_CREDS_MISSING") {
+      return NextResponse.json({ error: "IAP_NOT_CONFIGURED" }, { status: 503 });
+    }
+    if (error?.message === "GOOGLE_TEST_PURCHASE_IN_PRODUCTION") {
+      return NextResponse.json({ error: "TEST_PURCHASE_NOT_ALLOWED" }, { status: 400 });
+    }
+    if (error?.name === "BILLING_CONFIG_ERROR") {
       return NextResponse.json({ error: "IAP_NOT_CONFIGURED" }, { status: 503 });
     }
     captureException(error, { route: "/api/mobile/iap/verify" });

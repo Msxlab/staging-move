@@ -3,21 +3,22 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
+import { captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
 
 // POST /api/stripe/portal — Create a Stripe Customer Portal session
 export async function POST(request: NextRequest) {
   try {
-    const stripeSecretKey = await getRuntimeConfigValue("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
-    }
+    const stripeSecretKey = requireStripeSecretKeyForMutation(
+      await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
+    );
 
     const userId = await requireDbUserId();
 
     // Rate limit: 5 portal sessions per minute
     const rlKey = getRateLimitKey(request, "stripe:portal");
-    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60 });
+    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
@@ -37,7 +38,13 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.name === "BILLING_CONFIG_ERROR") {
+      const reason = error?.message || "Stripe not configured";
+      console.error("[PORTAL] Stripe config rejected:", reason);
+      captureMessage(`[PORTAL] Stripe config rejected: ${reason}`, "error");
+      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
+    }
     console.error("Stripe portal error:", error);
     return NextResponse.json({ error: "Failed to create portal session" }, { status: 500 });
   }

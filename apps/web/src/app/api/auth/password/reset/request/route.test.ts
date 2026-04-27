@@ -7,6 +7,7 @@ vi.mock("@/lib/db", () => ({
       findUnique: vi.fn(),
     },
     passwordResetToken: {
+      findFirst: vi.fn(),
       create: vi.fn(),
     },
   },
@@ -31,7 +32,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { GENERIC_FORGOT_PASSWORD_MESSAGE, POST } from "./route";
 
 const userMock = prisma.user as unknown as { findUnique: Mock };
-const tokenMock = prisma.passwordResetToken as unknown as { create: Mock };
+const tokenMock = prisma.passwordResetToken as unknown as { findFirst: Mock; create: Mock };
 const sendPasswordResetEmailMock = sendPasswordResetEmail as unknown as Mock;
 const rateLimitMock = rateLimit as unknown as Mock;
 
@@ -52,6 +53,7 @@ async function expectGenericSuccess(response: Response) {
 describe("password reset request route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    tokenMock.findFirst.mockResolvedValue(null);
     tokenMock.create.mockResolvedValue({});
     sendPasswordResetEmailMock.mockResolvedValue(true);
     rateLimitMock.mockResolvedValue({ success: true });
@@ -119,6 +121,25 @@ describe("password reset request route", () => {
     });
 
     const response = await POST(makeRequest({ email: "deleted@example.com" }));
+
+    await expectGenericSuccess(response);
+    expect(tokenMock.create).not.toHaveBeenCalled();
+    expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("returns generic success and sends nothing when the recipient cap is hit", async () => {
+    userMock.findUnique.mockResolvedValue({
+      id: "user-password",
+      email: "alice@example.com",
+      firstName: "Alice",
+      passwordHash: "hash",
+      emailVerifiedAt: null,
+      deletedAt: null,
+      oauthAccounts: [],
+    });
+    tokenMock.findFirst.mockResolvedValue({ id: "recent-token" });
+
+    const response = await POST(makeRequest({ email: "alice@example.com" }));
 
     await expectGenericSuccess(response);
     expect(tokenMock.create).not.toHaveBeenCalled();

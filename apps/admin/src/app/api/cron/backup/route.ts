@@ -5,8 +5,10 @@ import { BACKUP_TABLE_ORDER } from "@/lib/backup-tables";
 import { serializeBackupRecordMetadata, uploadBackupArchive } from "@/lib/backup-storage";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { dispatchAlert } from "@/lib/alert-dispatcher";
 import {
   BackupPolicyError,
+  evaluateBackupArchiveSize,
   getBackupArchivePolicy,
   requireArchiveProtected,
   requireBackupCrypto,
@@ -14,21 +16,34 @@ import {
 } from "@/lib/backup-policy";
 
 const BACKUP_TABLE_FETCHERS = {
-  users: () => prisma.user.findMany(),
-  profiles: () => prisma.profile.findMany(),
-  providers: () => prisma.serviceProvider.findMany(),
-  providerCoverages: () => prisma.serviceProviderCoverage.findMany(),
-  addresses: () => prisma.address.findMany(),
-  services: () => prisma.service.findMany(),
-  movingPlans: () => prisma.movingPlan.findMany(),
-  customProviders: () => prisma.userCustomProvider.findMany(),
-  moveTasks: () => prisma.moveTask.findMany(),
-  budgets: () => prisma.budget.findMany(),
-  subscriptions: () => prisma.subscription.findMany(),
-  notifications: () => prisma.notification.findMany(),
-  auditLogs: () => prisma.auditLog.findMany(),
-  providerGovernanceIssues: () => prisma.providerGovernanceIssue.findMany(),
+  users: () => prisma.user.findMany({ take: 50000 }),
+  oauthAccounts: () => prisma.oAuthAccount.findMany({ take: 50000 }),
+  profiles: () => prisma.profile.findMany({ take: 50000 }),
+  dataConsents: () => prisma.dataConsent.findMany({ take: 50000 }),
+  providers: () => prisma.serviceProvider.findMany({ take: 50000 }),
+  providerCoverages: () => prisma.serviceProviderCoverage.findMany({ take: 50000 }),
+  addresses: () => prisma.address.findMany({ take: 50000 }),
+  services: () => prisma.service.findMany({ take: 50000 }),
+  movingPlans: () => prisma.movingPlan.findMany({ take: 50000 }),
+  customProviders: () => prisma.userCustomProvider.findMany({ take: 50000 }),
+  moveTasks: () => prisma.moveTask.findMany({ take: 50000 }),
+  budgets: () => prisma.budget.findMany({ take: 50000 }),
+  subscriptions: () => prisma.subscription.findMany({ take: 50000 }),
+  notifications: () => prisma.notification.findMany({ take: 50000 }),
+  emailLogs: () => prisma.emailLog.findMany({ take: 50000 }),
+  auditLogs: () => prisma.auditLog.findMany({ take: 50000 }),
+  providerGovernanceIssues: () => prisma.providerGovernanceIssue.findMany({ take: 50000 }),
+  adminUsers: () => prisma.adminUser.findMany({ take: 50000 }),
+  adminPermissions: () => prisma.adminPermission.findMany({ take: 50000 }),
+  adminLoginLogs: () => prisma.adminLoginLog.findMany({ take: 50000 }),
+  adminAuditLogs: () => prisma.adminAuditLog.findMany({ take: 50000 }),
 } as const;
+
+const STALE_BACKUP_ALERT_MS = 24 * 60 * 60 * 1000;
+
+async function dispatchBackupAlert(type: string, details: string) {
+  await Promise.resolve(dispatchAlert(type, "CRITICAL", "cron", details)).catch(() => null);
+}
 
 // POST /api/cron/backup — automated daily backup via cron
 // Protected by CRON_SECRET. Call from Vercel Cron or external scheduler.
@@ -40,6 +55,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const archivePolicy = getBackupArchivePolicy();
+    const latestCompletedBackup = await prisma.backupRecord.findFirst({
+      where: { status: "COMPLETED", completedAt: { not: null } },
+      orderBy: { completedAt: "desc" },
+      select: { id: true, completedAt: true },
+    });
+    if (
+      latestCompletedBackup?.completedAt &&
+      Date.now() - latestCompletedBackup.completedAt.getTime() > STALE_BACKUP_ALERT_MS
+    ) {
+      await dispatchBackupAlert(
+        "BACKUP_STALE",
+        `Latest completed backup ${latestCompletedBackup.id} is older than 24 hours.`,
+      );
+    }
+
     // Create backup record
     const backup = await prisma.backupRecord.create({
       data: {
@@ -57,6 +87,7 @@ export async function POST(request: NextRequest) {
     const backupData: Record<string, any[]> = {};
     const selectedTables = BACKUP_TABLE_ORDER;
     const tableCounts: Record<string, number> = {};
+    const failedTables: string[] = [];
     let totalRecords = 0;
 
     for (const tableName of selectedTables) {
@@ -71,7 +102,21 @@ export async function POST(request: NextRequest) {
         console.error(`[CRON-BACKUP] Failed to fetch ${tableName}:`, err);
         backupData[tableName] = [];
         tableCounts[tableName] = 0;
+        failedTables.push(tableName);
       }
+    }
+
+    // A per-table fetch failure used to be silently absorbed: the table
+    // ended up empty in the archive but the backup was still marked
+    // COMPLETED, so ops had no way to learn that (e.g.) the audit log or
+    // the admin user table was missing from a "successful" backup. Page
+    // the operator with the failed table list so the next restore drill
+    // can be retargeted before the gap rolls past the 30-day retention.
+    if (failedTables.length > 0) {
+      await dispatchBackupAlert(
+        "BACKUP_PARTIAL_FAILURE",
+        `Backup ${backup.id} completed with empty data for tables: ${failedTables.join(", ")}.`,
+      );
     }
 
     const createdAt = new Date();
@@ -117,6 +162,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate file size
     const fileSize = Buffer.byteLength(archiveBody, "utf8");
+    const sizeEvaluation = evaluateBackupArchiveSize(fileSize);
     const offsite = await uploadBackupArchive({
       backupId: backup.id,
       fileName,
@@ -131,6 +177,7 @@ export async function POST(request: NextRequest) {
         signature: Boolean(signature),
         totalRecords,
         tableCounts,
+        archiveSizeWarning: sizeEvaluation.warning,
       },
     });
 
@@ -167,6 +214,7 @@ export async function POST(request: NextRequest) {
         signed: Boolean(signature),
         offsite,
         archivePolicy,
+        archiveSizeWarning: sizeEvaluation.warning,
         tables: Object.keys(backupData).length,
       },
       retention: { cleaned: cleaned.count },
@@ -181,6 +229,10 @@ export async function POST(request: NextRequest) {
         },
       }).catch(() => null);
     }
+    await dispatchBackupAlert(
+      "BACKUP_FAILED",
+      error instanceof Error ? error.message.slice(0, 500) : "Scheduled backup failed.",
+    );
     if (error instanceof BackupPolicyError) {
       return NextResponse.json(
         { error: error.message, code: error.code },

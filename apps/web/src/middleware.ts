@@ -47,8 +47,8 @@ const PUBLIC_API_EXACT = [
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
   // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated
-  // session cookie enters the browser. The token in the query string is
-  // HMAC-signed + DB-validated inside the route itself, so auth here.
+  // session cookie enters the browser. The route validates a short-lived
+  // HMAC-signed token delivered by POST body, not by URL query string.
   "/api/auth/impersonate-handoff",
 ];
 const PUBLIC_API_GET = ["/api/providers"];
@@ -135,7 +135,17 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   }
 
   const secFetchSite = req.headers.get("sec-fetch-site");
-  if (isLogout && !contentType && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+  const requestedWith = req.headers.get("x-requested-with");
+  if (isLogout && secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    return NextResponse.json(
+      {
+        error:
+          "Invalid Origin. API mutations must originate from the same site.",
+      },
+      { status: 403 },
+    );
+  }
+  if (isLogout && requestedWith !== "locateflow" && secFetchSite !== "same-origin" && secFetchSite !== "none") {
     const origin = req.headers.get("origin");
     const referer = req.headers.get("referer");
     if (!origin && !referer) {
@@ -196,10 +206,19 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
   if (pathname.startsWith("/api/internal/")) return null;
 
   const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
-  const key = getRateLimitKey(req, isWrite ? "write" : "read");
+  const isOptionalAuthMe =
+    req.method === "GET" &&
+    pathname === "/api/auth/me" &&
+    ["1", "true"].includes(req.nextUrl.searchParams.get("optional") || "");
+  const key = getRateLimitKey(
+    req,
+    isOptionalAuthMe ? "auth-me-optional" : isWrite ? "write" : "read",
+  );
   const config = isWrite
     ? { limit: 30, windowSeconds: 60 }
-    : { limit: 120, windowSeconds: 60 };
+    : isOptionalAuthMe
+      ? { limit: 200, windowSeconds: 60, failClosed: false }
+      : { limit: 120, windowSeconds: 60 };
 
   const result = await rateLimit(key, config);
   if (!result.success) {
@@ -241,7 +260,7 @@ async function hasValidSession(request: NextRequest): Promise<boolean> {
   const jwtSecret = tryGetUserJwtSecretKey();
   if (!jwtSecret) return false;
   try {
-    await jwtVerify(token, jwtSecret);
+    await jwtVerify(token, jwtSecret, { algorithms: ["HS256"] });
     return true;
   } catch {
     return false;
@@ -305,6 +324,36 @@ function applyStagingNoIndex(request: NextRequest, response: NextResponse): Next
   if (shouldNoIndex) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
+  return applySecurityHeaders(request, response);
+}
+
+function nextWithCurrentPath(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-locateflow-pathname", request.nextUrl.pathname);
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
+
+function applySecurityHeaders(request: NextRequest, response: NextResponse): NextResponse {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  const isHttps =
+    request.nextUrl.protocol === "https:" ||
+    forwardedProto === "https" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    process.env.NODE_ENV === "production";
+
+  if (isHttps) {
+    response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  }
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
   return response;
 }
 
@@ -344,28 +393,22 @@ export default async function middleware(request: NextRequest) {
 
   // Skip auth for public endpoints.
   if (pathname.startsWith("/api/")) {
-    if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, NextResponse.next());
+    if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, nextWithCurrentPath(request));
     if (!(await hasValidSession(request))) {
       return applyStagingNoIndex(
         request,
         NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
       );
     }
-    return applyStagingNoIndex(request, NextResponse.next());
+    return applyStagingNoIndex(request, nextWithCurrentPath(request));
   }
 
   // Page routes.
   if (isPublicPath(pathname)) {
-    if ((pathname === "/sign-in" || pathname === "/sign-up") && (await hasValidSession(request))) {
-      return applyStagingNoIndex(
-        request,
-        applyLocaleCookie(request, NextResponse.redirect(new URL("/dashboard", request.url))),
-      );
-    }
-    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
+    return applyStagingNoIndex(request, applyLocaleCookie(request, nextWithCurrentPath(request)));
   }
   if (await hasValidSession(request)) {
-    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
+    return applyStagingNoIndex(request, applyLocaleCookie(request, nextWithCurrentPath(request)));
   }
 
   const signInUrl = new URL("/sign-in", request.url);

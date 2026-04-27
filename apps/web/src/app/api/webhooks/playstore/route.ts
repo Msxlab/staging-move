@@ -209,7 +209,10 @@ export async function POST(request: NextRequest) {
       received: true,
       type: subNotif.notificationType,
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message === "GOOGLE_TEST_PURCHASE_IN_PRODUCTION") {
+      return NextResponse.json({ received: true, skipped: "test_purchase_production" });
+    }
     captureException(error, { route: "/api/webhooks/playstore" });
     console.error("[PLAYSTORE WEBHOOK] error:", error);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });

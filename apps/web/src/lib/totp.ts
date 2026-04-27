@@ -10,6 +10,7 @@ const TOTP_PERIOD = 30; // seconds
 const TOTP_DIGITS = 6;
 const TOTP_ALGORITHM = "sha1";
 const BACKUP_CODE_COUNT = 8;
+const BACKUP_CODE_BCRYPT_COST = 12;
 
 // ── Base32 encoding/decoding ──────────────────────────────
 
@@ -131,7 +132,7 @@ export async function generateBackupCodes(): Promise<{ codes: string[]; hashes: 
   for (let i = 0; i < BACKUP_CODE_COUNT; i++) {
     const code = randomBytes(4).toString("hex").toUpperCase(); // 8-char hex
     codes.push(code);
-    hashes.push(await bcrypt.hash(code, 10));
+    hashes.push(await bcrypt.hash(code, BACKUP_CODE_BCRYPT_COST));
   }
 
   return { codes, hashes };

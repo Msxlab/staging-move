@@ -22,7 +22,7 @@ function genericResponse() {
 
 export async function POST(request: NextRequest) {
   const rlKey = getRateLimitKey(request, "auth:pwreset");
-  const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60 });
+  const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60, failClosed: true });
   if (!rl.success) {
     console.info("[AUTH] password reset skipped", { reason: "rate_limited" });
     return genericResponse();
@@ -88,6 +88,23 @@ export async function POST(request: NextRequest) {
     return genericResponse();
   }
 
+  const recentToken = await prisma.passwordResetToken.findFirst({
+    where: {
+      userId: user.id,
+      usedAt: null,
+      createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
+    },
+    select: { id: true },
+    orderBy: { createdAt: "desc" },
+  });
+  if (recentToken) {
+    console.info("[AUTH] password reset skipped", {
+      reason: "recipient_rate_limited",
+      userId: user.id,
+    });
+    return genericResponse();
+  }
+
   const { token, hash } = generateOpaqueToken();
   await prisma.passwordResetToken.create({
     data: {
@@ -102,8 +119,7 @@ export async function POST(request: NextRequest) {
     userName: user.firstName || "there",
     resetToken: token,
     mode: hasPasswordLogin ? "reset" : "set-password",
-    locale: user.preferredLocale,
-    dedupeKey: `pwreset:${user.id}:${hash.slice(0, 12)}`,
+    dedupeKey: `pwreset:${user.id}:${hash}`,
   }).catch((err) => {
     console.error("[EMAIL] password reset send threw:", {
       userId: user.id,

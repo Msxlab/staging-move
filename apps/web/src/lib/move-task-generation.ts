@@ -7,6 +7,7 @@ import {
 } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageConfidenceFromDb, resolveEffectiveState } from "@/lib/provider-matching";
+import { canGenerateMoveTasks } from "@/lib/plan-limits";
 
 function safeParseJSON(value: unknown, fallback: string[]): string[] {
   if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string");
@@ -181,7 +182,11 @@ function buildTaskTitle(plan: MoveServiceTransitionPlan): string {
   return `${plan.actionLabel}: ${plan.serviceCategory.replace(/_/g, " ").toLowerCase()}`;
 }
 
-function buildIdempotencyKey(movingPlanId: string, plan: MoveServiceTransitionPlan): string {
+function normalizeKeyState(value: string): string {
+  return (value || "unknown").trim().toUpperCase() || "unknown";
+}
+
+function buildLegacyIdempotencyKey(movingPlanId: string, plan: MoveServiceTransitionPlan): string {
   const providerPart =
     plan.actionType === "START_SERVICE" || plan.actionType === "VERIFY_AVAILABILITY"
       ? plan.destinationProviderCandidates[0]?.id || "no-provider"
@@ -195,17 +200,41 @@ function buildIdempotencyKey(movingPlanId: string, plan: MoveServiceTransitionPl
   ].join(":");
 }
 
+export function buildMoveTaskIdempotencyKey(
+  movingPlanId: string,
+  plan: MoveServiceTransitionPlan,
+  context: { fromState: string; toState: string },
+): string {
+  const legacy = buildLegacyIdempotencyKey(movingPlanId, plan);
+  return [
+    legacy,
+    normalizeKeyState(context.fromState),
+    normalizeKeyState(context.toState),
+  ].join(":");
+}
+
 export async function syncSuggestedMoveTasks(userId: string, movingPlanId: string) {
+  const entitlement = await canGenerateMoveTasks(userId);
+  if (!entitlement.allowed) {
+    throw new Error("MOVE_TASK_GENERATION_NOT_ENTITLED");
+  }
+
   const context = await buildMoveTransitionContext(userId, movingPlanId);
   const generated = [];
   const skipped = [];
 
   for (const plan of context.transitionPlans) {
     if (plan.actionType === "NO_ACTION") continue;
-    const idempotencyKey = buildIdempotencyKey(movingPlanId, plan);
-    const existing = await prisma.moveTask.findUnique({
+    const idempotencyKey = buildMoveTaskIdempotencyKey(movingPlanId, plan, context);
+    const legacyIdempotencyKey = buildLegacyIdempotencyKey(movingPlanId, plan);
+    let existing = await prisma.moveTask.findUnique({
       where: { userId_idempotencyKey: { userId, idempotencyKey } },
     });
+    if (!existing) {
+      existing = await prisma.moveTask.findUnique({
+        where: { userId_idempotencyKey: { userId, idempotencyKey: legacyIdempotencyKey } },
+      });
+    }
     const now = new Date();
     const data = {
       userId,

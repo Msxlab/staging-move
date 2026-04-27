@@ -9,7 +9,9 @@ const ALLOWED_TABLES = new Set(Object.keys(BACKUP_TABLES));
 
 const BACKUP_TABLE_COUNTERS = {
   users: () => prisma.user.count(),
+  oauthAccounts: () => prisma.oAuthAccount.count(),
   profiles: () => prisma.profile.count(),
+  dataConsents: () => prisma.dataConsent.count(),
   addresses: () => prisma.address.count(),
   services: () => prisma.service.count(),
   providers: () => prisma.serviceProvider.count(),
@@ -19,9 +21,14 @@ const BACKUP_TABLE_COUNTERS = {
   moveTasks: () => prisma.moveTask.count(),
   budgets: () => prisma.budget.count(),
   subscriptions: () => prisma.subscription.count(),
+  emailLogs: () => prisma.emailLog.count(),
   auditLogs: () => prisma.auditLog.count(),
   notifications: () => prisma.notification.count(),
   providerGovernanceIssues: () => prisma.providerGovernanceIssue.count(),
+  adminUsers: () => prisma.adminUser.count(),
+  adminPermissions: () => prisma.adminPermission.count(),
+  adminLoginLogs: () => prisma.adminLoginLog.count(),
+  adminAuditLogs: () => prisma.adminAuditLog.count(),
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {

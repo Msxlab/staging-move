@@ -113,7 +113,7 @@ export default async function ProviderDetailPage({
   try {
     userId = await requireDbUserId();
   } catch {
-    redirect("/login");
+    redirect(`/sign-in?redirect=${encodeURIComponent(`/providers/${id}`)}`);
   }
 
   const provider = (await prisma.serviceProvider.findFirst({

@@ -20,6 +20,7 @@ import {
   type GoogleSubscriptionResult,
 } from "@/lib/iap-google";
 import type { BillingPlan, SubscriptionStatus } from "@/lib/shared-billing";
+import { isBillingProductionLike } from "@/lib/billing-config";
 
 export type IapPlatform = "ios" | "android";
 
@@ -90,6 +91,10 @@ export async function normalizeAppleResult(
 export async function normalizeGoogleResult(
   result: GoogleSubscriptionResult,
 ): Promise<NormalizedIapState | null> {
+  if (result.response.testPurchase && isBillingProductionLike()) {
+    throw new Error("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
+  }
+
   const lineItem = result.response.lineItems?.[0];
   if (!lineItem?.productId) return null;
 

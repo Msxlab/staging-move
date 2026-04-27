@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { parseClampedPositiveInt, parsePaginationParams } from "@/lib/pagination";
+import { validateCsvFileMetadata } from "@/lib/privacy";
 import { rebuildProviderCoverage } from "@locateflow/db";
 import {
   findProviderConflicts,
@@ -90,9 +92,12 @@ export async function GET(request: NextRequest) {
   try {
     await requirePermission("providers", "canRead", { minimumRole: "VIEWER" });
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
+    const page = parseClampedPositiveInt(searchParams.get("page"), 1);
     const grouped = searchParams.get("grouped") === "true";
-    const perPage = grouped ? 2000 : Math.min(parseInt(searchParams.get("perPage") || "100"), 100);
+    const { perPage: requestedPerPage } = parsePaginationParams(searchParams, {
+      defaultPerPage: 100,
+    });
+    const perPage = grouped ? 2000 : requestedPerPage;
     const search = searchParams.get("search") || "";
     const category = searchParams.get("category") || "";
     const scope = searchParams.get("scope") || "";
@@ -100,7 +105,7 @@ export async function GET(request: NextRequest) {
     const states = searchParams.get("states") || "";
     const scoreMin = searchParams.get("scoreMin") || "";
     const scoreMax = searchParams.get("scoreMax") || "";
-    const tags = searchParams.get("tags") || "";
+    const tags = (searchParams.get("tags") || "").trim().slice(0, 64);
 
     const where: any = {};
     if (search) {
@@ -198,7 +203,16 @@ export async function PUT(request: NextRequest) {
   try {
     const session = await requirePermission("providers", "canCreate", { minimumRole: "MODERATOR" });
     const body = await request.json();
-    const { providers: rows } = body;
+    const { providers: rows, sourceFile } = body;
+
+    if (!sourceFile) {
+      return NextResponse.json({ error: "CSV import requires file metadata." }, { status: 415 });
+    }
+
+    const fileValidation = validateCsvFileMetadata(sourceFile);
+    if (!fileValidation.ok) {
+      return NextResponse.json({ error: fileValidation.error }, { status: fileValidation.status });
+    }
 
     if (!Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json({ error: "No providers to import" }, { status: 400 });

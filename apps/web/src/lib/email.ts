@@ -15,6 +15,17 @@ const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
 export const DEFAULT_APP_URL = "https://locateflow.com";
 export const DEFAULT_SUPPORT_EMAIL = "support@locateflow.com";
 
+function isProductionLikeEmailRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    Boolean(process.env.DIGITALOCEAN_APP_ID)
+  );
+}
+
 const COLORS = {
   background: "#f5f7fb",
   card: "#ffffff",
@@ -39,6 +50,8 @@ export interface SendEmailResult {
   success: boolean;
   providerMessageId: string | null;
   error: string | null;
+  fromEmail: string | null;
+  configError?: boolean;
 }
 
 export interface EmailContent {
@@ -58,14 +71,33 @@ async function resolveEmailConfig() {
 
   const supportEmail =
     values.SUPPORT_EMAIL || values.EMAIL_REPLY_TO || DEFAULT_SUPPORT_EMAIL;
+  const appUrl = values.NEXT_PUBLIC_APP_URL
+    ? normalizeBaseUrl(values.NEXT_PUBLIC_APP_URL)
+    : DEFAULT_APP_URL;
 
   return {
     resendApiKey: values.RESEND_API_KEY,
     fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
-    appUrl: normalizeBaseUrl(values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL),
+    appUrl,
     supportEmail,
     replyTo: values.EMAIL_REPLY_TO || supportEmail,
+    configured: {
+      resendApiKey: Boolean(values.RESEND_API_KEY),
+      fromEmail: Boolean(values.EMAIL_FROM),
+      appUrl: Boolean(values.NEXT_PUBLIC_APP_URL),
+      supportEmail: Boolean(values.SUPPORT_EMAIL || values.EMAIL_REPLY_TO),
+    },
   };
+}
+
+function validateEmailConfig(config: Awaited<ReturnType<typeof resolveEmailConfig>>): string | null {
+  if (!isProductionLikeEmailRuntime()) return null;
+  if (!config.configured.resendApiKey) return "RESEND_API_KEY missing";
+  if (!/^re_[A-Za-z0-9_-]+$/.test(config.resendApiKey || "")) return "RESEND_API_KEY invalid";
+  if (!config.configured.fromEmail) return "EMAIL_FROM missing";
+  if (!config.configured.appUrl) return "NEXT_PUBLIC_APP_URL missing";
+  if (!config.configured.supportEmail) return "SUPPORT_EMAIL or EMAIL_REPLY_TO missing";
+  return null;
 }
 
 function redactKnownSecrets(value: string): string {
@@ -74,7 +106,9 @@ function redactKnownSecrets(value: string): string {
   for (const secret of knownSecrets) {
     redacted = redacted.split(secret).join("[redacted]");
   }
-  return redacted.replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]");
+  return redacted
+    .replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]")
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[redacted]");
 }
 
 function safeEmailError(error: unknown): string {
@@ -90,12 +124,29 @@ function safeEmailError(error: unknown): string {
 export async function sendEmailWithResult(
   options: EmailOptions,
 ): Promise<SendEmailResult> {
-  const { resendApiKey, fromEmail, replyTo } = await resolveEmailConfig();
+  const config = await resolveEmailConfig();
+  const configError = validateEmailConfig(config);
+  if (configError) {
+    console.error("[EMAIL] Configuration error:", { message: configError });
+    return {
+      success: false,
+      providerMessageId: null,
+      error: configError,
+      fromEmail: config.fromEmail,
+      configError: true,
+    };
+  }
+  const { resendApiKey, fromEmail, replyTo } = config;
   const text = options.text || htmlToPlainText(options.html);
 
   if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${options.to} | Subject: ${options.subject}`);
-    return { success: true, providerMessageId: null, error: null };
+    return {
+      success: true,
+      providerMessageId: null,
+      error: null,
+      fromEmail,
+    };
   }
 
   try {
@@ -115,9 +166,10 @@ export async function sendEmailWithResult(
         success: false,
         providerMessageId: null,
         error: safeError,
+        fromEmail,
       };
     }
-    return { success: true, providerMessageId: data?.id || null, error: null };
+    return { success: true, providerMessageId: data?.id || null, error: null, fromEmail };
   } catch (err) {
     const safeError = safeEmailError(err);
     console.error("[EMAIL] Error:", { message: safeError });
@@ -125,6 +177,7 @@ export async function sendEmailWithResult(
       success: false,
       providerMessageId: null,
       error: safeError,
+      fromEmail,
     };
   }
 }
@@ -370,6 +423,200 @@ export function passwordResetContent(data: {
     textFooter(true, data.supportEmail),
   ].join("\n");
   return { subject, html, text };
+}
+
+export function subscriptionActivatedContent(data: {
+  userName: string;
+  planLabel: string;
+  amountFormatted?: string | null;
+  manageLink: string;
+  supportEmail?: string;
+}): EmailContent {
+  const subject = `Welcome to LocateFlow ${data.planLabel}`;
+  const rows: Array<[string, string]> = [["Plan", escapeHtml(data.planLabel)]];
+  if (data.amountFormatted) rows.push(["Amount", escapeHtml(data.amountFormatted)]);
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Your subscription is active. Here are the details:</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;margin:8px 0 4px;">${detailRows(rows)}</table>
+    <p style="margin:16px 0 0;font-size:13px;line-height:20px;color:${COLORS.muted};">You can update or cancel your plan from billing settings at any time.</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: `Your LocateFlow ${data.planLabel} subscription is active.`,
+    title: "Subscription activated",
+    bodyHtml,
+    cta: { href: data.manageLink, label: "Manage Subscription" },
+    supportEmail: data.supportEmail,
+  });
+  const text = [
+    `Hi ${data.userName},`,
+    "",
+    "Your subscription is active.",
+    `Plan: ${data.planLabel}`,
+    data.amountFormatted ? `Amount: ${data.amountFormatted}` : "",
+    "",
+    `Manage Subscription: ${data.manageLink}`,
+    "",
+    "You can update or cancel your plan from billing settings at any time.",
+    textFooter(false, data.supportEmail),
+  ].filter(Boolean).join("\n");
+  return { subject, html, text };
+}
+
+export function subscriptionCanceledContent(data: {
+  userName: string;
+  planLabel: string;
+  accessEndsOn?: string | null;
+  reactivateLink: string;
+  supportEmail?: string;
+}): EmailContent {
+  const subject = "Your LocateFlow subscription was canceled";
+  const accessLine = data.accessEndsOn
+    ? `You'll still have access through <strong>${escapeHtml(data.accessEndsOn)}</strong>.`
+    : "Your access has ended.";
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">We've canceled your <strong>${escapeHtml(data.planLabel)}</strong> subscription. ${accessLine}</p>
+    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">Changed your mind? You can reactivate anytime.</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: "Your LocateFlow subscription was canceled.",
+    title: "Subscription canceled",
+    bodyHtml,
+    cta: { href: data.reactivateLink, label: "Reactivate" },
+    supportEmail: data.supportEmail,
+    securityNote: true,
+  });
+  const text = [
+    `Hi ${data.userName},`,
+    "",
+    `We've canceled your ${data.planLabel} subscription.`,
+    data.accessEndsOn ? `You'll still have access through ${data.accessEndsOn}.` : "Your access has ended.",
+    "",
+    `Reactivate: ${data.reactivateLink}`,
+    textFooter(true, data.supportEmail),
+  ].join("\n");
+  return { subject, html, text };
+}
+
+export function paymentFailedContent(data: {
+  userName: string;
+  amountFormatted?: string | null;
+  retryLink: string;
+  nextAttemptOn?: string | null;
+  supportEmail?: string;
+}): EmailContent {
+  const subject = "Payment failed for your LocateFlow subscription";
+  const amountLine = data.amountFormatted
+    ? `We couldn't charge <strong>${escapeHtml(data.amountFormatted)}</strong> for your subscription.`
+    : "We couldn't charge your card for your subscription.";
+  const retryNote = data.nextAttemptOn
+    ? `We'll try again on ${escapeHtml(data.nextAttemptOn)}, or you can update your card now to retry immediately.`
+    : "Update your card to retry the payment and keep your account active.";
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${amountLine}</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${retryNote}</p>
+    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">If your card was lost or replaced, please update your billing information.</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: "Payment failed — please update your billing details.",
+    title: "Payment failed",
+    bodyHtml,
+    cta: { href: data.retryLink, label: "Update Payment Method" },
+    supportEmail: data.supportEmail,
+  });
+  const text = [
+    `Hi ${data.userName},`,
+    "",
+    data.amountFormatted
+      ? `We couldn't charge ${data.amountFormatted} for your subscription.`
+      : "We couldn't charge your card for your subscription.",
+    "",
+    data.nextAttemptOn
+      ? `We'll try again on ${data.nextAttemptOn}, or you can update your card now to retry immediately.`
+      : "Update your card to retry the payment and keep your account active.",
+    "",
+    `Update Payment Method: ${data.retryLink}`,
+    textFooter(false, data.supportEmail),
+  ].join("\n");
+  return { subject, html, text };
+}
+
+export type SecurityNoticeKind =
+  | "password-changed"
+  | "mfa-enabled"
+  | "mfa-disabled"
+  | "oauth-linked"
+  | "account-deletion-requested";
+
+export function securityNoticeContent(data: {
+  userName: string;
+  kind: SecurityNoticeKind;
+  detail?: string | null;
+  occurredAt?: string | null;
+  manageLink: string;
+  supportEmail?: string;
+}): EmailContent {
+  const COPY: Record<SecurityNoticeKind, { subject: string; title: string; body: string; cta: string }> = {
+    "password-changed": {
+      subject: "Your LocateFlow password was changed",
+      title: "Password changed",
+      body: "Your account password was just changed. If this was you, no action is needed.",
+      cta: "Review Account Security",
+    },
+    "mfa-enabled": {
+      subject: "Two-factor authentication is now on",
+      title: "Two-factor authentication enabled",
+      body: "Two-factor authentication is now active on your account. You'll need your authenticator app the next time you sign in.",
+      cta: "Review Account Security",
+    },
+    "mfa-disabled": {
+      subject: "Two-factor authentication was turned off",
+      title: "Two-factor authentication disabled",
+      body: "Two-factor authentication has been turned off on your account. If this wasn't you, re-enable it immediately and change your password.",
+      cta: "Review Account Security",
+    },
+    "oauth-linked": {
+      subject: "A new sign-in method was linked to your account",
+      title: "Sign-in method linked",
+      body: data.detail
+        ? `${data.detail} can now sign in to your LocateFlow account. If this wasn't you, contact support immediately.`
+        : "A new sign-in method was linked to your account. If this wasn't you, contact support immediately.",
+      cta: "Review Account Security",
+    },
+    "account-deletion-requested": {
+      subject: "Your LocateFlow account deletion is scheduled",
+      title: "Account deletion requested",
+      body: data.detail
+        ? `We received a request to delete your account. ${data.detail} If you didn't request this, contact support immediately to cancel.`
+        : "We received a request to delete your account. If you didn't request this, contact support immediately to cancel.",
+      cta: "Cancel Deletion",
+    },
+  };
+  const copy = COPY[data.kind];
+  const occurredLine = data.occurredAt
+    ? `<p style="margin:0 0 14px;font-size:13px;line-height:20px;color:${COLORS.muted};">When: ${escapeHtml(data.occurredAt)}</p>`
+    : "";
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">Hi <strong>${escapeHtml(data.userName)}</strong>,</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${copy.body}</p>
+    ${occurredLine}`;
+  const html = renderLocateFlowEmail({
+    preheader: copy.subject,
+    title: copy.title,
+    bodyHtml,
+    cta: { href: data.manageLink, label: copy.cta },
+    supportEmail: data.supportEmail,
+    securityNote: true,
+  });
+  const text = [
+    `Hi ${data.userName},`,
+    "",
+    copy.body,
+    data.occurredAt ? `When: ${data.occurredAt}` : "",
+    "",
+    `${copy.cta}: ${data.manageLink}`,
+    textFooter(true, data.supportEmail),
+  ].filter(Boolean).join("\n");
+  return { subject: copy.subject, html, text };
 }
 
 export function billReminderHtml(data: {

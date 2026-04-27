@@ -10,15 +10,47 @@ import {
   htmlToPlainText,
   normalizeBaseUrl,
   passwordResetContent,
+  paymentFailedContent,
+  securityNoticeContent,
+  type SecurityNoticeKind,
   sendEmailWithResult,
+  subscriptionActivatedContent,
+  subscriptionCanceledContent,
   weeklyDigestHtml,
   weeklyDigestText,
 } from "@/lib/email";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
+const SAFE_METADATA_KEYS = new Set([
+  "kind",
+  "templateSlug",
+  "slug",
+  "fromAddress",
+  "configError",
+  "resendApiError",
+  "retryAvailable",
+  "templateUnavailable",
+  "userId",
+  "serviceId",
+  "subscriptionId",
+  "movingPlanId",
+  "daysUntilDue",
+  "daysRemaining",
+  "weekStart",
+  "weekEnd",
+]);
+const SENSITIVE_METADATA_KEY = /password|token|otp|secret|jwt|cookie/i;
+
 function buildEmailMetadata(metadata?: Record<string, unknown>) {
   if (!metadata) return null;
-  return JSON.stringify(metadata);
+  const safe: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (!SAFE_METADATA_KEYS.has(key) || SENSITIVE_METADATA_KEY.test(key)) continue;
+    if (value === null || typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      safe[key] = typeof value === "string" ? value.slice(0, 191) : value;
+    }
+  }
+  return JSON.stringify(safe);
 }
 
 function isUniqueConstraintError(error: any) {
@@ -56,10 +88,11 @@ export async function sendLoggedEmail(opts: {
   metadata?: Record<string, unknown>;
 }): Promise<{ success: boolean; skipped: boolean }> {
   const templateId = await resolveTemplateId(opts.templateId, opts.templateSlug);
-  const metadata = buildEmailMetadata({
+  const metadataInput = {
     ...(opts.metadata || {}),
     templateSlug: opts.templateSlug || null,
-  });
+  };
+  const metadata = buildEmailMetadata(metadataInput);
   let logId: string;
 
   try {
@@ -116,6 +149,13 @@ export async function sendLoggedEmail(opts: {
     html: opts.html,
     text: opts.text,
   });
+  const resultMetadata = buildEmailMetadata({
+    ...metadataInput,
+    fromAddress: result.fromEmail,
+    configError: Boolean(result.configError),
+    resendApiError: Boolean(result.error && !result.configError),
+    retryAvailable: !result.success,
+  });
 
   try {
     await prisma.emailLog.update({
@@ -125,7 +165,7 @@ export async function sendLoggedEmail(opts: {
         error: result.error,
         providerMessageId: result.providerMessageId,
         sentAt: result.success ? new Date() : null,
-        metadata,
+        metadata: resultMetadata,
       },
     });
   } catch (error) {
@@ -133,6 +173,42 @@ export async function sendLoggedEmail(opts: {
   }
 
   return { success: result.success, skipped: false };
+}
+
+async function logUnavailableTemplateEmail(opts: {
+  to: string;
+  slug: string;
+  userId?: string;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const error = `Email template '${opts.slug}' is missing or inactive.`;
+  const metadata = buildEmailMetadata({
+    ...(opts.metadata || {}),
+    kind: "template-unavailable",
+    slug: opts.slug,
+    templateSlug: opts.slug,
+    userId: opts.userId || null,
+    templateUnavailable: true,
+    retryAvailable: true,
+  });
+
+  try {
+    await prisma.emailLog.create({
+      data: {
+        templateId: null,
+        dedupeKey: opts.dedupeKey ?? null,
+        to: opts.to,
+        subject: `Email template unavailable: ${opts.slug}`.slice(0, 200),
+        status: "FAILED",
+        error,
+        metadata,
+      },
+    });
+  } catch (error) {
+    if (opts.dedupeKey && isUniqueConstraintError(error)) return;
+    console.error("[EMAIL] Failed to log unavailable email template:", error);
+  }
 }
 
 /**
@@ -206,6 +282,13 @@ export async function sendTemplatedEmail(opts: {
   const rendered = await renderTemplate(opts.slug, opts.variables, opts.locale);
   if (!rendered) {
     console.warn(`[EMAIL] Template '${opts.slug}' not found or inactive`);
+    await logUnavailableTemplateEmail({
+      to: opts.to,
+      slug: opts.slug,
+      userId: opts.userId,
+      dedupeKey: opts.dedupeKey,
+      metadata: opts.metadata,
+    });
     return false;
   }
 
@@ -555,4 +638,131 @@ export async function sendMoveReminderEmail(opts: {
       appUrl,
     },
   });
+}
+
+/**
+ * Subscription activated, sent after Stripe checkout completes.
+ */
+export async function sendSubscriptionActivatedEmail(opts: {
+  userEmail: string;
+  userName: string;
+  planLabel: string;
+  amountFormatted?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = subscriptionActivatedContent({
+    userName: opts.userName,
+    planLabel: opts.planLabel,
+    amountFormatted: opts.amountFormatted,
+    manageLink: `${appUrl}/settings/subscription`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "subscription-activated",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "subscription-activated", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Subscription canceled, sent on customer.subscription.deleted.
+ */
+export async function sendSubscriptionCanceledEmail(opts: {
+  userEmail: string;
+  userName: string;
+  planLabel: string;
+  accessEndsOn?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = subscriptionCanceledContent({
+    userName: opts.userName,
+    planLabel: opts.planLabel,
+    accessEndsOn: opts.accessEndsOn,
+    reactivateLink: `${appUrl}/settings/subscription`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "subscription-canceled",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "subscription-canceled", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Payment failed, sent on invoice.payment_failed.
+ */
+export async function sendPaymentFailedEmail(opts: {
+  userEmail: string;
+  userName: string;
+  amountFormatted?: string | null;
+  nextAttemptOn?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = paymentFailedContent({
+    userName: opts.userName,
+    amountFormatted: opts.amountFormatted,
+    nextAttemptOn: opts.nextAttemptOn,
+    retryLink: `${appUrl}/settings/subscription`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "payment-failed",
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: "payment-failed", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Account-security notice (password changed, MFA toggled, OAuth linked, deletion requested).
+ *
+ * Single sender that branches on `kind` so all security-event copy lives
+ * alongside each other in `securityNoticeContent` and we don't sprawl
+ * one wrapper per event into this module.
+ */
+export async function sendSecurityNoticeEmail(opts: {
+  userEmail: string;
+  userName: string;
+  kind: SecurityNoticeKind;
+  detail?: string | null;
+  occurredAt?: Date | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const occurredAt = opts.occurredAt ? opts.occurredAt.toISOString() : null;
+  const content = securityNoticeContent({
+    userName: opts.userName,
+    kind: opts.kind,
+    detail: opts.detail,
+    occurredAt,
+    manageLink: `${appUrl}/settings/security`,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: `security-${opts.kind}`,
+    dedupeKey: opts.dedupeKey,
+    metadata: { kind: `security-${opts.kind}`, ...(opts.metadata || {}) },
+  });
+  return result.success;
 }

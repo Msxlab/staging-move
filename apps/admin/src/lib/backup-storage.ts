@@ -34,6 +34,7 @@ export interface BackupArchiveRecordMetadata {
   signature: boolean;
   totalRecords: number | null;
   tableCounts: Record<string, number>;
+  archiveSizeWarning?: string | null;
 }
 
 export interface BackupRecordMetadata {
@@ -246,6 +247,10 @@ function normalizeArchiveRecordMetadata(
     totalRecords:
       typeof input.totalRecords === "number" ? input.totalRecords : null,
     tableCounts,
+    archiveSizeWarning:
+      typeof input.archiveSizeWarning === "string"
+        ? input.archiveSizeWarning
+        : null,
   };
 }
 

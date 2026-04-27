@@ -1,28 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 
+const CATEGORY_PREFIX_TO_KEY: Record<string, string> = {
+  GOVERNMENT: "GOVERNMENT", UTILITY: "UTILITY", FINANCIAL: "FINANCIAL",
+  HOUSING: "HOUSING", HEALTHCARE: "HEALTHCARE", TRANSPORTATION: "TRANSPORTATION",
+  KIDS: "KIDS", FITNESS: "FITNESS", SHOPPING: "SHOPPING", OTHER: "OTHER",
+};
+
 const categoryColors: Record<string, string> = {
-  Financial: "bg-emerald-500",
-  Utility: "bg-amber-500",
-  Government: "bg-red-500",
-  Housing: "bg-sky-500",
-  Healthcare: "bg-rose-500",
-  Transportation: "bg-blue-500",
-  Kids: "bg-purple-500",
-  Fitness: "bg-orange-500",
-  Shopping: "bg-pink-500",
-  Other: "bg-gray-500",
+  FINANCIAL: "bg-emerald-500",
+  UTILITY: "bg-amber-500",
+  GOVERNMENT: "bg-red-500",
+  HOUSING: "bg-sky-500",
+  HEALTHCARE: "bg-rose-500",
+  TRANSPORTATION: "bg-blue-500",
+  KIDS: "bg-purple-500",
+  FITNESS: "bg-orange-500",
+  SHOPPING: "bg-pink-500",
+  OTHER: "bg-gray-500",
 };
 
 interface CategoryItem {
-  name: string;
+  key: string;
   amount: number;
   color: string;
 }
 
 export function BudgetWidget() {
+  const td = useTranslations("dashboard");
   const [totalExpenses, setTotalExpenses] = useState(0);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,8 +51,8 @@ export function BudgetWidget() {
           const cost = s.monthlyCost || 0;
           total += cost;
           const catPrefix = (s.category || "OTHER").split("_")[0];
-          const catLabel = catPrefix.charAt(0) + catPrefix.slice(1).toLowerCase();
-          catMap[catLabel] = (catMap[catLabel] || 0) + cost;
+          const catKey = CATEGORY_PREFIX_TO_KEY[catPrefix] || "OTHER";
+          catMap[catKey] = (catMap[catKey] || 0) + cost;
         });
 
         // If budgets exist, prefer budget totals
@@ -57,10 +65,10 @@ export function BudgetWidget() {
         setCategories(
           Object.entries(catMap)
             .sort((a, b) => b[1] - a[1])
-            .map(([name, amount]) => ({
-              name,
+            .map(([key, amount]) => ({
+              key,
               amount,
-              color: categoryColors[name] || "bg-gray-500",
+              color: categoryColors[key] || "bg-gray-500",
             }))
         );
       })
@@ -73,21 +81,21 @@ export function BudgetWidget() {
   return (
     <div className="glass-card overflow-hidden">
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <h3 className="text-sm font-semibold text-white">Monthly Budget</h3>
+        <h3 className="text-sm font-semibold text-white">{td("budget_monthlyTitle")}</h3>
         <span className="text-xl font-bold text-white">
           {formatCurrency(totalExpenses)}
         </span>
       </div>
       <div className="px-5 pb-5 space-y-3">
         {loading ? (
-          <p className="text-sm text-white/30 text-center py-4">Loading...</p>
+          <p className="text-sm text-white/30 text-center py-4">{td("budget_loading")}</p>
         ) : categories.length === 0 ? (
-          <p className="text-sm text-white/30 text-center py-4">No expense data</p>
+          <p className="text-sm text-white/30 text-center py-4">{td("budget_noData")}</p>
         ) : (
           categories.map((category) => (
-            <div key={category.name} className="space-y-1.5">
+            <div key={category.key} className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">{category.name}</span>
+                <span className="text-white/50">{td(`categoryLabel_${category.key}` as any)}</span>
                 <span className="font-medium text-white/80">
                   {formatCurrency(category.amount)}
                 </span>
