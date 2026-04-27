@@ -39,6 +39,7 @@ export default function NeedsLogoPage() {
   const [loading, setLoading] = useState(true);
   const [statuses, setStatuses] = useState<Record<string, RowStatus>>({});
   const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; ok: number; failed: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -104,17 +105,93 @@ export default function NeedsLogoPage() {
   async function handleAutoFetchAll() {
     if (bulkRunning) return;
     setBulkRunning(true);
+    setBulkProgress({ done: 0, total: providers.length, ok: 0, failed: 0 });
     let success = 0;
     let failed = 0;
+    let done = 0;
     for (const provider of providers) {
-      if (statuses[provider.id]?.kind === "done") continue;
+      if (statuses[provider.id]?.kind === "done") {
+        done++;
+        setBulkProgress({ done, total: providers.length, ok: success, failed });
+        continue;
+      }
       const ok = await autoFetch(provider.id);
       if (ok) success++;
       else failed++;
+      done++;
+      setBulkProgress({ done, total: providers.length, ok: success, failed });
     }
     setBulkRunning(false);
-    toast(`Bulk fetch done — ${success} ok, ${failed} failed`);
+    toast(`Page done — ${success} ok, ${failed} failed`);
     if (success > 0) load();
+  }
+
+  async function handleAutoFetchEntireCatalog() {
+    if (bulkRunning) return;
+    setBulkRunning(true);
+
+    // Walk all pages first so we know the total. Up to 200 per page;
+    // 231 active providers today means usually one page is enough.
+    const allIds: string[] = [];
+    let cursor = 1;
+    while (true) {
+      const params = new URLSearchParams({
+        page: String(cursor),
+        perPage: "200",
+        onlyWithWebsite: "true",
+      });
+      const res = await fetch(`/api/providers/needs-logo?${params.toString()}`);
+      if (!res.ok) {
+        toast.error("Failed to walk catalog");
+        setBulkRunning(false);
+        return;
+      }
+      const data = await res.json();
+      const ids: string[] = data.providers.map((p: { id: string }) => p.id);
+      allIds.push(...ids);
+      if (ids.length < 200) break;
+      cursor++;
+    }
+
+    if (allIds.length === 0) {
+      setBulkRunning(false);
+      toast("No providers left to fetch");
+      return;
+    }
+
+    setBulkProgress({ done: 0, total: allIds.length, ok: 0, failed: 0 });
+
+    // Limited concurrency. Sequential is too slow at ~3-5s per fetch
+    // (~12 minutes for 231); 4-way parallel cuts it to ~3 minutes without
+    // tripping any of the upstream logo CDNs' rate limits.
+    const CONCURRENCY = 4;
+    let success = 0;
+    let failed = 0;
+    let done = 0;
+    let nextIndex = 0;
+
+    async function worker() {
+      while (true) {
+        const i = nextIndex++;
+        if (i >= allIds.length) return;
+        const id = allIds[i];
+        const ok = await autoFetch(id);
+        if (ok) success++;
+        else failed++;
+        done++;
+        setBulkProgress({ done, total: allIds.length, ok: success, failed });
+      }
+    }
+
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, allIds.length) }, () => worker()),
+    );
+
+    setBulkRunning(false);
+    toast.success(
+      `Catalog backfill done — ${success} ok, ${failed} failed of ${allIds.length}`,
+    );
+    load();
   }
 
   async function handleUpload(providerId: string, file: File) {
@@ -176,6 +253,19 @@ export default function NeedsLogoPage() {
             type="button"
             onClick={handleAutoFetchAll}
             disabled={bulkRunning || providers.length === 0}
+            className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            {bulkRunning ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            This page
+          </button>
+          <button
+            type="button"
+            onClick={handleAutoFetchEntireCatalog}
+            disabled={bulkRunning || total === 0}
             className="inline-flex items-center gap-1 rounded bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
             {bulkRunning ? (
@@ -183,10 +273,33 @@ export default function NeedsLogoPage() {
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            Auto-fetch all on this page
+            Auto-fetch entire catalog
           </button>
         </div>
       </div>
+
+      {bulkProgress && (
+        <div className="rounded border bg-card p-3">
+          <div className="flex items-center justify-between text-sm mb-2">
+            <span>
+              {bulkProgress.done} / {bulkProgress.total} processed —{" "}
+              <span className="text-green-600">{bulkProgress.ok} ok</span> ·{" "}
+              <span className="text-red-600">{bulkProgress.failed} failed</span>
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {Math.round((bulkProgress.done / Math.max(1, bulkProgress.total)) * 100)}%
+            </span>
+          </div>
+          <div className="h-2 w-full rounded bg-muted overflow-hidden">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{
+                width: `${Math.round((bulkProgress.done / Math.max(1, bulkProgress.total)) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-3 text-sm">
         <label className="inline-flex items-center gap-2 cursor-pointer">
