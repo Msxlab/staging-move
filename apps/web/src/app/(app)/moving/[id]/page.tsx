@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { normalizeMovingPlanStatus, type MoveTaskLocalEffect } from "@locateflow/shared";
 
 const STATUS_BADGE_CLASSES: Record<string, { cls: string }> = {
-  PLANNING: { cls: "bg-white/5 text-white/40 border-white/10" },
+  PLANNING: { cls: "bg-foreground/5 text-muted-foreground border-border" },
   IN_PROGRESS: { cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
   COMPLETED: { cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
   CANCELED: { cls: "bg-red-500/10 text-red-400 border-red-500/20" },
@@ -252,15 +252,15 @@ export default function MovingPlanDetailPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/moving">
-            <button className="p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/5 transition">
+            <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
               <ArrowLeft className="h-4 w-4" />
             </button>
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2 flex-wrap">
-              {plan.fromAddress.city} <ArrowRight className="h-4 w-4 text-white/30" /> {plan.toAddress.city}
+            <h1 className="text-xl font-bold text-foreground flex items-center gap-2 flex-wrap">
+              {plan.fromAddress.city} <ArrowRight className="h-4 w-4 text-foreground/40" /> {plan.toAddress.city}
             </h1>
-            <p className="text-sm text-white/40 flex items-center gap-1.5">
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" />
               {daysUntilMove > 0 ? t("daysUntilMove", { days: daysUntilMove }) : t("moveDatePassed")}
             </p>
@@ -294,26 +294,26 @@ export default function MovingPlanDetailPage() {
               <MapPin className={`h-4 w-4 text-${item.color}-400`} />
               <span className={`text-xs font-medium text-${item.color}-400`}>{item.label}</span>
             </div>
-            <p className="text-sm font-medium text-white">{item.addr.street}</p>
-            <p className="text-xs text-white/40">{item.addr.city}, {item.addr.state} {item.addr.zip}</p>
+            <p className="text-sm font-medium text-foreground">{item.addr.street}</p>
+            <p className="text-xs text-muted-foreground">{item.addr.city}, {item.addr.state} {item.addr.zip}</p>
           </div>
         ))}
       </div>
 
       {/* Move Date */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 flex items-center gap-4">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4 flex items-center gap-4">
         <Calendar className="h-6 w-6 text-orange-400 shrink-0" />
         <div>
-          <p className="text-2xl font-bold text-white">{new Date(plan.moveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
-          <p className="text-[11px] text-white/40">Move Date</p>
+          <p className="text-2xl font-bold text-foreground">{new Date(plan.moveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
+          <p className="text-[11px] text-muted-foreground">Move Date</p>
         </div>
       </div>
 
       <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-xl p-5">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-white">Your move checklist</h2>
-            <p className="text-xs text-white/40 mt-1 max-w-2xl">
+            <h2 className="text-sm font-semibold text-foreground">Your move checklist</h2>
+            <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
               These items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
             </p>
           </div>
@@ -331,9 +331,9 @@ export default function MovingPlanDetailPage() {
         </div>
         <div className="mt-4 space-y-2">
           {moveTasks.length === 0 && !tasksLoading && (
-            <div className="rounded-xl border border-white/10 bg-black/10 p-4">
-              <p className="text-sm text-white/60">No items yet.</p>
-              <p className="text-xs text-white/35 mt-1">
+            <div className="rounded-xl border border-border bg-black/10 p-4">
+              <p className="text-sm text-muted-foreground">No items yet.</p>
+              <p className="text-xs text-foreground/35 mt-1">
                 Add a destination address and at least one service, then click "Generate checklist".
               </p>
             </div>
@@ -346,15 +346,15 @@ export default function MovingPlanDetailPage() {
             const statusCls = isDone
               ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/25"
               : isDismissed
-                ? "bg-white/[0.04] text-white/35 border-white/10"
+                ? "bg-foreground/[0.04] text-foreground/35 border-border"
                 : "bg-cyan-500/10 text-cyan-300 border-cyan-500/20";
             return (
               <div
                 key={task.id}
                 className={`rounded-xl border p-4 transition ${
                   isDone || isDismissed
-                    ? "border-white/[0.06] bg-white/[0.02] opacity-70"
-                    : "border-white/10 bg-black/10"
+                    ? "border-foreground/[0.06] bg-foreground/[0.02] opacity-70"
+                    : "border-border bg-black/10"
                 }`}
               >
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
@@ -369,17 +369,17 @@ export default function MovingPlanDetailPage() {
                         </span>
                       )}
                     </div>
-                    <p className={`text-sm font-semibold mt-2 ${isDone ? "text-white/70 line-through" : "text-white"}`}>
+                    <p className={`text-sm font-semibold mt-2 ${isDone ? "text-foreground/80 line-through" : "text-foreground"}`}>
                       {task.title}
                     </p>
                     {task.description && !isDone && !isDismissed && (
-                      <p className="text-xs text-white/50 mt-1">{task.description}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
                     )}
                     {task.destinationProvider?.name && !isDone && !isDismissed && (
                       <p className="text-[11px] text-emerald-300 mt-2">Candidate: {task.destinationProvider.name}</p>
                     )}
                     {task.caveats?.[0] && !isDone && !isDismissed && (
-                      <p className="text-[10px] text-white/30 mt-2">{task.caveats[0]}</p>
+                      <p className="text-[10px] text-foreground/40 mt-2">{task.caveats[0]}</p>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-1.5 shrink-0">
@@ -396,7 +396,7 @@ export default function MovingPlanDetailPage() {
                         <button
                           disabled={busy}
                           onClick={() => handleDismissMoveTask(task.id)}
-                          className="px-2 py-1 rounded-lg bg-white/5 text-white/40 text-[11px] hover:bg-white/10 disabled:opacity-50"
+                          className="px-2 py-1 rounded-lg bg-foreground/5 text-muted-foreground text-[11px] hover:bg-foreground/10 disabled:opacity-50"
                         >
                           Skip
                         </button>
@@ -406,7 +406,7 @@ export default function MovingPlanDetailPage() {
                       <button
                         disabled={busy}
                         onClick={() => handleReopenMoveTask(task.id)}
-                        className="px-2 py-1 rounded-lg bg-white/5 text-white/50 text-[11px] hover:bg-white/10 disabled:opacity-50"
+                        className="px-2 py-1 rounded-lg bg-foreground/5 text-muted-foreground text-[11px] hover:bg-foreground/10 disabled:opacity-50"
                       >
                         {busy ? <Loader2 className="h-3 w-3 animate-spin inline" /> : "Reopen"}
                       </button>
@@ -420,32 +420,32 @@ export default function MovingPlanDetailPage() {
       </div>
 
       {/* Move Scope Summary */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-white/30 mb-1">Move scope</p>
+          <p className="text-[11px] uppercase tracking-wider text-foreground/40 mb-1">Move scope</p>
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-base font-semibold text-white">{moveScopeLabel}</h3>
+            <h3 className="text-base font-semibold text-foreground">{moveScopeLabel}</h3>
             <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${isInterstateMove ? "bg-amber-500/10 text-amber-300 border-amber-500/20" : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"}`}>
               {plan.fromAddress.state} → {plan.toAddress.state}
             </span>
           </div>
-          <p className="text-sm text-white/40 mt-2 max-w-2xl">{focusLabel}</p>
+          <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{focusLabel}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">Route</p>
-            <p className="text-sm font-medium text-white">{plan.fromAddress.city}, {plan.fromAddress.state} → {plan.toAddress.city}, {plan.toAddress.state}</p>
-            <p className="text-xs text-white/35 mt-1">Your guidance uses this route, but provider actions remain manual.</p>
+          <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
+            <p className="text-[10px] uppercase tracking-wider text-foreground/35 mb-1">Route</p>
+            <p className="text-sm font-medium text-foreground">{plan.fromAddress.city}, {plan.fromAddress.state} → {plan.toAddress.city}, {plan.toAddress.state}</p>
+            <p className="text-xs text-foreground/35 mt-1">Your guidance uses this route, but provider actions remain manual.</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">Service migration</p>
-            <p className="text-sm font-medium text-white">{migrationSummaryLabel}</p>
-            <p className="text-xs text-white/35 mt-1">Provider guidance is listed and unverified until confirmed with the provider.</p>
+          <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
+            <p className="text-[10px] uppercase tracking-wider text-foreground/35 mb-1">Service migration</p>
+            <p className="text-sm font-medium text-foreground">{migrationSummaryLabel}</p>
+            <p className="text-xs text-foreground/35 mt-1">Provider guidance is listed and unverified until confirmed with the provider.</p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">Checklist posture</p>
-            <p className="text-sm font-medium text-white">{isInterstateMove ? "Higher compliance workload" : "Operational move workflow"}</p>
-            <p className="text-xs text-white/35 mt-1">{isInterstateMove ? "Expect more identity, vehicle, and state transition tasks." : "Expect more transfer, scheduling, and utility coordination tasks."}</p>
+          <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
+            <p className="text-[10px] uppercase tracking-wider text-foreground/35 mb-1">Checklist posture</p>
+            <p className="text-sm font-medium text-foreground">{isInterstateMove ? "Higher compliance workload" : "Operational move workflow"}</p>
+            <p className="text-xs text-foreground/35 mt-1">{isInterstateMove ? "Expect more identity, vehicle, and state transition tasks." : "Expect more transfer, scheduling, and utility coordination tasks."}</p>
           </div>
         </div>
       </div>
@@ -456,15 +456,15 @@ export default function MovingPlanDetailPage() {
           <div className="p-5 pb-3">
             <div className="flex items-center gap-2 mb-1">
               <ArrowRightLeft className="h-4 w-4 text-orange-400" />
-              <h3 className="text-sm font-semibold text-white">Service Migration Plan</h3>
+              <h3 className="text-sm font-semibold text-foreground">Service Migration Plan</h3>
               {migration && (
-                <span className="ml-auto text-[10px] text-white/30">
+                <span className="ml-auto text-[10px] text-foreground/40">
                   {plan?.fromAddress?.state} → {plan?.toAddress?.state}
                 </span>
               )}
             </div>
             {migration && (
-              <p className="text-xs text-white/40">
+              <p className="text-xs text-muted-foreground">
                 {migration.summary.total} services analyzed · {migration.transitionPlans?.length || 0} manual transition guidance items
               </p>
             )}
@@ -473,16 +473,16 @@ export default function MovingPlanDetailPage() {
           {migrationLoading ? (
             <div className="flex items-center justify-center gap-2 py-8">
               <Loader2 className="h-4 w-4 animate-spin text-orange-400" />
-              <span className="text-xs text-white/40">Analyzing your services...</span>
+              <span className="text-xs text-muted-foreground">Analyzing your services...</span>
             </div>
           ) : migration ? (
             <div className="px-5 pb-5 space-y-4">
               {migration.transitionPlans?.length > 0 && (
-                <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                      <p className="text-sm font-semibold text-white">Move Transition Plan</p>
-                      <p className="text-xs text-white/40 mt-1">
+                      <p className="text-sm font-semibold text-foreground">Move Transition Plan</p>
+                      <p className="text-xs text-muted-foreground mt-1">
                         Read-only guidance. LocateFlow does not update provider accounts or execute address changes.
                       </p>
                     </div>
@@ -492,30 +492,30 @@ export default function MovingPlanDetailPage() {
                   </div>
                   <div className="space-y-2">
                     {migration.transitionPlans.map((planItem: any, i: number) => (
-                      <div key={`transition-${planItem.serviceId || i}`} className="rounded-xl border border-white/10 bg-black/10 p-3">
+                      <div key={`transition-${planItem.serviceId || i}`} className="rounded-xl border border-border bg-black/10 p-3">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                           <div>
-                            <p className="text-xs font-semibold text-white">
+                            <p className="text-xs font-semibold text-foreground">
                               {planItem.actionLabel || String(planItem.actionType || "").replace(/_/g, " ")}
                             </p>
-                            <p className="text-[11px] text-white/40 mt-1">{planItem.primaryReason}</p>
+                            <p className="text-[11px] text-muted-foreground mt-1">{planItem.primaryReason}</p>
                           </div>
-                          <span className="text-[10px] px-2 py-1 rounded-full border border-white/10 text-white/40">
+                          <span className="text-[10px] px-2 py-1 rounded-full border border-border text-muted-foreground">
                             {planItem.confidence} confidence
                           </span>
                         </div>
-                        <p className="text-xs text-white/60 mt-2">{planItem.suggestedNextStep}</p>
+                        <p className="text-xs text-muted-foreground mt-2">{planItem.suggestedNextStep}</p>
                         {planItem.destinationProviderCandidates?.length > 0 && (
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {planItem.destinationProviderCandidates.slice(0, 3).map((candidate: any) => (
-                              <span key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} className="text-[10px] px-2 py-1 rounded-full bg-white/5 text-white/45 border border-white/10">
+                              <span key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} className="text-[10px] px-2 py-1 rounded-full bg-foreground/5 text-foreground/45 border border-border">
                                 {candidate.name} · {candidate.coverageLabel}
                               </span>
                             ))}
                           </div>
                         )}
                         {planItem.caveats?.length > 0 && (
-                          <p className="text-[10px] text-white/30 mt-2">{planItem.caveats[0]}</p>
+                          <p className="text-[10px] text-foreground/40 mt-2">{planItem.caveats[0]}</p>
                         )}
                       </div>
                     ))}
@@ -529,7 +529,7 @@ export default function MovingPlanDetailPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Shield className="h-3.5 w-3.5 text-emerald-400" />
                     <span className="text-[11px] font-medium text-emerald-400 uppercase tracking-wider">Keep ({migration.keeps.length})</span>
-                    <span className="text-[10px] text-white/20">Update address only</span>
+                    <span className="text-[10px] text-foreground/30">Update address only</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {migration.keeps.map((item: any, i: number) => {
@@ -540,8 +540,8 @@ export default function MovingPlanDetailPage() {
                         <div key={`keep-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white/70 truncate">{item.currentService?.providerName}</p>
-                            <p className="text-[10px] text-white/25 truncate">{item.note}</p>
+                            <p className="text-sm text-foreground/80 truncate">{item.currentService?.providerName}</p>
+                            <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
                           </div>
                           {confirmed ? (
                             <span className="shrink-0 flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
@@ -566,7 +566,7 @@ export default function MovingPlanDetailPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Repeat className="h-3.5 w-3.5 text-cyan-400" />
                     <span className="text-[11px] font-medium text-cyan-400 uppercase tracking-wider">Transfer ({migration.transfers.length})</span>
-                    <span className="text-[10px] text-white/20">Same provider, new state</span>
+                    <span className="text-[10px] text-foreground/30">Same provider, new state</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {migration.transfers.map((item: any, i: number) => {
@@ -577,8 +577,8 @@ export default function MovingPlanDetailPage() {
                         <div key={`transfer-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white/70 truncate">{item.currentService?.providerName}</p>
-                            <p className="text-[10px] text-white/25 truncate">{item.note}</p>
+                            <p className="text-sm text-foreground/80 truncate">{item.currentService?.providerName}</p>
+                            <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
                           </div>
                           {confirmed ? (
                             <span className="shrink-0 flex items-center gap-1 text-[10px] text-cyan-400 font-medium">
@@ -603,7 +603,7 @@ export default function MovingPlanDetailPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowRightLeft className="h-3.5 w-3.5 text-amber-400" />
                     <span className="text-[11px] font-medium text-amber-400 uppercase tracking-wider">Switch ({migration.switches.length})</span>
-                    <span className="text-[10px] text-white/20">Provider change needed</span>
+                    <span className="text-[10px] text-foreground/30">Provider change needed</span>
                   </div>
                   <div className="space-y-1.5">
                     {migration.switches.map((item: any, i: number) => {
@@ -618,11 +618,11 @@ export default function MovingPlanDetailPage() {
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
-                              <p className="text-sm text-white/50 line-through truncate">{item.currentService?.providerName}</p>
+                              <p className="text-sm text-muted-foreground line-through truncate">{item.currentService?.providerName}</p>
                               <ArrowRight className="h-3 w-3 text-amber-400 shrink-0" />
                               <p className="text-sm font-medium text-amber-300 truncate">{item.recommendedProvider?.name || "Find new"}</p>
                             </div>
-                            <p className="text-[10px] text-white/25 truncate mt-0.5">{item.note}</p>
+                            <p className="text-[10px] text-foreground/35 truncate mt-0.5">{item.note}</p>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {confirmed ? (
@@ -631,7 +631,7 @@ export default function MovingPlanDetailPage() {
                               </span>
                             ) : sid ? (
                               <button onClick={() => confirmAction(sid, "SWITCH")} disabled={busy}
-                                className="px-2 py-1 rounded-lg bg-white/5 text-white/50 text-[10px] font-medium hover:bg-white/10 transition disabled:opacity-50">
+                                className="px-2 py-1 rounded-lg bg-foreground/5 text-muted-foreground text-[10px] font-medium hover:bg-foreground/10 transition disabled:opacity-50">
                                 {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
                               </button>
                             ) : null}
@@ -654,7 +654,7 @@ export default function MovingPlanDetailPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <PlusCircle className="h-3.5 w-3.5 text-orange-400" />
                     <span className="text-[11px] font-medium text-orange-400 uppercase tracking-wider">New Needed ({migration.newNeeded.length})</span>
-                    <span className="text-[10px] text-white/20">Services you'll need</span>
+                    <span className="text-[10px] text-foreground/30">Services you'll need</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {migration.newNeeded.map((item: any, i: number) => {
@@ -663,7 +663,7 @@ export default function MovingPlanDetailPage() {
                         <div key={`new-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-orange-500/5 border border-orange-500/10">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white/70 truncate">{item.categoryLabel}</p>
+                            <p className="text-sm text-foreground/80 truncate">{item.categoryLabel}</p>
                             {item.recommendedProvider && (
                               <p className="text-[10px] text-orange-300 truncate">Rec: {item.recommendedProvider.name}</p>
                             )}
@@ -686,7 +686,7 @@ export default function MovingPlanDetailPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <XCircle className="h-3.5 w-3.5 text-red-400" />
                     <span className="text-[11px] font-medium text-red-400 uppercase tracking-wider">Cancel ({migration.cancels.length})</span>
-                    <span className="text-[10px] text-white/20">No longer needed</span>
+                    <span className="text-[10px] text-foreground/30">No longer needed</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {migration.cancels.map((item: any, i: number) => {
@@ -697,8 +697,8 @@ export default function MovingPlanDetailPage() {
                         <div key={`cancel-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-red-500/5 border border-red-500/10">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white/50 truncate">{item.currentService?.providerName}</p>
-                            <p className="text-[10px] text-white/25 truncate">{item.note}</p>
+                            <p className="text-sm text-muted-foreground truncate">{item.currentService?.providerName}</p>
+                            <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
                           </div>
                           {confirmed ? (
                             <span className="shrink-0 flex items-center gap-1 text-[10px] text-red-400 font-medium">
@@ -718,7 +718,7 @@ export default function MovingPlanDetailPage() {
               )}
 
               {migration.summary.total === 0 && (
-                <p className="text-xs text-white/30 text-center py-4">No services to migrate. Add services to your origin address first.</p>
+                <p className="text-xs text-foreground/40 text-center py-4">No services to migrate. Add services to your origin address first.</p>
               )}
             </div>
           ) : null}
@@ -727,51 +727,51 @@ export default function MovingPlanDetailPage() {
 
       {/* State Guide */}
       {stateRules && (
-        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+        <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
           <button
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition"
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-foreground/[0.03] transition"
             onClick={() => setStateGuideOpen(!stateGuideOpen)}
           >
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-cyan-400" />
-              <span className="text-sm font-semibold text-white">State Guide — {plan.toAddress.state}</span>
+              <span className="text-sm font-semibold text-foreground">State Guide — {plan.toAddress.state}</span>
             </div>
             {stateGuideOpen ? (
-              <ChevronUp className="h-4 w-4 text-white/30" />
+              <ChevronUp className="h-4 w-4 text-foreground/40" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-white/30" />
+              <ChevronDown className="h-4 w-4 text-foreground/40" />
             )}
           </button>
           {stateGuideOpen && (
-            <div className="px-5 pb-5 space-y-4 border-t border-white/5 pt-4">
+            <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
               {stateRules.dmvRules && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">DMV / Vehicle</p>
-                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.dmvRules}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-foreground/40 mb-1">DMV / Vehicle</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{stateRules.dmvRules}</p>
                 </div>
               )}
               {stateRules.voterRegistration && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Voter Registration</p>
-                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.voterRegistration}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-foreground/40 mb-1">Voter Registration</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{stateRules.voterRegistration}</p>
                 </div>
               )}
               {stateRules.taxInfo && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">State Tax</p>
-                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.taxInfo}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-foreground/40 mb-1">State Tax</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{stateRules.taxInfo}</p>
                 </div>
               )}
               {stateRules.utilityInfo && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Utilities</p>
-                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.utilityInfo}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-foreground/40 mb-1">Utilities</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{stateRules.utilityInfo}</p>
                 </div>
               )}
               {stateRules.insuranceRules && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-wider text-white/30 mb-1">Insurance</p>
-                  <p className="text-sm text-white/60 leading-relaxed">{stateRules.insuranceRules}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-foreground/40 mb-1">Insurance</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{stateRules.insuranceRules}</p>
                 </div>
               )}
             </div>
@@ -784,13 +784,13 @@ export default function MovingPlanDetailPage() {
         {!deleteConfirm ? (
           <button
             onClick={() => setDeleteConfirm(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs text-white/20 hover:text-red-400 hover:bg-red-500/10 transition"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs text-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition"
           >
             <Trash2 className="h-3.5 w-3.5" />Delete Plan
           </button>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-white/30">Delete this plan and all data?</span>
+            <span className="text-xs text-foreground/40">Delete this plan and all data?</span>
             <button
               onClick={handleDelete}
               disabled={deleting}
@@ -798,7 +798,7 @@ export default function MovingPlanDetailPage() {
             >
               {deleting ? "Deleting..." : "Confirm Delete"}
             </button>
-            <button onClick={() => setDeleteConfirm(false)} className="px-3 py-1.5 rounded-xl text-xs text-white/30 hover:text-white hover:bg-white/5 transition">
+            <button onClick={() => setDeleteConfirm(false)} className="px-3 py-1.5 rounded-xl text-xs text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
               Cancel
             </button>
           </div>
