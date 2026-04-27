@@ -46,6 +46,8 @@ export function SessionTracker() {
   const authPage =
     pathname === "/sign-in" ||
     pathname === "/sign-up" ||
+    pathname === "/verify-email" ||
+    pathname?.startsWith("/verify-email/") ||
     pathname?.startsWith("/reset-password") ||
     pathname?.startsWith("/forgot-password");
   const { user } = useCurrentUser({ enabled: !authPage });

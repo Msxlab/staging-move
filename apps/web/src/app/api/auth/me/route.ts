@@ -1,20 +1,36 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/user-auth";
 
 export const runtime = "nodejs";
 
+function isOptionalAuthStateRequest(request?: NextRequest): boolean {
+  const optional = request?.nextUrl.searchParams.get("optional");
+  return optional === "1" || optional === "true";
+}
+
+function loggedOutResponse(optional: boolean) {
+  if (optional) {
+    return NextResponse.json(
+      { authenticated: false, user: null },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
+  return NextResponse.json(
+    { error: "Unauthorized", user: null },
+    { status: 401, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
 /**
  * Returns the current user. Used by the web client to hydrate state.
  * Never exposes passwordHash or mfaSecret.
  */
-export async function GET() {
+export async function GET(request?: NextRequest) {
+  const optional = isOptionalAuthStateRequest(request);
   const session = await getUserSession();
   if (!session) {
-    return NextResponse.json(
-      { error: "Unauthorized", user: null },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
+    return loggedOutResponse(optional);
   }
 
   const user = await prisma.user.findUnique({
@@ -31,14 +47,12 @@ export async function GET() {
     },
   });
   if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized", user: null },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
-    );
+    return loggedOutResponse(optional);
   }
 
   return NextResponse.json(
     {
+      authenticated: true,
       user: {
         id: user.id,
         email: user.email,

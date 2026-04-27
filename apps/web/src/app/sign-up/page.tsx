@@ -42,7 +42,7 @@ export default function SignUpPage() {
     authCheckStarted.current = true;
 
     let cancelled = false;
-    fetch("/api/auth/me", { cache: "no-store" })
+    fetch("/api/auth/me?optional=1", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!cancelled && data?.user) {
