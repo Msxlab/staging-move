@@ -76,7 +76,13 @@
     "copied": "Copied to clipboard",
     "networkError": "Network error. Check your connection and try again.",
     "unexpectedError": "Something went wrong. Please try again.",
-    "unauthorized": "Please sign in to continue."
+    "unauthorized": "Please sign in to continue.",
+    "invalidCost": "Invalid cost",
+    "costUpdated": "Cost updated",
+    "costUpdateFailed": "Failed to update cost",
+    "serviceRemoved": "Service removed",
+    "serviceRemoveFailed": "Failed to remove service",
+    "servicesRemoved": "{count, plural, one {# service removed} other {# services removed}}"
   },
   "validation": {
     "required": "This field is required.",

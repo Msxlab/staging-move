@@ -85,6 +85,15 @@ export default function NewServicePage() {
     billingDay: string; notes: string;
   }>>({});
 
+  // User pref: hide cost UI when the user has opted out of budget tracking
+  const [showBudget, setShowBudget] = useState<boolean>(true);
+  useEffect(() => {
+    fetch("/api/user/preferences")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && typeof d.showBudget === "boolean") setShowBudget(d.showBudget); })
+      .catch(() => {});
+  }, []);
+
   // Fetch addresses — auto-select primary or first
   useEffect(() => {
     fetch("/api/addresses")
@@ -721,16 +730,18 @@ export default function NewServicePage() {
               {Array.from(selectedProviders.entries()).map(([id, p]) => (
                 <div key={id} className="flex min-w-0 flex-wrap items-center gap-1 rounded-lg border border-white/10 bg-white/5 py-1 pl-3 pr-1">
                   <span className="max-w-[180px] truncate text-sm font-medium text-white/85 sm:max-w-[220px]">{p.name}</span>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); toggleBilling(id); }}
-                    className="rounded p-1 hover:bg-white/5" title="Add billing details">
-                    <DollarSign className={`h-3.5 w-3.5 ${billingExpanded.has(id) ? "text-orange-400" : "text-white/45"}`} />
-                  </button>
+                  {showBudget && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); toggleBilling(id); }}
+                      className="rounded p-1 hover:bg-white/5" title="Add billing details">
+                      <DollarSign className={`h-3.5 w-3.5 ${billingExpanded.has(id) ? "text-orange-400" : "text-white/45"}`} />
+                    </button>
+                  )}
                   <button type="button"
                     onClick={(e) => { e.stopPropagation(); setSelectedProviders((prev) => { const n = new Map(prev); n.delete(id); return n; }); }}
                     className="rounded p-1 hover:bg-red-500/10">
                     <Minus className="h-3.5 w-3.5 text-white/45 hover:text-red-400" />
                   </button>
-                  {billingExpanded.has(id) && (
+                  {showBudget && billingExpanded.has(id) && (
                     <div className="flex min-w-full items-center gap-1.5 border-t border-white/10 pt-1 sm:ml-1 sm:min-w-0 sm:border-l sm:border-t-0 sm:pl-2 sm:pt-0">
                       <input className="h-7 w-20 text-xs rounded-lg border border-white/10 bg-white/5 px-2 text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                         type="number" step="0.01" placeholder="$/mo" value={billingData[id]?.monthlyCost || ""}

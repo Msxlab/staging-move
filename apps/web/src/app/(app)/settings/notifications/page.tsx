@@ -132,6 +132,10 @@ export default function NotificationsPage() {
                     <p className="text-[11px] text-white/30">{item.description}</p>
                   </div>
                   <button
+                    type="button"
+                    role="switch"
+                    aria-checked={settings[item.key]}
+                    aria-label={item.label}
                     onClick={() => toggle(item.key)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
                       settings[item.key] ? "bg-orange-500" : "bg-white/10"
@@ -200,6 +204,10 @@ export default function NotificationsPage() {
               <p className="text-[11px] text-white/30">Send enabled notifications via email</p>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={emailEnabled}
+              aria-label="Enable email notifications"
               onClick={() => setEmailEnabled(!emailEnabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
                 emailEnabled ? "bg-orange-500" : "bg-white/10"

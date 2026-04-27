@@ -76,7 +76,13 @@
     "copied": "Copiado al portapapeles",
     "networkError": "Error de red. Verifica tu conexión y reintenta.",
     "unexpectedError": "Algo salió mal. Reintenta.",
-    "unauthorized": "Inicia sesión para continuar."
+    "unauthorized": "Inicia sesión para continuar.",
+    "invalidCost": "Monto inválido",
+    "costUpdated": "Costo actualizado",
+    "costUpdateFailed": "No se pudo actualizar el costo",
+    "serviceRemoved": "Servicio eliminado",
+    "serviceRemoveFailed": "No se pudo eliminar el servicio",
+    "servicesRemoved": "{count, plural, one {# servicio eliminado} other {# servicios eliminados}}"
   },
   "validation": {
     "required": "Este campo es obligatorio.",
