@@ -81,26 +81,26 @@ export function BudgetWidget() {
   return (
     <div className="glass-card overflow-hidden">
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
-        <h3 className="text-sm font-semibold text-white">{td("budget_monthlyTitle")}</h3>
-        <span className="text-xl font-bold text-white">
+        <h3 className="text-sm font-semibold text-foreground">{td("budget_monthlyTitle")}</h3>
+        <span className="text-xl font-bold text-foreground">
           {formatCurrency(totalExpenses)}
         </span>
       </div>
       <div className="px-5 pb-5 space-y-3">
         {loading ? (
-          <p className="text-sm text-white/30 text-center py-4">{td("budget_loading")}</p>
+          <p className="text-sm text-foreground/40 text-center py-4">{td("budget_loading")}</p>
         ) : categories.length === 0 ? (
-          <p className="text-sm text-white/30 text-center py-4">{td("budget_noData")}</p>
+          <p className="text-sm text-foreground/40 text-center py-4">{td("budget_noData")}</p>
         ) : (
           categories.map((category) => (
             <div key={category.key} className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">{td(`categoryLabel_${category.key}` as any)}</span>
-                <span className="font-medium text-white/80">
+                <span className="text-muted-foreground">{td(`categoryLabel_${category.key}` as any)}</span>
+                <span className="font-medium text-foreground/80">
                   {formatCurrency(category.amount)}
                 </span>
               </div>
-              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-foreground/5 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full ${category.color} transition-all`}
                   style={{

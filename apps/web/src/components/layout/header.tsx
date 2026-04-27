@@ -42,7 +42,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       <div className="flex h-14 items-center gap-4 px-4 md:px-6">
         {/* Mobile menu button */}
         <button
-          className="md:hidden p-2 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition"
+          className="md:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition"
           onClick={onMenuClick}
           aria-label={tNav("menu")}
         >
@@ -70,37 +70,37 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           <div className="relative" ref={menuRef}>
             <button
-              className="p-1 rounded-full hover:bg-white/5 transition"
+              className="p-1 rounded-full hover:bg-foreground/5 transition"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               aria-expanded={userMenuOpen}
               aria-haspopup="true"
               aria-label={tNav("userMenu")}
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500/30 to-cyan-500/30 border border-white/10 flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500/30 to-cyan-500/30 border border-border flex items-center justify-center">
                 {userName ? (
-                  <span className="text-xs font-bold text-white/80">
+                  <span className="text-xs font-bold text-foreground/80">
                     {userName.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
                   </span>
                 ) : (
-                  <User className="h-4 w-4 text-white/50" />
+                  <User className="h-4 w-4 text-muted-foreground" />
                 )}
               </div>
             </button>
 
             {userMenuOpen && (
               <div
-                className="absolute right-0 mt-2 w-56 rounded-xl border border-white/10 backdrop-blur-xl shadow-2xl py-1 z-50"
+                className="absolute right-0 mt-2 w-56 rounded-xl border border-border backdrop-blur-xl shadow-2xl py-1 z-50"
                 style={{ background: "color-mix(in srgb, var(--surface-secondary) 95%, transparent)" }}
                 role="menu"
                 aria-label={tNav("userMenu")}
               >
-                <div className="px-3 py-2.5 border-b border-white/5">
-                  <p className="text-sm font-medium text-white">{userName || tCommon("unknown")}</p>
-                  <p className="text-xs text-white/40 truncate">{userEmail}</p>
+                <div className="px-3 py-2.5 border-b border-border">
+                  <p className="text-sm font-medium text-foreground">{userName || tCommon("unknown")}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                 </div>
                 <Link
                   href="/settings"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
                   onClick={() => setUserMenuOpen(false)}
                   role="menuitem"
                 >
@@ -109,16 +109,16 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </Link>
                 <Link
                   href="/onboarding"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
                   onClick={() => setUserMenuOpen(false)}
                   role="menuitem"
                 >
                   <User className="h-4 w-4" aria-hidden="true" />
                   {tNav("editProfile")}
                 </Link>
-                <div className="border-t border-white/5 my-1" />
+                <div className="border-t border-border my-1" />
                 <button
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-white/5 transition-colors w-full text-left"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-foreground/5 transition-colors w-full text-left"
                   role="menuitem"
                   onClick={() => {
                     setUserMenuOpen(false);

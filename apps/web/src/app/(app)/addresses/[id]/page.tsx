@@ -202,16 +202,16 @@ export default function AddressDetailPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/addresses">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/5 transition">
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
             <ArrowLeft className="h-4 w-4" />{tCommon("back")}
           </button>
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{address.nickname || t("detail_defaultName")}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{address.nickname || t("detail_defaultName")}</h1>
             {address.isPrimary && <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
           </div>
-          <p className="text-sm text-white/40">{address.street}, {address.city}, {address.state} {address.zip}</p>
+          <p className="text-sm text-muted-foreground">{address.street}, {address.city}, {address.state} {address.zip}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/moving/new?from=${address.id}`}>
@@ -220,7 +220,7 @@ export default function AddressDetailPage() {
             </button>
           </Link>
           <Link href={`/addresses/${address.id}/edit`}>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 text-sm text-white/60 hover:text-white hover:bg-white/5 transition">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
               <Edit className="h-3.5 w-3.5" />{tCommon("edit")}
             </button>
           </Link>
@@ -228,33 +228,33 @@ export default function AddressDetailPage() {
       </div>
 
       {/* Address Info Card */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
         <div className="flex items-start gap-4">
           <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
             <TypeIcon className="h-6 w-6 text-orange-400" />
           </div>
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_type")}</p>
-              <p className="text-sm font-medium text-white mt-0.5">{address.type}</p>
+              <p className="text-[10px] text-foreground/40 uppercase tracking-wider">{t("detail_label_type")}</p>
+              <p className="text-sm font-medium text-foreground mt-0.5">{address.type}</p>
             </div>
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_ownership")}</p>
-              <p className="text-sm font-medium text-white mt-0.5">
+              <p className="text-[10px] text-foreground/40 uppercase tracking-wider">{t("detail_label_ownership")}</p>
+              <p className="text-sm font-medium text-foreground mt-0.5">
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                   address.ownership === "OWNER" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
                 }`}>{address.ownership === "OWNER" ? t("detail_owner") : t("detail_renter")}</span>
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_moveIn")}</p>
-              <p className="text-sm font-medium text-white mt-0.5 flex items-center gap-1">
-                <Calendar className="h-3 w-3 text-white/30" />
+              <p className="text-[10px] text-foreground/40 uppercase tracking-wider">{t("detail_label_moveIn")}</p>
+              <p className="text-sm font-medium text-foreground mt-0.5 flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-foreground/40" />
                 {new Date(address.startDate).toLocaleDateString(locale === "es" ? "es-US" : "en-US", { month: "short", year: "numeric" })}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_monthlyCost")}</p>
+              <p className="text-[10px] text-foreground/40 uppercase tracking-wider">{t("detail_label_monthlyCost")}</p>
               <p className="text-sm font-bold text-emerald-400 mt-0.5">
                 <DollarSign className="h-3 w-3 inline" />{totalMonthlyCost.toLocaleString()}{t("detail_perMo")}
               </p>
@@ -268,15 +268,15 @@ export default function AddressDetailPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-orange-400" />
-            <h2 className="text-lg font-semibold text-white">{t("detail_servicesTitle")}</h2>
-            <span className="text-xs text-white/30">({address.services.length})</span>
+            <h2 className="text-lg font-semibold text-foreground">{t("detail_servicesTitle")}</h2>
+            <span className="text-xs text-foreground/40">({address.services.length})</span>
           </div>
           <div className="flex items-center gap-2">
             {address.services.length > 0 && (
               <button
                 onClick={() => { setBulkMode(!bulkMode); setBulkSelected(new Set()); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                  bulkMode ? "bg-red-500/10 text-red-400 border border-red-500/20" : "text-white/40 hover:text-white hover:bg-white/5"
+                  bulkMode ? "bg-red-500/10 text-red-400 border border-red-500/20" : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
                 }`}
               >{bulkMode ? tCommon("cancel") : t("detail_bulkEdit")}</button>
             )}
@@ -306,10 +306,10 @@ export default function AddressDetailPage() {
         {/* Search services */}
         {address.services.length > 3 && (
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
             <input
               placeholder={t("detail_searchPlaceholder")}
-              className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-4 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              className="w-full rounded-xl border border-border bg-foreground/5 pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
               value={serviceSearch}
               onChange={(e) => setServiceSearch(e.target.value)}
             />
@@ -318,13 +318,13 @@ export default function AddressDetailPage() {
 
         {/* Services grouped by category */}
         {address.services.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-            <Zap className="h-8 w-8 text-white/10 mx-auto mb-2" />
-            <p className="text-sm text-white/40">{t("detail_noServices")}</p>
+          <div className="rounded-2xl border border-border bg-foreground/5 p-8 text-center">
+            <Zap className="h-8 w-8 text-foreground/20 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">{t("detail_noServices")}</p>
             <Link href="/services/new" className="text-sm text-orange-400 hover:underline mt-1 inline-block">{t("detail_noServicesCta")}</Link>
           </div>
         ) : sortedGroups.length === 0 ? (
-          <p className="text-sm text-white/40 text-center py-4">{t("detail_noMatch")}</p>
+          <p className="text-sm text-muted-foreground text-center py-4">{t("detail_noMatch")}</p>
         ) : (
           <div className="space-y-3">
             {sortedGroups.map((prefix) => {
@@ -333,8 +333,8 @@ export default function AddressDetailPage() {
                 <div key={prefix} className="space-y-1.5">
                   <div className="flex items-center gap-2 px-1">
                     <span className="text-base">{groupIcons[prefix] || "📋"}</span>
-                    <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wide">{groupLabels[prefix] || prefix}</h3>
-                    <span className="text-[10px] text-white/20">{items.length}</span>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h3>
+                    <span className="text-[10px] text-foreground/30">{items.length}</span>
                   </div>
                   <div className="space-y-1.5">
                     {items.map((service) => {
@@ -348,44 +348,44 @@ export default function AddressDetailPage() {
                         <div
                           key={service.id}
                           className={`group rounded-xl border p-3.5 transition-all ${
-                            isChecked ? "border-red-500/30 bg-red-500/5" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10"
+                            isChecked ? "border-red-500/30 bg-red-500/5" : "border-border bg-foreground/[0.02] hover:bg-foreground/[0.05] hover:border-border"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             {bulkMode && (
                               <button onClick={() => toggleBulk(service.id)} className="shrink-0">
                                 <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition ${
-                                  isChecked ? "border-red-500 bg-red-500" : "border-white/20 bg-white/5"
+                                  isChecked ? "border-red-500 bg-red-500" : "border-foreground/20 bg-foreground/5"
                                 }`}>
-                                  {isChecked && <CheckCircle2 className="h-3 w-3 text-white" />}
+                                  {isChecked && <CheckCircle2 className="h-3 w-3 text-foreground" />}
                                 </div>
                               </button>
                             )}
-                            <div className="shrink-0 w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center text-sm">
+                            <div className="shrink-0 w-9 h-9 rounded-lg bg-foreground/5 flex items-center justify-center text-sm">
                               {meta?.icon || "📋"}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="font-medium text-sm text-white truncate">{service.providerName}</p>
+                                <p className="font-medium text-sm text-foreground truncate">{service.providerName}</p>
                                 {!bulkMode && (
                                   <Link href={`/services/${service.id}`}>
-                                    <ChevronRight className="h-3.5 w-3.5 text-white/20 opacity-0 group-hover:opacity-100 transition shrink-0" />
+                                    <ChevronRight className="h-3.5 w-3.5 text-foreground/30 opacity-0 group-hover:opacity-100 transition shrink-0" />
                                   </Link>
                                 )}
                               </div>
-                              <p className="text-[11px] text-white/35">{meta?.label || service.category.replace(/_/g, " ")}</p>
+                              <p className="text-[11px] text-foreground/35">{meta?.label || service.category.replace(/_/g, " ")}</p>
                             </div>
                             <div className="text-right shrink-0 flex items-center gap-2">
                               {/* Inline cost edit */}
                               {isEditingCost ? (
                                 <div className="flex items-center gap-1">
-                                  <span className="text-white/30 text-xs">$</span>
+                                  <span className="text-foreground/40 text-xs">$</span>
                                   <input
                                     autoFocus
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    className="w-20 rounded-lg border border-orange-500/30 bg-white/5 px-2 py-1 text-sm text-white text-right focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                                    className="w-20 rounded-lg border border-orange-500/30 bg-foreground/5 px-2 py-1 text-sm text-foreground text-right focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                                     value={editingCostValue}
                                     onChange={(e) => setEditingCostValue(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === "Enter") saveCost(service.id); if (e.key === "Escape") setEditingCostId(null); }}
@@ -394,7 +394,7 @@ export default function AddressDetailPage() {
                                     className="p-1 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition disabled:opacity-50">
                                     {isSavingCost ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                                   </button>
-                                  <button onClick={() => setEditingCostId(null)} className="p-1 rounded-md text-white/30 hover:text-white hover:bg-white/5 transition">
+                                  <button onClick={() => setEditingCostId(null)} className="p-1 rounded-md text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
@@ -405,11 +405,11 @@ export default function AddressDetailPage() {
                                   title={t("detail_editCostTitle")}
                                 >
                                   {(service.monthlyCost || 0) > 0 ? (
-                                    <p className="text-sm font-semibold text-white/70 group-hover/cost:text-orange-400 transition">
-                                      {formatCurrency(service.monthlyCost)}<span className="text-white/30">{t("detail_perMo")}</span>
+                                    <p className="text-sm font-semibold text-foreground/80 group-hover/cost:text-orange-400 transition">
+                                      {formatCurrency(service.monthlyCost)}<span className="text-foreground/40">{t("detail_perMo")}</span>
                                     </p>
                                   ) : (
-                                    <p className="text-[11px] text-white/20 group-hover/cost:text-orange-400 transition flex items-center gap-0.5">
+                                    <p className="text-[11px] text-foreground/30 group-hover/cost:text-orange-400 transition flex items-center gap-0.5">
                                       <DollarSign className="h-3 w-3" />{t("detail_setCost")}
                                     </p>
                                   )}
@@ -419,23 +419,23 @@ export default function AddressDetailPage() {
                           </div>
                           {/* Quick actions row */}
                           {!bulkMode && (
-                            <div className="flex items-center gap-1 mt-2 pt-2 border-t border-white/[0.03] opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 mt-2 pt-2 border-t border-foreground/[0.03] opacity-0 group-hover:opacity-100 transition-opacity">
                               {service.website && (
                                 <a href={service.website.startsWith("http") ? service.website : `https://${service.website}`} target="_blank" rel="noopener noreferrer"
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-white/30 hover:text-white hover:bg-white/5 transition">
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
                                   <ExternalLink className="h-2.5 w-2.5" />
                                   {service.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}
                                 </a>
                               )}
                               <Link href={`/services/${service.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-white/30 hover:text-orange-400 hover:bg-orange-500/10 transition">
+                                <button className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-orange-400 hover:bg-orange-500/10 transition">
                                   <Edit className="h-2.5 w-2.5" />Edit
                                 </button>
                               </Link>
                               <div className="flex-1" />
                               {!isConfirmDel ? (
                                 <button onClick={() => handleSingleDelete(service.id)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-white/15 hover:text-red-400 hover:bg-red-500/10 transition">
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/25 hover:text-red-400 hover:bg-red-500/10 transition">
                                   <Trash2 className="h-2.5 w-2.5" />
                                 </button>
                               ) : (
@@ -446,7 +446,7 @@ export default function AddressDetailPage() {
                                     {tCommon("delete")}
                                   </button>
                                   <button onClick={() => setDeleteSvcConfirm(null)}
-                                    className="px-2 py-1 rounded-md text-[10px] text-white/30 hover:text-white hover:bg-white/5 transition">
+                                    className="px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
                                     {tCommon("cancel")}
                                   </button>
                                 </div>
@@ -465,8 +465,8 @@ export default function AddressDetailPage() {
 
         {/* Total */}
         {address.services.length > 0 && (
-          <div className="flex items-center justify-between px-2 pt-2 border-t border-white/5">
-            <span className="text-sm font-medium text-white/50">{t("detail_totalMonthly")}</span>
+          <div className="flex items-center justify-between px-2 pt-2 border-t border-border">
+            <span className="text-sm font-medium text-muted-foreground">{t("detail_totalMonthly")}</span>
             <span className="text-lg font-bold text-emerald-400">{formatCurrency(totalMonthlyCost)}{t("detail_perMo")}</span>
           </div>
         )}
@@ -475,7 +475,7 @@ export default function AddressDetailPage() {
       {/* Danger Zone */}
       <div className="rounded-2xl border border-red-500/10 bg-red-500/[0.02] p-5 space-y-3">
         <h3 className="text-sm font-semibold text-red-400">{t("detail_dangerZone")}</h3>
-        <p className="text-xs text-white/30">{t("detail_dangerDescription", { count: address.services.length })}</p>
+        <p className="text-xs text-foreground/40">{t("detail_dangerDescription", { count: address.services.length })}</p>
         {!showDeleteConfirm ? (
           <button onClick={() => setShowDeleteConfirm(true)}
             className="px-3 py-1.5 rounded-xl border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/10 transition">
@@ -489,7 +489,7 @@ export default function AddressDetailPage() {
               {t("detail_confirmDelete")}
             </button>
             <button onClick={() => setShowDeleteConfirm(false)}
-              className="px-3 py-1.5 rounded-xl border border-white/10 text-white/40 text-xs hover:text-white hover:bg-white/5 transition">
+              className="px-3 py-1.5 rounded-xl border border-border text-muted-foreground text-xs hover:text-foreground hover:bg-foreground/5 transition">
               {tCommon("cancel")}
             </button>
           </div>

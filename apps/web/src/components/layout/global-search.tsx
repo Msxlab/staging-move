@@ -132,17 +132,17 @@ export function GlobalSearch() {
     <>
       {/* Trigger button */}
       <button
-        className="hidden sm:flex items-center gap-2 w-full max-w-sm rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2 text-sm text-white/30 hover:bg-white/5 transition"
+        className="hidden sm:flex items-center gap-2 w-full max-w-sm rounded-xl border border-border bg-foreground/[0.02] px-3 py-2 text-sm text-foreground/40 hover:bg-foreground/5 transition"
         onClick={() => setOpen(true)}
       >
         <Search className="h-4 w-4" />
         <span>Search...</span>
-        <kbd className="ml-auto inline-flex h-5 items-center gap-1 rounded-md border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/20">
+        <kbd className="ml-auto inline-flex h-5 items-center gap-1 rounded-md border border-border bg-foreground/5 px-1.5 font-mono text-[10px] text-foreground/30">
           <span className="text-xs">⌘</span>K
         </kbd>
       </button>
       <button
-        className="sm:hidden p-2 rounded-xl text-white/40 hover:text-white/70 hover:bg-white/5 transition"
+        className="sm:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition"
         onClick={() => setOpen(true)}
       >
         <Search className="h-5 w-5" />
@@ -155,20 +155,20 @@ export function GlobalSearch() {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden" style={{ background: "color-mix(in srgb, var(--surface-secondary) 95%, transparent)" }}>
+      <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-border backdrop-blur-xl shadow-2xl overflow-hidden" style={{ background: "color-mix(in srgb, var(--surface-secondary) 95%, transparent)" }}>
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-          <Search className="h-4 w-4 text-white/30 shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+          <Search className="h-4 w-4 text-foreground/40 shrink-0" />
           <input
             ref={inputRef}
             type="text"
             placeholder="Search addresses, services, pages..."
-            className="flex-1 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground/40 focus:outline-none"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded-md border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/20">
+          <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded-md border border-border bg-foreground/5 px-1.5 font-mono text-[10px] text-foreground/30">
             ESC
           </kbd>
         </div>
@@ -177,8 +177,8 @@ export function GlobalSearch() {
         <div className="max-h-[50vh] overflow-y-auto py-2">
           {results.length === 0 ? (
             <div className="text-center py-8">
-              <Search className="h-8 w-8 text-white/10 mx-auto mb-2" />
-              <p className="text-xs text-white/30">No results for &quot;{query}&quot;</p>
+              <Search className="h-8 w-8 text-foreground/20 mx-auto mb-2" />
+              <p className="text-xs text-foreground/40">No results for &quot;{query}&quot;</p>
             </div>
           ) : (
             results.map((result, i) => {
@@ -188,28 +188,28 @@ export function GlobalSearch() {
                 <button
                   key={result.id}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition ${
-                    isSelected ? "bg-orange-500/10" : "hover:bg-white/[0.03]"
+                    isSelected ? "bg-orange-500/10" : "hover:bg-foreground/[0.03]"
                   }`}
                   onClick={() => navigate(result.href)}
                   onMouseEnter={() => setSelectedIndex(i)}
                 >
                   <div className={`p-1.5 rounded-lg shrink-0 ${
                     result.type === "address" ? "bg-orange-500/10" :
-                    result.type === "service" ? "bg-cyan-500/10" : "bg-white/5"
+                    result.type === "service" ? "bg-cyan-500/10" : "bg-foreground/5"
                   }`}>
                     <Icon className={`h-3.5 w-3.5 ${
                       result.type === "address" ? "text-orange-400" :
-                      result.type === "service" ? "text-cyan-400" : "text-white/40"
+                      result.type === "service" ? "text-cyan-400" : "text-muted-foreground"
                     }`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isSelected ? "text-white" : "text-white/70"}`}>{result.title}</p>
-                    <p className="text-[10px] text-white/25 truncate">{result.subtitle}</p>
+                    <p className={`text-sm font-medium truncate ${isSelected ? "text-foreground" : "text-foreground/80"}`}>{result.title}</p>
+                    <p className="text-[10px] text-foreground/35 truncate">{result.subtitle}</p>
                   </div>
                   <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${
                     result.type === "address" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
                     result.type === "service" ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" :
-                    "bg-white/5 text-white/30 border-white/10"
+                    "bg-foreground/5 text-foreground/40 border-border"
                   }`}>
                     {result.type === "address" ? "Address" : result.type === "service" ? "Service" : "Page"}
                   </span>
@@ -220,10 +220,10 @@ export function GlobalSearch() {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-4 px-4 py-2 border-t border-white/5 text-[10px] text-white/20">
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">↑↓</kbd> Navigate</span>
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">↵</kbd> Open</span>
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-white/10 bg-white/5">Esc</kbd> Close</span>
+        <div className="flex items-center gap-4 px-4 py-2 border-t border-border text-[10px] text-foreground/30">
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">↑↓</kbd> Navigate</span>
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">↵</kbd> Open</span>
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Esc</kbd> Close</span>
         </div>
       </div>
     </div>

@@ -33,8 +33,8 @@ export default function UpgradePrompt({ feature, message, compact = false }: Upg
           <Sparkles className="h-6 w-6 text-orange-400" />
         </div>
       </div>
-      <h3 className="text-lg font-semibold text-white mb-2">Unlock {feature}</h3>
-      <p className="text-sm text-white/60 mb-4 max-w-sm mx-auto">
+      <h3 className="text-lg font-semibold text-foreground mb-2">Unlock {feature}</h3>
+      <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
         {message || defaultMessage}
       </p>
       <Link href="/pricing">
