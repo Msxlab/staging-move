@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlan } from "@/lib/billing";
+import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
 
@@ -23,9 +24,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
     }
 
-    const stripeSecretKey = await getRuntimeConfigValue("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      console.error("STRIPE_SECRET_KEY not configured");
+    let stripeSecretKey: string;
+    try {
+      stripeSecretKey = requireStripeSecretKeyForMutation(
+        await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
+      );
+    } catch (configErr: any) {
+      // In production, a non-`sk_live_` key (or missing key) means real
+      // payments will never settle. Fail loudly so Stripe retries while
+      // ops investigates instead of silently 200-OK'ing dropped events.
+      const reason = configErr?.message || "Stripe not configured";
+      console.error("[WEBHOOK] Stripe config rejected webhook:", reason);
+      captureMessage(`[WEBHOOK] Stripe config rejected webhook: ${reason}`, "error");
       return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
     }
 
