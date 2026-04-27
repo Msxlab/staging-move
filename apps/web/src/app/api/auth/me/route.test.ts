@@ -70,4 +70,16 @@ describe("/api/auth/me", () => {
     expect(response.status).toBe(429);
     expect(body.error).toBe("Too many requests. Please try again later.");
   });
+
+  it("returns a quiet logged-out state for optional checks when the session user no longer exists", async () => {
+    getUserSessionMock.mockResolvedValue({ userId: "user_1" });
+    userFindUniqueMock.mockResolvedValue(null);
+
+    const response = await GET(makeRequest("/api/auth/me?optional=true"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(body).toEqual({ authenticated: false, user: null });
+  });
 });

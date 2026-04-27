@@ -99,4 +99,29 @@ describe("auth page regressions", () => {
     expect(messages).toContain("This sign-in method is currently unavailable.");
     expect(messages).not.toContain("this email was deleted");
   });
+
+  it("has a real pending email verification page for guarded app redirects", () => {
+    const page = read("src/app/verify-email/page.tsx");
+    const resend = read("src/app/verify-email/resend-verification-button.tsx");
+
+    expect(page).toContain("Verify your email");
+    expect(page).toContain("normalizeAppRedirectPath");
+    expect(page).toContain("ResendVerificationButton");
+    expect(resend).toContain("/api/auth/resend-verification");
+  });
+
+  it("maps known OAuth failures to specific safe user-facing copy", () => {
+    const signIn = read("src/app/sign-in/page.tsx");
+    const messages = read("src/i18n/messages/en.json");
+
+    expect(signIn).toContain('"oauth-account-unavailable": "error_account_unavailable"');
+    expect(signIn).toContain('"oauth-account-deleted": "error_account_unavailable"');
+    expect(signIn).toContain('"email-unverified": "error_oauth_email_unverified"');
+    expect(signIn).toContain('"apple-email-not-verified": "error_oauth_email_unverified"');
+    expect(signIn).toContain('"oauth-provider-disabled": "error_provider_disabled"');
+    expect(messages).toContain("This account is unavailable. Contact support if you believe this is a mistake.");
+    expect(messages).toContain("Your Google account email could not be verified. Try another sign-in method.");
+    expect(messages).toContain("This sign-in method is currently unavailable.");
+    expect(messages).not.toContain("this email was deleted");
+  });
 });

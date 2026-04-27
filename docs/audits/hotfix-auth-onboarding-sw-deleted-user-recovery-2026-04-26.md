@@ -18,7 +18,7 @@ Branch: `hotfix-auth-onboarding-sw-deleted-user-recovery`
 
 - Follow-up finding: email verification gates redirected unverified email/password users to `/verify-email?redirect=...`, but the app only implemented `/verify-email/[token]`. That made the intended gate URL return 404, and browsers with the stale service worker could surface it as `503 Offline`.
 - Service worker: `sw.js` only bypassed cached/offline handling for authenticated app prefixes. Auth pages such as `/sign-in?redirect=/onboarding` could fall through to the offline fallback and surface `503 Offline` from a stale installed worker.
-- Auth fetch loop: auth pages and global session tracking could both check `/api/auth/me`; prior hotfix introduced one-shot auth checks on sign-in/sign-up and disabled `SessionTracker` current-user polling on auth pages. Follow-up also treats `/verify-email` and `/verify-email/[token]` as auth pages so the tracker does not poll `/api/auth/me` there.
+- Auth fetch loop / noisy 401: auth pages and global session tracking could both check `/api/auth/me`; prior hotfix introduced one-shot auth checks on sign-in/sign-up and disabled `SessionTracker` current-user polling on auth pages. Follow-up also treats `/verify-email` and `/verify-email/[token]` as auth pages so the tracker does not poll `/api/auth/me` there. Public/auth UI checks now use `/api/auth/me?optional=1`, which returns a quiet logged-out state instead of a console-visible 401 while preserving normal 401 behavior for non-optional `/api/auth/me`.
 - Google OAuth account unavailable: the safe current behavior rejects OAuth links or email matches when the user row is soft-deleted. The observed `OAUTH_ACCOUNT_UNAVAILABLE` is consistent with a soft-deleted test/user account or an OAuth link attached to one. This branch keeps that block and adds an admin restore path instead of auto-reactivating via OAuth.
 - Sign-up legal panel: live still had the old sign-up legal panel, but current branch includes the prior fix that removes sign-up legal acceptance and keeps legal consent in onboarding only.
 - Deleted user recovery gap: admin could soft-delete and revoke sessions, but there was no clear restore/reactivation control for legitimate test/support recovery.
@@ -59,6 +59,7 @@ Branch: `hotfix-auth-onboarding-sw-deleted-user-recovery`
 - Added a real `/verify-email?redirect=...` pending-verification page.
 - Added a rate-limited `/api/auth/resend-verification` endpoint for the signed-in unverified password user to request one verification email at a time.
 - Disabled `SessionTracker` current-user polling on `/verify-email` and `/verify-email/[token]`.
+- Added optional auth-state mode for `/api/auth/me?optional=1` and switched public/auth page client checks to it so logged-out users do not get console-visible 401 noise.
 - Added OAuth error mapping for account unavailable/deleted, unverified provider email, and provider-disabled cases with safe non-enumerating copy.
 - Kept OAuth soft-deleted-user rejection in place; no OAuth auto-reactivation.
 - Added admin user list account-state filter: active, deleted, all.
@@ -84,6 +85,7 @@ Branch: `hotfix-auth-onboarding-sw-deleted-user-recovery`
 - Auth page regression:
   - sign-up has no blocking legal panel
   - sign-in/sign-up/verify-email auth checks are guarded from retry loops
+  - public/auth page auth-state checks use optional mode and do not produce logged-out 401 noise
   - `/verify-email?redirect=...` has a real page
   - OAuth error codes map to safe copy
 - Resend verification:
@@ -119,8 +121,9 @@ Branch: `hotfix-auth-onboarding-sw-deleted-user-recovery`
 
 - In a browser with the old service worker installed, load `https://locateflow.com/sign-in?redirect=/onboarding`; verify no `503 Offline` is served.
 - Open devtools Application tab and confirm old `locateflow-v4` caches are removed after the new service worker activates.
-- Confirm `/api/auth/me` on logged-out `/sign-in` returns at most one 401 and does not repeat in a render loop.
-- Confirm logged-out `/sign-up` returns at most one `/api/auth/me` 401 and no loop.
+- Confirm logged-out `/sign-in` uses `/api/auth/me?optional=1`, returns `200` with `user: null`, and does not loop.
+- Confirm logged-out `/sign-up` uses `/api/auth/me?optional=1`, returns `200` with `user: null`, and does not loop.
+- Confirm direct non-optional `/api/auth/me` still returns `401` when logged out.
 - Confirm `/verify-email?redirect=%2Fdashboard` renders the pending verification page and does not return 404 or 503.
 - Confirm `/verify-email` does not repeatedly call `/api/auth/me`.
 - Confirm existing service workers are unregistered after any successful page load.
