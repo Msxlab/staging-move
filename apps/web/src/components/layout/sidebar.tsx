@@ -21,7 +21,11 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { LogoMark } from "@/components/marketing/logo";
 
-export function Sidebar() {
+interface SidebarProps {
+  showBudget?: boolean;
+}
+
+export function Sidebar({ showBudget = true }: SidebarProps = {}) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const t = useTranslations("nav");
@@ -35,7 +39,9 @@ export function Sidebar() {
     { key: "addresses", href: "/addresses", icon: MapPin },
     { key: "services", href: "/services", icon: Zap },
     { key: "providers", href: "/providers", icon: Building2 },
-    { key: "budget", href: "/budget", icon: DollarSign },
+    ...(showBudget
+      ? [{ key: "budget" as const, href: "/budget", icon: DollarSign }]
+      : []),
     { key: "moving", href: "/moving", icon: Truck },
     { key: "notifications", href: "/notifications", icon: Bell },
     { key: "support", href: "/support", icon: LifeBuoy },
