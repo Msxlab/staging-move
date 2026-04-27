@@ -13,7 +13,7 @@
   "dependencies": {
     "@locateflow/db": "workspace:*",
     "@locateflow/shared": "workspace:*",
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "^5.22.0",
     "@sentry/nextjs": "^10.50.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
