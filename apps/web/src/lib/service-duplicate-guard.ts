@@ -47,7 +47,6 @@ export async function findDuplicateTrackedService(
       providerId: true,
       customProviderId: true,
     },
-    take: 100,
   });
 
   return (

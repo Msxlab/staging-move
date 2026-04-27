@@ -4,10 +4,13 @@ import { requireDbUserId } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { encrypt, decrypt } from "@/lib/shared-encryption";
 import { canCreateService } from "@/lib/plan-limits";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
-import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
+import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
+import {
+  decryptServiceSensitiveFields,
+  encryptServiceSensitiveFields,
+} from "@/lib/service-sensitive-fields";
 import {
   duplicateServiceError,
   findDuplicateTrackedService,
@@ -46,13 +49,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Decrypt sensitive fields for response
-    const decryptedServices = services.map((s: any) => ({
-      ...s,
-      accountNumber: s.accountNumber ? decrypt(s.accountNumber) : s.accountNumber,
-      username: s.username ? decrypt(s.username) : s.username,
-      phone: s.phone ? decrypt(s.phone) : s.phone,
-      notes: s.notes ? decrypt(s.notes) : s.notes,
-    }));
+    const decryptedServices = services.map((s: any) => decryptServiceSensitiveFields(s));
 
     return NextResponse.json({ services: decryptedServices, ...buildPaginatedResponse(decryptedServices, total, pagination) });
   } catch (error) {
@@ -143,14 +140,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Encrypt sensitive fields before storage
-    const encryptedData = {
+    const encryptedData = encryptServiceSensitiveFields({
       ...validated,
       category: normalizedCategory,
-      accountNumber: validated.accountNumber ? encrypt(validated.accountNumber) : validated.accountNumber,
-      username: validated.username ? encrypt(validated.username) : validated.username,
-      phone: validated.phone ? encrypt(validated.phone) : validated.phone,
-      notes: validated.notes ? encrypt(validated.notes) : validated.notes,
-    };
+    });
 
     const service = await prisma.service.create({
       data: {
@@ -188,9 +181,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const moveTaskSync = await syncMoveTasksForAddress(userId, validated.addressId);
+    const moveTaskSync = await safeSyncMoveTasksForAddress(userId, validated.addressId);
 
-    return NextResponse.json({ service, moveTaskSync }, { status: 201 });
+    return NextResponse.json({ service: decryptServiceSensitiveFields(service as any), moveTaskSync }, { status: 201 });
   } catch (error: any) {
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
