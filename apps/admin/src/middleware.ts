@@ -103,6 +103,8 @@ function getAllowedOrigins(req: NextRequest) {
 // occasional inline styles working via CSP3's nonce-priority behavior.
 const NONCE_BYTES = 16; // 128 bits — well above NIST SP 800-63B minimum
 
+const DEFAULT_R2_ASSET_ORIGIN = "https://assets.locateflow.com";
+
 function generateCspNonce(): string {
   const bytes = new Uint8Array(NONCE_BYTES);
   crypto.getRandomValues(bytes);
@@ -116,7 +118,27 @@ function generateCspNonce(): string {
     .replace(/\//g, "_");
 }
 
-function buildCspHeader(nonce: string, isDev: boolean): string {
+function normalizeCspOrigin(input: string | null | undefined): string | null {
+  if (!input) return null;
+  const value = input.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return null;
+  }
+}
+
+function getImageCspSources(): string {
+  const origins = new Set<string>([DEFAULT_R2_ASSET_ORIGIN]);
+  const configuredR2Origin = normalizeCspOrigin(process.env.R2_PUBLIC_BASE_URL);
+  if (configuredR2Origin) origins.add(configuredR2Origin);
+  return ["'self'", "data:", "blob:", ...origins].join(" ");
+}
+
+export function buildCspHeader(nonce: string, isDev: boolean): string {
   // Dev needs `'unsafe-eval'` for HMR + Fast Refresh + React DevTools.
   // Prod drops it entirely — all runtime `eval` usage is a policy violation.
   const scriptSrc = isDev
@@ -132,7 +154,7 @@ function buildCspHeader(nonce: string, isDev: boolean): string {
     `script-src ${scriptSrc}`,
     `style-src ${styleSrc}`,
     "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob:",
+    `img-src ${getImageCspSources()}`,
     `connect-src 'self' https://errors.locateflow.com${isDev ? " ws: http: https:" : ""}`,
     "frame-src 'none'",
     "frame-ancestors 'none'",
