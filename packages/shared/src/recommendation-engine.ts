@@ -308,13 +308,26 @@ export const PROVIDER_CATEGORY_OPTIONS = PROVIDER_CATEGORY_VALUES.map((value) =>
   order: CATEGORY_META[value]?.order ?? 999,
 }));
 
-const MERGED_DISPLAY_CATEGORY_KEY = "FINANCIAL_ACCOUNTS";
+const MERGED_DISPLAY_CATEGORY_KEY = "FINANCIAL";
 const MERGED_DISPLAY_CATEGORY_META: Record<string, { label: string; icon: string; order: number }> = {
-  [MERGED_DISPLAY_CATEGORY_KEY]: { label: "Banking & Cards", icon: "💳", order: 21 },
+  [MERGED_DISPLAY_CATEGORY_KEY]: { label: "Financial", icon: "$", order: 21 },
 };
 const MERGED_DISPLAY_CATEGORY_ALIASES: Record<string, string> = {
   FINANCIAL_BANK: MERGED_DISPLAY_CATEGORY_KEY,
   FINANCIAL_CREDIT_CARD: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_FINTECH: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_AUTO: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_HOME: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_RENTERS: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_HEALTH: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_MORTGAGE: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_LOAN: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_PET: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_MOTORCYCLE: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_BOAT: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_RV: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_LIFE: MERGED_DISPLAY_CATEGORY_KEY,
+  FINANCIAL_INSURANCE_FLOOD: MERGED_DISPLAY_CATEGORY_KEY,
 };
 
 export function getMergedDisplayCategoryKey(category: string): string {
@@ -334,6 +347,10 @@ export function getMergedDisplayCategoryLabel(category: string): string {
 export function getMergedDisplayCategoryIcon(category: string): string {
   const key = getMergedDisplayCategoryKey(category);
   return MERGED_DISPLAY_CATEGORY_META[key]?.icon ?? getCategoryIcon(key);
+}
+
+export function getMergedDisplaySubcategoryLabel(category: string): string | null {
+  return getMergedDisplayCategoryKey(category) === category ? null : getCategoryLabel(category);
 }
 
 export function groupByMergedDisplayCategory<T extends { category: string }>(items: T[]): Record<string, T[]> {

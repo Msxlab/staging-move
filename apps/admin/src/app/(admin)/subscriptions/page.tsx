@@ -7,6 +7,7 @@ import {
   TrendingUp, Filter, X, Eye, Clock, XCircle, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
 
 interface Sub {
   id: string;
@@ -297,7 +298,7 @@ export default function SubscriptionsPage() {
                   <td className="px-4 py-3">
                     <div>
                       <p className="font-medium text-foreground text-sm">{sub.user.firstName} {sub.user.lastName}</p>
-                      <p className="text-xs text-muted-foreground">{sub.user.email}</p>
+                      <p className="text-xs text-muted-foreground">{maskEmail(sub.user.email)}</p>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -378,7 +379,7 @@ export default function SubscriptionsPage() {
                 <div className="rounded-lg bg-primary/10 p-2"><Users className="h-5 w-5 text-primary" /></div>
                 <div>
                   <p className="font-medium text-foreground text-sm">{detail.user.firstName} {detail.user.lastName}</p>
-                  <p className="text-xs text-muted-foreground">{detail.user.email}</p>
+                  <p className="text-xs text-muted-foreground">{maskEmail(detail.user.email)}</p>
                 </div>
               </div>
 
@@ -392,7 +393,7 @@ export default function SubscriptionsPage() {
                 <DetailItem label="Trial Ends" value={detail.trialEndsAt ? new Date(detail.trialEndsAt).toLocaleDateString() : "—"} />
                 <DetailItem label="Canceled At" value={detail.canceledAt ? new Date(detail.canceledAt).toLocaleDateString() : "—"} />
                 <DetailItem label="Period End" value={detail.stripeCurrentPeriodEnd ? new Date(detail.stripeCurrentPeriodEnd).toLocaleDateString() : "—"} />
-                <DetailItem label="Stripe Customer" value={detail.stripeCustomerId || "—"} />
+                <DetailItem label="Stripe Customer" value={maskProviderIdentifier(detail.stripeCustomerId)} />
                 <DetailItem label="Last Validated" value={detail.lastValidatedAt ? new Date(detail.lastValidatedAt).toLocaleString() : "Never"} />
                 <DetailItem label="Last Synced" value={detail.lastSyncedAt ? new Date(detail.lastSyncedAt).toLocaleString() : "Never"} />
               </div>
@@ -400,7 +401,7 @@ export default function SubscriptionsPage() {
               {detail.stripeSubscriptionId && (
                 <div className="rounded-lg bg-muted/50 p-3">
                   <p className="text-[11px] font-medium text-muted-foreground mb-1">Stripe Subscription ID</p>
-                  <p className="text-xs text-foreground font-mono break-all">{detail.stripeSubscriptionId}</p>
+                  <p className="text-xs text-foreground font-mono break-all">{maskProviderIdentifier(detail.stripeSubscriptionId)}</p>
                 </div>
               )}
 

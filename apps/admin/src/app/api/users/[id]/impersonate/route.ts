@@ -23,9 +23,8 @@ export const runtime = "nodejs";
  *  - Cross-app handoff is done through the web app's internal endpoint
  *    authenticated by IMPERSONATION_HANDOFF_SECRET.
  *
- * The response contains a one-shot `handoffUrl` the operator should open
- * in a new browser profile / incognito window. That URL, served by the
- * web app, exchanges the token for the `user_session` cookie.
+ * The response contains a `handoffUrl` plus a short-lived handoff token.
+ * Clients must POST the token to the web app; it is never embedded in a URL.
  */
 export async function POST(
   request: NextRequest,
@@ -56,8 +55,8 @@ export async function POST(
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
+    const user = await prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: { id: true, email: true, firstName: true },
     });
     if (!user) {
@@ -145,6 +144,8 @@ export async function POST(
 
     return NextResponse.json({
       handoffUrl: handoff.handoffUrl,
+      handoffMethod: "POST",
+      handoffToken: handoff.token,
       expiresAt: handoff.expiresAt,
       userEmail: user.email,
     });

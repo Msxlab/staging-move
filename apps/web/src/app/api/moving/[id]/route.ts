@@ -3,10 +3,17 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { z } from "zod";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
+
+const MOVING_STATUS_VALUES = ["PLANNING", "IN_PROGRESS", "COMPLETED", "CANCELED"] as const;
+const movingStatusSchema = z.preprocess(
+  (value) => (typeof value === "string" ? normalizeMovingPlanStatus(value) : value),
+  z.enum(MOVING_STATUS_VALUES),
+);
 
 const movingPatchSchema = z.object({
   moveDate: z.string().optional(),
-  status: z.enum(["PLANNING", "IN_PROGRESS", "COMPLETED", "CANCELED"]).optional(),
+  status: movingStatusSchema.optional(),
   isTemporary: z.boolean().optional(),
   estimatedDuration: z.number().min(1).optional(),
 });
@@ -35,7 +42,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Moving plan not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ plan });
+    return NextResponse.json({ plan: { ...plan, status: normalizeMovingPlanStatus(plan.status) } });
   } catch (error) {
     console.error("Failed to fetch moving plan:", error);
     return NextResponse.json({ error: "Failed to fetch moving plan" }, { status: 500 });
@@ -58,7 +65,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // Enforce state machine transitions
     if (validated.status) {
-      const currentStatus = existing.status;
+      const currentStatus = normalizeMovingPlanStatus(existing.status);
       const allowedTransitions = VALID_STATUS_TRANSITIONS[currentStatus] || [];
       if (!allowedTransitions.includes(validated.status)) {
         return NextResponse.json(

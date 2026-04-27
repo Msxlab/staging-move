@@ -3,7 +3,9 @@ import { NextRequest } from "next/server";
 import {
   getOAuthRedirectUri,
   getOAuthResponseUrl,
+  isAppleEmailVerifiedClaim,
   normalizeOAuthRedirectPath,
+  resolveOAuthPostAuthRedirectPath,
 } from "./oauth";
 
 describe("OAuth URL helpers", () => {
@@ -32,8 +34,26 @@ describe("OAuth URL helpers", () => {
 
   it("keeps post-login redirects same-site and relative", () => {
     expect(normalizeOAuthRedirectPath("/dashboard")).toBe("/dashboard");
+    expect(normalizeOAuthRedirectPath("/providers/provider_123")).toBe("/providers/provider_123");
+    expect(normalizeOAuthRedirectPath("/api/auth/me")).toBe("/dashboard");
+    expect(normalizeOAuthRedirectPath("/login")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("//evil.example")).toBe("/dashboard");
     expect(normalizeOAuthRedirectPath("https://evil.example")).toBe("/dashboard");
+  });
+
+  it("sends fresh OAuth signups directly to the onboarding legal step", () => {
+    expect(
+      resolveOAuthPostAuthRedirectPath({
+        isNewUser: true,
+        redirectPath: "/dashboard",
+      }),
+    ).toBe("/onboarding?step=legal");
+    expect(
+      resolveOAuthPostAuthRedirectPath({
+        isNewUser: false,
+        redirectPath: "/providers/provider_123",
+      }),
+    ).toBe("/providers/provider_123");
   });
 
   it("falls back to configured origin when the request host is not trusted", async () => {
@@ -49,5 +69,18 @@ describe("OAuth URL helpers", () => {
     await expect(
       getOAuthResponseUrl(request, "/sign-in?error=missing-code").then((url) => url.toString()),
     ).resolves.toBe("https://app.locateflow.com/sign-in?error=missing-code");
+  });
+});
+
+describe("Apple OAuth email verification claim", () => {
+  it("allows boolean true and string true claims", () => {
+    expect(isAppleEmailVerifiedClaim(true)).toBe(true);
+    expect(isAppleEmailVerifiedClaim("true")).toBe(true);
+  });
+
+  it("rejects false, string false, and missing claims", () => {
+    expect(isAppleEmailVerifiedClaim(false)).toBe(false);
+    expect(isAppleEmailVerifiedClaim("false")).toBe(false);
+    expect(isAppleEmailVerifiedClaim(undefined)).toBe(false);
   });
 });

@@ -42,9 +42,18 @@ function detectPlatform() {
 }
 
 export function SessionTracker() {
-  const { user } = useCurrentUser();
-  const isSignedIn = Boolean(user);
   const pathname = usePathname();
+  const trackerDisabledPage =
+    pathname === "/sign-in" ||
+    pathname === "/sign-up" ||
+    pathname === "/verify-email" ||
+    pathname?.startsWith("/verify-email/") ||
+    pathname === "/onboarding" ||
+    pathname?.startsWith("/onboarding/") ||
+    pathname?.startsWith("/reset-password") ||
+    pathname?.startsWith("/forgot-password");
+  const { user } = useCurrentUser({ enabled: !trackerDisabledPage });
+  const isSignedIn = Boolean(user);
   const sessionIdRef = useRef<string | null>(null);
   const pageViewsRef = useRef(0);
   const initializedRef = useRef(false);

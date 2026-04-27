@@ -1,6 +1,8 @@
-const CACHE_NAME = "locateflow-v2";
-const STATIC_CACHE = "locateflow-static-v2";
-const DYNAMIC_CACHE = "locateflow-dynamic-v2";
+const CACHE_NAME = "locateflow-v7-auth-stabilization-disabled";
+const STATIC_CACHE = "locateflow-static-v7-auth-stabilization-disabled";
+const DISABLE_SERVICE_WORKER = true;
+const SERVICE_WORKER_SHUTOFF_REASON = "emergency-auth-state-machine-stabilization";
+let unregisterAttempted = false;
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -9,7 +11,7 @@ const STATIC_ASSETS = [
   "/icons/icon-512.png",
 ];
 
-const CACHED_PAGES = [
+const AUTHENTICATED_NAV_PREFIXES = [
   "/dashboard",
   "/addresses",
   "/services",
@@ -17,22 +19,88 @@ const CACHED_PAGES = [
   "/budget",
   "/documents",
   "/community",
+  "/providers",
+  "/notifications",
+  "/support",
   "/settings",
+  "/onboarding",
 ];
 
+const AUTH_NAV_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/verify-email",
+];
+
+const SAFE_OFFLINE_NAV_PATHS = [
+  "/",
+  "/help",
+  "/privacy",
+  "/terms",
+  "/disclaimer",
+  "/cookie-policy",
+  "/contact",
+  "/pricing",
+  "/how-it-works",
+  "/faq",
+  "/security",
+  "/refund",
+  "/dpa",
+  "/acceptable-use",
+  "/ccpa-privacy-notice",
+];
+
+function pathMatchesPrefix(pathname, prefixes) {
+  return prefixes.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+function isSafeOfflineNavigation(pathname) {
+  return SAFE_OFFLINE_NAV_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
 self.addEventListener("install", (event) => {
+  if (DISABLE_SERVICE_WORKER) {
+    self.skipWaiting();
+    return;
+  }
+
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
 
+function clearLocateFlowCaches() {
+  return caches.keys().then((keys) =>
+    Promise.all(
+      keys
+        .filter((key) => key.indexOf("locateflow-") === 0)
+        .map((key) => caches.delete(key))
+    )
+  );
+}
+
+function unregisterDisabledWorker() {
+  return clearLocateFlowCaches()
+    .then(() => self.registration.unregister())
+    .catch(() => undefined);
+}
+
 self.addEventListener("activate", (event) => {
+  if (DISABLE_SERVICE_WORKER) {
+    event.waitUntil(
+      self.clients.claim()
+        .catch(() => undefined)
+        .then(() => unregisterDisabledWorker())
+    );
+    return;
+  }
+
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k !== STATIC_CACHE && k !== DYNAMIC_CACHE)
+          .filter((k) => k.indexOf("locateflow-") === 0 && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
     )
@@ -41,12 +109,29 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+  if (DISABLE_SERVICE_WORKER) {
+    if (!unregisterAttempted) {
+      unregisterAttempted = true;
+      event.waitUntil(unregisterDisabledWorker());
+    }
+    return;
+  }
+
   const { request } = event;
   const url = new URL(request.url);
 
   if (request.method !== "GET") return;
   if (url.pathname.startsWith("/api/")) return;
   if (url.pathname.startsWith("/_next/")) return;
+
+  if (
+    request.mode === "navigate" &&
+    (pathMatchesPrefix(url.pathname, AUTHENTICATED_NAV_PREFIXES) ||
+      pathMatchesPrefix(url.pathname, AUTH_NAV_PREFIXES))
+  ) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   // Static assets: cache-first
   if (STATIC_ASSETS.some((a) => url.pathname === a) || url.pathname.match(/\.(png|jpg|svg|ico|woff2?)$/)) {
@@ -65,19 +150,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Pages: network-first with offline fallback
+  if (request.mode === "navigate" && !isSafeOfflineNavigation(url.pathname)) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Safe public pages: network-first with offline fallback. Do not cache HTML:
+  // marketing pages can vary by auth state, and app pages must never survive logout.
   event.respondWith(
     fetch(request)
-      .then((response) => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(DYNAMIC_CACHE).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      })
+      .then((response) => response)
       .catch(async () => {
-        const cached = await caches.match(request);
-        if (cached) return cached;
         // Return offline page for navigation requests
         if (request.mode === "navigate") {
           const offlinePage = await caches.match("/offline");
@@ -92,5 +175,16 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === "LOGOUT_CLEAR_CACHES") {
+    event.waitUntil(
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.indexOf("locateflow-") === 0)
+            .map((key) => caches.delete(key))
+        )
+      )
+    );
   }
 });

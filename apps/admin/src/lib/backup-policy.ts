@@ -22,6 +22,9 @@ export interface BackupArchivePolicy {
   message: string;
 }
 
+export const BACKUP_ARCHIVE_WARN_BYTES = 500 * 1024 * 1024;
+export const BACKUP_ARCHIVE_MAX_BYTES = 1024 * 1024 * 1024;
+
 function normalizeEnvValue(value: string | undefined): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -92,4 +95,27 @@ export function shouldReturnBrowserDownloadFallback(input: {
 }): boolean {
   const policy = input.policy || getBackupArchivePolicy();
   return policy.browserDownloadFallbackAllowed && input.offsite.status !== "stored";
+}
+
+export function evaluateBackupArchiveSize(bytes: number): {
+  ok: boolean;
+  warning: string | null;
+} {
+  if (bytes > BACKUP_ARCHIVE_MAX_BYTES) {
+    throw new BackupPolicyError(
+      "BACKUP_ARCHIVE_TOO_LARGE",
+      "Backup archive exceeds the 1 GB safety limit. Use a managed database snapshot or a reviewed paginated export plan.",
+      413,
+    );
+  }
+
+  if (bytes >= BACKUP_ARCHIVE_WARN_BYTES) {
+    return {
+      ok: true,
+      warning:
+        "Backup archive is larger than 500 MB. Monitor storage cost and plan cursor-based pagination before data grows further.",
+    };
+  }
+
+  return { ok: true, warning: null };
 }

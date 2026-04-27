@@ -3,8 +3,11 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
 import { profileSchema } from "@/lib/validators";
-import { LEGAL_CONSENT_EVENT, LEGAL_CONSENT_VERSION, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
+import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
+import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
+import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 
 function parseStoredLegalConsents(metadata: string | null | undefined) {
   if (!metadata) return null;
@@ -20,18 +23,28 @@ export async function GET() {
   try {
     const userId = await requireDbUserId();
 
-    const [user, consentEvent, address] = await Promise.all([
+    const [user, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         include: { profile: true, subscription: true },
       }),
-      prisma.userEvent.findFirst({
+      prisma.userEvent.findMany({
         where: { userId, event: LEGAL_CONSENT_EVENT },
         orderBy: { createdAt: "desc" },
+        take: 10,
       }),
-      prisma.address.findFirst({
-        where: { userId, deletedAt: null },
-        select: { id: true, isPrimary: true },
+      prisma.address.count({ where: { userId, deletedAt: null } }),
+      prisma.service.count({ where: { userId, deletedAt: null, isActive: true } }),
+      prisma.movingPlan.count({
+        where: {
+          userId,
+          status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] },
+        },
+      }),
+      prisma.userEvent.findMany({
+        where: { userId, event: { in: [...ONBOARDING_PROGRESS_EVENTS] } },
+        select: { event: true },
+        orderBy: { createdAt: "desc" },
       }),
     ]);
 
@@ -39,9 +52,22 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const legalConsents = parseStoredLegalConsents(consentEvent?.metadata);
+    const legalConsents = consentEvents
+      .map((event) => parseStoredLegalConsents(event.metadata))
+      .find((consents) => hasRequiredLegalConsents(consents))
+      || parseStoredLegalConsents(consentEvents[0]?.metadata);
+    const hasLegal = consentEvents.some((event) =>
+      hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),
+    );
+    const onboardingProgress = getOnboardingProgress({
+      hasProfile: Boolean(user.profile),
+      hasRequiredLegalConsents: hasLegal,
+      addressCount,
+      serviceCount,
+      movingPlanCount,
+      ...summarizeOnboardingEvents(onboardingEvents),
+    });
     const entitlement = buildUnifiedEntitlementSnapshot(user.subscription);
-    const onboardingCompleted = Boolean(user.profile && hasRequiredLegalConsents(legalConsents) && address);
 
     return NextResponse.json({
       user: {
@@ -54,7 +80,9 @@ export async function GET() {
       subscription: user.subscription,
       entitlement,
       legalConsents,
-      onboardingCompleted,
+      onboardingCompleted: onboardingProgress.completed,
+      onboardingStep: onboardingProgress.step,
+      onboardingStepIndex: onboardingProgress.stepIndex,
     });
   } catch (error) {
     console.error("Failed to fetch profile:", error);
@@ -91,7 +119,8 @@ export async function POST(request: NextRequest) {
   // Step 3: Validate
   let validated: any;
   try {
-    validated = profileSchema.parse(body);
+    const { legalConsents: _legalConsents, ...profileBody } = body || {};
+    validated = profileSchema.parse(profileBody);
   } catch (err: any) {
     const details = err?.errors || err?.message;
     return NextResponse.json({ error: "Validation failed", details }, { status: 400 });
@@ -101,18 +130,25 @@ export async function POST(request: NextRequest) {
     where: { userId, event: LEGAL_CONSENT_EVENT },
     orderBy: { createdAt: "desc" },
   });
-  const existingLegalConsents = parseStoredLegalConsents(existingConsentEvent?.metadata);
-  const incomingLegalConsents = validated.legalConsents
-    ? getDefaultLegalConsents({
-        ...validated.legalConsents,
-        termsVersion: validated.legalConsents.termsVersion || LEGAL_CONSENT_VERSION,
-        disclaimerVersion: validated.legalConsents.disclaimerVersion || LEGAL_CONSENT_VERSION,
-        acceptedAt: validated.legalConsents.acceptedAt || new Date().toISOString(),
-      })
-    : null;
+  let existingLegalConsents = parseStoredLegalConsents(existingConsentEvent?.metadata);
 
-  if (!existingLegalConsents && !hasRequiredLegalConsents(incomingLegalConsents)) {
-    return NextResponse.json({ error: "You must accept the Terms of Use and Disclaimer before continuing." }, { status: 400 });
+  if (!hasRequiredLegalConsents(existingLegalConsents)) {
+    const acceptedLegalConsents = normalizeAcceptedLegalConsents(body?.legalConsents);
+    if (acceptedLegalConsents) {
+      await recordLegalAcceptance({
+        userId,
+        request,
+        page: "/onboarding",
+        source: "profile_fallback",
+        consents: acceptedLegalConsents,
+      });
+      existingLegalConsents = acceptedLegalConsents;
+    } else {
+      return NextResponse.json(
+        { error: "You must accept the Terms of Use and Disclaimer before continuing.", code: "LEGAL_ACCEPTANCE_REQUIRED" },
+        { status: 400 },
+      );
+    }
   }
 
   // Step 4: Update user name
@@ -152,25 +188,7 @@ export async function POST(request: NextRequest) {
       update: profileData,
     });
 
-    if (hasRequiredLegalConsents(incomingLegalConsents)) {
-      const shouldRecordConsent = !existingLegalConsents
-        || existingLegalConsents.acceptedAt !== incomingLegalConsents.acceptedAt
-        || existingLegalConsents.termsVersion !== incomingLegalConsents.termsVersion
-        || existingLegalConsents.disclaimerVersion !== incomingLegalConsents.disclaimerVersion;
-
-      if (shouldRecordConsent) {
-        await prisma.userEvent.create({
-          data: {
-            userId,
-            event: LEGAL_CONSENT_EVENT,
-            page: request.nextUrl.pathname,
-            metadata: JSON.stringify(incomingLegalConsents),
-          },
-        });
-      }
-    }
-
-    return NextResponse.json({ profile, legalConsents: incomingLegalConsents || existingLegalConsents }, { status: 200 });
+    return NextResponse.json({ profile, legalConsents: existingLegalConsents }, { status: 200 });
   } catch (err: any) {
     console.error("[PROFILE POST] Profile upsert failed:", err?.message);
     return NextResponse.json({ error: `Profile save failed: ${err?.message}` }, { status: 500 });

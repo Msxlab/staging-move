@@ -1,8 +1,18 @@
-import { afterEach, describe, it, expect, vi } from "vitest";
-import { rateLimit, getRateLimitKey } from "./rate-limit";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { getRateLimitKey, rateLimit } from "./rate-limit";
+
+const originalEnv = { ...process.env };
 
 function makeRequest(headers: Record<string, string>): Request {
   return new Request("http://localhost/", { headers });
+}
+
+async function importFreshRateLimit(env: NodeJS.ProcessEnv) {
+  vi.resetModules();
+  process.env = { ...originalEnv, ...env };
+  delete process.env.UPSTASH_REDIS_REST_URL;
+  delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  return import("./rate-limit");
 }
 
 describe("getRateLimitKey", () => {
@@ -43,7 +53,9 @@ describe("getRateLimitKey", () => {
   });
 
   it("takes the leftmost IP from x-forwarded-for", () => {
-    const req = makeRequest({ "x-forwarded-for": "5.5.5.5, 6.6.6.6, 7.7.7.7" });
+    const req = makeRequest({
+      "x-forwarded-for": "5.5.5.5, 6.6.6.6, 7.7.7.7",
+    });
     expect(getRateLimitKey(req)).toBe("api:5.5.5.5");
   });
 
@@ -99,5 +111,43 @@ describe("rateLimit (in-memory fallback)", () => {
     const before = Date.now();
     const result = await rateLimit(key, config);
     expect(result.resetAt).toBeGreaterThan(before);
+  });
+});
+
+describe("rateLimit fail-closed mode", () => {
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    vi.resetModules();
+  });
+
+  it("fails closed for sensitive production-like endpoints when Redis is missing", async () => {
+    const { rateLimit: freshRateLimit } = await importFreshRateLimit({
+      NODE_ENV: "production",
+      APP_ENV: "production",
+    });
+
+    const result = await freshRateLimit("auth:reset:test", {
+      limit: 1,
+      windowSeconds: 60,
+      failClosed: true,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.remaining).toBe(0);
+  });
+
+  it("keeps non-sensitive fallback behavior available outside fail-closed mode", async () => {
+    const { rateLimit: freshRateLimit } = await importFreshRateLimit({
+      NODE_ENV: "production",
+      APP_ENV: "production",
+    });
+
+    const result = await freshRateLimit("read:test", {
+      limit: 1,
+      windowSeconds: 60,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.remaining).toBe(0);
   });
 });

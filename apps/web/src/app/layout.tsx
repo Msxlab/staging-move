@@ -131,8 +131,8 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LocateFlow" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="alternate icon" href="/favicon.svg" />
         <link rel="mask-icon" href="/logo-mark.svg" color="#D4846A" />
       </head>
       <body className={geistSans.className}>

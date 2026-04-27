@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getUserSession } from "@/lib/user-auth";
 import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle";
 import { Wordmark } from "@/components/marketing/logo";
+import { LanguageSelector } from "@/components/language-selector";
 
 type MarketingHeaderProps = {
   userId?: string | null;
@@ -36,6 +37,7 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
           </Link>
         </nav>
         <div className="flex items-center gap-1 md:gap-2">
+          <LanguageSelector variant="icon" />
           <LandingThemeToggle />
           {userId ? (
             <>
@@ -48,7 +50,7 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
             </>
           ) : (
             <>
-              <Link href="/sign-in" className="hidden sm:block">
+              <Link href="/sign-in">
                 <Button variant="ghost" size="sm">{tCommon("signIn")}</Button>
               </Link>
               <Link href="/sign-up">

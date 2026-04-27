@@ -9,7 +9,7 @@ const statusBadge: Record<string, { label: string; cls: string }> = {
   OPEN: { label: "Open", cls: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
   IN_PROGRESS: { label: "In Progress", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
   WAITING_USER: { label: "Waiting for you", cls: "bg-orange-500/10 text-orange-400 border-orange-500/20" },
-  CLOSED: { label: "Closed", cls: "bg-white/5 text-white/40 border-white/10" },
+  CLOSED: { label: "Closed", cls: "bg-foreground/5 text-muted-foreground border-border" },
 };
 
 const categoryLabels: Record<string, string> = {
@@ -80,8 +80,8 @@ export default function SupportPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Support</h1>
-          <p className="text-sm text-white/40 mt-1">View and manage your support tickets</p>
+          <h1 className="text-2xl font-bold text-foreground">Support</h1>
+          <p className="text-sm text-muted-foreground mt-1">View and manage your support tickets</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -93,18 +93,18 @@ export default function SupportPage() {
 
       {/* Create ticket form */}
       {showCreate && (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+        <div className="rounded-2xl border border-border bg-foreground/[0.03] p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-white">New Support Ticket</h2>
-            <button onClick={() => setShowCreate(false)} className="text-white/30 hover:text-white">
+            <h2 className="text-base font-semibold text-foreground">New Support Ticket</h2>
+            <button onClick={() => setShowCreate(false)} className="text-foreground/40 hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <label className="block text-xs text-white/40 mb-1">Subject</label>
+              <label className="block text-xs text-muted-foreground mb-1">Subject</label>
               <input
-                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-orange-500/50"
+                className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-orange-500/50"
                 placeholder="Brief description of your issue"
                 value={form.subject}
                 onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
@@ -115,9 +115,9 @@ export default function SupportPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-white/40 mb-1">Category</label>
+                <label className="block text-xs text-muted-foreground mb-1">Category</label>
                 <select
-                  className="w-full rounded-xl border border-white/10 bg-[#0a0a0f] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
+                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-orange-500/50"
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                 >
@@ -125,9 +125,9 @@ export default function SupportPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-white/40 mb-1">Priority</label>
+                <label className="block text-xs text-muted-foreground mb-1">Priority</label>
                 <select
-                  className="w-full rounded-xl border border-white/10 bg-[#0a0a0f] px-3 py-2 text-sm text-white focus:outline-none focus:border-orange-500/50"
+                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-orange-500/50"
                   value={form.priority}
                   onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
                 >
@@ -139,9 +139,9 @@ export default function SupportPage() {
               </div>
             </div>
             <div>
-              <label className="block text-xs text-white/40 mb-1">Message</label>
+              <label className="block text-xs text-muted-foreground mb-1">Message</label>
               <textarea
-                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-orange-500/50 resize-none"
+                className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-orange-500/50 resize-none"
                 placeholder="Describe your issue in detail..."
                 rows={4}
                 value={form.message}
@@ -160,7 +160,7 @@ export default function SupportPage() {
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Submit Ticket
               </button>
-              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-white/10 text-white/50 text-sm hover:text-white transition">
+              <button type="button" onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-xl border border-border text-muted-foreground text-sm hover:text-foreground transition">
                 Cancel
               </button>
             </div>
@@ -171,13 +171,13 @@ export default function SupportPage() {
       {/* Ticket list */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-white/20" />
+          <Loader2 className="h-6 w-6 animate-spin text-foreground/30" />
         </div>
       ) : tickets.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-12 text-center">
-          <MessageCircle className="h-10 w-10 text-white/10 mx-auto mb-3" />
-          <p className="text-white/40 text-sm">No support tickets yet</p>
-          <p className="text-white/20 text-xs mt-1">Create a ticket if you need help with anything</p>
+        <div className="rounded-2xl border border-border bg-foreground/[0.02] p-12 text-center">
+          <MessageCircle className="h-10 w-10 text-foreground/20 mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">No support tickets yet</p>
+          <p className="text-foreground/30 text-xs mt-1">Create a ticket if you need help with anything</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -186,29 +186,29 @@ export default function SupportPage() {
             const lastMsg = ticket.messages[0];
             return (
               <Link key={ticket.id} href={`/support/${ticket.id}`}>
-                <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] p-4 transition flex items-center gap-4">
+                <div className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.02] hover:bg-foreground/[0.04] p-4 transition flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${badge.cls}`}>
                         {badge.label}
                       </span>
-                      <span className="text-[10px] text-white/25">{categoryLabels[ticket.category] || ticket.category}</span>
+                      <span className="text-[10px] text-foreground/35">{categoryLabels[ticket.category] || ticket.category}</span>
                     </div>
-                    <p className="text-sm font-medium text-white truncate">{ticket.subject}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{ticket.subject}</p>
                     {lastMsg && (
-                      <p className="text-xs text-white/30 mt-0.5 truncate">
+                      <p className="text-xs text-foreground/40 mt-0.5 truncate">
                         {lastMsg.senderType === "ADMIN" ? "Support: " : "You: "}{lastMsg.content}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-[10px] text-white/20">{ticket._count.messages} msg{ticket._count.messages !== 1 ? "s" : ""}</p>
-                      <p className="text-[10px] text-white/20 mt-0.5">
+                      <p className="text-[10px] text-foreground/30">{ticket._count.messages} msg{ticket._count.messages !== 1 ? "s" : ""}</p>
+                      <p className="text-[10px] text-foreground/30 mt-0.5">
                         {new Date(ticket.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-white/20" />
+                    <ChevronRight className="h-4 w-4 text-foreground/30" />
                   </div>
                 </div>
               </Link>

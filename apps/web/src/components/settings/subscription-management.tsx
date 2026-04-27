@@ -134,12 +134,12 @@ export default function SubscriptionManagementPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-8">
       <div className="flex items-center gap-4">
-        <Link href="/settings" className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm text-white/50 transition hover:bg-white/5 hover:text-white">
+        <Link href="/settings" className="inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Subscription</h1>
-          <p className="text-sm text-white/40">Manage your plan across web, iOS, and Android</p>
+          <h1 className="text-2xl font-bold text-foreground">Subscription</h1>
+          <p className="text-sm text-muted-foreground">Manage your plan across web, iOS, and Android</p>
         </div>
       </div>
 
@@ -153,32 +153,32 @@ export default function SubscriptionManagementPage() {
             <Crown className="h-5 w-5 text-orange-400" />
           </div>
           <div>
-            <span className="text-sm font-medium text-white">{currentPlan.displayName}</span>
-            <span className="block text-xs text-white/40">
+            <span className="text-sm font-medium text-foreground">{currentPlan.displayName}</span>
+            <span className="block text-xs text-muted-foreground">
               {renewalLabel
                 ? `Renews: ${renewalLabel}`
                 : trialLabel
                   ? `Trial ends: ${trialLabel}`
                   : getProviderLabel(currentProvider)}
             </span>
-            <span className="mt-1 block text-[11px] text-white/30">{getProviderLabel(currentProvider)}</span>
+            <span className="mt-1 block text-[11px] text-foreground/40">{getProviderLabel(currentProvider)}</span>
           </div>
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${currentStatus === "ACTIVE" || currentStatus === "TRIALING" ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border border-white/10 bg-white/5 text-white/50"}`}>
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${currentStatus === "ACTIVE" || currentStatus === "TRIALING" ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400" : "border border-border bg-foreground/5 text-muted-foreground"}`}>
           {currentStatus}
         </span>
       </div>
 
-      <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
+      <div className="rounded-3xl border border-border bg-foreground/5 p-6 text-center backdrop-blur-xl">
         <Crown className="mx-auto h-8 w-8 text-orange-400" />
-        <h2 className="mt-4 text-2xl font-bold text-white">One entitlement, every platform</h2>
-        <p className="mx-auto mt-2 max-w-2xl text-sm text-white/50">
+        <h2 className="mt-4 text-2xl font-bold text-foreground">One entitlement, every platform</h2>
+        <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
           Web billing stays on Stripe. iPhone and Android purchases are validated server-side and synced into the same entitlement record.
         </p>
       </div>
 
       {loading ? (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-white/50">Loading subscription...</div>
+        <div className="rounded-2xl border border-border bg-foreground/5 p-10 text-center text-muted-foreground">Loading subscription...</div>
       ) : (
         <>
           {/* Billing cycle toggle applies to the current paid plan. */}
@@ -186,7 +186,7 @@ export default function SubscriptionManagementPage() {
             <div
               role="tablist"
               aria-label="Billing cycle"
-              className="inline-flex items-center rounded-full border border-white/10 bg-white/5 p-1"
+              className="inline-flex items-center rounded-full border border-border bg-foreground/5 p-1"
             >
               <button
                 role="tab"
@@ -195,7 +195,7 @@ export default function SubscriptionManagementPage() {
                 className={`rounded-full px-5 py-1.5 text-sm font-medium transition ${
                   cycle === "monthly"
                     ? "bg-orange-500 text-white"
-                    : "text-white/50 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Monthly
@@ -207,7 +207,7 @@ export default function SubscriptionManagementPage() {
                 className={`rounded-full px-5 py-1.5 text-sm font-medium transition ${
                   cycle === "yearly"
                     ? "bg-orange-500 text-white"
-                    : "text-white/50 hover:text-white"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 Yearly
@@ -232,7 +232,7 @@ export default function SubscriptionManagementPage() {
               const displayPeriod = cycle === "yearly" ? "/year" : plan.periodLabel;
 
               return (
-                <div key={planKey} className={`relative overflow-hidden rounded-2xl border bg-white/5 backdrop-blur-xl ${isCurrent ? "border-orange-500/40 ring-1 ring-orange-500/20" : "border-white/10"}`}>
+                <div key={planKey} className={`relative overflow-hidden rounded-2xl border bg-foreground/5 backdrop-blur-xl ${isCurrent ? "border-orange-500/40 ring-1 ring-orange-500/20" : "border-border"}`}>
                   {isCurrent ? (
                     <div className="absolute right-3 top-3">
                       <span className="flex items-center gap-1 rounded-full border border-orange-500/30 bg-orange-500/20 px-2 py-0.5 text-[9px] font-medium text-orange-300">
@@ -241,19 +241,19 @@ export default function SubscriptionManagementPage() {
                     </div>
                   ) : null}
                   <div className="p-5 pb-3">
-                    <h3 className="text-base font-semibold text-white">{plan.displayName}</h3>
+                    <h3 className="text-base font-semibold text-foreground">{plan.displayName}</h3>
                     <div className="mt-2">
-                      <span className="text-2xl font-bold text-white">{displayPrice}</span>
-                      <span className="text-sm text-white/40"> {displayPeriod}</span>
+                      <span className="text-2xl font-bold text-foreground">{displayPrice}</span>
+                      <span className="text-sm text-muted-foreground"> {displayPeriod}</span>
                     </div>
                     {cycle === "yearly" && plan.yearlyPriceLabel ? (
-                      <span className="mt-1 block text-[11px] text-white/30">Billed as {plan.yearlyPriceLabel}</span>
+                      <span className="mt-1 block text-[11px] text-foreground/40">Billed as {plan.yearlyPriceLabel}</span>
                     ) : null}
                   </div>
                   <div className="space-y-3 px-5 pb-5">
                     <ul className="space-y-2">
                       {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2 text-xs text-white/60">
+                        <li key={feature} className="flex items-start gap-2 text-xs text-muted-foreground">
                           <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
                           {feature}
                         </li>
@@ -266,12 +266,12 @@ export default function SubscriptionManagementPage() {
                           type="button"
                           onClick={() => void openPortal()}
                           disabled={processing === "MANAGE"}
-                          className="w-full rounded-xl border border-white/10 py-2 text-sm font-medium text-white transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="w-full rounded-xl border border-border py-2 text-sm font-medium text-foreground transition hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {processing === "MANAGE" ? "Opening..." : "Manage Billing"}
                         </button>
                       ) : (
-                        <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-white/10 py-2 text-sm text-white/30">
+                        <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-border py-2 text-sm text-foreground/40">
                           Current Plan
                         </button>
                       )
@@ -290,7 +290,7 @@ export default function SubscriptionManagementPage() {
                           : `Upgrade — ${cycle === "yearly" ? "yearly" : "monthly"}`}
                       </button>
                     ) : (
-                      <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-white/10 py-2 text-sm text-white/30">
+                      <button type="button" disabled className="w-full cursor-not-allowed rounded-xl border border-border py-2 text-sm text-foreground/40">
                         Included by default
                       </button>
                     )}

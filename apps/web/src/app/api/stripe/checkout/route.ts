@@ -4,21 +4,25 @@ import { requireDbUserId } from "@/lib/auth";
 import { ensureSubscriptionDefaults, getStripePriceIdForPlan } from "@/lib/billing";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import {
+  buildStripeIdempotencyKey,
+  requireStripeSecretKeyForMutation,
+} from "@/lib/billing-config";
+import { captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
 
 // POST /api/stripe/checkout — Create a Stripe Checkout session for plan upgrade
 export async function POST(request: NextRequest) {
   try {
-    const stripeSecretKey = await getRuntimeConfigValue("STRIPE_SECRET_KEY");
-    if (!stripeSecretKey) {
-      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
-    }
+    const stripeSecretKey = requireStripeSecretKeyForMutation(
+      await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
+    );
 
     const userId = await requireDbUserId();
 
     // Rate limit: 5 checkout sessions per minute
     const rlKey = getRateLimitKey(request, "stripe:checkout");
-    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60 });
+    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
     if (!rl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
@@ -48,6 +52,8 @@ export async function POST(request: NextRequest) {
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: { userId },
+      }, {
+        idempotencyKey: buildStripeIdempotencyKey(["stripe-customer", userId]),
       });
       stripeCustomerId = customer.id;
       const subscriptionPlatform = ((subscription as any)?.platform as string | undefined) || "web";
@@ -65,7 +71,10 @@ export async function POST(request: NextRequest) {
     const priceId = await getStripePriceIdForPlan(plan, cycle);
 
     if (!priceId) {
-      return NextResponse.json({ error: `Stripe price not configured for ${plan} ${cycle}` }, { status: 503 });
+      return NextResponse.json(
+        { error: `Stripe price not configured for ${plan} ${cycle}` },
+        { status: cycle === "yearly" ? 400 : 503 },
+      );
     }
 
     const appUrl = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -81,7 +90,16 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.name === "BILLING_CONFIG_ERROR") {
+      // Production-mode guard: a non-`sk_live_` key (or missing key) at
+      // checkout time means real charges will never settle. Page ops via
+      // Sentry so the misconfiguration is caught before it reaches users.
+      const reason = error?.message || "Stripe not configured";
+      console.error("[CHECKOUT] Stripe config rejected:", reason);
+      captureMessage(`[CHECKOUT] Stripe config rejected: ${reason}`, "error");
+      return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
+    }
     console.error("Stripe checkout error:", error);
     return NextResponse.json({ error: "Failed to create checkout session" }, { status: 500 });
   }

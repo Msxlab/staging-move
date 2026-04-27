@@ -151,9 +151,15 @@ const STRICT_NO_SCRIPT_CSP = [
 function hardenEarlyResponse(response: NextResponse): NextResponse {
   response.headers.set("Content-Security-Policy", STRICT_NO_SCRIPT_CSP);
   response.headers.set("Cache-Control", "no-store");
-  response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("Referrer-Policy", "no-referrer");
+  return applySecurityHeaders(response);
+}
+
+function applySecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
   return response;
 }
 
@@ -170,7 +176,7 @@ function nextWithCsp(request: NextRequest): NextResponse {
   });
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("x-nonce", nonce);
-  return response;
+  return applySecurityHeaders(response);
 }
 
 // Request body size limit (5MB for backup imports, 1MB for regular JSON)
@@ -210,7 +216,8 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   if (!isMutation) return null;
 
   const contentType = req.headers.get("content-type") || "";
-  if (!contentType.includes("application/json") && !contentType.includes("multipart/form-data")) {
+  const isLogout = pathname === "/api/auth/logout";
+  if (!contentType.includes("application/json") && !contentType.includes("multipart/form-data") && !isLogout) {
     return NextResponse.json(
       { error: "Invalid Content-Type. API mutations require application/json or multipart/form-data." },
       { status: 403 }
@@ -218,6 +225,23 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   }
 
   const secFetchSite = req.headers.get("sec-fetch-site");
+  const requestedWith = req.headers.get("x-requested-with");
+  if (isLogout && secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    return NextResponse.json(
+      { error: "Invalid Origin. API mutations must originate from the same site." },
+      { status: 403 }
+    );
+  }
+  if (isLogout && requestedWith !== "locateflow" && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    const origin = req.headers.get("origin");
+    const referer = req.headers.get("referer");
+    if (!origin && !referer) {
+      return NextResponse.json(
+        { error: "Invalid Origin. API mutations must originate from the same site." },
+        { status: 403 }
+      );
+    }
+  }
   if (secFetchSite === "same-origin" || secFetchSite === "none") {
     return null;
   }
@@ -323,6 +347,10 @@ export async function middleware(request: NextRequest) {
   const csrfBlocked = applyCsrfCheck(request);
   if (csrfBlocked) return hardenEarlyResponse(csrfBlocked);
 
+  if (pathname === "/api/auth/logout") {
+    return nextWithCsp(request);
+  }
+
   // Check session cookie
   const token = request.cookies.get("admin_session")?.value;
   const isApiRoute = pathname.startsWith("/api/");
@@ -338,7 +366,9 @@ export async function middleware(request: NextRequest) {
   try {
     // JWT verification only — no DB calls in Edge Runtime
     // isActive check is enforced by requireAdmin() in every API route
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      algorithms: ["HS256"],
+    });
 
     // ── MFA setup gate ────────────────────────────────────────
     // Roles that handle the most sensitive operations must have MFA

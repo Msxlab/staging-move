@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTheme } from "./theme-provider";
 
 /**
@@ -20,6 +21,7 @@ export function ThemeToggle({
   variant?: "inline" | "icon";
 }) {
   const { preference, setTheme } = useTheme();
+  const t = useTranslations("theme");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -36,7 +38,7 @@ export function ThemeToggle({
     return (
       <button
         type="button"
-        aria-label="Theme preference"
+        aria-label={t("toggle")}
         className={
           variant === "icon"
             ? "inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground"
@@ -44,7 +46,7 @@ export function ThemeToggle({
         }
       >
         <Sun className="h-4 w-4" />
-        {variant === "inline" && <span>Theme</span>}
+        {variant === "inline" && <span>{t("toggle")}</span>}
       </button>
     );
   }
@@ -60,17 +62,17 @@ export function ThemeToggle({
 
   const label =
     preference === "system"
-      ? "System"
+      ? t("system")
       : preference === "light"
-      ? "Light"
-      : "Dark";
+      ? t("light")
+      : t("dark");
 
   const aria =
     preference === "system"
-      ? "Theme: follows system. Click to use Light mode."
+      ? t("system_full")
       : preference === "light"
-      ? "Theme: Light. Click to use Dark mode."
-      : "Theme: Dark. Click to follow system.";
+      ? t("light_full")
+      : t("dark_full");
 
   return (
     <button

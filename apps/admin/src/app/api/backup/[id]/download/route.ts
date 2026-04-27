@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { downloadBackupArchive, parseBackupRecordMetadata } from "@/lib/backup-storage";
 
-export async function GET(
-  _request: NextRequest,
+export async function GET() {
+  return NextResponse.json(
+    { error: "Password confirmation is required before downloading a backup archive.", requiresPassword: true },
+    { status: 403 },
+  );
+}
+
+export async function POST(
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+    const session = await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const confirm = await requirePasswordConfirm(
+      session,
+      typeof body?.confirmPassword === "string" ? body.confirmPassword : undefined,
+    );
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
 
     const backup = await prisma.backupRecord.findUnique({ where: { id } });
     if (!backup) {
@@ -23,6 +39,25 @@ export async function GET(
 
     const archive = await downloadBackupArchive(metadata.offsite);
     const fileName = backup.fileName || `backup-${backup.id}.json`;
+    const fileSize = Buffer.byteLength(archive.content, "utf8");
+    const contentHash = createHash("sha256").update(archive.content).digest("hex");
+
+    await prisma.adminAuditLog.create({
+      data: {
+        adminUserId: session.adminId,
+        action: "BACKUP_DOWNLOAD",
+        entityType: "BackupRecord",
+        entityId: backup.id,
+        changes: JSON.stringify({
+          fileName,
+          fileSize,
+          contentHash,
+          offsiteStatus: metadata.offsite.status,
+          userAgent: request.headers.get("user-agent") || "unknown",
+        }),
+        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      },
+    });
 
     return new NextResponse(archive.content, {
       status: 200,

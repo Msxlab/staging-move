@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { checkIPAccess } from "@/lib/ip-rules";
+import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
 
 // ── Public routes (no auth required) ───────────────────────────
 const PUBLIC_PATHS = [
@@ -37,13 +38,17 @@ const PUBLIC_API_PREFIXES = [
 ];
 const PUBLIC_API_EXACT = [
   "/api/auth/login",
+  "/api/auth/logout",
   "/api/auth/register",
+  "/api/auth/me",
   "/api/auth/verify-email",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
   // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated
-  // session cookie enters the browser. The token in the query string is
-  // HMAC-signed + DB-validated inside the route itself, so auth here.
+  // session cookie enters the browser. The route validates a short-lived
+  // HMAC-signed token delivered by POST body, not by URL query string.
   "/api/auth/impersonate-handoff",
 ];
 const PUBLIC_API_GET = ["/api/providers"];
@@ -114,9 +119,11 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   if (!isMutation) return null;
 
   const contentType = req.headers.get("content-type") || "";
+  const isLogout = pathname === "/api/auth/logout";
   if (
     !contentType.includes("application/json") &&
-    !contentType.includes("multipart/form-data")
+    !contentType.includes("multipart/form-data") &&
+    !isLogout
   ) {
     return NextResponse.json(
       {
@@ -128,6 +135,29 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   }
 
   const secFetchSite = req.headers.get("sec-fetch-site");
+  const requestedWith = req.headers.get("x-requested-with");
+  if (isLogout && secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    return NextResponse.json(
+      {
+        error:
+          "Invalid Origin. API mutations must originate from the same site.",
+      },
+      { status: 403 },
+    );
+  }
+  if (isLogout && requestedWith !== "locateflow" && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    const origin = req.headers.get("origin");
+    const referer = req.headers.get("referer");
+    if (!origin && !referer) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid Origin. API mutations must originate from the same site.",
+        },
+        { status: 403 },
+      );
+    }
+  }
   if (secFetchSite === "same-origin" || secFetchSite === "none") {
     return null;
   }
@@ -176,10 +206,19 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
   if (pathname.startsWith("/api/internal/")) return null;
 
   const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
-  const key = getRateLimitKey(req, isWrite ? "write" : "read");
+  const isOptionalAuthMe =
+    req.method === "GET" &&
+    pathname === "/api/auth/me" &&
+    ["1", "true"].includes(req.nextUrl.searchParams.get("optional") || "");
+  const key = getRateLimitKey(
+    req,
+    isOptionalAuthMe ? "auth-me-optional" : isWrite ? "write" : "read",
+  );
   const config = isWrite
     ? { limit: 30, windowSeconds: 60 }
-    : { limit: 120, windowSeconds: 60 };
+    : isOptionalAuthMe
+      ? { limit: 200, windowSeconds: 60, failClosed: false }
+      : { limit: 120, windowSeconds: 60 };
 
   const result = await rateLimit(key, config);
   if (!result.success) {
@@ -201,12 +240,6 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
 }
 
 // ── Session check ──────────────────────────────────────────────
-const userJwtSecret = process.env.USER_JWT_SECRET;
-if (!userJwtSecret || userJwtSecret.length < 32) {
-  throw new Error("USER_JWT_SECRET must be set and at least 32 characters");
-}
-const JWT_SECRET = new TextEncoder().encode(userJwtSecret);
-
 function readBearerToken(request: NextRequest): string | null {
   const auth =
     request.headers.get("authorization") ||
@@ -224,8 +257,10 @@ async function hasValidSession(request: NextRequest): Promise<boolean> {
   const token =
     request.cookies.get("user_session")?.value || readBearerToken(request);
   if (!token) return false;
+  const jwtSecret = tryGetUserJwtSecretKey();
+  if (!jwtSecret) return false;
   try {
-    await jwtVerify(token, JWT_SECRET);
+    await jwtVerify(token, jwtSecret, { algorithms: ["HS256"] });
     return true;
   } catch {
     return false;
@@ -289,6 +324,36 @@ function applyStagingNoIndex(request: NextRequest, response: NextResponse): Next
   if (shouldNoIndex) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
+  return applySecurityHeaders(request, response);
+}
+
+function nextWithCurrentPath(request: NextRequest): NextResponse {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-locateflow-pathname", request.nextUrl.pathname);
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+}
+
+function applySecurityHeaders(request: NextRequest, response: NextResponse): NextResponse {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  const forwardedProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim().toLowerCase();
+  const isHttps =
+    request.nextUrl.protocol === "https:" ||
+    forwardedProto === "https" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    process.env.NODE_ENV === "production";
+
+  if (isHttps) {
+    response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  }
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
   return response;
 }
 
@@ -328,22 +393,22 @@ export default async function middleware(request: NextRequest) {
 
   // Skip auth for public endpoints.
   if (pathname.startsWith("/api/")) {
-    if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, NextResponse.next());
+    if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, nextWithCurrentPath(request));
     if (!(await hasValidSession(request))) {
       return applyStagingNoIndex(
         request,
         NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
       );
     }
-    return applyStagingNoIndex(request, NextResponse.next());
+    return applyStagingNoIndex(request, nextWithCurrentPath(request));
   }
 
   // Page routes.
   if (isPublicPath(pathname)) {
-    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
+    return applyStagingNoIndex(request, applyLocaleCookie(request, nextWithCurrentPath(request)));
   }
   if (await hasValidSession(request)) {
-    return applyStagingNoIndex(request, applyLocaleCookie(request, NextResponse.next()));
+    return applyStagingNoIndex(request, applyLocaleCookie(request, nextWithCurrentPath(request)));
   }
 
   const signInUrl = new URL("/sign-in", request.url);

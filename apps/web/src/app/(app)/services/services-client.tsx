@@ -185,19 +185,19 @@ export function ServicesClient({
             <div className="flex items-center gap-3">
               <span className="text-xl">{currentPhaseInfo?.icon || ""}</span>
               <div>
-                <h2 className="text-sm font-bold text-white">{t("checklist.heading")}</h2>
-                <p className="text-xs text-white/40">
+                <h2 className="text-sm font-bold text-foreground">{t("checklist.heading")}</h2>
+                <p className="text-xs text-muted-foreground">
                   {checklist.fromState} → {checklist.toState} · Phase {checklist.currentPhase + 1}: {currentPhaseInfo?.label || ""}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-lg font-bold text-white">{checklist.progressPercent}%</p>
-              <p className="text-[10px] text-white/30">{t("checklist.progressDone", { percent: checklist.progressPercent })}</p>
+              <p className="text-lg font-bold text-foreground">{checklist.progressPercent}%</p>
+              <p className="text-[10px] text-foreground/40">{t("checklist.progressDone", { percent: checklist.progressPercent })}</p>
             </div>
           </div>
 
-          <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+          <div className="h-2 rounded-full bg-foreground/5 overflow-hidden">
             <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-500" style={{ width: `${checklist.progressPercent}%` }} />
           </div>
 
@@ -230,16 +230,16 @@ export function ServicesClient({
           )}
 
           {checklist.nextAction && !checklist.nextAction.isCompleted && (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-foreground/[0.03] border border-border">
               <span className="text-base">{checklist.nextAction.icon}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">{checklist.nextAction.title}</p>
+                <p className="text-sm font-medium text-foreground truncate">{checklist.nextAction.title}</p>
                 {checklist.nextAction.stateNote && (
                   <p className="text-[11px] text-amber-300/70 truncate">{checklist.nextAction.stateNote}</p>
                 )}
-                <p className="text-[11px] text-white/35 truncate">{checklist.nextAction.description}</p>
+                <p className="text-[11px] text-foreground/35 truncate">{checklist.nextAction.description}</p>
                 {checklist.nextAction.estimatedMinutes && (
-                  <span className="text-[10px] text-white/25">~{checklist.nextAction.estimatedMinutes} min</span>
+                  <span className="text-[10px] text-foreground/35">~{checklist.nextAction.estimatedMinutes} min</span>
                 )}
               </div>
               <Link href="/services/new">
@@ -254,9 +254,12 @@ export function ServicesClient({
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{t("title")}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="mt-1 max-w-2xl text-sm text-foreground/45">
+            Services are the actual accounts you track at an address. They can link to listed providers or private local/custom providers.
+          </p>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-white/40 text-sm">
+            <span className="text-muted-foreground text-sm">
               {filtered.length}
             </span>
             {totalMonthlyCost > 0 && (
@@ -275,12 +278,12 @@ export function ServicesClient({
 
       {addresses.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-xs font-medium text-white/30 uppercase tracking-wider">{tCommon("filter")}</h3>
+          <h3 className="text-xs font-medium text-foreground/40 uppercase tracking-wider">{tCommon("filter")}</h3>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setAddressFilter("")}
               className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                !addressFilter ? "bg-orange-500 text-white shadow-sm" : "bg-white/5 text-white/40 border border-white/[0.06] hover:bg-white/10"
+                !addressFilter ? "bg-orange-500 text-white shadow-sm" : "bg-foreground/5 text-muted-foreground border border-foreground/[0.06] hover:bg-foreground/10"
               }`}
             >{tCommon("all")}</button>
             {addresses.map((addr) => {
@@ -292,13 +295,13 @@ export function ServicesClient({
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     isActive
                       ? "bg-orange-500/10 text-orange-300 border border-orange-500/30 ring-1 ring-orange-500/20"
-                      : "bg-white/[0.03] text-white/50 border border-white/[0.06] hover:bg-white/[0.06]"
+                      : "bg-foreground/[0.03] text-muted-foreground border border-foreground/[0.06] hover:bg-foreground/[0.06]"
                   }`}
                 >
-                  <TypeIcon className={`h-3.5 w-3.5 ${isActive ? "text-orange-400" : "text-white/25"}`} />
+                  <TypeIcon className={`h-3.5 w-3.5 ${isActive ? "text-orange-400" : "text-foreground/35"}`} />
                   <span>{addr.nickname || `${addr.city}, ${addr.state}`}</span>
                   {addr.isPrimary && <Star className="h-3 w-3 text-amber-400 fill-amber-400" />}
-                  <span className={`px-1.5 py-0 rounded-full text-[10px] ${isActive ? "bg-orange-500/20 text-orange-300" : "bg-white/5 text-white/25"}`}>{svcCount}</span>
+                  <span className={`px-1.5 py-0 rounded-full text-[10px] ${isActive ? "bg-orange-500/20 text-orange-300" : "bg-foreground/5 text-foreground/35"}`}>{svcCount}</span>
                 </button>
               );
             })}
@@ -309,18 +312,18 @@ export function ServicesClient({
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
             <input
               aria-label={tCommon("search")}
               placeholder={tCommon("search")}
-              className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              className="w-full rounded-xl border border-border bg-foreground/5 pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <select
             aria-label={t("sortBy")}
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white/60 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition min-w-[140px]"
+            className="rounded-xl border border-border bg-foreground/5 px-3 py-2.5 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition min-w-[140px]"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
@@ -334,7 +337,7 @@ export function ServicesClient({
             onClick={() => setShowInactive(!showInactive)}
             className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-medium transition whitespace-nowrap ${
               showInactive
-                ? "border-white/10 text-white/40 hover:bg-white/5"
+                ? "border-border text-muted-foreground hover:bg-foreground/5"
                 : "border-orange-500/30 bg-orange-500/10 text-orange-400"
             }`}
           >
@@ -352,12 +355,12 @@ export function ServicesClient({
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   categoryFilter === g.value
                     ? "bg-orange-500 text-white shadow-sm"
-                    : "bg-white/5 text-white/40 hover:bg-white/10"
+                    : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                 }`}
               >
                 <span>{g.icon}</span>
                 {g.label}
-                <span className={`px-1.5 py-0 rounded-full text-[10px] ${categoryFilter === g.value ? "bg-orange-500/20 text-orange-300" : "bg-white/5 text-white/25"}`}>{count}</span>
+                <span className={`px-1.5 py-0 rounded-full text-[10px] ${categoryFilter === g.value ? "bg-orange-500/20 text-orange-300" : "bg-foreground/5 text-foreground/35"}`}>{count}</span>
               </button>
             );
           })}
@@ -380,27 +383,27 @@ export function ServicesClient({
               <div key={prefix} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
                   <span className="text-base">{groupIcons[prefix] || ""}</span>
-                  <h2 className="text-xs font-semibold text-white/40 uppercase tracking-wide">{groupLabels[prefix] || prefix}</h2>
-                  <span className="text-[10px] text-white/20">{items.length}</span>
+                  <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h2>
+                  <span className="text-[10px] text-foreground/30">{items.length}</span>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {items.map((service) => (
                     <Link key={service.id} href={`/services/${service.id}`}>
-                      <div className="group rounded-xl border border-white/5 bg-white/[0.02] p-4 hover:bg-white/[0.05] hover:border-white/10 transition-all cursor-pointer">
+                      <div className="group rounded-xl border border-border bg-foreground/[0.02] p-4 hover:bg-foreground/[0.05] hover:border-border transition-all cursor-pointer">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-lg shrink-0">
+                            <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-lg shrink-0">
                               {getMergedDisplayCategoryIcon(service.category)}
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <h3 className="font-medium text-sm text-white truncate group-hover:text-orange-300 transition">{service.providerName}</h3>
-                                <ChevronRight className="h-3.5 w-3.5 text-white/20 opacity-0 group-hover:opacity-100 transition shrink-0" />
+                                <h3 className="font-medium text-sm text-foreground truncate group-hover:text-orange-300 transition">{service.providerName}</h3>
+                                <ChevronRight className="h-3.5 w-3.5 text-foreground/30 opacity-0 group-hover:opacity-100 transition shrink-0" />
                               </div>
-                              <p className="text-[11px] text-white/35 mt-0.5">
+                              <p className="text-[11px] text-foreground/35 mt-0.5">
                                 {getMergedDisplayCategoryLabel(service.category)}
                               </p>
-                              <div className="flex items-center gap-3 mt-2 text-xs text-white/30">
+                              <div className="flex items-center gap-3 mt-2 text-xs text-foreground/40">
                                 {service.address && (
                                   <span className="flex items-center gap-1">
                                     <MapPin className="h-2.5 w-2.5" />

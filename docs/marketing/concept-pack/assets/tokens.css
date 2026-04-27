@@ -1,0 +1,235 @@
+/* =========================================================================
+   LocateFlow — Colors & Type foundations
+   Source: apps/web/src/styles/globals.css, apps/mobile/src/lib/theme.ts,
+           apps/web/tailwind.config.ts, apps/mobile/tailwind.config.ts
+   Dark-first: both web and mobile default to a near-black background with
+   orange as the single brand accent. Light mode is a shadcn-style override.
+   ========================================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap");
+
+:root,
+.dark {
+  /* ── Brand ── */
+  --brand-orange: #f97316;          /* primary — orange-500 */
+  --brand-orange-light: #fb923c;    /* orange-400 */
+  --brand-orange-dark: #ea580c;     /* orange-600 */
+  --brand-amber: #fbbf24;           /* secondary/accent — amber-400 */
+
+  /* Orange scale (mobile uses these) */
+  --orange-50:  #fff7ed;
+  --orange-100: #ffedd5;
+  --orange-200: #fed7aa;
+  --orange-300: #fdba74;
+  --orange-400: #fb923c;
+  --orange-500: #f97316;
+  --orange-600: #ea580c;
+  --orange-700: #c2410c;
+  --orange-800: #9a3412;
+  --orange-900: #7c2d12;
+
+  /* ── Surface / background (dark default) ── */
+  --bg:            #0a0a0f;  /* app background (mobile) / hsl(222 47% 6%) web */
+  --surface:       #12121a;
+  --surface-2:     #1a1a25;  /* card */
+  --surface-3:     #22222f;  /* card hover */
+  --elevated:      #252530;
+
+  /* ── Foreground / text ── */
+  --fg:            #ffffff;
+  --fg-1:          rgba(255, 255, 255, 1);    /* primary text */
+  --fg-2:          rgba(255, 255, 255, 0.7);  /* secondary */
+  --fg-3:          rgba(255, 255, 255, 0.45); /* tertiary */
+  --fg-muted:      rgba(255, 255, 255, 0.2);
+
+  /* ── Borders ── */
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-focus:  rgba(249, 115, 22, 0.5);
+
+  /* ── Glass (used on landing, modals, elevated chrome) ── */
+  --glass-bg:      rgba(255, 255, 255, 0.05);
+  --glass-border:  rgba(255, 255, 255, 0.10);
+  --glass-hover:   rgba(255, 255, 255, 0.10);
+
+  /* ── Semantic ── */
+  --success:       #10b981;
+  --success-light: #d1fae5;
+  --warning:       #f59e0b;
+  --warning-light: #fef3c7;
+  --danger:        #ef4444;
+  --danger-light:  #fee2e2;
+  --info:          #3b82f6;
+  --info-light:    #dbeafe;
+
+  /* Tonal pairs used for stat cards / category chips (dark) */
+  --tone-orange-bg:  rgba(249, 115, 22, 0.10);
+  --tone-orange-br:  rgba(249, 115, 22, 0.20);
+  --tone-orange-fg:  #fb923c;
+  --tone-emerald-bg: rgba(16, 185, 129, 0.10);
+  --tone-emerald-br: rgba(16, 185, 129, 0.20);
+  --tone-emerald-fg: #6ee7b7;
+  --tone-amber-bg:   rgba(245, 158, 11, 0.10);
+  --tone-amber-br:   rgba(245, 158, 11, 0.20);
+  --tone-amber-fg:   #fcd34d;
+  --tone-rose-bg:    rgba(244, 63, 94, 0.10);
+  --tone-rose-br:    rgba(244, 63, 94, 0.20);
+  --tone-rose-fg:    #fda4af;
+  --tone-sky-bg:     rgba(14, 165, 233, 0.10);
+  --tone-sky-br:     rgba(14, 165, 233, 0.20);
+  --tone-sky-fg:     #7dd3fc;
+  --tone-cyan-bg:    rgba(6, 182, 212, 0.10);
+  --tone-cyan-br:    rgba(6, 182, 212, 0.20);
+  --tone-cyan-fg:    #67e8f9;
+
+  /* ── Radii (mobile theme + shadcn --radius 0.75rem) ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+  --radius: 12px;                 /* default shadcn --radius */
+
+  /* ── Spacing ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 40px;
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 10px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 12px rgba(249, 115, 22, 0.30);
+
+  /* ── Type ── */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 14px;
+  --fs-md: 15px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 22px;
+  --fs-3xl: 28px;
+  --fs-display: 40px;
+  --fs-display-lg: 60px;   /* hero md:text-6xl */
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-black: 800;
+
+  --lh-tight: 1.1;
+  --lh-snug: 1.25;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.65;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+}
+
+/* Light mode — mirrors apps/web/src/styles/globals.css */
+.light {
+  --bg:            #ffffff;
+  --surface:       #f8fafc;
+  --surface-2:     #ffffff;
+  --surface-3:     #f1f5f9;
+  --elevated:      #f8fafc;
+
+  --fg-1:          rgba(15, 23, 42, 1);
+  --fg-2:          rgba(15, 23, 42, 0.75);
+  --fg-3:          rgba(15, 23, 42, 0.5);
+  --fg-muted:      rgba(15, 23, 42, 0.3);
+
+  --border:        rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.12);
+
+  --glass-bg:      rgba(255, 255, 255, 0.7);
+  --glass-border:  rgba(0, 0, 0, 0.08);
+  --glass-hover:   rgba(0, 0, 0, 0.04);
+
+  --tone-orange-fg:  #c2410c;
+  --tone-emerald-fg: #047857;
+  --tone-amber-fg:   #b45309;
+  --tone-rose-fg:    #be123c;
+  --tone-sky-fg:     #0369a1;
+  --tone-cyan-fg:    #0e7490;
+}
+
+/* =========================================================================
+   Semantic element defaults — use these everywhere.
+   ========================================================================= */
+html, body {
+  background: var(--bg);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, .h1 {
+  font-size: clamp(36px, 6vw, var(--fs-display-lg));
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+}
+h2, .h2 {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-snug);
+}
+h3, .h3 {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+}
+h4, .h4 {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+p, .body {
+  font-size: var(--fs-base);
+  color: var(--fg-1);
+  line-height: var(--lh-normal);
+}
+.body-lg {
+  font-size: var(--fs-lg);
+  color: var(--fg-2);
+  line-height: var(--lh-relaxed);
+}
+.caption {
+  font-size: var(--fs-sm);
+  color: var(--fg-3);
+}
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* Stat-number style seen repeatedly in dashboards */
+.stat-number {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-black);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Glass surface helper */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}

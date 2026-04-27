@@ -122,6 +122,7 @@ export async function GET(req: Request) {
             upcomingBills,
             totalExpenses,
             newServices: newServicesByUser.get(user.id) || 0,
+            userId: user.id,
             dedupeKey: `cron:weekly-digest:${user.id}:${weekStart}:${weekEnd}`,
             metadata: { userId: user.id },
           });

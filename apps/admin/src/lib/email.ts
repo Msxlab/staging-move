@@ -13,27 +13,65 @@ function getResend(apiKey: string): Resend {
 
 const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
 const DEFAULT_APP_URL = "http://localhost:3000";
+const DEFAULT_REPLY_TO = "support@locateflow.com";
+
+function isProductionLikeEmailRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    Boolean(process.env.DIGITALOCEAN_APP_ID)
+  );
+}
 
 async function resolveEmailConfig() {
   const values = await getAdminRuntimeConfigValues([
     "RESEND_API_KEY",
     "EMAIL_FROM",
     "NEXT_PUBLIC_APP_URL",
+    "EMAIL_REPLY_TO",
+    "SUPPORT_EMAIL",
   ]);
 
   return {
     resendApiKey: values.RESEND_API_KEY,
     fromEmail: values.EMAIL_FROM || DEFAULT_FROM_EMAIL,
-    appUrl: values.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL,
+    appUrl: values.NEXT_PUBLIC_APP_URL || (isProductionLikeEmailRuntime() ? "https://locateflow.com" : DEFAULT_APP_URL),
+    replyTo: values.EMAIL_REPLY_TO || values.SUPPORT_EMAIL || DEFAULT_REPLY_TO,
+    configured: {
+      resendApiKey: Boolean(values.RESEND_API_KEY),
+      fromEmail: Boolean(values.EMAIL_FROM),
+      appUrl: Boolean(values.NEXT_PUBLIC_APP_URL),
+      replyTo: Boolean(values.EMAIL_REPLY_TO || values.SUPPORT_EMAIL),
+    },
   };
+}
+
+function validateEmailConfig(config: Awaited<ReturnType<typeof resolveEmailConfig>>): string | null {
+  if (!isProductionLikeEmailRuntime()) return null;
+  if (!config.configured.resendApiKey) return "RESEND_API_KEY missing";
+  if (!/^re_[A-Za-z0-9_-]+$/.test(config.resendApiKey || "")) return "RESEND_API_KEY invalid";
+  if (!config.configured.fromEmail) return "EMAIL_FROM missing";
+  if (!config.configured.appUrl) return "NEXT_PUBLIC_APP_URL missing";
+  if (!config.configured.replyTo) return "SUPPORT_EMAIL or EMAIL_REPLY_TO missing";
+  return null;
 }
 
 export async function sendEmail(opts: {
   to: string;
   subject: string;
   html: string;
+  text?: string;
 }): Promise<boolean> {
-  const { resendApiKey, fromEmail } = await resolveEmailConfig();
+  const config = await resolveEmailConfig();
+  const configError = validateEmailConfig(config);
+  if (configError) {
+    console.error("[EMAIL] Configuration error:", { message: configError });
+    return false;
+  }
+  const { resendApiKey, fromEmail, replyTo } = config;
 
   if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${opts.to} | Subject: ${opts.subject}`);
@@ -45,16 +83,50 @@ export async function sendEmail(opts: {
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
+      text: opts.text || htmlToPlainText(opts.html),
+      replyTo,
     });
     if (error) {
-      console.error("[EMAIL] Send failed:", error);
+      console.error("[EMAIL] Send failed:", { message: safeEmailError(error) });
       return false;
     }
     return true;
   } catch (err) {
-    console.error("[EMAIL] Error:", err);
+    console.error("[EMAIL] Error:", { message: safeEmailError(err) });
     return false;
   }
+}
+
+function safeEmailError(error: unknown): string {
+  const raw =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error && "message" in error
+        ? String((error as { message?: unknown }).message || "SEND_FAILED")
+        : String(error || "SEND_FAILED");
+  return raw
+    .replace(/\bre_[A-Za-z0-9_-]{8,}\b/g, "[redacted]")
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[redacted]")
+    .slice(0, 500);
+}
+
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_m, href: string, label: string) => `${label.replace(/<[^>]*>/g, "").trim()}: ${href}`)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h1|h2|h3|tr|table|li)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function esc(str: string): string {

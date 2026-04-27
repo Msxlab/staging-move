@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import {
@@ -34,7 +35,10 @@ export async function GET(request: NextRequest) {
       prisma.profile.findUnique({ where: { userId } }).catch(() => null),
       prisma.address.findMany({ where: { userId } }),
       prisma.service.findMany({ where: { userId, isActive: true }, select: { providerName: true, category: true, providerId: true } }),
-      prisma.movingPlan.findFirst({ where: { userId, status: { not: "CANCELED" } }, orderBy: { moveDate: "asc" } }),
+      prisma.movingPlan.findFirst({
+        where: { userId, status: { notIn: [...CANCELED_MOVING_PLAN_STATUSES] } },
+        orderBy: { moveDate: "asc" },
+      }),
     ]);
 
     const selectedAddress = addresses.find((a) => a.id === requestedAddressId);

@@ -4,10 +4,17 @@ import { requireDbUserId } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { encrypt, decrypt } from "@/lib/shared-encryption";
 import { canCreateService } from "@/lib/plan-limits";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
-import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
+import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
+import {
+  decryptServiceSensitiveFields,
+  encryptServiceSensitiveFields,
+} from "@/lib/service-sensitive-fields";
+import {
+  duplicateServiceError,
+  findDuplicateTrackedService,
+} from "@/lib/service-duplicate-guard";
 
 // GET /api/services
 export async function GET(request: NextRequest) {
@@ -42,16 +49,13 @@ export async function GET(request: NextRequest) {
     ]);
 
     // Decrypt sensitive fields for response
-    const decryptedServices = services.map((s: any) => ({
-      ...s,
-      accountNumber: s.accountNumber ? decrypt(s.accountNumber) : s.accountNumber,
-      username: s.username ? decrypt(s.username) : s.username,
-      phone: s.phone ? decrypt(s.phone) : s.phone,
-      notes: s.notes ? decrypt(s.notes) : s.notes,
-    }));
+    const decryptedServices = services.map((s: any) => decryptServiceSensitiveFields(s));
 
     return NextResponse.json({ services: decryptedServices, ...buildPaginatedResponse(decryptedServices, total, pagination) });
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Failed to fetch services:", error);
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 });
   }
@@ -64,19 +68,32 @@ export async function POST(request: NextRequest) {
 
     // Rate limit: 30 writes per minute
     const rlKey = getRateLimitKey(request, "svc:create");
-    const rl = await rateLimit(rlKey, { limit: 30, windowSeconds: 60 });
-    if (!rl.success) {
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(rlKey, { limit: 30, windowSeconds: 60 }),
+      rateLimit(`svc:create:user:${userId}`, { limit: 30, windowSeconds: 60 }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
     // Plan limit check
     const limitCheck = await canCreateService(userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json({ error: limitCheck.reason }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: limitCheck.reason,
+          code: limitCheck.code,
+          upgradeRequired: limitCheck.upgradeRequired,
+          current: limitCheck.current,
+          limit: limitCheck.limit,
+        },
+        { status: 403 },
+      );
     }
 
     const body = await request.json();
     const validated = serviceSchema.parse(body);
+    const normalizedCategory = validated.category.trim().toUpperCase();
 
     if (validated.providerId && validated.customProviderId) {
       return NextResponse.json({ error: "Choose either a listed provider or a custom provider, not both" }, { status: 400 });
@@ -89,11 +106,14 @@ export async function POST(request: NextRequest) {
     if (address.userId !== userId) {
       return NextResponse.json({ error: "You don't have permission to add services to this address" }, { status: 403 });
     }
+    if (address.deletedAt) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
 
     // Validate providerId if supplied
     if (validated.providerId) {
       const providerExists = await prisma.serviceProvider.findUnique({ where: { id: validated.providerId } });
-      if (!providerExists) {
+      if (!providerExists || providerExists.deletedAt) {
         return NextResponse.json({ error: "Provider not found" }, { status: 404 });
       }
     }
@@ -107,14 +127,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const duplicate = await findDuplicateTrackedService(prisma, {
+      userId,
+      addressId: validated.addressId,
+      category: normalizedCategory,
+      providerName: validated.providerName,
+      providerId: validated.providerId || null,
+      customProviderId: validated.customProviderId || null,
+    });
+    if (duplicate) {
+      return NextResponse.json(duplicateServiceError(duplicate), { status: 409 });
+    }
+
     // Encrypt sensitive fields before storage
-    const encryptedData = {
+    const encryptedData = encryptServiceSensitiveFields({
       ...validated,
-      accountNumber: validated.accountNumber ? encrypt(validated.accountNumber) : validated.accountNumber,
-      username: validated.username ? encrypt(validated.username) : validated.username,
-      phone: validated.phone ? encrypt(validated.phone) : validated.phone,
-      notes: validated.notes ? encrypt(validated.notes) : validated.notes,
-    };
+      category: normalizedCategory,
+    });
 
     const service = await prisma.service.create({
       data: {
@@ -133,7 +162,7 @@ export async function POST(request: NextRequest) {
       entityId: service.id,
       changes: {
         provider: validated.providerName,
-        category: validated.category,
+        category: normalizedCategory,
         providerId: validated.providerId || null,
         customProviderId: validated.customProviderId || null,
       },
@@ -152,9 +181,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const moveTaskSync = await syncMoveTasksForAddress(userId, validated.addressId);
+    const moveTaskSync = await safeSyncMoveTasksForAddress(userId, validated.addressId);
 
-    return NextResponse.json({ service, moveTaskSync }, { status: 201 });
+    return NextResponse.json({ service: decryptServiceSensitiveFields(service as any), moveTaskSync }, { status: 201 });
   } catch (error: any) {
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });

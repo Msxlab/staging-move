@@ -3,9 +3,14 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { movingPlanSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
-import { canCreateAddress, canCreateMovingPlan } from "@/lib/plan-limits";
+import { canCreateMovingDestinationAddress, canCreateMovingPlan } from "@/lib/plan-limits";
 import { encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
+import { normalizeMovingPlanStatus } from "@locateflow/shared";
+import {
+  normalizeMovingState,
+  validateMovingAddressStates,
+} from "@/lib/moving-address-validation";
 
 function normalizeAddressValue(value?: string | null) {
   return (value || "").trim().toUpperCase();
@@ -33,7 +38,9 @@ export async function GET() {
       },
       orderBy: { moveDate: "desc" },
     });
-    return NextResponse.json({ plans });
+    return NextResponse.json({
+      plans: plans.map((plan) => ({ ...plan, status: normalizeMovingPlanStatus(plan.status) })),
+    });
   } catch (error) {
     console.error("Failed to fetch moving plans:", error);
     return NextResponse.json({ error: "Failed to fetch moving plans" }, { status: 500 });
@@ -47,8 +54,11 @@ export async function POST(request: NextRequest) {
 
     // Rate limit: 10 plans per minute
     const rlKey = getRateLimitKey(request, "moving:create");
-    const rl = await rateLimit(rlKey, { limit: 10, windowSeconds: 60 });
-    if (!rl.success) {
+    const [ipRl, userRl] = await Promise.all([
+      rateLimit(rlKey, { limit: 10, windowSeconds: 60 }),
+      rateLimit(`moving:create:user:${userId}`, { limit: 10, windowSeconds: 60 }),
+    ]);
+    if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
@@ -59,12 +69,18 @@ export async function POST(request: NextRequest) {
     // Plan limit check
     const limitCheck = await canCreateMovingPlan(userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json({ error: limitCheck.reason }, { status: 403 });
+      return NextResponse.json(
+        { error: limitCheck.reason, code: limitCheck.code, upgradeRequired: limitCheck.upgradeRequired },
+        { status: 403 },
+      );
     }
     if (needsNewDestinationAddress) {
-      const addressLimitCheck = await canCreateAddress(userId);
+      const addressLimitCheck = await canCreateMovingDestinationAddress(userId);
       if (!addressLimitCheck.allowed) {
-        return NextResponse.json({ error: addressLimitCheck.reason }, { status: 403 });
+        return NextResponse.json(
+          { error: addressLimitCheck.reason, code: addressLimitCheck.code, upgradeRequired: addressLimitCheck.upgradeRequired },
+          { status: 403 },
+        );
       }
     }
 
@@ -104,6 +120,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Destination address not found" }, { status: 404 });
     }
 
+    const stateValidation = validateMovingAddressStates({
+      fromAddress,
+      toAddress,
+      destinationField: validated.toAddressId ? "toAddressId" : "destinationAddress.state",
+    });
+    if (!stateValidation.ok) {
+      return NextResponse.json(
+        { error: stateValidation.error, field: stateValidation.field },
+        { status: 400 },
+      );
+    }
+
     const { plan, destinationAddressId } = await prisma.$transaction(async (tx: any) => {
       let destinationAddressId = validated.toAddressId;
 
@@ -111,6 +139,7 @@ export async function POST(request: NextRequest) {
         const destinationAddress = await tx.address.create({
           data: {
             ...validated.destinationAddress,
+            state: normalizeMovingState(validated.destinationAddress.state),
             formattedAddress: validated.destinationAddress.formattedAddress
               ? encrypt(validated.destinationAddress.formattedAddress)
               : validated.destinationAddress.formattedAddress,

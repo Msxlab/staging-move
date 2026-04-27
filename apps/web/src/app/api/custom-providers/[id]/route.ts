@@ -5,6 +5,10 @@ import { requireDbUserId } from "@/lib/auth";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import {
+  findDuplicateCustomProvider,
+  findListedProviderNameConflict,
+} from "@/lib/custom-provider-duplicate-guard";
 
 function cleanText(value: string | undefined): string | null {
   const trimmed = (value || "").trim();
@@ -15,6 +19,10 @@ function cleanText(value: string | undefined): string | null {
 function normalizeState(value: string | undefined): string | null {
   const cleaned = cleanText(value);
   return cleaned ? cleaned.toUpperCase() : null;
+}
+
+function cleanCategory(value: string | undefined): string {
+  return (cleanText(value) || "OTHER").toUpperCase();
 }
 
 function presentCustomProvider(provider: any) {
@@ -71,12 +79,47 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const body = await request.json();
     const validated = customProviderSchema.partial().parse(body);
+    const nextName = validated.name !== undefined ? cleanText(validated.name)! : existing.name;
+    const nextCategory = validated.category !== undefined ? cleanCategory(validated.category) : existing.category;
+
+    if (validated.name !== undefined || validated.category !== undefined) {
+      const duplicate = await findDuplicateCustomProvider(prisma, {
+        userId,
+        name: nextName,
+        category: nextCategory,
+        ignoreCustomProviderId: existing.id,
+      });
+      if (duplicate) {
+        return NextResponse.json(
+          {
+            error: "You already have a private provider with this name and category.",
+            existingProviderId: duplicate.id,
+          },
+          { status: 409 },
+        );
+      }
+
+      const listedConflict = await findListedProviderNameConflict(prisma, {
+        name: nextName,
+        category: nextCategory,
+      });
+      if (listedConflict) {
+        return NextResponse.json(
+          {
+            error: "A listed provider already matches this name and category. Add the listed provider instead, or use a more specific private provider name.",
+            listedProviderId: listedConflict.id,
+            listedProviderSlug: listedConflict.slug,
+          },
+          { status: 409 },
+        );
+      }
+    }
 
     const provider = await prisma.userCustomProvider.update({
       where: { id },
       data: {
-        ...(validated.name !== undefined && { name: cleanText(validated.name)! }),
-        ...(validated.category !== undefined && { category: cleanText(validated.category)! }),
+        ...(validated.name !== undefined && { name: nextName }),
+        ...(validated.category !== undefined && { category: nextCategory }),
         ...(validated.description !== undefined && { description: cleanText(validated.description) }),
         ...(validated.website !== undefined && { website: cleanText(validated.website) }),
         ...(validated.phone !== undefined && { phone: cleanText(validated.phone) }),

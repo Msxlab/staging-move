@@ -745,7 +745,18 @@ export function BackupControlPlane() {
   async function handleHistoricalDownload(backup: BackupRecord) {
     setDownloadingBackupId(backup.id);
     try {
-      const response = await fetch(`/api/backup/${backup.id}/download`);
+      const confirmedPassword = await requestPassword(
+        "Download backup archive",
+        "Confirm your admin password before downloading this retained backup archive.",
+        "Download archive",
+      );
+      if (!confirmedPassword) return;
+
+      const response = await fetch(`/api/backup/${backup.id}/download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword: confirmedPassword }),
+      });
       const blob = await response.blob();
       if (!response.ok) {
         let message = "Failed to download backup archive";

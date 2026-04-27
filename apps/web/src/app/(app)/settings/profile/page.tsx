@@ -45,10 +45,11 @@ export default function ProfileSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const { email: _email, ...profilePayload } = form;
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(profilePayload),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Failed to save");
       toast.success("Profile saved!");
@@ -65,55 +66,55 @@ export default function ProfileSettingsPage() {
     </div>
   );
 
-  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
-  const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/60 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+  const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+  const selectCls = "w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
         <Link href="/settings">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/5 transition">
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
             <ArrowLeft className="h-4 w-4" />Back
           </button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Profile</h1>
-          <p className="text-sm text-white/40">Manage your personal info and household details</p>
+          <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+          <p className="text-sm text-muted-foreground">Manage your personal info and household details</p>
         </div>
       </div>
 
       {/* Personal Info */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 space-y-4">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 space-y-4">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-orange-400" />
-          <h2 className="text-sm font-semibold text-white">Personal Info</h2>
+          <h2 className="text-sm font-semibold text-foreground">Personal Info</h2>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-white/50 block mb-1">First Name</label>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">First Name</label>
             <input className={inputCls} value={form.firstName} onChange={(e) => update("firstName", e.target.value)} />
           </div>
           <div>
-            <label className="text-xs font-medium text-white/50 block mb-1">Last Name</label>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Last Name</label>
             <input className={inputCls} value={form.lastName} onChange={(e) => update("lastName", e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="text-xs font-medium text-white/50 block mb-1">Email</label>
+          <label className="text-xs font-medium text-muted-foreground block mb-1">Email</label>
           <input className={`${inputCls} opacity-50 cursor-not-allowed`} value={form.email} disabled />
-          <p className="text-[10px] text-white/20 mt-1">Managed by authentication provider</p>
+          <p className="text-[10px] text-foreground/30 mt-1">Managed by authentication provider</p>
         </div>
       </div>
 
       {/* Household */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 space-y-4">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <Home className="h-4 w-4 text-cyan-400" />
-          <h2 className="text-sm font-semibold text-white">Household</h2>
+          <Home className="h-4 w-4 text-info" />
+          <h2 className="text-sm font-semibold text-foreground">Household</h2>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-medium text-white/50 block mb-1">Age Range</label>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Age Range</label>
             <select className={selectCls} value={form.ageRange} onChange={(e) => update("ageRange", e.target.value)}>
               <option value="">Select</option>
               <option value="18-24">18-24</option>
@@ -124,7 +125,7 @@ export default function ProfileSettingsPage() {
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-white/50 block mb-1">Family Status</label>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Family Status</label>
             <select className={selectCls} value={form.familyStatus} onChange={(e) => update("familyStatus", e.target.value)}>
               <option value="SINGLE">Single</option>
               <option value="COUPLE">Couple</option>
@@ -150,7 +151,7 @@ export default function ProfileSettingsPage() {
               className={`flex items-center gap-2 p-2.5 rounded-xl border text-sm transition ${
                 (form as any)[item.key]
                   ? "border-orange-500/30 bg-orange-500/10 text-white"
-                  : "border-white/5 bg-white/[0.02] text-white/40 hover:bg-white/[0.05]"
+                  : "border-border bg-foreground/[0.02] text-muted-foreground hover:bg-foreground/[0.05]"
               }`}
             >
               <span className="text-sm">{item.icon}</span>
@@ -161,13 +162,13 @@ export default function ProfileSettingsPage() {
 
         {form.hasChildren && (
           <div>
-            <label className="text-xs font-medium text-white/50 block mb-1">Number of Children</label>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">Number of Children</label>
             <input type="number" min="0" max="20" className={inputCls}
               value={form.childrenCount} onChange={(e) => update("childrenCount", parseInt(e.target.value) || 0)} />
           </div>
         )}
         <div>
-          <label className="text-xs font-medium text-white/50 block mb-1">Number of Cars</label>
+          <label className="text-xs font-medium text-muted-foreground block mb-1">Number of Cars</label>
           <input type="number" min="0" max="10" className={inputCls}
             value={form.carCount} onChange={(e) => update("carCount", parseInt(e.target.value) || 0)} />
         </div>

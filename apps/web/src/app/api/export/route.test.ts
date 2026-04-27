@@ -9,6 +9,7 @@ vi.mock("@/lib/db", () => ({
     userEvent: { findMany: vi.fn() },
     budget: { findMany: vi.fn() },
     movingPlan: { findMany: vi.fn() },
+    subscription: { findUnique: vi.fn() },
   },
 }));
 
@@ -17,7 +18,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/shared-encryption", () => ({
-  decrypt: vi.fn((value: string) => `decrypted:${value}`),
+  decrypt: vi.fn((value: string) => value === "enc-email" ? "customer@example.com" : `decrypted:${value}`),
 }));
 
 import { prisma } from "@/lib/db";
@@ -32,6 +33,7 @@ const mockPrisma = {
   userEvent: { findMany: prisma.userEvent.findMany as Mock },
   budget: { findMany: prisma.budget.findMany as Mock },
   movingPlan: { findMany: prisma.movingPlan.findMany as Mock },
+  subscription: { findUnique: (prisma as any).subscription.findUnique as Mock },
 };
 const mockRequireDbUserId = requireDbUserId as any;
 
@@ -50,6 +52,7 @@ describe("export route", () => {
     mockPrisma.userEvent.findMany.mockResolvedValue([]);
     mockPrisma.budget.findMany.mockResolvedValue([]);
     mockPrisma.movingPlan.findMany.mockResolvedValue([]);
+    mockPrisma.subscription.findUnique.mockRejectedValue(new Error("subscription gate should not run"));
   });
 
   it("masks sensitive service fields in JSON exports", async () => {
@@ -60,7 +63,7 @@ describe("export route", () => {
         accountNumber: "acct-1234",
         website: "https://example.com",
         phone: "5551234567",
-        email: "customer@example.com",
+        email: "enc-email",
         monthlyCost: 120,
         billingDay: 15,
         billingCycle: "MONTHLY",
@@ -140,7 +143,7 @@ describe("export route", () => {
         accountNumber: "acct-1234",
         website: "https://example.com",
         phone: "5551234567",
-        email: "customer@example.com",
+        email: "enc-email",
         monthlyCost: 120,
         billingDay: 15,
         billingCycle: "MONTHLY",
@@ -226,5 +229,30 @@ describe("export route", () => {
     expect(data.legalConsents).toHaveLength(1);
     expect(data.legalConsents[0].metadata.termsAccepted).toBe(true);
     expect(data.legalConsents[0].metadata.source).toBe("email_signup");
+  });
+
+  it("does not gate data export on subscription state", async () => {
+    mockPrisma.address.findMany.mockResolvedValue([
+      {
+        nickname: "Old home",
+        type: "CURRENT",
+        street: "1 Main",
+        street2: null,
+        city: "Austin",
+        state: "TX",
+        zip: "78701",
+        ownership: "RENT",
+        isPrimary: true,
+        startDate: null,
+        endDate: null,
+      },
+    ]);
+
+    const response = await GET(makeRequest("?type=addresses&format=json"));
+    const data = JSON.parse(await response.text());
+
+    expect(response.status).toBe(200);
+    expect(data.addresses).toHaveLength(1);
+    expect(mockPrisma.subscription.findUnique).not.toHaveBeenCalled();
   });
 });
