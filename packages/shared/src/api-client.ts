@@ -3,6 +3,7 @@ import type { ApiResponse } from "./types";
 export interface ApiClientConfig {
   baseUrl: string;
   getToken: () => Promise<string | null>;
+  clientType?: "web" | "mobile";
   onUnauthorized?: () => void;
   onError?: (error: Error) => void;
 }
@@ -58,6 +59,9 @@ export class ApiClient {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
+    if (this.config.clientType) {
+      headers["x-client-type"] = this.config.clientType;
+    }
     const token = await this.config.getToken();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
@@ -198,6 +202,9 @@ export class ApiClient {
       const url = new URL(path, this.config.baseUrl);
       const token = await this.config.getToken();
       const headers: Record<string, string> = {};
+      if (this.config.clientType) {
+        headers["x-client-type"] = this.config.clientType;
+      }
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }

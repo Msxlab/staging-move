@@ -67,6 +67,7 @@ describe("email-service logging", () => {
       success: true,
       providerMessageId: "resend_123",
       error: null,
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
     });
   });
 
@@ -131,6 +132,53 @@ describe("email-service logging", () => {
     );
   });
 
+  it("does not couple password reset delivery to the DB template row", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue(null);
+    mocks.sendEmailWithResult.mockResolvedValue({
+      success: false,
+      providerMessageId: null,
+      error: "EMAIL_FROM domain is not verified",
+      configError: true,
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
+    });
+
+    const result = await sendPasswordResetEmail({
+      userEmail: "alice@example.com",
+      userName: "Alice",
+      resetToken: "reset-token",
+      dedupeKey: "pwreset:user:provider-failed",
+    });
+
+    expect(result).toBe(false);
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: "Reset your LocateFlow password",
+        text: expect.stringContaining("Reset Password: https://locateflow.com/reset-password/reset-token"),
+      }),
+    );
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: null,
+        status: "PENDING",
+        subject: "Reset your LocateFlow password",
+      }),
+    });
+    expect(mocks.emailLogUpdate).toHaveBeenCalledWith({
+      where: { id: "log_1" },
+      data: expect.objectContaining({
+        status: "FAILED",
+        error: "EMAIL_FROM domain is not verified",
+      }),
+    });
+    expect(JSON.parse(mocks.emailLogUpdate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({
+        configError: true,
+        retryAvailable: true,
+        templateSlug: "password-reset",
+      }),
+    );
+  });
+
   it("links welcome sends to the Welcome template with a text fallback", async () => {
     const result = await sendWelcomeEmail({
       email: "new@example.com",
@@ -160,6 +208,7 @@ describe("email-service logging", () => {
       success: false,
       providerMessageId: null,
       error: "Resend rejected the message [redacted]",
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
     });
 
     const result = await sendLoggedEmail({
@@ -181,6 +230,44 @@ describe("email-service logging", () => {
         sentAt: null,
       }),
     });
+    expect(JSON.parse(mocks.emailLogUpdate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({
+        fromAddress: "LocateFlow <noreply@locateflow.com>",
+        resendApiError: true,
+        retryAvailable: true,
+      }),
+    );
+  });
+
+  it("logs missing or inactive templates as failed email diagnostics", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue(null);
+
+    const result = await sendWelcomeEmail({
+      email: "new@example.com",
+      firstName: "New",
+      dedupeKey: "welcome:user-missing-template",
+    });
+
+    expect(result).toBe(false);
+    expect(mocks.sendEmailWithResult).not.toHaveBeenCalled();
+    expect(mocks.emailLogCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        templateId: null,
+        dedupeKey: "welcome:user-missing-template",
+        to: "new@example.com",
+        subject: "Email template unavailable: welcome",
+        status: "FAILED",
+        error: "Email template 'welcome' is missing or inactive.",
+      }),
+    });
+    expect(JSON.parse(mocks.emailLogCreate.mock.calls[0][0].data.metadata)).toEqual(
+      expect.objectContaining({
+        kind: "template-unavailable",
+        templateSlug: "welcome",
+        templateUnavailable: true,
+        retryAvailable: true,
+      }),
+    );
   });
 
   it("allowlists EmailLog metadata and strips sensitive keys", async () => {

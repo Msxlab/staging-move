@@ -28,8 +28,9 @@ vi.mock("@/lib/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/shared-encryption", () => ({
-  decrypt: vi.fn((value: string) => value),
-  encrypt: vi.fn((value: string) => value),
+  decrypt: vi.fn((value: string) => value.replace(/^enc:/, "")),
+  encrypt: vi.fn((value: string) => `enc:${value}`),
+  isEncrypted: vi.fn((value: string) => typeof value === "string" && value.startsWith("enc:")),
 }));
 
 vi.mock("@/lib/plan-limits", () => ({
@@ -37,11 +38,13 @@ vi.mock("@/lib/plan-limits", () => ({
 }));
 
 vi.mock("@/lib/move-task-sync", () => ({
-  syncMoveTasksForAddress: vi.fn(() => Promise.resolve({ created: 0, updated: 0 })),
+  safeSyncMoveTasksForAddress: vi.fn(() => Promise.resolve({ attemptedPlans: 0, generatedCount: 0, skippedCount: 0, failedPlanIds: [] })),
 }));
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { canCreateService } from "@/lib/plan-limits";
+import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { GET, POST } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -53,6 +56,8 @@ const mockService = prisma.service as unknown as {
 const mockAddress = prisma.address as unknown as { findUnique: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findUnique: Mock; update: Mock };
 const mockCustomProvider = prisma.userCustomProvider as unknown as { findFirst: Mock };
+const mockCanCreateService = canCreateService as unknown as Mock;
+const mockSafeSyncMoveTasksForAddress = safeSyncMoveTasksForAddress as unknown as Mock;
 
 function makeRequest(search = "") {
   return new Request(`http://localhost/api/services${search}`) as any;
@@ -150,6 +155,119 @@ describe("services route", () => {
     );
 
     expect(response.status).toBe(404);
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("encrypts service contact and account fields before creating", async () => {
+    mockService.create.mockResolvedValueOnce({
+      id: "service-new",
+      accountNumber: "enc:acct-1234",
+      username: "enc:user-1234",
+      phone: "enc:1-800-436-7734",
+      email: "enc:customer@example.com",
+      notes: "enc:private note",
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+          accountNumber: "acct-1234",
+          username: "user-1234",
+          phone: "1-800-436-7734",
+          email: "customer@example.com",
+          notes: "private note",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.service).toMatchObject({
+      accountNumber: "acct-1234",
+      username: "user-1234",
+      phone: "1-800-436-7734",
+      email: "customer@example.com",
+      notes: "private note",
+    });
+    expect(mockService.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          accountNumber: "enc:acct-1234",
+          username: "enc:user-1234",
+          phone: "enc:1-800-436-7734",
+          email: "enc:customer@example.com",
+          notes: "enc:private note",
+        }),
+      }),
+    );
+  });
+
+  it("does not fail service creation when move task sync reports a non-blocking failure", async () => {
+    mockSafeSyncMoveTasksForAddress.mockResolvedValueOnce({
+      attemptedPlans: 0,
+      generatedCount: 0,
+      skippedCount: 0,
+      failedPlanIds: [],
+      syncFailed: true,
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(body.moveTaskSync.syncFailed).toBe(true);
+    expect(mockService.create).toHaveBeenCalled();
+  });
+
+  it("returns structured entitlement errors for expired complete users", async () => {
+    mockCanCreateService.mockResolvedValueOnce({
+      allowed: false,
+      code: "TRIAL_EXPIRED",
+      reason: "Your trial has ended. Upgrade to add more services.",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      code: "TRIAL_EXPIRED",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+    expect(mockAddress.findUnique).not.toHaveBeenCalled();
     expect(mockService.create).not.toHaveBeenCalled();
   });
 });

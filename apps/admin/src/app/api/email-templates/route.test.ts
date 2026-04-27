@@ -6,6 +6,9 @@ const mocks = vi.hoisted(() => ({
   emailLogGroupBy: vi.fn(),
   emailLogFindMany: vi.fn(),
   emailLogCount: vi.fn(),
+  emailTemplateFindUnique: vi.fn(),
+  emailTemplateDelete: vi.fn(),
+  adminAuditCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -16,16 +19,21 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     emailTemplate: {
       findMany: (...args: unknown[]) => mocks.emailTemplateFindMany(...args),
+      findUnique: (...args: unknown[]) => mocks.emailTemplateFindUnique(...args),
+      delete: (...args: unknown[]) => mocks.emailTemplateDelete(...args),
     },
     emailLog: {
       groupBy: (...args: unknown[]) => mocks.emailLogGroupBy(...args),
       findMany: (...args: unknown[]) => mocks.emailLogFindMany(...args),
       count: (...args: unknown[]) => mocks.emailLogCount(...args),
     },
+    adminAuditLog: {
+      create: (...args: unknown[]) => mocks.adminAuditCreate(...args),
+    },
   },
 }));
 
-import { GET } from "./route";
+import { DELETE, GET } from "./route";
 
 describe("email templates admin API", () => {
   beforeEach(() => {
@@ -76,9 +84,16 @@ describe("email templates admin API", () => {
     mocks.emailLogFindMany.mockResolvedValue([
       {
         id: "log_verify",
+        templateId: "tpl_verify",
         to: "new@example.com",
         subject: "Verify your LocateFlow email",
         status: "SENT",
+        error: null,
+        metadata: JSON.stringify({
+          fromAddress: "LocateFlow <noreply@locateflow.com>",
+          configError: false,
+          resendApiError: false,
+        }),
         sentAt: new Date("2026-04-26T12:02:00Z"),
         createdAt: new Date("2026-04-26T12:02:00Z"),
         providerMessageId: "resend_verify",
@@ -86,19 +101,31 @@ describe("email templates admin API", () => {
       },
       {
         id: "log_reset",
+        templateId: "tpl_reset",
         to: "alice@example.com",
         subject: "Reset your LocateFlow password",
-        status: "SENT",
-        sentAt: new Date("2026-04-26T12:03:00Z"),
+        status: "FAILED",
+        error: "RESEND_API_KEY missing",
+        metadata: JSON.stringify({
+          fromAddress: "LocateFlow <noreply@locateflow.com>",
+          configError: true,
+          retryAvailable: true,
+        }),
+        sentAt: null,
         createdAt: new Date("2026-04-26T12:03:00Z"),
-        providerMessageId: "resend_reset",
+        providerMessageId: null,
         template: { name: "Password Reset", slug: "password-reset" },
       },
       {
         id: "log_welcome",
+        templateId: "tpl_welcome",
         to: "new@example.com",
         subject: "Welcome to LocateFlow",
         status: "SENT",
+        error: null,
+        metadata: JSON.stringify({
+          fromAddress: "LocateFlow <noreply@locateflow.com>",
+        }),
         sentAt: new Date("2026-04-26T12:04:00Z"),
         createdAt: new Date("2026-04-26T12:04:00Z"),
         providerMessageId: "resend_welcome",
@@ -108,6 +135,9 @@ describe("email templates admin API", () => {
     mocks.emailLogCount
       .mockResolvedValueOnce(4)
       .mockResolvedValueOnce(1);
+    mocks.emailTemplateFindUnique.mockResolvedValue(null);
+    mocks.emailTemplateDelete.mockResolvedValue({});
+    mocks.adminAuditCreate.mockResolvedValue({});
   });
 
   it("returns per-template sent counts and templated send log details", async () => {
@@ -134,17 +164,22 @@ describe("email templates admin API", () => {
     ]);
     expect(body.logs).toEqual([
       expect.objectContaining({
-        to: "new@example.com",
+        to: "ne***@example.com",
+        toDomain: "example.com",
         providerMessageId: "resend_verify",
+        templateIdPresent: true,
         template: { name: "Email Verification", slug: "email-verify" },
       }),
       expect.objectContaining({
-        to: "alice@example.com",
-        providerMessageId: "resend_reset",
+        to: "al***@example.com",
+        safeErrorReason: "RESEND_API_KEY missing",
+        missingConfig: true,
+        retryAvailable: true,
+        providerMessageId: null,
         template: { name: "Password Reset", slug: "password-reset" },
       }),
       expect.objectContaining({
-        to: "new@example.com",
+        to: "ne***@example.com",
         providerMessageId: "resend_welcome",
         template: { name: "Welcome Email", slug: "welcome" },
       }),
@@ -155,5 +190,45 @@ describe("email templates admin API", () => {
       totalSent: 4,
       totalFailed: 1,
     });
+  });
+
+  it("blocks hard delete of required default transactional templates", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue({
+      id: "tpl_reset",
+      slug: "password-reset",
+      name: "Password Reset",
+      isDefault: true,
+    });
+
+    const response = await DELETE(new Request("http://localhost/api/email-templates", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "tpl_reset" }),
+    }) as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.code).toBe("REQUIRED_TEMPLATE_DELETE_BLOCKED");
+    expect(mocks.emailTemplateDelete).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+  });
+
+  it("allows hard delete of non-default optional templates", async () => {
+    mocks.emailTemplateFindUnique.mockResolvedValue({
+      id: "tpl_optional",
+      slug: "optional-newsletter",
+      name: "Optional Newsletter",
+      isDefault: false,
+    });
+
+    const response = await DELETE(new Request("http://localhost/api/email-templates", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "tpl_optional" }),
+    }) as any);
+
+    expect(response.status).toBe(200);
+    expect(mocks.emailTemplateDelete).toHaveBeenCalledWith({ where: { id: "tpl_optional" } });
+    expect(mocks.adminAuditCreate).toHaveBeenCalled();
   });
 });

@@ -29,8 +29,29 @@ vi.mock("@/lib/email-service", () => ({
   sendEmailVerificationEmail: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock("@/lib/billing", () => ({
+  ensureSubscriptionDefaults: vi.fn(() => Promise.resolve({ id: "sub-1" })),
+}));
+
+vi.mock("@/lib/legal-acceptance", () => ({
+  normalizeAcceptedLegalConsents: vi.fn((consents) =>
+    consents?.termsAccepted && consents?.disclaimerAccepted
+      ? {
+          termsAccepted: true,
+          disclaimerAccepted: true,
+          termsVersion: consents.termsVersion || "2026-03-13",
+          disclaimerVersion: consents.disclaimerVersion || "2026-03-13",
+          acceptedAt: consents.acceptedAt || "2026-04-27T12:00:00.000Z",
+        }
+      : null,
+  ),
+  recordLegalAcceptance: vi.fn(() => Promise.resolve()),
+}));
+
 import { prisma } from "@/lib/db";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
+import { ensureSubscriptionDefaults } from "@/lib/billing";
+import { recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as {
@@ -40,6 +61,8 @@ const userMock = prisma.user as unknown as {
 };
 const tokenMock = prisma.emailVerificationToken as unknown as { create: Mock };
 const sendEmailVerificationEmailMock = sendEmailVerificationEmail as unknown as Mock;
+const ensureSubscriptionDefaultsMock = ensureSubscriptionDefaults as unknown as Mock;
+const recordLegalAcceptanceMock = recordLegalAcceptance as unknown as Mock;
 
 const validBody = {
   email: "new@example.com",
@@ -98,16 +121,66 @@ describe("register route", () => {
         passwordHash: "hashed-password",
         firstName: "New",
         lastName: "User",
+        preferredLocale: "en",
       },
     });
     expect(tokenMock.create).toHaveBeenCalled();
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("user-new");
     expect(sendEmailVerificationEmailMock).toHaveBeenCalledWith({
       userEmail: "new@example.com",
       userName: "New",
       verifyToken: "verify-token",
+      locale: "en",
       dedupeKey: "verify:user-new:verify-hash",
     });
+    expect(recordLegalAcceptanceMock).not.toHaveBeenCalled();
     expect(userMock.update).not.toHaveBeenCalled();
+  });
+
+  it("persists mobile legal consent during registration", async () => {
+    const response = await POST(makeRequest({
+      ...validBody,
+      legalConsents: {
+        termsAccepted: true,
+        disclaimerAccepted: true,
+        termsVersion: "2026-03-13",
+        disclaimerVersion: "2026-03-13",
+        acceptedAt: "2026-04-27T12:00:00.000Z",
+      },
+    }));
+
+    expect(response.status).toBe(201);
+    expect(ensureSubscriptionDefaultsMock).toHaveBeenCalledWith("user-new");
+    expect(recordLegalAcceptanceMock).toHaveBeenCalledWith({
+      userId: "user-new",
+      request: expect.any(NextRequest),
+      page: "/sign-up",
+      source: "mobile_register",
+      consents: {
+        termsAccepted: true,
+        disclaimerAccepted: true,
+        termsVersion: "2026-03-13",
+        disclaimerVersion: "2026-03-13",
+        acceptedAt: "2026-04-27T12:00:00.000Z",
+      },
+    });
+  });
+
+  it("rejects incomplete mobile legal consent without creating a user", async () => {
+    const response = await POST(makeRequest({
+      ...validBody,
+      legalConsents: {
+        termsAccepted: true,
+        disclaimerAccepted: false,
+      },
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("LEGAL_ACCEPTANCE_REQUIRED");
+    expect(userMock.create).not.toHaveBeenCalled();
+    expect(ensureSubscriptionDefaultsMock).not.toHaveBeenCalled();
+    expect(recordLegalAcceptanceMock).not.toHaveBeenCalled();
   });
 
   it("returns 409 for a soft-deleted email instead of reviving it", async () => {

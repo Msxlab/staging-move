@@ -9,6 +9,7 @@ import {
   isAppleEmailVerifiedClaim,
   logSafeOAuthEvent,
   normalizeOAuthRedirectPath,
+  oauthUserIdHint,
   summarizeOAuthError,
 } from "@/lib/oauth";
 import {
@@ -16,10 +17,19 @@ import {
   findOrLinkOAuthUserWithStatus,
   generateFingerprint,
 } from "@/lib/user-auth";
-import { sendWelcomeEmail } from "@/lib/email-service";
+import { sendSecurityNoticeEmail, sendWelcomeEmail } from "@/lib/email-service";
+import { prisma } from "@/lib/db";
 import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import { z } from "zod";
+import {
+  MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_REDIRECT_COOKIE,
+  buildMobileOAuthRedirectUrl,
+  createMobileOAuthExchangeCode,
+  isMobileOAuthClient,
+  normalizeMobileOAuthRedirectUri,
+} from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
 
@@ -41,6 +51,8 @@ function clearAppleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_state_apple");
   response.cookies.delete("oauth_redirect_uri_apple");
   response.cookies.delete("oauth_redirect");
+  response.cookies.delete(MOBILE_OAUTH_CLIENT_COOKIE);
+  response.cookies.delete(MOBILE_OAUTH_REDIRECT_COOKIE);
   response.cookies.delete(LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }
@@ -156,6 +168,7 @@ export async function POST(request: NextRequest) {
 
   let userId: string;
   let isNewUser = false;
+  let wasLinkedNow = false;
   try {
     const oauthUser = await findOrLinkOAuthUserWithStatus({
       provider: "apple",
@@ -167,6 +180,7 @@ export async function POST(request: NextRequest) {
     });
     userId = oauthUser.userId;
     isNewUser = oauthUser.isNewUser;
+    wasLinkedNow = oauthUser.wasLinkedNow;
   } catch (err: any) {
     if (err?.message === "LEGAL_ACCEPTANCE_REQUIRED") {
       const response = NextResponse.redirect(
@@ -190,6 +204,37 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const isMobileClient = isMobileOAuthClient(request.cookies.get(MOBILE_OAUTH_CLIENT_COOKIE)?.value);
+  if (isMobileClient) {
+    const mobileRedirectUri = normalizeMobileOAuthRedirectUri(
+      request.cookies.get(MOBILE_OAUTH_REDIRECT_COOKIE)?.value,
+    );
+    if (!mobileRedirectUri) {
+      return clearAppleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=mobile-oauth-redirect-invalid")),
+      );
+    }
+    try {
+      const handoffCode = await createMobileOAuthExchangeCode({
+        userId,
+        provider: "apple",
+        redirectUri: mobileRedirectUri,
+      });
+      return clearAppleOAuthCookies(
+        NextResponse.redirect(buildMobileOAuthRedirectUrl({
+          redirectUri: mobileRedirectUri,
+          code: handoffCode,
+          provider: "apple",
+        })),
+      );
+    } catch (err) {
+      logAppleOAuthFailure("mobile_handoff", err);
+      return clearAppleOAuthCookies(
+        NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=mobile-oauth-handoff-failed")),
+      );
+    }
+  }
+
   const ua = request.headers.get("user-agent") || "";
   const ip = resolveClientIP(request);
   const fp = await generateFingerprint(ip, ua);
@@ -200,7 +245,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     logSafeOAuthEvent("oauth_session_create_failed", {
       provider: "apple",
-      userId,
+      userIdHint: oauthUserIdHint(userId),
       ...summarizeOAuthError(err),
     });
     return clearAppleOAuthCookies(
@@ -213,9 +258,9 @@ export async function POST(request: NextRequest) {
     const userState = await getPostAuthUserState(userId);
     finalRedirectPath = resolvePostAuthRedirect(userState, redirectPath);
     if (!userState.hasRequiredLegalConsents) {
-      logSafeOAuthEvent("oauth_legal_redirect", { provider: "apple", userId });
+      logSafeOAuthEvent("oauth_legal_redirect", { provider: "apple", userIdHint: oauthUserIdHint(userId) });
     } else if (!userState.onboardingCompleted) {
-      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "apple", userId });
+      logSafeOAuthEvent("oauth_onboarding_redirect", { provider: "apple", userIdHint: oauthUserIdHint(userId) });
     }
   } catch (err) {
     logAppleOAuthFailure("post_auth_redirect", err);
@@ -231,18 +276,39 @@ export async function POST(request: NextRequest) {
     ),
   );
   if (isNewUser) {
+    const welcomeLocale = request.cookies.get("NEXT_LOCALE")?.value ?? null;
     const welcomeSent = await sendWelcomeEmail({
       email: payload.email,
       firstName,
+      locale: welcomeLocale,
       dedupeKey: `welcome:${userId}`,
     }).catch((err) => {
       console.error("[EMAIL] welcome after apple signup failed:", {
-        userId,
+        userIdHint: oauthUserIdHint(userId),
         message: err instanceof Error ? err.message : "SEND_FAILED",
       });
       return false;
     });
-    console.info("[EMAIL] welcome after apple signup", { userId, sent: welcomeSent });
+    console.info("[EMAIL] welcome after apple signup", { userIdHint: oauthUserIdHint(userId), sent: welcomeSent });
+  } else if (wasLinkedNow) {
+    const recipient = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, firstName: true, preferredLocale: true },
+    }).catch(() => null);
+    if (recipient?.email) {
+      void sendSecurityNoticeEmail({
+        userEmail: recipient.email,
+        userName: recipient.firstName || "there",
+        kind: "oauth-linked",
+        detail: "Apple",
+        occurredAt: new Date(),
+        locale: recipient.preferredLocale,
+        dedupeKey: `oauth-linked:apple:${userId}`,
+      }).catch((err) => console.error("[EMAIL] oauth-linked notice failed:", {
+        userIdHint: oauthUserIdHint(userId),
+        message: err instanceof Error ? err.message : "SEND_FAILED",
+      }));
+    }
   }
   return clearAppleOAuthCookies(response);
 }

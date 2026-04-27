@@ -74,14 +74,14 @@ export default function EditServiceScreen() {
     const payload: any = {
       providerName: form.providerName,
       billingCycle: form.billingCycle,
+      accountNumber: form.accountNumber,
+      phone: form.phone,
+      website: form.website,
+      email: form.email,
+      notes: form.notes,
     };
     if (form.monthlyCost) payload.monthlyCost = parseFloat(form.monthlyCost) || 0;
     if (form.billingDay) payload.billingDay = parseInt(form.billingDay) || undefined;
-    if (form.accountNumber) payload.accountNumber = form.accountNumber;
-    if (form.phone) payload.phone = form.phone;
-    if (form.website) payload.website = form.website;
-    if (form.email) payload.email = form.email;
-    if (form.notes) payload.notes = form.notes;
 
     const res = await api.patch(`/api/services/${id}`, payload);
     setSaving(false);

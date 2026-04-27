@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 
 const inputCls =
-  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+  "w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
 
 interface AccountSecurityState {
   account: {
@@ -93,6 +93,7 @@ export default function PrivacyPage() {
   // ── Delete ────────────────────────────────────────────
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteText, setDeleteText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
   const [deleting, setDeleting] = useState(false);
 
   const handlePasswordChange = async () => {
@@ -266,10 +267,14 @@ export default function PrivacyPage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteText !== "DELETE") return;
+    if (deleteText !== "DELETE" || !deletePassword) return;
     setDeleting(true);
     try {
-      const res = await fetch("/api/account/delete", { method: "POST" });
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword: deletePassword }),
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         await fetch("/api/auth/logout", {
@@ -293,7 +298,7 @@ export default function PrivacyPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -307,25 +312,25 @@ export default function PrivacyPage() {
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
         <Link href="/settings">
-          <button className="p-2 rounded-xl text-white/30 hover:text-white hover:bg-white/5 transition" aria-label="Back">
+          <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition" aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Privacy & Security</h1>
-          <p className="text-sm text-white/40">Manage passwords, sessions, and data</p>
+          <h1 className="text-2xl font-bold text-foreground">Privacy & Security</h1>
+          <p className="text-sm text-muted-foreground">Manage passwords, sessions, and data</p>
         </div>
       </div>
 
       {/* Account Access */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-orange-400" />
-          <h2 className="text-sm font-semibold text-white">Account Access</h2>
+          <h2 className="text-sm font-semibold text-foreground">Account Access</h2>
         </div>
         <div className="px-5 pb-5 space-y-4">
           {securityLoading ? (
-            <div className="flex items-center gap-2 text-sm text-white/40">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Loading account security...
             </div>
           ) : !securityState ? (
@@ -352,8 +357,8 @@ export default function PrivacyPage() {
                 />
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/40">Linked sign-in methods</p>
+              <div className="rounded-xl border border-border bg-black/20 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Linked sign-in methods</p>
                 <div className="flex flex-wrap gap-2">
                   {securityState.linkedMethods.map((method) => (
                     <span
@@ -361,7 +366,7 @@ export default function PrivacyPage() {
                       className={`rounded-full px-3 py-1 text-xs font-medium ${
                         method.enabled
                           ? "bg-emerald-500/10 text-emerald-300"
-                          : "bg-white/5 text-white/35"
+                          : "bg-foreground/5 text-foreground/35"
                       }`}
                     >
                       {method.label}{method.enabled ? "" : " not enabled"}
@@ -375,11 +380,11 @@ export default function PrivacyPage() {
                 )}
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+              <div className="rounded-xl border border-border bg-black/20 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-white/40">Login sessions</p>
-                    <p className="mt-1 text-xs text-white/30">{activeSessions.length} active session(s)</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Login sessions</p>
+                    <p className="mt-1 text-xs text-foreground/40">{activeSessions.length} active session(s)</p>
                   </div>
                   <button
                     onClick={handleRevokeOtherSessions}
@@ -391,24 +396,24 @@ export default function PrivacyPage() {
                 </div>
                 <div className="space-y-2">
                   {securityState.sessions.length === 0 ? (
-                    <p className="text-sm text-white/40">No authenticated sessions are currently recorded.</p>
+                    <p className="text-sm text-muted-foreground">No authenticated sessions are currently recorded.</p>
                   ) : (
                     securityState.sessions.slice(0, 6).map((session) => (
-                      <div key={session.id} className="flex items-start justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.03] p-3">
+                      <div key={session.id} className="flex items-start justify-between gap-3 rounded-xl border border-border bg-foreground/[0.03] p-3">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             {session.deviceType?.toLowerCase().includes("mobile") ? (
-                              <Smartphone className="h-4 w-4 text-white/35" />
+                              <Smartphone className="h-4 w-4 text-foreground/35" />
                             ) : (
-                              <Monitor className="h-4 w-4 text-white/35" />
+                              <Monitor className="h-4 w-4 text-foreground/35" />
                             )}
-                            <p className="truncate text-sm font-medium text-white/80">
+                            <p className="truncate text-sm font-medium text-foreground/80">
                               {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}
                             </p>
                             {session.current && <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] text-orange-300">Current</span>}
-                            {!session.isActive && <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/35">Revoked</span>}
+                            {!session.isActive && <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/35">Revoked</span>}
                           </div>
-                          <p className="mt-1 text-xs text-white/35">
+                          <p className="mt-1 text-xs text-foreground/35">
                             {session.ipAddress || "No IP"} · Last active {new Date(session.lastActivity).toLocaleString()}
                           </p>
                         </div>
@@ -416,7 +421,7 @@ export default function PrivacyPage() {
                           <button
                             onClick={() => handleRevokeSession(session.id, session.current)}
                             disabled={securityBusy}
-                            className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1.5 text-xs text-white/45 hover:bg-white/5 hover:text-white disabled:opacity-50"
+                            className="shrink-0 rounded-lg border border-border px-2.5 py-1.5 text-xs text-foreground/45 hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
                           >
                             Revoke
                           </button>
@@ -432,19 +437,19 @@ export default function PrivacyPage() {
       </div>
 
       {/* Password */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Key className="h-4 w-4 text-orange-400" />
-          <h2 className="text-sm font-semibold text-white">{hasPasswordLogin ? "Change Password" : "Set Password"}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{hasPasswordLogin ? "Change Password" : "Set Password"}</h2>
         </div>
         {!hasPasswordLogin ? (
           <div className="px-5 pb-5 space-y-3">
-            <p className="text-xs text-white/40">
+            <p className="text-xs text-muted-foreground">
               Set a password to enable password sign-in, password changes, and MFA management. Your linked OAuth method remains available.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50">New Password</label>
+                <label className="text-xs font-medium text-muted-foreground">New Password</label>
                 <input
                   type="password" className={inputCls} placeholder="Min 12 characters"
                   value={setPasswordForm.next}
@@ -452,7 +457,7 @@ export default function PrivacyPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50">Confirm Password</label>
+                <label className="text-xs font-medium text-muted-foreground">Confirm Password</label>
                 <input
                   type="password" className={inputCls} placeholder="Repeat password"
                   value={setPasswordForm.confirm}
@@ -460,7 +465,7 @@ export default function PrivacyPage() {
                 />
               </div>
             </div>
-            <p className="text-[11px] text-white/30">
+            <p className="text-[11px] text-foreground/40">
               Must include upper, lower, digit, and special character.
             </p>
             <div className="flex justify-end">
@@ -477,7 +482,7 @@ export default function PrivacyPage() {
         ) : (
           <div className="px-5 pb-5 space-y-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-white/50">Current Password</label>
+              <label className="text-xs font-medium text-muted-foreground">Current Password</label>
               <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -486,14 +491,14 @@ export default function PrivacyPage() {
                 value={pwForm.current}
                 onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))}
               />
-              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/40" aria-label="Toggle password visibility">
+              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 hover:text-muted-foreground" aria-label="Toggle password visibility">
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-white/50">New Password</label>
+              <label className="text-xs font-medium text-muted-foreground">New Password</label>
               <input
                 type="password" className={inputCls} placeholder="Min 12 characters"
                 value={pwForm.next}
@@ -501,7 +506,7 @@ export default function PrivacyPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-white/50">Confirm New Password</label>
+              <label className="text-xs font-medium text-muted-foreground">Confirm New Password</label>
               <input
                 type="password" className={inputCls} placeholder="Repeat new password"
                 value={pwForm.confirm}
@@ -509,7 +514,7 @@ export default function PrivacyPage() {
               />
             </div>
           </div>
-          <p className="text-[11px] text-white/30">
+          <p className="text-[11px] text-foreground/40">
             Must include upper, lower, digit, and special character. Other devices are signed out.
           </p>
           <div className="flex justify-end">
@@ -527,15 +532,15 @@ export default function PrivacyPage() {
       </div>
 
       {/* Two-Factor Authentication */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
               <Fingerprint className="h-5 w-5 text-orange-400" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white">Two-Factor Authentication</h3>
-              <p className="text-xs text-white/40">
+              <h3 className="text-sm font-semibold text-foreground">Two-Factor Authentication</h3>
+              <p className="text-xs text-muted-foreground">
                 {twoFaEnabled
                   ? "Enabled — your account is secured with TOTP"
                   : "Add extra security with an authenticator app"}
@@ -546,8 +551,8 @@ export default function PrivacyPage() {
 
         {/* Disable flow */}
         {twoFaEnabled && (
-          <div className="px-5 pb-5 space-y-3 border-t border-white/5 pt-4">
-            <label className="text-xs font-medium text-white/50">Confirm your password to disable</label>
+          <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
+            <label className="text-xs font-medium text-muted-foreground">Confirm your password to disable</label>
             <div className="flex gap-2">
               <input
                 type="password" className={inputCls} placeholder="Current password"
@@ -566,7 +571,7 @@ export default function PrivacyPage() {
 
         {/* Setup — step 1: password gate */}
         {!twoFaEnabled && !mfaSetup && !hasPasswordLogin && (
-          <div className="px-5 pb-5 border-t border-white/5 pt-4">
+          <div className="px-5 pb-5 border-t border-border pt-4">
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-100/75">
               Set a password before enabling MFA. This prevents OAuth-only accounts from getting locked out during authenticator recovery.
             </div>
@@ -574,8 +579,8 @@ export default function PrivacyPage() {
         )}
 
         {!twoFaEnabled && !mfaSetup && hasPasswordLogin && (
-          <div className="px-5 pb-5 space-y-3 border-t border-white/5 pt-4">
-            <label className="text-xs font-medium text-white/50">Re-enter your password to start</label>
+          <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
+            <label className="text-xs font-medium text-muted-foreground">Re-enter your password to start</label>
             <div className="flex gap-2">
               <input
                 type="password" className={inputCls} placeholder="Current password"
@@ -594,10 +599,10 @@ export default function PrivacyPage() {
 
         {/* Setup — step 2: scan QR + verify TOTP */}
         {!twoFaEnabled && mfaSetup && (
-          <div className="px-5 pb-5 space-y-4 border-t border-white/5 pt-4">
+          <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
             <div className="text-center space-y-2">
               <QrCode className="h-6 w-6 mx-auto text-orange-400" />
-              <p className="text-sm text-white/60">Scan this QR code with your authenticator app</p>
+              <p className="text-sm text-muted-foreground">Scan this QR code with your authenticator app</p>
               <div className="inline-block bg-white p-3 rounded-xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -607,7 +612,7 @@ export default function PrivacyPage() {
                 />
               </div>
               <div className="space-y-1">
-                <p className="text-[11px] text-white/30">Or enter this key manually:</p>
+                <p className="text-[11px] text-foreground/40">Or enter this key manually:</p>
                 <code className="text-xs text-orange-400 bg-orange-500/10 px-3 py-1 rounded-lg select-all">{mfaSetup.secret}</code>
               </div>
             </div>
@@ -623,7 +628,7 @@ export default function PrivacyPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-white/50">Verification Code</label>
+              <label className="text-xs font-medium text-muted-foreground">Verification Code</label>
               <div className="flex gap-2">
                 <input
                   className={inputCls + " font-mono text-center tracking-[0.3em]"}
@@ -644,7 +649,7 @@ export default function PrivacyPage() {
             </div>
             <button
               onClick={() => { setMfaSetup(null); setMfaCode(""); }}
-              className="text-xs text-white/30 hover:text-white transition"
+              className="text-xs text-foreground/40 hover:text-foreground transition"
             >
               Cancel setup
             </button>
@@ -653,19 +658,19 @@ export default function PrivacyPage() {
       </div>
 
       {/* Data Privacy */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Shield className="h-4 w-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold text-white">Data Privacy</h2>
+          <h2 className="text-sm font-semibold text-foreground">Data Privacy</h2>
         </div>
         <div className="px-5 pb-5 space-y-3">
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-foreground/[0.02] border border-border">
             <div>
-              <p className="text-sm text-white/80">Download My Data</p>
-              <p className="text-[11px] text-white/30">Export all your data (GDPR compliant)</p>
+              <p className="text-sm text-foreground/80">Download My Data</p>
+              <p className="text-[11px] text-foreground/40">Export all your data (GDPR compliant)</p>
             </div>
             <Link href="/settings/export">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 text-xs text-white/50 hover:text-white hover:bg-white/5 transition">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
                 <Download className="h-3 w-3" />Export
               </button>
             </Link>
@@ -683,8 +688,8 @@ export default function PrivacyPage() {
           {!deleteConfirm ? (
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-white/80">Delete Account</p>
-                <p className="text-xs text-white/30">Permanently delete all data. Cannot be undone.</p>
+                <p className="text-sm font-medium text-foreground/80">Delete Account</p>
+                <p className="text-xs text-foreground/40">Permanently delete all data. Cannot be undone.</p>
               </div>
               <button
                 onClick={() => setDeleteConfirm(true)}
@@ -695,7 +700,7 @@ export default function PrivacyPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-xs text-white/40">
+              <p className="text-xs text-muted-foreground">
                 This will permanently delete your account, all addresses, services, and moving plans.
                 Type <strong className="text-red-400">DELETE</strong> to confirm.
               </p>
@@ -705,10 +710,18 @@ export default function PrivacyPage() {
                 value={deleteText}
                 onChange={(e) => setDeleteText(e.target.value)}
               />
+              <input
+                className={`${inputCls} border-red-500/20`}
+                type="password"
+                autoComplete="current-password"
+                placeholder="Confirm your password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+              />
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleDeleteAccount}
-                  disabled={deleteText !== "DELETE" || deleting}
+                  disabled={deleteText !== "DELETE" || !deletePassword || deleting}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50"
                 >
                   {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -716,7 +729,7 @@ export default function PrivacyPage() {
                 </button>
                 <button
                   onClick={() => { setDeleteConfirm(false); setDeleteText(""); }}
-                  className="px-4 py-2 rounded-xl text-xs text-white/30 hover:text-white hover:bg-white/5 transition"
+                  className="px-4 py-2 rounded-xl text-xs text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition"
                 >
                   Cancel
                 </button>
@@ -743,10 +756,10 @@ function SecuritySummaryCard({
       ? "text-emerald-300"
       : tone === "warn"
         ? "text-amber-300"
-        : "text-white/60";
+        : "text-muted-foreground";
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-white/35">{label}</p>
+    <div className="rounded-xl border border-border bg-black/20 p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground/35">{label}</p>
       <p className={`mt-1 text-sm font-semibold ${toneClass}`}>{value}</p>
     </div>
   );

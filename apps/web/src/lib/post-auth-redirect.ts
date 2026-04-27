@@ -56,6 +56,23 @@ export function resolvePostAuthRedirect(
   return safeRedirect;
 }
 
+export function resolveOnboardingGateRedirect(
+  userState: PostAuthUserState,
+  requestedRedirect = "/onboarding",
+): string | null {
+  const safeRedirect = normalizeAppRedirectPath(requestedRedirect, "/onboarding");
+
+  if (userState.needsEmailVerification) {
+    return buildEmailVerificationGateRedirect(safeRedirect);
+  }
+
+  if (userState.onboardingCompleted) {
+    return "/dashboard";
+  }
+
+  return null;
+}
+
 export async function getPostAuthUserState(userId: string): Promise<PostAuthUserState> {
   const [
     user,
@@ -66,8 +83,8 @@ export async function getPostAuthUserState(userId: string): Promise<PostAuthUser
     movingPlanCount,
     onboardingEvents,
   ] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
+    prisma.user.findFirst({
+      where: { id: userId, deletedAt: null },
       select: {
         emailVerifiedAt: true,
         passwordHash: true,
@@ -94,6 +111,10 @@ export async function getPostAuthUserState(userId: string): Promise<PostAuthUser
       orderBy: { createdAt: "desc" },
     }),
   ]);
+
+  if (!user) {
+    throw new Error("AUTH_STATE_USER_UNAVAILABLE");
+  }
 
   const hasRequiredLegalConsentsValue = consentEvents.some((event) =>
     hasRequiredLegalConsents(parseStoredLegalConsents(event.metadata)),

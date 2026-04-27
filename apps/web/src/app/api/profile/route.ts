@@ -4,6 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
 import { profileSchema } from "@/lib/validators";
 import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
+import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { getOnboardingProgress, ONBOARDING_PROGRESS_EVENTS, summarizeOnboardingEvents } from "@/lib/onboarding-progress";
 import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
@@ -118,7 +119,8 @@ export async function POST(request: NextRequest) {
   // Step 3: Validate
   let validated: any;
   try {
-    validated = profileSchema.parse(body);
+    const { legalConsents: _legalConsents, ...profileBody } = body || {};
+    validated = profileSchema.parse(profileBody);
   } catch (err: any) {
     const details = err?.errors || err?.message;
     return NextResponse.json({ error: "Validation failed", details }, { status: 400 });
@@ -128,10 +130,25 @@ export async function POST(request: NextRequest) {
     where: { userId, event: LEGAL_CONSENT_EVENT },
     orderBy: { createdAt: "desc" },
   });
-  const existingLegalConsents = parseStoredLegalConsents(existingConsentEvent?.metadata);
+  let existingLegalConsents = parseStoredLegalConsents(existingConsentEvent?.metadata);
 
   if (!hasRequiredLegalConsents(existingLegalConsents)) {
-    return NextResponse.json({ error: "You must accept the Terms of Use and Disclaimer before continuing." }, { status: 400 });
+    const acceptedLegalConsents = normalizeAcceptedLegalConsents(body?.legalConsents);
+    if (acceptedLegalConsents) {
+      await recordLegalAcceptance({
+        userId,
+        request,
+        page: "/onboarding",
+        source: "profile_fallback",
+        consents: acceptedLegalConsents,
+      });
+      existingLegalConsents = acceptedLegalConsents;
+    } else {
+      return NextResponse.json(
+        { error: "You must accept the Terms of Use and Disclaimer before continuing.", code: "LEGAL_ACCEPTANCE_REQUIRED" },
+        { status: 400 },
+      );
+    }
   }
 
   // Step 4: Update user name

@@ -5,6 +5,7 @@ import { requireDbUserId } from "@/lib/user-auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { sendSecurityNoticeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { mfaSecret: true, mfaEnabled: true },
+    select: { email: true, firstName: true, preferredLocale: true, mfaSecret: true, mfaEnabled: true },
   });
   if (!user || !user.mfaSecret) {
     return NextResponse.json({ error: "Call /api/auth/mfa/setup first." }, { status: 400 });
@@ -71,6 +72,15 @@ export async function POST(request: NextRequest) {
     where: { id: userId },
     data: { mfaEnabled: true },
   });
+
+  void sendSecurityNoticeEmail({
+    userEmail: user.email,
+    userName: user.firstName || "there",
+    kind: "mfa-enabled",
+    occurredAt: new Date(),
+    locale: user.preferredLocale,
+    dedupeKey: `mfa-enabled:${userId}:${Date.now()}`,
+  }).catch((err) => console.error("[AUTH] mfa-enabled email failed:", err));
 
   return NextResponse.json({ success: true });
 }

@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
@@ -14,7 +13,6 @@ interface OAuthProviderStatus {
 }
 
 export default function SignUpPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -23,7 +21,6 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
-  const authCheckStarted = useRef(false);
   const tAuth = useTranslations("auth");
   const tCommon = useTranslations("common");
   const tLegal = useTranslations("legal");
@@ -36,25 +33,6 @@ export default function SignUpPage() {
       .then((data) => setOauthProviders(data.providers || null))
       .catch(() => setOauthProviders(null));
   }, []);
-
-  useEffect(() => {
-    if (authCheckStarted.current) return;
-    authCheckStarted.current = true;
-
-    let cancelled = false;
-    fetch("/api/auth/me?optional=1", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data?.user) {
-          router.replace("/dashboard");
-          router.refresh();
-        }
-      })
-      .catch(() => null);
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

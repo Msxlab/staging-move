@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -45,7 +45,9 @@ function SignInForm() {
     "oauth-account-create-failed": "error_account_setup",
     "oauth-account-unavailable": "error_account_unavailable",
     "oauth-account-deleted": "error_account_unavailable",
+    "account-unavailable": "error_account_unavailable",
     "session-create-failed": "error_session_create",
+    "logout-failed": "error_logout_failed",
   };
 
   const [email, setEmail] = useState("");
@@ -59,7 +61,6 @@ function SignInForm() {
       : null,
   );
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
-  const authCheckStarted = useRef(false);
 
   useEffect(() => {
     fetch("/api/auth/oauth/providers", { cache: "no-store" })
@@ -67,25 +68,6 @@ function SignInForm() {
       .then((data) => setOauthProviders(data.providers || null))
       .catch(() => setOauthProviders(null));
   }, []);
-
-  useEffect(() => {
-    if (authCheckStarted.current) return;
-    authCheckStarted.current = true;
-
-    let cancelled = false;
-    fetch("/api/auth/me?optional=1", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data?.user) {
-          router.replace(redirectTo);
-          router.refresh();
-        }
-      })
-      .catch(() => null);
-    return () => {
-      cancelled = true;
-    };
-  }, [redirectTo, router]);
 
   const googleReady = oauthProviders?.google?.configured ?? true;
   const appleReady = oauthProviders?.apple?.configured ?? true;
@@ -135,6 +117,12 @@ function SignInForm() {
       if (!res.ok) {
         setError(data.error || tAuth("error_generic"));
         setLoading(false);
+        return;
+      }
+
+      if (data.user?.emailVerified === false) {
+        router.replace(`/verify-email?redirect=${encodeURIComponent(redirectTo)}`);
+        router.refresh();
         return;
       }
 

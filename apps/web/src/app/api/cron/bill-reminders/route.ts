@@ -88,6 +88,7 @@ export async function GET(req: Request) {
           amount: svc.monthlyCost || 0,
           dueDate: dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
           daysUntilDue,
+          userId: svc.user.id,
           dedupeKey: `cron:bill-reminder:${svc.id}:${dueDate.toISOString().slice(0, 10)}:${daysUntilDue}`,
           metadata: {
             userId: svc.user.id,

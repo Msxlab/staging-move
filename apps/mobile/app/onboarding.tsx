@@ -277,7 +277,9 @@ export default function OnboardingScreen() {
     setError(""); setSaving(true);
     try {
       const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
-      const res = await api.post<any>("/api/profile", { ...profile, legalConsents: acceptedLegalConsents });
+      const legalRes = await api.post<any>("/api/legal/acceptance", { legalConsents: acceptedLegalConsents });
+      if (legalRes.error) throw new Error(legalRes.error);
+      const res = await api.post<any>("/api/profile", profile);
       if (res.error) throw new Error(res.error);
       setPendingLegalConsents(null);
       return true;

@@ -79,8 +79,8 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white">{t("title")}</h1>
-          <p className="text-white/40 mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">
             {addresses.length} · {totalServices} · {
               new Intl.NumberFormat(locale, {
                 style: "currency",
@@ -117,20 +117,20 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
             return (
               <div
                 key={address.id}
-                className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 hover:bg-white/[0.07] transition-all cursor-pointer group relative"
+                className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 hover:bg-foreground/[0.07] transition-all cursor-pointer group relative"
                 onClick={() => router.push(`/addresses/${address.id}`)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 group-hover:bg-orange-500 group-hover:border-orange-500 transition-colors">
-                      <TypeIcon className="h-5 w-5 text-orange-400 group-hover:text-white transition-colors" />
+                      <TypeIcon className="h-5 w-5 text-orange-400 group-hover:text-foreground transition-colors" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                         {address.nickname || t("title")}
                         {address.isPrimary && <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
                       </h3>
-                      <p className="text-sm text-white/35">
+                      <p className="text-sm text-foreground/35">
                         {address.street}, {address.city}, {address.state} {address.zip}
                       </p>
                     </div>
@@ -146,38 +146,38 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-sm border-t border-white/5 pt-3 mb-3">
+                <div className="flex items-center justify-between text-sm border-t border-border pt-3 mb-3">
                   <div className="flex items-center gap-4">
-                    <span className="text-white/40">
-                      <span className="font-medium text-white/70">{servicesCount}</span>
+                    <span className="text-muted-foreground">
+                      <span className="font-medium text-foreground/80">{servicesCount}</span>
                     </span>
-                    <span className="text-white/40">
+                    <span className="text-muted-foreground">
                       <span className="font-semibold text-emerald-400">
                         {new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(monthlyCost)}
                       </span>
                     </span>
                   </div>
-                  <span className="text-xs text-white/25">
+                  <span className="text-xs text-foreground/35">
                     {new Date(address.startDate).toLocaleDateString(locale, { month: "short", year: "numeric" })}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 border-t border-white/5 pt-3" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-1.5 border-t border-border pt-3" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => router.push(`/addresses/${address.id}`)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-white hover:bg-white/5 transition"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
                   >
                     <Eye className="h-3 w-3" />{tCommon("details")}
                   </button>
                   <button
                     onClick={() => router.push(`/addresses/${address.id}/edit`)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-orange-400 hover:bg-orange-500/10 transition"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10 transition"
                   >
                     <Edit className="h-3 w-3" />{tCommon("edit")}
                   </button>
                   <button
                     onClick={() => router.push(`/services/new`)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 transition"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition"
                   >
                     <Zap className="h-3 w-3" />{tServices("newTitle")}
                   </button>
@@ -187,7 +187,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                   {!isConfirming ? (
                     <button
                       onClick={(e) => handleDelete(address.id, e)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-white/20 hover:text-red-400 hover:bg-red-500/10 transition"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition"
                       aria-label={t("deleteAddress")}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -204,7 +204,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                       </button>
                       <button
                         onClick={cancelDelete}
-                        className="px-2 py-1 rounded-lg text-[11px] text-white/40 hover:text-white hover:bg-white/5 transition"
+                        className="px-2 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
                       >
                         {tCommon("cancel")}
                       </button>

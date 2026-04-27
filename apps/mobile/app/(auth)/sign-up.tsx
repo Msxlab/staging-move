@@ -88,7 +88,8 @@ export default function SignUpScreen() {
       return;
     }
     setPendingLegalConsents(createAcceptedLegalConsents(legalConsents));
-    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?redirect=/dashboard&acceptLegal=true`);
+    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
+    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
   };
 
   if (done) {

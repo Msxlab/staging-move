@@ -3,6 +3,7 @@ import {
   parseMoveTaskLocalEffect,
 } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
+import { encryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
 
 export interface CompleteMoveTaskOptions {
   selectedDestinationProviderId?: string | null;
@@ -129,7 +130,7 @@ export async function completeMoveTaskWithLocalEffect(
       });
       if (!existingDestinationService) {
         const service = await tx.service.create({
-          data: {
+          data: encryptServiceSensitiveFields({
             userId,
             addressId: task.destinationAddressId,
             providerId: task.service.providerId,
@@ -145,7 +146,7 @@ export async function completeMoveTaskWithLocalEffect(
             migrationAction: "TRANSFER",
             previousServiceId: task.service.id,
             notes: "Created locally when the user completed a move transfer task. No external provider update was performed.",
-          },
+          }),
         });
         createdServiceId = service.id;
       } else {
@@ -175,7 +176,7 @@ export async function completeMoveTaskWithLocalEffect(
       });
       if (!existingDestinationService) {
         const service = await tx.service.create({
-          data: {
+          data: encryptServiceSensitiveFields({
             userId,
             addressId: task.destinationAddressId,
             providerId: selectedProvider.providerId,
@@ -190,7 +191,7 @@ export async function completeMoveTaskWithLocalEffect(
             migrationAction: "NEW",
             previousServiceId: task.serviceId || null,
             notes: "Created locally when the user completed a destination provider task. No external provider update was performed.",
-          },
+          }),
         });
         createdServiceId = service.id;
       } else {

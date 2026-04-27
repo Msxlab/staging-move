@@ -18,7 +18,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 
 vi.mock("@/lib/shared-encryption", () => ({
-  decrypt: vi.fn((value: string) => `decrypted:${value}`),
+  decrypt: vi.fn((value: string) => value === "enc-email" ? "customer@example.com" : `decrypted:${value}`),
 }));
 
 import { prisma } from "@/lib/db";
@@ -63,7 +63,7 @@ describe("export route", () => {
         accountNumber: "acct-1234",
         website: "https://example.com",
         phone: "5551234567",
-        email: "customer@example.com",
+        email: "enc-email",
         monthlyCost: 120,
         billingDay: 15,
         billingCycle: "MONTHLY",
@@ -143,7 +143,7 @@ describe("export route", () => {
         accountNumber: "acct-1234",
         website: "https://example.com",
         phone: "5551234567",
-        email: "customer@example.com",
+        email: "enc-email",
         monthlyCost: 120,
         billingDay: 15,
         billingCycle: "MONTHLY",

@@ -15,6 +15,17 @@ const DEFAULT_FROM_EMAIL = "LocateFlow <noreply@locateflow.com>";
 export const DEFAULT_APP_URL = "https://locateflow.com";
 export const DEFAULT_SUPPORT_EMAIL = "support@locateflow.com";
 
+// Inline-content emails are translated in-process. ES targets the US Hispanic
+// audience; everything else falls back to EN. DB-templated emails use their
+// own `${slug}-es` lookup in renderTemplate (see email-service.ts).
+export type EmailLocale = "en" | "es";
+
+export function resolveEmailLocale(input?: string | null): EmailLocale {
+  const normalized = (input || "").toLowerCase();
+  if (normalized.startsWith("es")) return "es";
+  return "en";
+}
+
 function isProductionLikeEmailRuntime() {
   const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
   return (
@@ -44,12 +55,15 @@ export interface EmailOptions {
   html: string;
   text?: string;
   replyTo?: string | string[];
+  headers?: Record<string, string>;
 }
 
 export interface SendEmailResult {
   success: boolean;
   providerMessageId: string | null;
   error: string | null;
+  fromEmail: string | null;
+  configError?: boolean;
 }
 
 export interface EmailContent {
@@ -126,14 +140,25 @@ export async function sendEmailWithResult(
   const configError = validateEmailConfig(config);
   if (configError) {
     console.error("[EMAIL] Configuration error:", { message: configError });
-    return { success: false, providerMessageId: null, error: configError };
+    return {
+      success: false,
+      providerMessageId: null,
+      error: configError,
+      fromEmail: config.fromEmail,
+      configError: true,
+    };
   }
   const { resendApiKey, fromEmail, replyTo } = config;
   const text = options.text || htmlToPlainText(options.html);
 
   if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${options.to} | Subject: ${options.subject}`);
-    return { success: true, providerMessageId: null, error: null };
+    return {
+      success: true,
+      providerMessageId: null,
+      error: null,
+      fromEmail,
+    };
   }
 
   try {
@@ -144,6 +169,7 @@ export async function sendEmailWithResult(
       html: options.html,
       text,
       replyTo: options.replyTo || replyTo,
+      ...(options.headers ? { headers: options.headers } : {}),
     });
 
     if (error) {
@@ -153,9 +179,10 @@ export async function sendEmailWithResult(
         success: false,
         providerMessageId: null,
         error: safeError,
+        fromEmail,
       };
     }
-    return { success: true, providerMessageId: data?.id || null, error: null };
+    return { success: true, providerMessageId: data?.id || null, error: null, fromEmail };
   } catch (err) {
     const safeError = safeEmailError(err);
     console.error("[EMAIL] Error:", { message: safeError });
@@ -163,6 +190,7 @@ export async function sendEmailWithResult(
       success: false,
       providerMessageId: null,
       error: safeError,
+      fromEmail,
     };
   }
 }
@@ -257,6 +285,17 @@ function ctaButton(href: string, label: string): string {
     </table>`;
 }
 
+const SHELL_STRINGS: Record<EmailLocale, { securityNote: string; footerNote: string }> = {
+  en: {
+    securityNote: "If this wasn't you, ignore this email or contact support.",
+    footerNote: "You're receiving this email because you used LocateFlow.",
+  },
+  es: {
+    securityNote: "Si no fuiste tú, ignora este correo o contacta con soporte.",
+    footerNote: "Recibes este correo porque usaste LocateFlow.",
+  },
+};
+
 export function renderLocateFlowEmail(opts: {
   preheader: string;
   title: string;
@@ -264,15 +303,18 @@ export function renderLocateFlowEmail(opts: {
   cta?: { href: string; label: string };
   supportEmail?: string;
   securityNote?: boolean;
+  locale?: EmailLocale;
 }): string {
+  const locale: EmailLocale = opts.locale || "en";
+  const strings = SHELL_STRINGS[locale];
   const supportEmail = opts.supportEmail || DEFAULT_SUPPORT_EMAIL;
   const cta = opts.cta ? ctaButton(opts.cta.href, opts.cta.label) : "";
   const securityNote = opts.securityNote
-    ? `<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:${COLORS.muted};">If this wasn't you, ignore this email or contact support.</p>`
+    ? `<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:${COLORS.muted};">${strings.securityNote}</p>`
     : "";
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -312,7 +354,7 @@ export function renderLocateFlowEmail(opts: {
                 &nbsp;|&nbsp;
                 <a href="mailto:${escapeHtml(supportEmail)}" style="color:${COLORS.primaryDark};text-decoration:underline;">${escapeHtml(supportEmail)}</a>
               </p>
-              <p style="margin:0;font-size:12px;line-height:18px;color:${COLORS.muted};">You're receiving this email because you used LocateFlow.</p>
+              <p style="margin:0;font-size:12px;line-height:18px;color:${COLORS.muted};">${strings.footerNote}</p>
             </td>
           </tr>
         </table>
@@ -323,17 +365,68 @@ export function renderLocateFlowEmail(opts: {
 </html>`;
 }
 
-function textFooter(security = false, supportEmail = DEFAULT_SUPPORT_EMAIL): string {
+function textFooter(
+  security = false,
+  supportEmail = DEFAULT_SUPPORT_EMAIL,
+  locale: EmailLocale = "en",
+): string {
+  const strings = SHELL_STRINGS[locale];
   return [
     "",
     "LocateFlow",
     DEFAULT_APP_URL,
     supportEmail,
-    "You're receiving this email because you used LocateFlow.",
-    security ? "If this wasn't you, ignore this email or contact support." : "",
+    strings.footerNote,
+    security ? strings.securityNote : "",
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+const UNSUBSCRIBE_FOOTER_STRINGS: Record<EmailLocale, { line: string; cta: string }> = {
+  en: { line: "Don't want these emails?", cta: "Unsubscribe" },
+  es: { line: "¿No quieres recibir estos correos?", cta: "Cancelar suscripción" },
+};
+
+/**
+ * Appends an unsubscribe line to a marketing email's HTML and plain-text
+ * bodies. Pass the rendered email content + the absolute unsubscribe URL.
+ * The HTML version is wrapped in a small footer that matches the existing
+ * email shell's muted style; the plain-text version adds two new lines.
+ */
+export function appendUnsubscribeFooter(
+  content: EmailContent,
+  unsubscribeUrl: string,
+  locale: EmailLocale = "en",
+): EmailContent {
+  const strings = UNSUBSCRIBE_FOOTER_STRINGS[locale];
+  const htmlFooter = `<p style="margin:8px 0 0;font-size:12px;line-height:18px;color:${COLORS.muted};">${strings.line} <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLORS.primaryDark};text-decoration:underline;">${strings.cta}</a>.</p>`;
+  // Insert the footer right before the closing </body> so it renders inside
+  // the email shell. If for some reason the marker is missing we just
+  // append at the end.
+  const closingBody = "</body>";
+  const html = content.html.includes(closingBody)
+    ? content.html.replace(closingBody, `${htmlFooter}${closingBody}`)
+    : `${content.html}${htmlFooter}`;
+  const text = `${content.text}\n\n${strings.line} ${strings.cta}: ${unsubscribeUrl}`;
+  return { ...content, html, text };
+}
+
+/**
+ * Builds RFC 2369 + RFC 8058 compliant unsubscribe headers. Pass the
+ * absolute https URL that POSTs to /api/unsubscribe; the mailto: variant
+ * is added so older clients without one-click support still have a path.
+ */
+export function buildUnsubscribeHeaders(
+  unsubscribeUrl: string,
+  supportEmail = DEFAULT_SUPPORT_EMAIL,
+): Record<string, string> {
+  const subject = `unsubscribe`;
+  const mailto = `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}`;
+  return {
+    "List-Unsubscribe": `<${unsubscribeUrl}>, <${mailto}>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  };
 }
 
 export function emailVerificationContent(data: {
@@ -408,6 +501,412 @@ export function passwordResetContent(data: {
     textFooter(true, data.supportEmail),
   ].join("\n");
   return { subject, html, text };
+}
+
+const SUBSCRIPTION_ACTIVATED_STRINGS: Record<EmailLocale, {
+  subject: (plan: string) => string;
+  preheader: (plan: string) => string;
+  title: string;
+  greeting: (name: string) => string;
+  intro: string;
+  planLabel: string;
+  amountLabel: string;
+  cta: string;
+  managePolicy: string;
+  hi: (name: string) => string;
+  active: string;
+}> = {
+  en: {
+    subject: (plan) => `Welcome to LocateFlow ${plan}`,
+    preheader: (plan) => `Your LocateFlow ${plan} subscription is active.`,
+    title: "Subscription activated",
+    greeting: (name) => `Hi <strong>${escapeHtml(name)}</strong>,`,
+    intro: "Your subscription is active. Here are the details:",
+    planLabel: "Plan",
+    amountLabel: "Amount",
+    cta: "Manage Subscription",
+    managePolicy: "You can update or cancel your plan from billing settings at any time.",
+    hi: (name) => `Hi ${name},`,
+    active: "Your subscription is active.",
+  },
+  es: {
+    subject: (plan) => `Bienvenido a LocateFlow ${plan}`,
+    preheader: (plan) => `Tu suscripción de LocateFlow ${plan} está activa.`,
+    title: "Suscripción activada",
+    greeting: (name) => `Hola <strong>${escapeHtml(name)}</strong>,`,
+    intro: "Tu suscripción está activa. Estos son los detalles:",
+    planLabel: "Plan",
+    amountLabel: "Monto",
+    cta: "Administrar suscripción",
+    managePolicy: "Puedes cambiar o cancelar tu plan desde la configuración de facturación cuando quieras.",
+    hi: (name) => `Hola ${name},`,
+    active: "Tu suscripción está activa.",
+  },
+};
+
+export function subscriptionActivatedContent(data: {
+  userName: string;
+  planLabel: string;
+  amountFormatted?: string | null;
+  manageLink: string;
+  supportEmail?: string;
+  locale?: EmailLocale | null;
+}): EmailContent {
+  const locale: EmailLocale = resolveEmailLocale(data.locale);
+  const s = SUBSCRIPTION_ACTIVATED_STRINGS[locale];
+  const subject = s.subject(data.planLabel);
+  const rows: Array<[string, string]> = [[s.planLabel, escapeHtml(data.planLabel)]];
+  if (data.amountFormatted) rows.push([s.amountLabel, escapeHtml(data.amountFormatted)]);
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${s.greeting(data.userName)}</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${s.intro}</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;margin:8px 0 4px;">${detailRows(rows)}</table>
+    <p style="margin:16px 0 0;font-size:13px;line-height:20px;color:${COLORS.muted};">${s.managePolicy}</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: s.preheader(data.planLabel),
+    title: s.title,
+    bodyHtml,
+    cta: { href: data.manageLink, label: s.cta },
+    supportEmail: data.supportEmail,
+    locale,
+  });
+  const text = [
+    s.hi(data.userName),
+    "",
+    s.active,
+    `${s.planLabel}: ${data.planLabel}`,
+    data.amountFormatted ? `${s.amountLabel}: ${data.amountFormatted}` : "",
+    "",
+    `${s.cta}: ${data.manageLink}`,
+    "",
+    s.managePolicy,
+    textFooter(false, data.supportEmail, locale),
+  ].filter(Boolean).join("\n");
+  return { subject, html, text };
+}
+
+const SUBSCRIPTION_CANCELED_STRINGS: Record<EmailLocale, {
+  subject: string;
+  preheader: string;
+  title: string;
+  cta: string;
+  reminder: string;
+  greeting: (name: string) => string;
+  bodyLine: (plan: string) => string;
+  accessUntil: (date: string) => string;
+  accessEnded: string;
+  hi: (name: string) => string;
+  bodyText: (plan: string) => string;
+  accessUntilText: (date: string) => string;
+  accessEndedText: string;
+}> = {
+  en: {
+    subject: "Your LocateFlow subscription was canceled",
+    preheader: "Your LocateFlow subscription was canceled.",
+    title: "Subscription canceled",
+    cta: "Reactivate",
+    reminder: "Changed your mind? You can reactivate anytime.",
+    greeting: (name) => `Hi <strong>${escapeHtml(name)}</strong>,`,
+    bodyLine: (plan) => `We've canceled your <strong>${escapeHtml(plan)}</strong> subscription.`,
+    accessUntil: (d) => `You'll still have access through <strong>${escapeHtml(d)}</strong>.`,
+    accessEnded: "Your access has ended.",
+    hi: (name) => `Hi ${name},`,
+    bodyText: (plan) => `We've canceled your ${plan} subscription.`,
+    accessUntilText: (d) => `You'll still have access through ${d}.`,
+    accessEndedText: "Your access has ended.",
+  },
+  es: {
+    subject: "Tu suscripción de LocateFlow fue cancelada",
+    preheader: "Tu suscripción de LocateFlow fue cancelada.",
+    title: "Suscripción cancelada",
+    cta: "Reactivar",
+    reminder: "¿Cambiaste de opinión? Puedes reactivar tu suscripción cuando quieras.",
+    greeting: (name) => `Hola <strong>${escapeHtml(name)}</strong>,`,
+    bodyLine: (plan) => `Cancelamos tu suscripción <strong>${escapeHtml(plan)}</strong>.`,
+    accessUntil: (d) => `Mantendrás el acceso hasta <strong>${escapeHtml(d)}</strong>.`,
+    accessEnded: "Tu acceso ha terminado.",
+    hi: (name) => `Hola ${name},`,
+    bodyText: (plan) => `Cancelamos tu suscripción ${plan}.`,
+    accessUntilText: (d) => `Mantendrás el acceso hasta ${d}.`,
+    accessEndedText: "Tu acceso ha terminado.",
+  },
+};
+
+export function subscriptionCanceledContent(data: {
+  userName: string;
+  planLabel: string;
+  accessEndsOn?: string | null;
+  reactivateLink: string;
+  supportEmail?: string;
+  locale?: EmailLocale | null;
+}): EmailContent {
+  const locale: EmailLocale = resolveEmailLocale(data.locale);
+  const s = SUBSCRIPTION_CANCELED_STRINGS[locale];
+  const accessLine = data.accessEndsOn ? s.accessUntil(data.accessEndsOn) : s.accessEnded;
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${s.greeting(data.userName)}</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${s.bodyLine(data.planLabel)} ${accessLine}</p>
+    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">${s.reminder}</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: s.preheader,
+    title: s.title,
+    bodyHtml,
+    cta: { href: data.reactivateLink, label: s.cta },
+    supportEmail: data.supportEmail,
+    securityNote: true,
+    locale,
+  });
+  const text = [
+    s.hi(data.userName),
+    "",
+    s.bodyText(data.planLabel),
+    data.accessEndsOn ? s.accessUntilText(data.accessEndsOn) : s.accessEndedText,
+    "",
+    `${s.cta}: ${data.reactivateLink}`,
+    textFooter(true, data.supportEmail, locale),
+  ].join("\n");
+  return { subject: s.subject, html, text };
+}
+
+const PAYMENT_FAILED_STRINGS: Record<EmailLocale, {
+  subject: string;
+  preheader: string;
+  title: string;
+  cta: string;
+  greeting: (name: string) => string;
+  amountWithValue: (amount: string) => string;
+  amountWithoutValue: string;
+  retryWithDate: (date: string) => string;
+  retryWithoutDate: string;
+  cardReplacedNote: string;
+  hi: (name: string) => string;
+  amountWithValueText: (amount: string) => string;
+  amountWithoutValueText: string;
+  retryWithDateText: (date: string) => string;
+  retryWithoutDateText: string;
+}> = {
+  en: {
+    subject: "Payment failed for your LocateFlow subscription",
+    preheader: "Payment failed — please update your billing details.",
+    title: "Payment failed",
+    cta: "Update Payment Method",
+    greeting: (name) => `Hi <strong>${escapeHtml(name)}</strong>,`,
+    amountWithValue: (a) => `We couldn't charge <strong>${escapeHtml(a)}</strong> for your subscription.`,
+    amountWithoutValue: "We couldn't charge your card for your subscription.",
+    retryWithDate: (d) => `We'll try again on ${escapeHtml(d)}, or you can update your card now to retry immediately.`,
+    retryWithoutDate: "Update your card to retry the payment and keep your account active.",
+    cardReplacedNote: "If your card was lost or replaced, please update your billing information.",
+    hi: (name) => `Hi ${name},`,
+    amountWithValueText: (a) => `We couldn't charge ${a} for your subscription.`,
+    amountWithoutValueText: "We couldn't charge your card for your subscription.",
+    retryWithDateText: (d) => `We'll try again on ${d}, or you can update your card now to retry immediately.`,
+    retryWithoutDateText: "Update your card to retry the payment and keep your account active.",
+  },
+  es: {
+    subject: "Falló el pago de tu suscripción de LocateFlow",
+    preheader: "Falló el pago — actualiza tus datos de facturación.",
+    title: "Falló el pago",
+    cta: "Actualizar método de pago",
+    greeting: (name) => `Hola <strong>${escapeHtml(name)}</strong>,`,
+    amountWithValue: (a) => `No pudimos cobrar <strong>${escapeHtml(a)}</strong> de tu suscripción.`,
+    amountWithoutValue: "No pudimos cobrar tu tarjeta para tu suscripción.",
+    retryWithDate: (d) => `Lo intentaremos de nuevo el ${escapeHtml(d)}, o puedes actualizar tu tarjeta ahora para reintentar de inmediato.`,
+    retryWithoutDate: "Actualiza tu tarjeta para reintentar el cobro y mantener tu cuenta activa.",
+    cardReplacedNote: "Si perdiste o reemplazaste tu tarjeta, por favor actualiza tu información de facturación.",
+    hi: (name) => `Hola ${name},`,
+    amountWithValueText: (a) => `No pudimos cobrar ${a} de tu suscripción.`,
+    amountWithoutValueText: "No pudimos cobrar tu tarjeta para tu suscripción.",
+    retryWithDateText: (d) => `Lo intentaremos de nuevo el ${d}, o puedes actualizar tu tarjeta ahora para reintentar de inmediato.`,
+    retryWithoutDateText: "Actualiza tu tarjeta para reintentar el cobro y mantener tu cuenta activa.",
+  },
+};
+
+export function paymentFailedContent(data: {
+  userName: string;
+  amountFormatted?: string | null;
+  retryLink: string;
+  nextAttemptOn?: string | null;
+  supportEmail?: string;
+  locale?: EmailLocale | null;
+}): EmailContent {
+  const locale: EmailLocale = resolveEmailLocale(data.locale);
+  const s = PAYMENT_FAILED_STRINGS[locale];
+  const amountLine = data.amountFormatted ? s.amountWithValue(data.amountFormatted) : s.amountWithoutValue;
+  const retryNote = data.nextAttemptOn ? s.retryWithDate(data.nextAttemptOn) : s.retryWithoutDate;
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${s.greeting(data.userName)}</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${amountLine}</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${retryNote}</p>
+    <p style="margin:0;font-size:13px;line-height:20px;color:${COLORS.muted};">${s.cardReplacedNote}</p>`;
+  const html = renderLocateFlowEmail({
+    preheader: s.preheader,
+    title: s.title,
+    bodyHtml,
+    cta: { href: data.retryLink, label: s.cta },
+    supportEmail: data.supportEmail,
+    locale,
+  });
+  const text = [
+    s.hi(data.userName),
+    "",
+    data.amountFormatted ? s.amountWithValueText(data.amountFormatted) : s.amountWithoutValueText,
+    "",
+    data.nextAttemptOn ? s.retryWithDateText(data.nextAttemptOn) : s.retryWithoutDateText,
+    "",
+    `${s.cta}: ${data.retryLink}`,
+    textFooter(false, data.supportEmail, locale),
+  ].join("\n");
+  const subject = s.subject;
+  return { subject, html, text };
+}
+
+export type SecurityNoticeKind =
+  | "password-changed"
+  | "mfa-enabled"
+  | "mfa-disabled"
+  | "oauth-linked"
+  | "account-deletion-requested";
+
+type SecurityNoticeCopy = {
+  subject: string;
+  title: string;
+  body: (detail?: string | null) => string;
+  cta: string;
+};
+
+const SECURITY_NOTICE_STRINGS: Record<EmailLocale, {
+  hi: (name: string) => string;
+  greeting: (name: string) => string;
+  whenLabel: string;
+  copy: Record<SecurityNoticeKind, SecurityNoticeCopy>;
+}> = {
+  en: {
+    hi: (name) => `Hi ${name},`,
+    greeting: (name) => `Hi <strong>${escapeHtml(name)}</strong>,`,
+    whenLabel: "When",
+    copy: {
+      "password-changed": {
+        subject: "Your LocateFlow password was changed",
+        title: "Password changed",
+        body: (detail) => detail
+          ? `${detail} If this wasn't you, secure your account immediately.`
+          : "Your account password was just changed. If this was you, no action is needed.",
+        cta: "Review Account Security",
+      },
+      "mfa-enabled": {
+        subject: "Two-factor authentication is now on",
+        title: "Two-factor authentication enabled",
+        body: () => "Two-factor authentication is now active on your account. You'll need your authenticator app the next time you sign in.",
+        cta: "Review Account Security",
+      },
+      "mfa-disabled": {
+        subject: "Two-factor authentication was turned off",
+        title: "Two-factor authentication disabled",
+        body: () => "Two-factor authentication has been turned off on your account. If this wasn't you, re-enable it immediately and change your password.",
+        cta: "Review Account Security",
+      },
+      "oauth-linked": {
+        subject: "A new sign-in method was linked to your account",
+        title: "Sign-in method linked",
+        body: (detail) => detail
+          ? `${detail} can now sign in to your LocateFlow account. If this wasn't you, contact support immediately.`
+          : "A new sign-in method was linked to your account. If this wasn't you, contact support immediately.",
+        cta: "Review Account Security",
+      },
+      "account-deletion-requested": {
+        subject: "Your LocateFlow account deletion is scheduled",
+        title: "Account deletion requested",
+        body: (detail) => detail
+          ? `We received a request to delete your account. ${detail} If you didn't request this, contact support immediately to cancel.`
+          : "We received a request to delete your account. If you didn't request this, contact support immediately to cancel.",
+        cta: "Cancel Deletion",
+      },
+    },
+  },
+  es: {
+    hi: (name) => `Hola ${name},`,
+    greeting: (name) => `Hola <strong>${escapeHtml(name)}</strong>,`,
+    whenLabel: "Cuándo",
+    copy: {
+      "password-changed": {
+        subject: "Cambiaste la contraseña de tu cuenta de LocateFlow",
+        title: "Contraseña cambiada",
+        body: (detail) => detail
+          ? `${detail} Si no fuiste tú, asegura tu cuenta de inmediato.`
+          : "Acaban de cambiar la contraseña de tu cuenta. Si fuiste tú, no necesitas hacer nada.",
+        cta: "Revisar la seguridad de la cuenta",
+      },
+      "mfa-enabled": {
+        subject: "La verificación en dos pasos está activa",
+        title: "Verificación en dos pasos activada",
+        body: () => "La verificación en dos pasos ya está activa en tu cuenta. Necesitarás tu app de autenticación la próxima vez que inicies sesión.",
+        cta: "Revisar la seguridad de la cuenta",
+      },
+      "mfa-disabled": {
+        subject: "Se desactivó la verificación en dos pasos",
+        title: "Verificación en dos pasos desactivada",
+        body: () => "La verificación en dos pasos se ha desactivado en tu cuenta. Si no fuiste tú, vuelve a activarla de inmediato y cambia tu contraseña.",
+        cta: "Revisar la seguridad de la cuenta",
+      },
+      "oauth-linked": {
+        subject: "Se vinculó un nuevo método de inicio de sesión a tu cuenta",
+        title: "Método de inicio de sesión vinculado",
+        body: (detail) => detail
+          ? `${detail} ahora puede iniciar sesión en tu cuenta de LocateFlow. Si no fuiste tú, contacta con soporte de inmediato.`
+          : "Se vinculó un nuevo método de inicio de sesión a tu cuenta. Si no fuiste tú, contacta con soporte de inmediato.",
+        cta: "Revisar la seguridad de la cuenta",
+      },
+      "account-deletion-requested": {
+        subject: "Programamos la eliminación de tu cuenta de LocateFlow",
+        title: "Eliminación de cuenta solicitada",
+        body: (detail) => detail
+          ? `Recibimos una solicitud para eliminar tu cuenta. ${detail} Si no la solicitaste tú, contacta con soporte de inmediato para cancelarla.`
+          : "Recibimos una solicitud para eliminar tu cuenta. Si no la solicitaste tú, contacta con soporte de inmediato para cancelarla.",
+        cta: "Cancelar la eliminación",
+      },
+    },
+  },
+};
+
+export function securityNoticeContent(data: {
+  userName: string;
+  kind: SecurityNoticeKind;
+  detail?: string | null;
+  occurredAt?: string | null;
+  manageLink: string;
+  supportEmail?: string;
+  locale?: EmailLocale | null;
+}): EmailContent {
+  const locale: EmailLocale = resolveEmailLocale(data.locale);
+  const localeStrings = SECURITY_NOTICE_STRINGS[locale];
+  const copy = localeStrings.copy[data.kind];
+  const bodyText = copy.body(data.detail);
+  const occurredLine = data.occurredAt
+    ? `<p style="margin:0 0 14px;font-size:13px;line-height:20px;color:${COLORS.muted};">${localeStrings.whenLabel}: ${escapeHtml(data.occurredAt)}</p>`
+    : "";
+  const bodyHtml = `
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${localeStrings.greeting(data.userName)}</p>
+    <p style="margin:0 0 14px;font-size:15px;line-height:24px;color:${COLORS.text};">${bodyText}</p>
+    ${occurredLine}`;
+  const html = renderLocateFlowEmail({
+    preheader: copy.subject,
+    title: copy.title,
+    bodyHtml,
+    cta: { href: data.manageLink, label: copy.cta },
+    supportEmail: data.supportEmail,
+    securityNote: true,
+    locale,
+  });
+  const text = [
+    localeStrings.hi(data.userName),
+    "",
+    bodyText,
+    data.occurredAt ? `${localeStrings.whenLabel}: ${data.occurredAt}` : "",
+    "",
+    `${copy.cta}: ${data.manageLink}`,
+    textFooter(true, data.supportEmail, locale),
+  ].filter(Boolean).join("\n");
+  return { subject: copy.subject, html, text };
 }
 
 export function billReminderHtml(data: {

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         if (item.accountNumber)
           out.accountNumber = maskValue(readEncrypted(item.accountNumber));
         if (item.phone) out.phone = maskValue(readEncrypted(item.phone));
-        if (item.email) out.email = maskEmail(item.email);
+        if (item.email) out.email = maskEmail(readEncrypted(item.email));
         if (item.username)
           out.username = maskValue(readEncrypted(item.username), 2);
         if ("notes" in item) {

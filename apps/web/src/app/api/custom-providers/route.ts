@@ -96,9 +96,17 @@ export async function POST(request: NextRequest) {
 
     const entitlement = await canCreateCustomProvider(userId);
     if (!entitlement.allowed) {
-      return NextResponse.json({ error: entitlement.reason, upgradeRequired: true }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: entitlement.reason,
+          code: entitlement.code,
+          upgradeRequired: entitlement.upgradeRequired,
+          current: entitlement.current,
+          limit: entitlement.limit,
+        },
+        { status: 403 },
+      );
     }
-
     const body = await request.json();
     const validated = customProviderSchema.parse(body);
     const providerName = cleanText(validated.name)!;

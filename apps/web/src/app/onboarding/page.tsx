@@ -38,7 +38,7 @@ const STEPS = [
 // --- Glass card wrapper ---
 function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl ${className}`}>
+    <div className={`rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl shadow-2xl ${className}`}>
       {children}
     </div>
   );
@@ -63,6 +63,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
   const [showCategories, setShowCategories] = useState(false);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
+  const [legalAcceptedOnServer, setLegalAcceptedOnServer] = useState(false);
   const legalStepRequested = searchParams.get("step") === "legal";
 
   // Resume the server-derived onboarding step. Profile, address, service
@@ -82,6 +83,10 @@ export default function OnboardingPage() {
         }
 
         const hasLegal = hasRequiredLegalConsents(data.legalConsents);
+        setLegalAcceptedOnServer(hasLegal);
+        if (data.legalConsents) {
+          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
+        }
 
         if (!hasLegal) {
           if (!legalStepRequested) {
@@ -146,9 +151,6 @@ export default function OnboardingPage() {
           }
         }
 
-        if (data.legalConsents) {
-          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
-        }
       } catch {
         // Keep the current step visible; individual saves still surface errors.
       }
@@ -325,6 +327,7 @@ export default function OnboardingPage() {
         throw new Error(data.error || "Failed to save legal acknowledgement");
       }
       setLegalConsents(getDefaultLegalConsents(data.legalConsents || acceptedLegalConsents));
+      setLegalAcceptedOnServer(true);
       toast.success("Legal acknowledgements saved.");
       router.replace("/onboarding");
       router.refresh();
@@ -399,8 +402,17 @@ export default function OnboardingPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        if (res.ok) saved++;
+        if (res.ok) {
+          saved++;
+          continue;
+        }
+        const data = await res.json().catch(() => ({}));
+        const message = data.error || "A selected provider could not be added.";
+        if (data.upgradeRequired || typeof data.code === "string") {
+          throw new Error(message);
+        }
       }
+      if (saved === 0) throw new Error("No selected providers could be added.");
       toast.success(`${saved} service${saved !== 1 ? "s" : ""} added!`);
       return true;
     } catch (e: any) {
@@ -542,11 +554,11 @@ export default function OnboardingPage() {
       .join(" - ");
 
   // --- Common input styles for glass theme ---
-  const inputCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition";
-  const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
-  const labelCls = "block text-xs font-medium text-white/60 mb-1.5";
-  const checkboxCls = "w-4 h-4 rounded border-white/20 bg-white/5 accent-orange-500 cursor-pointer";
-  const showLegalGate = legalStepRequested && !hasRequiredLegalConsents(legalConsents);
+  const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 transition";
+  const selectCls = "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
+  const labelCls = "block text-xs font-medium text-muted-foreground mb-1.5";
+  const checkboxCls = "w-4 h-4 rounded border-foreground/20 bg-foreground/5 accent-orange-500 cursor-pointer";
+  const showLegalGate = legalStepRequested && !legalAcceptedOnServer;
 
   if (showLegalGate) {
     return (
@@ -564,8 +576,8 @@ export default function OnboardingPage() {
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Required legal acknowledgements</h2>
-              <p className="mt-1 text-sm text-white/50">
+              <h2 className="text-lg font-semibold text-foreground">Required legal acknowledgements</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Accept these before using LocateFlow.
               </p>
             </div>
@@ -612,13 +624,13 @@ export default function OnboardingPage() {
                   ? "bg-emerald-500/20 text-emerald-400"
                   : i === step
                   ? "bg-orange-500/20 text-orange-300 ring-1 ring-orange-500/40"
-                  : "bg-white/5 text-white/30"
+                  : "bg-foreground/5 text-foreground/40"
               }`}>
                 {i < step ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                 <span className="hidden sm:inline">{s.label}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-6 h-px ${i < step ? "bg-emerald-500/40" : "bg-white/10"}`} />
+                <div className={`w-6 h-px ${i < step ? "bg-emerald-500/40" : "bg-foreground/10"}`} />
               )}
             </div>
           );
@@ -636,8 +648,8 @@ export default function OnboardingPage() {
       {/* Step 0: Profile */}
       {step === 0 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Your Profile</h2>
-          <p className="text-white/40 text-sm mb-5">Help us personalize your experience</p>
+          <h2 className="text-lg font-semibold text-foreground mb-1">Your Profile</h2>
+          <p className="text-muted-foreground text-sm mb-5">Help us personalize your experience</p>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -672,7 +684,7 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            <p className="text-xs text-white/40 -mt-2">
+            <p className="text-xs text-muted-foreground -mt-2">
               Tap the ones that apply — all optional. We use these only to tailor your checklist.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -684,7 +696,7 @@ export default function OnboardingPage() {
                 { key: "hasMotorcycle", label: "Motorcycle" },
                 { key: "hasBoatRV", label: "Boat / RV" },
               ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                <label key={key} className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                   <input
                     type="checkbox"
                     className={checkboxCls}
@@ -699,7 +711,7 @@ export default function OnboardingPage() {
             {/* Sensitive-category opt-in (GDPR Art. 9 / CCPA sensitive PI).
                 Off by default; only unlocks the disability + immigration
                 questions when the user explicitly consents. */}
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+            <div className="rounded-xl border border-border bg-foreground/[0.03] p-4 space-y-3">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -717,10 +729,10 @@ export default function OnboardingPage() {
                   }}
                 />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">
-                    Share accessibility and immigration details <span className="text-white/40 font-normal">(optional)</span>
+                  <p className="text-sm font-semibold text-foreground">
+                    Share accessibility and immigration details <span className="text-muted-foreground font-normal">(optional)</span>
                   </p>
-                  <p className="mt-1 text-xs text-white/50 leading-relaxed">
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                     These fields are sensitive under US and EU privacy law. They&apos;re never required, never shared, and you can turn this off any time in Settings → Privacy.
                   </p>
                 </div>
@@ -728,7 +740,7 @@ export default function OnboardingPage() {
 
               {profile.sensitiveOptIn ? (
                 <div className="space-y-3 pl-8">
-                  <label className="flex items-start gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                  <label className="flex items-start gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                     <input
                       type="checkbox"
                       className={checkboxCls}
@@ -737,7 +749,7 @@ export default function OnboardingPage() {
                     />
                     <div className="flex-1">
                       <p>Someone at home has a disability</p>
-                      <p className="mt-0.5 text-[11px] text-white/40">
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
                         Why we ask: so we can suggest accessibility-friendly movers and flag state-level DMV accommodations when you relocate.
                       </p>
                     </div>
@@ -774,7 +786,7 @@ export default function OnboardingPage() {
                     className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition ${
                       profile.moveType === opt.value
                         ? "border-orange-500 bg-orange-500/20 text-orange-300"
-                        : "border-white/10 bg-white/5 text-white/50 hover:bg-white/10"
+                        : "border-border bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                     }`}
                   >
                     {opt.label}
@@ -785,15 +797,15 @@ export default function OnboardingPage() {
 
             {/* Immigration Status — only shown when sensitive opt-in is on. */}
             {profile.sensitiveOptIn ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+              <div className="rounded-xl border border-border bg-foreground/[0.03] p-4 space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">Immigration status <span className="text-white/40 font-normal">(optional)</span></p>
-                  <p className="mt-1 text-xs text-white/50 leading-relaxed">
+                  <p className="text-sm font-semibold text-foreground">Immigration status <span className="text-muted-foreground font-normal">(optional)</span></p>
+                  <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                     Why we ask: some states (CA, NY, WA) have different DMV document rules for new residents depending on visa status. Skip if it doesn&apos;t apply.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                  <label className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                     <input
                       type="checkbox"
                       className={checkboxCls}
@@ -820,7 +832,7 @@ export default function OnboardingPage() {
             {/* Business Owner */}
             {(profile.moveType === "BUSINESS" || profile.moveType === "PERSONAL") && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 cursor-pointer hover:bg-white/10 transition text-sm text-white/70">
+                <label className="flex items-center gap-2 rounded-xl border border-border bg-foreground/5 px-3 py-2.5 cursor-pointer hover:bg-foreground/10 transition text-sm text-foreground/80">
                   <input
                     type="checkbox"
                     className={checkboxCls}
@@ -849,8 +861,8 @@ export default function OnboardingPage() {
       {/* Step 1: Address */}
       {step === 1 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Your Primary Address</h2>
-          <p className="text-white/40 text-sm mb-5">Where do you currently live?</p>
+          <h2 className="text-lg font-semibold text-foreground mb-1">Your Primary Address</h2>
+          <p className="text-muted-foreground text-sm mb-5">Where do you currently live?</p>
           <div className="space-y-4">
             <div>
               <label className={labelCls}>Nickname</label>
@@ -914,11 +926,11 @@ export default function OnboardingPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">Choose Listed Providers</h2>
-              <p className="text-sm text-white/50">
+              <h2 className="text-lg font-semibold text-foreground">Choose Listed Providers</h2>
+              <p className="text-sm text-muted-foreground">
                 Choose a listed provider or add a local/custom provider later to create a tracked service.
               </p>
-              <p className="mt-1 text-xs text-white/45">
+              <p className="mt-1 text-xs text-foreground/45">
                 Showing unverified directory entries for <span className="text-orange-400 font-medium">{address.state || "all states"}</span>.
               </p>
             </div>
@@ -950,9 +962,9 @@ export default function OnboardingPage() {
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
-              className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              className="w-full rounded-xl border border-border bg-foreground/5 pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
               placeholder="Search listed providers..."
               value={providerSearch}
               onChange={(e) => setProviderSearch(e.target.value)}
@@ -963,18 +975,18 @@ export default function OnboardingPage() {
           <div>
             <button
               onClick={() => setShowCategories(!showCategories)}
-              className="flex items-center gap-2 text-xs text-white/50 hover:text-white/80 transition"
+              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition"
             >
               {showCategories ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
               {showCategories ? "Hide categories" : "Browse by category"}
-              <span className="text-white/45">({allCategories.length})</span>
+              <span className="text-foreground/45">({allCategories.length})</span>
             </button>
             {showCategories && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 <button
                   onClick={() => setActiveCategory(null)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                    !activeCategory ? "bg-orange-500 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+                    !activeCategory ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                   }`}
                 >All ({providers.length})</button>
                 {allCategories.map((cat) => {
@@ -983,7 +995,7 @@ export default function OnboardingPage() {
                     <button key={cat}
                       onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                        activeCategory === cat ? "bg-orange-500 text-white" : "bg-white/5 text-white/50 hover:bg-white/10"
+                        activeCategory === cat ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                       }`}
                     >{getMergedDisplayCategoryIcon(cat)} {getMergedDisplayCategoryLabel(cat)} ({count})</button>
                   );
@@ -997,8 +1009,8 @@ export default function OnboardingPage() {
             <GlassCard className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles className="h-4 w-4 text-amber-400" />
-                <h3 className="text-sm font-semibold text-white">Recommended Listed Providers</h3>
-                <span className="text-[10px] text-white/45 ml-auto">Manual tracking</span>
+                <h3 className="text-sm font-semibold text-foreground">Recommended Listed Providers</h3>
+                <span className="text-[10px] text-foreground/45 ml-auto">Manual tracking</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {recommended.map((provider) => {
@@ -1008,16 +1020,16 @@ export default function OnboardingPage() {
                       className={`group relative text-left p-3 rounded-xl border transition-all ${
                         isSelected
                           ? "border-orange-500/50 bg-orange-500/10"
-                          : "border-white/5 bg-white/[0.02] hover:bg-white/5 hover:border-white/10"
+                          : "border-border bg-foreground/[0.02] hover:bg-foreground/5 hover:border-border"
                       }`}
                     >
                       {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
                       <div className="flex items-center gap-3">
                         <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
-                          isSelected ? "bg-orange-500 text-white" : "bg-white/5 text-white/60"
+                          isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
                         }`}>{provider.name.charAt(0)}</div>
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm text-white truncate pr-6">{provider.name}</p>
+                          <p className="font-medium text-sm text-foreground truncate pr-6">{provider.name}</p>
                           <div className="flex flex-wrap gap-1 mt-0.5">
                             {(provider.matchReasons.length > 0 ? provider.matchReasons : [providerCategoryLabel(provider.category)]).slice(0, 2).map((reason, i) => (
                               <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-300 border border-orange-500/10">
@@ -1038,13 +1050,13 @@ export default function OnboardingPage() {
           {loadingProviders ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
-              <span className="ml-2 text-white/40 text-sm">Loading providers...</span>
+              <span className="ml-2 text-muted-foreground text-sm">Loading providers...</span>
             </div>
           ) : sortedCategories.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-              <Building2 className="mx-auto mb-3 h-9 w-9 text-white/30" />
-              <h3 className="text-sm font-semibold text-white">{providerEmptyState.title}</h3>
-              <p className="mx-auto mt-2 max-w-md text-sm text-white/60">
+            <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-center">
+              <Building2 className="mx-auto mb-3 h-9 w-9 text-foreground/40" />
+              <h3 className="text-sm font-semibold text-foreground">{providerEmptyState.title}</h3>
+              <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
                 {providerEmptyState.description}
               </p>
               <div className="mt-5 flex flex-col items-center justify-center gap-2 sm:flex-row">
@@ -1056,7 +1068,7 @@ export default function OnboardingPage() {
                 >
                   Continue without listed providers <ArrowRight className="h-4 w-4" />
                 </button>
-                <p className="text-xs text-white/45">
+                <p className="text-xs text-foreground/45">
                   Add local/custom providers later from Services &gt; Add Service.
                 </p>
               </div>
@@ -1068,18 +1080,18 @@ export default function OnboardingPage() {
                 const isOpen = expandedCats.has(cat);
                 const selectedInCat = items.filter((p: ScoredProvider) => selectedProviders.has(p.id)).length;
                 return (
-                  <div key={cat} className="rounded-xl border border-white/5 overflow-hidden">
+                  <div key={cat} className="rounded-xl border border-border overflow-hidden">
                     <button
                       onClick={() => toggleCat(cat)}
-                      className="w-full flex items-center gap-2 px-4 py-3 bg-white/[0.02] hover:bg-white/5 transition text-left"
+                      className="w-full flex items-center gap-2 px-4 py-3 bg-foreground/[0.02] hover:bg-foreground/5 transition text-left"
                     >
                       <span className="text-base">{getMergedDisplayCategoryIcon(cat)}</span>
-                      <span className="text-sm font-medium text-white/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
-                      <span className="text-[10px] text-white/45">{items.length}</span>
+                      <span className="text-sm font-medium text-foreground/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
+                      <span className="text-[10px] text-foreground/45">{items.length}</span>
                       {selectedInCat > 0 && (
                         <span className="px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[10px] font-medium">{selectedInCat}</span>
                       )}
-                      {isOpen ? <ChevronUp className="h-3.5 w-3.5 text-white/30" /> : <ChevronDown className="h-3.5 w-3.5 text-white/30" />}
+                      {isOpen ? <ChevronUp className="h-3.5 w-3.5 text-foreground/40" /> : <ChevronDown className="h-3.5 w-3.5 text-foreground/40" />}
                     </button>
                     {isOpen && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 p-3 pt-1">
@@ -1090,7 +1102,7 @@ export default function OnboardingPage() {
                             <div key={provider.id} className={`rounded-xl border transition-all ${
                               isSelected
                                 ? "border-orange-500/50 bg-orange-500/10"
-                                : "border-white/5 bg-white/[0.02] hover:bg-white/5"
+                                : "border-border bg-foreground/[0.02] hover:bg-foreground/5"
                             }`}>
                               <button type="button" onClick={() => toggleProvider(provider)}
                                 className="group relative text-left p-3 w-full"
@@ -1098,15 +1110,15 @@ export default function OnboardingPage() {
                                 {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
                                 <div className="flex items-center gap-3">
                                   <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                    isSelected ? "bg-orange-500 text-white" : "bg-white/5 text-white/50"
+                                    isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
                                   }`}>{provider.name.charAt(0)}</div>
                                   <div className="min-w-0 flex-1">
-                                    <p className="font-medium text-sm text-white truncate pr-5">{provider.name}</p>
+                                    <p className="font-medium text-sm text-foreground truncate pr-5">{provider.name}</p>
                                     {getMergedDisplaySubcategoryLabel(provider.category) && (
-                                      <p className="text-[10px] text-white/45 truncate">{getMergedDisplaySubcategoryLabel(provider.category)}</p>
+                                      <p className="text-[10px] text-foreground/45 truncate">{getMergedDisplaySubcategoryLabel(provider.category)}</p>
                                     )}
                                     {provider.description && (
-                                      <p className="text-[11px] text-white/45 truncate">{provider.description}</p>
+                                      <p className="text-[11px] text-foreground/45 truncate">{provider.description}</p>
                                     )}
                                     <div className="flex items-center gap-1.5 mt-1">
                                       <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
@@ -1115,7 +1127,7 @@ export default function OnboardingPage() {
                                         {provider.scope === "FEDERAL" ? "Federal" : provider.states.join(", ")}
                                       </span>
                                       {provider.website && (
-                                        <span className="text-[9px] text-white/45 flex items-center gap-0.5">
+                                        <span className="text-[9px] text-foreground/45 flex items-center gap-0.5">
                                           <Globe className="h-2.5 w-2.5" />
                                           {provider.website.replace(/https?:\/\/(www\.)?/, "").split("/")[0]}
                                         </span>
@@ -1132,16 +1144,16 @@ export default function OnboardingPage() {
                               {isSelected && (
                                 <div className="flex items-center gap-2 px-3 pb-2.5 pt-0" onClick={(e) => e.stopPropagation()}>
                                   <div className="flex items-center gap-1.5 flex-1">
-                                    <span className="text-[10px] text-white/45 shrink-0">$</span>
+                                    <span className="text-[10px] text-foreground/45 shrink-0">$</span>
                                     <input
                                       type="number" step="0.01" placeholder="Monthly cost"
-                                      className="h-7 w-full text-xs rounded-lg border border-white/10 bg-white/5 px-2 text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                                      className="h-7 w-full text-xs rounded-lg border border-border bg-foreground/5 px-2 text-foreground placeholder:text-foreground/35 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                                       value={bd?.monthlyCost || ""}
                                       onChange={(e) => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: e.target.value, billingCycle: prev[provider.id]?.billingCycle || "MONTHLY" } }))}
                                     />
                                   </div>
                                   <select
-                                    className="h-7 text-[10px] rounded-lg border border-white/10 bg-white/5 px-1 text-white/70 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                                    className="h-7 text-[10px] rounded-lg border border-border bg-foreground/5 px-1 text-foreground/80 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
                                     value={bd?.billingCycle || "MONTHLY"}
                                     onChange={(e) => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: prev[provider.id]?.monthlyCost || "", billingCycle: e.target.value } }))}
                                   >
@@ -1168,8 +1180,8 @@ export default function OnboardingPage() {
       {/* Step 3: Moving */}
       {step === 3 && (
         <GlassCard className="p-6">
-          <h2 className="text-lg font-semibold text-white mb-1">Do you have a move planned?</h2>
-          <p className="text-white/40 text-sm mb-5">
+          <h2 className="text-lg font-semibold text-foreground mb-1">Do you have a move planned?</h2>
+          <p className="text-muted-foreground text-sm mb-5">
             If yes, we&apos;ll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.
           </p>
 
@@ -1185,7 +1197,7 @@ export default function OnboardingPage() {
                 </button>
                 <button
                   onClick={() => { setWantsToMove(false); }}
-                  className="px-5 py-3 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition"
+                  className="px-5 py-3 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
                 >Not right now</button>
               </div>
             </div>
@@ -1194,8 +1206,8 @@ export default function OnboardingPage() {
           {wantsToMove === false && (
             <div className="text-center py-4">
               <CheckCircle2 className="h-12 w-12 mx-auto text-emerald-400/50 mb-3" />
-              <p className="text-white/60 text-sm mb-1">No problem! You can create a moving plan anytime.</p>
-              <p className="text-white/30 text-xs">Go to Moving section from the sidebar when you&apos;re ready.</p>
+              <p className="text-muted-foreground text-sm mb-1">No problem! You can create a moving plan anytime.</p>
+              <p className="text-foreground/40 text-xs">Go to Moving section from the sidebar when you&apos;re ready.</p>
               <button
                 onClick={finishOnboarding}
                 disabled={saving}
@@ -1210,7 +1222,7 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-2">
                 <MapPin className="h-4 w-4 text-orange-400" />
-                <h3 className="text-sm font-semibold text-white">Where are you moving to?</h3>
+                <h3 className="text-sm font-semibold text-foreground">Where are you moving to?</h3>
               </div>
               <AddressAutocompleteInput
                 label="Street Address"
@@ -1236,7 +1248,7 @@ export default function OnboardingPage() {
               <div>
                 <label className={labelCls}>Move Date *</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40 pointer-events-none" />
                   <input aria-required="true" type="date" className={`${inputCls} pl-10`} value={movingForm.moveDate} onChange={(e) => updateMovingField("moveDate", e.target.value)} />
                 </div>
               </div>
@@ -1250,7 +1262,7 @@ export default function OnboardingPage() {
                 </button>
                 <button
                   onClick={() => { setWantsToMove(null); }}
-                  className="px-4 py-2.5 rounded-xl border border-white/10 text-white/40 text-sm hover:bg-white/5 transition"
+                  className="px-4 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
                 >Cancel</button>
               </div>
             </div>
@@ -1260,19 +1272,19 @@ export default function OnboardingPage() {
 
       {/* Sticky Navigation Footer */}
       <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="backdrop-blur-xl border-t border-white/5" style={{ background: "color-mix(in srgb, var(--surface) 80%, transparent)" }}>
+        <div className="backdrop-blur-xl border-t border-border" style={{ background: "color-mix(in srgb, var(--surface) 80%, transparent)" }}>
           <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
             <button
               onClick={prev}
               disabled={step === 0 || saving}
-              className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
             >Back</button>
             <div className="flex items-center gap-2">
               {step === 2 && (
                 <button
                   onClick={next}
                   disabled={saving}
-                  className="px-5 py-2.5 rounded-xl border border-white/10 text-white/60 text-sm hover:bg-white/5 transition"
+                  className="px-5 py-2.5 rounded-xl border border-border text-muted-foreground text-sm hover:bg-foreground/5 transition"
                 >Skip</button>
               )}
               {step < 3 && (

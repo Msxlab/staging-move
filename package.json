@@ -47,7 +47,8 @@
     "mobile:build:dev:android": "pnpm --filter @locateflow/mobile build:dev:android",
     "mobile:build:dev:ios": "pnpm --filter @locateflow/mobile build:dev:ios",
     "mobile:build:simulator:ios": "pnpm --filter @locateflow/mobile build:simulator:ios",
-    "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts"
+    "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts",
+    "backfill:subscriptions": "pnpm exec tsx scripts/backfill-missing-subscriptions.ts"
   },
   "devDependencies": {
     "turbo": "^2.9.6"

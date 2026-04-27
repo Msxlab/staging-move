@@ -11,7 +11,13 @@ import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
-import { hashForOAuthLog, logSafeOAuthEvent, summarizeOAuthError } from "@/lib/oauth";
+import {
+  hashForOAuthLog,
+  logSafeOAuthEvent,
+  oauthUserIdHint,
+  summarizeOAuthError,
+} from "@/lib/oauth";
+import { ensureSubscriptionDefaults } from "@/lib/billing";
 
 // ── Secret / constants ──────────────────────────────────────
 
@@ -373,19 +379,24 @@ export async function destroyAllUserSessions(userId: string): Promise<void> {
 
 /**
  * Throw UNAUTHORIZED if no valid session cookie / DB row.
- * Also verifies the ACCOUNT_DELETED GDPR flag.
+ * Also destroys stale soft-deleted sessions. Callers that need a distinct
+ * user-facing deleted-account branch can opt into ACCOUNT_DELETED.
  */
-export async function requireDbUserId(): Promise<string> {
+export async function requireDbUserId(options: { distinguishDeleted?: boolean } = {}): Promise<string> {
   const session = await getUserSession();
   if (!session) throw new Error("UNAUTHORIZED");
 
-  const user = await prisma.user.findFirst({
-    where: { id: session.userId, deletedAt: null },
-    select: { id: true },
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, deletedAt: true },
   });
   if (!user) {
     await destroyUserSession();
     throw new Error("UNAUTHORIZED");
+  }
+  if (user.deletedAt) {
+    await destroyUserSession();
+    throw new Error(options.distinguishDeleted ? "ACCOUNT_DELETED" : "UNAUTHORIZED");
   }
 
   // Update lastActivity (non-blocking).
@@ -434,7 +445,7 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   lastName?: string | null;
   imageUrl?: string | null;
   allowNewAccount?: boolean;
-}): Promise<{ userId: string; isNewUser: boolean }> {
+}): Promise<{ userId: string; isNewUser: boolean; wasLinkedNow: boolean }> {
   // 1) Existing OAuth link
   const existingLink = await prisma.oAuthAccount.findUnique({
     where: {
@@ -450,13 +461,28 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   });
   if (existingLink) {
     if (existingLink.user?.deletedAt) {
+      logSafeOAuthEvent("oauth_account_link_diagnostic", {
+        provider: input.provider,
+        reason: "existing_oauth_deleted_user",
+        oauthUserIdHint: oauthUserIdHint(existingLink.userId),
+        oauthAccountUserDeleted: true,
+        activeOAuthMatch: false,
+      });
       logSafeOAuthEvent("oauth_existing_deleted_user_blocked", {
         provider: input.provider,
-        userId: existingLink.userId,
+        userIdHint: oauthUserIdHint(existingLink.userId),
       });
       throw new Error("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     }
-    return { userId: existingLink.userId, isNewUser: false };
+    logSafeOAuthEvent("oauth_account_link_diagnostic", {
+      provider: input.provider,
+      reason: "existing_oauth_active_user",
+      oauthUserIdHint: oauthUserIdHint(existingLink.userId),
+      oauthAccountUserDeleted: false,
+      activeOAuthMatch: true,
+    });
+    await ensureSubscriptionDefaults(existingLink.userId);
+    return { userId: existingLink.userId, isNewUser: false, wasLinkedNow: false };
   }
 
   // 2) Existing user by email → link
@@ -466,13 +492,29 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   });
   if (userByEmail) {
     if (userByEmail.deletedAt) {
+      logSafeOAuthEvent("oauth_account_link_diagnostic", {
+        provider: input.provider,
+        reason: "email_match_deleted_user",
+        emailUserIdHint: oauthUserIdHint(userByEmail.id),
+        emailHash: hashForOAuthLog(input.email),
+        emailMatchDeleted: true,
+        activeEmailMatch: false,
+      });
       logSafeOAuthEvent("oauth_existing_deleted_user_blocked", {
         provider: input.provider,
-        userId: userByEmail.id,
+        userIdHint: oauthUserIdHint(userByEmail.id),
         emailHash: hashForOAuthLog(input.email),
       });
       throw new Error("OAUTH_EXISTING_DELETED_USER_BLOCKED");
     }
+    logSafeOAuthEvent("oauth_account_link_diagnostic", {
+      provider: input.provider,
+      reason: "email_match_active_user",
+      emailUserIdHint: oauthUserIdHint(userByEmail.id),
+      emailHash: hashForOAuthLog(input.email),
+      emailMatchDeleted: false,
+      activeEmailMatch: true,
+    });
     try {
       await prisma.oAuthAccount.create({
         data: {
@@ -484,7 +526,7 @@ export async function findOrLinkOAuthUserWithStatus(input: {
     } catch (err) {
       logSafeOAuthEvent("oauth_account_create_failed", {
         provider: input.provider,
-        userId: userByEmail.id,
+        userIdHint: oauthUserIdHint(userByEmail.id),
         emailHash: hashForOAuthLog(input.email),
         ...summarizeOAuthError(err),
       });
@@ -497,7 +539,8 @@ export async function findOrLinkOAuthUserWithStatus(input: {
         data: { emailVerifiedAt: new Date() },
       });
     }
-    return { userId: userByEmail.id, isNewUser: false };
+    await ensureSubscriptionDefaults(userByEmail.id);
+    return { userId: userByEmail.id, isNewUser: false, wasLinkedNow: true };
   }
 
   if (input.allowNewAccount === false) {
@@ -505,6 +548,13 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   }
 
   // 3) Brand new account
+  logSafeOAuthEvent("oauth_account_link_diagnostic", {
+    provider: input.provider,
+    reason: "no_match_create_new_user",
+    emailHash: hashForOAuthLog(input.email),
+    activeEmailMatch: false,
+    activeOAuthMatch: false,
+  });
   let created: { id: string };
   try {
     created = await prisma.user.create({
@@ -528,5 +578,6 @@ export async function findOrLinkOAuthUserWithStatus(input: {
     throw new Error("OAUTH_ACCOUNT_CREATE_FAILED");
   }
 
-  return { userId: created.id, isNewUser: true };
+  await ensureSubscriptionDefaults(created.id);
+  return { userId: created.id, isNewUser: true, wasLinkedNow: false };
 }

@@ -206,10 +206,19 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
   if (pathname.startsWith("/api/internal/")) return null;
 
   const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
-  const key = getRateLimitKey(req, isWrite ? "write" : "read");
+  const isOptionalAuthMe =
+    req.method === "GET" &&
+    pathname === "/api/auth/me" &&
+    ["1", "true"].includes(req.nextUrl.searchParams.get("optional") || "");
+  const key = getRateLimitKey(
+    req,
+    isOptionalAuthMe ? "auth-me-optional" : isWrite ? "write" : "read",
+  );
   const config = isWrite
     ? { limit: 30, windowSeconds: 60 }
-    : { limit: 120, windowSeconds: 60 };
+    : isOptionalAuthMe
+      ? { limit: 200, windowSeconds: 60, failClosed: false }
+      : { limit: 120, windowSeconds: 60 };
 
   const result = await rateLimit(key, config);
   if (!result.success) {

@@ -8,6 +8,7 @@ import {
   buildStripeIdempotencyKey,
   requireStripeSecretKeyForMutation,
 } from "@/lib/billing-config";
+import { captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
 
 // POST /api/stripe/checkout — Create a Stripe Checkout session for plan upgrade
@@ -91,6 +92,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
     if (error?.name === "BILLING_CONFIG_ERROR") {
+      // Production-mode guard: a non-`sk_live_` key (or missing key) at
+      // checkout time means real charges will never settle. Page ops via
+      // Sentry so the misconfiguration is caught before it reaches users.
+      const reason = error?.message || "Stripe not configured";
+      console.error("[CHECKOUT] Stripe config rejected:", reason);
+      captureMessage(`[CHECKOUT] Stripe config rejected: ${reason}`, "error");
       return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
     }
     console.error("Stripe checkout error:", error);

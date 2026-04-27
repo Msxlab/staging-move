@@ -1,6 +1,8 @@
-const CACHE_NAME = "locateflow-v6";
-const STATIC_CACHE = "locateflow-static-v6";
+const CACHE_NAME = "locateflow-v7-auth-stabilization-disabled";
+const STATIC_CACHE = "locateflow-static-v7-auth-stabilization-disabled";
 const DISABLE_SERVICE_WORKER = true;
+const SERVICE_WORKER_SHUTOFF_REASON = "emergency-auth-state-machine-stabilization";
+let unregisterAttempted = false;
 
 const STATIC_ASSETS = [
   "/manifest.json",
@@ -68,21 +70,52 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
+function clearLocateFlowCaches() {
+  return caches.keys().then((keys) =>
+    Promise.all(
+      keys
+        .filter((key) => key.indexOf("locateflow-") === 0)
+        .map((key) => caches.delete(key))
+    )
+  );
+}
+
+function unregisterDisabledWorker() {
+  return clearLocateFlowCaches()
+    .then(() => self.registration.unregister())
+    .catch(() => undefined);
+}
+
 self.addEventListener("activate", (event) => {
+  if (DISABLE_SERVICE_WORKER) {
+    event.waitUntil(
+      self.clients.claim()
+        .catch(() => undefined)
+        .then(() => unregisterDisabledWorker())
+    );
+    return;
+  }
+
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k.indexOf("locateflow-") === 0 && (DISABLE_SERVICE_WORKER || k !== STATIC_CACHE))
+          .filter((k) => k.indexOf("locateflow-") === 0 && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
-    ).then(() => (DISABLE_SERVICE_WORKER ? self.registration.unregister() : undefined))
+    )
   );
   self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  if (DISABLE_SERVICE_WORKER) return;
+  if (DISABLE_SERVICE_WORKER) {
+    if (!unregisterAttempted) {
+      unregisterAttempted = true;
+      event.waitUntil(unregisterDisabledWorker());
+    }
+    return;
+  }
 
   const { request } = event;
   const url = new URL(request.url);
