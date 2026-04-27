@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ArrowLeft, Home, Briefcase, Palmtree, Calendar, Edit, Zap, Star,
   Trash2, MapPin, Globe, Phone, DollarSign, ChevronRight, CheckCircle2,
@@ -54,6 +55,7 @@ interface AddressDetail {
 export default function AddressDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const tToast = useTranslations("toast");
   const id = params.id as string;
   const [address, setAddress] = useState<AddressDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,8 +82,8 @@ export default function AddressDetailPage() {
   const handleDelete = async () => {
     setDeleting(true);
     const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
-    if (res.ok) { toast.success("Address deleted"); router.push("/addresses"); }
-    else { toast.error("Failed to delete address"); setDeleting(false); }
+    if (res.ok) { toast.success(tToast("deleted")); router.push("/addresses"); }
+    else { toast.error(tToast("deleteFailed")); setDeleting(false); }
   };
 
   const handleBulkDelete = async () => {
@@ -100,7 +102,7 @@ export default function AddressDetailPage() {
     setBulkSelected(new Set());
     setBulkMode(false);
     setDeletingBulk(false);
-    toast.success(`${deleted} service${deleted !== 1 ? "s" : ""} removed`);
+    toast.success(tToast("servicesRemoved", { count: deleted }));
   };
 
   const toggleBulk = (sid: string) => {
@@ -118,7 +120,7 @@ export default function AddressDetailPage() {
 
   const saveCost = async (sid: string) => {
     const val = parseFloat(editingCostValue);
-    if (isNaN(val) || val < 0) { toast.error("Invalid cost"); return; }
+    if (isNaN(val) || val < 0) { toast.error(tToast("invalidCost")); return; }
     setSavingCostId(sid);
     try {
       const res = await fetch(`/api/services/${sid}`, {
@@ -133,9 +135,9 @@ export default function AddressDetailPage() {
           services: address.services.map((s) => s.id === sid ? { ...s, monthlyCost: val } : s),
         });
       }
-      toast.success("Cost updated");
+      toast.success(tToast("costUpdated"));
     } catch {
-      toast.error("Failed to update cost");
+      toast.error(tToast("costUpdateFailed"));
     }
     setSavingCostId(null);
     setEditingCostId(null);
@@ -150,9 +152,9 @@ export default function AddressDetailPage() {
       if (address) {
         setAddress({ ...address, services: address.services.filter((s) => s.id !== sid) });
       }
-      toast.success("Service removed");
+      toast.success(tToast("serviceRemoved"));
     } catch {
-      toast.error("Failed to remove service");
+      toast.error(tToast("serviceRemoveFailed"));
     }
     setDeletingSvcId(null);
     setDeleteSvcConfirm(null);

@@ -31,11 +31,7 @@ const categoryColors: Record<string, string> = {
   HOUSING: "bg-sky-500", HEALTHCARE: "bg-rose-500", TRANSPORTATION: "bg-blue-500",
   KIDS: "bg-purple-500", FITNESS: "bg-orange-500", SHOPPING: "bg-pink-500", OTHER: "bg-gray-500",
 };
-const categoryLabels: Record<string, string> = {
-  GOVERNMENT: "Government", UTILITY: "Utilities", FINANCIAL: "Financial",
-  HOUSING: "Housing", HEALTHCARE: "Healthcare", TRANSPORTATION: "Transport",
-  KIDS: "Kids & Edu", FITNESS: "Fitness", SHOPPING: "Shopping", OTHER: "Other",
-};
+const CATEGORY_KEYS = ["GOVERNMENT", "UTILITY", "FINANCIAL", "HOUSING", "HEALTHCARE", "TRANSPORTATION", "KIDS", "FITNESS", "SHOPPING", "OTHER"] as const;
 
 interface AddressInfo {
   id: string; type: string; nickname?: string; street: string; city: string; state: string; isPrimary: boolean;
@@ -48,14 +44,14 @@ interface DashboardStats {
 }
 
 const WIDGET_KEYS = [
-  { key: "stats", label: "Stats Overview", default: true },
-  { key: "nextCritical", label: "Next Critical Actions", default: true },
-  { key: "spending", label: "Spending by Address", default: true },
-  { key: "moving", label: "Moving Progress", default: true },
-  { key: "recent", label: "Recent Services", default: true },
-  { key: "bills", label: "Upcoming Bills", default: true },
-  { key: "categories", label: "Expenses by Category", default: true },
-  { key: "topSpending", label: "Top Spending", default: true },
+  { key: "stats", default: true },
+  { key: "nextCritical", default: true },
+  { key: "spending", default: true },
+  { key: "moving", default: true },
+  { key: "recent", default: true },
+  { key: "bills", default: true },
+  { key: "categories", default: true },
+  { key: "topSpending", default: true },
 ] as const;
 
 type WidgetKey = typeof WIDGET_KEYS[number]["key"];
@@ -87,7 +83,7 @@ function normaliseVisibility(incoming: Record<string, boolean> | undefined): Rec
   return merged;
 }
 
-function SortableItem({ id, label, enabled, onToggle }: { id: string; label: string; enabled: boolean; onToggle: () => void }) {
+function SortableItem({ id, label, dragLabel, enabled, onToggle }: { id: string; label: string; dragLabel: string; enabled: boolean; onToggle: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -96,7 +92,7 @@ function SortableItem({ id, label, enabled, onToggle }: { id: string; label: str
   };
   return (
     <div ref={setNodeRef} style={style} className="flex items-center gap-2">
-      <button {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing text-white/40 hover:text-white/60 touch-none" aria-label="Drag to reorder widget">
+      <button {...attributes} {...listeners} className="p-1 cursor-grab active:cursor-grabbing text-white/40 hover:text-white/60 touch-none" aria-label={dragLabel}>
         <GripVertical className="h-3.5 w-3.5" />
       </button>
       <button
@@ -116,6 +112,20 @@ function SortableItem({ id, label, enabled, onToggle }: { id: string; label: str
 
 export default function DashboardClient({ initialPrefs }: { initialPrefs: DashboardWidgetPrefs | null }) {
   const t = useTranslations("services");
+  const td = useTranslations("dashboard");
+  const widgetLabels: Record<WidgetKey, string> = {
+    stats: td("widget_stats"),
+    nextCritical: td("widget_nextCritical"),
+    spending: td("widget_spending"),
+    moving: td("widget_moving"),
+    recent: td("widget_recent"),
+    bills: td("widget_bills"),
+    categories: td("widget_categories"),
+    topSpending: td("widget_topSpending"),
+  };
+  const categoryLabels: Record<string, string> = Object.fromEntries(
+    CATEGORY_KEYS.map((k) => [k, td(`categoryLabel_${k}` as const)])
+  );
   const [stats, setStats] = useState<DashboardStats>({
     addressCount: 0, serviceCount: 0, monthlyExpenses: 0, activePlan: null,
   });
@@ -195,7 +205,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
         const failedApis = [addrResult, svcResult, movingResult, profileResult].filter((r) => r.status === "rejected");
         if (failedApis.length > 0) {
-          toast.error(`Some dashboard data failed to load (${failedApis.length}/4). Showing available data.`);
+          toast.error(td("loadPartial", { failed: failedApis.length, total: 4 }));
         }
 
         const addrs: AddressInfo[] = addrData.addresses || [];
@@ -270,7 +280,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           } catch { /* non-blocking */ }
         }
       })
-      .catch(() => { toast.error("Failed to load dashboard data"); })
+      .catch(() => { toast.error(td("loadFailed")); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -324,15 +334,15 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold text-white">Dashboard</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">{td("title")}</h1>
             {isPremium && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-500/30 text-amber-300 animate-pulse">
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                LocateFlow Premium
+                {td("premiumBadge")}
               </span>
             )}
           </div>
-          <p className="text-white/40 mt-1">Welcome back! Here&apos;s your overview.</p>
+          <p className="text-white/40 mt-1">{td("welcome")}. {td("subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -341,16 +351,16 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               showWidgetPanel ? "border-orange-500/30 bg-orange-500/10 text-orange-400" : "border-white/10 text-white/40 hover:bg-white/5"
             }`}
           >
-            <SlidersHorizontal className="h-4 w-4" /> Customize
+            <SlidersHorizontal className="h-4 w-4" /> {td("customize")}
           </button>
           <Link href="/addresses/new">
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 text-sm text-white/60 hover:bg-white/5 transition">
-              <MapPin className="h-4 w-4" /> Add Address
+              <MapPin className="h-4 w-4" /> {td("addAddressBtn")}
             </button>
           </Link>
           <Link href="/moving/new">
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
-              <Truck className="h-4 w-4" /> Plan a Move
+              <Truck className="h-4 w-4" /> {td("planMoveBtn")}
             </button>
           </Link>
         </div>
@@ -360,12 +370,12 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       <div className="flex flex-wrap gap-2">
         <Link href="/services/new">
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-xs text-white/50 hover:text-white hover:bg-white/5 transition">
-            <Plus className="h-3 w-3" /> Add Service
+            <Plus className="h-3 w-3" /> {td("addServiceBtn")}
           </button>
         </Link>
         <Link href="/budget">
           <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.06] bg-white/[0.02] text-xs text-white/50 hover:text-white hover:bg-white/5 transition">
-            <DollarSign className="h-3 w-3" /> Budget
+            <DollarSign className="h-3 w-3" /> {td("budgetBtn")}
           </button>
         </Link>
       </div>
@@ -374,7 +384,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
       {showWidgetPanel && (
         <div className="rounded-2xl border border-orange-500/20 bg-white/5 backdrop-blur-xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-white">Dashboard Widgets</h3>
+            <h3 className="text-sm font-semibold text-white">{td("widget_panel_title")}</h3>
             <button onClick={() => setShowWidgetPanel(false)} className="p-1 rounded-lg text-white/30 hover:text-white hover:bg-white/5 transition">
               <X className="h-4 w-4" />
             </button>
@@ -389,7 +399,8 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     <SortableItem
                       key={wk.key}
                       id={wk.key}
-                      label={wk.label}
+                      label={widgetLabels[wk.key]}
+                      dragLabel={td("widget_drag_label")}
                       enabled={widgets[wk.key] !== false}
                       onToggle={() => toggleWidget(wk.key)}
                     />
@@ -403,9 +414,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
       {/* Stats Grid */}
       {w("stats") && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <StatsCard title="Addresses" value={stats.addressCount} icon={MapPin} description={stats.addressCount > 0 ? `${addresses.filter(a => a.isPrimary).length} primary` : undefined} />
-        <StatsCard title="Active Services" value={stats.serviceCount} description={stats.monthlyExpenses > 0 ? `${formatCurrency(stats.monthlyExpenses)}/mo total` : "Across all addresses"} icon={Zap} />
-        <Link href="/budget"><StatsCard title="Monthly Expenses" value={formatCurrency(stats.monthlyExpenses)} icon={DollarSign} description={sortedCats.length > 0 ? `${sortedCats.length} categories` : undefined} /></Link>
+        <StatsCard title={td("stat_addresses")} value={stats.addressCount} icon={MapPin} description={stats.addressCount > 0 ? td("stat_addresses_primary", { count: addresses.filter(a => a.isPrimary).length }) : undefined} />
+        <StatsCard title={td("stat_services")} value={stats.serviceCount} description={stats.monthlyExpenses > 0 ? td("stat_services_total", { amount: formatCurrency(stats.monthlyExpenses) }) : td("stat_services_acrossAll")} icon={Zap} />
+        <Link href="/budget"><StatsCard title={td("stat_monthly")} value={formatCurrency(stats.monthlyExpenses)} icon={DollarSign} description={sortedCats.length > 0 ? td("stat_monthly_categories", { count: sortedCats.length }) : undefined} /></Link>
       </div>}
 
       {/* Main Content Grid */}
@@ -421,14 +432,14 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-red-400" />
-                        <h3 className="text-sm font-bold text-white">Next Critical Actions</h3>
+                        <h3 className="text-sm font-bold text-white">{td("widget_nextCritical")}</h3>
                       </div>
                       <Link href="/providers">
-                        <button className="text-[10px] text-white/30 hover:text-white transition">Browse all</button>
+                        <button className="text-[10px] text-white/30 hover:text-white transition">{td("browseAll")}</button>
                       </Link>
                     </div>
                     <p className="text-xs text-white/40">
-                      Time-sensitive providers you haven't set up yet. Tap one to add it as a service.
+                      {td("nextCritical_help")}
                     </p>
                     <div className="space-y-2">
                       {criticalActions.map((action) => (
@@ -462,9 +473,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
                         <Home className="h-4 w-4 text-orange-400" />
-                        <h3 className="text-sm font-semibold text-white">Spending by Address</h3>
+                        <h3 className="text-sm font-semibold text-white">{td("widget_spending")}</h3>
                       </div>
-                      <Link href="/addresses"><button className="text-[10px] text-white/30 hover:text-white transition">View All</button></Link>
+                      <Link href="/addresses"><button className="text-[10px] text-white/30 hover:text-white transition">{td("viewAll")}</button></Link>
                     </div>
                     <div className="px-5 pb-5 space-y-2">
                       {addresses.map((addr) => {
@@ -492,7 +503,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                               </div>
                               <div className="text-right shrink-0">
                                 <p className="text-sm font-semibold text-emerald-400">{formatCurrency(addrCost)}</p>
-                                <p className="text-xs text-white/50">{svcCount} services</p>
+                                <p className="text-xs text-white/50">{td("servicesCount", { count: svcCount })}</p>
                               </div>
                             </div>
                           </Link>
@@ -509,17 +520,17 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{phaseInfo?.icon || "🚚"}</span>
                         <div>
-                          <h3 className="text-sm font-bold text-white">Relocation Progress</h3>
+                          <h3 className="text-sm font-bold text-white">{td("section_moving")}</h3>
                           <p className="text-xs text-white/40">
                             {stats.activePlan.fromCity} → {stats.activePlan.toCity}
-                            {checklist ? ` · Phase ${checklist.currentPhase + 1}: ${phaseInfo?.label || ""}` : ""}
+                            {checklist ? ` · ${td("moving_phase", { phase: checklist.currentPhase + 1, label: phaseInfo?.label || "" })}` : ""}
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-white">{checklist ? `${checklist.progressPercent}%` : `${progress}%`}</p>
                         <p className="text-[10px] text-white/30">
-                          {checklist ? `${checklist.completedItems}/${checklist.totalItems}` : `${progress}%`} done
+                          {checklist ? `${checklist.completedItems}/${checklist.totalItems}` : `${progress}%`} {td("moving_done")}
                         </p>
                       </div>
                     </div>
@@ -537,10 +548,10 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                       <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
                         <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-semibold text-red-400">Overdue ({checklist.overdueItems.length})</p>
+                          <p className="text-xs font-semibold text-red-400">{td("moving_overdue")} ({checklist.overdueItems.length})</p>
                           <p className="text-xs text-red-300/70 mt-0.5">
                             {checklist.overdueItems.slice(0, 2).map((i: any) => i.title).join(" · ")}
-                            {checklist.overdueItems.length > 2 && ` +${checklist.overdueItems.length - 2} more`}
+                            {checklist.overdueItems.length > 2 && ` ${td("moving_overdueMore", { count: checklist.overdueItems.length - 2 })}`}
                           </p>
                         </div>
                       </div>
@@ -551,7 +562,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                       <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
                         <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-semibold text-amber-400">Deadline Soon</p>
+                          <p className="text-xs font-semibold text-amber-400">{td("moving_deadlineSoon")}</p>
                           <p className="text-xs text-amber-300/70 mt-0.5">
                             {checklist.urgentItems.filter((i: any) => !i.isOverdue).slice(0, 2).map((i: any) => {
                               const dl = i.daysUntilDeadline !== null ? ` (${i.daysUntilDeadline}d)` : "";
@@ -572,7 +583,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                             <p className="text-[11px] text-amber-300/70 truncate">{checklist.nextAction.stateNote}</p>
                           )}
                           {checklist.nextAction.estimatedMinutes && (
-                            <span className="text-xs text-white/50">~{checklist.nextAction.estimatedMinutes} min</span>
+                            <span className="text-xs text-white/50">~{checklist.nextAction.estimatedMinutes} {td("moving_minute")}</span>
                           )}
                         </div>
                         <Link href="/services">
@@ -585,18 +596,18 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
                     <div className="flex gap-2">
                       <Link href={`/moving/${stats.activePlan.id}`} className="flex-1">
-                        <button className="w-full py-2 rounded-xl border border-white/10 text-sm text-white/60 hover:bg-white/5 transition">View Plan</button>
+                        <button className="w-full py-2 rounded-xl border border-white/10 text-sm text-white/60 hover:bg-white/5 transition">{td("moving_viewPlan")}</button>
                       </Link>
                       <Link href="/services" className="flex-1">
-                        <button className="w-full py-2 rounded-xl border border-orange-500/30 bg-orange-500/10 text-sm text-orange-400 hover:bg-orange-500/20 transition">Checklist</button>
+                        <button className="w-full py-2 rounded-xl border border-orange-500/30 bg-orange-500/10 text-sm text-orange-400 hover:bg-orange-500/20 transition">{td("moving_checklist")}</button>
                       </Link>
                     </div>
                   </div>
                 ) : !loading ? (
                   <div key={key} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
                     <Truck className="h-10 w-10 mx-auto text-white/30 mb-2" />
-                    <p className="text-sm text-white/30 mb-3">No active moving plan</p>
-                    <Link href="/moving/new"><button className="px-4 py-2 rounded-xl border border-white/10 text-sm text-white/60 hover:bg-white/5 transition">Plan a Move</button></Link>
+                    <p className="text-sm text-white/30 mb-3">{td("moving_noPlan")}</p>
+                    <Link href="/moving/new"><button className="px-4 py-2 rounded-xl border border-white/10 text-sm text-white/60 hover:bg-white/5 transition">{td("moving_planMove")}</button></Link>
                   </div>
                 ) : null;
               }
@@ -606,9 +617,9 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-cyan-400" />
-                        <h3 className="text-sm font-semibold text-white">Recently Added Services</h3>
+                        <h3 className="text-sm font-semibold text-white">{td("section_recent")}</h3>
                       </div>
-                      <Link href="/services"><button className="text-[10px] text-white/30 hover:text-white transition">View All</button></Link>
+                      <Link href="/services"><button className="text-[10px] text-white/30 hover:text-white transition">{td("viewAll")}</button></Link>
                     </div>
                     <div className="px-5 pb-5 space-y-1.5">
                       {recentServices.map((svc: any) => (
@@ -625,7 +636,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                               <span className="text-xs font-medium text-white/50">{formatCurrency(svc.monthlyCost)}/mo</span>
                             )}
                             <Link href={`/services/${svc.id}`}>
-                              <button className="p-1 rounded-md text-white/40 hover:text-orange-400 hover:bg-orange-500/10 transition opacity-0 group-hover:opacity-100" aria-label="Edit service">
+                              <button className="p-1 rounded-md text-white/40 hover:text-orange-400 hover:bg-orange-500/10 transition opacity-0 group-hover:opacity-100" aria-label={td("recent_editService")}>
                                 <Edit className="h-3 w-3" />
                               </button>
                             </Link>
@@ -653,7 +664,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
                         <PieChart className="h-4 w-4 text-emerald-400" />
-                        <h3 className="text-sm font-semibold text-white">Expenses by Category</h3>
+                        <h3 className="text-sm font-semibold text-white">{td("widget_categories")}</h3>
                       </div>
                       <span className="text-lg font-bold text-white">{formatCurrency(stats.monthlyExpenses)}</span>
                     </div>
@@ -678,7 +689,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-amber-400" />
-                        <h3 className="text-sm font-semibold text-white">Top Spending</h3>
+                        <h3 className="text-sm font-semibold text-white">{td("widget_topSpending")}</h3>
                       </div>
                     </div>
                     <div className="px-5 pb-5 space-y-1.5">

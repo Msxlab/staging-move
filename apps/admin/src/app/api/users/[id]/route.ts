@@ -37,6 +37,7 @@ export async function GET(
         mfaEnabled: true,
         preferredLocale: true,
         dashboardWidgetPrefs: true,
+        showBudget: true,
         createdAt: true,
         updatedAt: true,
         deletedAt: true,
