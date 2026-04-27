@@ -45,6 +45,10 @@ const BACKUP_TABLE_OPS = {
     count: () => prisma.serviceProvider.count(),
     findRecords: () => prisma.serviceProvider.findMany({ take: 50000 }),
   },
+  providerLogoCandidates: {
+    count: () => prisma.providerLogoCandidate.count(),
+    findRecords: () => prisma.providerLogoCandidate.findMany({ take: 50000 }),
+  },
   providerCoverages: {
     count: () => prisma.serviceProviderCoverage.count(),
     findRecords: () => prisma.serviceProviderCoverage.findMany({ take: 50000 }),

@@ -4,14 +4,27 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Check,
   Globe,
   ImageOff,
   Loader2,
   RefreshCw,
   Sparkles,
   Upload,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
+
+interface LogoCandidate {
+  id: string;
+  source: string;
+  sourceUrl: string | null;
+  publicUrl: string;
+  contentType: string;
+  bytes: number;
+  status: string;
+  createdAt: string;
+}
 
 interface ProviderRow {
   id: string;
@@ -22,13 +35,17 @@ interface ProviderRow {
   phone: string | null;
   scope: string;
   popularityScore: number;
+  logoCandidates: LogoCandidate[];
 }
 
 type RowStatus =
   | { kind: "idle" }
-  | { kind: "running"; action: "auto-fetch" | "upload" }
+  | { kind: "running"; action: "auto-fetch" | "upload" | "review" }
+  | { kind: "candidate"; candidate: LogoCandidate }
   | { kind: "done"; logoUrl: string }
   | { kind: "error"; message: string };
+
+const MAX_CATALOG_CANDIDATES_PER_RUN = 50;
 
 export default function NeedsLogoPage() {
   const [providers, setProviders] = useState<ProviderRow[]>([]);
@@ -70,6 +87,12 @@ export default function NeedsLogoPage() {
 
   const setRowStatus = (id: string, status: RowStatus) =>
     setStatuses((prev) => ({ ...prev, [id]: status }));
+  const clearRowStatus = (id: string) =>
+    setStatuses((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
 
   async function autoFetch(providerId: string) {
     setRowStatus(providerId, { kind: "running", action: "auto-fetch" });
@@ -86,7 +109,7 @@ export default function NeedsLogoPage() {
         setRowStatus(providerId, { kind: "error", message });
         return false;
       }
-      setRowStatus(providerId, { kind: "done", logoUrl: data.logoUrl });
+      setRowStatus(providerId, { kind: "candidate", candidate: data.candidate });
       return true;
     } catch (err: any) {
       setRowStatus(providerId, {
@@ -99,7 +122,7 @@ export default function NeedsLogoPage() {
 
   async function handleAutoFetch(providerId: string) {
     const ok = await autoFetch(providerId);
-    if (ok) toast.success("Logo fetched");
+    if (ok) toast.success("Logo candidate ready for review");
   }
 
   async function handleAutoFetchAll() {
@@ -110,7 +133,12 @@ export default function NeedsLogoPage() {
     let failed = 0;
     let done = 0;
     for (const provider of providers) {
-      if (statuses[provider.id]?.kind === "done") {
+      const currentStatus = statuses[provider.id];
+      if (
+        currentStatus?.kind === "done" ||
+        currentStatus?.kind === "candidate" ||
+        provider.logoCandidates.length > 0
+      ) {
         done++;
         setBulkProgress({ done, total: providers.length, ok: success, failed });
         continue;
@@ -122,7 +150,7 @@ export default function NeedsLogoPage() {
       setBulkProgress({ done, total: providers.length, ok: success, failed });
     }
     setBulkRunning(false);
-    toast(`Page done — ${success} ok, ${failed} failed`);
+    toast(`Page done - ${success} candidates, ${failed} failed`);
     if (success > 0) load();
   }
 
@@ -130,11 +158,11 @@ export default function NeedsLogoPage() {
     if (bulkRunning) return;
     setBulkRunning(true);
 
-    // Walk all pages first so we know the total. Up to 200 per page;
-    // 231 active providers today means usually one page is enough.
+    // Batch the catalog path so one click cannot fan out across the whole
+    // provider catalog. Operators can rerun this after reviewing results.
     const allIds: string[] = [];
     let cursor = 1;
-    while (true) {
+    while (allIds.length < MAX_CATALOG_CANDIDATES_PER_RUN) {
       const params = new URLSearchParams({
         page: String(cursor),
         perPage: "200",
@@ -147,19 +175,28 @@ export default function NeedsLogoPage() {
         return;
       }
       const data = await res.json();
-      const ids: string[] = data.providers.map((p: { id: string }) => p.id);
+      const ids: string[] = data.providers
+        .filter((p: { logoCandidates?: LogoCandidate[] }) => !p.logoCandidates?.length)
+        .map((p: { id: string }) => p.id);
       allIds.push(...ids);
-      if (ids.length < 200) break;
+      if (data.providers.length < 200) break;
       cursor++;
     }
 
     if (allIds.length === 0) {
       setBulkRunning(false);
-      toast("No providers left to fetch");
+      toast("No providers left to generate candidates for");
       return;
     }
 
-    setBulkProgress({ done: 0, total: allIds.length, ok: 0, failed: 0 });
+    const batchIds = allIds.slice(0, MAX_CATALOG_CANDIDATES_PER_RUN);
+    if (allIds.length > batchIds.length) {
+      toast(
+        `Generating the next ${batchIds.length} candidates only; rerun after review for the remaining providers.`,
+      );
+    }
+
+    setBulkProgress({ done: 0, total: batchIds.length, ok: 0, failed: 0 });
 
     // Limited concurrency. Sequential is too slow at ~3-5s per fetch
     // (~12 minutes for 231); 4-way parallel cuts it to ~3 minutes without
@@ -173,23 +210,23 @@ export default function NeedsLogoPage() {
     async function worker() {
       while (true) {
         const i = nextIndex++;
-        if (i >= allIds.length) return;
-        const id = allIds[i];
+        if (i >= batchIds.length) return;
+        const id = batchIds[i];
         const ok = await autoFetch(id);
         if (ok) success++;
         else failed++;
         done++;
-        setBulkProgress({ done, total: allIds.length, ok: success, failed });
+        setBulkProgress({ done, total: batchIds.length, ok: success, failed });
       }
     }
 
     await Promise.all(
-      Array.from({ length: Math.min(CONCURRENCY, allIds.length) }, () => worker()),
+      Array.from({ length: Math.min(CONCURRENCY, batchIds.length) }, () => worker()),
     );
 
     setBulkRunning(false);
     toast.success(
-      `Catalog backfill done — ${success} ok, ${failed} failed of ${allIds.length}`,
+      `Catalog candidate batch done - ${success} candidates, ${failed} failed of ${batchIds.length}`,
     );
     load();
   }
@@ -212,14 +249,52 @@ export default function NeedsLogoPage() {
         toast.error(data.error || "Upload failed");
         return;
       }
-      setRowStatus(providerId, { kind: "done", logoUrl: data.logoUrl });
-      toast.success("Logo uploaded");
+      setRowStatus(providerId, { kind: "candidate", candidate: data.candidate });
+      toast.success("Logo candidate uploaded");
     } catch (err: any) {
       setRowStatus(providerId, {
         kind: "error",
         message: err?.message || "Network error",
       });
       toast.error("Upload failed");
+    }
+  }
+
+  async function reviewCandidate(
+    providerId: string,
+    candidateId: string,
+    action: "approve" | "reject",
+  ) {
+    setRowStatus(providerId, { kind: "running", action: "review" });
+    try {
+      const res = await fetch(
+        `/api/providers/${providerId}/logo/candidates/${candidateId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        const message = data.error || `Failed to ${action} logo candidate`;
+        setRowStatus(providerId, { kind: "error", message });
+        toast.error(message);
+        return;
+      }
+
+      if (action === "approve") {
+        setRowStatus(providerId, { kind: "done", logoUrl: data.logoUrl });
+        toast.success("Logo approved and published");
+      } else {
+        clearRowStatus(providerId);
+        toast.success("Logo candidate rejected");
+      }
+      load();
+    } catch (err: any) {
+      const message = err?.message || `Failed to ${action} logo candidate`;
+      setRowStatus(providerId, { kind: "error", message });
+      toast.error(message);
     }
   }
 
@@ -260,7 +335,7 @@ export default function NeedsLogoPage() {
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            This page
+            Generate page
           </button>
           <button
             type="button"
@@ -273,7 +348,7 @@ export default function NeedsLogoPage() {
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            Auto-fetch entire catalog
+            Generate next 50 candidates
           </button>
         </div>
       </div>
@@ -283,7 +358,7 @@ export default function NeedsLogoPage() {
           <div className="flex items-center justify-between text-sm mb-2">
             <span>
               {bulkProgress.done} / {bulkProgress.total} processed —{" "}
-              <span className="text-green-600">{bulkProgress.ok} ok</span> ·{" "}
+              <span className="text-green-600">{bulkProgress.ok} candidates</span> ·{" "}
               <span className="text-red-600">{bulkProgress.failed} failed</span>
             </span>
             <span className="text-xs text-muted-foreground">
@@ -335,7 +410,12 @@ export default function NeedsLogoPage() {
               </tr>
             )}
             {providers.map((p) => {
-              const status = statuses[p.id] ?? { kind: "idle" as const };
+              const existingCandidate = p.logoCandidates[0] ?? null;
+              const status =
+                statuses[p.id] ??
+                (existingCandidate
+                  ? ({ kind: "candidate", candidate: existingCandidate } as const)
+                  : ({ kind: "idle" } as const));
               return (
                 <tr key={p.id} className="border-t">
                   <td className="px-4 py-3">
@@ -368,7 +448,23 @@ export default function NeedsLogoPage() {
                     {status.kind === "running" && (
                       <span className="inline-flex items-center gap-1 text-blue-600">
                         <Loader2 className="h-3 w-3 animate-spin" />
-                        {status.action === "auto-fetch" ? "Fetching…" : "Uploading…"}
+                        {status.action === "auto-fetch"
+                          ? "Fetching…"
+                          : status.action === "review"
+                            ? "Reviewing…"
+                            : "Uploading…"}
+                      </span>
+                    )}
+                    {status.kind === "candidate" && (
+                      <span className="inline-flex items-center gap-2">
+                        <img
+                          src={status.candidate.publicUrl}
+                          alt=""
+                          className="h-6 w-6 rounded object-contain bg-white"
+                        />
+                        <span className="text-amber-700">
+                          Candidate · {status.candidate.source}
+                        </span>
                       </span>
                     )}
                     {status.kind === "done" && (
@@ -391,6 +487,28 @@ export default function NeedsLogoPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
+                      {status.kind === "candidate" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              reviewCandidate(p.id, status.candidate.id, "approve")
+                            }
+                            className="inline-flex items-center gap-1 rounded border border-green-200 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
+                          >
+                            <Check className="h-3 w-3" /> Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              reviewCandidate(p.id, status.candidate.id, "reject")
+                            }
+                            className="inline-flex items-center gap-1 rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-3 w-3" /> Reject
+                          </button>
+                        </>
+                      )}
                       <button
                         type="button"
                         disabled={!p.website || status.kind === "running"}
@@ -407,7 +525,7 @@ export default function NeedsLogoPage() {
                         <Upload className="h-3 w-3" /> Upload
                         <input
                           type="file"
-                          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/x-icon"
+                          accept="image/png,image/jpeg,image/webp,image/gif,image/x-icon"
                           className="hidden"
                           onChange={(e) => {
                             const file = e.target.files?.[0];

@@ -543,6 +543,7 @@ model ServiceProvider {
   moveTasks             MoveTask[]                @relation("MoveTaskProvider")
   destinationMoveTasks  MoveTask[]                @relation("MoveTaskDestinationProvider")
   governanceIssues      ProviderGovernanceIssue[]
+  logoCandidates        ProviderLogoCandidate[]
 
   deletedAt DateTime?
 
@@ -557,6 +558,37 @@ model ServiceProvider {
   @@index([scope])
   @@index([slug])
   @@index([deletedAt])
+}
+
+model ProviderLogoCandidate {
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  providerId String          @db.VarChar(30)
+  provider   ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  source      String  @db.VarChar(30)
+  sourceUrl   String? @db.VarChar(1000)
+  publicUrl   String  @db.VarChar(500)
+  objectKey   String  @unique @db.VarChar(500)
+  contentType String  @db.VarChar(100)
+  contentHash String  @db.VarChar(64)
+  bytes       Int
+
+  status     String  @default("PENDING") @db.VarChar(30)
+  confidence String? @db.VarChar(20)
+  notes      String? @db.Text
+
+  createdByAdminId  String?   @db.VarChar(30)
+  reviewedByAdminId String?   @db.VarChar(30)
+  reviewedAt        DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([status])
+  @@index([providerId, status])
+  @@index([providerId, status, contentHash])
 }
 
 // ==================== MOVE TASKS ====================
