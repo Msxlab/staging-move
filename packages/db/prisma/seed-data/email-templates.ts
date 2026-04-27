@@ -32,11 +32,29 @@ function rows(items: Array<[string, string]>): string {
     .join("")}</table></td></tr></table>`;
 }
 
-function wrap(title: string, preheader: string, content: string, security = false): string {
-  const securityNote = security
-    ? note("If this was not you, ignore this email or contact support.")
-    : "";
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${title}</title></head><body style="margin:0;padding:0;background:${BRAND.bg};font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:${BRAND.text};"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${preheader}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${BRAND.bg}" style="border-collapse:collapse;background:${BRAND.bg};"><tr><td align="center" style="padding:24px 12px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;"><tr><td style="padding:0 0 12px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;"><tr><td bgcolor="${BRAND.primary}" style="width:34px;height:34px;border-radius:8px;text-align:center;color:#ffffff;font-weight:700;font-size:13px;line-height:34px;">LF</td><td style="padding-left:10px;font-size:20px;line-height:24px;font-weight:700;color:${BRAND.text};">LocateFlow</td></tr></table></td></tr><tr><td bgcolor="${BRAND.card}" style="background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:8px;padding:32px 28px;"><h1 style="margin:0 0 16px;font-size:24px;line-height:31px;color:${BRAND.text};font-weight:700;">${title}</h1>${content}${securityNote}</td></tr><tr><td style="padding:18px 4px 0;text-align:left;"><p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${BRAND.muted};font-weight:700;">LocateFlow</p><p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${BRAND.muted};"><a href="${BRAND.url}" style="color:${BRAND.primaryDark};text-decoration:underline;">${BRAND.url}</a>&nbsp;|&nbsp;<a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.primaryDark};text-decoration:underline;">${BRAND.supportEmail}</a></p><p style="margin:0;font-size:12px;line-height:18px;color:${BRAND.muted};">You&#39;re receiving this email because you used LocateFlow.</p></td></tr></table></td></tr></table></body></html>`;
+type WrapLocale = "en" | "es";
+
+const WRAP_STRINGS: Record<WrapLocale, { securityNote: string; footerNote: string }> = {
+  en: {
+    securityNote: "If this was not you, ignore this email or contact support.",
+    footerNote: "You&#39;re receiving this email because you used LocateFlow.",
+  },
+  es: {
+    securityNote: "Si no fuiste tú, ignora este correo o contacta con soporte.",
+    footerNote: "Recibes este correo porque usaste LocateFlow.",
+  },
+};
+
+function wrap(
+  title: string,
+  preheader: string,
+  content: string,
+  security = false,
+  locale: WrapLocale = "en",
+): string {
+  const strings = WRAP_STRINGS[locale];
+  const securityNote = security ? note(strings.securityNote) : "";
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>${title}</title></head><body style="margin:0;padding:0;background:${BRAND.bg};font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:${BRAND.text};"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${preheader}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="${BRAND.bg}" style="border-collapse:collapse;background:${BRAND.bg};"><tr><td align="center" style="padding:24px 12px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:600px;border-collapse:collapse;"><tr><td style="padding:0 0 12px;"><table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;"><tr><td bgcolor="${BRAND.primary}" style="width:34px;height:34px;border-radius:8px;text-align:center;color:#ffffff;font-weight:700;font-size:13px;line-height:34px;">LF</td><td style="padding-left:10px;font-size:20px;line-height:24px;font-weight:700;color:${BRAND.text};">LocateFlow</td></tr></table></td></tr><tr><td bgcolor="${BRAND.card}" style="background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:8px;padding:32px 28px;"><h1 style="margin:0 0 16px;font-size:24px;line-height:31px;color:${BRAND.text};font-weight:700;">${title}</h1>${content}${securityNote}</td></tr><tr><td style="padding:18px 4px 0;text-align:left;"><p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${BRAND.muted};font-weight:700;">LocateFlow</p><p style="margin:0 0 6px;font-size:12px;line-height:18px;color:${BRAND.muted};"><a href="${BRAND.url}" style="color:${BRAND.primaryDark};text-decoration:underline;">${BRAND.url}</a>&nbsp;|&nbsp;<a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.primaryDark};text-decoration:underline;">${BRAND.supportEmail}</a></p><p style="margin:0;font-size:12px;line-height:18px;color:${BRAND.muted};">${strings.footerNote}</p></td></tr></table></td></tr></table></body></html>`;
 }
 
 export const EMAIL_TEMPLATES_ALL = [
@@ -267,6 +285,71 @@ export const EMAIL_TEMPLATES_ALL = [
       "Family invitations unavailable",
       "This LocateFlow template is inactive.",
       p("Family invitation emails are currently inactive because family sharing is not available in the current product."),
+    ),
+  },
+  // ──────────────────────────────────────────────────────────────────────
+  // Spanish (US Hispanic audience). Slug = "{base}-es".
+  // Looked up via locale-aware fallback in renderTemplate; missing slugs
+  // fall back to the English base template.
+  // ──────────────────────────────────────────────────────────────────────
+  {
+    slug: "welcome-es",
+    name: "Welcome Email (ES)",
+    subject: "Bienvenido a LocateFlow",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "dashboardLink", "appUrl"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Bienvenido a LocateFlow",
+      "Tu cuenta de LocateFlow está lista.",
+      p("Hola <strong>{{firstName}}</strong>,") +
+        p("Bienvenido a LocateFlow. Ya puedes organizar direcciones, servicios, recordatorios y tareas de mudanza en un solo lugar.") +
+        rows([
+          ["Comenzar", "Revisa tu panel"],
+          ["Soporte", `<a href="mailto:${BRAND.supportEmail}" style="color:${BRAND.primaryDark};text-decoration:underline;">${BRAND.supportEmail}</a>`],
+        ]) +
+        button("{{dashboardLink}}", "Abrir el panel"),
+      false,
+      "es",
+    ),
+  },
+  {
+    slug: "email-verify-es",
+    name: "Email Verification (ES)",
+    subject: "Verifica tu correo de LocateFlow",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "verifyLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Verifica tu correo",
+      "Confirma tu correo para terminar de configurar LocateFlow.",
+      p("Hola <strong>{{firstName}}</strong>,") +
+        p("Gracias por crear una cuenta en LocateFlow. Confirma tu correo para terminar de configurar tu cuenta.") +
+        note("Este enlace expira en 24 horas.") +
+        button("{{verifyLink}}", "Verificar correo"),
+      true,
+      "es",
+    ),
+  },
+  {
+    slug: "password-reset-es",
+    name: "Password Reset (ES)",
+    subject: "Restablece tu contraseña de LocateFlow",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "resetLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Restablece tu contraseña",
+      "Usa este enlace seguro para restablecer tu contraseña de LocateFlow.",
+      p("Hola <strong>{{firstName}}</strong>,") +
+        p("Recibimos una solicitud para restablecer tu contraseña de LocateFlow.") +
+        note("Este enlace expira en 1 hora y solo puede usarse una vez.") +
+        button("{{resetLink}}", "Restablecer contraseña"),
+      true,
+      "es",
     ),
   },
 ];

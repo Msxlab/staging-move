@@ -12,6 +12,7 @@ import {
   normalizeAcceptedLegalConsents,
   recordLegalAcceptance,
 } from "@/lib/legal-acceptance";
+import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 
 export const runtime = "nodejs";
 
@@ -75,6 +76,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Account already exists." }, { status: 409 });
   }
 
+  const locale = resolveLocale(
+    request.cookies.get(LOCALE_COOKIE)?.value,
+    request.headers.get("accept-language"),
+  );
+
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.create({
     data: {
@@ -82,6 +88,7 @@ export async function POST(request: NextRequest) {
       passwordHash,
       firstName: firstName ?? null,
       lastName: lastName ?? null,
+      preferredLocale: locale,
     },
   });
 
@@ -108,6 +115,7 @@ export async function POST(request: NextRequest) {
     userEmail: email,
     userName: firstName || "there",
     verifyToken: token,
+    locale,
     dedupeKey: `verify:${user.id}:${hash.slice(0, 12)}`,
   }).catch((err) => console.error("[EMAIL] verification send failed:", err));
 

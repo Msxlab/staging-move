@@ -13,6 +13,11 @@ import {
   ArrowRight,
   Shield,
   ChevronDown,
+  Scale,
+  Receipt,
+  Building2,
+  Stethoscope,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -145,24 +150,56 @@ export default async function LandingPage() {
         <div className="mx-auto mt-14 max-w-4xl">
           <div className="grid grid-cols-1 gap-4 rounded-2xl border bg-card/40 px-6 py-5 text-center sm:grid-cols-3">
             <div>
-              <p className="text-sm font-semibold">Manual move tasks</p>
+              <p className="text-sm font-semibold">{t("scope_strip_manual_title")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Track local workflow steps without external account automation.
+                {t("scope_strip_manual_body")}
               </p>
             </div>
             <div>
-              <p className="text-sm font-semibold">Listed providers</p>
+              <p className="text-sm font-semibold">{t("scope_strip_directory_title")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Provider data is directory guidance; confirm availability with the provider.
+                {t("scope_strip_directory_body")}
               </p>
             </div>
             <div>
-              <p className="text-sm font-semibold">Web and mobile</p>
+              <p className="text-sm font-semibold">{t("scope_strip_devices_title")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Use the same service, provider, and move-task model across devices.
+                {t("scope_strip_devices_body")}
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* What goes to your old address — psychological pain section */}
+      <section className="container py-20 border-t">
+        <div className="text-center mb-14 max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/5 px-3 py-1 text-xs text-amber-600 dark:text-amber-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+            {t("risk_eyebrow")}
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("risk_title")}</h2>
+          <p className="text-muted-foreground text-lg">{t("risk_subtitle")}</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+          {[
+            { icon: Scale, titleKey: "risk_legal_title", bodyKey: "risk_legal_body" },
+            { icon: Receipt, titleKey: "risk_finance_title", bodyKey: "risk_finance_body" },
+            { icon: Building2, titleKey: "risk_govt_title", bodyKey: "risk_govt_body" },
+            { icon: Stethoscope, titleKey: "risk_health_title", bodyKey: "risk_health_body" },
+            { icon: Package, titleKey: "risk_daily_title", bodyKey: "risk_daily_body" },
+          ].map((item) => (
+            <div
+              key={item.titleKey}
+              className="rounded-xl border bg-card p-5 space-y-3 hover:border-amber-500/40 hover:shadow-md transition-all"
+            >
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <item.icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-semibold">{t(item.titleKey as any)}</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">{t(item.bodyKey as any)}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -225,31 +262,20 @@ export default async function LandingPage() {
 
       {/* Current workflow coverage */}
       <section className="container py-20 border-t">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Built for manual move coordination</h2>
-          <p className="text-muted-foreground text-lg">
-            LocateFlow helps you organize what to do; it does not contact providers for you.
-          </p>
+        <div className="text-center mb-12 max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold mb-4">{t("scope_title")}</h2>
+          <p className="text-muted-foreground text-lg">{t("scope_subtitle")}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
           {[
-            {
-              title: "Services to stop or start",
-              text: "Track old-address and destination service work as local LocateFlow tasks.",
-            },
-            {
-              title: "Address updates to record",
-              text: "Keep a local checklist of account address updates without implying external account access.",
-            },
-            {
-              title: "Provider availability to confirm",
-              text: "Use listed provider guidance with caveats and confirm details with the provider.",
-            },
+            { titleKey: "scope_track_title", bodyKey: "scope_track_body" },
+            { titleKey: "scope_provider_title", bodyKey: "scope_provider_body" },
+            { titleKey: "scope_devices_title", bodyKey: "scope_devices_body" },
           ].map((item) => (
-            <div key={item.title} className="rounded-xl border bg-card p-6 space-y-3">
+            <div key={item.titleKey} className="rounded-xl border bg-card p-6 space-y-3">
               <CheckCircle2 className="h-7 w-7 text-primary" />
-              <h3 className="text-base font-semibold">{item.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.text}</p>
+              <h3 className="text-base font-semibold">{t(item.titleKey as any)}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{t(item.bodyKey as any)}</p>
             </div>
           ))}
         </div>
@@ -282,27 +308,22 @@ export default async function LandingPage() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-              Mobile companion
+              {t("mobile_eyebrow")}
             </div>
-            <h2 className="text-3xl font-bold tracking-tight">Your service list in your pocket</h2>
-            <p className="text-muted-foreground">
-              Add services, providers, and move tasks on the go. Snap a bill,
-              get a renewal nudge, and check your monthly spend without
-              leaving the couch. iOS and Android availability depends on
-              store release status.
-            </p>
+            <h2 className="text-3xl font-bold tracking-tight">{t("mobile_title")}</h2>
+            <p className="text-muted-foreground">{t("mobile_body")}</p>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
-                Same data as the web — addresses, services, providers in sync.
+                {t("mobile_bullet_1")}
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
-                Email and in-app reminders before auto-renew, ready to check off on any device.
+                {t("mobile_bullet_2")}
               </li>
               <li className="flex items-start gap-2">
                 <CheckCircle2 className="h-4 w-4 mt-0.5 text-success shrink-0" />
-                Document scanning for bills, receipts, and proof-of-address.
+                {t("mobile_bullet_3")}
               </li>
             </ul>
             <AppStoreCTA />

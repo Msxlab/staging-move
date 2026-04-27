@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       passwordHash: true,
       emailVerifiedAt: true,
       deletedAt: true,
+      preferredLocale: true,
       oauthAccounts: { select: { id: true, provider: true } },
     },
   });
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
     userName: user.firstName || "there",
     resetToken: token,
     mode: hasPasswordLogin ? "reset" : "set-password",
+    locale: user.preferredLocale,
     dedupeKey: `pwreset:${user.id}:${hash.slice(0, 12)}`,
   }).catch((err) => {
     console.error("[EMAIL] password reset send threw:", {

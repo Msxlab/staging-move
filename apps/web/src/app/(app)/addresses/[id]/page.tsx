@@ -8,6 +8,7 @@ import {
   Loader2, Plus, X, Search, ExternalLink, Check, Truck,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
@@ -54,6 +55,10 @@ interface AddressDetail {
 export default function AddressDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations("addresses");
+  const tCommon = useTranslations("common");
+  const tToast = useTranslations("toast");
   const id = params.id as string;
   const [address, setAddress] = useState<AddressDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,8 +85,8 @@ export default function AddressDetailPage() {
   const handleDelete = async () => {
     setDeleting(true);
     const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
-    if (res.ok) { toast.success("Address deleted"); router.push("/addresses"); }
-    else { toast.error("Failed to delete address"); setDeleting(false); }
+    if (res.ok) { toast.success(tToast("addressDeleted")); router.push("/addresses"); }
+    else { toast.error(tToast("addressDeleteFailed")); setDeleting(false); }
   };
 
   const handleBulkDelete = async () => {
@@ -100,7 +105,7 @@ export default function AddressDetailPage() {
     setBulkSelected(new Set());
     setBulkMode(false);
     setDeletingBulk(false);
-    toast.success(`${deleted} service${deleted !== 1 ? "s" : ""} removed`);
+    toast.success(tToast("servicesRemoved", { count: deleted }));
   };
 
   const toggleBulk = (sid: string) => {
@@ -118,7 +123,7 @@ export default function AddressDetailPage() {
 
   const saveCost = async (sid: string) => {
     const val = parseFloat(editingCostValue);
-    if (isNaN(val) || val < 0) { toast.error("Invalid cost"); return; }
+    if (isNaN(val) || val < 0) { toast.error(tToast("invalidCost")); return; }
     setSavingCostId(sid);
     try {
       const res = await fetch(`/api/services/${sid}`, {
@@ -133,9 +138,9 @@ export default function AddressDetailPage() {
           services: address.services.map((s) => s.id === sid ? { ...s, monthlyCost: val } : s),
         });
       }
-      toast.success("Cost updated");
+      toast.success(tToast("costUpdated"));
     } catch {
-      toast.error("Failed to update cost");
+      toast.error(tToast("costUpdateFailed"));
     }
     setSavingCostId(null);
     setEditingCostId(null);
@@ -150,9 +155,9 @@ export default function AddressDetailPage() {
       if (address) {
         setAddress({ ...address, services: address.services.filter((s) => s.id !== sid) });
       }
-      toast.success("Service removed");
+      toast.success(tToast("serviceRemoved"));
     } catch {
-      toast.error("Failed to remove service");
+      toast.error(tToast("serviceRemoveFailed"));
     }
     setDeletingSvcId(null);
     setDeleteSvcConfirm(null);
@@ -177,9 +182,15 @@ export default function AddressDetailPage() {
   const sortedGroups = Object.keys(grouped).sort((a, b) => groupOrder.indexOf(a) - groupOrder.indexOf(b));
 
   const groupLabels: Record<string, string> = {
-    GOVERNMENT: "Government & Official", UTILITY: "Utilities", FINANCIAL: "Financial",
-    HOUSING: "Housing", HEALTHCARE: "Healthcare", TRANSPORTATION: "Transportation",
-    KIDS: "Kids & Education", FITNESS: "Fitness", SHOPPING: "Shopping & Other",
+    GOVERNMENT: t("detail_group_government"),
+    UTILITY: t("detail_group_utility"),
+    FINANCIAL: t("detail_group_financial"),
+    HOUSING: t("detail_group_housing"),
+    HEALTHCARE: t("detail_group_healthcare"),
+    TRANSPORTATION: t("detail_group_transportation"),
+    KIDS: t("detail_group_kids"),
+    FITNESS: t("detail_group_fitness"),
+    SHOPPING: t("detail_group_shopping"),
   };
   const groupIcons: Record<string, string> = {
     GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
@@ -192,12 +203,12 @@ export default function AddressDetailPage() {
       <div className="flex items-center gap-4">
         <Link href="/addresses">
           <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/5 transition">
-            <ArrowLeft className="h-4 w-4" />Back
+            <ArrowLeft className="h-4 w-4" />{tCommon("back")}
           </button>
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{address.nickname || "Address"}</h1>
+            <h1 className="text-2xl font-bold text-white">{address.nickname || t("detail_defaultName")}</h1>
             {address.isPrimary && <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
           </div>
           <p className="text-sm text-white/40">{address.street}, {address.city}, {address.state} {address.zip}</p>
@@ -205,12 +216,12 @@ export default function AddressDetailPage() {
         <div className="flex items-center gap-2">
           <Link href={`/moving/new?from=${address.id}`}>
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
-              <Truck className="h-3.5 w-3.5" />Move from here
+              <Truck className="h-3.5 w-3.5" />{t("detail_moveFromHere")}
             </button>
           </Link>
           <Link href={`/addresses/${address.id}/edit`}>
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/10 text-sm text-white/60 hover:text-white hover:bg-white/5 transition">
-              <Edit className="h-3.5 w-3.5" />Edit
+              <Edit className="h-3.5 w-3.5" />{tCommon("edit")}
             </button>
           </Link>
         </div>
@@ -224,28 +235,28 @@ export default function AddressDetailPage() {
           </div>
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">Type</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_type")}</p>
               <p className="text-sm font-medium text-white mt-0.5">{address.type}</p>
             </div>
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">Ownership</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_ownership")}</p>
               <p className="text-sm font-medium text-white mt-0.5">
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                   address.ownership === "OWNER" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                }`}>{address.ownership === "OWNER" ? "Owner" : "Renter"}</span>
+                }`}>{address.ownership === "OWNER" ? t("detail_owner") : t("detail_renter")}</span>
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">Move-in</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_moveIn")}</p>
               <p className="text-sm font-medium text-white mt-0.5 flex items-center gap-1">
                 <Calendar className="h-3 w-3 text-white/30" />
-                {new Date(address.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                {new Date(address.startDate).toLocaleDateString(locale === "es" ? "es-US" : "en-US", { month: "short", year: "numeric" })}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-white/30 uppercase tracking-wider">Monthly Cost</p>
+              <p className="text-[10px] text-white/30 uppercase tracking-wider">{t("detail_label_monthlyCost")}</p>
               <p className="text-sm font-bold text-emerald-400 mt-0.5">
-                <DollarSign className="h-3 w-3 inline" />{totalMonthlyCost.toLocaleString()}/mo
+                <DollarSign className="h-3 w-3 inline" />{totalMonthlyCost.toLocaleString()}{t("detail_perMo")}
               </p>
             </div>
           </div>
@@ -257,7 +268,7 @@ export default function AddressDetailPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-orange-400" />
-            <h2 className="text-lg font-semibold text-white">Services</h2>
+            <h2 className="text-lg font-semibold text-white">{t("detail_servicesTitle")}</h2>
             <span className="text-xs text-white/30">({address.services.length})</span>
           </div>
           <div className="flex items-center gap-2">
@@ -267,11 +278,11 @@ export default function AddressDetailPage() {
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
                   bulkMode ? "bg-red-500/10 text-red-400 border border-red-500/20" : "text-white/40 hover:text-white hover:bg-white/5"
                 }`}
-              >{bulkMode ? "Cancel" : "Bulk Edit"}</button>
+              >{bulkMode ? tCommon("cancel") : t("detail_bulkEdit")}</button>
             )}
             <Link href="/services/new">
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition">
-                <Plus className="h-3 w-3" />Add Service
+                <Plus className="h-3 w-3" />{t("detail_addService")}
               </button>
             </Link>
           </div>
@@ -280,14 +291,14 @@ export default function AddressDetailPage() {
         {/* Bulk action bar */}
         {bulkMode && bulkSelected.size > 0 && (
           <div className="flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/20">
-            <span className="text-sm text-red-400">{bulkSelected.size} selected</span>
+            <span className="text-sm text-red-400">{t("detail_selectedCount", { count: bulkSelected.size })}</span>
             <button
               onClick={handleBulkDelete}
               disabled={deletingBulk}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50"
             >
               {deletingBulk ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-              Delete Selected
+              {t("detail_deleteSelected")}
             </button>
           </div>
         )}
@@ -297,7 +308,7 @@ export default function AddressDetailPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
             <input
-              placeholder="Search services..."
+              placeholder={t("detail_searchPlaceholder")}
               className="w-full rounded-xl border border-white/10 bg-white/5 pl-9 pr-4 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
               value={serviceSearch}
               onChange={(e) => setServiceSearch(e.target.value)}
@@ -309,11 +320,11 @@ export default function AddressDetailPage() {
         {address.services.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
             <Zap className="h-8 w-8 text-white/10 mx-auto mb-2" />
-            <p className="text-sm text-white/40">No services registered to this address.</p>
-            <Link href="/services/new" className="text-sm text-orange-400 hover:underline mt-1 inline-block">Add your first service</Link>
+            <p className="text-sm text-white/40">{t("detail_noServices")}</p>
+            <Link href="/services/new" className="text-sm text-orange-400 hover:underline mt-1 inline-block">{t("detail_noServicesCta")}</Link>
           </div>
         ) : sortedGroups.length === 0 ? (
-          <p className="text-sm text-white/40 text-center py-4">No services match your search.</p>
+          <p className="text-sm text-white/40 text-center py-4">{t("detail_noMatch")}</p>
         ) : (
           <div className="space-y-3">
             {sortedGroups.map((prefix) => {
@@ -391,15 +402,15 @@ export default function AddressDetailPage() {
                                 <button
                                   onClick={() => startEditCost(service)}
                                   className="text-right group/cost"
-                                  title="Click to edit cost"
+                                  title={t("detail_editCostTitle")}
                                 >
                                   {(service.monthlyCost || 0) > 0 ? (
                                     <p className="text-sm font-semibold text-white/70 group-hover/cost:text-orange-400 transition">
-                                      {formatCurrency(service.monthlyCost)}<span className="text-white/30">/mo</span>
+                                      {formatCurrency(service.monthlyCost)}<span className="text-white/30">{t("detail_perMo")}</span>
                                     </p>
                                   ) : (
                                     <p className="text-[11px] text-white/20 group-hover/cost:text-orange-400 transition flex items-center gap-0.5">
-                                      <DollarSign className="h-3 w-3" />Set cost
+                                      <DollarSign className="h-3 w-3" />{t("detail_setCost")}
                                     </p>
                                   )}
                                 </button>
@@ -432,11 +443,11 @@ export default function AddressDetailPage() {
                                   <button onClick={() => handleSingleDelete(service.id)} disabled={isDeletingSvc}
                                     className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50">
                                     {isDeletingSvc ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
-                                    Delete
+                                    {tCommon("delete")}
                                   </button>
                                   <button onClick={() => setDeleteSvcConfirm(null)}
                                     className="px-2 py-1 rounded-md text-[10px] text-white/30 hover:text-white hover:bg-white/5 transition">
-                                    Cancel
+                                    {tCommon("cancel")}
                                   </button>
                                 </div>
                               )}
@@ -455,31 +466,31 @@ export default function AddressDetailPage() {
         {/* Total */}
         {address.services.length > 0 && (
           <div className="flex items-center justify-between px-2 pt-2 border-t border-white/5">
-            <span className="text-sm font-medium text-white/50">Total Monthly</span>
-            <span className="text-lg font-bold text-emerald-400">{formatCurrency(totalMonthlyCost)}/mo</span>
+            <span className="text-sm font-medium text-white/50">{t("detail_totalMonthly")}</span>
+            <span className="text-lg font-bold text-emerald-400">{formatCurrency(totalMonthlyCost)}{t("detail_perMo")}</span>
           </div>
         )}
       </div>
 
       {/* Danger Zone */}
       <div className="rounded-2xl border border-red-500/10 bg-red-500/[0.02] p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-red-400">Danger Zone</h3>
-        <p className="text-xs text-white/30">Deleting this address will remove all {address.services.length} associated services. This cannot be undone.</p>
+        <h3 className="text-sm font-semibold text-red-400">{t("detail_dangerZone")}</h3>
+        <p className="text-xs text-white/30">{t("detail_dangerDescription", { count: address.services.length })}</p>
         {!showDeleteConfirm ? (
           <button onClick={() => setShowDeleteConfirm(true)}
             className="px-3 py-1.5 rounded-xl border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/10 transition">
-            Delete Address
+            {t("detail_deleteAddressBtn")}
           </button>
         ) : (
           <div className="flex items-center gap-2">
             <button onClick={handleDelete} disabled={deleting}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50">
               {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-              Confirm Delete
+              {t("detail_confirmDelete")}
             </button>
             <button onClick={() => setShowDeleteConfirm(false)}
               className="px-3 py-1.5 rounded-xl border border-white/10 text-white/40 text-xs hover:text-white hover:bg-white/5 transition">
-              Cancel
+              {tCommon("cancel")}
             </button>
           </div>
         )}

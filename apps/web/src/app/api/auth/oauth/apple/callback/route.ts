@@ -179,9 +179,11 @@ export async function POST(request: NextRequest) {
 
   const response = NextResponse.redirect(await getOAuthResponseUrl(request, redirectPath));
   if (isNewUser) {
+    const welcomeLocale = request.cookies.get("NEXT_LOCALE")?.value ?? null;
     const welcomeSent = await sendWelcomeEmail({
       email: payload.email,
       firstName,
+      locale: welcomeLocale,
       dedupeKey: `welcome:${userId}`,
     }).catch((err) => {
       console.error("[EMAIL] welcome after apple signup failed:", {
