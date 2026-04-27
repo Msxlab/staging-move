@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Receipt, Calendar, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
@@ -25,14 +26,18 @@ function getDaysUntilBill(billingDay: number): number {
   return daysInMonth - currentDay + billingDay;
 }
 
-function getBillStatus(daysUntil: number): { label: string; color: string; icon: React.ElementType } {
-  if (daysUntil === 0) return { label: "Due Today", color: "text-red-400", icon: AlertTriangle };
-  if (daysUntil <= 3) return { label: `In ${daysUntil}d`, color: "text-amber-400", icon: Clock };
-  if (daysUntil <= 7) return { label: `In ${daysUntil}d`, color: "text-cyan-400", icon: Calendar };
-  return { label: `In ${daysUntil}d`, color: "text-white/30", icon: Calendar };
+function getBillStatus(
+  daysUntil: number,
+  td: ReturnType<typeof useTranslations>
+): { label: string; color: string; icon: React.ElementType } {
+  if (daysUntil === 0) return { label: td("bills_dueToday"), color: "text-red-400", icon: AlertTriangle };
+  if (daysUntil <= 3) return { label: td("bills_dueIn", { days: daysUntil }), color: "text-amber-400", icon: Clock };
+  if (daysUntil <= 7) return { label: td("bills_dueIn", { days: daysUntil }), color: "text-cyan-400", icon: Calendar };
+  return { label: td("bills_dueIn", { days: daysUntil }), color: "text-white/30", icon: Calendar };
 }
 
 export function UpcomingBills() {
+  const td = useTranslations("dashboard");
   const [bills, setBills] = useState<BillService[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,27 +63,27 @@ export function UpcomingBills() {
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <div className="flex items-center gap-2">
           <Receipt className="h-4 w-4 text-amber-400" />
-          <h3 className="text-sm font-semibold text-white">Upcoming Bills</h3>
+          <h3 className="text-sm font-semibold text-white">{td("widget_bills")}</h3>
         </div>
         {upcomingThisWeek.length > 0 && (
           <span className="text-xs font-semibold text-amber-400">
-            {formatCurrency(weekTotal)} this week
+            {td("bills_thisWeek", { amount: formatCurrency(weekTotal) })}
           </span>
         )}
       </div>
       <div className="px-5 pb-5 space-y-1.5">
         {loading ? (
-          <p className="text-sm text-white/30 text-center py-4">Loading...</p>
+          <p className="text-sm text-white/30 text-center py-4">{td("bills_loading")}</p>
         ) : bills.length === 0 ? (
           <div className="text-center py-4">
             <CheckCircle2 className="h-6 w-6 text-white/10 mx-auto mb-1.5" />
-            <p className="text-xs text-white/30">No bills with due dates set</p>
-            <p className="text-[10px] text-white/20 mt-0.5">Set billing day on your services to track due dates</p>
+            <p className="text-xs text-white/30">{td("bills_empty")}</p>
+            <p className="text-[10px] text-white/20 mt-0.5">{td("bills_empty_hint")}</p>
           </div>
         ) : (
           bills.map((bill) => {
             const daysUntil = getDaysUntilBill(bill.billingDay);
-            const status = getBillStatus(daysUntil);
+            const status = getBillStatus(daysUntil, td);
             const StatusIcon = status.icon;
             return (
               <Link key={bill.id} href={`/services/${bill.id}`}>
@@ -89,7 +94,7 @@ export function UpcomingBills() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-white truncate">{bill.providerName}</p>
                     <p className="text-[10px] text-white/25">
-                      Day {bill.billingDay}
+                      {td("bills_day", { day: bill.billingDay })}
                       {bill.address && ` · ${bill.address.nickname || bill.address.city}`}
                     </p>
                   </div>

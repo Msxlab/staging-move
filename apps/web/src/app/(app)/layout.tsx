@@ -5,6 +5,7 @@ import { InstallPrompt } from "@/components/shared/install-prompt";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { destroyUserSession, requireDbUserId } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 import type { ReactNode } from "react";
@@ -40,7 +41,7 @@ async function getAppGateState(): Promise<
 
   try {
     const target = resolvePostAuthRedirect(await getPostAuthUserState(userId), currentPath);
-    return target === currentPath ? null : target;
+    return target === currentPath ? { userId } : { redirectTo: target };
   } catch (error: any) {
     if (error?.message === "AUTH_STATE_USER_UNAVAILABLE") {
       await destroyUserSession().catch(() => null);
