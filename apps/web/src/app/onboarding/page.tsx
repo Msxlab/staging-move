@@ -63,6 +63,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
   const [showCategories, setShowCategories] = useState(false);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
+  const [legalAcceptedOnServer, setLegalAcceptedOnServer] = useState(false);
   const legalStepRequested = searchParams.get("step") === "legal";
 
   // Resume the server-derived onboarding step. Profile, address, service
@@ -82,6 +83,10 @@ export default function OnboardingPage() {
         }
 
         const hasLegal = hasRequiredLegalConsents(data.legalConsents);
+        setLegalAcceptedOnServer(hasLegal);
+        if (data.legalConsents) {
+          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
+        }
 
         if (!hasLegal) {
           if (!legalStepRequested) {
@@ -146,9 +151,6 @@ export default function OnboardingPage() {
           }
         }
 
-        if (data.legalConsents) {
-          setLegalConsents(getDefaultLegalConsents(data.legalConsents));
-        }
       } catch {
         // Keep the current step visible; individual saves still surface errors.
       }
@@ -325,6 +327,7 @@ export default function OnboardingPage() {
         throw new Error(data.error || "Failed to save legal acknowledgement");
       }
       setLegalConsents(getDefaultLegalConsents(data.legalConsents || acceptedLegalConsents));
+      setLegalAcceptedOnServer(true);
       toast.success("Legal acknowledgements saved.");
       router.replace("/onboarding");
       router.refresh();
@@ -555,7 +558,7 @@ export default function OnboardingPage() {
   const selectCls = "w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition [&>option]:bg-popover [&>option]:text-popover-foreground";
   const labelCls = "block text-xs font-medium text-white/60 mb-1.5";
   const checkboxCls = "w-4 h-4 rounded border-white/20 bg-white/5 accent-orange-500 cursor-pointer";
-  const showLegalGate = legalStepRequested && !hasRequiredLegalConsents(legalConsents);
+  const showLegalGate = legalStepRequested && !legalAcceptedOnServer;
 
   if (showLegalGate) {
     return (

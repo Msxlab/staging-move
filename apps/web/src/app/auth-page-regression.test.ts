@@ -57,6 +57,16 @@ describe("auth page regressions", () => {
     expect(postAuth).toContain('return "/onboarding"');
   });
 
+  it("keeps the onboarding legal gate open until legal acceptance is saved", () => {
+    const onboarding = read("src/app/onboarding/page.tsx");
+
+    expect(onboarding).toContain("legalAcceptedOnServer");
+    expect(onboarding).toContain("setLegalAcceptedOnServer(hasLegal)");
+    expect(onboarding).toContain("setLegalAcceptedOnServer(true)");
+    expect(onboarding).toContain("const showLegalGate = legalStepRequested && !legalAcceptedOnServer");
+    expect(onboarding).not.toContain("const showLegalGate = legalStepRequested && !hasRequiredLegalConsents(legalConsents)");
+  });
+
   it("routes unverified password users directly to verify-email after login", () => {
     const signIn = read("src/app/sign-in/page.tsx");
 
