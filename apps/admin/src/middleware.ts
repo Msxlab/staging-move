@@ -16,6 +16,11 @@ if (!adminJwtSecret || adminJwtSecret.length < 32) {
 const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+const PUBLIC_STATIC_PATHS = ["/sw.js"];
+
+export function isPublicStaticPath(pathname: string): boolean {
+  return PUBLIC_STATIC_PATHS.includes(pathname);
+}
 
 function resolveClientIP(request: NextRequest): string {
   if (process.env.VERCEL_ENV) {
@@ -349,6 +354,10 @@ export async function middleware(request: NextRequest) {
       );
     }
     return hardenEarlyResponse(new NextResponse(ipCheck.reason || "Access denied", { status: 403 }));
+  }
+
+  if (isPublicStaticPath(pathname)) {
+    return NextResponse.next();
   }
 
   // Allow internal endpoints (used by IP rule cache refresh)
