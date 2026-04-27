@@ -33,6 +33,49 @@ const R2_ASSET_KEYS = [
 ] as const;
 
 const R2_PUT_TIMEOUT_MS = 3_000;
+const TINY_TEST_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+  "base64",
+);
+
+export interface R2AssetConfigShapeInput {
+  endpoint?: string | null;
+  region?: string | null;
+  bucket?: string | null;
+  accessKeyId?: string | null;
+  secretAccessKey?: string | null;
+  publicBaseUrl?: string | null;
+}
+
+export interface R2AssetConfigSummary {
+  endpointHost: string | null;
+  endpointPath: string | null;
+  publicBaseUrlHost: string | null;
+  bucket: string | null;
+  region: string | null;
+  hasAccessKeyId: boolean;
+  hasSecretAccessKey: boolean;
+}
+
+export interface R2AssetConfigValidation {
+  ok: boolean;
+  errors: string[];
+  config?: R2AssetConfig;
+  summary: R2AssetConfigSummary;
+}
+
+export interface R2AssetStorageHealth {
+  ready: boolean;
+  errors: string[];
+  summary: R2AssetConfigSummary;
+  testUpload?: {
+    attempted: boolean;
+    ok: boolean;
+    objectKey?: string;
+    errorName?: string;
+    errorMessage?: string;
+  };
+}
 
 export const ALLOWED_LOGO_CONTENT_TYPES = new Set([
   "image/jpeg",
@@ -85,23 +128,141 @@ export function buildLogoObjectKey(providerId: string, contentType: string): str
   return `provider-logo/${safeProviderId}/${uuid}.${ext}`;
 }
 
+function normalizeValue(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function errorName(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
+
+function parseUrl(value: string | null): URL | null {
+  if (!value) return null;
+  const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  try {
+    return new URL(withScheme);
+  } catch {
+    return null;
+  }
+}
+
+function urlHost(value: string | null): string | null {
+  return parseUrl(value)?.host ?? null;
+}
+
+function summarizeConfig(input: R2AssetConfigShapeInput): R2AssetConfigSummary {
+  const endpointUrl = parseUrl(normalizeValue(input.endpoint));
+  return {
+    endpointHost: endpointUrl?.host ?? null,
+    endpointPath: endpointUrl?.pathname && endpointUrl.pathname !== "/" ? endpointUrl.pathname : null,
+    publicBaseUrlHost: urlHost(normalizeValue(input.publicBaseUrl)),
+    bucket: normalizeValue(input.bucket),
+    region: normalizeValue(input.region) || "auto",
+    hasAccessKeyId: Boolean(normalizeValue(input.accessKeyId)),
+    hasSecretAccessKey: Boolean(normalizeValue(input.secretAccessKey)),
+  };
+}
+
+export function validateR2AssetStorageConfigShape(
+  input: R2AssetConfigShapeInput,
+): R2AssetConfigValidation {
+  const endpointValue = normalizeValue(input.endpoint);
+  const bucket = normalizeValue(input.bucket);
+  const accessKeyId = normalizeValue(input.accessKeyId);
+  const secretAccessKey = normalizeValue(input.secretAccessKey);
+  const publicBaseUrl = normalizeValue(input.publicBaseUrl);
+  const region = normalizeValue(input.region) || "auto";
+  const errors: string[] = [];
+
+  if (!endpointValue) errors.push("missing R2_ENDPOINT");
+  if (!bucket) errors.push("missing R2_BUCKET");
+  if (!accessKeyId) errors.push("missing R2_ACCESS_KEY_ID");
+  if (!secretAccessKey) errors.push("missing R2_SECRET_ACCESS_KEY");
+
+  const endpointUrl = parseUrl(endpointValue);
+  if (endpointValue && !endpointUrl) {
+    errors.push("R2_ENDPOINT must be a valid URL or hostname");
+  }
+  if (endpointUrl && !["https:", "http:"].includes(endpointUrl.protocol)) {
+    errors.push("R2_ENDPOINT must use http or https");
+  }
+
+  const publicBaseUrlUrl = parseUrl(publicBaseUrl);
+  if (publicBaseUrl && !publicBaseUrlUrl) {
+    errors.push("R2_PUBLIC_BASE_URL must be a valid URL or hostname");
+  }
+
+  if (bucket && /[\\/]/.test(bucket)) {
+    errors.push("R2_BUCKET must be a bucket name, not a path");
+  }
+
+  if (endpointUrl && bucket) {
+    const normalizedBucket = bucket.toLowerCase();
+    const endpointPathParts = endpointUrl.pathname
+      .split("/")
+      .map((part) => part.trim().toLowerCase())
+      .filter(Boolean);
+    if (endpointPathParts.includes(normalizedBucket)) {
+      errors.push("R2_ENDPOINT must not include the bucket path");
+    }
+    if (endpointUrl.hostname.toLowerCase().startsWith(`${normalizedBucket}.`)) {
+      errors.push("R2_ENDPOINT must not include the bucket as a host prefix");
+    }
+  }
+
+  if (
+    endpointUrl &&
+    publicBaseUrlUrl &&
+    endpointUrl.host.toLowerCase() === publicBaseUrlUrl.host.toLowerCase()
+  ) {
+    errors.push("R2_ENDPOINT must be the S3 API endpoint, not the public asset domain");
+  }
+
+  const summary = summarizeConfig(input);
+  if (errors.length > 0 || !endpointUrl || !bucket || !accessKeyId || !secretAccessKey) {
+    return { ok: false, errors, summary };
+  }
+
+  endpointUrl.search = "";
+  endpointUrl.hash = "";
+  endpointUrl.pathname = endpointUrl.pathname.replace(/\/+$/, "");
+
+  return {
+    ok: true,
+    errors: [],
+    summary,
+    config: {
+      endpoint: endpointUrl.toString().replace(/\/+$/, ""),
+      region,
+      bucket,
+      accessKeyId,
+      secretAccessKey,
+      publicBaseUrl,
+    },
+  };
+}
+
 async function resolveAssetConfig(): Promise<R2AssetConfig> {
   const values = await getAdminRuntimeConfigValues([...R2_ASSET_KEYS]);
-  const endpoint = values.R2_ENDPOINT?.trim();
-  const bucket = values.R2_BUCKET?.trim();
-  const accessKeyId = values.R2_ACCESS_KEY_ID?.trim();
-  const secretAccessKey = values.R2_SECRET_ACCESS_KEY?.trim();
-  if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
-    throw new Error("R2_ASSET_STORAGE_NOT_CONFIGURED");
+  const validation = validateR2AssetStorageConfigShape({
+    endpoint: values.R2_ENDPOINT,
+    region: values.R2_REGION,
+    bucket: values.R2_BUCKET,
+    accessKeyId: values.R2_ACCESS_KEY_ID,
+    secretAccessKey: values.R2_SECRET_ACCESS_KEY,
+    publicBaseUrl: values.R2_PUBLIC_BASE_URL,
+  });
+  if (!validation.ok || !validation.config) {
+    throw new Error(
+      `R2_ASSET_STORAGE_NOT_CONFIGURED:${validation.errors.join("; ")}`,
+    );
   }
-  return {
-    endpoint,
-    region: values.R2_REGION?.trim() || "auto",
-    bucket,
-    accessKeyId,
-    secretAccessKey,
-    publicBaseUrl: values.R2_PUBLIC_BASE_URL?.trim() || null,
-  };
+  return validation.config;
 }
 
 function sha256Hex(value: string | Buffer) {
@@ -236,4 +397,46 @@ export async function isAssetStorageConfigured(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+export async function getR2AssetStorageHealth(options: {
+  attemptUpload?: boolean;
+} = {}): Promise<R2AssetStorageHealth> {
+  const values = await getAdminRuntimeConfigValues([...R2_ASSET_KEYS]);
+  const validation = validateR2AssetStorageConfigShape({
+    endpoint: values.R2_ENDPOINT,
+    region: values.R2_REGION,
+    bucket: values.R2_BUCKET,
+    accessKeyId: values.R2_ACCESS_KEY_ID,
+    secretAccessKey: values.R2_SECRET_ACCESS_KEY,
+    publicBaseUrl: values.R2_PUBLIC_BASE_URL,
+  });
+  const health: R2AssetStorageHealth = {
+    ready: validation.ok,
+    errors: validation.errors,
+    summary: validation.summary,
+  };
+
+  if (!options.attemptUpload) return health;
+
+  const objectKey = `health/provider-logo/${randomUUID()}.png`;
+  try {
+    await putAssetObject({
+      objectKey,
+      body: TINY_TEST_PNG,
+      contentType: "image/png",
+    });
+    health.testUpload = { attempted: true, ok: true, objectKey };
+  } catch (error) {
+    health.ready = false;
+    health.testUpload = {
+      attempted: true,
+      ok: false,
+      objectKey,
+      errorName: errorName(error),
+      errorMessage: errorMessage(error).slice(0, 500),
+    };
+  }
+
+  return health;
 }

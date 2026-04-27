@@ -1,11 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
-import { ingestLogoFromUpload } from "@/lib/logo-ingest";
+import {
+  ingestLogoFromUpload,
+  LogoIngestError,
+  type LogoIngestFailureStage,
+} from "@/lib/logo-ingest";
 
 export const runtime = "nodejs";
 
 const MAX_UPLOAD_BYTES = 1_000_000;
+
+interface FailureLogContext {
+  providerId: string;
+  stage: LogoIngestFailureStage;
+  error: unknown;
+  details?: unknown;
+}
+
+function errorName(error: unknown): string {
+  return error instanceof Error ? error.name : typeof error;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function logLogoUploadFailure(context: FailureLogContext) {
+  console.error("[ADMIN] provider logo upload failed", {
+    providerId: context.providerId,
+    stage: context.stage,
+    errorName: errorName(context.error),
+    errorMessage: errorMessage(context.error).slice(0, 500),
+    details: context.details,
+  });
+}
+
+function jsonFailure(input: {
+  code: string;
+  message: string;
+  details?: unknown;
+  status: number;
+}) {
+  return NextResponse.json(
+    {
+      error: input.code,
+      message: input.message,
+      details: input.details ?? null,
+    },
+    { status: input.status },
+  );
+}
 
 /**
  * Manual logo upload (multipart/form-data, single field "file"). Used when
@@ -17,18 +62,24 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  let providerIdForLog = "unknown";
   try {
     const session = await requirePermission("providers", "canUpdate", {
       minimumRole: "MODERATOR",
     });
     const { id } = await params;
+    providerIdForLog = id;
 
     const provider = await prisma.serviceProvider.findUnique({
       where: { id },
       select: { id: true },
     });
     if (!provider) {
-      return NextResponse.json({ error: "Provider not found" }, { status: 404 });
+      return jsonFailure({
+        code: "PROVIDER_NOT_FOUND",
+        message: "Provider not found",
+        status: 404,
+      });
     }
 
     let file: File | null = null;
@@ -36,74 +87,84 @@ export async function POST(
       const formData = await request.formData();
       const value = formData.get("file");
       if (value instanceof File) file = value;
-    } catch {
-      return NextResponse.json({ error: "Invalid multipart body" }, { status: 400 });
+    } catch (error) {
+      logLogoUploadFailure({
+        providerId: id,
+        stage: "parse_multipart",
+        error,
+      });
+      return jsonFailure({
+        code: "INVALID_LOGO_FILE",
+        message: "Invalid multipart body",
+        status: 400,
+      });
     }
     if (!file) {
-      return NextResponse.json({ error: "Missing 'file' field" }, { status: 400 });
+      const error = new Error("Missing 'file' field");
+      logLogoUploadFailure({
+        providerId: id,
+        stage: "validate_request",
+        error,
+      });
+      return jsonFailure({
+        code: "INVALID_LOGO_FILE",
+        message: "Missing 'file' field",
+        status: 400,
+      });
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      return NextResponse.json(
-        { error: `File too large (max ${MAX_UPLOAD_BYTES} bytes)` },
-        { status: 413 },
-      );
+      const error = new Error("File too large");
+      logLogoUploadFailure({
+        providerId: id,
+        stage: "validate_request",
+        error,
+        details: { size: file.size, max: MAX_UPLOAD_BYTES },
+      });
+      return jsonFailure({
+        code: "INVALID_LOGO_FILE",
+        message: `File too large (max ${MAX_UPLOAD_BYTES} bytes)`,
+        status: 413,
+      });
     }
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const contentType = file.type || "application/octet-stream";
 
-    let result;
-    try {
-      result = await ingestLogoFromUpload({
-        providerId: provider.id,
-        body: buffer,
-        contentType,
-      });
-    } catch (err: any) {
-      const message = String(err?.message ?? err);
-      if (message.startsWith("UNSUPPORTED_LOGO_CONTENT_TYPE")) {
-        return NextResponse.json(
-          { error: "Unsupported file type. Use PNG, JPEG, WEBP, GIF, or ICO." },
-          { status: 415 },
-        );
-      }
-      if (message === "LOGO_TOO_LARGE") {
-        return NextResponse.json({ error: "File too large" }, { status: 413 });
-      }
-      if (message === "LOGO_TOO_SMALL") {
-        return NextResponse.json({ error: "File too small to be a usable logo" }, { status: 400 });
-      }
-      if (
-        message === "R2_ASSET_STORAGE_NOT_CONFIGURED" ||
-        message === "R2_PUBLIC_BASE_URL_MISSING"
-      ) {
-        return NextResponse.json(
-          { error: "Logo storage is not configured", code: message },
-          { status: 503 },
-        );
-      }
-      throw err;
-    }
-
-    const existingCandidate = await prisma.providerLogoCandidate.findFirst({
-      where: {
-        providerId: id,
-        status: "PENDING",
-        contentHash: result.contentHash,
-      },
-      select: {
-        id: true,
-        source: true,
-        sourceUrl: true,
-        publicUrl: true,
-        contentType: true,
-        contentHash: true,
-        bytes: true,
-        status: true,
-        createdAt: true,
-      },
+    const result = await ingestLogoFromUpload({
+      providerId: provider.id,
+      body: buffer,
+      contentType,
     });
+
+    const existingCandidate = await prisma.providerLogoCandidate
+      .findFirst({
+        where: {
+          providerId: id,
+          status: "PENDING",
+          contentHash: result.contentHash,
+        },
+        select: {
+          id: true,
+          source: true,
+          sourceUrl: true,
+          publicUrl: true,
+          contentType: true,
+          contentHash: true,
+          bytes: true,
+          status: true,
+          createdAt: true,
+        },
+      })
+      .catch((error) => {
+        throw new LogoIngestError({
+          code: "CANDIDATE_CREATE_FAILED",
+          message: "Failed to check existing logo candidates",
+          stage: "create_candidate",
+          status: 500,
+          details: errorMessage(error).slice(0, 500),
+        });
+      });
 
     if (existingCandidate) {
       return NextResponse.json({
@@ -116,49 +177,69 @@ export async function POST(
       });
     }
 
-    const candidate = await prisma.providerLogoCandidate.create({
-      data: {
-        providerId: id,
-        source: result.source,
-        sourceUrl: result.sourceUrl,
-        publicUrl: result.publicUrl,
-        objectKey: result.objectKey,
-        contentType: result.contentType,
-        contentHash: result.contentHash,
-        bytes: result.bytes,
-        status: "PENDING",
-        createdByAdminId: session.adminId,
-      },
-      select: {
-        id: true,
-        source: true,
-        sourceUrl: true,
-        publicUrl: true,
-        contentType: true,
-        contentHash: true,
-        bytes: true,
-        status: true,
-        createdAt: true,
-      },
-    });
-
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "CREATE_PROVIDER_LOGO_CANDIDATE",
-        entityType: "ProviderLogoCandidate",
-        entityId: candidate.id,
-        changes: JSON.stringify({
+    const candidate = await prisma.providerLogoCandidate
+      .create({
+        data: {
           providerId: id,
-          source: "manual-upload",
+          source: result.source,
+          sourceUrl: result.sourceUrl,
+          publicUrl: result.publicUrl,
           objectKey: result.objectKey,
-          bytes: result.bytes,
           contentType: result.contentType,
           contentHash: result.contentHash,
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
+          bytes: result.bytes,
+          status: "PENDING",
+          createdByAdminId: session.adminId,
+        },
+        select: {
+          id: true,
+          source: true,
+          sourceUrl: true,
+          publicUrl: true,
+          contentType: true,
+          contentHash: true,
+          bytes: true,
+          status: true,
+          createdAt: true,
+        },
+      })
+      .catch((error) => {
+        throw new LogoIngestError({
+          code: "CANDIDATE_CREATE_FAILED",
+          message: "Failed to create logo candidate",
+          stage: "create_candidate",
+          status: 500,
+          details: errorMessage(error).slice(0, 500),
+        });
+      });
+
+    await prisma.adminAuditLog
+      .create({
+        data: {
+          adminUserId: session.adminId,
+          action: "LOGO_CAND_ADD",
+          entityType: "ProviderLogoCandidate",
+          entityId: candidate.id,
+          changes: JSON.stringify({
+            providerId: id,
+            source: "manual-upload",
+            objectKey: result.objectKey,
+            bytes: result.bytes,
+            contentType: result.contentType,
+            contentHash: result.contentHash,
+          }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      })
+      .catch((error) => {
+        throw new LogoIngestError({
+          code: "AUDIT_LOG_FAILED",
+          message: "Logo candidate was created but audit logging failed",
+          stage: "audit_log",
+          status: 500,
+          details: errorMessage(error).slice(0, 500),
+        });
+      });
 
     return NextResponse.json({
       logoUrl: result.publicUrl,
@@ -167,14 +248,37 @@ export async function POST(
       bytes: result.bytes,
       status: "PENDING",
     });
-  } catch (error: any) {
-    if (error?.message === "UNAUTHORIZED") {
+  } catch (error: unknown) {
+    const message = errorMessage(error);
+    if (message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (error?.message === "FORBIDDEN") {
+    if (message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("[ADMIN] logo upload failed:", error);
-    return NextResponse.json({ error: "Failed to upload logo" }, { status: 500 });
+    if (error instanceof LogoIngestError) {
+      logLogoUploadFailure({
+        providerId: providerIdForLog,
+        stage: error.stage,
+        error,
+        details: error.details,
+      });
+      return jsonFailure({
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        status: error.status,
+      });
+    }
+    logLogoUploadFailure({
+      providerId: providerIdForLog,
+      stage: "validate_request",
+      error,
+    });
+    return jsonFailure({
+      code: "LOGO_UPLOAD_FAILED",
+      message: "Failed to upload logo",
+      status: 500,
+    });
   }
 }

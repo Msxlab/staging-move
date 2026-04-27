@@ -91,7 +91,7 @@ export async function PATCH(
         await tx.adminAuditLog.create({
           data: {
             adminUserId: session.adminId,
-            action: "APPROVE_PROVIDER_LOGO_CANDIDATE",
+            action: "LOGO_CAND_APPROVE",
             entityType: "ProviderLogoCandidate",
             entityId: candidate.id,
             changes: JSON.stringify({
@@ -130,7 +130,7 @@ export async function PATCH(
       prisma.adminAuditLog.create({
         data: {
           adminUserId: session.adminId,
-          action: "REJECT_PROVIDER_LOGO_CANDIDATE",
+          action: "LOGO_CAND_REJECT",
           entityType: "ProviderLogoCandidate",
           entityId: candidate.id,
           changes: JSON.stringify({

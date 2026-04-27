@@ -118,27 +118,37 @@ export async function POST(
     }
 
     const existingCandidate = result.sourceUrl
-      ? await prisma.providerLogoCandidate.findFirst({
-          where: {
-            providerId: id,
-            status: "PENDING",
-            OR: [
-              { contentHash: result.contentHash },
-              { source: result.source, sourceUrl: result.sourceUrl },
-            ],
-          },
-          select: {
-            id: true,
-            source: true,
-            sourceUrl: true,
-            publicUrl: true,
-            contentType: true,
-            contentHash: true,
-            bytes: true,
-            status: true,
-            createdAt: true,
-          },
-        })
+      ? await prisma.providerLogoCandidate
+          .findFirst({
+            where: {
+              providerId: id,
+              status: "PENDING",
+              OR: [
+                { contentHash: result.contentHash },
+                { source: result.source, sourceUrl: result.sourceUrl },
+              ],
+            },
+            select: {
+              id: true,
+              source: true,
+              sourceUrl: true,
+              publicUrl: true,
+              contentType: true,
+              contentHash: true,
+              bytes: true,
+              status: true,
+              createdAt: true,
+            },
+          })
+          .catch((error) => {
+            throw new LogoIngestError({
+              code: "CANDIDATE_CREATE_FAILED",
+              message: "Failed to check existing logo candidates",
+              stage: "create_candidate",
+              status: 500,
+              details: errorMessage(error).slice(0, 500),
+            });
+          })
       : null;
 
     if (existingCandidate) {
@@ -181,7 +191,7 @@ export async function POST(
       })
       .catch((error) => {
         throw new LogoIngestError({
-          code: "LOGO_CANDIDATE_CREATE_FAILED",
+          code: "CANDIDATE_CREATE_FAILED",
           message: "Failed to create logo candidate",
           stage: "create_candidate",
           status: 500,
@@ -189,24 +199,34 @@ export async function POST(
         });
       });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "CREATE_PROVIDER_LOGO_CANDIDATE",
-        entityType: "ProviderLogoCandidate",
-        entityId: candidate.id,
-        changes: JSON.stringify({
-          providerId: id,
-          source: result.source,
-          sourceUrl: result.sourceUrl,
-          objectKey: result.objectKey,
-          bytes: result.bytes,
-          contentType: result.contentType,
-          contentHash: result.contentHash,
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
+    await prisma.adminAuditLog
+      .create({
+        data: {
+          adminUserId: session.adminId,
+          action: "LOGO_CAND_ADD",
+          entityType: "ProviderLogoCandidate",
+          entityId: candidate.id,
+          changes: JSON.stringify({
+            providerId: id,
+            source: result.source,
+            sourceUrl: result.sourceUrl,
+            objectKey: result.objectKey,
+            bytes: result.bytes,
+            contentType: result.contentType,
+            contentHash: result.contentHash,
+          }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      })
+      .catch((error) => {
+        throw new LogoIngestError({
+          code: "AUDIT_LOG_FAILED",
+          message: "Logo candidate was created but audit logging failed",
+          stage: "audit_log",
+          status: 500,
+          details: errorMessage(error).slice(0, 500),
+        });
+      });
 
     return NextResponse.json({
       logoUrl: result.publicUrl,

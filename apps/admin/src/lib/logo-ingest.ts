@@ -26,11 +26,14 @@ const FETCH_TIMEOUT_MS = 1_500;
 const R2_PUT_TIMEOUT_DETAILS = "3000ms";
 
 export type LogoIngestFailureStage =
+  | "validate_request"
+  | "parse_multipart"
   | "fetch_homepage"
   | "parse_logo"
   | "download_asset"
   | "upload_storage"
-  | "create_candidate";
+  | "create_candidate"
+  | "audit_log";
 
 export class LogoIngestError extends Error {
   code: string;
@@ -80,19 +83,24 @@ function errorMessage(error: unknown): string {
 
 function mapStorageError(error: unknown): LogoIngestError | null {
   const message = errorMessage(error);
-  if (message === "R2_ASSET_STORAGE_NOT_CONFIGURED") {
+  if (
+    message === "R2_ASSET_STORAGE_NOT_CONFIGURED" ||
+    message.startsWith("R2_ASSET_STORAGE_NOT_CONFIGURED:")
+  ) {
+    const detail = message.includes(":") ? message.split(":").slice(1).join(":") : "";
     return new LogoIngestError({
       code: "LOGO_STORAGE_NOT_CONFIGURED",
       message: "Logo storage is not configured",
       stage: "upload_storage",
       status: 503,
       details:
+        detail ||
         "Missing R2_ENDPOINT, R2_BUCKET, R2_ACCESS_KEY_ID, or R2_SECRET_ACCESS_KEY",
     });
   }
   if (message === "R2_PUBLIC_BASE_URL_MISSING") {
     return new LogoIngestError({
-      code: "LOGO_STORAGE_PUBLIC_URL_MISSING",
+      code: "LOGO_STORAGE_NOT_CONFIGURED",
       message: "Logo storage public base URL is not configured",
       stage: "upload_storage",
       status: 503,
@@ -101,7 +109,7 @@ function mapStorageError(error: unknown): LogoIngestError | null {
   }
   if (message === "R2_PUT_TIMEOUT") {
     return new LogoIngestError({
-      code: "LOGO_STORAGE_UPLOAD_TIMEOUT",
+      code: "LOGO_UPLOAD_FAILED",
       message: "Logo storage upload timed out",
       stage: "upload_storage",
       status: 504,
@@ -110,7 +118,7 @@ function mapStorageError(error: unknown): LogoIngestError | null {
   }
   if (message.startsWith("R2_PUT_FAILED:")) {
     return new LogoIngestError({
-      code: "LOGO_STORAGE_UPLOAD_FAILED",
+      code: "LOGO_UPLOAD_FAILED",
       message: "Logo storage upload failed",
       stage: "upload_storage",
       status: 502,
@@ -294,7 +302,7 @@ export async function ingestLogoFromWebsite(input: {
     // a viewable URL. Treat as misconfiguration — operator should set the
     // public base before backfilling.
     throw new LogoIngestError({
-      code: "LOGO_STORAGE_PUBLIC_URL_MISSING",
+      code: "LOGO_STORAGE_NOT_CONFIGURED",
       message: "Logo storage public base URL is not configured",
       stage: "upload_storage",
       status: 503,
@@ -322,18 +330,59 @@ export async function ingestLogoFromUpload(input: {
   body: Buffer;
   contentType: string;
 }): Promise<IngestedLogo> {
-  const contentType = normalizeLogoContentType(input.contentType);
+  let contentType: string;
+  try {
+    contentType = normalizeLogoContentType(input.contentType);
+  } catch (error) {
+    throw new LogoIngestError({
+      code: "INVALID_LOGO_FILE",
+      message: "Unsupported file type. Use PNG, JPEG, WEBP, GIF, or ICO.",
+      stage: "validate_request",
+      status: 415,
+      details: errorMessage(error).slice(0, 500),
+    });
+  }
   if (input.body.byteLength > MAX_LOGO_BYTES) {
-    throw new Error("LOGO_TOO_LARGE");
+    throw new LogoIngestError({
+      code: "INVALID_LOGO_FILE",
+      message: "File too large",
+      stage: "validate_request",
+      status: 413,
+      details: `Max ${MAX_LOGO_BYTES} bytes`,
+    });
   }
   if (input.body.byteLength < MIN_LOGO_BYTES) {
-    throw new Error("LOGO_TOO_SMALL");
+    throw new LogoIngestError({
+      code: "INVALID_LOGO_FILE",
+      message: "File too small to be a usable logo",
+      stage: "validate_request",
+      status: 400,
+      details: `Min ${MIN_LOGO_BYTES} bytes`,
+    });
   }
 
   const objectKey = buildLogoObjectKey(input.providerId, contentType);
-  await putAssetObject({ objectKey, body: input.body, contentType });
-  const publicUrl = await rawAssetUrl(objectKey);
-  if (!publicUrl) throw new Error("R2_PUBLIC_BASE_URL_MISSING");
+  try {
+    await putAssetObject({ objectKey, body: input.body, contentType });
+  } catch (error) {
+    const mapped = mapStorageError(error);
+    if (mapped) throw mapped;
+    throw error;
+  }
+  const publicUrl = await rawAssetUrl(objectKey).catch((error) => {
+    const mapped = mapStorageError(error);
+    if (mapped) throw mapped;
+    throw error;
+  });
+  if (!publicUrl) {
+    throw new LogoIngestError({
+      code: "LOGO_STORAGE_NOT_CONFIGURED",
+      message: "Logo storage public base URL is not configured",
+      stage: "upload_storage",
+      status: 503,
+      details: "Missing R2_PUBLIC_BASE_URL",
+    });
+  }
 
   return {
     publicUrl,
