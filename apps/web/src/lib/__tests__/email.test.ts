@@ -20,7 +20,9 @@ vi.mock("@/lib/runtime-config", () => ({
 }));
 
 import {
+  appendUnsubscribeFooter,
   billReminderHtml,
+  buildUnsubscribeHeaders,
   contractReminderHtml,
   emailVerificationContent,
   paymentFailedContent,
@@ -279,6 +281,39 @@ describe("Spanish (es) inline content", () => {
     });
     expect(content.html).toContain("Se agregó una contraseña a tu cuenta.");
     expect(content.html).toContain("Si no fuiste tú, asegura tu cuenta de inmediato.");
+  });
+});
+
+describe("unsubscribe footer + headers", () => {
+  const baseContent = {
+    subject: "Test",
+    html: "<html><body><p>Hello</p></body></html>",
+    text: "Hello",
+  };
+
+  it("appends a footer line + plain-text URL to a marketing email body", () => {
+    const url = "https://locateflow.com/unsubscribe?t=tok.abc";
+    const result = appendUnsubscribeFooter(baseContent, url);
+    expect(result.html).toContain("Unsubscribe");
+    expect(result.html).toContain(url);
+    // Footer goes inside </body>, not after it.
+    expect(result.html.indexOf(url)).toBeLessThan(result.html.indexOf("</body>"));
+    expect(result.text).toContain(url);
+  });
+
+  it("translates the footer to Spanish for es locale", () => {
+    const url = "https://locateflow.com/unsubscribe?t=tok.abc";
+    const result = appendUnsubscribeFooter(baseContent, url, "es");
+    expect(result.html).toContain("Cancelar suscripción");
+    expect(result.text).toContain("Cancelar suscripción");
+  });
+
+  it("builds RFC 2369 + RFC 8058 List-Unsubscribe headers", () => {
+    const url = "https://locateflow.com/unsubscribe?t=tok.abc";
+    const headers = buildUnsubscribeHeaders(url);
+    expect(headers["List-Unsubscribe"]).toContain(`<${url}>`);
+    expect(headers["List-Unsubscribe"]).toContain("<mailto:");
+    expect(headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
   });
 });
 
