@@ -64,3 +64,15 @@ export async function syncMoveTasksForAddress(
     plans.map((plan) => plan.id),
   );
 }
+
+export async function safeSyncMoveTasksForAddress(
+  userId: string,
+  addressId: string,
+): Promise<MoveTaskSyncSummary & { syncFailed?: boolean }> {
+  try {
+    return await syncMoveTasksForAddress(userId, addressId);
+  } catch (error) {
+    console.error("Move task address sync failed:", { addressId, error });
+    return { ...EMPTY_MOVE_TASK_SYNC, syncFailed: true };
+  }
+}

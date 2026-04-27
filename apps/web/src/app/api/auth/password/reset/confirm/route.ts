@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findFirst({
     where: { id: record.userId, deletedAt: null },
-    select: { id: true, email: true, firstName: true },
+    select: { id: true, email: true, firstName: true, preferredLocale: true },
   });
   if (!user) {
     return invalidResetLink();
@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
     userName: user.firstName || "there",
     kind: "password-changed",
     occurredAt: now,
+    locale: user.preferredLocale,
     dedupeKey: `pwd-changed:${record.id}`,
   }).catch((err) => console.error("[AUTH] password-changed email failed:", err));
 

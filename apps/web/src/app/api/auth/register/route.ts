@@ -8,7 +8,7 @@ import {
 } from "@/lib/user-auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
-import { resolveLocale, LOCALE_COOKIE } from "@/i18n/config";
+import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 
 export const runtime = "nodejs";
 

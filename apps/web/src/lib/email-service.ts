@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/db";
 import {
+  appendUnsubscribeFooter,
   billReminderHtml,
   billReminderText,
+  buildUnsubscribeHeaders,
   contractReminderHtml,
   contractReminderText,
   DEFAULT_APP_URL,
@@ -11,6 +13,7 @@ import {
   normalizeBaseUrl,
   passwordResetContent,
   paymentFailedContent,
+  resolveEmailLocale,
   securityNoticeContent,
   type SecurityNoticeKind,
   sendEmailWithResult,
@@ -20,6 +23,12 @@ import {
   weeklyDigestText,
 } from "@/lib/email";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import {
+  buildUnsubscribeUrl,
+  signUnsubscribeToken,
+  type UnsubscribeKind,
+} from "@/lib/unsubscribe";
+import { isEmailTypeOptedOut } from "@/lib/unsubscribe-actions";
 
 const SAFE_METADATA_KEYS = new Set([
   "kind",
@@ -63,6 +72,35 @@ async function resolveAppUrl() {
   );
 }
 
+/**
+ * Builds the per-recipient unsubscribe URL + List-Unsubscribe headers for
+ * a marketing-class email. Returns null if no userId is provided (e.g.
+ * tests or one-off ops sends) so the sender keeps working without
+ * compliance plumbing.
+ *
+ * The "kind" maps to the type the email belongs to so the user lands on
+ * an unsub page that pre-targets that category. The token itself is the
+ * same per-user signature regardless of kind, so future emails can reuse
+ * one-click links without DB lookups on click.
+ */
+function buildMarketingUnsubscribe(
+  userId: string | null | undefined,
+  appUrl: string,
+  kind: UnsubscribeKind,
+): { url: string; headers: Record<string, string> } | null {
+  if (!userId) return null;
+  try {
+    const token = signUnsubscribeToken(userId);
+    const url = buildUnsubscribeUrl(appUrl, token, kind);
+    const headers = buildUnsubscribeHeaders(url);
+    return { url, headers };
+  } catch (err) {
+    // Missing secret in dev — not worth blocking the email; log once.
+    console.warn("[EMAIL] unsubscribe token unavailable:", err instanceof Error ? err.message : err);
+    return null;
+  }
+}
+
 async function resolveTemplateId(
   templateId?: string | null,
   templateSlug?: string | null,
@@ -86,6 +124,7 @@ export async function sendLoggedEmail(opts: {
   templateSlug?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
+  headers?: Record<string, string>;
 }): Promise<{ success: boolean; skipped: boolean }> {
   const templateId = await resolveTemplateId(opts.templateId, opts.templateSlug);
   const metadataInput = {
@@ -148,6 +187,7 @@ export async function sendLoggedEmail(opts: {
     subject: opts.subject,
     html: opts.html,
     text: opts.text,
+    ...(opts.headers ? { headers: opts.headers } : {}),
   });
   const resultMetadata = buildEmailMetadata({
     ...metadataInput,
@@ -278,6 +318,13 @@ export async function sendTemplatedEmail(opts: {
   locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
+  headers?: Record<string, string>;
+  /**
+   * When set, appends a per-recipient unsubscribe footer after the
+   * template renders. Saves us from threading a {{unsubscribeLink}}
+   * variable through every marketing template seed.
+   */
+  unsubscribeUrl?: string | null;
 }): Promise<boolean> {
   const rendered = await renderTemplate(opts.slug, opts.variables, opts.locale);
   if (!rendered) {
@@ -292,14 +339,23 @@ export async function sendTemplatedEmail(opts: {
     return false;
   }
 
+  const finalContent = opts.unsubscribeUrl
+    ? appendUnsubscribeFooter(
+        { subject: rendered.subject, html: rendered.html, text: rendered.text },
+        opts.unsubscribeUrl,
+        resolveEmailLocale(opts.locale),
+      )
+    : { subject: rendered.subject, html: rendered.html, text: rendered.text };
+
   const result = await sendLoggedEmail({
     to: opts.to,
-    subject: rendered.subject,
-    html: rendered.html,
-    text: rendered.text,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
     templateId: rendered.templateId,
     templateSlug: rendered.slug,
     dedupeKey: opts.dedupeKey,
+    headers: opts.headers,
     metadata: {
       slug: opts.slug,
       renderedSlug: rendered.slug,
@@ -473,10 +529,16 @@ export async function sendBillReminderEmail(opts: {
   amount: number;
   dueDate: string;
   daysUntilDue: number;
+  userId?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
+    return false;
+  }
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const subject = `Bill reminder: ${opts.serviceName} - $${opts.amount.toFixed(2)} due in ${opts.daysUntilDue} day${opts.daysUntilDue !== 1 ? "s" : ""}`;
   const emailData = {
     userName: opts.userName,
@@ -487,13 +549,21 @@ export async function sendBillReminderEmail(opts: {
     daysUntilDue: opts.daysUntilDue,
     appUrl,
   };
-  const result = await sendLoggedEmail({
-    to: opts.userEmail,
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
+  const baseContent: EmailContent = {
     subject,
     html: billReminderHtml(emailData),
     text: billReminderText(emailData),
+  };
+  const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
     templateSlug: "bill-reminder",
     dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
     metadata: {
       kind: "bill-reminder",
       daysUntilDue: opts.daysUntilDue,
@@ -512,10 +582,16 @@ export async function sendWeeklyDigestEmail(opts: {
   upcomingBills: { name: string; amount: number; dueDate: string }[];
   totalExpenses: number;
   newServices: number;
+  userId?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "MARKETING"))) {
+    return false;
+  }
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const emailData = {
     userName: opts.userName,
     weekStart: opts.weekStart,
@@ -525,13 +601,21 @@ export async function sendWeeklyDigestEmail(opts: {
     newServices: opts.newServices,
     appUrl,
   };
-  const result = await sendLoggedEmail({
-    to: opts.userEmail,
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "marketing");
+  const baseContent: EmailContent = {
     subject: `Your weekly digest - ${opts.weekStart} to ${opts.weekEnd}`,
     html: weeklyDigestHtml(emailData),
     text: weeklyDigestText(emailData),
+  };
+  const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
     templateSlug: "weekly-digest",
     dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
     metadata: {
       kind: "weekly-digest",
       weekStart: opts.weekStart,
@@ -550,9 +634,16 @@ export async function sendContractReminderEmail(opts: {
   contractEndDate: string;
   daysRemaining: number;
   serviceLink: string;
+  userId?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
+    return false;
+  }
+  const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const subject = `${opts.serviceName} contract ends in ${opts.daysRemaining} day${opts.daysRemaining === 1 ? "" : "s"}`;
   const emailData = {
     userName: opts.userName || "there",
@@ -561,13 +652,21 @@ export async function sendContractReminderEmail(opts: {
     daysRemaining: opts.daysRemaining,
     serviceLink: opts.serviceLink,
   };
-  const result = await sendLoggedEmail({
-    to: opts.userEmail,
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
+  const baseContent: EmailContent = {
     subject,
     html: contractReminderHtml(emailData),
     text: contractReminderText(emailData),
+  };
+  const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
     templateSlug: "contract-reminder",
     dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
     metadata: {
       kind: "contract-reminder",
       daysRemaining: opts.daysRemaining,
@@ -585,14 +684,24 @@ export async function sendTrialExpiringEmail(opts: {
   userEmail: string;
   userName: string;
   daysRemaining: number;
+  userId?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "MARKETING"))) {
+    return false;
+  }
   const appUrl = await resolveAppUrl();
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "marketing");
   return sendTemplatedEmail({
     to: opts.userEmail,
     slug: "trial-expiring",
+    locale: opts.locale,
+    userId: opts.userId ?? undefined,
     dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
+    unsubscribeUrl: unsubscribe?.url,
     metadata: {
       kind: "trial-expiring",
       daysRemaining: opts.daysRemaining,
@@ -617,14 +726,24 @@ export async function sendMoveReminderEmail(opts: {
   toCity: string;
   moveDate: string;
   daysRemaining: number;
+  userId?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
+    return false;
+  }
   const appUrl = await resolveAppUrl();
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
   return sendTemplatedEmail({
     to: opts.userEmail,
     slug: "move-reminder",
+    locale: opts.locale,
+    userId: opts.userId ?? undefined,
     dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
+    unsubscribeUrl: unsubscribe?.url,
     metadata: {
       kind: "move-reminder",
       daysRemaining: opts.daysRemaining,
@@ -648,15 +767,18 @@ export async function sendSubscriptionActivatedEmail(opts: {
   userName: string;
   planLabel: string;
   amountFormatted?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const content = subscriptionActivatedContent({
     userName: opts.userName,
     planLabel: opts.planLabel,
     amountFormatted: opts.amountFormatted,
     manageLink: `${appUrl}/settings/subscription`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,
@@ -678,15 +800,18 @@ export async function sendSubscriptionCanceledEmail(opts: {
   userName: string;
   planLabel: string;
   accessEndsOn?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const content = subscriptionCanceledContent({
     userName: opts.userName,
     planLabel: opts.planLabel,
     accessEndsOn: opts.accessEndsOn,
     reactivateLink: `${appUrl}/settings/subscription`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,
@@ -708,15 +833,18 @@ export async function sendPaymentFailedEmail(opts: {
   userName: string;
   amountFormatted?: string | null;
   nextAttemptOn?: string | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const content = paymentFailedContent({
     userName: opts.userName,
     amountFormatted: opts.amountFormatted,
     nextAttemptOn: opts.nextAttemptOn,
     retryLink: `${appUrl}/settings/subscription`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,
@@ -743,10 +871,12 @@ export async function sendSecurityNoticeEmail(opts: {
   kind: SecurityNoticeKind;
   detail?: string | null;
   occurredAt?: Date | null;
+  locale?: string | null;
   dedupeKey?: string;
   metadata?: Record<string, unknown>;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
   const occurredAt = opts.occurredAt ? opts.occurredAt.toISOString() : null;
   const content = securityNoticeContent({
     userName: opts.userName,
@@ -754,6 +884,7 @@ export async function sendSecurityNoticeEmail(opts: {
     detail: opts.detail,
     occurredAt,
     manageLink: `${appUrl}/settings/security`,
+    locale,
   });
   const result = await sendLoggedEmail({
     to: opts.userEmail,

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true, firstName: true, mfaSecret: true, mfaEnabled: true },
+    select: { email: true, firstName: true, preferredLocale: true, mfaSecret: true, mfaEnabled: true },
   });
   if (!user || !user.mfaSecret) {
     return NextResponse.json({ error: "Call /api/auth/mfa/setup first." }, { status: 400 });
@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
     userName: user.firstName || "there",
     kind: "mfa-enabled",
     occurredAt: new Date(),
+    locale: user.preferredLocale,
     dedupeKey: `mfa-enabled:${userId}:${Date.now()}`,
   }).catch((err) => console.error("[AUTH] mfa-enabled email failed:", err));
 

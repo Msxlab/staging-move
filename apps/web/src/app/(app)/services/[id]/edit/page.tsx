@@ -61,13 +61,13 @@ export default function EditServicePage() {
     try {
       const payload = {
         providerName: form.providerName,
-        accountNumber: form.accountNumber || undefined,
-        website: form.website || undefined,
-        phone: form.phone || undefined,
-        email: form.email || undefined,
+        accountNumber: form.accountNumber,
+        website: form.website,
+        phone: form.phone,
+        email: form.email,
         monthlyCost: form.monthlyCost ? parseFloat(form.monthlyCost) : undefined,
         billingDay: form.billingDay ? parseInt(form.billingDay) : undefined,
-        notes: form.notes || undefined,
+        notes: form.notes,
       };
       const res = await fetch(`/api/services/${id}`, {
         method: "PATCH",

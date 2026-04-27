@@ -55,9 +55,9 @@ interface AddressDetail {
 export default function AddressDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const tToast = useTranslations("toast");
   const t = useTranslations("addresses");
   const tCommon = useTranslations("common");
+  const tToast = useTranslations("toast");
   const locale = useLocale();
   const id = params.id as string;
   const [address, setAddress] = useState<AddressDetail | null>(null);
