@@ -101,6 +101,20 @@
     "invalidDate": "Introduce una fecha válida.",
     "invalidNumber": "Introduce un número válido."
   },
+  "premiumReveal": {
+    "close": "Cerrar",
+    "greeting": "Bienvenido",
+    "greetingNamed": "Bienvenido, {name}",
+    "tier_pro": "Pro",
+    "tier_family": "Familiar",
+    "tier_individual": "Individual",
+    "titleHtml": "Ahora eres <em>{tier}</em>",
+    "sub_pro": "Direcciones ilimitadas, registros de auditoría firmados y soporte prioritario. Bienvenido al nivel superior.",
+    "sub_family": "Tú y hasta 4 personas más ahora comparten direcciones, proveedores y recordatorios.",
+    "sub_individual": "Tu cuenta está lista. Una dirección, cada proveedor rastreado, cero recibos olvidados.",
+    "primary": "Hacer un recorrido",
+    "secondary": "Quizá más tarde"
+  },
   "errors": {
     "notFound": "Página no encontrada",
     "notFoundDescription": "La página que buscas no existe o fue movida.",

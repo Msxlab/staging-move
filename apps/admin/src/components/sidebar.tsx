@@ -176,7 +176,9 @@ export function Sidebar() {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card">
-      {/* Logo — mirrors public/logo-mark.svg from the design system */}
+      {/* Logo — mirrors public/logo-mark.svg from the design system.
+          Animations driven by .sb-sweep / .sb-ripple / .sb-pin-float in
+          globals.css. All respect prefers-reduced-motion. */}
       <div className="flex h-16 items-center gap-2.5 border-b border-border px-6">
         <svg className="h-8 w-8 shrink-0" viewBox="0 0 100 100" fill="none" aria-hidden="true">
           <defs>
@@ -191,6 +193,7 @@ export function Sidebar() {
             </linearGradient>
           </defs>
           <path
+            className="sb-sweep"
             d="M20 65 Q 30 32, 50 48 T 80 40"
             stroke="url(#admin-mk-foil)"
             strokeWidth="3.25"
@@ -199,8 +202,22 @@ export function Sidebar() {
           />
           <circle cx="20" cy="65" r="4.5" fill="url(#admin-mk-foil)" />
           <circle cx="20" cy="65" r="1.5" fill="#0E0A07" />
-          <circle cx="80" cy="40" r="7.25" fill="url(#admin-mk-rose)" />
-          <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
+          {/* Ripple ring under the rose pin */}
+          <circle
+            className="sb-ripple"
+            cx="80"
+            cy="40"
+            r="7.25"
+            fill="none"
+            stroke="url(#admin-mk-rose)"
+            strokeWidth="1.25"
+            opacity="0.6"
+            style={{ transformOrigin: "80px 40px", transformBox: "fill-box" }}
+          />
+          <g className="sb-pin-float" style={{ transformOrigin: "80px 40px", transformBox: "fill-box" }}>
+            <circle cx="80" cy="40" r="7.25" fill="url(#admin-mk-rose)" />
+            <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
+          </g>
         </svg>
         <span
           className="text-lg leading-none tracking-[-0.02em] text-foreground"

@@ -163,3 +163,135 @@
     pointer-events: none;
   }
 }
+
+/* =========================================================================
+   Sidebar logo animation — pin float + ring ripple + sweep draw.
+   Driven by admin sidebar SVG group classes; respects reduced motion.
+   ========================================================================= */
+.sb-pin-float {
+  animation: sb-pin-float 3.8s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes sb-pin-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+
+.sb-ripple {
+  transform-origin: center;
+  animation: sb-ripple 2.4s cubic-bezier(0.3, 0.7, 0.4, 1) infinite;
+}
+@keyframes sb-ripple {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  100% { transform: scale(2.4); opacity: 0;   }
+}
+
+.sb-sweep {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 0;
+  animation: sb-sweep 3.2s ease-in-out infinite;
+}
+@keyframes sb-sweep {
+  0%   { stroke-dashoffset: 90;  opacity: 0.4; }
+  50%  { stroke-dashoffset: 0;   opacity: 1;   }
+  100% { stroke-dashoffset: -90; opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-pin-float, .sb-ripple, .sb-sweep { animation: none; }
+  .sb-sweep   { stroke-dashoffset: 0; }
+  .sb-ripple  { opacity: 0; }
+}
+
+/* =========================================================================
+   Health pill — sage / honey / rose. The rose tone pulses to draw the
+   support team's eye to at-risk users.
+   ========================================================================= */
+.health-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.health-pill .health-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  position: relative;
+}
+.health-pill.tone-sage {
+  background: rgba(94, 173, 154, 0.12);
+  border-color: rgba(94, 173, 154, 0.22);
+  color: #5EAD9A;
+}
+.health-pill.tone-sage .health-dot {
+  background: #5EAD9A;
+  box-shadow: 0 0 0 3px rgba(94, 173, 154, 0.18);
+}
+.health-pill.tone-honey {
+  background: rgba(227, 176, 75, 0.14);
+  border-color: rgba(227, 176, 75, 0.22);
+  color: #E3B04B;
+}
+.health-pill.tone-honey .health-dot { background: #E3B04B; }
+.health-pill.tone-rose {
+  background: rgba(212, 132, 106, 0.14);
+  border-color: rgba(212, 132, 106, 0.28);
+  color: #D4846A;
+}
+.health-pill.tone-rose .health-dot {
+  background: #D4846A;
+  animation: health-pulse 1.6s ease-out infinite;
+}
+@keyframes health-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(212, 132, 106, 0.5); }
+  100% { box-shadow: 0 0 0 8px rgba(212, 132, 106, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .health-pill.tone-rose .health-dot { animation: none; }
+}
+
+/* =========================================================================
+   Premium tier stamp — small inline badge for table rows. Renders next to a
+   user's name in the Users table.
+   ========================================================================= */
+.tier-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 999px;
+  font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid;
+  line-height: 1;
+}
+.tier-stamp svg { display: block; }
+.tier-stamp.tier-individual {
+  background: rgba(212, 132, 106, 0.10);
+  border-color: rgba(212, 132, 106, 0.28);
+  color: #D4846A;
+}
+.tier-stamp.tier-family {
+  background: rgba(229, 201, 168, 0.10);
+  border-color: rgba(229, 201, 168, 0.28);
+  color: #E5C9A8;
+}
+.tier-stamp.tier-pro {
+  background: linear-gradient(
+    135deg,
+    rgba(244, 228, 208, 0.16),
+    rgba(212, 132, 106, 0.18)
+  );
+  border-color: rgba(229, 201, 168, 0.38);
+  color: #F4E4D0;
+  box-shadow: 0 0 0 1px rgba(229, 201, 168, 0.12) inset;
+}
