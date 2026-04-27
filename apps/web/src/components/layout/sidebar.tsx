@@ -55,16 +55,16 @@ export function Sidebar({ showBudget = true }: SidebarProps = {}) {
   return (
     <aside
       className={cn(
-        "hidden md:flex flex-col h-screen sticky top-0 transition-all duration-300 z-20 border-r border-white/5 bg-white/[0.02] backdrop-blur-xl",
+        "hidden md:flex flex-col h-screen sticky top-0 transition-all duration-300 z-20 border-r border-border bg-foreground/[0.02] backdrop-blur-xl",
         collapsed ? "w-[68px]" : "w-60"
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 h-14 border-b border-white/5 shrink-0">
+      <div className="flex items-center gap-2.5 px-4 h-14 border-b border-border shrink-0">
         <Link href="/dashboard" className="flex items-center gap-2.5">
           <LogoMark size={32} animated={false} className="shrink-0" />
           {!collapsed && (
-            <span className="text-base font-semibold text-white">
+            <span className="text-base font-semibold text-foreground">
               Locate<span className="italic foil-text">flow</span>
             </span>
           )}
@@ -84,7 +84,7 @@ export function Sidebar({ showBudget = true }: SidebarProps = {}) {
                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
                 isActive
                   ? "bg-orange-500/15 text-orange-300"
-                  : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                  : "text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5"
               )}
               title={collapsed ? label : undefined}
             >
@@ -96,7 +96,7 @@ export function Sidebar({ showBudget = true }: SidebarProps = {}) {
       </nav>
 
       {/* Bottom */}
-      <div className="border-t border-white/5 py-3 px-2 space-y-0.5 shrink-0">
+      <div className="border-t border-border py-3 px-2 space-y-0.5 shrink-0">
         {bottomNav.map((item) => {
           const isActive = pathname.startsWith(item.href);
           const label = t(item.key);
@@ -108,7 +108,7 @@ export function Sidebar({ showBudget = true }: SidebarProps = {}) {
                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
                 isActive
                   ? "bg-orange-500/15 text-orange-300"
-                  : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                  : "text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5"
               )}
               title={collapsed ? label : undefined}
             >
@@ -119,7 +119,7 @@ export function Sidebar({ showBudget = true }: SidebarProps = {}) {
         })}
 
         <button
-          className="w-full flex items-center justify-center py-2 rounded-xl text-white/20 hover:text-white/40 hover:bg-white/5 transition-all mt-1"
+          className="w-full flex items-center justify-center py-2 rounded-xl text-foreground/30 hover:text-muted-foreground hover:bg-foreground/5 transition-all mt-1"
           onClick={() => setCollapsed(!collapsed)}
         >
           {collapsed ? (

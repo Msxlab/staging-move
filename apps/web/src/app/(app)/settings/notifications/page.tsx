@@ -106,30 +106,30 @@ export default function NotificationsPage() {
     <div className="max-w-2xl mx-auto space-y-6 pb-8">
       <div className="flex items-center gap-4">
         <Link href="/settings">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/5 transition">
+          <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">
             <ArrowLeft className="h-4 w-4" />Back
           </button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-white">Notifications</h1>
-          <p className="text-sm text-white/40">{enabledCount} of {allKeys.length} notifications enabled</p>
+          <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
+          <p className="text-sm text-muted-foreground">{enabledCount} of {allKeys.length} notifications enabled</p>
         </div>
       </div>
 
       {notifGroups.map((group) => {
         const Icon = group.icon;
         return (
-          <div key={group.title} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <div key={group.title} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
             <div className="flex items-center gap-2 px-5 pt-5 pb-3">
               <Icon className={`h-4 w-4 ${group.iconColor}`} />
-              <h3 className="text-sm font-semibold text-white">{group.title}</h3>
+              <h3 className="text-sm font-semibold text-foreground">{group.title}</h3>
             </div>
             <div className="px-5 pb-4 space-y-0.5">
               {group.items.map((item) => (
-                <div key={item.key} className="flex items-center justify-between py-3 border-b border-white/[0.03] last:border-0">
+                <div key={item.key} className="flex items-center justify-between py-3 border-b border-foreground/[0.03] last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-white/70">{item.label}</p>
-                    <p className="text-[11px] text-white/30">{item.description}</p>
+                    <p className="text-sm font-medium text-foreground/80">{item.label}</p>
+                    <p className="text-[11px] text-foreground/40">{item.description}</p>
                   </div>
                   <button
                     type="button"
@@ -138,7 +138,7 @@ export default function NotificationsPage() {
                     aria-label={item.label}
                     onClick={() => toggle(item.key)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
-                      settings[item.key] ? "bg-orange-500" : "bg-white/10"
+                      settings[item.key] ? "bg-orange-500" : "bg-foreground/10"
                     }`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
@@ -153,28 +153,28 @@ export default function NotificationsPage() {
       })}
 
       {/* Email Delivery Settings */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
           <Mail className="h-4 w-4 text-orange-400" />
-          <h3 className="text-sm font-semibold text-white">Email Delivery</h3>
+          <h3 className="text-sm font-semibold text-foreground">Email Delivery</h3>
         </div>
         <div className="px-5 pb-5 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-white/50">Email Address</label>
+            <label className="text-xs font-medium text-muted-foreground">Email Address</label>
             <input
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
               placeholder="your@email.com"
               value={emailAddress}
               onChange={(e) => setEmailAddress(e.target.value)}
             />
-            <p className="text-[10px] text-white/20">Notifications will be sent to this email</p>
+            <p className="text-[10px] text-foreground/30">Notifications will be sent to this email</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-white/50">Weekly Digest Day</label>
+              <label className="text-xs font-medium text-muted-foreground">Weekly Digest Day</label>
               <select
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/60 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+                className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
                 value={digestDay}
                 onChange={(e) => setDigestDay(e.target.value)}
               >
@@ -184,9 +184,9 @@ export default function NotificationsPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-white/50">Bill Reminder Lead Time</label>
+              <label className="text-xs font-medium text-muted-foreground">Bill Reminder Lead Time</label>
               <select
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/60 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+                className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
                 value={reminderDays}
                 onChange={(e) => setReminderDays(e.target.value)}
               >
@@ -198,10 +198,10 @@ export default function NotificationsPage() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between py-3 border-t border-white/[0.03]">
+          <div className="flex items-center justify-between py-3 border-t border-foreground/[0.03]">
             <div>
-              <p className="text-sm font-medium text-white/70">Enable Email Notifications</p>
-              <p className="text-[11px] text-white/30">Send enabled notifications via email</p>
+              <p className="text-sm font-medium text-foreground/80">Enable Email Notifications</p>
+              <p className="text-[11px] text-foreground/40">Send enabled notifications via email</p>
             </div>
             <button
               type="button"
@@ -210,7 +210,7 @@ export default function NotificationsPage() {
               aria-label="Enable email notifications"
               onClick={() => setEmailEnabled(!emailEnabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
-                emailEnabled ? "bg-orange-500" : "bg-white/10"
+                emailEnabled ? "bg-orange-500" : "bg-foreground/10"
               }`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${

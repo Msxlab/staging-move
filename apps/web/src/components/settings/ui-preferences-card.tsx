@@ -57,16 +57,16 @@ export function UIPreferencesCard() {
 
   if (!prefs) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5">
-        <Loader2 className="h-4 w-4 animate-spin text-white/40" />
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden">
+    <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
       <div className="px-5 pt-5 pb-2">
-        <h2 className="text-xs font-semibold text-white/30 uppercase tracking-wider">
+        <h2 className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">
           {t("heading")}
         </h2>
       </div>
@@ -77,8 +77,8 @@ export function UIPreferencesCard() {
               <DollarSign className="h-4 w-4 text-orange-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">{t("showBudget.label")}</p>
-              <p className="text-xs text-white/40">{t("showBudget.description")}</p>
+              <p className="text-sm font-medium text-foreground">{t("showBudget.label")}</p>
+              <p className="text-xs text-muted-foreground">{t("showBudget.description")}</p>
             </div>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
@@ -90,7 +90,7 @@ export function UIPreferencesCard() {
               disabled={saving}
               aria-label={t("showBudget.label")}
             />
-            <div className="w-11 h-6 bg-white/10 peer-checked:bg-orange-500 rounded-full transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5 peer-disabled:opacity-50" />
+            <div className="w-11 h-6 bg-foreground/10 peer-checked:bg-orange-500 rounded-full transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-foreground after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5 peer-disabled:opacity-50 peer-checked:after:bg-white" />
           </label>
         </div>
       </div>
