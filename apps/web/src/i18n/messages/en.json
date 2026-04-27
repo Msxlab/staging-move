@@ -101,6 +101,20 @@
     "invalidDate": "Enter a valid date.",
     "invalidNumber": "Enter a valid number."
   },
+  "premiumReveal": {
+    "close": "Close",
+    "greeting": "Welcome",
+    "greetingNamed": "Welcome, {name}",
+    "tier_pro": "Pro",
+    "tier_family": "Family",
+    "tier_individual": "Individual",
+    "titleHtml": "You're now <em>{tier}</em>",
+    "sub_pro": "Unlimited addresses, signed audit trails, and priority support. Welcome to the top shelf.",
+    "sub_family": "You and up to 4 others now share addresses, providers, and reminders.",
+    "sub_individual": "You're officially set up. One address, every provider tracked, zero forgotten bills.",
+    "primary": "Take the tour",
+    "secondary": "Maybe later"
+  },
   "errors": {
     "notFound": "Page not found",
     "notFoundDescription": "The page you're looking for doesn't exist or has moved.",
