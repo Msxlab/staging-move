@@ -233,7 +233,84 @@ export async function createUserSession(input: {
   return token;
 }
 
-async function readTokenFromRequest(): Promise<{
+type RequestTokenCandidate = {
+  token: string;
+  source: "cookie" | "header";
+};
+
+function addTokenCandidate(
+  candidates: RequestTokenCandidate[],
+  seen: Set<string>,
+  token: string | undefined | null,
+  source: RequestTokenCandidate["source"],
+) {
+  const trimmed = token?.trim();
+  if (!trimmed || seen.has(trimmed)) return;
+  seen.add(trimmed);
+  candidates.push({ token: trimmed, source });
+}
+
+function readCookieHeaderValues(cookieHeader: string | null, name: string): string[] {
+  if (!cookieHeader) return [];
+  const values: string[] = [];
+  for (const part of cookieHeader.split(";")) {
+    const [rawName, ...rawValueParts] = part.split("=");
+    if (!rawName || rawValueParts.length === 0) continue;
+    if (rawName.trim() !== name) continue;
+
+    const rawValue = rawValueParts.join("=").trim();
+    try {
+      values.push(decodeURIComponent(rawValue));
+    } catch {
+      values.push(rawValue);
+    }
+  }
+  return values;
+}
+
+async function readTokenCandidatesFromRequest(): Promise<RequestTokenCandidate[]> {
+  const candidates: RequestTokenCandidate[] = [];
+  const seen = new Set<string>();
+
+  // Cookie first: web uses httpOnly cookies. Collect every same-name cookie so
+  // stale host/domain duplicates do not shadow the valid session.
+  try {
+    const cookieStore = await cookies();
+    const duplicateCookies =
+      typeof cookieStore.getAll === "function"
+        ? cookieStore.getAll(COOKIE_NAME)
+        : [];
+    for (const cookie of duplicateCookies) {
+      addTokenCandidate(candidates, seen, cookie.value, "cookie");
+    }
+    addTokenCandidate(candidates, seen, cookieStore.get(COOKIE_NAME)?.value, "cookie");
+  } catch {
+    /* outside request scope */
+  }
+
+  try {
+    const hdrs = await headers();
+    for (const value of readCookieHeaderValues(hdrs.get("cookie"), COOKIE_NAME)) {
+      addTokenCandidate(candidates, seen, value, "cookie");
+    }
+
+    // Authorization: Bearer: mobile clients.
+    const auth = hdrs.get("authorization") || hdrs.get("Authorization");
+    if (auth?.toLowerCase().startsWith("bearer ")) {
+      addTokenCandidate(candidates, seen, auth.slice(7), "header");
+    }
+  } catch {
+    /* outside request scope */
+  }
+
+  return candidates;
+}
+
+async function readTokenFromRequest(): Promise<RequestTokenCandidate | null> {
+  return (await readTokenCandidatesFromRequest())[0] ?? null;
+}
+
+async function readSingleTokenFromRequestForLegacyPath(): Promise<{
   token: string;
   source: "cookie" | "header";
 } | null> {
@@ -256,31 +333,31 @@ async function readTokenFromRequest(): Promise<{
 }
 
 export async function getUserSession(): Promise<UserSessionClaims | null> {
-  const found = await readTokenFromRequest();
-  if (!found) return null;
-  const token = found.token;
-  const cameFromCookie = found.source === "cookie";
+  const candidates = await readTokenCandidatesFromRequest();
+  if (candidates.length === 0) return null;
 
-  const tokenHash = await hashSessionToken(token).catch(() => null);
-  if (!tokenHash) return null;
+  let shouldClearCookie = false;
 
-  const clearIfCookie = async () => {
-    if (cameFromCookie) {
-      const store = await cookies();
-      clearSessionCookie(store);
+  for (const found of candidates) {
+    const token = found.token;
+    const cameFromCookie = found.source === "cookie";
+
+    const tokenHash = await hashSessionToken(token).catch(() => null);
+    if (!tokenHash) {
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
     }
-  };
 
-  const invalidateSession = async () => {
-    await prisma.userLoginSession
-      .updateMany({
-        where: { tokenHash, isActive: true },
-        data: { isActive: false },
-      })
-      .catch(() => null);
-  };
+    const invalidateSession = async () => {
+      await prisma.userLoginSession
+        .updateMany({
+          where: { tokenHash, isActive: true },
+          data: { isActive: false },
+        })
+        .catch(() => null);
+    };
 
-  try {
+    try {
     const { payload } = await jwtVerify(token, getUserJwtSecretKey(), {
       algorithms: ["HS256"],
     });
@@ -293,8 +370,14 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
       .catch(() => null);
 
     if (!record) {
-      await clearIfCookie();
-      return null;
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
+    }
+
+    if (typeof payload.userId !== "string" || typeof payload.email !== "string") {
+      await invalidateSession();
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
     }
 
     if (typeof payload.fp === "string" && payload.fp) {
@@ -319,8 +402,8 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
         fpMode === "web" && record.userAgent === userAgent;
       if (!currentFp || (currentFp !== payload.fp && !proxyIpChangedButSameBrowser)) {
         await invalidateSession();
-        await clearIfCookie();
-        return null;
+        shouldClearCookie = shouldClearCookie || cameFromCookie;
+        continue;
       }
     }
 
@@ -329,8 +412,8 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
       record.expiresAt.getTime() <= Date.now()
     ) {
       await invalidateSession();
-      await clearIfCookie();
-      return null;
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
     }
 
     return {
@@ -345,9 +428,16 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
     };
   } catch {
     await invalidateSession();
-    await clearIfCookie();
-    return null;
+    shouldClearCookie = shouldClearCookie || cameFromCookie;
+    continue;
   }
+}
+
+  if (shouldClearCookie) {
+    const store = await cookies().catch(() => null);
+    if (store) clearSessionCookie(store);
+  }
+  return null;
 }
 
 function getRequestIpFromHeaderValue(value: string | null): string {

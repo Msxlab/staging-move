@@ -178,6 +178,7 @@ describe("service detail route", () => {
 
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
+    expect(mockServiceProvider.update).not.toHaveBeenCalled();
     expect(mockService.update).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "service-1" },
@@ -188,6 +189,28 @@ describe("service detail route", () => {
         }),
       }),
     );
+  });
+
+  it("returns UNAUTHORIZED for unauthenticated service deletes before ownership checks", async () => {
+    mockRequireVerifiedUser.mockRejectedValueOnce(new Error("UNAUTHORIZED"));
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }) as any,
+      serviceParams() as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toMatchObject({
+      code: "UNAUTHORIZED",
+      error: "Please sign in again.",
+    });
+    expect(mockService.findUnique).not.toHaveBeenCalled();
+    expect(mockService.update).not.toHaveBeenCalled();
   });
 
   it("returns EMAIL_VERIFICATION_REQUIRED for unverified service deletes", async () => {
@@ -204,7 +227,10 @@ describe("service detail route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(403);
-    expect(body.code).toBe("EMAIL_VERIFICATION_REQUIRED");
+    expect(body).toMatchObject({
+      code: "EMAIL_VERIFICATION_REQUIRED",
+      error: "Please verify your email to manage services.",
+    });
     expect(mockService.update).not.toHaveBeenCalled();
   });
 
@@ -228,8 +254,31 @@ describe("service detail route", () => {
       }) as any,
       serviceParams() as any,
     );
+    const body = await response.json();
 
     expect(response.status).toBe(404);
+    expect(body.code).toBe("NOT_FOUND");
     expect(mockService.update).not.toHaveBeenCalled();
+    expect(mockServiceProvider.update).not.toHaveBeenCalled();
+  });
+
+  it("uses Service.id for delete and treats provider ids as not found", async () => {
+    mockService.findUnique.mockResolvedValueOnce(null);
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/provider-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }) as any,
+      serviceParams("provider-1") as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body.code).toBe("NOT_FOUND");
+    expect(mockService.findUnique).toHaveBeenCalledWith({ where: { id: "provider-1" } });
+    expect(mockService.update).not.toHaveBeenCalled();
+    expect(mockServiceProvider.update).not.toHaveBeenCalled();
   });
 });

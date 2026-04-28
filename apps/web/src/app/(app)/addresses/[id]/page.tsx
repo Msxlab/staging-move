@@ -52,6 +52,23 @@ interface AddressDetail {
   startDate: string; services: ServiceItem[];
 }
 
+function serviceRemoveErrorMessage(data: any, fallback: string): string {
+  switch (data?.code) {
+    case "UNAUTHORIZED":
+      return data?.error || "Please sign in again.";
+    case "EMAIL_VERIFICATION_REQUIRED":
+      return data?.error || "Please verify your email to manage services.";
+    case "FORBIDDEN":
+      return data?.error || "You don't have permission to remove this service.";
+    case "NOT_FOUND":
+      return data?.error || "Service not found.";
+    case "INVALID_CONTENT_TYPE":
+      return "Could not remove this service. Please refresh and try again.";
+    default:
+      return data?.error || fallback;
+  }
+}
+
 export default function AddressDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -104,9 +121,13 @@ export default function AddressDetailPage() {
         if (res.ok) deleted++;
         else {
           const data = await res.json().catch(() => ({}));
-          firstError ||= data?.error || tToast("serviceRemoveFailed");
-          if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
-            router.push(data.redirectTo);
+          firstError ||= serviceRemoveErrorMessage(data, tToast("serviceRemoveFailed"));
+          if (data?.code === "UNAUTHORIZED") {
+            router.push(`/sign-in?redirect=${encodeURIComponent(`/addresses/${id}`)}`);
+            break;
+          }
+          if (data?.code === "EMAIL_VERIFICATION_REQUIRED") {
+            router.push(data.redirectTo || `/verify-email?redirect=${encodeURIComponent(`/addresses/${id}`)}`);
             break;
           }
         }
@@ -171,11 +192,15 @@ export default function AddressDetailPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
-          router.push(data.redirectTo);
+        if (data?.code === "EMAIL_VERIFICATION_REQUIRED") {
+          router.push(data.redirectTo || `/verify-email?redirect=${encodeURIComponent(`/addresses/${id}`)}`);
           return;
         }
-        throw new Error(data?.error || tToast("serviceRemoveFailed"));
+        if (data?.code === "UNAUTHORIZED") {
+          router.push(`/sign-in?redirect=${encodeURIComponent(`/addresses/${id}`)}`);
+          return;
+        }
+        throw new Error(serviceRemoveErrorMessage(data, tToast("serviceRemoveFailed")));
       }
       if (address) {
         setAddress({ ...address, services: address.services.filter((s) => s.id !== sid) });

@@ -30,6 +30,23 @@ async function fetchServices(filters?: ServiceFilters): Promise<Service[]> {
   return data.services as Service[];
 }
 
+function serviceMutationErrorMessage(data: any, fallback: string): string {
+  switch (data?.code) {
+    case "UNAUTHORIZED":
+      return data?.error || "Please sign in again.";
+    case "EMAIL_VERIFICATION_REQUIRED":
+      return data?.error || "Please verify your email to manage services.";
+    case "FORBIDDEN":
+      return data?.error || "You don't have permission to manage this service.";
+    case "NOT_FOUND":
+      return data?.error || "Service not found.";
+    case "INVALID_CONTENT_TYPE":
+      return "Could not complete the request. Please refresh and try again.";
+    default:
+      return data?.error || fallback;
+  }
+}
+
 export function useServices(filters?: ServiceFilters) {
   const qc = useQueryClient();
   const key = servicesKey(filters);
@@ -46,7 +63,10 @@ export function useServices(filters?: ServiceFilters) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to create");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(serviceMutationErrorMessage(data, "Failed to create"));
+      }
       const result = await res.json();
       return result.service as Service;
     },
@@ -64,7 +84,7 @@ export function useServices(filters?: ServiceFilters) {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Failed to delete");
+        throw new Error(serviceMutationErrorMessage(data, "Failed to remove"));
       }
       return id;
     },

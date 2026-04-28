@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
+const mocks = vi.hoisted(() => ({
+  jwtVerify: vi.fn(),
+  tryGetUserJwtSecretKey: vi.fn(() => null),
+}));
+
 vi.mock("@/lib/ip-rules", () => ({
   checkIPAccess: vi.fn(() => Promise.resolve({ blocked: false })),
 }));
@@ -11,7 +16,11 @@ vi.mock("@/lib/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/user-jwt-secret", () => ({
-  tryGetUserJwtSecretKey: vi.fn(() => null),
+  tryGetUserJwtSecretKey: mocks.tryGetUserJwtSecretKey,
+}));
+
+vi.mock("jose", () => ({
+  jwtVerify: mocks.jwtVerify,
 }));
 
 import middleware from "./middleware";
@@ -23,6 +32,8 @@ function request(url: string, init?: any) {
 describe("web middleware auth boundaries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.tryGetUserJwtSecretKey.mockReturnValue(null);
+    mocks.jwtVerify.mockRejectedValue(new Error("invalid token"));
   });
 
   it("redirects protected pages to sign-in when no session cookie remains", async () => {
@@ -91,5 +102,40 @@ describe("web middleware auth boundaries", () => {
 
     expect(response.status).toBe(403);
     expect(body.code).toBe("INVALID_CONTENT_TYPE");
+  });
+
+  it("returns a machine-readable code for API requests without a valid session", async () => {
+    const response = await middleware(request("https://locateflow.com/api/services"));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toMatchObject({
+      code: "UNAUTHORIZED",
+      error: "Please sign in again.",
+    });
+  });
+
+  it("tries later duplicate session cookie values before rejecting protected API requests", async () => {
+    mocks.tryGetUserJwtSecretKey.mockReturnValue(new TextEncoder().encode("test-user-jwt-secret-32-characters"));
+    mocks.jwtVerify.mockImplementation(async (token: string) => {
+      if (token === "valid-token") return { payload: { userId: "user-1" } };
+      throw new Error("stale token");
+    });
+
+    const response = await middleware(
+      request("https://locateflow.com/api/services/service-1", {
+        headers: {
+          cookie: "user_session=stale-token; user_session=valid-token",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(mocks.jwtVerify).toHaveBeenCalledWith(
+      "valid-token",
+      expect.any(Uint8Array),
+      { algorithms: ["HS256"] },
+    );
   });
 });

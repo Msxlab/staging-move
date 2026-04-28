@@ -105,7 +105,7 @@ describe("services route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(401);
-    expect(body.error).toBe("Unauthorized");
+    expect(body.error).toBe("Please sign in again.");
   });
 
   it("blocks duplicate listed provider services for the same address and category", async () => {

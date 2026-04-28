@@ -8,6 +8,7 @@ interface ConfirmDialogProps {
   title: string;
   description: string;
   confirmLabel?: string;
+  loadingLabel?: string;
   onConfirm: () => void | Promise<void>;
   trigger: React.ReactNode;
   variant?: "destructive" | "default";
@@ -17,6 +18,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = "Confirm",
+  loadingLabel = "Deleting...",
   onConfirm,
   trigger,
   variant = "destructive",
@@ -62,7 +64,7 @@ export function ConfirmDialog({
                   onClick={handleConfirm}
                   disabled={loading}
                 >
-                  {loading ? "Deleting..." : confirmLabel}
+                  {loading ? loadingLabel : confirmLabel}
                 </Button>
               </div>
             </CardContent>

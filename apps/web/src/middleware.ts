@@ -251,22 +251,73 @@ function readBearerToken(request: NextRequest): string | null {
   return m ? m[1].trim() : null;
 }
 
+function addSessionTokenCandidate(
+  candidates: string[],
+  seen: Set<string>,
+  token: string | undefined | null,
+) {
+  const trimmed = token?.trim();
+  if (!trimmed || seen.has(trimmed)) return;
+  seen.add(trimmed);
+  candidates.push(trimmed);
+}
+
+function readCookieHeaderValues(cookieHeader: string | null, name: string): string[] {
+  if (!cookieHeader) return [];
+  const values: string[] = [];
+  for (const part of cookieHeader.split(";")) {
+    const [rawName, ...rawValueParts] = part.split("=");
+    if (!rawName || rawValueParts.length === 0) continue;
+    if (rawName.trim() !== name) continue;
+
+    const rawValue = rawValueParts.join("=").trim();
+    try {
+      values.push(decodeURIComponent(rawValue));
+    } catch {
+      values.push(rawValue);
+    }
+  }
+  return values;
+}
+
+function readSessionTokenCandidates(request: NextRequest): string[] {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+
+  const duplicateCookies =
+    typeof request.cookies.getAll === "function"
+      ? request.cookies.getAll("user_session")
+      : [];
+  for (const cookie of duplicateCookies) {
+    addSessionTokenCandidate(candidates, seen, cookie.value);
+  }
+  addSessionTokenCandidate(candidates, seen, request.cookies.get("user_session")?.value);
+  for (const value of readCookieHeaderValues(request.headers.get("cookie"), "user_session")) {
+    addSessionTokenCandidate(candidates, seen, value);
+  }
+  addSessionTokenCandidate(candidates, seen, readBearerToken(request));
+
+  return candidates;
+}
+
 async function hasValidSession(request: NextRequest): Promise<boolean> {
   // Web: httpOnly cookie. Mobile: Authorization: Bearer <token>.
   // Both flows are JWT-signed with the same USER_JWT_SECRET; DB-row validation
   // (isActive, expiresAt, fingerprint) still runs inside route handlers via
   // requireDbUserId() / getUserSession(). Middleware is edge-safe — no DB.
-  const token =
-    request.cookies.get("user_session")?.value || readBearerToken(request);
-  if (!token) return false;
+  const tokens = readSessionTokenCandidates(request);
+  if (tokens.length === 0) return false;
   const jwtSecret = tryGetUserJwtSecretKey();
   if (!jwtSecret) return false;
-  try {
-    await jwtVerify(token, jwtSecret, { algorithms: ["HS256"] });
-    return true;
-  } catch {
-    return false;
+  for (const token of tokens) {
+    try {
+      await jwtVerify(token, jwtSecret, { algorithms: ["HS256"] });
+      return true;
+    } catch {
+      /* try the next same-name cookie/header token */
+    }
   }
+  return false;
 }
 
 // ── Locale auto-detect ─────────────────────────────────────────
@@ -399,7 +450,10 @@ export default async function middleware(request: NextRequest) {
     if (!(await hasValidSession(request))) {
       return applyStagingNoIndex(
         request,
-        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        NextResponse.json(
+          { code: "UNAUTHORIZED", error: "Please sign in again." },
+          { status: 401 },
+        ),
       );
     }
     return applyStagingNoIndex(request, nextWithCurrentPath(request));

@@ -25,12 +25,12 @@ function serviceError(code: string, error: string, status: number, extra: Record
 function authErrorResponse(error: unknown) {
   if (!(error instanceof Error)) return null;
   if (error.message === "UNAUTHORIZED") {
-    return serviceError("UNAUTHORIZED", "Unauthorized", 401);
+    return serviceError("UNAUTHORIZED", "Please sign in again.", 401);
   }
   if (error.message === "EMAIL_VERIFICATION_REQUIRED") {
     return serviceError(
       "EMAIL_VERIFICATION_REQUIRED",
-      "Verify your email before managing services.",
+      "Please verify your email to manage services.",
       403,
       { redirectTo: VERIFY_EMAIL_REDIRECT },
     );

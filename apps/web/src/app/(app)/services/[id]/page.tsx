@@ -62,11 +62,30 @@ export default function ServiceDetailPage() {
       return;
     }
     const data = await res.json().catch(() => ({}));
-    if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
-      router.push(data.redirectTo);
+    if (data?.code === "UNAUTHORIZED") {
+      toast.error(data?.error || "Please sign in again.");
+      router.push(`/sign-in?redirect=${encodeURIComponent(`/services/${id}`)}`);
       return;
     }
-    toast.error(data?.error || "Failed to delete service");
+    if (data?.code === "EMAIL_VERIFICATION_REQUIRED") {
+      toast.error(data?.error || "Please verify your email to manage services.");
+      router.push(data.redirectTo || `/verify-email?redirect=${encodeURIComponent(`/services/${id}`)}`);
+      return;
+    }
+    if (data?.code === "NOT_FOUND") {
+      toast.error(data?.error || "Service not found.");
+      router.push("/services");
+      return;
+    }
+    if (data?.code === "FORBIDDEN") {
+      toast.error(data?.error || "You don't have permission to remove this service.");
+      return;
+    }
+    if (data?.code === "INVALID_CONTENT_TYPE") {
+      toast.error("Could not remove this service. Please refresh and try again.");
+      return;
+    }
+    toast.error(data?.error || "Failed to remove service");
   };
 
   if (loading || !service) return <LoadingSpinner />;
@@ -219,11 +238,12 @@ export default function ServiceDetailPage() {
 
       <div className="flex justify-end">
         <ConfirmDialog
-          title="Delete Service"
-          description="Are you sure you want to delete this service? This action cannot be undone."
-          confirmLabel="Delete Service"
+          title="Remove from my services"
+          description="This removes the service from your account/address. It does not delete the provider from LocateFlow."
+          confirmLabel="Remove from my services"
+          loadingLabel="Removing..."
           onConfirm={handleDelete}
-          trigger={<Button variant="destructive" size="sm">Delete Service</Button>}
+          trigger={<Button variant="destructive" size="sm">Remove from my services</Button>}
         />
       </div>
     </div>
