@@ -1,0 +1,152 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireDbUserId } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import {
+  assertCampaignAvailable,
+  buildSignupSnapshot,
+  campaignToSnapshotText,
+  findAcquisitionCampaign,
+  getRequestHashSnapshot,
+} from "@/lib/acquisition-campaigns";
+import {
+  REFUND_POLICY_VERSION,
+  SUBSCRIPTION_POLICY_VERSION,
+  TERMS_VERSION,
+} from "@/lib/shared-billing";
+
+export async function POST(request: NextRequest) {
+  try {
+    const userId = await requireDbUserId();
+    const rlKey = getRateLimitKey(request, "acquisition:redeem");
+    const rl = await rateLimit(rlKey, { limit: 10, windowSeconds: 60, failClosed: true });
+    if (!rl.success) {
+      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const code = typeof body.code === "string" ? body.code : "";
+    const campaign = await findAcquisitionCampaign(code);
+    if (!campaign) {
+      return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
+    }
+    try {
+      assertCampaignAvailable(campaign);
+    } catch (error: any) {
+      return NextResponse.json({ error: error?.message || "Campaign is not available." }, { status: 400 });
+    }
+    if (campaign.accessType !== "FREE_ACCESS") {
+      return NextResponse.json(
+        { error: "This campaign requires checkout to start the trial." },
+        { status: 400 },
+      );
+    }
+    if (!campaign.freeAccessDays || campaign.freeAccessDays < 1) {
+      return NextResponse.json({ error: "Free Access duration is not configured." }, { status: 400 });
+    }
+
+    if (campaign.newUsersOnly) {
+      const previousRedemption = await (prisma as any).acquisitionRedemption.findFirst({
+        where: { userId },
+        select: { id: true },
+      });
+      if (previousRedemption) {
+        return NextResponse.json({ error: "This campaign is for new users only." }, { status: 409 });
+      }
+    }
+
+    const now = new Date();
+    const freeAccessEndsAt = new Date(now);
+    freeAccessEndsAt.setUTCDate(freeAccessEndsAt.getUTCDate() + campaign.freeAccessDays);
+    const requestHashes = getRequestHashSnapshot(request);
+    const snapshot = buildSignupSnapshot({
+      campaign,
+      now,
+      ...requestHashes,
+    });
+    const snapshotText = campaignToSnapshotText(snapshot);
+
+    const result = await prisma.$transaction(async (tx: any) => {
+      const subscription = await tx.subscription.upsert({
+        where: { userId },
+        update: {
+          plan: "INDIVIDUAL",
+          status: "ACTIVE",
+          provider: "ADMIN",
+          platform: "web",
+          accessType: "FREE_ACCESS",
+          billingInterval: null,
+          freeAccessEndsAt,
+          trialEndsAt: null,
+          firstChargeAt: null,
+          firstChargeAmount: null,
+          autoRenew: false,
+          cancelAtPeriodEnd: false,
+          campaignId: campaign.id || null,
+          campaignCode: campaign.code,
+          campaignSnapshot: snapshotText,
+          checkoutConsentSnapshot: null,
+          termsVersion: TERMS_VERSION,
+          subscriptionPolicyVersion: SUBSCRIPTION_POLICY_VERSION,
+          refundPolicyVersion: REFUND_POLICY_VERSION,
+          lastSyncedAt: now,
+        },
+        create: {
+          userId,
+          plan: "INDIVIDUAL",
+          status: "ACTIVE",
+          provider: "ADMIN",
+          platform: "web",
+          accessType: "FREE_ACCESS",
+          freeAccessEndsAt,
+          autoRenew: false,
+          cancelAtPeriodEnd: false,
+          campaignId: campaign.id || null,
+          campaignCode: campaign.code,
+          campaignSnapshot: snapshotText,
+          termsVersion: TERMS_VERSION,
+          subscriptionPolicyVersion: SUBSCRIPTION_POLICY_VERSION,
+          refundPolicyVersion: REFUND_POLICY_VERSION,
+          lastSyncedAt: now,
+        },
+      });
+
+      const redemption = await tx.acquisitionRedemption.create({
+        data: {
+          campaignId: campaign.id || null,
+          userId,
+          subscriptionId: subscription.id,
+          accessType: "FREE_ACCESS",
+          status: "REDEEMED",
+          snapshot: snapshotText,
+          consentIpHash: requestHashes.consentIpHash,
+          consentUserAgentHash: requestHashes.consentUserAgentHash,
+          termsVersion: TERMS_VERSION,
+          subscriptionPolicyVersion: SUBSCRIPTION_POLICY_VERSION,
+          refundPolicyVersion: REFUND_POLICY_VERSION,
+        },
+      });
+
+      if (campaign.id) {
+        await tx.acquisitionCampaign.update({
+          where: { id: campaign.id },
+          data: { redemptionCount: { increment: 1 } },
+        });
+      }
+
+      return { subscription, redemption };
+    });
+
+    return NextResponse.json({
+      accessType: "FREE_ACCESS",
+      freeAccessEndsAt: result.subscription.freeAccessEndsAt,
+      redemptionId: result.redemption.id,
+    });
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    console.error("Failed to redeem acquisition campaign:", error);
+    return NextResponse.json({ error: "Failed to redeem campaign" }, { status: 500 });
+  }
+}

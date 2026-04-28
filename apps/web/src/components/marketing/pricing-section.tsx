@@ -1,576 +1,88 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Check, CheckCircle2, Lock, Shield, Sparkles, X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { Check, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
-
-type Cycle = "monthly" | "yearly";
-type TierId = "INDIVIDUAL" | "FAMILY" | "PRO";
 
 interface PricingSectionProps {
   ctaHref: string;
   ctaLabelLoggedIn: boolean;
-  /**
-   * When true, render the side-by-side feature comparison table below the
-   * three plan cards. We keep this off on the homepage (the cards alone
-   * carry the message) and turn it on for the dedicated /pricing page.
-   */
   showComparison?: boolean;
 }
-
-// Yearly savings label is computed from INDIVIDUAL — the only live plan.
-const YEARLY_SAVINGS_PCT = Math.round(
-  (1 -
-    BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceUsd! /
-      (BILLING_PLAN_DEFINITIONS.INDIVIDUAL.monthlyPriceUsd * 12)) *
-    100,
-);
-
-interface PreviewTier {
-  id: TierId;
-  monthly: string;
-  yearly: string;
-  yearlyTotal: string;
-  available: boolean;
-  flagship: boolean;
-  featureKeys: string[];
-}
-
-const TIERS: PreviewTier[] = [
-  {
-    id: "INDIVIDUAL",
-    monthly: BILLING_PLAN_DEFINITIONS.INDIVIDUAL.priceLabel,
-    yearly: BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel?.split("/")[0] ?? "$79",
-    yearlyTotal: BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel ?? "$79/year",
-    available: true,
-    flagship: false,
-    featureKeys: [
-      "individualFeature1",
-      "individualFeature2",
-      "individualFeature3",
-      "individualFeature4",
-      "individualFeature5",
-    ],
-  },
-  {
-    id: "FAMILY",
-    monthly: "$14.99",
-    yearly: "$149",
-    yearlyTotal: "$149/year",
-    available: false,
-    flagship: false,
-    featureKeys: [
-      "familyFeature1",
-      "familyFeature2",
-      "familyFeature3",
-      "familyFeature4",
-      "familyFeature5",
-    ],
-  },
-  {
-    id: "PRO",
-    monthly: "$24.99",
-    yearly: "$249",
-    yearlyTotal: "$249/year",
-    available: false,
-    flagship: true,
-    featureKeys: [
-      "proFeature1",
-      "proFeature2",
-      "proFeature3",
-      "proFeature4",
-      "proFeature5",
-      "proFeature6",
-      "proFeature7",
-    ],
-  },
-];
-
-type CellKind = "no" | "value";
-interface ComparisonCell {
-  kind: CellKind;
-  /** Translation key under `pricing.*`, or a literal string for prices/numbers. */
-  value?: string;
-  /** When true, the cell value is a translation key; otherwise a literal. */
-  i18n?: boolean;
-}
-
-interface ComparisonRow {
-  labelKey: string;
-  individual: ComparisonCell;
-  family: ComparisonCell;
-  pro: ComparisonCell;
-}
-
-const ROWS: ComparisonRow[] = [
-  {
-    labelKey: "compareRow_userType",
-    individual: { kind: "value", value: "compare_individual_user", i18n: true },
-    family: { kind: "value", value: "compare_family_user", i18n: true },
-    pro: { kind: "value", value: "compare_pro_user", i18n: true },
-  },
-  {
-    labelKey: "compareRow_addressLimit",
-    individual: { kind: "value", value: "10" },
-    family: { kind: "value", value: "compare_family_addresses", i18n: true },
-    pro: { kind: "value", value: "compare_unlimited", i18n: true },
-  },
-  {
-    labelKey: "compareRow_serviceLimit",
-    individual: { kind: "value", value: "100" },
-    family: { kind: "value", value: "compare_family_services", i18n: true },
-    pro: { kind: "value", value: "compare_unlimited", i18n: true },
-  },
-  {
-    labelKey: "compareRow_householdMembers",
-    individual: { kind: "no" },
-    family: { kind: "value", value: "5" },
-    pro: { kind: "value", value: "compare_pro_household", i18n: true },
-  },
-  {
-    labelKey: "compareRow_sharedWorkspace",
-    individual: { kind: "no" },
-    family: { kind: "value", value: "compare_yes_shared", i18n: true },
-    pro: { kind: "value", value: "compare_yes_shared", i18n: true },
-  },
-  {
-    labelKey: "compareRow_kyc",
-    individual: { kind: "no" },
-    family: { kind: "value", value: "compare_optional", i18n: true },
-    pro: { kind: "value", value: "compare_required", i18n: true },
-  },
-  {
-    labelKey: "compareRow_plaid",
-    individual: { kind: "no" },
-    family: { kind: "value", value: "compare_later", i18n: true },
-    pro: { kind: "value", value: "compare_yes", i18n: true },
-  },
-  {
-    labelKey: "compareRow_utility",
-    individual: { kind: "no" },
-    family: { kind: "value", value: "compare_later", i18n: true },
-    pro: { kind: "value", value: "compare_yes", i18n: true },
-  },
-  {
-    labelKey: "compareRow_verifiedBadge",
-    individual: { kind: "no" },
-    family: { kind: "no" },
-    pro: { kind: "value", value: "compare_yes", i18n: true },
-  },
-  {
-    labelKey: "compareRow_actionCenter",
-    individual: { kind: "value", value: "compare_basic", i18n: true },
-    family: { kind: "value", value: "compare_shared", i18n: true },
-    pro: { kind: "value", value: "compare_advanced", i18n: true },
-  },
-  {
-    labelKey: "compareRow_emailTemplates",
-    individual: { kind: "value", value: "compare_basic", i18n: true },
-    family: { kind: "value", value: "compare_shared", i18n: true },
-    pro: { kind: "value", value: "compare_advanced", i18n: true },
-  },
-  {
-    labelKey: "compareRow_auditPdf",
-    individual: { kind: "no" },
-    family: { kind: "no" },
-    pro: { kind: "value", value: "compare_yes", i18n: true },
-  },
-  {
-    labelKey: "compareRow_prioritySupport",
-    individual: { kind: "no" },
-    family: { kind: "no" },
-    pro: { kind: "value", value: "compare_yes", i18n: true },
-  },
-  {
-    labelKey: "compareRow_partnerApi",
-    individual: { kind: "no" },
-    family: { kind: "no" },
-    pro: { kind: "value", value: "compare_pro_partner", i18n: true },
-  },
-  {
-    labelKey: "compareRow_autoConnector",
-    individual: { kind: "no" },
-    family: { kind: "no" },
-    pro: { kind: "value", value: "compare_pro_connector", i18n: true },
-  },
-];
 
 export function PricingSection({
   ctaHref,
   ctaLabelLoggedIn,
-  showComparison = false,
 }: PricingSectionProps) {
-  const [cycle, setCycle] = useState<Cycle>("yearly");
-  const tPricing = useTranslations("pricing");
-  const tBilling = useTranslations("billing");
-  const tLanding = useTranslations("landing");
-  const tErrors = useTranslations("errors");
+  const plan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
+  const yearlyPrice = plan.yearlyPriceLabel || "$79/year";
 
   return (
     <section id="pricing" className="container py-20">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold mb-4">{tPricing("title")}</h2>
+      <div className="mx-auto mb-10 max-w-2xl text-center">
+        <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          Individual Annual
+        </div>
+        <h2 className="text-3xl font-bold mb-4">Start with 3 months free</h2>
         <p className="text-muted-foreground text-lg">
-          {tPricing("subtitle")} {tLanding("noCreditCard")}.
+          One calm place to track addresses, services, renewal dates, moving tasks, and exports.
         </p>
       </div>
 
-      {/* Monthly/Yearly toggle */}
-      <div className="flex justify-center mb-12">
-        <div
-          role="tablist"
-          aria-label="Billing cycle"
-          className="inline-flex items-center rounded-full border bg-card p-1 shadow-sm"
-        >
-          <button
-            type="button"
-            role="tab"
-            aria-selected={cycle === "monthly"}
-            onClick={() => setCycle("monthly")}
-            className={`rounded-full px-5 py-1.5 text-sm font-medium transition-colors ${
-              cycle === "monthly"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tBilling("cycle_monthly")}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={cycle === "yearly"}
-            onClick={() => setCycle("yearly")}
-            className={`rounded-full px-5 py-1.5 text-sm font-medium transition-colors ${
-              cycle === "yearly"
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tBilling("cycle_yearly")}
-            <span className="ml-2 inline-flex items-center rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-semibold text-success">
-              -{YEARLY_SAVINGS_PCT}%
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 max-w-6xl mx-auto">
-        {TIERS.map((tier) => {
-          const nameKey = `${tier.id.toLowerCase()}Name` as const;
-          const descKey = `${tier.id.toLowerCase()}Description` as const;
-          const eyebrowKey = tier.available
-            ? "availableNow"
-            : tier.flagship
-              ? "flagshipBadge"
-              : "comingSoon";
-
-          const price = cycle === "yearly" ? tier.yearly : tier.monthly;
-          const periodLabel =
-            cycle === "yearly"
-              ? tPricing("perYear")
-              : tPricing("perMonth");
-
-          return (
-            <div
-              key={tier.id}
-              className={
-                tier.flagship
-                  ? "relative rounded-2xl border border-orange-500/40 bg-gradient-to-b from-orange-500/[0.06] to-transparent p-7 space-y-6 shadow-[0_0_40px_-12px_rgba(249,115,22,0.45)] ring-1 ring-orange-500/20"
-                  : tier.available
-                    ? "relative rounded-2xl border-2 border-primary p-7 space-y-6 bg-card shadow-lg"
-                    : "relative rounded-2xl border border-border/70 p-7 space-y-6 bg-card/60 backdrop-blur-sm"
-              }
-              aria-disabled={!tier.available}
-            >
-              <div
-                className={
-                  tier.flagship
-                    ? "absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[11px] font-bold tracking-wide uppercase px-3 py-1 shadow-lg"
-                    : tier.available
-                      ? "absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[11px] font-bold tracking-wide uppercase px-3 py-1 rounded-full"
-                      : "absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 rounded-full border border-orange-500/40 bg-background text-orange-500 dark:text-orange-300 text-[11px] font-semibold tracking-wide uppercase px-3 py-1"
-                }
-              >
-                {tier.flagship && <Sparkles className="h-3 w-3" aria-hidden="true" />}
-                {!tier.available && !tier.flagship && (
-                  <Lock className="h-3 w-3" aria-hidden="true" />
-                )}
-                {tPricing(eyebrowKey)}
-              </div>
-
-              <div>
-                <h3 className="text-xl font-semibold">{tPricing(nameKey)}</h3>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                  {tPricing(descKey)}
-                </p>
-              </div>
-
-              <div>
-                <div
-                  className={`flex items-baseline gap-1 ${
-                    !tier.available ? "opacity-90" : ""
-                  }`}
-                >
-                  <span
-                    className={`text-5xl font-bold tracking-tight ${
-                      tier.flagship
-                        ? "bg-gradient-to-br from-orange-500 to-amber-500 bg-clip-text text-transparent"
-                        : ""
-                    }`}
-                  >
-                    {price}
-                  </span>
-                  <span className="text-muted-foreground">{periodLabel}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {cycle === "yearly"
-                    ? `${tPricing("billedAnnually")} · ${tier.yearlyTotal}`
-                    : tPricing("billedMonthly")}
-                </p>
-              </div>
-
-              <ul className="space-y-2.5 text-sm">
-                {tier.featureKeys.map((key) => (
-                  <li key={key} className="flex items-start gap-2">
-                    <Check
-                      className={`h-4 w-4 mt-0.5 shrink-0 ${
-                        tier.flagship
-                          ? "text-orange-500 dark:text-orange-300"
-                          : tier.available
-                            ? "text-success"
-                            : "text-muted-foreground"
-                      }`}
-                      aria-hidden="true"
-                    />
-                    <span
-                      className={tier.available ? "" : "text-muted-foreground"}
-                    >
-                      {tPricing(key)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-
-              {tier.available ? (
-                <>
-                  <Link
-                    href={`${ctaHref}${ctaHref.includes("?") ? "&" : "?"}cycle=${cycle}`}
-                    className="block"
-                  >
-                    <Button className="w-full">
-                      {ctaLabelLoggedIn
-                        ? tErrors("goToDashboard")
-                        : tPricing("cta_trial")}
-                    </Button>
-                  </Link>
-                  <p className="text-[11px] text-center text-muted-foreground">
-                    {tLanding("noCreditCard")} · {tLanding("cancelAnytime")}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full cursor-not-allowed border-dashed"
-                    disabled
-                    aria-label={`${tPricing(nameKey)} — ${tPricing("comingSoon")}`}
-                  >
-                    <Lock className="h-3.5 w-3.5 mr-2" aria-hidden="true" />
-                    {tPricing("comingSoonCta")}
-                  </Button>
-                  <p className="text-[11px] text-center text-muted-foreground">
-                    {tier.flagship
-                      ? tPricing("proHint")
-                      : tPricing("familyHint")}
-                  </p>
-                </>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="max-w-3xl mx-auto mt-6 mb-2">
-        <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-          <div className="mb-1 flex items-center justify-center gap-2 font-medium text-foreground">
-            <Shield className="h-3.5 w-3.5" />
-            {tPricing("scopeNoteTitle")}
+      <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border-2 border-primary bg-card p-7 shadow-lg">
+          <div className="mb-5">
+            <p className="text-sm font-medium text-primary">3 months free, then annual billing</p>
+            <h3 className="mt-2 text-2xl font-semibold">{plan.displayName}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Built for one person keeping household services and moving details organized.
+            </p>
           </div>
-          {tPricing("scopeNoteBody")}
-        </div>
-      </div>
 
-      {/* Comparison table — only on the dedicated /pricing page. The
-          homepage shows the three cards alone so the section stays light. */}
-      {showComparison && (
-      <div className="mt-16 max-w-5xl mx-auto">
-        <div className="text-center mb-8">
-          <h3 className="text-2xl font-bold">{tPricing("compareTitle")}</h3>
-          <p className="text-sm text-muted-foreground mt-2">
-            {tPricing("compareSubtitle")}
+          <div className="mb-6">
+            <span className="text-5xl font-bold tracking-tight">{yearlyPrice.split("/")[0]}</span>
+            <span className="text-muted-foreground">/year after trial</span>
+            <p className="mt-1 text-xs text-muted-foreground">Today: $0</p>
+          </div>
+
+          <ul className="space-y-2.5 text-sm">
+            {plan.features.map((feature) => (
+              <li key={feature} className="flex items-start gap-2">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Link href={ctaHref} className="mt-7 block">
+            <Button className="w-full">
+              {ctaLabelLoggedIn ? "Manage subscription" : "Start with 3 months free"}
+            </Button>
+          </Link>
+          <p className="mt-3 text-center text-[11px] text-muted-foreground">
+            Full checkout terms are shown before you agree to the trial.
           </p>
         </div>
 
-        <div className="rounded-2xl border bg-card/60 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/70 bg-muted/30">
-                  <th
-                    scope="col"
-                    className="text-left font-semibold text-muted-foreground px-5 py-4 uppercase text-[11px] tracking-wider"
-                  >
-                    {tPricing("compareCol_feature")}
-                  </th>
-                  {TIERS.map((tier) => (
-                    <th
-                      key={tier.id}
-                      scope="col"
-                      className={`text-right px-5 py-4 ${
-                        tier.flagship ? "bg-orange-500/[0.04]" : ""
-                      }`}
-                    >
-                      <div className="flex flex-col items-end gap-1">
-                        <span className="font-semibold text-foreground">
-                          {tPricing(`${tier.id.toLowerCase()}Name` as const)}
-                        </span>
-                        {tier.available ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                            <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-                            {tPricing("availableNow")}
-                          </span>
-                        ) : (
-                          <span
-                            className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${
-                              tier.flagship
-                                ? "text-orange-500 dark:text-orange-300"
-                                : "text-muted-foreground"
-                            }`}
-                          >
-                            {tier.flagship ? (
-                              <Sparkles className="h-3 w-3" aria-hidden="true" />
-                            ) : (
-                              <Lock className="h-3 w-3" aria-hidden="true" />
-                            )}
-                            {tPricing("comingSoon")}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-                <tr className="border-b border-border/70">
-                  <th
-                    scope="row"
-                    className="text-left font-medium text-muted-foreground px-5 py-3"
-                  >
-                    {tPricing("compareRow_monthly")}
-                  </th>
-                  {TIERS.map((tier) => (
-                    <td
-                      key={tier.id}
-                      className={`text-right px-5 py-3 font-semibold ${
-                        tier.flagship
-                          ? "bg-orange-500/[0.04] text-orange-500 dark:text-orange-300"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {tier.monthly}
-                      <span className="text-muted-foreground font-normal">
-                        {tPricing("perMonthShort")}
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-                <tr className="border-b border-border/70">
-                  <th
-                    scope="row"
-                    className="text-left font-medium text-muted-foreground px-5 py-3"
-                  >
-                    {tPricing("compareRow_yearly")}
-                  </th>
-                  {TIERS.map((tier) => (
-                    <td
-                      key={tier.id}
-                      className={`text-right px-5 py-3 ${
-                        tier.flagship ? "bg-orange-500/[0.04]" : ""
-                      }`}
-                    >
-                      {tier.yearly}
-                      <span className="text-muted-foreground">
-                        {tPricing("perYearShort")}
-                      </span>
-                    </td>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {ROWS.map((row, idx) => (
-                  <tr
-                    key={row.labelKey}
-                    className={
-                      idx === ROWS.length - 1
-                        ? ""
-                        : "border-b border-border/40"
-                    }
-                  >
-                    <th
-                      scope="row"
-                      className="text-left font-medium px-5 py-3 text-foreground/80"
-                    >
-                      {tPricing(row.labelKey)}
-                    </th>
-                    {(["individual", "family", "pro"] as const).map((col) => {
-                      const cell = row[col];
-                      const tier = TIERS.find(
-                        (t) => t.id.toLowerCase() === col,
-                      )!;
-                      return (
-                        <td
-                          key={col}
-                          className={`text-right px-5 py-3 ${
-                            tier.flagship ? "bg-orange-500/[0.04]" : ""
-                          }`}
-                        >
-                          {cell.kind === "no" ? (
-                            <span
-                              className="inline-flex items-center justify-end gap-1 text-muted-foreground/60"
-                              aria-label={tPricing("compare_none")}
-                            >
-                              <X className="h-3.5 w-3.5" aria-hidden="true" />
-                            </span>
-                          ) : (
-                            <span
-                              className={
-                                tier.flagship
-                                  ? "text-orange-500 dark:text-orange-300 font-medium"
-                                  : "text-foreground"
-                              }
-                            >
-                              {cell.i18n
-                                ? tPricing(cell.value as string)
-                                : cell.value}
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="rounded-2xl border bg-muted/30 p-7">
+          <div className="mb-4 flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            <h3 className="text-lg font-semibold">Clear subscription terms</h3>
+          </div>
+          <div className="space-y-4 text-sm leading-6 text-muted-foreground">
+            <p>Free Access and Free Trial are separate. Free Access does not require a payment method and does not auto-charge.</p>
+            <p>The Individual Annual trial requires a payment method. Checkout shows today&apos;s due amount, trial length, first charge date, and annual renewal terms.</p>
+            <p>You can cancel trial or renewal online from Settings.</p>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3 text-sm">
+            <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
+            <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
+            <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
           </div>
         </div>
-
-        <p className="text-xs text-muted-foreground text-center mt-4">
-          {tPricing("compareDisclaimer")}
-        </p>
       </div>
-      )}
     </section>
   );
 }

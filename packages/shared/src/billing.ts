@@ -14,20 +14,27 @@ export const BILLING_PLATFORM_VALUES = ["web", "ios", "android"] as const;
 export type BillingPlatform = (typeof BILLING_PLATFORM_VALUES)[number];
 
 export const SUBSCRIPTION_STATUS_VALUES = [
+  "FREE_ACCESS",
+  "FREE_ACCESS_EXPIRED",
   "TRIALING",
+  "TRIAL_CANCELED",
   "ACTIVE",
+  "CANCEL_AT_PERIOD_END",
   "PAST_DUE",
+  "GRACE_PERIOD",
   "CANCELED",
   "EXPIRED",
   "INCOMPLETE",
   "UNPAID",
+  "REFUNDED",
   "UNKNOWN",
+  "PENDING_CHECKOUT",
   "PENDING_VALIDATION",
 ] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUS_VALUES)[number];
 
 export const DEFAULT_BILLING_PLAN: BillingPlan = "FREE_TRIAL";
-export const DEFAULT_SUBSCRIPTION_STATUS: SubscriptionStatus = "TRIALING";
+export const DEFAULT_SUBSCRIPTION_STATUS: SubscriptionStatus = "FREE_ACCESS";
 
 export interface BillingPlanDefinition {
   id: BillingPlan;
@@ -45,8 +52,8 @@ export interface BillingPlanDefinition {
 export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition> = {
   FREE_TRIAL: {
     id: "FREE_TRIAL",
-    displayName: "Free Trial",
-    shortDescription: "Try the full workflow before you upgrade.",
+    displayName: "Free Access",
+    shortDescription: "Try LocateFlow without a payment method.",
     priceLabel: "Free",
     periodLabel: `${TRIAL_DURATION_DAYS} days`,
     monthlyPriceUsd: 0,
@@ -89,10 +96,15 @@ export interface UnifiedEntitlementSnapshot {
   status: SubscriptionStatus;
   provider: BillingProvider;
   platform: BillingPlatform | null;
+  accessType: "FREE_ACCESS" | "FREE_TRIAL" | "PAID" | null;
   isActive: boolean;
   isTrial: boolean;
+  autoRenew: boolean;
+  cancelAtPeriodEnd: boolean;
   managementKind: "stripe" | "store" | "none";
   trialEndsAt: string | null;
+  freeAccessEndsAt: string | null;
+  firstChargeAt: string | null;
   currentPeriodEndsAt: string | null;
 }
 
@@ -106,7 +118,12 @@ export function isPaidBillingPlan(plan: string | null | undefined): plan is Paid
 }
 
 export function isActiveSubscriptionStatus(status: string | null | undefined): boolean {
-  return status === "ACTIVE" || status === "TRIALING";
+  return status === "ACTIVE" ||
+    status === "TRIALING" ||
+    status === "FREE_ACCESS" ||
+    status === "TRIAL_CANCELED" ||
+    status === "CANCEL_AT_PERIOD_END" ||
+    status === "GRACE_PERIOD";
 }
 
 export function createFallbackEntitlementSnapshot(
@@ -117,10 +134,15 @@ export function createFallbackEntitlementSnapshot(
     status: partial.status || DEFAULT_SUBSCRIPTION_STATUS,
     provider: partial.provider || "TRIAL",
     platform: partial.platform ?? null,
+    accessType: partial.accessType ?? "FREE_ACCESS",
     isActive: partial.isActive ?? true,
-    isTrial: partial.isTrial ?? true,
+    isTrial: partial.isTrial ?? false,
+    autoRenew: partial.autoRenew ?? false,
+    cancelAtPeriodEnd: partial.cancelAtPeriodEnd ?? false,
     managementKind: partial.managementKind || "none",
     trialEndsAt: partial.trialEndsAt ?? null,
+    freeAccessEndsAt: partial.freeAccessEndsAt ?? null,
+    firstChargeAt: partial.firstChargeAt ?? null,
     currentPeriodEndsAt: partial.currentPeriodEndsAt ?? null,
   };
 }

@@ -36,7 +36,7 @@ export async function MarketingFooter() {
               <Link href="/terms" className="block transition hover:text-foreground">{tLegal("terms_title")}</Link>
               <Link href="/cookie-policy" className="block transition hover:text-foreground">{tLegal("cookie_title")}</Link>
               <Link href="/disclaimer" className="block transition hover:text-foreground">{tLegal("disclaimer_title")}</Link>
-              <Link href="/refund" className="block transition hover:text-foreground">Refund policy</Link>
+              <Link href="/billing-policy" className="block transition hover:text-foreground">Billing policy</Link>
               <Link href="/acceptable-use" className="block transition hover:text-foreground">Acceptable use</Link>
               <Link href="/dpa" className="block transition hover:text-foreground">DPA</Link>
               <Link href="/security" className="block transition hover:text-foreground">Security</Link>

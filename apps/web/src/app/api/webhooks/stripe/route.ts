@@ -140,40 +140,85 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const stripeCustomerId = String(session.customer);
+        const stripeSubId = typeof session.subscription === "string" ? session.subscription : (session.subscription as any)?.id;
+        let stripeSubscription: Stripe.Subscription | null = null;
 
         // Resolve plan: prefer metadata, fallback to line_items priceId
         let plan = (session.metadata?.plan as string) || undefined;
-        if (!plan) {
-          // Try to resolve plan from subscription's priceId
-          const stripeSubId = typeof session.subscription === "string" ? session.subscription : (session.subscription as any)?.id;
-          if (stripeSubId) {
-            try {
-              const sub = await stripe.subscriptions.retrieve(stripeSubId);
-              const priceId = sub.items?.data?.[0]?.price?.id;
-              plan = (await mapStripePriceIdToPlan(priceId)) || undefined;
-            } catch (e) {
-              console.error("Failed to resolve plan from subscription:", e);
-            }
+        if (stripeSubId) {
+          try {
+            stripeSubscription = await stripe.subscriptions.retrieve(stripeSubId);
+            const priceId = stripeSubscription.items?.data?.[0]?.price?.id;
+            plan = plan || (await mapStripePriceIdToPlan(priceId)) || undefined;
+          } catch (e) {
+            console.error("Failed to resolve plan from subscription:", e);
           }
         }
 
         if (stripeCustomerId) {
+          const trialEnd = stripeSubscription?.trial_end
+            ? new Date(stripeSubscription.trial_end * 1000)
+            : null;
+          const currentPeriodEnd = stripeSubscription?.current_period_end
+            ? new Date(stripeSubscription.current_period_end * 1000)
+            : null;
+          const status = stripeSubscription
+            ? mapStripeStatusWithRenewal(stripeSubscription)
+            : session.metadata?.accessType === "FREE_TRIAL"
+              ? "TRIALING"
+              : "ACTIVE";
           const updateData: any = {
-            status: "ACTIVE",
+            status,
             provider: "STRIPE",
             platform: "web",
+            accessType: session.metadata?.accessType === "FREE_TRIAL" || trialEnd ? "FREE_TRIAL" : "PAID",
+            billingInterval: session.metadata?.cycle === "yearly" ? "YEAR" : null,
+            trialEndsAt: trialEnd,
+            firstChargeAt: trialEnd,
+            autoRenew: !stripeSubscription?.cancel_at_period_end,
+            cancelAtPeriodEnd: Boolean(stripeSubscription?.cancel_at_period_end),
+            stripePriceId: stripeSubscription?.items?.data?.[0]?.price?.id || undefined,
+            billingProductId: stripeSubscription?.items?.data?.[0]?.price?.id || undefined,
+            stripeCurrentPeriodEnd: currentPeriodEnd,
+            currentPeriodEndsAt: currentPeriodEnd,
             lastSyncedAt: new Date(),
           };
           if (plan) updateData.plan = plan;
-          // Link stripeSubscriptionId if available
-          const stripeSubId = typeof session.subscription === "string" ? session.subscription : (session.subscription as any)?.id;
           if (stripeSubId) updateData.stripeSubscriptionId = stripeSubId;
-          updateData.currentPeriodEndsAt = null;
 
           await prisma.subscription.updateMany({
             where: { stripeCustomerId },
             data: updateData,
           });
+
+          if (session.metadata?.accessType === "FREE_TRIAL" && session.metadata?.userId) {
+            try {
+              const pendingRedemption = await (prisma as any).acquisitionRedemption.findFirst({
+                where: {
+                  userId: session.metadata.userId,
+                  accessType: "FREE_TRIAL",
+                  status: "PENDING_CHECKOUT",
+                },
+                orderBy: { createdAt: "desc" },
+                select: { id: true, campaignId: true },
+              });
+              if (pendingRedemption) {
+                await (prisma as any).acquisitionRedemption.update({
+                  where: { id: pendingRedemption.id },
+                  data: { status: "REDEEMED" },
+                });
+                if (pendingRedemption.campaignId) {
+                  await (prisma as any).acquisitionCampaign.update({
+                    where: { id: pendingRedemption.campaignId },
+                    data: { redemptionCount: { increment: 1 } },
+                  });
+                }
+              }
+            } catch {
+              // Redemptions are additive audit records. Keep webhook delivery
+              // healthy if the campaign migration is not present yet.
+            }
+          }
 
           const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
           if (recipient) {
@@ -202,6 +247,7 @@ export async function POST(request: NextRequest) {
         const currentPeriodEnd = subscription.current_period_end
           ? new Date(subscription.current_period_end * 1000)
           : null;
+        const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
 
         // Map stripePriceId to plan name
         const plan = await mapStripePriceIdToPlan(stripePriceId);
@@ -209,9 +255,15 @@ export async function POST(request: NextRequest) {
         await prisma.subscription.updateMany({
           where: { stripeCustomerId },
           data: {
-            status: mapStripeStatus(status),
+            status: mapStripeStatusWithRenewal(subscription),
             provider: "STRIPE",
             platform: "web",
+            accessType: status === "trialing" ? "FREE_TRIAL" : "PAID",
+            billingInterval: "YEAR",
+            trialEndsAt: trialEnd,
+            firstChargeAt: trialEnd,
+            autoRenew: !subscription.cancel_at_period_end,
+            cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
             stripeSubscriptionId: subscription.id,
             stripePriceId,
             billingProductId: stripePriceId,
@@ -237,6 +289,8 @@ export async function POST(request: NextRequest) {
             status: "CANCELED",
             provider: "STRIPE",
             platform: "web",
+            autoRenew: false,
+            cancelAtPeriodEnd: false,
             canceledAt: new Date(),
             lastSyncedAt: new Date(),
           },
@@ -266,10 +320,18 @@ export async function POST(request: NextRequest) {
         const stripePriceId = invoice.lines?.data?.[0]?.price?.id;
         const plan = await mapStripePriceIdToPlan(stripePriceId);
 
+        if ((invoice.amount_paid || 0) === 0 && invoice.billing_reason === "subscription_create") {
+          break;
+        }
+
         const updateData: any = {
           status: "ACTIVE",
           provider: "STRIPE",
           platform: "web",
+          accessType: "PAID",
+          autoRenew: true,
+          cancelAtPeriodEnd: false,
+          gracePeriodEndsAt: null,
           lastSyncedAt: new Date(),
         };
         if (plan) updateData.plan = plan;
@@ -288,6 +350,8 @@ export async function POST(request: NextRequest) {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         const stripeCustomerId = String(invoice.customer);
+        const gracePeriodEndsAt = new Date();
+        gracePeriodEndsAt.setUTCDate(gracePeriodEndsAt.getUTCDate() + 7);
 
         await prisma.subscription.updateMany({
           where: { stripeCustomerId },
@@ -295,6 +359,7 @@ export async function POST(request: NextRequest) {
             status: "PAST_DUE",
             provider: "STRIPE",
             platform: "web",
+            gracePeriodEndsAt,
             lastSyncedAt: new Date(),
           },
         });
@@ -312,6 +377,25 @@ export async function POST(request: NextRequest) {
             }),
             `invoice.payment_failed user=${recipient.email}`,
           );
+        }
+        break;
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        const stripeCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
+        if (stripeCustomerId) {
+          await prisma.subscription.updateMany({
+            where: { stripeCustomerId },
+            data: {
+              status: "REFUNDED",
+              provider: "STRIPE",
+              platform: "web",
+              autoRenew: false,
+              cancelAtPeriodEnd: false,
+              lastSyncedAt: new Date(),
+            },
+          });
         }
         break;
       }
@@ -338,4 +422,10 @@ function mapStripeStatus(stripeStatus: string): string {
     incomplete: "INCOMPLETE",
   };
   return map[stripeStatus] || "UNKNOWN";
+}
+
+function mapStripeStatusWithRenewal(subscription: Stripe.Subscription): string {
+  if (subscription.status === "trialing" && subscription.cancel_at_period_end) return "TRIAL_CANCELED";
+  if (subscription.status === "active" && subscription.cancel_at_period_end) return "CANCEL_AT_PERIOD_END";
+  return mapStripeStatus(subscription.status);
 }

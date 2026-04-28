@@ -3,6 +3,7 @@ import {
   createFallbackEntitlementSnapshot,
   DEFAULT_BILLING_PLAN,
   DEFAULT_SUBSCRIPTION_STATUS,
+  deriveUserSubscriptionState,
   isActiveSubscriptionStatus,
   TRIAL_DURATION_DAYS,
   type BillingPlan,
@@ -57,7 +58,10 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
   const plan = (subscription.plan || DEFAULT_BILLING_PLAN) as BillingPlan;
   const status = subscription.status || DEFAULT_SUBSCRIPTION_STATUS;
   const provider = (subscription.provider || (subscription.stripeCustomerId ? "STRIPE" : "TRIAL")) as BillingProvider;
+  const accessType = subscription.accessType || (provider === "STRIPE" && subscription.trialEndsAt ? "FREE_TRIAL" : null);
   const trialEndsAt = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+  const freeAccessEndsAt = subscription.freeAccessEndsAt ? new Date(subscription.freeAccessEndsAt) : null;
+  const firstChargeAt = subscription.firstChargeAt ? new Date(subscription.firstChargeAt) : null;
   const currentPeriodEndsAt = subscription.currentPeriodEndsAt
     ? new Date(subscription.currentPeriodEndsAt)
     : subscription.stripeCurrentPeriodEnd
@@ -68,8 +72,17 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
 
   const trialExpired =
     plan === "FREE_TRIAL" &&
+    accessType !== "FREE_ACCESS" &&
     (!trialEndsAt || Date.now() > trialEndsAt.getTime());
-  const isActive = isActiveSubscriptionStatus(status) && !trialExpired;
+  const freeAccessExpired =
+    accessType === "FREE_ACCESS" &&
+    (!freeAccessEndsAt || Date.now() > freeAccessEndsAt.getTime());
+  const derivedState = deriveUserSubscriptionState(subscription);
+  const isActive =
+    isActiveSubscriptionStatus(status) &&
+    !trialExpired &&
+    !freeAccessExpired &&
+    !["FREE_ACCESS_EXPIRED", "CANCELED", "PAST_DUE", "REFUNDED", "UNKNOWN"].includes(derivedState);
   const managementKind = provider === "STRIPE" ? "stripe" : provider === "APP_STORE" || provider === "PLAY_STORE" ? "store" : "none";
 
   return {
@@ -77,10 +90,15 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
     status,
     provider,
     platform: subscription.platform || null,
+    accessType: accessType || (plan === "INDIVIDUAL" ? "PAID" : null),
     isActive,
-    isTrial: plan === "FREE_TRIAL",
+    isTrial: accessType === "FREE_TRIAL" || (plan === "FREE_TRIAL" && accessType !== "FREE_ACCESS"),
+    autoRenew: Boolean(subscription.autoRenew ?? (provider === "STRIPE" && !subscription.cancelAtPeriodEnd)),
+    cancelAtPeriodEnd: Boolean(subscription.cancelAtPeriodEnd),
     managementKind,
     trialEndsAt: trialEndsAt?.toISOString() || null,
+    freeAccessEndsAt: freeAccessEndsAt?.toISOString() || null,
+    firstChargeAt: firstChargeAt?.toISOString() || null,
     currentPeriodEndsAt: currentPeriodEndsAt?.toISOString() || null,
   };
 }
@@ -98,7 +116,8 @@ export async function ensureSubscriptionDefaults(
       status: DEFAULT_SUBSCRIPTION_STATUS,
       provider: "TRIAL",
       platform: options.platform || "web",
-      trialEndsAt: options.trialEndsAt || createTrialEndsAt(),
+      accessType: "FREE_ACCESS",
+      freeAccessEndsAt: options.trialEndsAt || createTrialEndsAt(),
     },
   });
 }

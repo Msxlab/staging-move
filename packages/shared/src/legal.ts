@@ -73,6 +73,14 @@ export const LEGAL_TERMS_DOCUMENT: LegalConsentDocument = {
       ],
     },
     {
+      heading: "Individual access and subscriptions",
+      paragraphs: [
+        "LocateFlow currently offers Individual access. Free Access is cardless, does not automatically charge, and ends on the date shown in the account. Free Trial requires a payment method and is attached to Individual Annual.",
+        "For a Free Trial, checkout shows the trial length, first annual charge date and amount, renewal interval, cancellation method, and policy links before the user agrees. Paid Individual Annual renews yearly unless renewal is canceled online in Settings.",
+        "Cancellation during a Free Trial prevents the first annual charge. Cancellation after a paid annual charge turns off renewal while paid access continues through the current paid period unless support or an admin-approved action says otherwise.",
+      ],
+    },
+    {
       heading: "Third-party services and availability",
       paragraphs: [
         "The product may reference third-party providers, payment processors, authentication vendors, storage systems, mapping services, or public resources. Those third parties operate independently and may change, fail, or impose their own terms.",

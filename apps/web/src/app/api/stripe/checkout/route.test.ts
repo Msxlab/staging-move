@@ -7,6 +7,13 @@ const mocks = vi.hoisted(() => ({
   rateLimit: vi.fn(),
   getStripePriceIdForPlan: vi.fn(),
   ensureSubscriptionDefaults: vi.fn(),
+  findAcquisitionCampaign: vi.fn(),
+  assertCampaignAvailable: vi.fn(),
+  buildCheckoutConsentSnapshot: vi.fn(),
+  buildSignupSnapshot: vi.fn(),
+  campaignToSnapshotText: vi.fn(),
+  getRequestHashSnapshot: vi.fn(),
+  hashForSnapshot: vi.fn(),
   customersCreate: vi.fn(),
   sessionsCreate: vi.fn(),
   stripeConstructor: vi.fn(),
@@ -17,6 +24,7 @@ vi.mock("@/lib/db", () => ({
     user: { findUnique: vi.fn() },
     subscription: {
       findUnique: vi.fn(),
+      create: vi.fn(),
       update: vi.fn(),
     },
   },
@@ -32,6 +40,15 @@ vi.mock("@/lib/billing", () => ({
   ensureSubscriptionDefaults: mocks.ensureSubscriptionDefaults,
   getStripePriceIdForPlan: mocks.getStripePriceIdForPlan,
 }));
+vi.mock("@/lib/acquisition-campaigns", () => ({
+  findAcquisitionCampaign: mocks.findAcquisitionCampaign,
+  assertCampaignAvailable: mocks.assertCampaignAvailable,
+  buildCheckoutConsentSnapshot: mocks.buildCheckoutConsentSnapshot,
+  buildSignupSnapshot: mocks.buildSignupSnapshot,
+  campaignToSnapshotText: mocks.campaignToSnapshotText,
+  getRequestHashSnapshot: mocks.getRequestHashSnapshot,
+  hashForSnapshot: mocks.hashForSnapshot,
+}));
 vi.mock("stripe", () => ({
   default: mocks.stripeConstructor,
 }));
@@ -41,6 +58,7 @@ import { POST } from "./route";
 
 const subscriptionMock = prisma.subscription as unknown as {
   findUnique: Mock;
+  create: Mock;
   update: Mock;
 };
 const userMock = prisma.user as unknown as { findUnique: Mock };
@@ -72,8 +90,33 @@ describe("stripe checkout route", () => {
       stripeCustomerId: null,
       platform: "web",
     });
+    subscriptionMock.create.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: null,
+      platform: "web",
+      status: "PENDING_CHECKOUT",
+    });
     subscriptionMock.update.mockResolvedValue({});
     mocks.getStripePriceIdForPlan.mockResolvedValue("price_monthly");
+    mocks.findAcquisitionCampaign.mockResolvedValue({
+      id: "camp_1",
+      name: "Individual Annual Trial",
+      code: "INDIVIDUAL90",
+      status: "ACTIVE",
+      accessType: "FREE_TRIAL",
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+      trialDays: 90,
+      displayPriceLabel: "$79/year",
+      requiresPaymentMethod: true,
+      autoRenew: true,
+      newUsersOnly: true,
+    });
+    mocks.buildSignupSnapshot.mockReturnValue({ campaignCode: "INDIVIDUAL90" });
+    mocks.campaignToSnapshotText.mockReturnValue("{\"campaignCode\":\"INDIVIDUAL90\"}");
+    mocks.buildCheckoutConsentSnapshot.mockReturnValue("{\"checkoutDisclosureTextHash\":\"hash_1\"}");
+    mocks.getRequestHashSnapshot.mockReturnValue({ consentIpHash: "ip_hash", consentUserAgentHash: "ua_hash" });
+    mocks.hashForSnapshot.mockReturnValue("hash_1");
     mocks.customersCreate.mockResolvedValue({ id: "cus_123" });
     mocks.sessionsCreate.mockResolvedValue({ url: "https://checkout.stripe.test/session" });
     mocks.stripeConstructor.mockImplementation(function StripeMock() {
@@ -87,7 +130,7 @@ describe("stripe checkout route", () => {
   it("rejects Stripe test keys in production billing environments", async () => {
     process.env.APP_ENV = "production";
 
-    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL" }));
+    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }));
 
     expect(response.status).toBe(503);
     expect(mocks.stripeConstructor).not.toHaveBeenCalled();
@@ -97,7 +140,7 @@ describe("stripe checkout route", () => {
     mocks.getStripePriceIdForPlan.mockResolvedValue(null);
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly" }),
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
     );
     const body = await response.json();
 
@@ -107,12 +150,54 @@ describe("stripe checkout route", () => {
   });
 
   it("creates Stripe customers with a deterministic idempotency key", async () => {
-    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL" }));
+    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }));
 
     expect(response.status).toBe(200);
     expect(mocks.customersCreate).toHaveBeenCalledWith(
       { email: "user@example.com", metadata: { userId: "user_1" } },
       { idempotencyKey: expect.stringMatching(/^locateflow:/) },
+    );
+  });
+
+  it("creates an annual trial Checkout session with payment method collection and snapshot metadata", async () => {
+    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        line_items: [{ price: "price_yearly", quantity: 1 }],
+        payment_method_collection: "always",
+        subscription_data: expect.objectContaining({
+          trial_period_days: 90,
+          metadata: expect.objectContaining({
+            campaignCode: "INDIVIDUAL90",
+            accessType: "FREE_TRIAL",
+          }),
+        }),
+      }),
+    );
+    expect(subscriptionMock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        data: expect.objectContaining({
+          billingInterval: "YEAR",
+          campaignCode: "INDIVIDUAL90",
+          checkoutConsentSnapshot: "{\"checkoutDisclosureTextHash\":\"hash_1\"}",
+        }),
+      }),
+    );
+    expect(subscriptionMock.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "TRIALING",
+          accessType: "FREE_TRIAL",
+        }),
+      }),
     );
   });
 });

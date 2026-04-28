@@ -560,6 +560,10 @@ export async function PATCH(
       body.premiumUntil !== undefined ||
       body.subscriptionStatus ||
       body.trialEndsAt !== undefined ||
+      body.freeAccessEndsAt !== undefined ||
+      body.accessType !== undefined ||
+      body.cancelAtPeriodEnd !== undefined ||
+      body.autoRenew !== undefined ||
       body.premiumNote !== undefined;
 
     // Update subscription plan + premium management
@@ -593,6 +597,22 @@ export async function PATCH(
       if (body.trialEndsAt !== undefined) {
         changes.trialEndsAt = { from: user.subscription?.trialEndsAt, to: body.trialEndsAt };
         subData.trialEndsAt = body.trialEndsAt ? new Date(body.trialEndsAt) : null;
+      }
+      if (body.freeAccessEndsAt !== undefined) {
+        changes.freeAccessEndsAt = { from: user.subscription?.freeAccessEndsAt, to: body.freeAccessEndsAt };
+        subData.freeAccessEndsAt = body.freeAccessEndsAt ? new Date(body.freeAccessEndsAt) : null;
+      }
+      if (body.accessType !== undefined) {
+        changes.accessType = { from: user.subscription?.accessType, to: body.accessType };
+        subData.accessType = body.accessType || null;
+      }
+      if (body.cancelAtPeriodEnd !== undefined) {
+        changes.cancelAtPeriodEnd = { from: user.subscription?.cancelAtPeriodEnd, to: body.cancelAtPeriodEnd };
+        subData.cancelAtPeriodEnd = Boolean(body.cancelAtPeriodEnd);
+      }
+      if (body.autoRenew !== undefined) {
+        changes.autoRenew = { from: user.subscription?.autoRenew, to: body.autoRenew };
+        subData.autoRenew = Boolean(body.autoRenew);
       }
 
       if (user.subscription) {

@@ -199,7 +199,7 @@ export const EMAIL_TEMPLATES_ALL = [
       "Trial expiring soon",
       "Your LocateFlow trial is nearing its end.",
       p("Hi <strong>{{firstName}}</strong>,") +
-        p("Your LocateFlow trial expires in <strong>{{daysLeft}} days</strong>. Your saved account data remains available according to LocateFlow account and billing settings.") +
+        p("Your LocateFlow trial ends in <strong>{{daysLeft}} days</strong>. Your annual plan is scheduled to start after that. You can manage or cancel your trial anytime in Settings.") +
         button("{{upgradeLink}}", "Review Subscription"),
     ),
   },

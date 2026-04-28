@@ -7,7 +7,7 @@ import { PublicPageShell, PublicSection } from "@/components/marketing/public-pa
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
   description:
-    "Billing, data, trial, cancellation, and security — answers to the questions people ask before signing up for LocateFlow.",
+    "Billing, data, trial, cancellation, and security - answers to the questions people ask before signing up for LocateFlow.",
   alternates: {
     canonical: "/faq",
   },
@@ -20,16 +20,16 @@ const groups: Array<{ title: string; items: Faq[] }> = [
     title: "Trial & billing",
     items: [
       {
-        q: "How does the 14-day free trial work?",
-        a: "You can explore every Individual feature for 14 days without a credit card. If you don't upgrade, your account stays in read-only mode — your data is preserved for 30 days.",
+        q: "What is the difference between Free Access and Free Trial?",
+        a: "Free Access does not require a payment method and does not auto-charge. Free Trial is attached to Individual Annual, requires a payment method at checkout, and gives full access during the trial.",
       },
       {
-        q: "Can I cancel anytime?",
-        a: "Yes. Cancellation takes effect at the end of the current billing period, and no future charges are made. You can still export your data for 30 days after cancellation.",
+        q: "When does annual billing start?",
+        a: "Checkout shows the exact first charge date before you agree. For the current Individual Annual offer, the annual plan starts after the 3-month trial.",
       },
       {
-        q: "Do you offer refunds?",
-        a: "If something isn't right in the first 14 days of a paid plan, reach out and we'll refund the period. After that, cancellation ends future charges but does not pro-rate the current period.",
+        q: "Can I cancel online?",
+        a: "Yes. You can cancel a trial or turn off annual renewal in Settings. Trial access continues through the scheduled trial end date; paid annual access continues through the paid period.",
       },
       {
         q: "Does LocateFlow update provider accounts for me?",
@@ -50,7 +50,7 @@ const groups: Array<{ title: string; items: Faq[] }> = [
       },
       {
         q: "What happens to my data if I cancel?",
-        a: "Your data stays available for 30 days after cancellation in case you come back. After 30 days we purge it. Export first if you want to keep records.",
+        a: "Your data stays available for 30 days after cancellation in case you come back. Export first if you want to keep records.",
       },
       {
         q: "Is LocateFlow GDPR / CCPA compliant?",
@@ -62,8 +62,8 @@ const groups: Array<{ title: string; items: Faq[] }> = [
     title: "How it works",
     items: [
       {
-        q: "What counts as a \"service\"?",
-        a: "Anything that sends you a bill or statement tied to an address. Utility (power, water, gas, internet), bank accounts, insurance, streaming, gym, HOA, alarm monitoring — all count.",
+        q: "What counts as a service?",
+        a: "Anything that sends you a bill or statement tied to an address. Utility, bank accounts, insurance, streaming, gym, HOA, alarm monitoring, and similar services all count.",
       },
       {
         q: "Do reminders reach me by email?",
@@ -71,7 +71,7 @@ const groups: Array<{ title: string; items: Faq[] }> = [
       },
       {
         q: "Does the moving checklist work in every state?",
-        a: "Move guidance can use destination state and ZIP context across 51 US jurisdictions (50 states + DC). Service actions are local suggestions, and address-sensitive providers still need confirmation.",
+        a: "Move guidance can use destination state and ZIP context across 51 US jurisdictions. Service actions are local suggestions, and address-sensitive providers still need confirmation.",
       },
       {
         q: "Can I use LocateFlow for someone else's move?",
@@ -88,7 +88,7 @@ const groups: Array<{ title: string; items: Faq[] }> = [
       },
       {
         q: "Can I use LocateFlow on the web?",
-        a: "Yes. The web app is production-ready and covers every core workflow — addresses, services, reminders, moving, budget, documents, and export.",
+        a: "Yes. The web app is production-ready and covers every core workflow: addresses, services, reminders, moving, budget, documents, and export.",
       },
     ],
   },

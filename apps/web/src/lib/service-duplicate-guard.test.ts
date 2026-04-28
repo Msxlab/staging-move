@@ -32,6 +32,14 @@ describe("service duplicate guard", () => {
           category: "UTILITY_ELECTRIC",
           isActive: true,
           deletedAt: null,
+          OR: [
+            { migrationAction: null },
+            {
+              migrationAction: {
+                notIn: expect.arrayContaining(["CANCEL", "REMOVED", "ARCHIVED"]),
+              },
+            },
+          ],
         }),
       }),
     );

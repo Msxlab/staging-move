@@ -30,7 +30,6 @@ export default async function PricingPage() {
   const faqs = [
     { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
     { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
-    { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
   ];
 

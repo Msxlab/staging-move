@@ -28,6 +28,7 @@ import {
   Database,
   LifeBuoy,
   Sparkles,
+  Ticket,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -59,6 +60,7 @@ const navGroups: NavGroup[] = [
       { name: "Dashboard", nameKey: "dashboard", href: "/", icon: LayoutDashboard },
       { name: "Users", nameKey: "users", href: "/users", icon: Users },
       { name: "Subscriptions", nameKey: "subscriptions", href: "/subscriptions", icon: CreditCard },
+      { name: "Acquisition Campaigns", nameKey: "acquisitionCampaigns", href: "/acquisition-campaigns", icon: Ticket },
       { name: "Billing", nameKey: "billing", href: "/billing", icon: DollarSign },
     ],
   },

@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/faq",
   "/security",
   "/refund",
+  "/billing-policy",
   "/dpa",
   "/acceptable-use",
   "/ccpa-privacy-notice",

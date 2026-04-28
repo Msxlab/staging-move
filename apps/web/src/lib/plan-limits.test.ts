@@ -21,6 +21,7 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import {
+  ACTIVE_TRACKED_SERVICE_WHERE,
   canCreateAddress,
   canCreateMovingDestinationAddress,
   canCreateCustomProvider,
@@ -41,10 +42,10 @@ describe("plan limits setup grace", () => {
     mocks.userCustomProviderCount.mockResolvedValue(0);
   });
 
-  it("treats a missing subscription row as an active default trial", async () => {
+  it("treats a missing subscription row as active default Free Access", async () => {
     await expect(getUserPlan("user_1")).resolves.toMatchObject({
       plan: "FREE_TRIAL",
-      status: "TRIALING",
+      status: "FREE_ACCESS",
       isActive: true,
       isTrialExpired: false,
     });
@@ -59,6 +60,56 @@ describe("plan limits setup grace", () => {
     });
   });
 
+  it("applies the 10-service cap to active Free Access users", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      accessType: "FREE_ACCESS",
+      freeAccessEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(10);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      current: 10,
+      limit: 10,
+    });
+  });
+
+  it("allows Free Access users to add services when deleted history leaves active count below 10", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      accessType: "FREE_ACCESS",
+      freeAccessEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(7);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: true,
+    });
+  });
+
+  it("applies the 10-service cap to annual Free Trial users even though the plan is Individual", async () => {
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      status: "TRIALING",
+      accessType: "FREE_TRIAL",
+      trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    });
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(10);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      limit: 10,
+    });
+  });
+
   it("still enforces the default service cap when the subscription row is missing", async () => {
     mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
     mocks.serviceCount.mockResolvedValue(10);
@@ -69,6 +120,49 @@ describe("plan limits setup grace", () => {
       current: 10,
       limit: 10,
     });
+  });
+
+  it("counts only active tracked services toward the trial service cap", async () => {
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(7);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: true,
+    });
+
+    expect(mocks.serviceCount).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1",
+        ...ACTIVE_TRACKED_SERVICE_WHERE,
+      },
+    });
+  });
+
+  it("blocks the 11th active tracked service but ignores deleted archived or canceled history", async () => {
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(10);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      current: 10,
+      limit: 10,
+    });
+
+    const countArg = mocks.serviceCount.mock.calls.at(-1)?.[0];
+    expect(countArg.where).toMatchObject({
+      userId: "user_1",
+      deletedAt: null,
+      isActive: true,
+    });
+    expect(countArg.where.OR).toEqual([
+      { migrationAction: null },
+      {
+        migrationAction: {
+          notIn: expect.arrayContaining(["CANCEL", "CANCELED", "CANCELLED", "REMOVE", "REMOVED", "ARCHIVE", "ARCHIVED"]),
+        },
+      },
+    ]);
   });
 
   it("allows incomplete setup users to add initial services even when a legacy trial row is expired", async () => {

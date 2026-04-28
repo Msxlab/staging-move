@@ -46,7 +46,7 @@ export default function UserDetailPage() {
   const [editForm, setEditForm] = useState({ firstName: "", lastName: "", plan: "" });
   const [changingPlan, setChangingPlan] = useState(false);
   const [premiumForm, setPremiumForm] = useState({
-    subscriptionStatus: "", premiumUntil: "", trialEndsAt: "", premiumNote: "",
+    subscriptionStatus: "", accessType: "", premiumUntil: "", trialEndsAt: "", freeAccessEndsAt: "", premiumNote: "", cancelAtPeriodEnd: false, autoRenew: false,
   });
   const [savingPremium, setSavingPremium] = useState(false);
   const [premiumError, setPremiumError] = useState<string | null>(null);
@@ -60,7 +60,10 @@ export default function UserDetailPage() {
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [restoreError, setRestoreError] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<string | null>(null);
+  const [pendingSubscriptionAction, setPendingSubscriptionAction] = useState<"cancel_trial" | "cancel_renewal" | "resume_renewal" | null>(null);
   const [planConfirmError, setPlanConfirmError] = useState<string | null>(null);
+  const [subscriptionActionError, setSubscriptionActionError] = useState<string | null>(null);
+  const [subscriptionActionBusy, setSubscriptionActionBusy] = useState(false);
   const [showPremiumConfirm, setShowPremiumConfirm] = useState(false);
   const [premiumConfirmError, setPremiumConfirmError] = useState<string | null>(null);
 
@@ -88,9 +91,13 @@ export default function UserDetailPage() {
           });
           setPremiumForm({
             subscriptionStatus: data.user.subscription?.status || "TRIALING",
+            accessType: data.user.subscription?.accessType || "",
             premiumUntil: data.user.subscription?.premiumUntil ? new Date(data.user.subscription.premiumUntil).toISOString().slice(0, 10) : "",
             trialEndsAt: data.user.subscription?.trialEndsAt ? new Date(data.user.subscription.trialEndsAt).toISOString().slice(0, 10) : "",
+            freeAccessEndsAt: data.user.subscription?.freeAccessEndsAt ? new Date(data.user.subscription.freeAccessEndsAt).toISOString().slice(0, 10) : "",
             premiumNote: data.user.subscription?.premiumNote || "",
+            cancelAtPeriodEnd: Boolean(data.user.subscription?.cancelAtPeriodEnd),
+            autoRenew: Boolean(data.user.subscription?.autoRenew),
           });
         }
       } catch { toast.error("Failed to load user"); }
@@ -204,6 +211,40 @@ export default function UserDetailPage() {
     }
   }
 
+  async function confirmSubscriptionAction(confirmPassword: string) {
+    if (!user || !pendingSubscriptionAction) return;
+    setSubscriptionActionBusy(true);
+    setSubscriptionActionError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}/subscription-actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: pendingSubscriptionAction, confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error || "Failed to update subscription.";
+        setSubscriptionActionError(message);
+        toast.error(message);
+        return;
+      }
+      setUser({ ...user, subscription: data.subscription });
+      setPremiumForm({
+        ...premiumForm,
+        subscriptionStatus: data.subscription?.status || premiumForm.subscriptionStatus,
+        cancelAtPeriodEnd: Boolean(data.subscription?.cancelAtPeriodEnd),
+        autoRenew: Boolean(data.subscription?.autoRenew),
+      });
+      setPendingSubscriptionAction(null);
+      toast.success("Subscription action completed.");
+    } catch {
+      setSubscriptionActionError("Failed to update subscription.");
+      toast.error("Failed to update subscription.");
+    } finally {
+      setSubscriptionActionBusy(false);
+    }
+  }
+
   async function confirmPremiumUpdate(confirmPassword: string) {
     if (!user) return;
     setSavingPremium(true);
@@ -212,6 +253,9 @@ export default function UserDetailPage() {
     try {
       const payload: any = {
         subscriptionStatus: premiumForm.subscriptionStatus,
+        accessType: premiumForm.accessType || null,
+        cancelAtPeriodEnd: premiumForm.cancelAtPeriodEnd,
+        autoRenew: premiumForm.autoRenew,
         premiumNote: premiumForm.premiumNote,
         confirmPassword,
       };
@@ -219,6 +263,8 @@ export default function UserDetailPage() {
       else payload.premiumUntil = null;
       if (premiumForm.trialEndsAt) payload.trialEndsAt = premiumForm.trialEndsAt;
       else payload.trialEndsAt = null;
+      if (premiumForm.freeAccessEndsAt) payload.freeAccessEndsAt = premiumForm.freeAccessEndsAt;
+      else payload.freeAccessEndsAt = null;
       const res = await fetch(`/api/users/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -230,8 +276,12 @@ export default function UserDetailPage() {
           subscription: {
             ...user.subscription,
             status: premiumForm.subscriptionStatus,
+            accessType: premiumForm.accessType || null,
             premiumUntil: premiumForm.premiumUntil || null,
             trialEndsAt: premiumForm.trialEndsAt || null,
+            freeAccessEndsAt: premiumForm.freeAccessEndsAt || null,
+            cancelAtPeriodEnd: premiumForm.cancelAtPeriodEnd,
+            autoRenew: premiumForm.autoRenew,
             premiumNote: premiumForm.premiumNote,
             premiumGrantedAt: new Date().toISOString(),
           },
@@ -537,6 +587,7 @@ export default function UserDetailPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
         <StatCard label="Subscription" value={user.subscription?.plan || "FREE_TRIAL"} />
+        <StatCard label="Access Type" value={user.subscription?.accessType || "Default"} />
         <StatCard label="Addresses" value={user.addresses?.length || 0} />
         <StatCard label="Moving Plans" value={user.movingPlans?.length || 0} />
         <StatCard label="Move Tasks" value={moveTasks.length} />
@@ -894,11 +945,30 @@ export default function UserDetailPage() {
               onChange={(e) => setPremiumForm({ ...premiumForm, subscriptionStatus: e.target.value })}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
+              <option value="FREE_ACCESS">Free Access</option>
+              <option value="FREE_ACCESS_EXPIRED">Free Access Expired</option>
               <option value="TRIALING">Trialing</option>
+              <option value="TRIAL_CANCELED">Trial Canceled</option>
               <option value="ACTIVE">Active</option>
+              <option value="CANCEL_AT_PERIOD_END">Cancel at Period End</option>
               <option value="CANCELED">Canceled</option>
               <option value="PAST_DUE">Past Due</option>
+              <option value="GRACE_PERIOD">Grace Period</option>
+              <option value="REFUNDED">Refunded</option>
               <option value="EXPIRED">Expired</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Access Type</label>
+            <select
+              value={premiumForm.accessType}
+              onChange={(e) => setPremiumForm({ ...premiumForm, accessType: e.target.value })}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">Default / Paid</option>
+              <option value="FREE_ACCESS">Free Access</option>
+              <option value="FREE_TRIAL">Free Trial</option>
+              <option value="PAID">Paid</option>
             </select>
           </div>
           <div>
@@ -916,6 +986,15 @@ export default function UserDetailPage() {
               type="date"
               value={premiumForm.trialEndsAt}
               onChange={(e) => setPremiumForm({ ...premiumForm, trialEndsAt: e.target.value })}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1">Free Access Ends At</label>
+            <input
+              type="date"
+              value={premiumForm.freeAccessEndsAt}
+              onChange={(e) => setPremiumForm({ ...premiumForm, freeAccessEndsAt: e.target.value })}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -941,6 +1020,71 @@ export default function UserDetailPage() {
             </div>
           </div>
         </div>
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground">
+            Auto-renewal: <span className="font-medium text-foreground">{premiumForm.autoRenew ? "On" : "Off"}</span>
+          </div>
+          <div className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground">
+            Cancel at period end: <span className="font-medium text-foreground">{premiumForm.cancelAtPeriodEnd ? "Yes" : "No"}</span>
+          </div>
+        </div>
+        {user.subscription?.campaignSnapshot && (
+          <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Campaign snapshot</p>
+            <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-foreground/80">{user.subscription.campaignSnapshot}</pre>
+          </div>
+        )}
+        {(user.subscription?.stripeCustomerId || user.subscription?.stripeSubscriptionId) && (
+          <div className="mb-4 flex flex-wrap gap-2 text-xs">
+            {user.subscription?.stripeCustomerId && (
+              <a
+                className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                href={`https://dashboard.stripe.com/customers/${user.subscription.stripeCustomerId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Stripe customer
+              </a>
+            )}
+            {user.subscription?.stripeSubscriptionId && (
+              <a
+                className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                href={`https://dashboard.stripe.com/subscriptions/${user.subscription.stripeSubscriptionId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Stripe subscription
+              </a>
+            )}
+            {user.subscription?.stripeSubscriptionId && user.subscription?.status === "TRIALING" && (
+              <button
+                type="button"
+                className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                onClick={() => setPendingSubscriptionAction("cancel_trial")}
+              >
+                Cancel trial
+              </button>
+            )}
+            {user.subscription?.stripeSubscriptionId && user.subscription?.status === "ACTIVE" && (
+              <button
+                type="button"
+                className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+                onClick={() => setPendingSubscriptionAction("cancel_renewal")}
+              >
+                Cancel renewal
+              </button>
+            )}
+            {user.subscription?.stripeSubscriptionId && ["TRIAL_CANCELED", "CANCEL_AT_PERIOD_END"].includes(user.subscription?.status) && (
+              <button
+                type="button"
+                className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-primary hover:bg-primary/20"
+                onClick={() => setPendingSubscriptionAction("resume_renewal")}
+              >
+                Resume renewal
+              </button>
+            )}
+          </div>
+        )}
         <div className="mb-4">
           <label className="block text-xs font-medium text-muted-foreground mb-1">Admin Note</label>
           <input
@@ -1439,6 +1583,33 @@ export default function UserDetailPage() {
           }
         }}
         onConfirm={confirmPlanChange}
+      />
+      <PasswordConfirmModal
+        open={Boolean(pendingSubscriptionAction)}
+        title="Update Stripe renewal"
+        description={`Enter your admin password to ${
+          pendingSubscriptionAction === "resume_renewal"
+            ? "resume renewal for"
+            : pendingSubscriptionAction === "cancel_trial"
+              ? "cancel the trial for"
+              : "cancel renewal for"
+        } ${maskEmail(user.email)}.`}
+        confirmLabel={
+          pendingSubscriptionAction === "resume_renewal"
+            ? "Resume Renewal"
+            : pendingSubscriptionAction === "cancel_trial"
+              ? "Cancel Trial"
+              : "Cancel Renewal"
+        }
+        busy={subscriptionActionBusy}
+        error={subscriptionActionError}
+        onClose={() => {
+          if (!subscriptionActionBusy) {
+            setPendingSubscriptionAction(null);
+            setSubscriptionActionError(null);
+          }
+        }}
+        onConfirm={confirmSubscriptionAction}
       />
       <PasswordConfirmModal
         open={showPremiumConfirm}

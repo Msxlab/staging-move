@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { ensureSubscriptionDefaults, getStripePriceIdForPlan } from "@/lib/billing";
+import { getStripePriceIdForPlan } from "@/lib/billing";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import {
   buildStripeIdempotencyKey,
   requireStripeSecretKeyForMutation,
 } from "@/lib/billing-config";
+import {
+  assertCampaignAvailable,
+  buildCheckoutConsentSnapshot,
+  buildSignupSnapshot,
+  campaignToSnapshotText,
+  findAcquisitionCampaign,
+  getRequestHashSnapshot,
+  hashForSnapshot,
+} from "@/lib/acquisition-campaigns";
+import {
+  buildCheckoutDisclosureText,
+  INDIVIDUAL_ANNUAL_TRIAL_DAYS,
+  REFUND_POLICY_VERSION,
+  SUBSCRIPTION_POLICY_VERSION,
+  TERMS_VERSION,
+} from "@/lib/shared-billing";
 import { captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
 
@@ -27,7 +43,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
-    const { plan, cycle: rawCycle } = await request.json();
+    const {
+      plan,
+      cycle: rawCycle,
+      campaignCode,
+      acceptedSubscriptionTerms,
+    } = await request.json();
 
     if (plan !== "INDIVIDUAL") {
       return NextResponse.json({ error: "Invalid plan. Must be INDIVIDUAL." }, { status: 400 });
@@ -36,14 +57,65 @@ export async function POST(request: NextRequest) {
     const cycle: "monthly" | "yearly" =
       rawCycle === "yearly" ? "yearly" : "monthly";
 
+    const campaign = await findAcquisitionCampaign(campaignCode);
+    if (!campaign) {
+      return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
+    }
+    try {
+      assertCampaignAvailable(campaign);
+    } catch (availabilityError: any) {
+      return NextResponse.json(
+        { error: availabilityError?.message || "Campaign is not available." },
+        { status: 400 },
+      );
+    }
+    if (campaign.accessType !== "FREE_TRIAL") {
+      return NextResponse.json({ error: "This campaign does not use Stripe checkout." }, { status: 400 });
+    }
+    if (cycle !== "yearly" || campaign.billingInterval !== "YEAR") {
+      return NextResponse.json(
+        { error: "Individual trial campaigns use annual billing." },
+        { status: 400 },
+      );
+    }
+    if (!acceptedSubscriptionTerms) {
+      return NextResponse.json(
+        { error: "Please accept the subscription terms before checkout." },
+        { status: 400 },
+      );
+    }
+    if (campaign.newUsersOnly) {
+      let previousTrialRedemption: { id: string } | null = null;
+      try {
+        previousTrialRedemption = await (prisma as any).acquisitionRedemption.findFirst({
+          where: { userId, accessType: "FREE_TRIAL" },
+          select: { id: true },
+        });
+      } catch {
+        previousTrialRedemption = null;
+      }
+      if (previousTrialRedemption) {
+        return NextResponse.json({ error: "This trial campaign is for new trial users only." }, { status: 409 });
+      }
+    }
+
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    // Get or create subscription record
+    // Get or create a non-entitling subscription shell. The paid trial access
+    // starts only after Stripe confirms Checkout and a payment method.
     let subscription = await prisma.subscription.findUnique({ where: { userId } });
     if (!subscription) {
-      subscription = await ensureSubscriptionDefaults(userId);
+      subscription = await prisma.subscription.create({
+        data: {
+          userId,
+          plan: "FREE_TRIAL",
+          status: "PENDING_CHECKOUT",
+          provider: "STRIPE",
+          platform: "web",
+        },
+      });
     }
 
     // Get or create Stripe customer
@@ -68,7 +140,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const priceId = await getStripePriceIdForPlan(plan, cycle);
+    const priceId = campaign.stripePriceId || await getStripePriceIdForPlan(plan, cycle);
 
     if (!priceId) {
       return NextResponse.json(
@@ -78,17 +150,109 @@ export async function POST(request: NextRequest) {
     }
 
     const appUrl = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const now = new Date();
+    const trialDays = campaign.trialDays || INDIVIDUAL_ANNUAL_TRIAL_DAYS;
+    const firstChargeAt = new Date(now);
+    firstChargeAt.setUTCDate(firstChargeAt.getUTCDate() + trialDays);
+    const displayPrice = campaign.displayPriceLabel || "$79/year";
+    const disclosureText = buildCheckoutDisclosureText({
+      campaign,
+      now,
+      firstChargeAt,
+      firstChargeAmount: displayPrice,
+    });
+    const requestHashes = getRequestHashSnapshot(request);
+    const snapshot = buildSignupSnapshot({
+      campaign: { ...campaign, stripePriceId: priceId },
+      now,
+      firstChargeAmount: displayPrice,
+      disclosureText,
+      consentAcceptedAt: now,
+      ...requestHashes,
+    });
+    const snapshotText = campaignToSnapshotText(snapshot);
+    const consentSnapshot = buildCheckoutConsentSnapshot({
+      acceptedAt: now,
+      disclosureText,
+      ...requestHashes,
+    });
+
+    await prisma.subscription.update({
+      where: { userId },
+      data: {
+        billingInterval: "YEAR",
+        firstChargeAt,
+        firstChargeAmount: Number.parseFloat(displayPrice.replace(/[^0-9.]/g, "")) || null,
+        campaignId: campaign.id || null,
+        campaignCode: campaign.code,
+        campaignSnapshot: snapshotText,
+        checkoutConsentSnapshot: consentSnapshot,
+        termsVersion: TERMS_VERSION,
+        subscriptionPolicyVersion: SUBSCRIPTION_POLICY_VERSION,
+        refundPolicyVersion: REFUND_POLICY_VERSION,
+        stripePriceId: priceId,
+        billingProductId: priceId,
+        lastSyncedAt: now,
+      },
+    });
+
+    try {
+      const updatedSubscription = await prisma.subscription.findUnique({ where: { userId }, select: { id: true } });
+      await (prisma as any).acquisitionRedemption.create({
+        data: {
+          campaignId: campaign.id || null,
+          userId,
+          subscriptionId: updatedSubscription?.id || null,
+          accessType: "FREE_TRIAL",
+          status: "PENDING_CHECKOUT",
+          snapshot: snapshotText,
+          consentAcceptedAt: now,
+          consentIpHash: requestHashes.consentIpHash,
+          consentUserAgentHash: requestHashes.consentUserAgentHash,
+          termsVersion: TERMS_VERSION,
+          subscriptionPolicyVersion: SUBSCRIPTION_POLICY_VERSION,
+          refundPolicyVersion: REFUND_POLICY_VERSION,
+          checkoutDisclosureTextHash: hashForSnapshot(disclosureText),
+        },
+      });
+    } catch {
+      // Snapshot is already stored on Subscription. The redemption table is
+      // additive and may not exist for a brief rolling-deploy window.
+    }
 
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
+      payment_method_collection: "always",
+      subscription_data: {
+        trial_period_days: trialDays,
+        metadata: {
+          userId,
+          plan,
+          cycle,
+          provider: "STRIPE",
+          platform: "web",
+          campaignCode: campaign.code,
+          accessType: "FREE_TRIAL",
+          checkoutDisclosureTextHash: hashForSnapshot(disclosureText) || "",
+        },
+      },
       // The plan query param is read by subscription-management to decide
       // which tier sticker to celebrate in the reveal modal.
-      success_url: `${appUrl}/settings/subscription?success=true&plan=${encodeURIComponent(plan)}`,
+      success_url: `${appUrl}/settings/subscription?success=true&plan=${encodeURIComponent(plan)}&trial=true`,
       cancel_url: `${appUrl}/settings/subscription?canceled=true`,
-      metadata: { userId, plan, cycle, provider: "STRIPE", platform: "web" },
+      metadata: {
+        userId,
+        plan,
+        cycle,
+        provider: "STRIPE",
+        platform: "web",
+        campaignCode: campaign.code,
+        accessType: "FREE_TRIAL",
+        checkoutDisclosureTextHash: hashForSnapshot(disclosureText) || "",
+      },
     });
 
     return NextResponse.json({ url: session.url });

@@ -27,6 +27,16 @@ function cleanCategory(value: string): string {
   return value.trim().toUpperCase();
 }
 
+const NON_TRACKED_SERVICE_ACTIONS = [
+  "CANCEL",
+  "CANCELED",
+  "CANCELLED",
+  "REMOVE",
+  "REMOVED",
+  "ARCHIVE",
+  "ARCHIVED",
+];
+
 export async function findDuplicateTrackedService(
   db: ServiceDuplicateLookup,
   input: ServiceDuplicateCandidate,
@@ -40,6 +50,10 @@ export async function findDuplicateTrackedService(
       category,
       isActive: true,
       deletedAt: null,
+      OR: [
+        { migrationAction: null },
+        { migrationAction: { notIn: NON_TRACKED_SERVICE_ACTIONS } },
+      ],
     },
     select: {
       id: true,

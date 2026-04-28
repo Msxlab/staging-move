@@ -27,6 +27,25 @@ const SETUP_GRACE_LIMITS = {
   maxMovingPlans: 1,
 };
 
+const NON_TRACKED_SERVICE_ACTIONS = [
+  "CANCEL",
+  "CANCELED",
+  "CANCELLED",
+  "REMOVE",
+  "REMOVED",
+  "ARCHIVE",
+  "ARCHIVED",
+];
+
+export const ACTIVE_TRACKED_SERVICE_WHERE = {
+  deletedAt: null,
+  isActive: true,
+  OR: [
+    { migrationAction: null },
+    { migrationAction: { notIn: NON_TRACKED_SERVICE_ACTIONS } },
+  ],
+};
+
 export type PlanName = keyof typeof PLAN_LIMITS;
 
 export interface UserPlan {
@@ -56,20 +75,32 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   });
 
   const plan = subscription?.plan || "FREE_TRIAL";
-  const status = subscription?.status || "TRIALING";
+  const status = subscription?.status || "FREE_ACCESS";
+  const accessType = subscription?.accessType || (!subscription ? "FREE_ACCESS" : null);
+  const effectivePlan =
+    accessType === "FREE_ACCESS" || accessType === "FREE_TRIAL"
+      ? "FREE_TRIAL"
+      : plan;
 
   // Check if trial expired
   let isTrialExpired = false;
-  if (plan === "FREE_TRIAL") {
+  if (accessType === "FREE_ACCESS") {
+    const freeAccessEndsAt = (subscription as any)?.freeAccessEndsAt as Date | null | undefined;
+    isTrialExpired = subscription ? !freeAccessEndsAt || new Date() > freeAccessEndsAt : false;
+  } else if (accessType === "FREE_TRIAL") {
+    isTrialExpired = subscription
+      ? !subscription.trialEndsAt || new Date() > subscription.trialEndsAt
+      : false;
+  } else if (plan === "FREE_TRIAL") {
     isTrialExpired = subscription
       ? !subscription.trialEndsAt || new Date() > subscription.trialEndsAt
       : false;
   }
 
-  const isActive = ["ACTIVE", "TRIALING"].includes(status) && !isTrialExpired;
-  const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.FREE_TRIAL;
+  const isActive = ["ACTIVE", "TRIALING", "TRIAL_CANCELED", "FREE_ACCESS"].includes(status) && !isTrialExpired;
+  const limits = PLAN_LIMITS[effectivePlan] || PLAN_LIMITS.FREE_TRIAL;
 
-  return { plan, status, isActive, isTrialExpired, limits };
+  return { plan: effectivePlan, status, isActive, isTrialExpired, limits };
 }
 
 async function isInSetupGrace(userId: string): Promise<boolean> {
@@ -150,7 +181,12 @@ export async function canCreateAddress(userId: string): Promise<PlanLimitCheck> 
  */
 export async function canCreateService(userId: string): Promise<PlanLimitCheck> {
   const userPlan = await getUserPlan(userId);
-  const count = await prisma.service.count({ where: { userId, deletedAt: null, isActive: true } });
+  const count = await prisma.service.count({
+    where: {
+      userId,
+      ...ACTIVE_TRACKED_SERVICE_WHERE,
+    },
+  });
 
   if (!userPlan.isActive) {
     if (await isInSetupGrace(userId)) {
