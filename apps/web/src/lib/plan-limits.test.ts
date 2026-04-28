@@ -41,22 +41,32 @@ describe("plan limits setup grace", () => {
     mocks.userCustomProviderCount.mockResolvedValue(0);
   });
 
-  it("treats a missing subscription row as inactive rather than an open-ended trial", async () => {
+  it("treats a missing subscription row as an active default trial", async () => {
     await expect(getUserPlan("user_1")).resolves.toMatchObject({
       plan: "FREE_TRIAL",
-      status: "MISSING_SUBSCRIPTION",
-      isActive: false,
-      isTrialExpired: true,
+      status: "TRIALING",
+      isActive: true,
+      isTrialExpired: false,
     });
   });
 
-  it("still allows incomplete setup users with a missing subscription to use setup-limited services", async () => {
+  it("allows completed users with a missing subscription to add services within the default trial limit", async () => {
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
     mocks.serviceCount.mockResolvedValue(2);
 
     await expect(canCreateService("user_1")).resolves.toMatchObject({
       allowed: true,
-      setupGrace: true,
-      current: 2,
+    });
+  });
+
+  it("still enforces the default service cap when the subscription row is missing", async () => {
+    mocks.userEventFindFirst.mockResolvedValue({ id: "evt_completed" });
+    mocks.serviceCount.mockResolvedValue(10);
+
+    await expect(canCreateService("user_1")).resolves.toMatchObject({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      current: 10,
       limit: 10,
     });
   });
