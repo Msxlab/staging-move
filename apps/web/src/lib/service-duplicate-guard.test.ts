@@ -32,6 +32,7 @@ describe("service duplicate guard", () => {
           category: "UTILITY_ELECTRIC",
           isActive: true,
           deletedAt: null,
+          deactivatedAt: null,
           OR: [
             { migrationAction: null },
             {

@@ -76,6 +76,10 @@ export default function EditServicePage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
+          router.push(data.redirectTo);
+          return;
+        }
         throw new Error(data.error || "Failed to update service");
       }
       toast.success("Service updated!");

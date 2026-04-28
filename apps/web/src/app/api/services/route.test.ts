@@ -15,6 +15,7 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
+  requireVerifiedUser: vi.fn(),
 }));
 
 vi.mock("@/lib/audit", () => ({
@@ -42,12 +43,13 @@ vi.mock("@/lib/move-task-sync", () => ({
 }));
 
 import { prisma } from "@/lib/db";
-import { requireDbUserId } from "@/lib/auth";
+import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
 import { canCreateService } from "@/lib/plan-limits";
 import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { GET, POST } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
+const mockRequireVerifiedUser = requireVerifiedUser as unknown as Mock;
 const mockService = prisma.service as unknown as {
   findMany: Mock;
   count: Mock;
@@ -67,6 +69,7 @@ describe("services route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireDbUserId.mockResolvedValue("user-1");
+    mockRequireVerifiedUser.mockResolvedValue("user-1");
     mockService.findMany.mockResolvedValue([]);
     mockService.count.mockResolvedValue(0);
     mockService.create.mockResolvedValue({ id: "service-new" });
@@ -130,7 +133,56 @@ describe("services route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(409);
+    expect(body.code).toBe("DUPLICATE_ACTIVE_SERVICE");
     expect(body.existingServiceId).toBe("service-existing");
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("returns EMAIL_VERIFICATION_REQUIRED when a service mutation is blocked by the verified-user gate", async () => {
+    mockRequireVerifiedUser.mockRejectedValueOnce(new Error("EMAIL_VERIFICATION_REQUIRED"));
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      code: "EMAIL_VERIFICATION_REQUIRED",
+      redirectTo: "/verify-email?redirect=%2Fservices",
+    });
+    expect(mockCanCreateService).not.toHaveBeenCalled();
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("returns UNAUTHORIZED for unauthenticated service creation", async () => {
+    mockRequireVerifiedUser.mockRejectedValueOnce(new Error("UNAUTHORIZED"));
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
     expect(mockService.create).not.toHaveBeenCalled();
   });
 
@@ -262,12 +314,74 @@ describe("services route", () => {
 
     expect(response.status).toBe(403);
     expect(body).toMatchObject({
-      code: "TRIAL_EXPIRED",
+      code: "SUBSCRIPTION_REQUIRED",
+      entitlementCode: "TRIAL_EXPIRED",
       upgradeRequired: true,
       current: 10,
       limit: 10,
     });
     expect(mockAddress.findUnique).not.toHaveBeenCalled();
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("returns SERVICE_LIMIT_REACHED for active service cap failures", async () => {
+    mockCanCreateService.mockResolvedValueOnce({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      reason: "Your FREE_TRIAL plan allows up to 10 services. Please upgrade.",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      code: "SERVICE_LIMIT_REACHED",
+      entitlementCode: "SERVICE_LIMIT_REACHED",
+      current: 10,
+      limit: 10,
+    });
+    expect(mockAddress.findUnique).not.toHaveBeenCalled();
+    expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("returns FORBIDDEN when creating a service for another user's address", async () => {
+    mockAddress.findUnique.mockResolvedValueOnce({
+      id: "address-1",
+      userId: "user-2",
+      deletedAt: null,
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("FORBIDDEN");
     expect(mockService.create).not.toHaveBeenCalled();
   });
 });

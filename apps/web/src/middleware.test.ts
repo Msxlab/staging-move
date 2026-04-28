@@ -80,4 +80,16 @@ describe("web middleware auth boundaries", () => {
 
     expect(response.status).toBe(403);
   });
+
+  it("returns a machine-readable code for API mutation requests without a JSON content type", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/services/service-1", {
+        method: "DELETE",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("INVALID_CONTENT_TYPE");
+  });
 });

@@ -8,13 +8,14 @@ vi.mock("@/lib/db", () => ({
       update: vi.fn(),
     },
     address: { findUnique: vi.fn() },
-    serviceProvider: { findUnique: vi.fn() },
+    serviceProvider: { findUnique: vi.fn(), update: vi.fn() },
     userCustomProvider: { findFirst: vi.fn() },
   },
 }));
 
 vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
+  requireVerifiedUser: vi.fn(),
 }));
 
 vi.mock("@/lib/audit", () => ({
@@ -33,13 +34,18 @@ vi.mock("@/lib/move-task-sync", () => ({
 }));
 
 import { prisma } from "@/lib/db";
-import { requireDbUserId } from "@/lib/auth";
-import { PATCH } from "./route";
+import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
+import { DELETE, PATCH } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
+const mockRequireVerifiedUser = requireVerifiedUser as unknown as Mock;
 const mockService = prisma.service as unknown as {
   findUnique: Mock;
   findMany: Mock;
+  update: Mock;
+};
+const mockServiceProvider = prisma.serviceProvider as unknown as {
+  findUnique: Mock;
   update: Mock;
 };
 
@@ -51,6 +57,7 @@ describe("service detail route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRequireDbUserId.mockResolvedValue("user-1");
+    mockRequireVerifiedUser.mockResolvedValue("user-1");
     mockService.findUnique.mockResolvedValue({
       id: "service-1",
       userId: "user-1",
@@ -69,6 +76,7 @@ describe("service detail route", () => {
       email: "",
       notes: "",
     });
+    mockServiceProvider.findUnique.mockResolvedValue({ id: "provider-1", deletedAt: null });
   });
 
   it("allows editable private fields to be cleared with empty strings", async () => {
@@ -105,5 +113,123 @@ describe("service detail route", () => {
       email: "",
       notes: "",
     });
+  });
+
+  it("returns EMAIL_VERIFICATION_REQUIRED for unverified service edits", async () => {
+    mockRequireVerifiedUser.mockRejectedValueOnce(new Error("EMAIL_VERIFICATION_REQUIRED"));
+
+    const response = await PATCH(
+      new Request("http://localhost/api/services/service-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerName: "PSE&G" }),
+      }) as any,
+      serviceParams() as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      code: "EMAIL_VERIFICATION_REQUIRED",
+      redirectTo: "/verify-email?redirect=%2Fservices",
+    });
+    expect(mockService.update).not.toHaveBeenCalled();
+  });
+
+  it("updates only the user service row when editing provider-facing fields", async () => {
+    const response = await PATCH(
+      new Request("http://localhost/api/services/service-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          providerName: "My PSE&G",
+          website: "https://example.com/account",
+          monthlyCost: 42,
+          notes: "user-only note",
+        }),
+      }) as any,
+      serviceParams() as any,
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockService.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "service-1" },
+        data: expect.objectContaining({
+          providerName: "My PSE&G",
+          website: "https://example.com/account",
+          monthlyCost: 42,
+        }),
+      }),
+    );
+    expect(mockServiceProvider.update).not.toHaveBeenCalled();
+  });
+
+  it("allows the owner to delete a service without checking service plan limits", async () => {
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }) as any,
+      serviceParams() as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(mockService.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "service-1" },
+        data: expect.objectContaining({
+          deletedAt: expect.any(Date),
+          deactivatedAt: expect.any(Date),
+          isActive: false,
+        }),
+      }),
+    );
+  });
+
+  it("returns EMAIL_VERIFICATION_REQUIRED for unverified service deletes", async () => {
+    mockRequireVerifiedUser.mockRejectedValueOnce(new Error("EMAIL_VERIFICATION_REQUIRED"));
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }) as any,
+      serviceParams() as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("EMAIL_VERIFICATION_REQUIRED");
+    expect(mockService.update).not.toHaveBeenCalled();
+  });
+
+  it("does not let a non-owner delete another user's service", async () => {
+    mockService.findUnique.mockResolvedValueOnce({
+      id: "service-1",
+      userId: "user-2",
+      addressId: "address-1",
+      category: "UTILITY_ELECTRIC",
+      providerName: "PSE&G",
+      providerId: "provider-1",
+      customProviderId: null,
+      deletedAt: null,
+    });
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      }) as any,
+      serviceParams() as any,
+    );
+
+    expect(response.status).toBe(404);
+    expect(mockService.update).not.toHaveBeenCalled();
   });
 });

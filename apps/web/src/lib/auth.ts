@@ -6,6 +6,7 @@
 
 export {
   requireDbUserId,
+  requireVerifiedUser,
   getUserSession,
   createUserSession,
   destroyUserSession,

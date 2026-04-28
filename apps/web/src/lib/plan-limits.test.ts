@@ -23,8 +23,8 @@ vi.mock("@/lib/db", () => ({
 import {
   ACTIVE_TRACKED_SERVICE_WHERE,
   canCreateAddress,
-  canCreateMovingDestinationAddress,
   canCreateCustomProvider,
+  canCreateMovingDestinationAddress,
   canCreateMovingPlan,
   canCreateService,
   canGenerateMoveTasks,
@@ -154,6 +154,7 @@ describe("plan limits setup grace", () => {
       userId: "user_1",
       deletedAt: null,
       isActive: true,
+      deactivatedAt: null,
     });
     expect(countArg.where.OR).toEqual([
       { migrationAction: null },
@@ -234,9 +235,6 @@ describe("plan limits setup grace", () => {
   });
 
   it("returns SETUP_MOVING_PLAN_LIMIT_REACHED when a setup user exceeds the move-plan allowance", async () => {
-    // Setup user (no ONBOARDING_COMPLETED_EVENT, expired legacy trial)
-    // who already created their one allowed setup move plan should see
-    // the setup-specific code, not a misleading TRIAL_EXPIRED message.
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
       status: "EXPIRED",
@@ -287,9 +285,6 @@ describe("plan limits setup grace", () => {
   });
 
   it("allows setup users to generate move tasks for their first plan", async () => {
-    // canCreateMovingPlan already capped the plan count, so mirroring
-    // that allowance for /api/move-tasks unblocks the onboarding flow
-    // without widening the abuse surface.
     mocks.subscriptionFindUnique.mockResolvedValue({
       plan: "FREE_TRIAL",
       status: "EXPIRED",

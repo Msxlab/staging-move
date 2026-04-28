@@ -6,6 +6,7 @@ import { canCreateAddress } from "@/lib/plan-limits";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { encrypt, decrypt } from "@/lib/shared-encryption";
 import { parsePaginationParams, buildPaginatedResponse } from "@/lib/pagination";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
 
 // GET /api/addresses
 export async function GET(request: NextRequest) {
@@ -19,7 +20,10 @@ export async function GET(request: NextRequest) {
       prisma.address.findMany({
         where,
         include: {
-          services: { select: { id: true, providerName: true, category: true, monthlyCost: true } },
+          services: {
+            where: activeTrackedServiceWhere(userId),
+            select: { id: true, providerName: true, category: true, monthlyCost: true },
+          },
           user: { select: { id: true, firstName: true, lastName: true } },
         },
         orderBy: { createdAt: "desc" },

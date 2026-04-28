@@ -1,4 +1,5 @@
 import { normalizeProviderName } from "@locateflow/shared";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
 
 export interface ServiceDuplicateLookup {
   service: {
@@ -27,16 +28,6 @@ function cleanCategory(value: string): string {
   return value.trim().toUpperCase();
 }
 
-const NON_TRACKED_SERVICE_ACTIONS = [
-  "CANCEL",
-  "CANCELED",
-  "CANCELLED",
-  "REMOVE",
-  "REMOVED",
-  "ARCHIVE",
-  "ARCHIVED",
-];
-
 export async function findDuplicateTrackedService(
   db: ServiceDuplicateLookup,
   input: ServiceDuplicateCandidate,
@@ -45,15 +36,10 @@ export async function findDuplicateTrackedService(
   const normalizedName = normalizeProviderName(input.providerName);
   const candidates = await db.service.findMany({
     where: {
-      userId: input.userId,
-      addressId: input.addressId,
-      category,
-      isActive: true,
-      deletedAt: null,
-      OR: [
-        { migrationAction: null },
-        { migrationAction: { notIn: NON_TRACKED_SERVICE_ACTIONS } },
-      ],
+      ...activeTrackedServiceWhere(input.userId, {
+        addressId: input.addressId,
+        category,
+      }),
     },
     select: {
       id: true,
@@ -75,6 +61,7 @@ export async function findDuplicateTrackedService(
 
 export function duplicateServiceError(existing: ServiceDuplicateRecord) {
   return {
+    code: "DUPLICATE_ACTIVE_SERVICE",
     error: "You already track this provider for that address and category.",
     existingServiceId: existing.id,
   };

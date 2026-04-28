@@ -128,6 +128,7 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   ) {
     return NextResponse.json(
       {
+        code: "INVALID_CONTENT_TYPE",
         error:
           "Invalid Content-Type. API mutations require application/json or multipart/form-data.",
       },

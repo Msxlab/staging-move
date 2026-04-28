@@ -11,6 +11,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { toast } from "sonner";
 
 interface ServiceDetail {
   id: string;
@@ -51,8 +52,21 @@ export default function ServiceDetailPage() {
   }, [id, router]);
 
   const handleDelete = async () => {
-    const res = await fetch(`/api/services/${id}`, { method: "DELETE" });
-    if (res.ok) router.push("/services");
+    const res = await fetch(`/api/services/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    if (res.ok) {
+      router.push("/services");
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
+    if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
+      router.push(data.redirectTo);
+      return;
+    }
+    toast.error(data?.error || "Failed to delete service");
   };
 
   if (loading || !service) return <LoadingSpinner />;

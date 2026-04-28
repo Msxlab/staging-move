@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireDbUserId } from "@/lib/auth";
+import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
@@ -15,6 +15,35 @@ import {
   duplicateServiceError,
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
+
+const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
+
+function serviceError(code: string, error: string, status: number, extra: Record<string, unknown> = {}) {
+  return NextResponse.json({ code, error, ...extra }, { status });
+}
+
+function authErrorResponse(error: unknown) {
+  if (!(error instanceof Error)) return null;
+  if (error.message === "UNAUTHORIZED") {
+    return serviceError("UNAUTHORIZED", "Unauthorized", 401);
+  }
+  if (error.message === "EMAIL_VERIFICATION_REQUIRED") {
+    return serviceError(
+      "EMAIL_VERIFICATION_REQUIRED",
+      "Verify your email before managing services.",
+      403,
+      { redirectTo: VERIFY_EMAIL_REDIRECT },
+    );
+  }
+  return null;
+}
+
+function limitErrorCode(code?: string) {
+  if (code === "SERVICE_LIMIT_REACHED" || code === "SETUP_SERVICE_LIMIT_REACHED") {
+    return "SERVICE_LIMIT_REACHED";
+  }
+  return "SUBSCRIPTION_REQUIRED";
+}
 
 // GET /api/services
 export async function GET(request: NextRequest) {
@@ -37,8 +66,8 @@ export async function GET(request: NextRequest) {
       prisma.service.findMany({
         where,
         include: {
-          address: { select: { nickname: true, city: true, state: true } },
-          provider: { select: { id: true, name: true, slug: true, website: true, phone: true, scope: true } },
+          address: { select: { id: true, nickname: true, city: true, state: true } },
+          provider: { select: { id: true, name: true, slug: true, category: true, website: true, phone: true, logoUrl: true, scope: true } },
           customProvider: { select: { id: true, name: true, category: true, phone: true, website: true, email: true, providerType: true, trustStatus: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -53,9 +82,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ services: decryptedServices, ...buildPaginatedResponse(decryptedServices, total, pagination) });
   } catch (error) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     console.error("Failed to fetch services:", error);
     return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 });
   }
@@ -64,7 +92,7 @@ export async function GET(request: NextRequest) {
 // POST /api/services
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireVerifiedUser();
 
     // Rate limit: 30 writes per minute
     const rlKey = getRateLimitKey(request, "svc:create");
@@ -79,15 +107,16 @@ export async function POST(request: NextRequest) {
     // Plan limit check
     const limitCheck = await canCreateService(userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json(
+      return serviceError(
+        limitErrorCode(limitCheck.code),
+        limitCheck.reason || "Subscription required to add services.",
+        403,
         {
-          error: limitCheck.reason,
-          code: limitCheck.code,
           upgradeRequired: limitCheck.upgradeRequired,
           current: limitCheck.current,
           limit: limitCheck.limit,
+          entitlementCode: limitCheck.code,
         },
-        { status: 403 },
       );
     }
 
@@ -104,7 +133,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
     if (address.userId !== userId) {
-      return NextResponse.json({ error: "You don't have permission to add services to this address" }, { status: 403 });
+      return serviceError("FORBIDDEN", "You don't have permission to add services to this address", 403);
     }
     if (address.deletedAt) {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
@@ -185,6 +214,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ service: decryptServiceSensitiveFields(service as any), moveTaskSync }, { status: 201 });
   } catch (error: any) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

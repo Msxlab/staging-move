@@ -93,10 +93,23 @@ export default function AddressDetailPage() {
     if (bulkSelected.size === 0) return;
     setDeletingBulk(true);
     let deleted = 0;
+    let firstError: string | null = null;
     for (const sid of bulkSelected) {
       try {
-        const res = await fetch(`/api/services/${sid}`, { method: "DELETE" });
+        const res = await fetch(`/api/services/${sid}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
         if (res.ok) deleted++;
+        else {
+          const data = await res.json().catch(() => ({}));
+          firstError ||= data?.error || tToast("serviceRemoveFailed");
+          if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
+            router.push(data.redirectTo);
+            break;
+          }
+        }
       } catch { /* skip */ }
     }
     if (address) {
@@ -105,7 +118,8 @@ export default function AddressDetailPage() {
     setBulkSelected(new Set());
     setBulkMode(false);
     setDeletingBulk(false);
-    toast.success(tToast("servicesRemoved", { count: deleted }));
+    if (deleted > 0) toast.success(tToast("servicesRemoved", { count: deleted }));
+    if (firstError) toast.error(firstError);
   };
 
   const toggleBulk = (sid: string) => {
@@ -150,14 +164,25 @@ export default function AddressDetailPage() {
     if (deleteSvcConfirm !== sid) { setDeleteSvcConfirm(sid); return; }
     setDeletingSvcId(sid);
     try {
-      const res = await fetch(`/api/services/${sid}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
+      const res = await fetch(`/api/services/${sid}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
+          router.push(data.redirectTo);
+          return;
+        }
+        throw new Error(data?.error || tToast("serviceRemoveFailed"));
+      }
       if (address) {
         setAddress({ ...address, services: address.services.filter((s) => s.id !== sid) });
       }
       toast.success(tToast("serviceRemoved"));
-    } catch {
-      toast.error(tToast("serviceRemoveFailed"));
+    } catch (error: any) {
+      toast.error(error?.message || tToast("serviceRemoveFailed"));
     }
     setDeletingSvcId(null);
     setDeleteSvcConfirm(null);

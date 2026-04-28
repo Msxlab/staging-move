@@ -61,7 +61,42 @@ export interface ServicesItem {
   monthlyCost: number; billingDay?: number | null; isActive?: boolean;
   addressId: string;
   address?: { nickname?: string; city?: string; state?: string };
+  provider?: { id?: string; name?: string | null; logoUrl?: string | null } | null;
+  providerLogoUrl?: string | null;
+  logoUrl?: string | null;
   createdAt?: string;
+}
+
+export function resolveServiceLogoUrl(service: ServicesItem): string | null {
+  return service.provider?.logoUrl || service.providerLogoUrl || service.logoUrl || null;
+}
+
+export function shouldShowServiceLogo(logoUrl: string | null | undefined, failedLogoUrl: string | null): logoUrl is string {
+  return Boolean(logoUrl && logoUrl !== failedLogoUrl);
+}
+
+export function ServiceLogoMark({ service }: { service: ServicesItem }) {
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
+  const logoUrl = resolveServiceLogoUrl(service);
+  const showLogo = shouldShowServiceLogo(logoUrl, failedLogoUrl);
+  const altName = service.provider?.name || service.providerName;
+
+  return (
+    <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-lg shrink-0 overflow-hidden">
+      {showLogo ? (
+        <img
+          src={logoUrl}
+          alt={`${altName} logo`}
+          className="h-full w-full rounded-[inherit] object-contain p-1"
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedLogoUrl(logoUrl)}
+        />
+      ) : (
+        <span aria-hidden="true">{getMergedDisplayCategoryIcon(service.category)}</span>
+      )}
+    </div>
+  );
 }
 
 export function ServicesClient({
@@ -392,9 +427,7 @@ export function ServicesClient({
                       <div className="group rounded-xl border border-border bg-foreground/[0.02] p-4 hover:bg-foreground/[0.05] hover:border-border transition-all cursor-pointer">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-lg shrink-0">
-                              {getMergedDisplayCategoryIcon(service.category)}
-                            </div>
+                            <ServiceLogoMark service={service} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <h3 className="font-medium text-sm text-foreground truncate group-hover:text-orange-300 transition">{service.providerName}</h3>

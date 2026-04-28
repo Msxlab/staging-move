@@ -11,6 +11,7 @@ import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
+import { needsEmailVerificationGate } from "@/lib/email-verification-gate";
 import {
   hashForOAuthLog,
   logSafeOAuthEvent,
@@ -409,6 +410,24 @@ export async function requireDbUserId(options: { distinguishDeleted?: boolean } 
       .catch(() => null);
   }
 
+  return user.id;
+}
+
+export async function requireVerifiedUser(): Promise<string> {
+  const userId = await requireDbUserId();
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      emailVerifiedAt: true,
+      passwordHash: true,
+      oauthAccounts: { select: { id: true } },
+    },
+  });
+  if (!user) throw new Error("UNAUTHORIZED");
+  if (needsEmailVerificationGate(user)) {
+    throw new Error("EMAIL_VERIFICATION_REQUIRED");
+  }
   return user.id;
 }
 

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
+export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
  * Plan limits configuration.
@@ -25,25 +27,6 @@ const SETUP_GRACE_LIMITS = {
   maxServices: 10,
   maxCustomProviders: 10,
   maxMovingPlans: 1,
-};
-
-const NON_TRACKED_SERVICE_ACTIONS = [
-  "CANCEL",
-  "CANCELED",
-  "CANCELLED",
-  "REMOVE",
-  "REMOVED",
-  "ARCHIVE",
-  "ARCHIVED",
-];
-
-export const ACTIVE_TRACKED_SERVICE_WHERE = {
-  deletedAt: null,
-  isActive: true,
-  OR: [
-    { migrationAction: null },
-    { migrationAction: { notIn: NON_TRACKED_SERVICE_ACTIONS } },
-  ],
 };
 
 export type PlanName = keyof typeof PLAN_LIMITS;
@@ -181,12 +164,7 @@ export async function canCreateAddress(userId: string): Promise<PlanLimitCheck> 
  */
 export async function canCreateService(userId: string): Promise<PlanLimitCheck> {
   const userPlan = await getUserPlan(userId);
-  const count = await prisma.service.count({
-    where: {
-      userId,
-      ...ACTIVE_TRACKED_SERVICE_WHERE,
-    },
-  });
+  const count = await prisma.service.count({ where: activeTrackedServiceWhere(userId) });
 
   if (!userPlan.isActive) {
     if (await isInSetupGrace(userId)) {

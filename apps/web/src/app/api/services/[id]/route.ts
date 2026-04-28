@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireDbUserId } from "@/lib/auth";
+import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
@@ -13,6 +13,28 @@ import {
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
 
+const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
+
+function serviceError(code: string, error: string, status: number, extra: Record<string, unknown> = {}) {
+  return NextResponse.json({ code, error, ...extra }, { status });
+}
+
+function authErrorResponse(error: unknown) {
+  if (!(error instanceof Error)) return null;
+  if (error.message === "UNAUTHORIZED") {
+    return serviceError("UNAUTHORIZED", "Unauthorized", 401);
+  }
+  if (error.message === "EMAIL_VERIFICATION_REQUIRED") {
+    return serviceError(
+      "EMAIL_VERIFICATION_REQUIRED",
+      "Verify your email before managing services.",
+      403,
+      { redirectTo: VERIFY_EMAIL_REDIRECT },
+    );
+  }
+  return null;
+}
+
 // GET /api/services/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -23,7 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         address: true,
         reminders: true,
-        provider: { select: { id: true, name: true, slug: true, website: true, phone: true, scope: true } },
+        provider: { select: { id: true, name: true, slug: true, website: true, phone: true, logoUrl: true, scope: true } },
         customProvider: { select: { id: true, name: true, category: true, phone: true, website: true, email: true, providerType: true, trustStatus: true } },
       },
     });
@@ -37,6 +59,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ service: decrypted });
   } catch (error) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     console.error("Failed to fetch service:", error);
     return NextResponse.json({ error: "Failed to fetch service" }, { status: 500 });
   }
@@ -45,7 +69,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // PATCH /api/services/:id
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireVerifiedUser();
     const { id } = await params;
 
     const existing = await prisma.service.findUnique({ where: { id } });
@@ -132,6 +156,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({ service: decryptServiceSensitiveFields(service as any), moveTaskSync });
   } catch (error: any) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
+    if (error?.name === "ZodError") {
+      return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
+    }
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });
     }
@@ -143,7 +172,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 // DELETE /api/services/:id
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireVerifiedUser();
     const { id } = await params;
 
     const existing = await prisma.service.findUnique({ where: { id } });
@@ -151,7 +180,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: "Service not found" }, { status: 404 });
     }
 
-    await prisma.service.update({ where: { id }, data: { deletedAt: new Date(), isActive: false } });
+    const now = new Date();
+    await prisma.service.update({ where: { id }, data: { deletedAt: now, isActive: false, deactivatedAt: now } });
 
     if (existing.providerId && existing.isActive) {
       try {
@@ -169,6 +199,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Service not found" }, { status: 404 });
     }

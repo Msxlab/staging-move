@@ -250,7 +250,7 @@ export default function NewServicePage() {
         } else {
           failed++;
           const next = await res.json().catch(() => null);
-          firstError ||= next?.error || "A selected provider could not be added.";
+          firstError ||= resolveServiceMutationError(next, "A selected provider could not be added.");
           if (next?.upgradeRequired || typeof next?.code === "string") {
             break;
           }
@@ -312,7 +312,7 @@ export default function NewServicePage() {
         }),
       });
       const serviceData = await serviceRes.json();
-      if (!serviceRes.ok) throw new Error(serviceData.error || "Failed to attach custom provider");
+      if (!serviceRes.ok) throw new Error(resolveServiceMutationError(serviceData, "Failed to attach custom provider"));
       toast.success("Custom provider added for local tracking");
       router.push("/services");
     } catch (error: any) {
@@ -323,6 +323,23 @@ export default function NewServicePage() {
   };
 
   const selectedCount = selectedProviders.size;
+
+  const resolveServiceMutationError = (data: any, fallback: string) => {
+    if (data?.code === "EMAIL_VERIFICATION_REQUIRED" && data.redirectTo) {
+      router.push(data.redirectTo);
+      return data.error || "Verify your email before adding services.";
+    }
+    if (data?.code === "SERVICE_LIMIT_REACHED") {
+      return data.error || "You have reached the active service limit for your plan.";
+    }
+    if (data?.code === "SUBSCRIPTION_REQUIRED") {
+      return data.error || "A subscription is required to add more services.";
+    }
+    if (data?.code === "DUPLICATE_ACTIVE_SERVICE") {
+      return data.error || "You already track this provider for that address.";
+    }
+    return data?.error || fallback;
+  };
 
   // ─── Render ─────────────────────────────────────────────────────────────
 
