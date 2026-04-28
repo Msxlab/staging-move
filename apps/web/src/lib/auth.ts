@@ -7,6 +7,7 @@
 export {
   requireDbUserId,
   requireVerifiedUser,
+  createUserAuthDiagnostics,
   getUserSession,
   createUserSession,
   destroyUserSession,
@@ -19,3 +20,5 @@ export {
   findOrLinkOAuthUser,
   findOrLinkOAuthUserWithStatus,
 } from "@/lib/user-auth";
+
+export type { UserAuthDiagnostics } from "@/lib/user-auth";

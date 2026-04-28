@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
+import {
+  createUserAuthDiagnostics,
+  requireDbUserId,
+  requireVerifiedUser,
+  type UserAuthDiagnostics,
+} from "@/lib/auth";
 import { serviceSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
@@ -19,18 +24,48 @@ function serviceError(code: string, error: string, status: number, extra: Record
   return NextResponse.json({ code, error, ...extra }, { status });
 }
 
-function authErrorResponse(error: unknown) {
+function logServiceAuthDiagnostic(
+  method: string,
+  diagnostics: UserAuthDiagnostics | undefined,
+  failureCode: string,
+) {
+  console.warn("service_auth_diagnostic", {
+    layer: "route",
+    route: "/api/services/[id]",
+    method,
+    cookieCandidatesCount: diagnostics?.cookieCandidatesCount ?? null,
+    jwtCandidateValidCount: diagnostics?.jwtCandidateValidCount ?? null,
+    dbSessionFound: diagnostics?.dbSessionFound ?? null,
+    sessionExpired: diagnostics?.sessionExpired ?? null,
+    fingerprintMatched: diagnostics?.fingerprintMatched ?? null,
+    dbUserFound: diagnostics?.dbUserFound ?? null,
+    emailVerified: diagnostics?.emailVerified ?? null,
+    finalFailureCode: diagnostics?.finalFailureCode ?? failureCode,
+  });
+}
+
+function authErrorResponse(
+  error: unknown,
+  diagnostics?: UserAuthDiagnostics,
+  method = "UNKNOWN",
+) {
   if (!(error instanceof Error)) return null;
   if (error.message === "UNAUTHORIZED") {
-    return serviceError("UNAUTHORIZED", "Please sign in again.", 401);
+    logServiceAuthDiagnostic(method, diagnostics, "UNAUTHORIZED");
+    const response = serviceError("UNAUTHORIZED", "Please sign in again.", 401);
+    response.headers.set("X-LocateFlow-Auth-Layer", "route");
+    return response;
   }
   if (error.message === "EMAIL_VERIFICATION_REQUIRED") {
-    return serviceError(
+    logServiceAuthDiagnostic(method, diagnostics, "EMAIL_VERIFICATION_REQUIRED");
+    const response = serviceError(
       "EMAIL_VERIFICATION_REQUIRED",
       "Please verify your email to manage services.",
       403,
       { redirectTo: VERIFY_EMAIL_REDIRECT },
     );
+    response.headers.set("X-LocateFlow-Auth-Layer", "route");
+    return response;
   }
   return null;
 }
@@ -171,8 +206,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 // DELETE /api/services/:id
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authDiagnostics = createUserAuthDiagnostics();
   try {
-    const userId = await requireVerifiedUser();
+    const userId = await requireVerifiedUser({ diagnostics: authDiagnostics });
     const { id } = await params;
 
     const existing = await prisma.service.findUnique({ where: { id } });
@@ -188,7 +224,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    const authResponse = authErrorResponse(error);
+    const authResponse = authErrorResponse(error, authDiagnostics, "DELETE");
     if (authResponse) return authResponse;
     if (error?.code === "P2025") {
       return serviceError("NOT_FOUND", "Service not found.", 404);

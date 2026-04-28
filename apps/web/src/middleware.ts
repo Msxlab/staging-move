@@ -262,6 +262,46 @@ function addSessionTokenCandidate(
   candidates.push(trimmed);
 }
 
+interface MiddlewareAuthDiagnostics {
+  cookieCandidatesCount: number;
+  jwtCandidateValidCount: number;
+  finalFailureCode: string | null;
+}
+
+function createMiddlewareAuthDiagnostics(): MiddlewareAuthDiagnostics {
+  return {
+    cookieCandidatesCount: 0,
+    jwtCandidateValidCount: 0,
+    finalFailureCode: null,
+  };
+}
+
+function logMiddlewareAuthDiagnostic(
+  request: NextRequest,
+  diagnostics: MiddlewareAuthDiagnostics,
+) {
+  if (
+    request.method !== "DELETE" ||
+    !request.nextUrl.pathname.startsWith("/api/services/")
+  ) {
+    return;
+  }
+
+  console.warn("service_auth_diagnostic", {
+    layer: "middleware",
+    route: "/api/services/[id]",
+    method: request.method,
+    cookieCandidatesCount: diagnostics.cookieCandidatesCount,
+    jwtCandidateValidCount: diagnostics.jwtCandidateValidCount,
+    dbSessionFound: null,
+    sessionExpired: null,
+    fingerprintMatched: null,
+    dbUserFound: null,
+    emailVerified: null,
+    finalFailureCode: diagnostics.finalFailureCode,
+  });
+}
+
 function readCookieHeaderValues(cookieHeader: string | null, name: string): string[] {
   if (!cookieHeader) return [];
   const values: string[] = [];
@@ -280,7 +320,10 @@ function readCookieHeaderValues(cookieHeader: string | null, name: string): stri
   return values;
 }
 
-function readSessionTokenCandidates(request: NextRequest): string[] {
+function readSessionTokenCandidates(
+  request: NextRequest,
+  diagnostics?: MiddlewareAuthDiagnostics,
+): string[] {
   const candidates: string[] = [];
   const seen = new Set<string>();
 
@@ -295,25 +338,40 @@ function readSessionTokenCandidates(request: NextRequest): string[] {
   for (const value of readCookieHeaderValues(request.headers.get("cookie"), "user_session")) {
     addSessionTokenCandidate(candidates, seen, value);
   }
+  if (diagnostics) diagnostics.cookieCandidatesCount = candidates.length;
   addSessionTokenCandidate(candidates, seen, readBearerToken(request));
 
   return candidates;
 }
 
-async function hasValidSession(request: NextRequest): Promise<boolean> {
+async function hasValidSession(
+  request: NextRequest,
+  diagnostics?: MiddlewareAuthDiagnostics,
+): Promise<boolean> {
   // Web: httpOnly cookie. Mobile: Authorization: Bearer <token>.
   // Both flows are JWT-signed with the same USER_JWT_SECRET; DB-row validation
   // (isActive, expiresAt, fingerprint) still runs inside route handlers via
   // requireDbUserId() / getUserSession(). Middleware is edge-safe — no DB.
-  const tokens = readSessionTokenCandidates(request);
-  if (tokens.length === 0) return false;
+  const tokens = readSessionTokenCandidates(request, diagnostics);
+  if (tokens.length === 0) {
+    if (diagnostics) diagnostics.finalFailureCode = "NO_SESSION_CANDIDATES";
+    return false;
+  }
   const jwtSecret = tryGetUserJwtSecretKey();
-  if (!jwtSecret) return false;
+  if (!jwtSecret) {
+    if (diagnostics) diagnostics.finalFailureCode = "JWT_SECRET_MISSING";
+    return false;
+  }
   for (const token of tokens) {
     try {
       await jwtVerify(token, jwtSecret, { algorithms: ["HS256"] });
+      if (diagnostics) {
+        diagnostics.jwtCandidateValidCount += 1;
+        diagnostics.finalFailureCode = null;
+      }
       return true;
     } catch {
+      if (diagnostics) diagnostics.finalFailureCode = "JWT_INVALID";
       /* try the next same-name cookie/header token */
     }
   }
@@ -447,13 +505,17 @@ export default async function middleware(request: NextRequest) {
   // Skip auth for public endpoints.
   if (pathname.startsWith("/api/")) {
     if (isPublicApi(pathname, request.method)) return applyStagingNoIndex(request, nextWithCurrentPath(request));
-    if (!(await hasValidSession(request))) {
+    const authDiagnostics = createMiddlewareAuthDiagnostics();
+    if (!(await hasValidSession(request, authDiagnostics))) {
+      logMiddlewareAuthDiagnostic(request, authDiagnostics);
+      const response = NextResponse.json(
+        { code: "UNAUTHORIZED", error: "Please sign in again." },
+        { status: 401 },
+      );
+      response.headers.set("X-LocateFlow-Auth-Layer", "middleware");
       return applyStagingNoIndex(
         request,
-        NextResponse.json(
-          { code: "UNAUTHORIZED", error: "Please sign in again." },
-          { status: 401 },
-        ),
+        response,
       );
     }
     return applyStagingNoIndex(request, nextWithCurrentPath(request));

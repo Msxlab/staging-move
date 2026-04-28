@@ -14,6 +14,16 @@ vi.mock("@/lib/db", () => ({
 }));
 
 vi.mock("@/lib/auth", () => ({
+  createUserAuthDiagnostics: vi.fn(() => ({
+    cookieCandidatesCount: 0,
+    jwtCandidateValidCount: 0,
+    dbSessionFound: null,
+    sessionExpired: null,
+    fingerprintMatched: null,
+    dbUserFound: null,
+    emailVerified: null,
+    finalFailureCode: null,
+  })),
   requireDbUserId: vi.fn(),
   requireVerifiedUser: vi.fn(),
 }));

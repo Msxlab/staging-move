@@ -238,6 +238,37 @@ type RequestTokenCandidate = {
   source: "cookie" | "header";
 };
 
+export interface UserAuthDiagnostics {
+  cookieCandidatesCount: number;
+  jwtCandidateValidCount: number;
+  dbSessionFound: boolean | null;
+  sessionExpired: boolean | null;
+  fingerprintMatched: boolean | null;
+  dbUserFound: boolean | null;
+  emailVerified: boolean | null;
+  finalFailureCode: string | null;
+}
+
+export function createUserAuthDiagnostics(): UserAuthDiagnostics {
+  return {
+    cookieCandidatesCount: 0,
+    jwtCandidateValidCount: 0,
+    dbSessionFound: null,
+    sessionExpired: null,
+    fingerprintMatched: null,
+    dbUserFound: null,
+    emailVerified: null,
+    finalFailureCode: null,
+  };
+}
+
+function markAuthFailure(
+  diagnostics: UserAuthDiagnostics | undefined,
+  code: string,
+) {
+  if (diagnostics) diagnostics.finalFailureCode = code;
+}
+
 function addTokenCandidate(
   candidates: RequestTokenCandidate[],
   seen: Set<string>,
@@ -332,9 +363,16 @@ async function readSingleTokenFromRequestForLegacyPath(): Promise<{
   return null;
 }
 
-export async function getUserSession(): Promise<UserSessionClaims | null> {
+export async function getUserSession(options: { diagnostics?: UserAuthDiagnostics } = {}): Promise<UserSessionClaims | null> {
   const candidates = await readTokenCandidatesFromRequest();
-  if (candidates.length === 0) return null;
+  const diagnostics = options.diagnostics;
+  if (diagnostics) {
+    diagnostics.cookieCandidatesCount = candidates.filter((candidate) => candidate.source === "cookie").length;
+  }
+  if (candidates.length === 0) {
+    markAuthFailure(diagnostics, "NO_SESSION_CANDIDATES");
+    return null;
+  }
 
   let shouldClearCookie = false;
 
@@ -344,6 +382,7 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
 
     const tokenHash = await hashSessionToken(token).catch(() => null);
     if (!tokenHash) {
+      markAuthFailure(diagnostics, "TOKEN_HASH_FAILED");
       shouldClearCookie = shouldClearCookie || cameFromCookie;
       continue;
     }
@@ -361,6 +400,7 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
     const { payload } = await jwtVerify(token, getUserJwtSecretKey(), {
       algorithms: ["HS256"],
     });
+    if (diagnostics) diagnostics.jwtCandidateValidCount += 1;
 
     const record = await prisma.userLoginSession
       .findFirst({
@@ -370,11 +410,16 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
       .catch(() => null);
 
     if (!record) {
+      if (diagnostics) diagnostics.dbSessionFound = false;
+      markAuthFailure(diagnostics, "DB_SESSION_NOT_FOUND");
       shouldClearCookie = shouldClearCookie || cameFromCookie;
       continue;
     }
 
+    if (diagnostics) diagnostics.dbSessionFound = true;
+
     if (typeof payload.userId !== "string" || typeof payload.email !== "string") {
+      markAuthFailure(diagnostics, "INVALID_CLAIMS");
       await invalidateSession();
       shouldClearCookie = shouldClearCookie || cameFromCookie;
       continue;
@@ -401,19 +446,34 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
       const proxyIpChangedButSameBrowser =
         fpMode === "web" && record.userAgent === userAgent;
       if (!currentFp || (currentFp !== payload.fp && !proxyIpChangedButSameBrowser)) {
+        if (diagnostics) diagnostics.fingerprintMatched = false;
+        markAuthFailure(diagnostics, "FINGERPRINT_MISMATCH");
         await invalidateSession();
         shouldClearCookie = shouldClearCookie || cameFromCookie;
         continue;
       }
     }
 
-    if (
-      record.userId !== payload.userId ||
-      record.expiresAt.getTime() <= Date.now()
-    ) {
+    if (diagnostics) diagnostics.fingerprintMatched = true;
+
+    if (record.userId !== payload.userId) {
+      markAuthFailure(diagnostics, "SESSION_USER_MISMATCH");
       await invalidateSession();
       shouldClearCookie = shouldClearCookie || cameFromCookie;
       continue;
+    }
+
+    if (record.expiresAt.getTime() <= Date.now()) {
+      if (diagnostics) diagnostics.sessionExpired = true;
+      markAuthFailure(diagnostics, "SESSION_EXPIRED");
+      await invalidateSession();
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
+    }
+
+    if (diagnostics) {
+      diagnostics.sessionExpired = false;
+      diagnostics.finalFailureCode = null;
     }
 
     return {
@@ -427,6 +487,9 @@ export async function getUserSession(): Promise<UserSessionClaims | null> {
       sessionId: record.id,
     };
   } catch {
+    if (!diagnostics || diagnostics.jwtCandidateValidCount === 0) {
+      markAuthFailure(diagnostics, "JWT_INVALID");
+    }
     await invalidateSession();
     shouldClearCookie = shouldClearCookie || cameFromCookie;
     continue;
@@ -473,8 +536,8 @@ export async function destroyAllUserSessions(userId: string): Promise<void> {
  * Also destroys stale soft-deleted sessions. Callers that need a distinct
  * user-facing deleted-account branch can opt into ACCOUNT_DELETED.
  */
-export async function requireDbUserId(options: { distinguishDeleted?: boolean } = {}): Promise<string> {
-  const session = await getUserSession();
+export async function requireDbUserId(options: { distinguishDeleted?: boolean; diagnostics?: UserAuthDiagnostics } = {}): Promise<string> {
+  const session = await getUserSession({ diagnostics: options.diagnostics });
   if (!session) throw new Error("UNAUTHORIZED");
 
   const user = await prisma.user.findUnique({
@@ -482,10 +545,14 @@ export async function requireDbUserId(options: { distinguishDeleted?: boolean } 
     select: { id: true, deletedAt: true },
   });
   if (!user) {
+    if (options.diagnostics) options.diagnostics.dbUserFound = false;
+    markAuthFailure(options.diagnostics, "DB_USER_NOT_FOUND");
     await destroyUserSession();
     throw new Error("UNAUTHORIZED");
   }
+  if (options.diagnostics) options.diagnostics.dbUserFound = true;
   if (user.deletedAt) {
+    markAuthFailure(options.diagnostics, "ACCOUNT_DELETED");
     await destroyUserSession();
     throw new Error(options.distinguishDeleted ? "ACCOUNT_DELETED" : "UNAUTHORIZED");
   }
@@ -503,8 +570,8 @@ export async function requireDbUserId(options: { distinguishDeleted?: boolean } 
   return user.id;
 }
 
-export async function requireVerifiedUser(): Promise<string> {
-  const userId = await requireDbUserId();
+export async function requireVerifiedUser(options: { diagnostics?: UserAuthDiagnostics } = {}): Promise<string> {
+  const userId = await requireDbUserId({ diagnostics: options.diagnostics });
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -514,8 +581,17 @@ export async function requireVerifiedUser(): Promise<string> {
       oauthAccounts: { select: { id: true } },
     },
   });
-  if (!user) throw new Error("UNAUTHORIZED");
-  if (needsEmailVerificationGate(user)) {
+  if (!user) {
+    if (options.diagnostics) options.diagnostics.dbUserFound = false;
+    markAuthFailure(options.diagnostics, "DB_USER_NOT_FOUND");
+    throw new Error("UNAUTHORIZED");
+  }
+  if (options.diagnostics) options.diagnostics.dbUserFound = true;
+
+  const emailVerified = !needsEmailVerificationGate(user);
+  if (options.diagnostics) options.diagnostics.emailVerified = emailVerified;
+  if (!emailVerified) {
+    markAuthFailure(options.diagnostics, "EMAIL_VERIFICATION_REQUIRED");
     throw new Error("EMAIL_VERIFICATION_REQUIRED");
   }
   return user.id;
