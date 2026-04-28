@@ -209,6 +209,82 @@ describe("getUserSession duplicate cookies", () => {
     expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
   });
 
+  it("keeps a web session valid when only the request IP changed and the UA matches", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      const normalized = name.toLowerCase();
+      if (normalized === "cookie") return "user_session=valid-token";
+      if (normalized === "user-agent") return "Test Browser";
+      if (normalized === "x-forwarded-for") return "203.0.113.10";
+      return null;
+    });
+    mocks.jwtVerify.mockResolvedValueOnce({
+      payload: {
+        userId: "user-1",
+        email: "user@example.com",
+        fp: "ip-bound-fingerprint-from-login",
+        fpMode: "web",
+      },
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-valid",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(getUserSession({ diagnostics })).resolves.toMatchObject({
+      userId: "user-1",
+      sessionId: "session-valid",
+    });
+
+    expect(diagnostics).toMatchObject({
+      jwtCandidateValidCount: 1,
+      dbSessionFound: true,
+      sessionExpired: false,
+      fingerprintMatched: true,
+      finalFailureCode: null,
+    });
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("keeps legacy web sessions valid on IP changes when the DB row has no stored UA", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      const normalized = name.toLowerCase();
+      if (normalized === "cookie") return "user_session=valid-token";
+      if (normalized === "user-agent") return "Test Browser";
+      if (normalized === "x-forwarded-for") return "203.0.113.10";
+      return null;
+    });
+    mocks.jwtVerify.mockResolvedValueOnce({
+      payload: {
+        userId: "user-1",
+        email: "user@example.com",
+        fp: "ip-bound-fingerprint-from-login",
+        fpMode: "web",
+      },
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-valid",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: null,
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(getUserSession({ diagnostics })).resolves.toMatchObject({
+      userId: "user-1",
+      sessionId: "session-valid",
+    });
+
+    expect(diagnostics.finalFailureCode).toBeNull();
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+  });
+
   it("throws EMAIL_VERIFICATION_REQUIRED with diagnostics for unverified users", async () => {
     mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
     mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });

@@ -16,7 +16,17 @@ import {
   type RelocationChecklist,
   type ChecklistStateRuleContext,
 } from "@/lib/shared-relocation";
-import { getMergedDisplayCategoryIcon, getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import { getMergedDisplayCategoryLabel } from "@/lib/recommendation-engine";
+import {
+  ServiceLogoMark,
+  resolveServiceLogoUrl,
+  shouldShowServiceLogo,
+} from "@/components/services/service-logo-mark";
+export {
+  ServiceLogoMark,
+  resolveServiceLogoUrl,
+  shouldShowServiceLogo,
+} from "@/components/services/service-logo-mark";
 
 // filterGroups mapping — labels are keys to be translated
 // Use getFilterGroups(t) to get translated version in the component
@@ -65,38 +75,6 @@ export interface ServicesItem {
   providerLogoUrl?: string | null;
   logoUrl?: string | null;
   createdAt?: string;
-}
-
-export function resolveServiceLogoUrl(service: ServicesItem): string | null {
-  return service.provider?.logoUrl || service.providerLogoUrl || service.logoUrl || null;
-}
-
-export function shouldShowServiceLogo(logoUrl: string | null | undefined, failedLogoUrl: string | null): logoUrl is string {
-  return Boolean(logoUrl && logoUrl !== failedLogoUrl);
-}
-
-export function ServiceLogoMark({ service }: { service: ServicesItem }) {
-  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-  const logoUrl = resolveServiceLogoUrl(service);
-  const showLogo = shouldShowServiceLogo(logoUrl, failedLogoUrl);
-  const altName = service.provider?.name || service.providerName;
-
-  return (
-    <div className="w-10 h-10 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-lg shrink-0 overflow-hidden">
-      {showLogo ? (
-        <img
-          src={logoUrl}
-          alt={`${altName} logo`}
-          className="h-full w-full rounded-[inherit] object-contain p-1"
-          loading="lazy"
-          decoding="async"
-          onError={() => setFailedLogoUrl(logoUrl)}
-        />
-      ) : (
-        <span aria-hidden="true">{getMergedDisplayCategoryIcon(service.category)}</span>
-      )}
-    </div>
-  );
 }
 
 export function ServicesClient({

@@ -55,6 +55,7 @@ export default function ServiceDetailPage() {
     const res = await fetch(`/api/services/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
       body: JSON.stringify({}),
     });
     if (res.ok) {

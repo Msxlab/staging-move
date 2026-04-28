@@ -61,7 +61,9 @@ async function sha256Hex(raw: string): Promise<string> {
     .join("");
 }
 
-// Web: IP + UA — strict. A hijacked cookie from a different IP is rejected.
+// Web tokens may carry an IP+UA fingerprint from older sessions. Validation
+// treats IP drift as advisory and keeps the DB-backed session alive when the
+// browser UA is unchanged or when legacy session rows did not record a UA.
 export async function generateFingerprint(
   ip: string,
   userAgent: string,
@@ -439,13 +441,14 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
               ),
               userAgent,
             ).catch(() => null);
-      // DigitalOcean/proxy chains can present a different forwarding IP
+      // DigitalOcean/proxy/CDN chains can present a different forwarding IP
       // between OAuth callback and later app/API requests. Keep the DB-backed
-      // session valid when the browser UA is unchanged; still reject device
-      // swaps where both IP-bound fingerprint and UA differ.
-      const proxyIpChangedButSameBrowser =
-        fpMode === "web" && record.userAgent === userAgent;
-      if (!currentFp || (currentFp !== payload.fp && !proxyIpChangedButSameBrowser)) {
+      // web session valid when the browser UA is unchanged. Legacy rows may
+      // have null userAgent, so do not permanently deactivate solely because
+      // the IP-bound fingerprint changed.
+      const webIpChangedButBrowserStillAcceptable =
+        fpMode === "web" && (!record.userAgent || record.userAgent === userAgent);
+      if (!currentFp || (currentFp !== payload.fp && !webIpChangedButBrowserStillAcceptable)) {
         if (diagnostics) diagnostics.fingerprintMatched = false;
         markAuthFailure(diagnostics, "FINGERPRINT_MISMATCH");
         await invalidateSession();

@@ -12,6 +12,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/shared/loading-state";
 import { toast } from "sonner";
+import { ServiceLogoMark } from "@/components/services/service-logo-mark";
 
 const CATEGORY_META: Record<string, { label: string; icon: string }> = {
   GOVERNMENT_POSTAL: { label: "Mail & Postal", icon: "📬" }, GOVERNMENT_TAX: { label: "Tax (IRS)", icon: "🧾" },
@@ -44,6 +45,10 @@ interface ServiceItem {
   id: string; providerName: string; category: string; monthlyCost: number;
   website?: string | null; phone?: string | null; isActive?: boolean;
   billingCycle?: string | null; billingDay?: number | null; accountNumber?: string | null;
+  provider?: { id?: string; name?: string | null; logoUrl?: string | null } | null;
+  customProvider?: { id?: string; name?: string | null } | null;
+  providerLogoUrl?: string | null;
+  logoUrl?: string | null;
 }
 
 interface AddressDetail {
@@ -101,7 +106,12 @@ export default function AddressDetailPage() {
 
   const handleDelete = async () => {
     setDeleting(true);
-    const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/addresses/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({}),
+    });
     if (res.ok) { toast.success(tToast("deleted")); router.push("/addresses"); }
     else { toast.error(tToast("deleteFailed")); setDeleting(false); }
   };
@@ -109,16 +119,17 @@ export default function AddressDetailPage() {
   const handleBulkDelete = async () => {
     if (bulkSelected.size === 0) return;
     setDeletingBulk(true);
-    let deleted = 0;
+    const removedIds = new Set<string>();
     let firstError: string | null = null;
     for (const sid of bulkSelected) {
       try {
         const res = await fetch(`/api/services/${sid}`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
           body: JSON.stringify({}),
         });
-        if (res.ok) deleted++;
+        if (res.ok) removedIds.add(sid);
         else {
           const data = await res.json().catch(() => ({}));
           firstError ||= serviceRemoveErrorMessage(data, tToast("serviceRemoveFailed"));
@@ -133,13 +144,17 @@ export default function AddressDetailPage() {
         }
       } catch { /* skip */ }
     }
-    if (address) {
-      setAddress({ ...address, services: address.services.filter((s) => !bulkSelected.has(s.id)) });
+    if (address && removedIds.size > 0) {
+      setAddress({ ...address, services: address.services.filter((s) => !removedIds.has(s.id)) });
     }
     setBulkSelected(new Set());
     setBulkMode(false);
     setDeletingBulk(false);
-    if (deleted > 0) toast.success(tToast("servicesRemoved", { count: deleted }));
+    if (removedIds.size > 0) toast.success(tToast("servicesRemoved", { count: removedIds.size }));
+    const failedCount = bulkSelected.size - removedIds.size;
+    if (failedCount > 0 && !firstError) {
+      firstError = `${failedCount} service${failedCount === 1 ? "" : "s"} could not be removed. Please try again.`;
+    }
     if (firstError) toast.error(firstError);
   };
 
@@ -188,6 +203,7 @@ export default function AddressDetailPage() {
       const res = await fetch(`/api/services/${sid}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({}),
       });
       if (!res.ok) {
@@ -411,9 +427,7 @@ export default function AddressDetailPage() {
                                 </div>
                               </button>
                             )}
-                            <div className="shrink-0 w-9 h-9 rounded-lg bg-foreground/5 flex items-center justify-center text-sm">
-                              {meta?.icon || "📋"}
-                            </div>
+                            <ServiceLogoMark service={service} className="w-9 h-9 rounded-lg" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <p className="font-medium text-sm text-foreground truncate">{service.providerName}</p>
@@ -493,7 +507,7 @@ export default function AddressDetailPage() {
                                   <button onClick={() => handleSingleDelete(service.id)} disabled={isDeletingSvc}
                                     className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50">
                                     {isDeletingSvc ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
-                                    {tCommon("delete")}
+                                    Remove
                                   </button>
                                   <button onClick={() => setDeleteSvcConfirm(null)}
                                     className="px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">

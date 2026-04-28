@@ -75,8 +75,18 @@ describe("service delete requests", () => {
     for (const source of [serviceDetail, addressDetail, useServices]) {
       expect(source).toContain('method: "DELETE"');
       expect(source).toContain('headers: { "Content-Type": "application/json" }');
+      expect(source).toContain('credentials: "same-origin"');
       expect(source).toContain("body: JSON.stringify({})");
     }
+  });
+
+  it("uses provider logos and keeps failed bulk removals visible on address detail cards", () => {
+    const addressDetail = readWebSource("src/app/(app)/addresses/[id]/page.tsx");
+
+    expect(addressDetail).toContain("ServiceLogoMark service={service}");
+    expect(addressDetail).toContain("const removedIds = new Set<string>()");
+    expect(addressDetail).toContain("!removedIds.has(s.id)");
+    expect(addressDetail).not.toContain("!bulkSelected.has(s.id)");
   });
 
   it("uses remove-from-account copy on the service detail delete flow", () => {

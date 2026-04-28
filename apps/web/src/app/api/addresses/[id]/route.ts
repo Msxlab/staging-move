@@ -5,6 +5,18 @@ import { addressSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { decryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
+
+function authErrorResponse(error: unknown) {
+  if (error instanceof Error && error.message === "UNAUTHORIZED") {
+    return NextResponse.json(
+      { code: "UNAUTHORIZED", error: "Please sign in again." },
+      { status: 401 },
+    );
+  }
+  return null;
+}
 
 // GET /api/addresses/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -14,7 +26,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const address = await prisma.address.findUnique({
       where: { id },
       include: {
-        services: true,
+        services: {
+          where: activeTrackedServiceWhere(userId),
+          include: {
+            provider: { select: { id: true, name: true, logoUrl: true } },
+            customProvider: { select: { id: true, name: true, category: true, website: true, phone: true, email: true, providerType: true, trustStatus: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        },
         budgets: true,
       },
     });
@@ -26,10 +45,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({
       address: {
         ...address,
+        services: address.services.map((service: any) => decryptServiceSensitiveFields(service)),
         formattedAddress: address.formattedAddress ? decrypt(address.formattedAddress) : address.formattedAddress,
       },
     });
   } catch (error) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     console.error("Failed to fetch address:", error);
     return NextResponse.json({ error: "Failed to fetch address" }, { status: 500 });
   }
@@ -82,6 +104,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       moveTaskSync,
     });
   } catch (error: any) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
@@ -108,6 +132,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    const authResponse = authErrorResponse(error);
+    if (authResponse) return authResponse;
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
     }
