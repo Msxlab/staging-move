@@ -113,6 +113,29 @@ describe("web middleware auth boundaries", () => {
       code: "UNAUTHORIZED",
       error: "Please sign in again.",
     });
+    expect(response.headers.get("X-LocateFlow-Auth-Layer")).toBe("middleware");
+    expect(response.headers.get("X-LocateFlow-Auth-Failure")).toBe("NO_SESSION_CANDIDATES");
+  });
+
+  it("reports JWT_INVALID on the middleware diagnostic header when the cookie is malformed", async () => {
+    mocks.tryGetUserJwtSecretKey.mockReturnValue(
+      new TextEncoder().encode("test-user-jwt-secret-32-characters") as any,
+    );
+    mocks.jwtVerify.mockRejectedValue(new Error("invalid signature"));
+
+    const response = await middleware(
+      request("https://locateflow.com/api/services/service-1", {
+        method: "DELETE",
+        headers: {
+          "content-type": "application/json",
+          cookie: "user_session=stale.jwt.value",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("X-LocateFlow-Auth-Layer")).toBe("middleware");
+    expect(response.headers.get("X-LocateFlow-Auth-Failure")).toBe("JWT_INVALID");
   });
 
   it("tries later duplicate session cookie values before rejecting protected API requests", async () => {

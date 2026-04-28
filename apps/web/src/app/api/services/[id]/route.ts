@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   createUserAuthDiagnostics,
+  expireUserSessionCookies,
   requireDbUserId,
   requireVerifiedUser,
   type UserAuthDiagnostics,
@@ -48,13 +49,20 @@ function authErrorResponse(
   error: unknown,
   diagnostics?: UserAuthDiagnostics,
   method = "UNKNOWN",
+  request?: NextRequest,
 ) {
   if (!(error instanceof Error)) return null;
   if (error.message === "UNAUTHORIZED") {
+    const failureCode = diagnostics?.finalFailureCode ?? "UNAUTHORIZED";
     logServiceAuthDiagnostic(method, diagnostics, "UNAUTHORIZED");
     const response = serviceError("UNAUTHORIZED", "Please sign in again.", 401);
     response.headers.set("X-LocateFlow-Auth-Layer", "route");
-    return response;
+    response.headers.set("X-LocateFlow-Auth-Failure", failureCode);
+    // Multi-domain cookie expiry so a legacy/dead session row (isActive=false)
+    // does not keep the same cookie alive across retries — the next request
+    // arrives without user_session and the client redirects to sign-in.
+    const host = request?.headers.get("host");
+    return expireUserSessionCookies(response, host);
   }
   if (error.message === "EMAIL_VERIFICATION_REQUIRED") {
     logServiceAuthDiagnostic(method, diagnostics, "EMAIL_VERIFICATION_REQUIRED");
@@ -65,6 +73,7 @@ function authErrorResponse(
       { redirectTo: VERIFY_EMAIL_REDIRECT },
     );
     response.headers.set("X-LocateFlow-Auth-Layer", "route");
+    response.headers.set("X-LocateFlow-Auth-Failure", "EMAIL_VERIFICATION_REQUIRED");
     return response;
   }
   return null;
@@ -72,8 +81,9 @@ function authErrorResponse(
 
 // GET /api/services/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authDiagnostics = createUserAuthDiagnostics();
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireDbUserId({ diagnostics: authDiagnostics });
     const { id } = await params;
     const service = await prisma.service.findUnique({
       where: { id },
@@ -94,7 +104,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ service: decrypted });
   } catch (error) {
-    const authResponse = authErrorResponse(error);
+    const authResponse = authErrorResponse(error, authDiagnostics, "GET", request);
     if (authResponse) return authResponse;
     console.error("Failed to fetch service:", error);
     return NextResponse.json({ error: "Failed to fetch service" }, { status: 500 });
@@ -103,8 +113,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 // PATCH /api/services/:id
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const authDiagnostics = createUserAuthDiagnostics();
   try {
-    const userId = await requireVerifiedUser();
+    const userId = await requireVerifiedUser({ diagnostics: authDiagnostics });
     const { id } = await params;
 
     const existing = await prisma.service.findUnique({ where: { id } });
@@ -191,7 +202,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({ service: decryptServiceSensitiveFields(service as any), moveTaskSync });
   } catch (error: any) {
-    const authResponse = authErrorResponse(error);
+    const authResponse = authErrorResponse(error, authDiagnostics, "PATCH", request);
     if (authResponse) return authResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
@@ -224,7 +235,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    const authResponse = authErrorResponse(error, authDiagnostics, "DELETE");
+    const authResponse = authErrorResponse(error, authDiagnostics, "DELETE", request);
     if (authResponse) return authResponse;
     if (error?.code === "P2025") {
       return serviceError("NOT_FOUND", "Service not found.", 404);

@@ -513,6 +513,10 @@ export default async function middleware(request: NextRequest) {
         { status: 401 },
       );
       response.headers.set("X-LocateFlow-Auth-Layer", "middleware");
+      response.headers.set(
+        "X-LocateFlow-Auth-Failure",
+        authDiagnostics.finalFailureCode ?? "NO_SESSION_CANDIDATES",
+      );
       return applyStagingNoIndex(
         request,
         response,

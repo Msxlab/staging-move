@@ -8,6 +8,7 @@ export {
   requireDbUserId,
   requireVerifiedUser,
   createUserAuthDiagnostics,
+  expireUserSessionCookies,
   getUserSession,
   createUserSession,
   destroyUserSession,

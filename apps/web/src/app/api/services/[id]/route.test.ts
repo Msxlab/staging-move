@@ -13,6 +13,12 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
+const authMocks = vi.hoisted(() => ({
+  expireUserSessionCookies: vi.fn(
+    (response: Response, _host?: string | null) => response,
+  ),
+}));
+
 vi.mock("@/lib/auth", () => ({
   createUserAuthDiagnostics: vi.fn(() => ({
     cookieCandidatesCount: 0,
@@ -24,9 +30,12 @@ vi.mock("@/lib/auth", () => ({
     emailVerified: null,
     finalFailureCode: null,
   })),
+  expireUserSessionCookies: authMocks.expireUserSessionCookies,
   requireDbUserId: vi.fn(),
   requireVerifiedUser: vi.fn(),
 }));
+
+const expireUserSessionCookiesMock = authMocks.expireUserSessionCookies;
 
 vi.mock("@/lib/audit", () => ({
   createAuditLog: vi.fn(),
@@ -290,5 +299,122 @@ describe("service detail route", () => {
     expect(mockService.findUnique).toHaveBeenCalledWith({ where: { id: "provider-1" } });
     expect(mockService.update).not.toHaveBeenCalled();
     expect(mockServiceProvider.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("service detail route auth diagnostics", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRequireDbUserId.mockResolvedValue("user-1");
+    mockRequireVerifiedUser.mockResolvedValue("user-1");
+    mockService.findUnique.mockResolvedValue({
+      id: "service-1",
+      userId: "user-1",
+      addressId: "address-1",
+      category: "UTILITY_ELECTRIC",
+      providerName: "PSE&G",
+      providerId: null,
+      customProviderId: null,
+      deletedAt: null,
+    });
+    mockService.update.mockResolvedValue({});
+  });
+
+  it("exposes X-LocateFlow-Auth-Failure with the diagnostics finalFailureCode on a route 401", async () => {
+    // Simulate getUserSession marking the legacy-session case before requireVerifiedUser throws.
+    mockRequireVerifiedUser.mockImplementationOnce(async ({ diagnostics }: { diagnostics: any }) => {
+      diagnostics.finalFailureCode = "DB_SESSION_NOT_FOUND";
+      throw new Error("UNAUTHORIZED");
+    });
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", host: "app.locateflow.com" },
+      }) as any,
+      serviceParams() as any,
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("X-LocateFlow-Auth-Layer")).toBe("route");
+    expect(response.headers.get("X-LocateFlow-Auth-Failure")).toBe("DB_SESSION_NOT_FOUND");
+    expect(expireUserSessionCookiesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to UNAUTHORIZED when no diagnostic stage was recorded", async () => {
+    mockRequireVerifiedUser.mockRejectedValueOnce(new Error("UNAUTHORIZED"));
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      }) as any,
+      serviceParams() as any,
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("X-LocateFlow-Auth-Failure")).toBe("UNAUTHORIZED");
+    expect(expireUserSessionCookiesMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 403 EMAIL_VERIFICATION_REQUIRED with diagnostic header and no cookie clear", async () => {
+    mockRequireVerifiedUser.mockRejectedValueOnce(new Error("EMAIL_VERIFICATION_REQUIRED"));
+
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      }) as any,
+      serviceParams() as any,
+    );
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get("X-LocateFlow-Auth-Layer")).toBe("route");
+    expect(response.headers.get("X-LocateFlow-Auth-Failure")).toBe("EMAIL_VERIFICATION_REQUIRED");
+    expect(expireUserSessionCookiesMock).not.toHaveBeenCalled();
+  });
+
+  it("does not set the diagnostic header on a successful authenticated DELETE", async () => {
+    const response = await DELETE(
+      new Request("http://localhost/api/services/service-1", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      }) as any,
+      serviceParams() as any,
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-LocateFlow-Auth-Layer")).toBeNull();
+    expect(response.headers.get("X-LocateFlow-Auth-Failure")).toBeNull();
+    expect(expireUserSessionCookiesMock).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a route 401 + diagnostics on PATCH and GET, not just DELETE", async () => {
+    mockRequireVerifiedUser.mockImplementationOnce(async ({ diagnostics }: { diagnostics: any }) => {
+      diagnostics.finalFailureCode = "FINGERPRINT_MISMATCH";
+      throw new Error("UNAUTHORIZED");
+    });
+    const patchResponse = await PATCH(
+      new Request("http://localhost/api/services/service-1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerName: "PSE&G" }),
+      }) as any,
+      serviceParams() as any,
+    );
+    expect(patchResponse.status).toBe(401);
+    expect(patchResponse.headers.get("X-LocateFlow-Auth-Failure")).toBe("FINGERPRINT_MISMATCH");
+
+    mockRequireDbUserId.mockImplementationOnce(async ({ diagnostics }: { diagnostics: any }) => {
+      diagnostics.finalFailureCode = "SESSION_EXPIRED";
+      throw new Error("UNAUTHORIZED");
+    });
+    const { GET } = await import("./route");
+    const getResponse = await GET(
+      new Request("http://localhost/api/services/service-1") as any,
+      serviceParams() as any,
+    );
+    expect(getResponse.status).toBe(401);
+    expect(getResponse.headers.get("X-LocateFlow-Auth-Failure")).toBe("SESSION_EXPIRED");
   });
 });
