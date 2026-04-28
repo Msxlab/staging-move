@@ -1,12 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { DollarSign, TrendingUp, TrendingDown, PiggyBank, Plus, X, Loader2, Calendar, BarChart3, ArrowLeft, Target } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import { CardSkeleton } from "@/components/shared/loading-state";
-import { EmptyState } from "@/components/shared/empty-state";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BarChart3,
+  Calendar,
+  DollarSign,
+  Loader2,
+  PiggyBank,
+  Plus,
+  Target,
+  WalletCards,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { EmptyState } from "@/components/shared/empty-state";
+import { CardSkeleton } from "@/components/shared/loading-state";
+import {
+  BUDGET_CATEGORY_LABELS,
+  calculateBudgetPlan,
+  parseBudgetCategoryLimits,
+  type BudgetCategoryLabel,
+  type ServiceCostInput,
+} from "@/lib/budget-planning";
+import { formatCurrency } from "@/lib/utils";
 
 const inputCls = "w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
 const labelCls = "text-xs font-medium text-muted-foreground";
@@ -19,227 +38,362 @@ interface Budget {
   actualIncome: number | null;
   plannedExpenses: number | null;
   actualExpenses: number;
-  categoryBreakdown?: any;
-  notes?: string;
-  addressId?: string;
+  categoryBreakdown?: string | null;
+  notes?: string | null;
+  addressId?: string | null;
 }
 
-interface ServiceSummary { category: string; monthlyCost: number; }
-interface AddressOption { id: string; nickname?: string; city: string; state: string; }
+interface AddressOption {
+  id: string;
+  nickname?: string | null;
+  city: string;
+  state: string;
+}
 
-const BUDGET_CATEGORIES = [
-  "Housing", "Utilities", "Insurance", "Transportation", "Groceries",
-  "Healthcare", "Subscriptions", "Entertainment", "Dining Out",
-  "Shopping", "Education", "Savings", "Debt Payments", "Other",
-];
+interface BudgetFormState {
+  month: string;
+  addressId: string;
+  budgetLimit: string;
+  plannedIncome: string;
+  notes: string;
+  categories: Partial<Record<BudgetCategoryLabel, string>>;
+}
 
-const catColors: Record<string, string> = {
-  Housing: "bg-orange-500", Utilities: "bg-cyan-500", Insurance: "bg-amber-500",
-  Transportation: "bg-emerald-500", Groceries: "bg-lime-500", Healthcare: "bg-rose-500",
-  Subscriptions: "bg-indigo-500", Entertainment: "bg-pink-500", "Dining Out": "bg-orange-500",
-  Shopping: "bg-teal-500", Education: "bg-blue-500", Savings: "bg-emerald-400",
-  "Debt Payments": "bg-red-500", Other: "bg-foreground/30",
+const categoryColors: Record<BudgetCategoryLabel, string> = {
+  Utilities: "bg-cyan-500",
+  "Internet & Phone": "bg-blue-500",
+  Insurance: "bg-amber-500",
+  Subscriptions: "bg-indigo-500",
+  "Banking / Financial": "bg-emerald-500",
+  Government: "bg-slate-400",
+  Moving: "bg-orange-500",
+  Shopping: "bg-teal-500",
+  Transportation: "bg-lime-500",
+  Other: "bg-foreground/30",
 };
+
+const statTone = {
+  orange: { box: "bg-orange-500/10 border-orange-500/20", icon: "text-orange-400" },
+  cyan: { box: "bg-cyan-500/10 border-cyan-500/20", icon: "text-cyan-400" },
+  emerald: { box: "bg-emerald-500/10 border-emerald-500/20", icon: "text-emerald-400" },
+  red: { box: "bg-red-500/10 border-red-500/20", icon: "text-red-400" },
+} as const;
+
+function currentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthDateFromKey(monthKey: string) {
+  const [year, month] = monthKey.split("-").map((part) => Number(part));
+  return new Date(year, (month || 1) - 1, 1);
+}
+
+function budgetMonthKey(month: string | Date) {
+  const date = month instanceof Date ? month : new Date(month);
+  if (!Number.isFinite(date.getTime())) return "";
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(monthKey: string) {
+  return monthDateFromKey(monthKey).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
+function emptyForm(): BudgetFormState {
+  return {
+    month: currentMonthKey(),
+    addressId: "",
+    budgetLimit: "",
+    plannedIncome: "",
+    notes: "",
+    categories: {},
+  };
+}
+
+function addressLabel(addresses: AddressOption[], addressId?: string | null) {
+  if (!addressId) return "All addresses";
+  const address = addresses.find((item) => item.id === addressId);
+  return address ? address.nickname || `${address.city}, ${address.state}` : "Selected address";
+}
+
+function toServices(rows: any[]): ServiceCostInput[] {
+  return rows.map((service) => ({
+    id: service.id,
+    providerName: service.providerName,
+    category: service.category,
+    addressId: service.addressId,
+    monthlyCost: typeof service.monthlyCost === "number" ? service.monthlyCost : Number(service.monthlyCost || 0),
+    billingCycle: service.billingCycle,
+    isActive: service.isActive,
+    activatedAt: service.activatedAt,
+    createdAt: service.createdAt,
+  }));
+}
 
 export default function BudgetPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
-  const [services, setServices] = useState<ServiceSummary[]>([]);
+  const [services, setServices] = useState<ServiceCostInput[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"overview" | "history">("overview");
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthKey());
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [form, setForm] = useState<BudgetFormState>(() => emptyForm());
 
-  const now = new Date();
-  const [form, setForm] = useState({
-    month: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`,
-    plannedIncome: "",
-    actualIncome: "",
-    plannedExpenses: "",
-    actualExpenses: "",
-    notes: "",
-    addressId: "",
-    categories: {} as Record<string, string>,
-  });
-
-  const resetForm = () => {
-    const n = new Date();
-    setForm({
-      month: `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`,
-      plannedIncome: "", actualIncome: "", plannedExpenses: "", actualExpenses: "",
-      notes: "", addressId: "", categories: {},
-    });
-    setEditingId(null);
-  };
-
-  const fetchBudgets = () => {
-    fetch("/api/budget")
-      .then((res) => res.json())
-      .then((data) => setBudgets(data.budgets || []))
-      .catch(() => {});
+  const loadBudgetData = () => {
+    Promise.all([
+      fetch("/api/budget").then((response) => response.json()),
+      fetch("/api/addresses").then((response) => response.json()),
+      fetch("/api/services?limit=200").then((response) => response.json()),
+    ])
+      .then(([budgetData, addressData, serviceData]) => {
+        setBudgets(budgetData.budgets || []);
+        setAddresses(addressData.addresses || []);
+        setServices(toServices(serviceData.services || []));
+      })
+      .catch(() => {
+        toast.error("Failed to load budget data");
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/budget").then((r) => r.json()),
-      fetch("/api/addresses").then((r) => r.json()),
-      fetch("/api/services").then((r) => r.json()),
-    ]).then(([budgetData, addrData, svcData]) => {
-      setBudgets(budgetData.budgets || []);
-      setAddresses(addrData.addresses || []);
-      setServices((svcData.services || []).map((s: any) => ({ category: s.category, monthlyCost: s.monthlyCost || 0 })));
-    }).catch(() => { toast.error("Failed to load budget data"); }).finally(() => setLoading(false));
+    loadBudgetData();
   }, []);
 
+  const selectedMonthDate = useMemo(() => monthDateFromKey(selectedMonth), [selectedMonth]);
+  const selectedAddress = selectedAddressId || null;
+
+  const currentBudget = useMemo(
+    () =>
+      budgets.find(
+        (budget) =>
+          budgetMonthKey(budget.month) === selectedMonth &&
+          (budget.addressId || "") === (selectedAddressId || ""),
+      ) || null,
+    [budgets, selectedAddressId, selectedMonth],
+  );
+
+  const budgetSummary = useMemo(
+    () => calculateBudgetPlan(services, { month: selectedMonthDate, addressId: selectedAddress }),
+    [services, selectedAddress, selectedMonthDate],
+  );
+
+  const budgetLimit = currentBudget?.plannedExpenses || 0;
+  const categoryLimits = parseBudgetCategoryLimits(currentBudget?.categoryBreakdown || null);
+  const budgetDelta = budgetLimit > 0 ? budgetLimit - budgetSummary.projectedThisMonth : null;
+  const budgetUsedPercent = budgetLimit > 0 ? Math.min((budgetSummary.projectedThisMonth / budgetLimit) * 100, 100) : 0;
+  const hasServiceCosts = budgetSummary.monthlyCommitted > 0 || budgetSummary.oneTimeThisMonth > 0;
+
+  const openBudgetForm = () => {
+    const limits = parseBudgetCategoryLimits(currentBudget?.categoryBreakdown || null);
+    setForm({
+      month: selectedMonth,
+      addressId: selectedAddressId,
+      budgetLimit: currentBudget?.plannedExpenses ? String(currentBudget.plannedExpenses) : "",
+      plannedIncome: currentBudget?.plannedIncome ? String(currentBudget.plannedIncome) : "",
+      notes: currentBudget?.notes || "",
+      categories: Object.fromEntries(
+        BUDGET_CATEGORY_LABELS.map((category) => [category, limits[category] ? String(limits[category]) : ""]),
+      ) as Partial<Record<BudgetCategoryLabel, string>>,
+    });
+    setShowForm(true);
+  };
+
+  const closeBudgetForm = () => {
+    setForm(emptyForm());
+    setShowForm(false);
+  };
+
   const handleSave = async () => {
-    if (!form.actualExpenses && !form.plannedExpenses) {
-      toast.error("Please enter at least planned or actual expenses");
+    if (!form.budgetLimit && !Object.values(form.categories).some((value) => value && Number(value) > 0)) {
+      toast.error("Set a monthly budget limit or at least one category limit.");
       return;
     }
-    setSaving(true);
+
     const [yearStr] = form.month.split("-");
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       month: `${form.month}-01`,
-      year: parseInt(yearStr),
-      actualExpenses: parseFloat(form.actualExpenses) || 0,
+      year: Number(yearStr),
     };
-    if (form.plannedIncome) payload.plannedIncome = parseFloat(form.plannedIncome);
-    if (form.actualIncome) payload.actualIncome = parseFloat(form.actualIncome);
-    if (form.plannedExpenses) payload.plannedExpenses = parseFloat(form.plannedExpenses);
-    if (form.notes) payload.notes = form.notes;
+
     if (form.addressId) payload.addressId = form.addressId;
+    if (form.budgetLimit) payload.plannedExpenses = Number(form.budgetLimit);
+    if (form.plannedIncome) payload.plannedIncome = Number(form.plannedIncome);
+    if (form.notes.trim()) payload.notes = form.notes.trim();
 
-    const breakdown: Record<string, number> = {};
-    Object.entries(form.categories).forEach(([cat, val]) => {
-      const num = parseFloat(val);
-      if (num > 0) breakdown[cat] = num;
-    });
-    if (Object.keys(breakdown).length > 0) payload.categoryBreakdown = JSON.stringify(breakdown);
+    const categoryBreakdown = Object.fromEntries(
+      Object.entries(form.categories)
+        .map(([category, value]) => [category, Number(value)] as const)
+        .filter(([, value]) => Number.isFinite(value) && value > 0),
+    );
+    if (Object.keys(categoryBreakdown).length > 0) {
+      payload.categoryBreakdown = categoryBreakdown;
+    }
 
+    setSaving(true);
     try {
-      const res = await fetch("/api/budget", {
+      const response = await fetch("/api/budget", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to save");
-      toast.success(editingId ? "Budget updated!" : "Budget added!");
-      resetForm();
-      setShowForm(false);
-      fetchBudgets();
+      if (!response.ok) throw new Error("Failed to save budget");
+      toast.success("Monthly budget saved");
+      setSelectedMonth(form.month);
+      setSelectedAddressId(form.addressId);
+      closeBudgetForm();
+      loadBudgetData();
     } catch {
       toast.error("Failed to save budget");
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   if (loading) return <CardSkeleton />;
 
-  const totalPlanned = budgets.reduce((sum, b) => sum + (b.plannedExpenses || 0), 0);
-  const totalActual = budgets.reduce((sum, b) => sum + (b.actualExpenses || 0), 0);
-  const totalIncome = budgets.reduce((sum, b) => sum + (b.actualIncome || 0), 0);
-
-  // Auto-calculated from services
-  const svcMonthly = services.reduce((s, sv) => s + sv.monthlyCost, 0);
-  const svcByCategory: Record<string, number> = {};
-  services.forEach((s) => {
-    const cat = s.category || "Other";
-    svcByCategory[cat] = (svcByCategory[cat] || 0) + s.monthlyCost;
-  });
-  const svcCats = Object.entries(svcByCategory).sort(([, a], [, b]) => b - a);
-  const maxSvcCat = svcCats.length > 0 ? Math.max(...svcCats.map(([, v]) => v)) : 1;
+  const overviewStats = [
+    {
+      label: "Monthly Committed",
+      value: formatCurrency(budgetSummary.monthlyCommitted),
+      sub: `${budgetSummary.costedRecurringServices.length} recurring service${budgetSummary.costedRecurringServices.length === 1 ? "" : "s"}`,
+      icon: DollarSign,
+      tone: "orange" as const,
+    },
+    {
+      label: "Monthly Budget Limit",
+      value: budgetLimit > 0 ? formatCurrency(budgetLimit) : "Not set",
+      sub: addressLabel(addresses, selectedAddressId),
+      icon: Target,
+      tone: "cyan" as const,
+    },
+    {
+      label: "Projected This Month",
+      value: formatCurrency(budgetSummary.projectedThisMonth),
+      sub: budgetSummary.oneTimeThisMonth > 0 ? `${formatCurrency(budgetSummary.oneTimeThisMonth)} one-time` : monthLabel(selectedMonth),
+      icon: Calendar,
+      tone: "emerald" as const,
+    },
+    {
+      label: "Over / Under Budget",
+      value: budgetDelta === null ? "Set budget" : formatCurrency(Math.abs(budgetDelta)),
+      sub: budgetDelta === null ? "No monthly limit yet" : budgetDelta >= 0 ? "Under budget" : "Over budget",
+      icon: PiggyBank,
+      tone: budgetDelta !== null && budgetDelta < 0 ? "red" as const : "emerald" as const,
+    },
+  ];
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <Link href="/settings">
-            <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
+            <button className="p-2 rounded-xl text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition" aria-label="Back to settings">
               <ArrowLeft className="h-4 w-4" />
             </button>
           </Link>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Budget</h1>
-            <p className="text-muted-foreground mt-1">Monthly expense tracking & planning</p>
+            <p className="text-muted-foreground mt-1">Plan monthly service commitments and one-time moving costs.</p>
           </div>
         </div>
         <button
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition"
-          onClick={() => { resetForm(); setShowForm(!showForm); }}
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition"
+          onClick={showForm ? closeBudgetForm : openBudgetForm}
         >
-          {showForm ? <><X className="h-4 w-4" />Cancel</> : <><Plus className="h-4 w-4" />Add Budget</>}
+          {showForm ? <><X className="h-4 w-4" />Cancel</> : <><Plus className="h-4 w-4" />Manage Budget Limits</>}
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-foreground/5 w-fit">
-        {(["overview", "history"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition ${
-              tab === t ? "bg-orange-500 text-white" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {t === "overview" ? "Overview" : "History"}
-          </button>
-        ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className={labelCls}>Month</label>
+          <input className={inputCls} type="month" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <label className={labelCls}>Address</label>
+          <select className={inputCls} value={selectedAddressId} onChange={(event) => setSelectedAddressId(event.target.value)}>
+            <option value="">All addresses</option>
+            {addresses.map((address) => (
+              <option key={address.id} value={address.id}>
+                {address.nickname || `${address.city}, ${address.state}`}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Add/Edit Form */}
       {showForm && (
         <div className="rounded-2xl border border-orange-500/20 bg-foreground/5 backdrop-blur-xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-foreground">{editingId ? "Edit Budget" : "New Monthly Budget"}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">Set Monthly Budget</h2>
+            <p className="text-xs text-muted-foreground mt-1">Budget limits compare against active service costs for the selected month and address.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-1.5">
-              <label className={labelCls}>Month *</label>
-              <input type="month" className={inputCls} value={form.month} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, month: e.target.value }))} />
+              <label className={labelCls}>Month</label>
+              <input className={inputCls} type="month" value={form.month} onChange={(event) => setForm((prev) => ({ ...prev, month: event.target.value }))} />
             </div>
             <div className="space-y-1.5">
-              <label className={labelCls}>Address (optional)</label>
-              <select className={inputCls} value={form.addressId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setForm((p) => ({ ...p, addressId: e.target.value }))}>
+              <label className={labelCls}>Address</label>
+              <select className={inputCls} value={form.addressId} onChange={(event) => setForm((prev) => ({ ...prev, addressId: event.target.value }))}>
                 <option value="">All addresses</option>
-                {addresses.map((a) => <option key={a.id} value={a.id}>{a.nickname || `${a.city}, ${a.state}`}</option>)}
+                {addresses.map((address) => (
+                  <option key={address.id} value={address.id}>
+                    {address.nickname || `${address.city}, ${address.state}`}
+                  </option>
+                ))}
               </select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: "Planned Income", key: "plannedIncome" },
-              { label: "Actual Income", key: "actualIncome" },
-              { label: "Planned Expenses", key: "plannedExpenses" },
-              { label: "Actual Expenses *", key: "actualExpenses" },
-            ].map((field) => (
-              <div key={field.key} className="space-y-1.5">
-                <label className={labelCls}>{field.label}</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/30" />
-                  <input
-                    className={`${inputCls} pl-8`}
-                    type="number" step="0.01" placeholder="0.00"
-                    value={(form as any)[field.key]}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, [field.key]: e.target.value }))}
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>Monthly Budget Limit</label>
+              <div className="relative">
+                <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/30" />
+                <input
+                  className={`${inputCls} pl-8`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={form.budgetLimit}
+                  onChange={(event) => setForm((prev) => ({ ...prev, budgetLimit: event.target.value }))}
+                />
               </div>
-            ))}
+            </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>Optional Monthly Income</label>
+              <div className="relative">
+                <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-foreground/30" />
+                <input
+                  className={`${inputCls} pl-8`}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Optional"
+                  value={form.plannedIncome}
+                  onChange={(event) => setForm((prev) => ({ ...prev, plannedIncome: event.target.value }))}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Category limits */}
           <div className="space-y-1.5">
-            <label className={labelCls}>Category Limits (optional)</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {BUDGET_CATEGORIES.map((cat) => (
-                <div key={cat} className="flex items-center gap-1.5">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${catColors[cat] || "bg-foreground/20"}`} />
-                  <span className="text-[11px] w-20 truncate text-muted-foreground">{cat}</span>
+            <label className={labelCls}>Category Budget Limits</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {BUDGET_CATEGORY_LABELS.map((category) => (
+                <div key={category} className="flex items-center gap-2 rounded-xl border border-border bg-background/30 px-3 py-2">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${categoryColors[category]}`} />
+                  <span className="text-xs text-muted-foreground min-w-0 flex-1 truncate">{category}</span>
                   <input
-                    className={`${inputCls} h-7 text-xs flex-1`}
-                    type="number" step="0.01" placeholder="0"
-                    value={form.categories[cat] || ""}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, categories: { ...p.categories, [cat]: e.target.value } }))}
+                    className="w-24 rounded-lg border border-border bg-foreground/5 px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0"
+                    value={form.categories[category] || ""}
+                    onChange={(event) => setForm((prev) => ({ ...prev, categories: { ...prev.categories, [category]: event.target.value } }))}
                   />
                 </div>
               ))}
@@ -248,207 +402,255 @@ export default function BudgetPage() {
 
           <div className="space-y-1.5">
             <label className={labelCls}>Notes</label>
-            <input className={inputCls} placeholder="Optional notes..." value={form.notes} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, notes: e.target.value }))} />
+            <input className={inputCls} placeholder="Optional notes..." value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} />
           </div>
 
           <div className="flex justify-end">
             <button
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
-              onClick={handleSave} disabled={saving}
+              onClick={handleSave}
+              disabled={saving}
             >
-              {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : "Save Budget"}
+              {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : "Save Budget Limits"}
             </button>
           </div>
         </div>
       )}
 
-      {tab === "overview" ? (
-        <>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { label: "Service Costs", value: formatCurrency(svcMonthly), sub: `${services.length} services`, icon: DollarSign, color: "orange" },
-              { label: "Budgeted", value: formatCurrency(totalPlanned), sub: `${budgets.length} budgets`, icon: Target, color: "cyan" },
-              { label: "Actual Spent", value: formatCurrency(totalActual), sub: totalPlanned > 0 ? `${Math.round((totalActual / totalPlanned) * 100)}% of budget` : "No budget set", icon: totalActual > totalPlanned && totalPlanned > 0 ? TrendingUp : TrendingDown, color: totalActual > totalPlanned && totalPlanned > 0 ? "red" : "emerald" },
-              { label: "Net Savings", value: formatCurrency(totalIncome - totalActual), sub: totalIncome > 0 ? `${Math.round(((totalIncome - totalActual) / totalIncome) * 100)}% saved` : "No income data", icon: PiggyBank, color: "amber" },
-            ].map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`p-1.5 rounded-lg bg-${stat.color}-500/10 border border-${stat.color}-500/20`}>
-                    <stat.icon className={`h-3.5 w-3.5 text-${stat.color}-400`} />
-                  </div>
-                  <span className="text-[11px] text-muted-foreground">{stat.label}</span>
-                </div>
-                <p className="text-xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-[10px] text-foreground/40 mt-0.5">{stat.sub}</p>
-              </div>
-            ))}
-          </div>
+      {!currentBudget && hasServiceCosts && (
+        <div className="rounded-2xl border border-cyan-500/25 bg-cyan-500/10 p-4 flex gap-3">
+          <Target className="h-4 w-4 text-cyan-300 shrink-0 mt-0.5" />
+          <p className="text-sm text-cyan-100">
+            Your active services currently total {formatCurrency(budgetSummary.monthlyCommitted)}/mo. Set a monthly budget to compare your costs.
+          </p>
+        </div>
+      )}
 
-          {/* Spending by Category (from services) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <BarChart3 className="h-4 w-4 text-orange-400" />
-                <h3 className="text-sm font-semibold text-foreground">Spending by Category</h3>
-              </div>
-              {svcCats.length === 0 ? (
-                <p className="text-xs text-foreground/40 text-center py-6">No services registered yet</p>
-              ) : (
-                <div className="space-y-3">
-                  {svcCats.map(([cat, amt]) => {
-                    const pct = maxSvcCat > 0 ? (amt / maxSvcCat) * 100 : 0;
-                    return (
-                      <div key={cat}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-muted-foreground">{cat}</span>
-                          <span className="text-xs font-semibold text-foreground/80">{formatCurrency(amt)}/mo</span>
-                        </div>
-                        <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${catColors[cat] || "bg-orange-500"}`} style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+      {!hasServiceCosts && (
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 flex gap-3">
+          <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-100">Add costs to your services to enable budget tracking.</p>
+        </div>
+      )}
 
-            {/* Budget vs Actual Chart */}
-            <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Target className="h-4 w-4 text-cyan-400" />
-                <h3 className="text-sm font-semibold text-foreground">Budget vs Actual</h3>
-              </div>
-              {budgets.length === 0 ? (
-                <p className="text-xs text-foreground/40 text-center py-6">Add a budget to see comparison</p>
-              ) : (
-                <div className="space-y-4">
-                  {budgets.slice(0, 6).map((b) => {
-                    const label = new Date(b.month).toLocaleDateString("en-US", { month: "short" });
-                    const planned = b.plannedExpenses || 0;
-                    const actual = b.actualExpenses;
-                    const maxVal = Math.max(planned, actual, 1);
-                    const overBudget = planned > 0 && actual > planned;
-                    return (
-                      <div key={b.id}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-medium text-muted-foreground">{label} {b.year}</span>
-                          <span className={`text-[10px] font-medium ${overBudget ? "text-red-400" : "text-emerald-400"}`}>
-                            {planned > 0 ? `${Math.round((actual / planned) * 100)}%` : "—"}
-                          </span>
-                        </div>
-                        <div className="flex gap-1">
-                          <div className="flex-1 space-y-1">
-                            <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
-                              <div className="h-full bg-cyan-500/60 rounded-full" style={{ width: `${(planned / maxVal) * 100}%` }} />
-                            </div>
-                            <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${overBudget ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${(actual / maxVal) * 100}%` }} />
-                            </div>
-                          </div>
-                          <div className="w-16 text-right">
-                            <p className="text-[9px] text-cyan-400">{formatCurrency(planned)}</p>
-                            <p className={`text-[9px] ${overBudget ? "text-red-400" : "text-emerald-400"}`}>{formatCurrency(actual)}</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div className="flex items-center gap-4 pt-2 border-t border-border">
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-cyan-500/60" /><span className="text-[10px] text-foreground/40">Planned</span></div>
-                    <div className="flex items-center gap-1.5"><div className="w-3 h-1.5 rounded-full bg-emerald-500" /><span className="text-[10px] text-foreground/40">Actual</span></div>
-                  </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {overviewStats.map((stat) => {
+          const tone = statTone[stat.tone];
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`p-1.5 rounded-lg border ${tone.box}`}>
+                  <Icon className={`h-3.5 w-3.5 ${tone.icon}`} />
                 </div>
-              )}
+                <span className="text-[11px] text-muted-foreground">{stat.label}</span>
+              </div>
+              <p className="text-xl font-bold text-foreground">{stat.value}</p>
+              <p className="text-[10px] text-foreground/40 mt-0.5">{stat.sub}</p>
             </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-orange-400" />
+            <h2 className="text-sm font-semibold text-foreground">Spending by Friendly Category</h2>
           </div>
-        </>
-      ) : (
-        /* History Tab — Budget list */
-        <>
-          {budgets.length === 0 && !showForm ? (
-            <EmptyState
-              icon={DollarSign}
-              title="No budget data yet"
-              description="Add your first monthly budget to start tracking expenses."
-            />
+          {budgetSummary.byBudgetCategory.length === 0 ? (
+            <p className="text-xs text-foreground/40 text-center py-6">No service cost data for this filter.</p>
           ) : (
             <div className="space-y-3">
-              {budgets.map((b) => {
-                const monthLabel = new Date(b.month).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-                const overBudget = b.actualExpenses > (b.plannedExpenses || Infinity);
-                let breakdown: Record<string, number> = {};
-                try { if (b.categoryBreakdown) breakdown = typeof b.categoryBreakdown === "string" ? JSON.parse(b.categoryBreakdown) : b.categoryBreakdown; } catch {}
-                const cats = Object.entries(breakdown).sort(([, a], [, b]) => b - a);
-                const maxCat = cats.length > 0 ? Math.max(...cats.map(([, v]) => v)) : 1;
-
+              {budgetSummary.byBudgetCategory.map((row) => {
+                const limit = categoryLimits[row.category] || 0;
+                const pct = Math.min((row.amount / Math.max(budgetSummary.projectedThisMonth, 1)) * 100, 100);
+                const overCategory = limit > 0 && row.amount > limit;
                 return (
-                  <div key={b.id} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
-                          <Calendar className="h-5 w-5 text-orange-400" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-semibold text-foreground">{monthLabel}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {b.actualIncome ? `Income: ${formatCurrency(b.actualIncome)}` : ""}
-                            {b.actualIncome && b.actualExpenses ? " · " : ""}
-                            Expenses: {formatCurrency(b.actualExpenses)}
-                            {b.plannedExpenses ? ` / ${formatCurrency(b.plannedExpenses)} planned` : ""}
-                          </p>
-                        </div>
-                      </div>
-                      {b.plannedExpenses ? (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
-                          overBudget
-                            ? "bg-red-500/10 text-red-400 border-red-500/20"
-                            : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        }`}>
-                          {overBudget ? "Over Budget" : "On Track"}
-                        </span>
-                      ) : null}
+                  <div key={row.category}>
+                    <div className="flex items-center justify-between mb-1 gap-3">
+                      <span className="text-xs text-muted-foreground">{row.category}</span>
+                      <span className={`text-xs font-semibold ${overCategory ? "text-red-400" : "text-foreground/80"}`}>
+                        {formatCurrency(row.amount)}
+                        {limit > 0 ? ` / ${formatCurrency(limit)}` : ""}
+                      </span>
                     </div>
-
-                    {/* Progress bar */}
-                    {b.plannedExpenses ? (
-                      <div className="space-y-1">
-                        <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${overBudget ? "bg-red-500" : "bg-emerald-500"}`}
-                            style={{ width: `${Math.min((b.actualExpenses / b.plannedExpenses) * 100, 100)}%` }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-foreground/35 text-right">
-                          {Math.round((b.actualExpenses / b.plannedExpenses) * 100)}% used
-                        </p>
-                      </div>
-                    ) : null}
-
-                    {cats.length > 0 && (
-                      <div className="space-y-1.5 pt-2 border-t border-border">
-                        {cats.slice(0, 5).map(([cat, amt]) => (
-                          <div key={cat} className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full shrink-0 ${catColors[cat] || "bg-foreground/20"}`} />
-                            <span className="text-[11px] w-24 truncate text-muted-foreground">{cat}</span>
-                            <div className="flex-1 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${catColors[cat] || "bg-orange-500"}`} style={{ width: `${(amt / maxCat) * 100}%` }} />
-                            </div>
-                            <span className="text-[11px] font-medium w-16 text-right text-muted-foreground">{formatCurrency(amt)}</span>
-                          </div>
-                        ))}
-                        {cats.length > 5 && <p className="text-[10px] text-foreground/35">+{cats.length - 5} more</p>}
-                      </div>
-                    )}
-                    {b.notes && <p className="text-[11px] text-foreground/35 italic pt-1">{b.notes}</p>}
+                    <div className="h-2 bg-foreground/5 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${categoryColors[row.category]}`} style={{ width: `${pct}%` }} />
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
-        </>
-      )}
+        </section>
+
+        <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="h-4 w-4 text-cyan-400" />
+            <h2 className="text-sm font-semibold text-foreground">Budget vs Committed</h2>
+          </div>
+          {budgetLimit <= 0 ? (
+            <p className="text-xs text-foreground/40 text-center py-6">Set a monthly budget limit to compare your committed and projected costs.</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Projected this month</span>
+                <span className="font-semibold text-foreground">{formatCurrency(budgetSummary.projectedThisMonth)}</span>
+              </div>
+              <div className="h-3 bg-foreground/5 rounded-full overflow-hidden">
+                <div className={`h-full rounded-full ${budgetSummary.projectedThisMonth > budgetLimit ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${budgetUsedPercent}%` }} />
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-xl bg-background/30 border border-border p-3">
+                  <p className="text-[10px] text-muted-foreground">Monthly committed</p>
+                  <p className="text-sm font-semibold text-foreground">{formatCurrency(budgetSummary.monthlyCommitted)}</p>
+                </div>
+                <div className="rounded-xl bg-background/30 border border-border p-3">
+                  <p className="text-[10px] text-muted-foreground">One-time</p>
+                  <p className="text-sm font-semibold text-foreground">{formatCurrency(budgetSummary.oneTimeThisMonth)}</p>
+                </div>
+                <div className="rounded-xl bg-background/30 border border-border p-3">
+                  <p className="text-[10px] text-muted-foreground">{budgetDelta !== null && budgetDelta < 0 ? "Over" : "Under"}</p>
+                  <p className={`text-sm font-semibold ${budgetDelta !== null && budgetDelta < 0 ? "text-red-400" : "text-emerald-400"}`}>
+                    {budgetDelta === null ? "$0.00" : formatCurrency(Math.abs(budgetDelta))}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <WalletCards className="h-4 w-4 text-amber-400" />
+            <h2 className="text-sm font-semibold text-foreground">One-time Costs This Month</h2>
+          </div>
+          {budgetSummary.oneTimeServicesThisMonth.length === 0 ? (
+            <p className="text-xs text-foreground/40 text-center py-6">No one-time service costs for {monthLabel(selectedMonth)}.</p>
+          ) : (
+            <div className="space-y-2">
+              {budgetSummary.oneTimeServicesThisMonth.map((service) => (
+                <div key={service.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/30 p-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{service.providerName}</p>
+                    <p className="text-[11px] text-muted-foreground">{service.friendlyCategory} - {service.budgetCategory}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">{formatCurrency(service.oneTimeAmount)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            <h2 className="text-sm font-semibold text-foreground">Services Missing Cost</h2>
+          </div>
+          {budgetSummary.missingCostServices.length === 0 ? (
+            <p className="text-xs text-foreground/40 text-center py-6">All active services in this filter have cost data.</p>
+          ) : (
+            <div className="space-y-2">
+              {budgetSummary.missingCostServices.slice(0, 8).map((service) => (
+                <div key={service.id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/30 p-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{service.providerName}</p>
+                    <p className="text-[11px] text-muted-foreground">{service.friendlyCategory} - {service.budgetCategory}</p>
+                  </div>
+                  <Link className="text-xs font-medium text-orange-300 hover:text-orange-200 shrink-0" href={`/services/${service.id}/edit`}>
+                    Add cost
+                  </Link>
+                </div>
+              ))}
+              {budgetSummary.missingCostServices.length > 8 && (
+                <p className="text-[11px] text-foreground/40">+{budgetSummary.missingCostServices.length - 8} more services missing cost data</p>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <section className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="h-4 w-4 text-orange-400" />
+          <h2 className="text-sm font-semibold text-foreground">Budget History</h2>
+        </div>
+        {budgets.length === 0 ? (
+          <EmptyState
+            icon={DollarSign}
+            title="No budget limits yet"
+            description={
+              hasServiceCosts
+                ? `Your active services currently total ${formatCurrency(budgetSummary.monthlyCommitted)}/mo. Set a monthly budget to compare your costs.`
+                : "Add costs to your services to enable budget tracking."
+            }
+            actionLabel="Set Monthly Budget"
+            onAction={openBudgetForm}
+          />
+        ) : (
+          <div className="space-y-3">
+            {budgets.map((budget) => {
+              const key = budgetMonthKey(budget.month);
+              const limit = budget.plannedExpenses || 0;
+              const projectedSnapshot = budget.actualExpenses || 0;
+              const delta = limit > 0 ? limit - projectedSnapshot : null;
+              const limits = parseBudgetCategoryLimits(budget.categoryBreakdown || null);
+              return (
+                <div key={budget.id} className="rounded-xl border border-border bg-background/30 p-4 space-y-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground">{monthLabel(key)}</h3>
+                      <p className="text-xs text-muted-foreground">{addressLabel(addresses, budget.addressId)}</p>
+                    </div>
+                    {delta !== null && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium w-fit ${
+                        delta < 0
+                          ? "bg-red-500/10 text-red-400 border-red-500/20"
+                          : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                      }`}>
+                        {delta < 0 ? "Over Budget" : "Under Budget"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Budget limit</p>
+                      <p className="font-semibold text-foreground">{limit > 0 ? formatCurrency(limit) : "Not set"}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Projected snapshot</p>
+                      <p className="font-semibold text-foreground">{formatCurrency(projectedSnapshot)}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Over / under</p>
+                      <p className={`font-semibold ${delta !== null && delta < 0 ? "text-red-400" : "text-emerald-400"}`}>
+                        {delta === null ? "Not set" : formatCurrency(Math.abs(delta))}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Optional income</p>
+                      <p className="font-semibold text-foreground">{budget.plannedIncome ? formatCurrency(budget.plannedIncome) : "Not set"}</p>
+                    </div>
+                  </div>
+                  {Object.keys(limits).length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+                      {Object.entries(limits).map(([category, amount]) => (
+                        <span key={category} className="text-[10px] rounded-full border border-border px-2 py-1 text-muted-foreground">
+                          {category}: {formatCurrency(amount || 0)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {budget.notes && <p className="text-[11px] text-foreground/40 italic">{budget.notes}</p>}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

@@ -153,7 +153,8 @@ export const budgetSchema = z.strictObject({
   plannedIncome: z.number().min(0).optional(),
   actualIncome: z.number().min(0).optional(),
   plannedExpenses: z.number().min(0).optional(),
-  actualExpenses: z.number().min(0),
+  actualExpenses: z.number().min(0).optional(),
+  categoryBreakdown: z.union([z.string(), z.record(z.number().min(0))]).optional(),
   notes: z.string().max(1000).optional(),
 });
 

@@ -3,6 +3,37 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { budgetSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { calculateBudgetPlan } from "@/lib/budget-planning";
+
+function monthDateFromInput(month: string): Date {
+  const parsed = new Date(month);
+  if (!Number.isFinite(parsed.getTime())) return new Date();
+  return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), 1);
+}
+
+async function calculateProjectedExpenses(userId: string, month: Date, addressId?: string | null): Promise<number> {
+  const services = await prisma.service.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      isActive: true,
+      ...(addressId ? { addressId } : {}),
+    },
+    select: {
+      id: true,
+      providerName: true,
+      category: true,
+      addressId: true,
+      monthlyCost: true,
+      billingCycle: true,
+      isActive: true,
+      activatedAt: true,
+      createdAt: true,
+    },
+  });
+
+  return calculateBudgetPlan(services, { month, addressId }).projectedThisMonth;
+}
 
 // GET /api/budget
 export async function GET(request: NextRequest) {
@@ -12,7 +43,7 @@ export async function GET(request: NextRequest) {
     const addressId = searchParams.get("addressId");
     const month = searchParams.get("month");
 
-    const where: any = { userId };
+    const where: any = { userId, deletedAt: null };
     if (addressId) where.addressId = addressId;
     if (month) where.month = new Date(month);
 
@@ -21,15 +52,38 @@ export async function GET(request: NextRequest) {
       orderBy: { month: "desc" },
     });
 
-    const totalExpenses = budgets.reduce((sum: number, b: any) => sum + (b.actualExpenses || 0), 0);
-    const totalIncome = budgets.reduce((sum: number, b: any) => sum + (b.actualIncome || 0), 0);
+    const summaryMonth = month ? monthDateFromInput(month) : new Date();
+    const services = await prisma.service.findMany({
+      where: {
+        userId,
+        deletedAt: null,
+        isActive: true,
+        ...(addressId ? { addressId } : {}),
+      },
+      select: {
+        id: true,
+        providerName: true,
+        category: true,
+        addressId: true,
+        monthlyCost: true,
+        billingCycle: true,
+        isActive: true,
+        activatedAt: true,
+        createdAt: true,
+      },
+    });
+    const serviceBudget = calculateBudgetPlan(services, { month: summaryMonth, addressId });
+    const monthlyBudgetLimit = budgets[0]?.plannedExpenses || 0;
 
     return NextResponse.json({
       budgets,
       summary: {
-        totalIncome,
-        totalExpenses,
-        savingsRate: totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome) * 100 : 0,
+        monthlyCommitted: serviceBudget.monthlyCommitted,
+        monthlyBudgetLimit,
+        projectedThisMonth: serviceBudget.projectedThisMonth,
+        overUnderBudget: monthlyBudgetLimit > 0 ? monthlyBudgetLimit - serviceBudget.projectedThisMonth : null,
+        oneTimeThisMonth: serviceBudget.oneTimeThisMonth,
+        missingCostCount: serviceBudget.missingCostServices.length,
       },
     });
   } catch (error) {
@@ -52,9 +106,11 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validated = budgetSchema.parse(body);
+    const budgetMonth = monthDateFromInput(validated.month);
+    const addressId = validated.addressId || null;
 
-    if (validated.addressId) {
-      const address = await prisma.address.findUnique({ where: { id: validated.addressId } });
+    if (addressId) {
+      const address = await prisma.address.findUnique({ where: { id: addressId } });
       if (!address) {
         return NextResponse.json({ error: "Address not found" }, { status: 404 });
       }
@@ -63,20 +119,45 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const budget = await prisma.budget.create({
-      data: {
+    const categoryBreakdown =
+      typeof validated.categoryBreakdown === "string"
+        ? validated.categoryBreakdown
+        : validated.categoryBreakdown
+          ? JSON.stringify(validated.categoryBreakdown)
+          : undefined;
+    const projectedExpenses = validated.actualExpenses ?? (await calculateProjectedExpenses(userId, budgetMonth, addressId));
+
+    const existingBudget = await prisma.budget.findFirst({
+      where: {
         userId,
-        addressId: validated.addressId,
-        month: new Date(validated.month),
-        year: validated.year,
-        plannedIncome: validated.plannedIncome,
-        actualIncome: validated.actualIncome,
-        plannedExpenses: validated.plannedExpenses,
-        actualExpenses: validated.actualExpenses,
-        categoryBreakdown: body.categoryBreakdown,
-        notes: validated.notes,
+        addressId,
+        month: budgetMonth,
       },
     });
+
+    const budgetData = {
+      addressId,
+      month: budgetMonth,
+      year: validated.year,
+      plannedIncome: validated.plannedIncome ?? null,
+      actualIncome: validated.actualIncome ?? null,
+      plannedExpenses: validated.plannedExpenses ?? null,
+      actualExpenses: projectedExpenses,
+      categoryBreakdown: categoryBreakdown ?? null,
+      notes: validated.notes ?? null,
+    };
+
+    const budget = existingBudget
+      ? await prisma.budget.update({
+        where: { id: existingBudget.id },
+        data: budgetData,
+      })
+      : await prisma.budget.create({
+        data: {
+          userId,
+          ...budgetData,
+        },
+      });
 
     return NextResponse.json({ budget }, { status: 201 });
   } catch (error: any) {

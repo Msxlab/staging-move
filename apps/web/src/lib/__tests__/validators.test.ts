@@ -196,18 +196,27 @@ describe("budgetSchema", () => {
     const result = budgetSchema.safeParse({
       month: "January",
       year: 2025,
-      actualExpenses: 1500,
+      plannedExpenses: 1500,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("should accept budget category limits without actual expenses", () => {
+    const result = budgetSchema.safeParse({
+      month: "January",
+      year: 2025,
+      categoryBreakdown: { Utilities: 300, "Internet & Phone": 150 },
     });
     expect(result.success).toBe(true);
   });
 
   it("should reject year < 2020", () => {
-    const result = budgetSchema.safeParse({ month: "Jan", year: 2019, actualExpenses: 0 });
+    const result = budgetSchema.safeParse({ month: "Jan", year: 2019 });
     expect(result.success).toBe(false);
   });
 
   it("should reject year > 2100", () => {
-    const result = budgetSchema.safeParse({ month: "Jan", year: 2101, actualExpenses: 0 });
+    const result = budgetSchema.safeParse({ month: "Jan", year: 2101 });
     expect(result.success).toBe(false);
   });
 });
