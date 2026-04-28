@@ -65,6 +65,7 @@ model User {
   supportTickets          SupportTicket[]
   pushDevices             PushDevice[]
   dataConsents            DataConsent[]
+  acquisitionRedemptions  AcquisitionRedemption[]
 
   // Soft-delete. Populated by admin UI "delete" action; hard-delete runs
   // from cron/data-retention after the undo window. Queries must filter
@@ -207,7 +208,7 @@ model Subscription {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   plan     String  @default("FREE_TRIAL") @db.VarChar(30)
-  status   String  @default("TRIALING") @db.VarChar(30)
+  status   String  @default("FREE_ACCESS") @db.VarChar(30)
   provider String  @default("TRIAL") @db.VarChar(30)
   platform String? @db.VarChar(20)
 
@@ -224,6 +225,22 @@ model Subscription {
   gracePeriodEndsAt      DateTime?
   lastValidatedAt        DateTime?
   lastSyncedAt           DateTime?
+  accessType             String?   @db.VarChar(30)
+  billingInterval        String?   @db.VarChar(20)
+  freeAccessEndsAt       DateTime?
+  cancelAtPeriodEnd      Boolean  @default(false)
+  firstChargeAt          DateTime?
+  firstChargeAmount      Float?
+  autoRenew              Boolean?
+  campaignId             String?   @db.VarChar(30)
+  campaignCode           String?   @db.VarChar(80)
+  campaignSnapshot       String?   @db.Text
+  checkoutConsentSnapshot String?  @db.Text
+  termsVersion           String?   @db.VarChar(30)
+  subscriptionPolicyVersion String? @db.VarChar(30)
+  refundPolicyVersion    String?   @db.VarChar(30)
+  acquisitionCampaign    AcquisitionCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  acquisitionRedemptions AcquisitionRedemption[]
 
   trialEndsAt DateTime?
   canceledAt  DateTime?
@@ -244,6 +261,83 @@ model Subscription {
   @@index([platform, provider])
   @@index([billingProductId])
   @@index([currentPeriodEndsAt])
+  @@index([accessType, status])
+  @@index([campaignId])
+}
+
+model AcquisitionCampaign {
+  id     String @id @default(cuid()) @db.VarChar(30)
+  name   String @db.VarChar(120)
+  code   String @unique @db.VarChar(80)
+  status String @default("DRAFT") @db.VarChar(20)
+
+  accessType            String  @db.VarChar(30)
+  plan                  String  @default("INDIVIDUAL") @db.VarChar(30)
+  billingInterval       String? @db.VarChar(20)
+  trialDays             Int?
+  freeAccessDays        Int?
+  stripePriceId         String? @db.VarChar(191)
+  displayPriceLabel     String? @db.VarChar(80)
+  requiresPaymentMethod Boolean @default(false)
+  autoRenew             Boolean @default(false)
+  newUsersOnly          Boolean @default(true)
+
+  startsAt       DateTime?
+  endsAt         DateTime?
+  maxRedemptions Int?
+  redemptionCount Int @default(0)
+
+  internalNotes          String? @db.Text
+  publicHeadline         String  @db.VarChar(200)
+  publicSubheadline      String? @db.VarChar(500)
+  checkoutDisclosureCopy String? @db.Text
+
+  createdByAdminId String?    @db.VarChar(30)
+  createdByAdmin   AdminUser? @relation("AcquisitionCampaignsCreated", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  subscriptions Subscription[]
+  redemptions   AcquisitionRedemption[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([accessType, plan])
+  @@index([startsAt, endsAt])
+  @@index([createdByAdminId])
+}
+
+model AcquisitionRedemption {
+  id     String @id @default(cuid()) @db.VarChar(30)
+
+  campaignId String?              @db.VarChar(30)
+  campaign   AcquisitionCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  userId String @db.VarChar(30)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subscriptionId String?       @db.VarChar(30)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  accessType String @db.VarChar(30)
+  status     String @default("REDEEMED") @db.VarChar(30)
+  snapshot   String @db.Text
+
+  consentAcceptedAt        DateTime?
+  consentIpHash            String? @db.VarChar(64)
+  consentUserAgentHash     String? @db.VarChar(64)
+  termsVersion             String? @db.VarChar(30)
+  subscriptionPolicyVersion String? @db.VarChar(30)
+  refundPolicyVersion      String? @db.VarChar(30)
+  checkoutDisclosureTextHash String? @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([campaignId])
+  @@index([userId])
+  @@index([subscriptionId])
+  @@index([accessType, status])
 }
 
 // ==================== PROFILE ====================
@@ -870,6 +964,7 @@ model AdminUser {
   loginLogs                 AdminLoginLog[]
   runtimeConfigUpdates      RuntimeConfigEntry[]      @relation("RuntimeConfigUpdatedBy")
   providerGovernanceReviews ProviderGovernanceIssue[] @relation("ProviderGovernanceReviewedBy")
+  acquisitionCampaignsCreated AcquisitionCampaign[] @relation("AcquisitionCampaignsCreated")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
