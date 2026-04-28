@@ -110,6 +110,49 @@ function trustFor(provider: ProviderItem | ScoredProvider): ProviderTrustSummary
   return getProviderTrustSummary(provider);
 }
 
+type ProviderLogoSource = {
+  name: string;
+  category: string;
+  logoUrl?: string | null;
+};
+
+export function shouldShowProviderLogo(logoUrl: string | null | undefined, failedLogoUrl: string | null): logoUrl is string {
+  return Boolean(logoUrl && logoUrl !== failedLogoUrl);
+}
+
+export function ProviderLogoMark({
+  provider,
+  className,
+  fallbackClassName,
+}: {
+  provider: ProviderLogoSource;
+  className: string;
+  fallbackClassName: string;
+}) {
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
+  const logoUrl = provider.logoUrl;
+  const showLogo = shouldShowProviderLogo(logoUrl, failedLogoUrl);
+
+  return (
+    <div className={`${className} shrink-0 bg-foreground/5 border border-border flex items-center justify-center overflow-hidden`}>
+      {showLogo ? (
+        <img
+          src={logoUrl}
+          alt={`${provider.name} logo`}
+          className="h-full w-full rounded-[inherit] object-contain p-1"
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailedLogoUrl(logoUrl)}
+        />
+      ) : (
+        <span className={fallbackClassName} aria-hidden="true">
+          {getMergedDisplayCategoryIcon(provider.category)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function ProvidersClient({
   initialProviders,
   addresses,
@@ -284,9 +327,7 @@ export function ProvidersClient({
                 href={`/providers/${p.id}`}
                 className="group rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 flex items-start gap-3"
               >
-                <div className="h-10 w-10 shrink-0 rounded-lg bg-foreground/5 border border-border flex items-center justify-center text-xl">
-                  {getMergedDisplayCategoryIcon(p.category)}
-                </div>
+                <ProviderLogoMark provider={p} className="h-10 w-10 rounded-lg" fallbackClassName="text-xl" />
                 <div className="min-w-0 flex-1">
                   {(() => {
                     const trust = trustFor(p);
@@ -406,9 +447,7 @@ export function ProvidersClient({
                 const trust = trustFor(p);
                 return (
                   <>
-              <div className="h-12 w-12 shrink-0 rounded-xl bg-foreground/5 border border-border flex items-center justify-center text-2xl">
-                {getMergedDisplayCategoryIcon(p.category)}
-              </div>
+              <ProviderLogoMark provider={p} className="h-12 w-12 rounded-xl" fallbackClassName="text-2xl" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>

@@ -120,6 +120,7 @@ export async function GET(request: NextRequest) {
       description: p.description,
       website: p.website,
       phone: p.phone,
+      logoUrl: p.logoUrl,
       scope: p.scope,
       states: safeJsonArray(p.states),
       zipCodes: Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes),
