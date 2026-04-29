@@ -9,7 +9,7 @@ import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
 
 const ACTIVE_CAMPAIGN_CONFLICT_RESPONSE = {
   code: "ACTIVE_CAMPAIGN_CONFLICT",
-  error: "Another active Individual Annual trial campaign already exists. Pause or end it before activating this one.",
+  error: "Another active matching Individual campaign already exists. Pause or end it before activating this one.",
 };
 
 function normalizeCode(value: unknown) {
@@ -20,7 +20,17 @@ function normalizeCode(value: unknown) {
 }
 
 function campaignData(body: any, adminId?: string) {
-  const accessType = body.accessType === "FREE_ACCESS" ? "FREE_ACCESS" : "FREE_TRIAL";
+  const accessType = body.accessType === "FREE_ACCESS"
+    ? "FREE_ACCESS"
+    : body.accessType === "PAID"
+      ? "PAID"
+      : "FREE_TRIAL";
+  const paymentRequired = accessType === "FREE_TRIAL" || accessType === "PAID";
+  const billingInterval = accessType === "FREE_TRIAL"
+    ? "YEAR"
+    : accessType === "PAID"
+      ? (body.billingInterval === "YEAR" ? "YEAR" : "MONTH")
+      : null;
   const displayPriceLabel =
     typeof body.displayPriceLabel === "string" && body.displayPriceLabel.trim()
       ? body.displayPriceLabel.trim()
@@ -31,19 +41,26 @@ function campaignData(body: any, adminId?: string) {
     status: body.status || "DRAFT",
     accessType,
     plan: "INDIVIDUAL",
-    billingInterval: accessType === "FREE_TRIAL" ? "YEAR" : null,
+    billingInterval,
     trialDays: accessType === "FREE_TRIAL" ? Number(body.trialDays || INDIVIDUAL_ANNUAL_TRIAL_DAYS) : null,
     freeAccessDays: accessType === "FREE_ACCESS" ? Number(body.freeAccessDays || 30) : null,
-    stripePriceId: accessType === "FREE_TRIAL" ? (body.stripePriceId || null) : null,
-    displayPriceLabel: displayPriceLabel || (accessType === "FREE_TRIAL" ? null : INDIVIDUAL_ANNUAL_PRICE_LABEL),
-    requiresPaymentMethod: accessType === "FREE_TRIAL",
-    autoRenew: accessType === "FREE_TRIAL",
+    stripePriceId: paymentRequired ? (body.stripePriceId || null) : null,
+    displayPriceLabel: displayPriceLabel || (paymentRequired ? null : INDIVIDUAL_ANNUAL_PRICE_LABEL),
+    requiresPaymentMethod: paymentRequired,
+    autoRenew: paymentRequired,
     newUsersOnly: body.newUsersOnly !== false,
     startsAt: body.startsAt ? new Date(body.startsAt) : null,
     endsAt: body.endsAt ? new Date(body.endsAt) : null,
     maxRedemptions: body.maxRedemptions ? Number(body.maxRedemptions) : null,
     internalNotes: body.internalNotes || null,
-    publicHeadline: String(body.publicHeadline || (accessType === "FREE_TRIAL" ? "Start with 3 months free" : "Free Access")).trim(),
+    publicHeadline: String(
+      body.publicHeadline ||
+        (accessType === "FREE_TRIAL"
+          ? "Start with 3 months free"
+          : accessType === "PAID"
+            ? "Subscribe monthly"
+            : "Free Access"),
+    ).trim(),
     publicSubheadline: body.publicSubheadline || null,
     checkoutDisclosureCopy: body.checkoutDisclosureCopy || null,
   };
@@ -111,6 +128,9 @@ export async function POST(request: NextRequest) {
     }
     if (data.accessType === "FREE_ACCESS" && data.freeAccessDays < 1) {
       return NextResponse.json({ error: "Free Access days must be at least 1." }, { status: 400 });
+    }
+    if (data.accessType === "PAID" && data.billingInterval !== "MONTH" && data.billingInterval !== "YEAR") {
+      return NextResponse.json({ error: "Paid campaigns must use monthly or annual billing." }, { status: 400 });
     }
 
     const priceValidation = await validateStripeCampaignPrice(data);

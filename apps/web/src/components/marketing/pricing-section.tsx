@@ -6,13 +6,20 @@ import { Button } from "@/components/ui/button";
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 
 type PublicCampaignForPricing = {
+  accessType?: string | null;
   publicHeadline: string;
   publicSubheadline: string | null;
   displayPriceLabel: string;
-  trialDays: number;
+  trialDays: number | null;
+  billingInterval?: string | null;
   ctaText: string;
   priceCopy: string;
   trialLabel: string | null;
+};
+
+type PublicOffersForPricing = {
+  annualTrial?: PublicCampaignForPricing | null;
+  monthlyPaid?: PublicCampaignForPricing | null;
 };
 
 interface PricingSectionProps {
@@ -21,6 +28,7 @@ interface PricingSectionProps {
   ctaIntent?: "anonymous" | "manage" | "upgrade";
   showComparison?: boolean;
   campaign?: PublicCampaignForPricing | null;
+  offers?: PublicOffersForPricing | null;
 }
 
 function resolveCtaLabel(
@@ -46,24 +54,33 @@ export function PricingSection({
   ctaLabelLoggedIn,
   ctaIntent,
   campaign,
+  offers,
 }: PricingSectionProps) {
   const plan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
-  const yearlyPrice = campaign?.displayPriceLabel || plan.yearlyPriceLabel || "$79/year";
+  const annualOffer = offers?.annualTrial ?? campaign ?? null;
+  const monthlyOffer = offers?.monthlyPaid ?? null;
+  const primaryOffer = annualOffer || monthlyOffer;
+  const yearlyPrice = primaryOffer?.displayPriceLabel || plan.yearlyPriceLabel || "$79/year";
   const price = splitPriceLabel(yearlyPrice);
-  const headline = campaign?.publicHeadline || plan.displayName;
+  const headline = annualOffer?.publicHeadline || monthlyOffer?.publicHeadline || plan.displayName;
   const subheadline =
-    campaign?.publicSubheadline ||
+    annualOffer?.publicSubheadline ||
+    monthlyOffer?.publicSubheadline ||
     "One calm place to track addresses, services, renewal dates, moving tasks, and exports.";
-  const planIntro = campaign?.trialLabel
-    ? `${campaign.trialLabel} free, then annual billing`
-    : "Individual Annual billing";
+  const planIntro = annualOffer?.trialLabel
+    ? `${annualOffer.trialLabel} free, then annual billing`
+    : monthlyOffer
+      ? "Monthly billing, no trial required"
+      : "Individual billing";
+  const primaryCtaOffer = annualOffer || monthlyOffer;
+  const hasTwoOffers = Boolean(annualOffer && monthlyOffer);
 
   return (
     <section id="pricing" className="container py-20">
       <div className="mx-auto mb-10 max-w-2xl text-center">
         <div className="mb-3 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5 text-primary" />
-          Individual Annual
+          Individual
         </div>
         <h2 className="text-3xl font-bold mb-4">{headline}</h2>
         <p className="text-muted-foreground text-lg">
@@ -71,7 +88,10 @@ export function PricingSection({
         </p>
       </div>
 
-      <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
+      <div className={hasTwoOffers
+        ? "mx-auto grid max-w-6xl gap-6 lg:grid-cols-3"
+        : "mx-auto grid max-w-4xl gap-6 md:grid-cols-[1.1fr_0.9fr]"}
+      >
         <div className="rounded-2xl border-2 border-primary bg-card p-7 shadow-lg">
           <div className="mb-5">
             <p className="text-sm font-medium text-primary">{planIntro}</p>
@@ -84,9 +104,9 @@ export function PricingSection({
           <div className="mb-6">
             <span className="text-5xl font-bold tracking-tight">{price.amount}</span>
             <span className="text-muted-foreground">
-              {campaign?.trialLabel ? `${price.suffix} after trial` : price.suffix}
+              {annualOffer?.trialLabel ? `${price.suffix} after trial` : price.suffix}
             </span>
-            {campaign?.trialLabel ? (
+            {annualOffer?.trialLabel ? (
               <p className="mt-1 text-xs text-muted-foreground">Today: $0</p>
             ) : null}
           </div>
@@ -102,13 +122,34 @@ export function PricingSection({
 
           <Link href={ctaHref} className="mt-7 block">
             <Button className="w-full">
-              {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn, campaign)}
+              {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn, primaryCtaOffer)}
             </Button>
           </Link>
           <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            Full checkout terms are shown before you agree to the trial.
+            Full checkout terms are shown before you subscribe.
           </p>
         </div>
+
+        {annualOffer && monthlyOffer ? (
+          <div className="rounded-2xl border bg-card p-7">
+            <div className="mb-5">
+              <p className="text-sm font-medium text-primary">Monthly billing</p>
+              <h3 className="mt-2 text-2xl font-semibold">Individual Monthly</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Prefer a simple monthly plan without the annual trial.
+              </p>
+            </div>
+            <div className="mb-6">
+              <span className="text-4xl font-bold tracking-tight">{splitPriceLabel(monthlyOffer.displayPriceLabel).amount}</span>
+              <span className="text-muted-foreground">{splitPriceLabel(monthlyOffer.displayPriceLabel).suffix}</span>
+            </div>
+            <Link href={ctaHref} className="block">
+              <Button variant="outline" className="w-full">
+                {ctaIntent === "manage" ? "Manage subscription" : monthlyOffer.ctaText}
+              </Button>
+            </Link>
+          </div>
+        ) : null}
 
         <div className="rounded-2xl border bg-muted/30 p-7">
           <div className="mb-4 flex items-center gap-2">
@@ -118,6 +159,7 @@ export function PricingSection({
           <div className="space-y-4 text-sm leading-6 text-muted-foreground">
             <p>Free Access and Free Trial are separate. Free Access does not require a payment method and does not auto-charge.</p>
             <p>The Individual Annual trial requires a payment method. Checkout shows today&apos;s due amount, trial length, first charge date, and annual renewal terms.</p>
+            <p>The Individual Monthly option starts today and renews monthly when a monthly campaign is active.</p>
             <p>You can cancel trial or renewal online from Settings.</p>
           </div>
           <div className="mt-5 flex flex-wrap gap-3 text-sm">

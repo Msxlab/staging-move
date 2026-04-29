@@ -15,6 +15,7 @@ import {
   campaignToSnapshotText,
   findAcquisitionCampaign,
   findActivePublicIndividualAnnualTrialCampaign,
+  findActivePublicIndividualMonthlyPaidOffer,
   getRequestHashSnapshot,
   hashForSnapshot,
 } from "@/lib/acquisition-campaigns";
@@ -55,14 +56,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid plan. Must be INDIVIDUAL." }, { status: 400 });
     }
 
-    const cycle: "monthly" | "yearly" =
+    let cycle: "monthly" | "yearly" =
       rawCycle === "yearly" ? "yearly" : "monthly";
 
     const requestedCampaignCode =
       typeof campaignCode === "string" ? campaignCode.trim() : "";
     const campaign = requestedCampaignCode
       ? await findAcquisitionCampaign(requestedCampaignCode, { allowDefaultFallback: false })
-      : await findActivePublicIndividualAnnualTrialCampaign();
+      : cycle === "yearly"
+        ? await findActivePublicIndividualAnnualTrialCampaign()
+        : await findActivePublicIndividualMonthlyPaidOffer();
     if (!campaign) {
       if (!requestedCampaignCode) {
         return NextResponse.json(
@@ -75,6 +78,14 @@ export async function POST(request: NextRequest) {
         { status: 404 },
       );
     }
+    if (
+      requestedCampaignCode &&
+      rawCycle !== "yearly" &&
+      rawCycle !== "monthly" &&
+      (campaign.billingInterval === "YEAR" || campaign.billingInterval === "MONTH")
+    ) {
+      cycle = campaign.billingInterval === "YEAR" ? "yearly" : "monthly";
+    }
     try {
       assertCampaignAvailable(campaign);
     } catch (availabilityError: any) {
@@ -86,19 +97,29 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    if (campaign.accessType !== "FREE_TRIAL") {
+    const expectedAccessType = cycle === "yearly" ? "FREE_TRIAL" : "PAID";
+    const expectedBillingInterval = cycle === "yearly" ? "YEAR" : "MONTH";
+    if (campaign.accessType !== expectedAccessType) {
       return NextResponse.json(
         { code: "CAMPAIGN_WRONG_TYPE", error: "This offer is no longer available." },
         { status: 400 },
       );
     }
-    if (cycle !== "yearly" || campaign.billingInterval !== "YEAR") {
+    if (campaign.billingInterval !== expectedBillingInterval) {
       return NextResponse.json(
         {
           code: "CAMPAIGN_WRONG_INTERVAL",
-          error: "Individual trial campaigns use annual billing.",
+          error: cycle === "yearly"
+            ? "Individual trial campaigns use annual billing."
+            : "Individual monthly campaigns use monthly billing.",
         },
         { status: 400 },
+      );
+    }
+    if (!campaign.displayPriceLabel) {
+      return NextResponse.json(
+        { code: "OFFER_UNAVAILABLE", error: "This offer is not currently available." },
+        { status: 409 },
       );
     }
     if (!acceptedSubscriptionTerms) {
@@ -146,7 +167,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (campaign.newUsersOnly) {
+    if (campaign.accessType === "FREE_TRIAL" && campaign.newUsersOnly) {
       let previousTrialRedemption: { id: string } | null = null;
       try {
         previousTrialRedemption = await (prisma as any).acquisitionRedemption.findFirst({
@@ -175,7 +196,7 @@ export async function POST(request: NextRequest) {
       subscription = await prisma.subscription.create({
         data: {
           userId,
-          plan: "FREE_TRIAL",
+          plan: campaign.accessType === "PAID" ? "INDIVIDUAL" : "FREE_TRIAL",
           status: "PENDING_CHECKOUT",
           provider: "STRIPE",
           platform: "web",
@@ -216,10 +237,11 @@ export async function POST(request: NextRequest) {
 
     const appUrl = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const now = new Date();
-    const trialDays = campaign.trialDays || INDIVIDUAL_ANNUAL_TRIAL_DAYS;
+    const isTrialOffer = campaign.accessType === "FREE_TRIAL";
+    const trialDays = isTrialOffer ? campaign.trialDays || INDIVIDUAL_ANNUAL_TRIAL_DAYS : null;
     const firstChargeAt = new Date(now);
-    firstChargeAt.setUTCDate(firstChargeAt.getUTCDate() + trialDays);
-    const displayPrice = campaign.displayPriceLabel || "$79/year";
+    if (trialDays) firstChargeAt.setUTCDate(firstChargeAt.getUTCDate() + trialDays);
+    const displayPrice = campaign.displayPriceLabel;
     const disclosureText = buildCheckoutDisclosureText({
       campaign,
       now,
@@ -246,7 +268,7 @@ export async function POST(request: NextRequest) {
       where: { userId },
       data: {
         status: "PENDING_CHECKOUT",
-        billingInterval: "YEAR",
+        billingInterval: expectedBillingInterval,
         firstChargeAt,
         firstChargeAmount: Number.parseFloat(displayPrice.replace(/[^0-9.]/g, "")) || null,
         campaignId: campaign.id || null,
@@ -269,7 +291,7 @@ export async function POST(request: NextRequest) {
           campaignId: campaign.id || null,
           userId,
           subscriptionId: updatedSubscription?.id || null,
-          accessType: "FREE_TRIAL",
+          accessType: campaign.accessType,
           status: "PENDING_CHECKOUT",
           snapshot: snapshotText,
           consentAcceptedAt: now,
@@ -294,7 +316,7 @@ export async function POST(request: NextRequest) {
       allow_promotion_codes: true,
       payment_method_collection: "always",
       subscription_data: {
-        trial_period_days: trialDays,
+        ...(trialDays ? { trial_period_days: trialDays } : {}),
         metadata: {
           userId,
           plan,
@@ -302,13 +324,13 @@ export async function POST(request: NextRequest) {
           provider: "STRIPE",
           platform: "web",
           campaignCode: campaign.code,
-          accessType: "FREE_TRIAL",
+          accessType: campaign.accessType,
           checkoutDisclosureTextHash: hashForSnapshot(disclosureText) || "",
         },
       },
       // The plan query param is read by subscription-management to decide
       // which tier sticker to celebrate in the reveal modal.
-      success_url: `${appUrl}/settings/subscription?success=true&plan=${encodeURIComponent(plan)}&trial=true`,
+      success_url: `${appUrl}/settings/subscription?success=true&plan=${encodeURIComponent(plan)}&trial=${isTrialOffer ? "true" : "false"}`,
       cancel_url: `${appUrl}/api/stripe/checkout/cancel`,
       metadata: {
         userId,
@@ -317,7 +339,7 @@ export async function POST(request: NextRequest) {
         provider: "STRIPE",
         platform: "web",
         campaignCode: campaign.code,
-        accessType: "FREE_TRIAL",
+        accessType: campaign.accessType,
         checkoutDisclosureTextHash: hashForSnapshot(disclosureText) || "",
       },
     });

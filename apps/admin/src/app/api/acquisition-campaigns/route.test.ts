@@ -99,6 +99,51 @@ describe("admin acquisition campaigns create route", () => {
     expect(mocks.campaignCreate).toHaveBeenCalledTimes(3);
   });
 
+  it("creates an ACTIVE paid monthly campaign with monthly billing fields", async () => {
+    mocks.validateStripeCampaignPrice.mockResolvedValueOnce({
+      ok: true,
+      displayPriceLabel: "$9/month",
+      canonicalDisplayPriceLabel: "$9/month",
+      price: { interval: "month" },
+    });
+
+    const response = await POST(request({
+      name: "Individual Monthly",
+      code: "MONTHLY",
+      status: "ACTIVE",
+      accessType: "PAID",
+      billingInterval: "MONTH",
+      stripePriceId: "price_monthly",
+      displayPriceLabel: "",
+      publicHeadline: "Subscribe monthly",
+    }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.campaignFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: "ACTIVE",
+          plan: "INDIVIDUAL",
+          accessType: "PAID",
+          billingInterval: "MONTH",
+        }),
+      }),
+    );
+    expect(mocks.campaignCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          accessType: "PAID",
+          billingInterval: "MONTH",
+          trialDays: null,
+          requiresPaymentMethod: true,
+          autoRenew: true,
+          stripePriceId: "price_monthly",
+          displayPriceLabel: "$9/month",
+        }),
+      }),
+    );
+  });
+
   it("auto-fills displayPriceLabel from Stripe validation when blank", async () => {
     const response = await POST(request({
       name: "Spring Trial",

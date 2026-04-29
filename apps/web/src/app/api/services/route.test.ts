@@ -40,18 +40,34 @@ vi.mock("@/lib/plan-limits", () => ({
 }));
 
 vi.mock("@/lib/acquisition-campaigns", () => ({
-  getPublicCampaignViewModel: vi.fn(() =>
+  getPublicSubscriptionOffersViewModel: vi.fn(() =>
     Promise.resolve({
-      campaignCode: "SPRING90",
-      publicHeadline: "Start with 90 days free",
-      publicSubheadline: "Individual Annual starts after your trial.",
-      checkoutDisclosureCopy: null,
-      displayPriceLabel: "$79/year",
-      trialDays: 90,
-      billingInterval: "YEAR",
-      ctaText: "Start 90 days free",
-      priceCopy: "$79/year after trial",
-      trialLabel: "3 months",
+      annualTrial: {
+        campaignCode: "SPRING90",
+        accessType: "FREE_TRIAL",
+        publicHeadline: "Start with 90 days free",
+        publicSubheadline: "Individual Annual starts after your trial.",
+        checkoutDisclosureCopy: null,
+        displayPriceLabel: "$79/year",
+        trialDays: 90,
+        billingInterval: "YEAR",
+        ctaText: "Start 90 days free",
+        priceCopy: "$79/year after trial",
+        trialLabel: "3 months",
+      },
+      monthlyPaid: {
+        campaignCode: "MONTHLY",
+        accessType: "PAID",
+        publicHeadline: "Subscribe monthly",
+        publicSubheadline: "Simple monthly billing.",
+        checkoutDisclosureCopy: null,
+        displayPriceLabel: "$9/month",
+        trialDays: null,
+        billingInterval: "MONTH",
+        ctaText: "Subscribe monthly",
+        priceCopy: "$9/month",
+        trialLabel: null,
+      },
     }),
   ),
 }));
@@ -63,7 +79,7 @@ vi.mock("@/lib/move-task-sync", () => ({
 import { prisma } from "@/lib/db";
 import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
 import { canCreateService } from "@/lib/plan-limits";
-import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
+import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { GET, POST } from "./route";
 
@@ -79,7 +95,7 @@ const mockServiceProvider = prisma.serviceProvider as unknown as { findUnique: M
 const mockCustomProvider = prisma.userCustomProvider as unknown as { findFirst: Mock };
 const mockSubscription = prisma.subscription as unknown as { findUnique: Mock };
 const mockCanCreateService = canCreateService as unknown as Mock;
-const mockGetPublicCampaignViewModel = getPublicCampaignViewModel as unknown as Mock;
+const mockGetPublicSubscriptionOffersViewModel = getPublicSubscriptionOffersViewModel as unknown as Mock;
 const mockSafeSyncMoveTasksForAddress = safeSyncMoveTasksForAddress as unknown as Mock;
 
 function makeRequest(search = "") {
@@ -104,17 +120,35 @@ describe("services route", () => {
       deletedAt: null,
     });
     mockCustomProvider.findFirst.mockResolvedValue(null);
-    mockGetPublicCampaignViewModel.mockResolvedValue({
-      campaignCode: "SPRING90",
-      publicHeadline: "Start with 90 days free",
-      publicSubheadline: "Individual Annual starts after your trial.",
-      checkoutDisclosureCopy: null,
-      displayPriceLabel: "$79/year",
-      trialDays: 90,
-      billingInterval: "YEAR",
-      ctaText: "Start 90 days free",
-      priceCopy: "$79/year after trial",
-      trialLabel: "3 months",
+    mockCanCreateService.mockResolvedValue({ allowed: true });
+    mockSubscription.findUnique.mockResolvedValue(null);
+    mockGetPublicSubscriptionOffersViewModel.mockResolvedValue({
+      annualTrial: {
+        campaignCode: "SPRING90",
+        accessType: "FREE_TRIAL",
+        publicHeadline: "Start with 90 days free",
+        publicSubheadline: "Individual Annual starts after your trial.",
+        checkoutDisclosureCopy: null,
+        displayPriceLabel: "$79/year",
+        trialDays: 90,
+        billingInterval: "YEAR",
+        ctaText: "Start 90 days free",
+        priceCopy: "$79/year after trial",
+        trialLabel: "3 months",
+      },
+      monthlyPaid: {
+        campaignCode: "MONTHLY",
+        accessType: "PAID",
+        publicHeadline: "Subscribe monthly",
+        publicSubheadline: "Simple monthly billing.",
+        checkoutDisclosureCopy: null,
+        displayPriceLabel: "$9/month",
+        trialDays: null,
+        billingInterval: "MONTH",
+        ctaText: "Subscribe monthly",
+        priceCopy: "$9/month",
+        trialLabel: null,
+      },
     });
   });
 
@@ -458,7 +492,10 @@ describe("services route", () => {
       provider: "ADMIN",
       stripeSubscriptionId: null,
     });
-    mockGetPublicCampaignViewModel.mockResolvedValueOnce(null);
+    mockGetPublicSubscriptionOffersViewModel.mockResolvedValueOnce({
+      annualTrial: null,
+      monthlyPaid: null,
+    });
 
     const response = await POST(
       new Request("http://localhost/api/services", {
@@ -476,7 +513,65 @@ describe("services route", () => {
 
     expect(response.status).toBe(403);
     expect(body.campaign).toBeNull();
+    expect(body.monthlyOffer).toBeNull();
     expect(body.subscription).toMatchObject({ eligibleForTrial: true });
+  });
+
+  it("returns the monthly paid offer when no annual trial campaign is active", async () => {
+    mockCanCreateService.mockResolvedValueOnce({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      reason: "Your FREE_ACCESS plan allows up to 10 services. Please upgrade.",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+    mockSubscription.findUnique.mockResolvedValueOnce({
+      status: "ACTIVE",
+      accessType: "FREE_ACCESS",
+      plan: "FREE_TRIAL",
+      provider: "ADMIN",
+      stripeSubscriptionId: null,
+    });
+    mockGetPublicSubscriptionOffersViewModel.mockResolvedValueOnce({
+      annualTrial: null,
+      monthlyPaid: {
+        campaignCode: "MONTHLY",
+        accessType: "PAID",
+        publicHeadline: "Subscribe monthly",
+        publicSubheadline: "Simple monthly billing.",
+        checkoutDisclosureCopy: null,
+        displayPriceLabel: "$9/month",
+        trialDays: null,
+        billingInterval: "MONTH",
+        ctaText: "Subscribe monthly",
+        priceCopy: "$9/month",
+        trialLabel: null,
+      },
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.campaign).toMatchObject({
+      code: "MONTHLY",
+      accessType: "PAID",
+      billingInterval: "MONTH",
+      trialDays: null,
+    });
+    expect(body.monthlyOffer).toMatchObject({ code: "MONTHLY" });
   });
 
   it("marks real Stripe-backed paid users as eligibleForTrial=false", async () => {
@@ -521,7 +616,7 @@ describe("services route", () => {
       },
       campaign: null,
     });
-    expect(mockGetPublicCampaignViewModel).not.toHaveBeenCalled();
+    expect(mockGetPublicSubscriptionOffersViewModel).not.toHaveBeenCalled();
   });
 
   it("returns FORBIDDEN when creating a service for another user's address", async () => {

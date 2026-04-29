@@ -16,8 +16,10 @@ vi.mock("@/lib/db", () => ({
 
 import {
   findActivePublicIndividualAnnualTrialCampaign,
+  findActivePublicIndividualMonthlyPaidOffer,
   findAcquisitionCampaign,
   getPublicCampaignViewModel,
+  getPublicSubscriptionOffersViewModel,
   toPublicCampaignViewModel,
 } from "./acquisition-campaigns";
 
@@ -82,6 +84,36 @@ describe("acquisition campaign DB helpers", () => {
     );
   });
 
+  it("returns the active public Individual Monthly paid offer", async () => {
+    mocks.findMany.mockResolvedValue([
+      campaign({
+        id: "monthly",
+        code: "MONTHLY",
+        accessType: "PAID",
+        billingInterval: "MONTH",
+        trialDays: null,
+        displayPriceLabel: "$9/month",
+        publicHeadline: "Subscribe monthly",
+      }),
+    ]);
+
+    const result = await findActivePublicIndividualMonthlyPaidOffer(now);
+
+    expect(result).toMatchObject({
+      code: "MONTHLY",
+      accessType: "PAID",
+      billingInterval: "MONTH",
+    });
+    expect(mocks.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          accessType: "PAID",
+          billingInterval: "MONTH",
+        }),
+      }),
+    );
+  });
+
   it("ignores paused, future, expired, and wrong-interval campaigns", async () => {
     mocks.findMany.mockResolvedValue([
       campaign({ id: "paused", status: "PAUSED" }),
@@ -140,6 +172,36 @@ describe("acquisition campaign DB helpers", () => {
     expect(JSON.stringify(viewModel)).not.toContain("price_secret");
     expect(JSON.stringify(viewModel)).not.toContain("admin only");
     expect(JSON.stringify(viewModel)).not.toContain("maxRedemptions");
+  });
+
+  it("returns annual trial and monthly paid offers together", async () => {
+    mocks.findMany
+      .mockResolvedValueOnce([campaign()])
+      .mockResolvedValueOnce([
+        campaign({
+          id: "monthly",
+          code: "MONTHLY",
+          accessType: "PAID",
+          billingInterval: "MONTH",
+          trialDays: null,
+          displayPriceLabel: "$9/month",
+          publicHeadline: "Subscribe monthly",
+          publicSubheadline: "Simple monthly billing.",
+        }),
+      ]);
+
+    const offers = await getPublicSubscriptionOffersViewModel(now);
+
+    expect(offers.annualTrial).toMatchObject({ campaignCode: "SPRING90" });
+    expect(offers.monthlyPaid).toMatchObject({
+      campaignCode: "MONTHLY",
+      accessType: "PAID",
+      billingInterval: "MONTH",
+      displayPriceLabel: "$9/month",
+      trialDays: null,
+      ctaText: "Subscribe monthly",
+      priceCopy: "$9/month",
+    });
   });
 
   it("hides free-trial-specific text for zero-day campaigns", () => {

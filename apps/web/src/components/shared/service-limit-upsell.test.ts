@@ -40,7 +40,7 @@ describe("buildServiceLimitCopy", () => {
     const copy = buildServiceLimitCopy({ accessType: "PAID", limit: 100 });
     expect(copy.body).not.toContain("Free Trial");
     expect(copy.body).not.toContain("Free Access");
-    expect(copy.body).toContain("Individual Annual plan");
+    expect(copy.body).toContain("Individual plan");
     expect(copy.body).toContain("up to 100 active services");
     expect(copy.primary).toBe("Manage subscription");
   });
@@ -55,7 +55,7 @@ describe("buildServiceLimitCopy", () => {
       limit: 100,
     });
     expect(copy.primary).toBe("Manage subscription");
-    expect(copy.body).toContain("Individual Annual plan");
+    expect(copy.body).toContain("Individual plan");
   });
 
   it("labels Free Trial users with the Free Trial tier when still eligible", () => {
@@ -78,5 +78,26 @@ describe("buildServiceLimitCopy", () => {
     expect(copy.body).toContain("Upgrade to Individual Annual");
     expect(copy.body).not.toContain("3 months free");
     expect(copy.primary).toBe("Upgrade to Individual Annual");
+  });
+
+  it("uses monthly paid offer copy when no annual trial campaign is active", () => {
+    const copy = buildServiceLimitCopy({
+      accessType: "FREE_ACCESS",
+      limit: 10,
+      monthlyOffer: {
+        code: "MONTHLY",
+        publicHeadline: "Subscribe monthly",
+        displayPriceLabel: "$9/month",
+        trialDays: null,
+        accessType: "PAID",
+        billingInterval: "MONTH",
+      },
+    });
+
+    expect(copy.body).toContain("Free Access includes up to 10 active services");
+    expect(copy.body).toContain("Subscribe monthly to keep adding services");
+    expect(copy.body).toContain("$9/month");
+    expect(copy.body).not.toContain("after trial");
+    expect(copy.primary).toBe("Subscribe monthly");
   });
 });

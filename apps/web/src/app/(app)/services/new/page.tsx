@@ -345,6 +345,7 @@ export default function NewServicePage() {
         eligibleForTrial: data.eligibleForTrial ?? true,
         subscription: data.subscription ?? null,
         campaign: data.campaign ?? null,
+        monthlyOffer: data.monthlyOffer ?? null,
         upgradePath: data.upgradePath ?? "/settings/subscription",
       });
       return data.error || "You have reached the active service limit for your plan.";
@@ -359,6 +360,7 @@ export default function NewServicePage() {
         eligibleForTrial: data.eligibleForTrial ?? true,
         subscription: data.subscription ?? null,
         campaign: data.campaign ?? null,
+        monthlyOffer: data.monthlyOffer ?? null,
         upgradePath: data.upgradePath ?? "/settings/subscription",
       });
       return data.error || "A subscription is required to add more services.";

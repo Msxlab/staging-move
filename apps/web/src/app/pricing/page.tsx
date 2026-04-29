@@ -7,7 +7,7 @@ import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { getUserSession } from "@/lib/user-auth";
 import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
-import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
+import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 import { absoluteUrl, SITE_NAME } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -30,7 +30,7 @@ export default async function PricingPage() {
   const userId = session?.userId ?? null;
   const [ctaTarget, publicCampaign] = await Promise.all([
     resolveMarketingCtaTarget(userId),
-    getPublicCampaignViewModel(),
+    getPublicSubscriptionOffersViewModel(),
   ]);
   const tPricing = await getTranslations("pricing");
 
@@ -47,7 +47,7 @@ export default async function PricingPage() {
         ctaHref={ctaTarget.href}
         ctaLabelLoggedIn={!!userId}
         ctaIntent={ctaTarget.intent}
-        campaign={publicCampaign}
+        offers={publicCampaign}
         showComparison
       />
 

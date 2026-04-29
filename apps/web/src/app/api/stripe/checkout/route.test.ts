@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   ensureSubscriptionDefaults: vi.fn(),
   findAcquisitionCampaign: vi.fn(),
   findActivePublicIndividualAnnualTrialCampaign: vi.fn(),
+  findActivePublicIndividualMonthlyPaidOffer: vi.fn(),
   assertCampaignAvailable: vi.fn(),
   buildCheckoutConsentSnapshot: vi.fn(),
   buildSignupSnapshot: vi.fn(),
@@ -44,6 +45,7 @@ vi.mock("@/lib/billing", () => ({
 vi.mock("@/lib/acquisition-campaigns", () => ({
   findAcquisitionCampaign: mocks.findAcquisitionCampaign,
   findActivePublicIndividualAnnualTrialCampaign: mocks.findActivePublicIndividualAnnualTrialCampaign,
+  findActivePublicIndividualMonthlyPaidOffer: mocks.findActivePublicIndividualMonthlyPaidOffer,
   assertCampaignAvailable: mocks.assertCampaignAvailable,
   buildCheckoutConsentSnapshot: mocks.buildCheckoutConsentSnapshot,
   buildSignupSnapshot: mocks.buildSignupSnapshot,
@@ -114,8 +116,24 @@ describe("stripe checkout route", () => {
       autoRenew: true,
       newUsersOnly: true,
     };
+    const activeMonthlyOffer = {
+      id: "camp_monthly",
+      name: "Individual Monthly",
+      code: "MONTHLY",
+      status: "ACTIVE",
+      accessType: "PAID",
+      plan: "INDIVIDUAL",
+      billingInterval: "MONTH",
+      trialDays: null,
+      displayPriceLabel: "$9/month",
+      stripePriceId: "price_monthly",
+      requiresPaymentMethod: true,
+      autoRenew: true,
+      newUsersOnly: false,
+    };
     mocks.findAcquisitionCampaign.mockResolvedValue(activeCampaign);
     mocks.findActivePublicIndividualAnnualTrialCampaign.mockResolvedValue(activeCampaign);
+    mocks.findActivePublicIndividualMonthlyPaidOffer.mockResolvedValue(activeMonthlyOffer);
     mocks.buildSignupSnapshot.mockReturnValue({ campaignCode: "INDIVIDUAL90" });
     mocks.campaignToSnapshotText.mockReturnValue("{\"campaignCode\":\"INDIVIDUAL90\"}");
     mocks.buildCheckoutConsentSnapshot.mockReturnValue("{\"checkoutDisclosureTextHash\":\"hash_1\"}");
@@ -243,6 +261,51 @@ describe("stripe checkout route", () => {
     expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
 
+  it("creates a monthly paid Checkout session from the active monthly offer", async () => {
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "monthly", acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.findActivePublicIndividualMonthlyPaidOffer).toHaveBeenCalled();
+    expect(mocks.findActivePublicIndividualAnnualTrialCampaign).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: "price_monthly", quantity: 1 }],
+        subscription_data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            campaignCode: "MONTHLY",
+            accessType: "PAID",
+            cycle: "monthly",
+          }),
+        }),
+        success_url: expect.stringContaining("trial=false"),
+      }),
+    );
+    expect(mocks.sessionsCreate.mock.calls[0][0].subscription_data).not.toHaveProperty("trial_period_days");
+    expect(subscriptionMock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          billingInterval: "MONTH",
+          campaignCode: "MONTHLY",
+        }),
+      }),
+    );
+  });
+
+  it("returns OFFER_UNAVAILABLE when no active monthly offer exists", async () => {
+    mocks.findActivePublicIndividualMonthlyPaidOffer.mockResolvedValueOnce(null);
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "monthly", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "OFFER_UNAVAILABLE" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
   it("uses an explicit campaign code only when that campaign exists", async () => {
     mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
     mocks.findAcquisitionCampaign.mockResolvedValueOnce({
@@ -278,6 +341,47 @@ describe("stripe checkout route", () => {
       expect.objectContaining({
         subscription_data: expect.objectContaining({
           metadata: expect.objectContaining({ campaignCode: "SPRING90" }),
+        }),
+      }),
+    );
+  });
+
+  it("infers cycle from an explicit annual campaign code when cycle is omitted", async () => {
+    mocks.findAcquisitionCampaign.mockResolvedValueOnce({
+      id: "camp_spring",
+      name: "Spring Trial",
+      code: "SPRING90",
+      status: "ACTIVE",
+      accessType: "FREE_TRIAL",
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+      trialDays: 90,
+      displayPriceLabel: "$79/year",
+      stripePriceId: "price_yearly",
+      requiresPaymentMethod: true,
+      autoRenew: true,
+      newUsersOnly: true,
+    });
+
+    const response = await POST(
+      checkoutRequest({
+        plan: "INDIVIDUAL",
+        campaignCode: "SPRING90",
+        acceptedSubscriptionTerms: true,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.findActivePublicIndividualMonthlyPaidOffer).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: "price_yearly", quantity: 1 }],
+        subscription_data: expect.objectContaining({
+          trial_period_days: 90,
+          metadata: expect.objectContaining({
+            campaignCode: "SPRING90",
+            cycle: "yearly",
+          }),
         }),
       }),
     );

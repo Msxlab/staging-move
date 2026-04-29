@@ -7,12 +7,13 @@ function readRepoFile(relativePath: string) {
 }
 
 describe("subscription acquisition copy", () => {
-  it("pricing focuses on Individual Annual and does not launch Family or Pro cards", () => {
+  it("pricing focuses on Individual offers and does not launch Family or Pro cards", () => {
     const source = readRepoFile("src/components/marketing/pricing-section.tsx");
 
     expect(source).toContain("Individual Annual");
-    expect(source).toContain("campaign?.publicHeadline");
-    expect(source).toContain("campaign?.displayPriceLabel");
+    expect(source).toContain("Individual Monthly");
+    expect(source).toContain("annualOffer?.publicHeadline");
+    expect(source).toContain("monthlyOffer.displayPriceLabel");
     expect(source).not.toContain("FAMILY");
     expect(source).not.toContain("PRO");
   });
@@ -25,6 +26,8 @@ describe("subscription acquisition copy", () => {
     expect(source).toContain("Annual plan starts");
     expect(source).toContain("/api/acquisition/public-trial-campaign");
     expect(source).toContain("publicCampaign?.publicHeadline");
+    expect(source).toContain("monthlyOffer");
+    expect(source).toContain("startMonthlyPlan");
     expect(source).toContain("buildTrialConsentLabel");
     expect(source.toLowerCase()).not.toContain("refund");
   });

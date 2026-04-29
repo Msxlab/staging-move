@@ -34,7 +34,7 @@ function paymentRequired(input: StripeCampaignPriceValidationInput) {
   if (input.accessType === "FREE_ACCESS" && input.requiresPaymentMethod === false) {
     return false;
   }
-  return input.requiresPaymentMethod === true || input.accessType === "FREE_TRIAL";
+  return input.requiresPaymentMethod === true || input.accessType === "FREE_TRIAL" || input.accessType === "PAID";
 }
 
 function configuredCurrency() {
@@ -94,7 +94,7 @@ export async function validateStripeCampaignPrice(
 
   const stripePriceId = input.stripePriceId?.trim();
   if (!stripePriceId) {
-    return validationProblem("Stripe price is required for paid trial campaigns.", input);
+    return validationProblem("Stripe price is required for paid campaigns.", input);
   }
 
   const stripeSecretKey = await getAdminRuntimeConfigValue("STRIPE_SECRET_KEY");

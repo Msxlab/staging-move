@@ -14,15 +14,21 @@ import {
 
 export interface PublicCampaignViewModel {
   campaignCode: string;
+  accessType: string;
   publicHeadline: string;
   publicSubheadline: string | null;
   checkoutDisclosureCopy: string | null;
   displayPriceLabel: string;
-  trialDays: number;
+  trialDays: number | null;
   billingInterval: string | null;
   ctaText: string;
   priceCopy: string;
   trialLabel: string | null;
+}
+
+export interface PublicSubscriptionOffersViewModel {
+  annualTrial: PublicCampaignViewModel | null;
+  monthlyPaid: PublicCampaignViewModel | null;
 }
 
 export function hashForSnapshot(value: string | null | undefined) {
@@ -83,17 +89,18 @@ function normalizeCampaign(record: any): AcquisitionCampaignLike {
   };
 }
 
-function isActivePublicIndividualAnnualTrialCampaign(
+function isActivePublicIndividualOffer(
   campaign: AcquisitionCampaignLike,
   now: Date,
+  input: { accessType: string; billingInterval: "YEAR" | "MONTH" },
 ) {
   const startsAt = campaign.startsAt ? new Date(campaign.startsAt) : null;
   const endsAt = campaign.endsAt ? new Date(campaign.endsAt) : null;
   return (
     campaign.status === "ACTIVE" &&
     campaign.plan === "INDIVIDUAL" &&
-    campaign.accessType === "FREE_TRIAL" &&
-    campaign.billingInterval === "YEAR" &&
+    campaign.accessType === input.accessType &&
+    campaign.billingInterval === input.billingInterval &&
     (!startsAt || startsAt <= now) &&
     (!endsAt || endsAt >= now)
   );
@@ -122,7 +129,8 @@ export async function findAcquisitionCampaign(
   return null;
 }
 
-export async function findActivePublicIndividualAnnualTrialCampaign(
+export async function findActivePublicIndividualOffer(
+  input: { accessType: "FREE_TRIAL" | "PAID"; billingInterval: "YEAR" | "MONTH" },
   now = new Date(),
 ): Promise<AcquisitionCampaignLike | null> {
   if (!process.env.DATABASE_URL && process.env.NODE_ENV === "production") {
@@ -133,8 +141,8 @@ export async function findActivePublicIndividualAnnualTrialCampaign(
       where: {
         status: "ACTIVE",
         plan: "INDIVIDUAL",
-        accessType: "FREE_TRIAL",
-        billingInterval: "YEAR",
+        accessType: input.accessType,
+        billingInterval: input.billingInterval,
         AND: [
           { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
           { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
@@ -146,16 +154,28 @@ export async function findActivePublicIndividualAnnualTrialCampaign(
     const activeCampaigns = (campaigns || [])
       .map(normalizeCampaign)
       .filter((campaign: AcquisitionCampaignLike) =>
-        isActivePublicIndividualAnnualTrialCampaign(campaign, now),
+        isActivePublicIndividualOffer(campaign, now, input),
       );
     if (!activeCampaigns.length) return null;
     if (activeCampaigns.length > 1) {
-      console.warn("[acquisition-campaigns] Multiple active public Individual Annual trial campaigns matched; using most recently updated.");
+      console.warn(`[acquisition-campaigns] Multiple active public Individual ${input.billingInterval} ${input.accessType} campaigns matched; using most recently updated.`);
     }
     return activeCampaigns[0];
   } catch {
     return null;
   }
+}
+
+export async function findActivePublicIndividualAnnualTrialCampaign(
+  now = new Date(),
+): Promise<AcquisitionCampaignLike | null> {
+  return findActivePublicIndividualOffer({ accessType: "FREE_TRIAL", billingInterval: "YEAR" }, now);
+}
+
+export async function findActivePublicIndividualMonthlyPaidOffer(
+  now = new Date(),
+): Promise<AcquisitionCampaignLike | null> {
+  return findActivePublicIndividualOffer({ accessType: "PAID", billingInterval: "MONTH" }, now);
 }
 
 export function getTrialLabel(days: number | null | undefined) {
@@ -173,18 +193,23 @@ export function toPublicCampaignViewModel(
   campaign: AcquisitionCampaignLike | null | undefined,
 ): PublicCampaignViewModel | null {
   if (!campaign) return null;
-  const trialDays = Number(campaign.trialDays ?? INDIVIDUAL_ANNUAL_TRIAL_DAYS);
-  const displayPriceLabel = campaign.displayPriceLabel || INDIVIDUAL_ANNUAL_PRICE_LABEL;
+  const isTrial = campaign.accessType === "FREE_TRIAL";
+  const isMonthly = campaign.billingInterval === "MONTH";
+  const trialDays = isTrial ? Number(campaign.trialDays ?? INDIVIDUAL_ANNUAL_TRIAL_DAYS) : null;
+  const displayPriceLabel = campaign.displayPriceLabel ||
+    (isMonthly ? "Price shown at checkout" : INDIVIDUAL_ANNUAL_PRICE_LABEL);
   const trialLabel = getTrialLabel(trialDays);
   return {
     campaignCode: campaign.code,
-    publicHeadline: campaign.publicHeadline || (trialLabel ? `Start with ${trialLabel} free` : "Individual Annual"),
+    accessType: campaign.accessType,
+    publicHeadline: campaign.publicHeadline ||
+      (trialLabel ? `Start with ${trialLabel} free` : isMonthly ? "Subscribe monthly" : "Individual Annual"),
     publicSubheadline: campaign.publicSubheadline || null,
     checkoutDisclosureCopy: campaign.checkoutDisclosureCopy || null,
     displayPriceLabel,
     trialDays,
     billingInterval: campaign.billingInterval || null,
-    ctaText: trialLabel ? `Start ${trialLabel} free` : "Continue with annual",
+    ctaText: trialLabel ? `Start ${trialLabel} free` : isMonthly ? "Subscribe monthly" : "Continue with annual",
     priceCopy: trialLabel ? `${displayPriceLabel} after trial` : displayPriceLabel,
     trialLabel,
   };
@@ -194,6 +219,19 @@ export async function getPublicCampaignViewModel(
   now = new Date(),
 ): Promise<PublicCampaignViewModel | null> {
   return toPublicCampaignViewModel(await findActivePublicIndividualAnnualTrialCampaign(now));
+}
+
+export async function getPublicSubscriptionOffersViewModel(
+  now = new Date(),
+): Promise<PublicSubscriptionOffersViewModel> {
+  const [annualTrial, monthlyPaid] = await Promise.all([
+    findActivePublicIndividualAnnualTrialCampaign(now),
+    findActivePublicIndividualMonthlyPaidOffer(now),
+  ]);
+  return {
+    annualTrial: toPublicCampaignViewModel(annualTrial),
+    monthlyPaid: toPublicCampaignViewModel(monthlyPaid),
+  };
 }
 
 export function assertCampaignAvailable(campaign: AcquisitionCampaignLike, now = new Date()) {

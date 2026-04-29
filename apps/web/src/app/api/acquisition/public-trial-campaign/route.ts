@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
+import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const campaign = await getPublicCampaignViewModel();
-  return NextResponse.json({ campaign });
+  const offers = await getPublicSubscriptionOffersViewModel();
+  return NextResponse.json({ campaign: offers.annualTrial, offers });
 }

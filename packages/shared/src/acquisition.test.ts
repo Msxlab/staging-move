@@ -24,6 +24,24 @@ describe("acquisition campaign helpers", () => {
     expect(copy.toLowerCase()).not.toContain("refund");
   });
 
+  it("creates paid monthly checkout disclosure without trial language", () => {
+    const campaign = {
+      ...getDefaultIndividualAnnualTrialCampaign(),
+      accessType: "PAID",
+      billingInterval: "MONTH",
+      trialDays: null,
+      displayPriceLabel: "$9/month",
+      requiresPaymentMethod: true,
+    };
+    const copy = buildCheckoutDisclosureText({ campaign, now });
+
+    expect(isCampaignRedeemable(campaign, now)).toEqual({ redeemable: true });
+    expect(copy).toContain("Today: $9/month.");
+    expect(copy).toContain("Your Individual subscription starts on 2026-04-28.");
+    expect(copy).toContain("Renews monthly.");
+    expect(copy).not.toContain("Trial:");
+  });
+
   it("keeps consent explicit and unambiguous without marketing alarm copy", () => {
     expect(buildTrialConsentLabel("2026-07-27T12:00:00.000Z")).toBe(
       "I understand my Individual Annual trial starts today and will continue as an annual subscription after the trial unless I cancel before 2026-07-27.",
@@ -75,6 +93,45 @@ describe("acquisition campaign helpers", () => {
     });
     expect(snapshot.trialEndsAt).toBe("2026-07-27T12:00:00.000Z");
     expect(snapshot.firstChargeAt).toBe("2026-07-27T12:00:00.000Z");
+  });
+
+  it("saves paid monthly snapshots with monthly interval and immediate first charge", () => {
+    const campaign = {
+      ...getDefaultIndividualAnnualTrialCampaign({
+        id: "camp_monthly",
+        name: "Monthly Individual",
+        code: "MONTHLY",
+        stripePriceId: "price_monthly",
+        displayPriceLabel: "$9/month",
+      }),
+      accessType: "PAID",
+      billingInterval: "MONTH",
+      trialDays: null,
+      requiresPaymentMethod: true,
+    };
+
+    const snapshot = buildCampaignSnapshot({
+      campaign,
+      now,
+      consentAcceptedAt: now,
+      checkoutDisclosureTextHash: "hash_monthly",
+    });
+
+    expect(snapshot).toMatchObject({
+      campaignId: "camp_monthly",
+      campaignCode: "MONTHLY",
+      accessType: "PAID",
+      plan: "INDIVIDUAL",
+      interval: "MONTH",
+      trialDaysAtSignup: null,
+      stripePriceIdAtSignup: "price_monthly",
+      displayPriceAtSignup: "$9/month",
+      firstChargeAmount: "$9/month",
+      checkoutDisclosureTextHash: "hash_monthly",
+    });
+    expect(snapshot.trialStartsAt).toBeNull();
+    expect(snapshot.trialEndsAt).toBeNull();
+    expect(snapshot.firstChargeAt).toBe("2026-04-28T12:00:00.000Z");
   });
 
   it("distinguishes Free Access, trial, canceled trial, and paid renewal states", () => {

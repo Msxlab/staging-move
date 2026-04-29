@@ -63,6 +63,43 @@ describe("validateStripeCampaignPrice", () => {
     expect(result.error).toBeUndefined();
   });
 
+  it("validates paid monthly campaigns against monthly Stripe prices", async () => {
+    mocks.pricesRetrieve.mockResolvedValueOnce({
+      active: true,
+      currency: "usd",
+      unit_amount: 900,
+      recurring: { interval: "month" },
+    });
+
+    const result = await validateStripeCampaignPrice({
+      accessType: "PAID",
+      requiresPaymentMethod: true,
+      stripePriceId: "price_monthly",
+      displayPriceLabel: "",
+      billingInterval: "MONTH",
+      status: "ACTIVE",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.displayPriceLabel).toBe("$9/month");
+    expect(result.price?.interval).toBe("month");
+  });
+
+  it("blocks paid monthly campaigns backed by yearly Stripe prices", async () => {
+    const result = await validateStripeCampaignPrice({
+      accessType: "PAID",
+      requiresPaymentMethod: true,
+      stripePriceId: "price_wrong_interval",
+      displayPriceLabel: "$79/year",
+      billingInterval: "MONTH",
+      status: "ACTIVE",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe("PRICE_VALIDATION_FAILED");
+    expect(result.error).toContain("month");
+  });
+
   it("allows draft mismatch with a warning", async () => {
     const result = await validateStripeCampaignPrice({
       accessType: "FREE_TRIAL",

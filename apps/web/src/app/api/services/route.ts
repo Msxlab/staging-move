@@ -15,7 +15,7 @@ import {
   duplicateServiceError,
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
-import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
+import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
 
@@ -149,13 +149,26 @@ export async function POST(request: NextRequest) {
           status === "CANCEL_AT_PERIOD_END" ||
           status === "TRIAL_CANCELED")
       );
-      const publicCampaign = eligibleForTrial ? await getPublicCampaignViewModel() : null;
+      const publicOffers = eligibleForTrial ? await getPublicSubscriptionOffersViewModel() : null;
+      const publicCampaign = publicOffers?.annualTrial || publicOffers?.monthlyPaid || null;
       const campaign = publicCampaign
         ? {
             code: publicCampaign.campaignCode,
             publicHeadline: publicCampaign.publicHeadline,
             displayPriceLabel: publicCampaign.displayPriceLabel,
             trialDays: publicCampaign.trialDays,
+            accessType: publicCampaign.accessType,
+            billingInterval: publicCampaign.billingInterval,
+          }
+        : null;
+      const monthlyOffer = publicOffers?.monthlyPaid
+        ? {
+            code: publicOffers.monthlyPaid.campaignCode,
+            publicHeadline: publicOffers.monthlyPaid.publicHeadline,
+            displayPriceLabel: publicOffers.monthlyPaid.displayPriceLabel,
+            trialDays: publicOffers.monthlyPaid.trialDays,
+            accessType: publicOffers.monthlyPaid.accessType,
+            billingInterval: publicOffers.monthlyPaid.billingInterval,
           }
         : null;
       return serviceError(
@@ -176,6 +189,8 @@ export async function POST(request: NextRequest) {
             eligibleForTrial,
           },
           campaign,
+          offers: publicOffers,
+          monthlyOffer,
           upgradePath: "/settings/subscription",
         },
       );

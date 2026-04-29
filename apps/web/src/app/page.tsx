@@ -33,7 +33,7 @@ import {
 } from "@locateflow/shared";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
-import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
+import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 import { AppStoreCTA } from "@/components/marketing/app-store-cta";
 import { MobileMockup } from "@/components/marketing/mobile-mockup";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
@@ -83,7 +83,7 @@ export default async function LandingPage() {
   const primaryHref = userId ? "/dashboard" : "/sign-up";
   const [ctaTarget, publicCampaign] = await Promise.all([
     resolveMarketingCtaTarget(userId),
-    getPublicCampaignViewModel(),
+    getPublicSubscriptionOffersViewModel(),
   ]);
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   // Server-side translation — getTranslations resolves the locale from
@@ -322,7 +322,7 @@ export default async function LandingPage() {
         ctaHref={ctaTarget.href}
         ctaLabelLoggedIn={!!userId}
         ctaIntent={ctaTarget.intent}
-        campaign={publicCampaign}
+        offers={publicCampaign}
       />
 
       {/* Current workflow coverage */}

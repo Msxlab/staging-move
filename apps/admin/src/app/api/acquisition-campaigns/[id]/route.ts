@@ -8,7 +8,7 @@ import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
 
 const ACTIVE_CAMPAIGN_CONFLICT_RESPONSE = {
   code: "ACTIVE_CAMPAIGN_CONFLICT",
-  error: "Another active Individual Annual trial campaign already exists. Pause or end it before activating this one.",
+  error: "Another active matching Individual campaign already exists. Pause or end it before activating this one.",
 };
 
 function normalizeCode(value: unknown) {
@@ -32,10 +32,22 @@ function mutableCampaignData(body: any) {
   }
   if (body.code !== undefined) data.code = normalizeCode(body.code);
   if (body.accessType !== undefined) {
-    data.accessType = body.accessType === "FREE_ACCESS" ? "FREE_ACCESS" : "FREE_TRIAL";
-    data.billingInterval = data.accessType === "FREE_TRIAL" ? "YEAR" : null;
-    data.requiresPaymentMethod = data.accessType === "FREE_TRIAL";
-    data.autoRenew = data.accessType === "FREE_TRIAL";
+    data.accessType = body.accessType === "FREE_ACCESS"
+      ? "FREE_ACCESS"
+      : body.accessType === "PAID"
+        ? "PAID"
+        : "FREE_TRIAL";
+    data.billingInterval = data.accessType === "FREE_TRIAL"
+      ? "YEAR"
+      : data.accessType === "PAID"
+        ? (body.billingInterval === "YEAR" ? "YEAR" : "MONTH")
+        : null;
+    data.requiresPaymentMethod = data.accessType === "FREE_TRIAL" || data.accessType === "PAID";
+    data.autoRenew = data.requiresPaymentMethod;
+    if (!data.requiresPaymentMethod) data.stripePriceId = null;
+  }
+  if (body.billingInterval !== undefined && data.accessType === undefined) {
+    data.billingInterval = body.billingInterval === "YEAR" ? "YEAR" : body.billingInterval === "MONTH" ? "MONTH" : null;
   }
   if (body.trialDays !== undefined) data.trialDays = body.trialDays ? Number(body.trialDays) : null;
   if (body.freeAccessDays !== undefined) data.freeAccessDays = body.freeAccessDays ? Number(body.freeAccessDays) : null;

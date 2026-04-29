@@ -21,6 +21,16 @@ export interface ServiceLimitDetails {
     publicHeadline?: string | null;
     displayPriceLabel?: string | null;
     trialDays?: number | null;
+    accessType?: string | null;
+    billingInterval?: string | null;
+  } | null;
+  monthlyOffer?: {
+    code?: string | null;
+    publicHeadline?: string | null;
+    displayPriceLabel?: string | null;
+    trialDays?: number | null;
+    accessType?: string | null;
+    billingInterval?: string | null;
   } | null;
   upgradePath?: string | null;
 }
@@ -54,7 +64,7 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
   const accessType = details?.subscription?.accessType ?? details?.accessType ?? null;
   const eligibleForTrial =
     details?.subscription?.eligibleForTrial ?? details?.eligibleForTrial ?? true;
-  const campaign = details?.campaign || null;
+  const campaign = details?.campaign || details?.monthlyOffer || null;
 
   // Paid users hit the Individual Annual ceiling — there's no higher tier
   // to upsell into, so the modal switches to a contact-support shape and
@@ -62,7 +72,7 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
   if (!eligibleForTrial || accessType === "PAID") {
     return {
       title: "You've reached your service limit",
-      body: `Your Individual Annual plan includes up to ${limit} active services. Contact support if you need additional capacity.`,
+      body: `Your Individual plan includes up to ${limit} active services. Contact support if you need additional capacity.`,
       primary: "Manage subscription",
       secondary: "Maybe later",
     };
@@ -77,9 +87,10 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
       ? `${campaign.displayPriceLabel}${trialLabel ? " after trial" : ""}`
       : "annual billing";
     const tier = accessType === "FREE_TRIAL" ? "Free Trial" : "Free Access";
+    const upgradeCopy = trialLabel ? headline : `${headline} to keep adding services`;
     return {
       title: "You've reached your service limit",
-      body: `${tier} includes up to ${limit} active services. ${headline} to keep adding services. ${priceCopy}.`,
+      body: `${tier} includes up to ${limit} active services. ${upgradeCopy}. ${priceCopy}.`,
       primary: headline,
       secondary: "Maybe later",
     };

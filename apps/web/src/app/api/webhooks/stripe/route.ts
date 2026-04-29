@@ -410,15 +410,18 @@ export async function POST(request: NextRequest) {
           stripeSubscriptionId: stripeSubId,
           stripeSubscription,
           plan: plan || "INDIVIDUAL",
-          billingInterval: session.metadata?.cycle === "yearly" ? "YEAR" : null,
+          billingInterval: session.metadata?.cycle === "monthly" ? "MONTH" : "YEAR",
         });
 
-        if (session.metadata?.accessType === "FREE_TRIAL" && userId) {
+        if (
+          (session.metadata?.accessType === "FREE_TRIAL" || session.metadata?.accessType === "PAID") &&
+          userId
+        ) {
           try {
             const pendingRedemption = await (prisma as any).acquisitionRedemption.findFirst({
               where: {
                 userId,
-                accessType: "FREE_TRIAL",
+                accessType: session.metadata.accessType,
                 status: "PENDING_CHECKOUT",
               },
               orderBy: { createdAt: "desc" },
@@ -481,7 +484,7 @@ export async function POST(request: NextRequest) {
           stripeSubscriptionId: stripeSubId,
           stripeSubscription: subscription,
           plan,
-          billingInterval: subscription.metadata?.cycle === "yearly" ? "YEAR" : "YEAR",
+          billingInterval: subscription.metadata?.cycle === "monthly" ? "MONTH" : "YEAR",
         });
         break;
       }

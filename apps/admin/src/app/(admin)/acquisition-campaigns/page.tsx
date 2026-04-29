@@ -9,7 +9,8 @@ type Campaign = {
   name: string;
   code: string;
   status: string;
-  accessType: "FREE_ACCESS" | "FREE_TRIAL";
+  accessType: "FREE_ACCESS" | "FREE_TRIAL" | "PAID";
+  billingInterval: "YEAR" | "MONTH" | null;
   trialDays: number | null;
   freeAccessDays: number | null;
   displayPriceLabel: string | null;
@@ -46,6 +47,7 @@ const emptyForm = {
   name: "",
   code: "",
   accessType: "FREE_TRIAL",
+  billingInterval: "YEAR",
   trialDays: "90",
   freeAccessDays: "30",
   stripePriceId: "",
@@ -72,6 +74,7 @@ function campaignToForm(campaign: Campaign) {
     name: campaign.name || "",
     code: campaign.code || "",
     accessType: campaign.accessType || "FREE_TRIAL",
+    billingInterval: campaign.billingInterval || (campaign.accessType === "PAID" ? "MONTH" : "YEAR"),
     trialDays: String(campaign.trialDays || 90),
     freeAccessDays: String(campaign.freeAccessDays || 30),
     stripePriceId: campaign.stripePriceId || "",
@@ -88,13 +91,23 @@ function campaignToForm(campaign: Campaign) {
 }
 
 function buildCampaignPayload(form: typeof emptyForm) {
-  const accessType = form.accessType === "FREE_ACCESS" ? "FREE_ACCESS" : "FREE_TRIAL";
+  const normalizedAccessType = form.accessType === "FREE_ACCESS"
+    ? "FREE_ACCESS"
+    : form.accessType === "PAID"
+      ? "PAID"
+      : "FREE_TRIAL";
+  const paymentRequired = normalizedAccessType === "FREE_TRIAL" || normalizedAccessType === "PAID";
   return {
     ...form,
-    accessType,
-    trialDays: accessType === "FREE_TRIAL" ? Number(form.trialDays || 90) : null,
-    freeAccessDays: accessType === "FREE_ACCESS" ? Number(form.freeAccessDays || 30) : null,
-    stripePriceId: accessType === "FREE_TRIAL" ? form.stripePriceId : "",
+    accessType: normalizedAccessType,
+    billingInterval: normalizedAccessType === "FREE_TRIAL"
+      ? "YEAR"
+      : normalizedAccessType === "PAID"
+        ? form.billingInterval
+        : null,
+    trialDays: normalizedAccessType === "FREE_TRIAL" ? Number(form.trialDays || 90) : null,
+    freeAccessDays: normalizedAccessType === "FREE_ACCESS" ? Number(form.freeAccessDays || 30) : null,
+    stripePriceId: paymentRequired ? form.stripePriceId : "",
     maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
     startsAt: form.startsAt || null,
     endsAt: form.endsAt || null,
@@ -133,6 +146,58 @@ export default function AcquisitionCampaignsPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function updateAccessType(value: string) {
+    const accessType = value === "FREE_ACCESS" ? "FREE_ACCESS" : value === "PAID" ? "PAID" : "FREE_TRIAL";
+    setForm((current) => {
+      if (accessType === "PAID") {
+        return {
+          ...current,
+          accessType,
+          billingInterval: current.accessType === "PAID" ? current.billingInterval : "MONTH",
+          displayPriceLabel: current.accessType === "PAID" ? current.displayPriceLabel : "",
+          publicHeadline: current.accessType === "PAID" ? current.publicHeadline : "Subscribe monthly",
+          publicSubheadline: current.accessType === "PAID" ? current.publicSubheadline : "Simple monthly billing.",
+          checkoutDisclosureCopy: current.accessType === "PAID" ? current.checkoutDisclosureCopy : "Checkout shows today's due amount, monthly renewal terms, and how to cancel.",
+        };
+      }
+      if (accessType === "FREE_ACCESS") {
+        return {
+          ...current,
+          accessType,
+          billingInterval: "YEAR",
+          stripePriceId: "",
+          displayPriceLabel: "",
+          publicHeadline: current.accessType === "FREE_ACCESS" ? current.publicHeadline : "Free Access",
+          publicSubheadline: current.accessType === "FREE_ACCESS" ? current.publicSubheadline : "No payment method required.",
+          checkoutDisclosureCopy: current.accessType === "FREE_ACCESS" ? current.checkoutDisclosureCopy : "Free Access does not require a payment method and does not auto-renew.",
+        };
+      }
+      return {
+        ...current,
+        accessType,
+        billingInterval: "YEAR",
+        displayPriceLabel: current.accessType === "FREE_TRIAL" ? current.displayPriceLabel : "$79/year",
+        publicHeadline: current.accessType === "FREE_TRIAL" ? current.publicHeadline : "Start with 3 months free",
+        publicSubheadline: current.accessType === "FREE_TRIAL" ? current.publicSubheadline : "Individual Annual starts after your trial.",
+        checkoutDisclosureCopy: current.accessType === "FREE_TRIAL" ? current.checkoutDisclosureCopy : "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
+      };
+    });
+  }
+
+  function updateBillingInterval(value: string) {
+    setForm((current) => ({
+      ...current,
+      billingInterval: value,
+      displayPriceLabel: current.accessType === "PAID" ? "" : current.displayPriceLabel,
+      publicHeadline: current.accessType === "PAID"
+        ? (value === "YEAR" ? "Subscribe annually" : "Subscribe monthly")
+        : current.publicHeadline,
+      publicSubheadline: current.accessType === "PAID"
+        ? (value === "YEAR" ? "Annual billing starts today." : "Simple monthly billing.")
+        : current.publicSubheadline,
+    }));
+  }
+
   function showPriceValidation(feedback: PriceValidationFeedback) {
     setPriceValidation(feedback || null);
     if (!feedback) return;
@@ -141,7 +206,8 @@ export default function AcquisitionCampaignsPage() {
     } else if (feedback.error) {
       toast.error(feedback.error);
     } else if (feedback.canonicalDisplayPriceLabel) {
-      toast.success(`Stripe price validated: ${feedback.canonicalDisplayPriceLabel} USD, annual`);
+      const interval = feedback.price?.interval === "month" ? "monthly" : "annual";
+      toast.success(`Stripe price validated: ${feedback.canonicalDisplayPriceLabel} USD, ${interval}`);
     }
   }
 
@@ -224,7 +290,7 @@ export default function AcquisitionCampaignsPage() {
       <div>
         <h1 className="text-3xl font-bold text-foreground">Acquisition Campaigns</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage Individual Free Access and Free Trial campaigns without changing existing redemption snapshots.
+          Manage Individual Free Access, Free Trial, and Paid campaigns without changing existing redemption snapshots.
           Public site updates within 60 seconds after activation.
         </p>
       </div>
@@ -254,9 +320,10 @@ export default function AcquisitionCampaignsPage() {
           </div>
           <div>
             <label className="mb-1 block text-xs text-muted-foreground">Access Type</label>
-            <select className={inputCls} value={form.accessType} onChange={(event) => update("accessType", event.target.value)}>
+            <select className={inputCls} value={form.accessType} onChange={(event) => updateAccessType(event.target.value)}>
               <option value="FREE_TRIAL">Free Trial</option>
               <option value="FREE_ACCESS">Free Access</option>
+              <option value="PAID">Paid</option>
             </select>
           </div>
           {form.accessType === "FREE_TRIAL" ? (
@@ -264,6 +331,20 @@ export default function AcquisitionCampaignsPage() {
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Trial Days</label>
                 <input className={inputCls} type="number" min="1" value={form.trialDays} onChange={(event) => update("trialDays", event.target.value)} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">Stripe Price ID</label>
+                <input className={inputCls} value={form.stripePriceId} onChange={(event) => update("stripePriceId", event.target.value)} placeholder="price_..." />
+              </div>
+            </>
+          ) : form.accessType === "PAID" ? (
+            <>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">Billing Interval</label>
+                <select className={inputCls} value={form.billingInterval} onChange={(event) => updateBillingInterval(event.target.value)}>
+                  <option value="MONTH">Monthly</option>
+                  <option value="YEAR">Yearly</option>
+                </select>
               </div>
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Stripe Price ID</label>
@@ -327,7 +408,7 @@ export default function AcquisitionCampaignsPage() {
               priceValidation.warning ||
               (priceValidation.skipped
                 ? "Stripe price validation skipped for this no-payment campaign."
-                : `Stripe price validated: ${priceValidation.canonicalDisplayPriceLabel || "configured price"} USD, annual`)}
+                : `Stripe price validated: ${priceValidation.canonicalDisplayPriceLabel || "configured price"} USD, ${priceValidation.price?.interval === "month" ? "monthly" : "annual"}`)}
           </div>
         ) : null}
         <div className="mt-4 flex flex-wrap gap-2">
@@ -376,7 +457,13 @@ export default function AcquisitionCampaignsPage() {
                   <p className="mt-2 text-sm text-muted-foreground">{campaign.publicHeadline}</p>
                   <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-4">
                     <span>Plan: Individual</span>
-                    <span>{campaign.accessType === "FREE_TRIAL" ? `Trial: ${campaign.trialDays || 90} days` : `Free Access: ${campaign.freeAccessDays || 0} days`}</span>
+                    <span>
+                      {campaign.accessType === "FREE_TRIAL"
+                        ? `Trial: ${campaign.trialDays || 90} days`
+                        : campaign.accessType === "PAID"
+                          ? `Billing: ${campaign.billingInterval === "YEAR" ? "Yearly" : "Monthly"}`
+                          : `Free Access: ${campaign.freeAccessDays || 0} days`}
+                    </span>
                     <span>Payment method: {campaign.requiresPaymentMethod ? "Required" : "Not required"}</span>
                     <span>Redemptions: {campaign.redemptionCount}{campaign.maxRedemptions ? ` / ${campaign.maxRedemptions}` : ""}</span>
                   </div>

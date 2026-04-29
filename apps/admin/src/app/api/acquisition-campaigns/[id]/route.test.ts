@@ -108,6 +108,37 @@ describe("admin acquisition campaigns update route", () => {
     expect(body.priceValidation).toMatchObject({ ok: true });
   });
 
+  it("updates a campaign into a paid monthly offer", async () => {
+    mocks.validateStripeCampaignPrice.mockResolvedValueOnce({
+      ok: true,
+      displayPriceLabel: "$9/month",
+      canonicalDisplayPriceLabel: "$9/month",
+      price: { interval: "month" },
+    });
+
+    const response = await PATCH(request({
+      accessType: "PAID",
+      billingInterval: "MONTH",
+      stripePriceId: "price_monthly",
+      displayPriceLabel: "",
+      publicHeadline: "Subscribe monthly",
+    }), params());
+
+    expect(response.status).toBe(200);
+    expect(mocks.campaignFindMany).not.toHaveBeenCalled();
+    expect(mocks.campaignUpdate).toHaveBeenCalledWith({
+      where: { id: "camp_1" },
+      data: expect.objectContaining({
+        accessType: "PAID",
+        billingInterval: "MONTH",
+        requiresPaymentMethod: true,
+        autoRenew: true,
+        stripePriceId: "price_monthly",
+        displayPriceLabel: "$9/month",
+      }),
+    });
+  });
+
   it("blocks ACTIVE updates when Stripe price validation fails", async () => {
     mocks.validateStripeCampaignPrice.mockResolvedValueOnce({
       ok: false,

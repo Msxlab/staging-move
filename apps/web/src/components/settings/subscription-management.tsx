@@ -40,14 +40,21 @@ type ProfileResponse = {
 
 type PublicTrialCampaign = {
   campaignCode: string;
+  accessType: string;
   publicHeadline: string;
   publicSubheadline: string | null;
   checkoutDisclosureCopy: string | null;
   displayPriceLabel: string;
-  trialDays: number;
+  trialDays: number | null;
+  billingInterval: string | null;
   ctaText: string;
   priceCopy: string;
   trialLabel: string | null;
+};
+
+type PublicSubscriptionOffers = {
+  annualTrial?: PublicTrialCampaign | null;
+  monthlyPaid?: PublicTrialCampaign | null;
 };
 
 function addDays(date: Date, days: number) {
@@ -63,7 +70,12 @@ function formatDateLabel(value?: string | null) {
   return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 }
 
-function stateTitle(state: string) {
+function intervalLabel(subscription: SubscriptionRecord | null | undefined) {
+  return subscription?.billingInterval === "MONTH" ? "Monthly" : "Annual";
+}
+
+function stateTitle(state: string, subscription?: SubscriptionRecord | null) {
+  const interval = intervalLabel(subscription);
   switch (state) {
     case "FREE_ACCESS":
       return "Free Access";
@@ -74,14 +86,14 @@ function stateTitle(state: string) {
     case "TRIAL_CANCELED":
       return "Trial canceled";
     case "ACTIVE":
-      return "Individual Annual";
+      return `Individual ${interval}`;
     case "CANCEL_AT_PERIOD_END":
-      return "Individual Annual";
+      return `Individual ${interval}`;
     case "PAST_DUE":
     case "GRACE_PERIOD":
       return "Payment needs attention";
     case "PENDING_CHECKOUT":
-      return "Activating your annual trial";
+      return "Activating checkout";
     default:
       return "Subscription";
   }
@@ -119,6 +131,7 @@ export default function SubscriptionManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [waitingForActivation, setWaitingForActivation] = useState(false);
   const [publicCampaign, setPublicCampaign] = useState<PublicTrialCampaign | null>(null);
+  const [monthlyOffer, setMonthlyOffer] = useState<PublicTrialCampaign | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const successFlag = searchParams.get("success") === "true";
@@ -146,10 +159,15 @@ export default function SubscriptionManagementPage() {
   async function loadPublicCampaign() {
     try {
       const response = await fetch("/api/acquisition/public-trial-campaign", { cache: "no-store" });
-      const data = (await response.json()) as { campaign?: PublicTrialCampaign | null };
-      setPublicCampaign(response.ok ? data.campaign || null : null);
+      const data = (await response.json()) as {
+        campaign?: PublicTrialCampaign | null;
+        offers?: PublicSubscriptionOffers | null;
+      };
+      setPublicCampaign(response.ok ? data.offers?.annualTrial || data.campaign || null : null);
+      setMonthlyOffer(response.ok ? data.offers?.monthlyPaid || null : null);
     } catch {
       setPublicCampaign(null);
+      setMonthlyOffer(null);
     }
   }
 
@@ -214,19 +232,25 @@ export default function SubscriptionManagementPage() {
     : addDays(new Date(), publicCampaign?.trialDays || 90);
   const firstChargeLabel = formatDateLabel(firstChargeDate.toISOString());
   const subscriptionPriceLabel = subscription?.firstChargeAmount
-    ? `$${subscription.firstChargeAmount}/year`
+    ? `$${subscription.firstChargeAmount}/${subscription?.billingInterval === "MONTH" ? "month" : "year"}`
     : BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel || "$79/year";
   const offerPriceLabel = publicCampaign?.displayPriceLabel || subscriptionPriceLabel;
+  const monthlyDisclosure = monthlyOffer?.checkoutDisclosureCopy ||
+    (monthlyOffer
+      ? `Today: ${monthlyOffer.displayPriceLabel}. Your Individual Monthly subscription starts today and renews monthly until you cancel.`
+      : null);
   const checkoutDisclosure = buildCheckoutDisclosureText({
     firstChargeAt: firstChargeDate,
     firstChargeAmount: offerPriceLabel,
   });
   const consentLabel = publicCampaign
     ? buildTrialConsentLabel(firstChargeDate)
-    : "I understand checkout will show the current Individual Annual terms before I subscribe.";
+    : monthlyOffer
+      ? "I understand my Individual Monthly subscription starts today and renews monthly until I cancel."
+      : "I understand checkout will show the current Individual terms before I subscribe.";
   const offerDisclosure = publicCampaign
     ? publicCampaign.checkoutDisclosureCopy || checkoutDisclosure
-    : "Checkout will show today's due amount, billing interval, first charge date, and renewal terms before you subscribe.";
+    : monthlyDisclosure || "Checkout will show today's due amount, billing interval, first charge date, and renewal terms before you subscribe.";
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
   // Trialing, active, and pending-checkout users have either already started
   // the annual plan or are mid-checkout — re-offering the trial CTA in those
@@ -236,7 +260,8 @@ export default function SubscriptionManagementPage() {
   // the "Activating…" banner.
   const showAnnualTrialOffer =
     !waitingForActivation &&
-    ["FREE_ACCESS", "FREE_ACCESS_EXPIRED", "CANCELED"].includes(currentState);
+    ["FREE_ACCESS", "FREE_ACCESS_EXPIRED", "CANCELED"].includes(currentState) &&
+    Boolean(publicCampaign || monthlyOffer);
 
   async function startAnnualTrial() {
     if (!acceptedTerms) {
@@ -253,6 +278,33 @@ export default function SubscriptionManagementPage() {
           plan: "INDIVIDUAL",
           cycle: "yearly",
           ...(publicCampaign?.campaignCode ? { campaignCode: publicCampaign.campaignCode } : {}),
+          acceptedSubscriptionTerms: true,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.url) throw new Error(data?.error || "Failed to start checkout.");
+      window.location.href = data.url;
+    } catch (err: any) {
+      setError(err?.message || "Failed to start checkout.");
+      setProcessing(null);
+    }
+  }
+
+  async function startMonthlyPlan() {
+    if (!acceptedTerms) {
+      setError("Please review and accept the subscription terms to continue.");
+      return;
+    }
+    setProcessing("MONTHLY_CHECKOUT");
+    setError(null);
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: "INDIVIDUAL",
+          cycle: "monthly",
+          ...(monthlyOffer?.campaignCode ? { campaignCode: monthlyOffer.campaignCode } : {}),
           acceptedSubscriptionTerms: true,
         }),
       });
@@ -303,28 +355,34 @@ export default function SubscriptionManagementPage() {
 
   const primaryDetail = (() => {
     if (currentState === "FREE_ACCESS") return `Access ends on ${freeAccessEndLabel || "the scheduled end date"}.`;
-    if (currentState === "FREE_ACCESS_EXPIRED") return "Choose the annual plan to continue full access.";
+    if (currentState === "FREE_ACCESS_EXPIRED") return "Choose an Individual plan to continue full access.";
     if (currentState === "TRIALING") return `Trial ends on ${trialEndLabel || "the scheduled trial end date"}. Next charge: ${subscriptionPriceLabel} on ${firstChargeLabel}.`;
     if (currentState === "TRIAL_CANCELED") return `Your trial remains active until ${trialEndLabel || "the trial end date"}. You will not be billed.`;
     if (currentState === "ACTIVE") return `Renews on ${periodEndLabel || "the renewal date"}.`;
     if (currentState === "CANCEL_AT_PERIOD_END") return `Your plan remains active until ${periodEndLabel || "the period end date"}. It will not renew.`;
-    if (currentState === "GRACE_PERIOD") return "Your annual payment needs attention. Access continues during the short grace period.";
+    if (currentState === "GRACE_PERIOD") return "Your payment needs attention. Access continues during the short grace period.";
     if (currentState === "PAST_DUE") return "Update billing to continue full access.";
-    if (currentState === "PENDING_CHECKOUT") return "Activating your annual trial… we are confirming with Stripe. This usually takes a few seconds.";
+    if (currentState === "PENDING_CHECKOUT") return "Activating checkout... we are confirming with Stripe. This usually takes a few seconds.";
     return "Review your current LocateFlow access.";
   })();
-  const offerHeadline = publicCampaign?.publicHeadline || "Upgrade to Individual Annual";
+  const offerHeadline = publicCampaign?.publicHeadline || monthlyOffer?.publicHeadline || "Upgrade to Individual";
   const offerSubheadline =
     publicCampaign?.publicSubheadline ||
+    monthlyOffer?.publicSubheadline ||
     (publicCampaign
       ? "Individual Annual, then annual billing."
-      : "Review the current Individual Annual offer before checkout.");
+      : monthlyOffer
+        ? "Monthly billing starts today."
+        : "Review the current Individual offer before checkout.");
   const offerTrialLabel = publicCampaign?.trialLabel || null;
   const offerCtaLabel =
     processing === "CHECKOUT"
       ? "Opening checkout..."
       : publicCampaign?.ctaText ||
         (currentState === "FREE_ACCESS" ? "Continue with annual" : "Upgrade to Individual Annual");
+  const monthlyCtaLabel = processing === "MONTHLY_CHECKOUT"
+    ? "Opening checkout..."
+    : monthlyOffer?.ctaText || "Subscribe monthly";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-8">
@@ -334,7 +392,7 @@ export default function SubscriptionManagementPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Subscription</h1>
-          <p className="text-sm text-muted-foreground">Manage Individual access and annual billing</p>
+          <p className="text-sm text-muted-foreground">Manage Individual access and billing</p>
         </div>
       </div>
 
@@ -363,7 +421,7 @@ export default function SubscriptionManagementPage() {
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-lg font-semibold text-foreground">{stateTitle(currentState)}</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{stateTitle(currentState, subscription)}</h2>
                     <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${statusBadge(currentState)}`}>
                       {statusLabel(currentState)}
                     </span>
@@ -437,27 +495,44 @@ export default function SubscriptionManagementPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-xl border border-border bg-background/40 p-4">
-                <p className="text-xs uppercase text-muted-foreground">Today</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">$0</p>
-              </div>
-              {offerTrialLabel ? (
+            {publicCampaign ? (
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-border bg-background/40 p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Today</p>
+                  <p className="mt-1 text-2xl font-bold text-foreground">$0</p>
+                </div>
+                {offerTrialLabel ? (
                 <div className="rounded-xl border border-border bg-background/40 p-4">
                   <p className="text-xs uppercase text-muted-foreground">Trial</p>
                   <p className="mt-1 text-2xl font-bold text-foreground">{offerTrialLabel}</p>
                 </div>
-              ) : (
+                ) : null}
                 <div className="rounded-xl border border-border bg-background/40 p-4">
-                  <p className="text-xs uppercase text-muted-foreground">Plan</p>
-                  <p className="mt-1 text-lg font-semibold text-foreground">Individual Annual</p>
+                  <p className="text-xs uppercase text-muted-foreground">Annual plan starts</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">{firstChargeLabel}</p>
                 </div>
-              )}
-              <div className="rounded-xl border border-border bg-background/40 p-4">
-                <p className="text-xs uppercase text-muted-foreground">Annual plan starts</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">{firstChargeLabel}</p>
               </div>
-            </div>
+            ) : null}
+
+            {monthlyOffer ? (
+              <div className="mt-4 rounded-xl border border-border bg-background/40 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground">Monthly option</p>
+                    <h3 className="mt-1 text-lg font-semibold text-foreground">
+                      {monthlyOffer.publicHeadline || "Subscribe monthly"}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {monthlyOffer.publicSubheadline || `${monthlyOffer.displayPriceLabel} with monthly renewal.`}
+                    </p>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <p className="text-2xl font-bold text-foreground">{monthlyOffer.displayPriceLabel}</p>
+                    <p className="text-xs text-muted-foreground">Starts today</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-4 rounded-xl border border-border bg-background/40 p-4">
               <div className="flex items-start gap-3">
@@ -486,15 +561,28 @@ export default function SubscriptionManagementPage() {
               <span>{consentLabel}</span>
             </label>
 
-            <button
-              type="button"
-              onClick={() => void startAnnualTrial()}
-              disabled={processing === "CHECKOUT" || !acceptedTerms}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-            >
-              <Check className="h-4 w-4" />
-              {offerCtaLabel}
-            </button>
+            {publicCampaign ? (
+              <button
+                type="button"
+                onClick={() => void startAnnualTrial()}
+                disabled={processing === "CHECKOUT" || !acceptedTerms}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                <Check className="h-4 w-4" />
+                {offerCtaLabel}
+              </button>
+            ) : null}
+            {monthlyOffer ? (
+              <button
+                type="button"
+                onClick={() => void startMonthlyPlan()}
+                disabled={processing === "MONTHLY_CHECKOUT" || !acceptedTerms}
+                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60 sm:ml-3 sm:mt-4 sm:w-auto"
+              >
+                <Check className="h-4 w-4" />
+                {monthlyCtaLabel}
+              </button>
+            ) : null}
           </div>
           ) : null}
         </>
