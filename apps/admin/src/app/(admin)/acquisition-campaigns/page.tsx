@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, Pause, Play, Plus, Square, Ticket } from "lucide-react";
+import { Copy, Pause, Pencil, Play, Plus, Save, Square, Ticket, X } from "lucide-react";
 import { toast } from "sonner";
 
 type Campaign = {
@@ -21,6 +21,7 @@ type Campaign = {
   endsAt: string | null;
   maxRedemptions: number | null;
   redemptionCount: number;
+  internalNotes: string | null;
   publicHeadline: string;
   publicSubheadline: string | null;
   checkoutDisclosureCopy: string | null;
@@ -59,12 +60,56 @@ const emptyForm = {
   internalNotes: "",
 };
 
+function formatDateTimeInput(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 16);
+}
+
+function campaignToForm(campaign: Campaign) {
+  return {
+    name: campaign.name || "",
+    code: campaign.code || "",
+    accessType: campaign.accessType || "FREE_TRIAL",
+    trialDays: String(campaign.trialDays || 90),
+    freeAccessDays: String(campaign.freeAccessDays || 30),
+    stripePriceId: campaign.stripePriceId || "",
+    displayPriceLabel: campaign.displayPriceLabel || "",
+    publicHeadline: campaign.publicHeadline || "",
+    publicSubheadline: campaign.publicSubheadline || "",
+    checkoutDisclosureCopy: campaign.checkoutDisclosureCopy || "",
+    newUsersOnly: campaign.newUsersOnly !== false,
+    maxRedemptions: campaign.maxRedemptions ? String(campaign.maxRedemptions) : "",
+    startsAt: formatDateTimeInput(campaign.startsAt),
+    endsAt: formatDateTimeInput(campaign.endsAt),
+    internalNotes: campaign.internalNotes || "",
+  };
+}
+
+function buildCampaignPayload(form: typeof emptyForm) {
+  const accessType = form.accessType === "FREE_ACCESS" ? "FREE_ACCESS" : "FREE_TRIAL";
+  return {
+    ...form,
+    accessType,
+    trialDays: accessType === "FREE_TRIAL" ? Number(form.trialDays || 90) : null,
+    freeAccessDays: accessType === "FREE_ACCESS" ? Number(form.freeAccessDays || 30) : null,
+    stripePriceId: accessType === "FREE_TRIAL" ? form.stripePriceId : "",
+    maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
+    startsAt: form.startsAt || null,
+    endsAt: form.endsAt || null,
+    internalNotes: form.internalNotes || null,
+  };
+}
+
 export default function AcquisitionCampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [priceValidation, setPriceValidation] = useState<PriceValidationFeedback>(null);
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
+  const editingCampaign = campaigns.find((campaign) => campaign.id === editingCampaignId) || null;
 
   async function load() {
     setLoading(true);
@@ -100,27 +145,41 @@ export default function AcquisitionCampaignsPage() {
     }
   }
 
-  async function createCampaign() {
+  function resetForm() {
+    setEditingCampaignId(null);
+    setForm(emptyForm);
+    setPriceValidation(null);
+  }
+
+  function startEditing(campaign: Campaign) {
+    setEditingCampaignId(campaign.id);
+    setForm(campaignToForm(campaign));
+    setPriceValidation(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function submitCampaignForm() {
     setSaving(true);
     try {
-      const response = await fetch("/api/acquisition-campaigns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          trialDays: Number(form.trialDays || 90),
-          freeAccessDays: Number(form.freeAccessDays || 30),
-          maxRedemptions: form.maxRedemptions ? Number(form.maxRedemptions) : null,
-        }),
-      });
+      const isEditing = Boolean(editingCampaignId);
+      const response = await fetch(
+        isEditing ? `/api/acquisition-campaigns/${editingCampaignId}` : "/api/acquisition-campaigns",
+        {
+          method: isEditing ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(buildCampaignPayload(form)),
+        },
+      );
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to create campaign.");
+      if (!response.ok) {
+        throw new Error(data.error || (isEditing ? "Failed to update campaign." : "Failed to create campaign."));
+      }
       showPriceValidation(data.priceValidation || null);
-      toast.success("Campaign created");
-      setForm(emptyForm);
+      toast.success(isEditing ? "Campaign updated" : "Campaign created");
+      resetForm();
       await load();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to create campaign.");
+      toast.error(error?.message || (editingCampaignId ? "Failed to update campaign." : "Failed to create campaign."));
     } finally {
       setSaving(false);
     }
@@ -173,7 +232,16 @@ export default function AcquisitionCampaignsPage() {
       <div className="rounded-xl border border-border bg-card p-5">
         <div className="mb-4 flex items-center gap-2">
           <Ticket className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">Create Campaign</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              {editingCampaign ? "Edit Campaign" : "Create Campaign"}
+            </h2>
+            {editingCampaign ? (
+              <p className="text-xs text-muted-foreground">
+                Editing {editingCampaign.name}. Existing redemption snapshots stay unchanged.
+              </p>
+            ) : null}
+          </div>
         </div>
         <div className="grid gap-3 md:grid-cols-4">
           <div className="md:col-span-2">
@@ -232,6 +300,18 @@ export default function AcquisitionCampaignsPage() {
             <input type="checkbox" checked={form.newUsersOnly} onChange={(event) => update("newUsersOnly", event.target.checked)} />
             New users only
           </label>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Starts At</label>
+            <input className={inputCls} type="datetime-local" value={form.startsAt} onChange={(event) => update("startsAt", event.target.value)} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Ends At</label>
+            <input className={inputCls} type="datetime-local" value={form.endsAt} onChange={(event) => update("endsAt", event.target.value)} />
+          </div>
+          <div className="md:col-span-4">
+            <label className="mb-1 block text-xs text-muted-foreground">Internal Notes</label>
+            <textarea className={inputCls} rows={2} value={form.internalNotes} onChange={(event) => update("internalNotes", event.target.value)} placeholder="Admin-only notes" />
+          </div>
         </div>
         {priceValidation ? (
           <div
@@ -250,15 +330,28 @@ export default function AcquisitionCampaignsPage() {
                 : `Stripe price validated: ${priceValidation.canonicalDisplayPriceLabel || "configured price"} USD, annual`)}
           </div>
         ) : null}
-        <button
-          type="button"
-          onClick={() => void createCampaign()}
-          disabled={saving}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
-        >
-          <Plus className="h-4 w-4" />
-          {saving ? "Creating..." : "Create Draft"}
-        </button>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void submitCampaignForm()}
+            disabled={saving}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {editingCampaign ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {saving ? (editingCampaign ? "Saving..." : "Creating...") : editingCampaign ? "Save Changes" : "Create Draft"}
+          </button>
+          {editingCampaign ? (
+            <button
+              type="button"
+              onClick={resetForm}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-60"
+            >
+              <X className="h-4 w-4" />
+              Cancel Edit
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card">
@@ -294,6 +387,9 @@ export default function AcquisitionCampaignsPage() {
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-start gap-2 lg:justify-end">
+                  <button onClick={() => startEditing(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </button>
                   {campaign.status !== "ACTIVE" ? (
                     <button onClick={() => void patchCampaign(campaign.id, { status: "ACTIVE" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
                       <Play className="h-3.5 w-3.5" /> Activate
