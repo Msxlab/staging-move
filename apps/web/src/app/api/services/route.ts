@@ -107,6 +107,24 @@ export async function POST(request: NextRequest) {
     // Plan limit check
     const limitCheck = await canCreateService(userId);
     if (!limitCheck.allowed) {
+      let subscription: { status: string | null; accessType: string | null; plan: string | null } | null = null;
+      try {
+        subscription = await prisma.subscription.findUnique({
+          where: { userId },
+          select: { status: true, accessType: true, plan: true },
+        });
+      } catch {
+        subscription = null;
+      }
+      const status = subscription?.status || null;
+      const accessType = subscription?.accessType || null;
+      const plan = subscription?.plan || null;
+      const eligibleForTrial = !(
+        status === "TRIALING" ||
+        status === "ACTIVE" ||
+        status === "CANCEL_AT_PERIOD_END" ||
+        status === "TRIAL_CANCELED"
+      );
       return serviceError(
         limitErrorCode(limitCheck.code),
         limitCheck.reason || "Subscription required to add services.",
@@ -116,6 +134,10 @@ export async function POST(request: NextRequest) {
           current: limitCheck.current,
           limit: limitCheck.limit,
           entitlementCode: limitCheck.code,
+          accessType,
+          plan,
+          eligibleForTrial,
+          upgradePath: "/settings/subscription",
         },
       );
     }

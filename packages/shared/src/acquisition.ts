@@ -29,6 +29,7 @@ export const USER_SUBSCRIPTION_STATE_VALUES = [
   "CANCELED",
   "PAST_DUE",
   "GRACE_PERIOD",
+  "PENDING_CHECKOUT",
   "REFUNDED",
   "UNKNOWN",
 ] as const;
@@ -264,22 +265,37 @@ export function deriveUserSubscriptionState(
     || asDate(subscription.premiumUntil);
 
   if (status === "REFUNDED") return "REFUNDED";
-  if (subscription.accessType === "FREE_ACCESS") {
-    return freeAccessEndsAt && freeAccessEndsAt > now ? "FREE_ACCESS" : "FREE_ACCESS_EXPIRED";
-  }
-  if (status === "PAST_DUE") {
-    return gracePeriodEndsAt && gracePeriodEndsAt > now ? "GRACE_PERIOD" : "PAST_DUE";
-  }
+
+  // Stripe-side states take priority over lingering accessType=FREE_ACCESS.
+  // A user can begin as Free Access and then start a paid annual trial; the
+  // webhook will set status=TRIALING but accessType may not flip in the same
+  // tick. Showing "Free Access" in that window misled trialing users into
+  // seeing the trial CTA again, so check status first.
   if (status === "TRIAL_CANCELED") return "TRIAL_CANCELED";
   if (status === "TRIALING") {
     if (subscription.cancelAtPeriodEnd) return "TRIAL_CANCELED";
     return trialEndsAt && trialEndsAt > now ? "TRIALING" : "CANCELED";
   }
   if (status === "CANCEL_AT_PERIOD_END") return "CANCEL_AT_PERIOD_END";
+  if (status === "ACTIVE" && subscription.accessType !== "FREE_ACCESS") {
+    if (subscription.cancelAtPeriodEnd) return "CANCEL_AT_PERIOD_END";
+    return periodEnd && periodEnd <= now && subscription.canceledAt ? "CANCELED" : "ACTIVE";
+  }
+
+  if (subscription.accessType === "FREE_ACCESS") {
+    return freeAccessEndsAt && freeAccessEndsAt > now ? "FREE_ACCESS" : "FREE_ACCESS_EXPIRED";
+  }
+  if (status === "PAST_DUE") {
+    return gracePeriodEndsAt && gracePeriodEndsAt > now ? "GRACE_PERIOD" : "PAST_DUE";
+  }
   if (status === "ACTIVE") {
     if (subscription.cancelAtPeriodEnd) return "CANCEL_AT_PERIOD_END";
     return periodEnd && periodEnd <= now && subscription.canceledAt ? "CANCELED" : "ACTIVE";
   }
+  // Stripe Checkout shell exists but the webhook hasn't confirmed yet — show
+  // a calm "activating" state instead of UNKNOWN so the user is not greeted
+  // by an error-shaped tile while their trial is being provisioned.
+  if (status === "PENDING_CHECKOUT" || status === "PENDING_VALIDATION") return "PENDING_CHECKOUT";
   if (status === "CANCELED" || status === "EXPIRED" || status === "UNPAID") return "CANCELED";
   return "UNKNOWN";
 }

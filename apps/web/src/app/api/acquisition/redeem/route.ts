@@ -28,21 +28,30 @@ export async function POST(request: NextRequest) {
     const code = typeof body.code === "string" ? body.code : "";
     const campaign = await findAcquisitionCampaign(code);
     if (!campaign) {
-      return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
+      return NextResponse.json(
+        { code: "CAMPAIGN_NOT_FOUND", error: "This offer is no longer available." },
+        { status: 404 },
+      );
     }
     try {
       assertCampaignAvailable(campaign);
     } catch (error: any) {
-      return NextResponse.json({ error: error?.message || "Campaign is not available." }, { status: 400 });
+      return NextResponse.json(
+        { code: "CAMPAIGN_UNAVAILABLE", error: error?.message || "This offer is no longer available." },
+        { status: 400 },
+      );
     }
     if (campaign.accessType !== "FREE_ACCESS") {
       return NextResponse.json(
-        { error: "This campaign requires checkout to start the trial." },
+        { code: "CAMPAIGN_WRONG_TYPE", error: "This campaign requires checkout to start the trial." },
         { status: 400 },
       );
     }
     if (!campaign.freeAccessDays || campaign.freeAccessDays < 1) {
-      return NextResponse.json({ error: "Free Access duration is not configured." }, { status: 400 });
+      return NextResponse.json(
+        { code: "CAMPAIGN_MISCONFIGURED", error: "Free Access duration is not configured." },
+        { status: 400 },
+      );
     }
 
     if (campaign.newUsersOnly) {
@@ -51,7 +60,10 @@ export async function POST(request: NextRequest) {
         select: { id: true },
       });
       if (previousRedemption) {
-        return NextResponse.json({ error: "This campaign is for new users only." }, { status: 409 });
+        return NextResponse.json(
+          { code: "ALREADY_REDEEMED", error: "You already used this offer." },
+          { status: 409 },
+        );
       }
     }
 

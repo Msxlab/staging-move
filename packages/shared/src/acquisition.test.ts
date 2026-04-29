@@ -110,6 +110,34 @@ describe("acquisition campaign helpers", () => {
     }, now)).toBe("CANCEL_AT_PERIOD_END");
   });
 
+  it("treats Stripe-confirmed trialing/active as primary even if accessType still says Free Access", () => {
+    // Webhook can flip status before accessType lands in the same write.
+    // The settings page must not show Free Access while Stripe says trialing.
+    expect(deriveUserSubscriptionState({
+      accessType: "FREE_ACCESS",
+      status: "TRIALING",
+      trialEndsAt: "2026-07-27T12:00:00.000Z",
+    }, now)).toBe("TRIALING");
+
+    expect(deriveUserSubscriptionState({
+      accessType: "FREE_ACCESS",
+      status: "TRIAL_CANCELED",
+      trialEndsAt: "2026-07-27T12:00:00.000Z",
+    }, now)).toBe("TRIAL_CANCELED");
+
+    expect(deriveUserSubscriptionState({
+      accessType: "FREE_ACCESS",
+      status: "CANCEL_AT_PERIOD_END",
+      currentPeriodEndsAt: "2027-04-28T12:00:00.000Z",
+    }, now)).toBe("CANCEL_AT_PERIOD_END");
+  });
+
+  it("returns PENDING_CHECKOUT while Stripe webhook is still in flight", () => {
+    expect(deriveUserSubscriptionState({
+      status: "PENDING_CHECKOUT",
+    }, now)).toBe("PENDING_CHECKOUT");
+  });
+
   it("uses the minimal notification schedule and avoids refund-heavy reminders", () => {
     const freeTrial = getMinimalNotificationSchedule("FREE_TRIAL");
     const freeAccess = getMinimalNotificationSchedule("FREE_ACCESS");

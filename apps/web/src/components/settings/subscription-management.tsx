@@ -68,6 +68,8 @@ function stateTitle(state: string) {
     case "PAST_DUE":
     case "GRACE_PERIOD":
       return "Payment needs attention";
+    case "PENDING_CHECKOUT":
+      return "Activating your annual trial";
     default:
       return "Subscription";
   }
@@ -77,10 +79,16 @@ function statusBadge(state: string) {
   if (["FREE_ACCESS", "TRIALING", "ACTIVE", "GRACE_PERIOD"].includes(state)) {
     return "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
   }
-  if (["FREE_ACCESS_EXPIRED", "PAST_DUE"].includes(state)) {
+  if (["FREE_ACCESS_EXPIRED", "PAST_DUE", "PENDING_CHECKOUT"].includes(state)) {
     return "border border-amber-500/20 bg-amber-500/10 text-amber-300";
   }
   return "border border-border bg-foreground/5 text-muted-foreground";
+}
+
+function statusLabel(state: string) {
+  if (state === "PENDING_CHECKOUT") return "PROCESSING";
+  if (state === "UNKNOWN") return "LOADING";
+  return state.replaceAll("_", " ");
 }
 
 export default function SubscriptionManagementPage() {
@@ -90,16 +98,15 @@ export default function SubscriptionManagementPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [waitingForActivation, setWaitingForActivation] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const justUpgradedPlan = searchParams.get("success") === "true"
-    ? searchParams.get("plan")
-    : null;
+  const successFlag = searchParams.get("success") === "true";
+  const justUpgradedPlan = successFlag ? searchParams.get("plan") : null;
   const justUpgradedTier = planToStickerTier(justUpgradedPlan);
   const [revealOpen, setRevealOpen] = useState(false);
 
   async function load() {
-    setLoading(true);
     setError(null);
     try {
       const response = await fetch("/api/profile", { cache: "no-store" });
@@ -107,22 +114,59 @@ export default function SubscriptionManagementPage() {
       if (!response.ok) throw new Error(data.error || "Failed to load subscription.");
       setSubscription(data.subscription || null);
       setEntitlement(data.entitlement || null);
+      return data;
     } catch (err: any) {
       setError(err?.message || "Failed to load subscription.");
+      return null;
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
+    setLoading(true);
     void load();
   }, []);
 
+  // Stripe Checkout returns the user here while the `customer.subscription.*`
+  // webhook is still in flight. Poll a short window so the page resolves to
+  // TRIALING/ACTIVE before we celebrate — otherwise the reveal modal would
+  // flash the success animation while the underlying state is still pending.
+  useEffect(() => {
+    if (!successFlag) return;
+    let cancelled = false;
+    setWaitingForActivation(true);
+    let attempts = 0;
+    const maxAttempts = 12; // ~24s total at 2s interval
+    const tick = async () => {
+      if (cancelled) return;
+      const data = await load();
+      attempts += 1;
+      const sub = data?.subscription || null;
+      const isActivated = Boolean(
+        sub && (sub.status === "TRIALING" || sub.status === "ACTIVE"),
+      );
+      if (isActivated || attempts >= maxAttempts) {
+        if (!cancelled) setWaitingForActivation(false);
+        return;
+      }
+      setTimeout(tick, 2000);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+    };
+  }, [successFlag]);
+
   useEffect(() => {
     if (!justUpgradedTier) return;
+    if (waitingForActivation) return;
+    if (!subscription) return;
+    const stripeStatus = subscription.status;
+    if (stripeStatus !== "TRIALING" && stripeStatus !== "ACTIVE") return;
     setRevealOpen(true);
     router.replace("/settings/subscription", { scroll: false });
-  }, [justUpgradedTier, router]);
+  }, [justUpgradedTier, router, waitingForActivation, subscription]);
 
   const currentState = useMemo(
     () => deriveUserSubscriptionState(subscription || null),
@@ -148,11 +192,13 @@ export default function SubscriptionManagementPage() {
   });
   const consentLabel = buildTrialConsentLabel(firstChargeDate);
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
+  // Trialing, active, and pending-checkout users have either already started
+  // the annual plan or are mid-checkout — re-offering the trial CTA in those
+  // states confused users into thinking the trial hadn't begun.
   const showAnnualTrialOffer = [
     "FREE_ACCESS",
     "FREE_ACCESS_EXPIRED",
     "CANCELED",
-    "UNKNOWN",
   ].includes(currentState);
 
   async function startAnnualTrial() {
@@ -221,12 +267,13 @@ export default function SubscriptionManagementPage() {
   const primaryDetail = (() => {
     if (currentState === "FREE_ACCESS") return `Access ends on ${freeAccessEndLabel || "the scheduled end date"}.`;
     if (currentState === "FREE_ACCESS_EXPIRED") return "Choose the annual plan to continue full access.";
-    if (currentState === "TRIALING") return `Trial ends on ${trialEndLabel || "the scheduled trial end date"}. Annual plan starts on ${firstChargeLabel}.`;
-    if (currentState === "TRIAL_CANCELED") return `Your trial is canceled. You can keep using LocateFlow until ${trialEndLabel || "the trial end date"}. You will not be billed.`;
+    if (currentState === "TRIALING") return `Trial ends on ${trialEndLabel || "the scheduled trial end date"}. Next charge: ${priceLabel} on ${firstChargeLabel}.`;
+    if (currentState === "TRIAL_CANCELED") return `Your trial remains active until ${trialEndLabel || "the trial end date"}. You will not be billed.`;
     if (currentState === "ACTIVE") return `Renews on ${periodEndLabel || "the renewal date"}.`;
     if (currentState === "CANCEL_AT_PERIOD_END") return `Your plan remains active until ${periodEndLabel || "the period end date"}. It will not renew.`;
     if (currentState === "GRACE_PERIOD") return "Your annual payment needs attention. Access continues during the short grace period.";
     if (currentState === "PAST_DUE") return "Update billing to continue full access.";
+    if (currentState === "PENDING_CHECKOUT") return "Activating your annual trial… we are confirming with Stripe. This usually takes a few seconds.";
     return "Review your current LocateFlow access.";
   })();
 
@@ -246,6 +293,15 @@ export default function SubscriptionManagementPage() {
         <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>
       ) : null}
 
+      {waitingForActivation ? (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200">
+          <p className="text-base font-medium">Activating your annual trial…</p>
+          <p className="mt-1 text-sm text-amber-100/80">
+            Stripe just confirmed your checkout. We are syncing your subscription — this usually takes a few seconds.
+          </p>
+        </div>
+      ) : null}
+
       {loading ? (
         <div className="rounded-2xl border border-border bg-foreground/5 p-10 text-center text-muted-foreground">Loading subscription...</div>
       ) : (
@@ -260,7 +316,7 @@ export default function SubscriptionManagementPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold text-foreground">{stateTitle(currentState)}</h2>
                     <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${statusBadge(currentState)}`}>
-                      {currentState.replaceAll("_", " ")}
+                      {statusLabel(currentState)}
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">{primaryDetail}</p>

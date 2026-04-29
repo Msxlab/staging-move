@@ -21,6 +21,11 @@ import {
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
+import {
+  ServiceLimitUpsell,
+  type ServiceLimitDetails,
+} from "@/components/shared/service-limit-upsell";
+import { ServiceUsageIndicator } from "@/components/shared/service-usage-indicator";
 
 const BILLING_CYCLES = [
   { value: "MONTHLY", label: "Monthly" },
@@ -67,6 +72,7 @@ export default function NewServicePage() {
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [serviceLimit, setServiceLimit] = useState<ServiceLimitDetails | null>(null);
   const [showCustomProvider, setShowCustomProvider] = useState(false);
   const [customProvider, setCustomProvider] = useState({
     name: "",
@@ -329,10 +335,28 @@ export default function NewServicePage() {
       router.push(data.redirectTo);
       return data.error || "Verify your email before adding services.";
     }
-    if (data?.code === "SERVICE_LIMIT_REACHED") {
+    if (data?.code === "SERVICE_LIMIT_REACHED" || data?.code === "SETUP_SERVICE_LIMIT_REACHED") {
+      setServiceLimit({
+        code: data.code,
+        limit: data.limit ?? null,
+        current: data.current ?? null,
+        accessType: data.accessType ?? null,
+        plan: data.plan ?? null,
+        eligibleForTrial: data.eligibleForTrial ?? true,
+        upgradePath: data.upgradePath ?? "/settings/subscription",
+      });
       return data.error || "You have reached the active service limit for your plan.";
     }
-    if (data?.code === "SUBSCRIPTION_REQUIRED") {
+    if (data?.code === "SUBSCRIPTION_REQUIRED" || data?.code === "TRIAL_EXPIRED") {
+      setServiceLimit({
+        code: data.code,
+        limit: data.limit ?? null,
+        current: data.current ?? null,
+        accessType: data.accessType ?? null,
+        plan: data.plan ?? null,
+        eligibleForTrial: data.eligibleForTrial ?? true,
+        upgradePath: data.upgradePath ?? "/settings/subscription",
+      });
       return data.error || "A subscription is required to add more services.";
     }
     if (data?.code === "DUPLICATE_ACTIVE_SERVICE") {
@@ -345,6 +369,13 @@ export default function NewServicePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-32">
+      <ServiceLimitUpsell
+        open={Boolean(serviceLimit)}
+        details={serviceLimit}
+        onClose={() => setServiceLimit(null)}
+        returnTo="/services/new"
+      />
+
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link href="/services">
@@ -352,12 +383,15 @@ export default function NewServicePage() {
             <ArrowLeft className="h-4 w-4" />Back
           </button>
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-foreground">Add Services</h1>
           <p className="text-sm text-muted-foreground">
             Choose a listed provider or add a local/custom provider to create a tracked service.
           </p>
         </div>
+        {serviceLimit && typeof serviceLimit.current === "number" && typeof serviceLimit.limit === "number" ? (
+          <ServiceUsageIndicator current={serviceLimit.current} limit={serviceLimit.limit} />
+        ) : null}
       </div>
 
       {error && (

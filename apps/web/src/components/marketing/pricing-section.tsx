@@ -8,12 +8,20 @@ import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 interface PricingSectionProps {
   ctaHref: string;
   ctaLabelLoggedIn: boolean;
+  ctaIntent?: "anonymous" | "manage" | "upgrade";
   showComparison?: boolean;
+}
+
+function resolveCtaLabel(intent: PricingSectionProps["ctaIntent"], loggedIn: boolean): string {
+  if (intent === "manage") return "Manage subscription";
+  if (intent === "upgrade") return "Continue with annual";
+  return loggedIn ? "Manage subscription" : "Start with 3 months free";
 }
 
 export function PricingSection({
   ctaHref,
   ctaLabelLoggedIn,
+  ctaIntent,
 }: PricingSectionProps) {
   const plan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   const yearlyPrice = plan.yearlyPriceLabel || "$79/year";
@@ -58,7 +66,7 @@ export function PricingSection({
 
           <Link href={ctaHref} className="mt-7 block">
             <Button className="w-full">
-              {ctaLabelLoggedIn ? "Manage subscription" : "Start with 3 months free"}
+              {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn)}
             </Button>
           </Link>
           <p className="mt-3 text-center text-[11px] text-muted-foreground">

@@ -59,31 +59,70 @@ export async function POST(request: NextRequest) {
 
     const campaign = await findAcquisitionCampaign(campaignCode);
     if (!campaign) {
-      return NextResponse.json({ error: "Campaign not found." }, { status: 404 });
+      return NextResponse.json(
+        { code: "CAMPAIGN_NOT_FOUND", error: "This offer is no longer available." },
+        { status: 404 },
+      );
     }
     try {
       assertCampaignAvailable(campaign);
     } catch (availabilityError: any) {
       return NextResponse.json(
-        { error: availabilityError?.message || "Campaign is not available." },
+        {
+          code: "CAMPAIGN_UNAVAILABLE",
+          error: availabilityError?.message || "This offer is no longer available.",
+        },
         { status: 400 },
       );
     }
     if (campaign.accessType !== "FREE_TRIAL") {
-      return NextResponse.json({ error: "This campaign does not use Stripe checkout." }, { status: 400 });
+      return NextResponse.json(
+        { code: "CAMPAIGN_WRONG_TYPE", error: "This offer is no longer available." },
+        { status: 400 },
+      );
     }
     if (cycle !== "yearly" || campaign.billingInterval !== "YEAR") {
       return NextResponse.json(
-        { error: "Individual trial campaigns use annual billing." },
+        {
+          code: "CAMPAIGN_WRONG_INTERVAL",
+          error: "Individual trial campaigns use annual billing.",
+        },
         { status: 400 },
       );
     }
     if (!acceptedSubscriptionTerms) {
       return NextResponse.json(
-        { error: "Please accept the subscription terms before checkout." },
+        {
+          code: "TERMS_NOT_ACCEPTED",
+          error: "Please accept the subscription terms before checkout.",
+        },
         { status: 400 },
       );
     }
+
+    // Block re-checkout if the user is already trialing or has an active paid
+    // annual subscription so a second checkout doesn't create a parallel
+    // Stripe subscription against the same customer.
+    const existingSubscription = await prisma.subscription.findUnique({
+      where: { userId },
+      select: { status: true, stripeSubscriptionId: true },
+    });
+    if (existingSubscription?.status === "TRIALING") {
+      return NextResponse.json(
+        { code: "ALREADY_TRIALING", error: "Your annual trial is already active." },
+        { status: 409 },
+      );
+    }
+    if (
+      existingSubscription?.status === "ACTIVE" ||
+      existingSubscription?.status === "CANCEL_AT_PERIOD_END"
+    ) {
+      return NextResponse.json(
+        { code: "ALREADY_ACTIVE", error: "Your annual plan is active." },
+        { status: 409 },
+      );
+    }
+
     if (campaign.newUsersOnly) {
       let previousTrialRedemption: { id: string } | null = null;
       try {
@@ -95,7 +134,10 @@ export async function POST(request: NextRequest) {
         previousTrialRedemption = null;
       }
       if (previousTrialRedemption) {
-        return NextResponse.json({ error: "This trial campaign is for new trial users only." }, { status: 409 });
+        return NextResponse.json(
+          { code: "TRIAL_ALREADY_REDEEMED", error: "You already used this trial offer." },
+          { status: 409 },
+        );
       }
     }
 

@@ -6,6 +6,7 @@ import { PricingSection } from "@/components/marketing/pricing-section";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { getUserSession } from "@/lib/user-auth";
+import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
 import { absoluteUrl, SITE_NAME } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
 export default async function PricingPage() {
   const session = await getUserSession();
   const userId = session?.userId ?? null;
-  const ctaHref = userId ? "/settings/subscription" : "/sign-up";
+  const ctaTarget = await resolveMarketingCtaTarget(userId);
   const tPricing = await getTranslations("pricing");
 
   const faqs = [
@@ -37,8 +38,9 @@ export default async function PricingPage() {
     <div className="min-h-screen bg-background">
       <MarketingHeader userId={userId} />
       <PricingSection
-        ctaHref={ctaHref}
+        ctaHref={ctaTarget.href}
         ctaLabelLoggedIn={!!userId}
+        ctaIntent={ctaTarget.intent}
         showComparison
       />
 

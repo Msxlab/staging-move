@@ -27,6 +27,10 @@ import { LegalConsentPanel } from "@/components/legal/legal-consent-panel";
 import { buildOnboardingProfilePayload } from "@/lib/onboarding-profile-payload";
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/shared-address-autocomplete";
+import {
+  ServiceLimitUpsell,
+  type ServiceLimitDetails,
+} from "@/components/shared/service-limit-upsell";
 
 const STEPS = [
   { icon: User, label: "Profile" },
@@ -40,6 +44,40 @@ function GlassCard({ children, className = "" }: { children: React.ReactNode; cl
   return (
     <div className={`rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl shadow-2xl ${className}`}>
       {children}
+    </div>
+  );
+}
+
+function OnboardingProviderLogo({
+  provider,
+  isSelected,
+}: {
+  provider: { name: string; category: string; logoUrl?: string | null };
+  isSelected: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const showLogo = Boolean(provider.logoUrl) && !failed;
+  if (showLogo) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={provider.logoUrl as string}
+        alt={`${provider.name} logo`}
+        className="shrink-0 w-9 h-9 rounded-lg object-contain bg-foreground/5 border border-border p-1"
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div
+      className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
+        isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
+      }`}
+      aria-hidden="true"
+    >
+      {provider.name.charAt(0).toUpperCase()}
     </div>
   );
 }
@@ -61,6 +99,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [serviceLimit, setServiceLimit] = useState<ServiceLimitDetails | null>(null);
   const [showCategories, setShowCategories] = useState(false);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
   const [legalAcceptedOnServer, setLegalAcceptedOnServer] = useState(false);
@@ -408,6 +447,23 @@ export default function OnboardingPage() {
         }
         const data = await res.json().catch(() => ({}));
         const message = data.error || "A selected provider could not be added.";
+        if (
+          data.code === "SERVICE_LIMIT_REACHED" ||
+          data.code === "SETUP_SERVICE_LIMIT_REACHED" ||
+          data.code === "SUBSCRIPTION_REQUIRED" ||
+          data.code === "TRIAL_EXPIRED"
+        ) {
+          setServiceLimit({
+            code: data.code,
+            limit: data.limit ?? null,
+            current: data.current ?? null,
+            accessType: data.accessType ?? null,
+            plan: data.plan ?? null,
+            eligibleForTrial: data.eligibleForTrial ?? true,
+            upgradePath: data.upgradePath ?? "/settings/subscription",
+          });
+          throw new Error(message);
+        }
         if (data.upgradeRequired || typeof data.code === "string") {
           throw new Error(message);
         }
@@ -613,6 +669,13 @@ export default function OnboardingPage() {
 
   return (
     <div className="space-y-5">
+      <ServiceLimitUpsell
+        open={Boolean(serviceLimit)}
+        details={serviceLimit}
+        onClose={() => setServiceLimit(null)}
+        returnTo="/onboarding"
+      />
+
       {/* Step Indicator */}
       <div className="flex items-center justify-center gap-1">
         {STEPS.map((s, i) => {
@@ -1025,9 +1088,7 @@ export default function OnboardingPage() {
                     >
                       {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
                       <div className="flex items-center gap-3">
-                        <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
-                          isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
-                        }`}>{provider.name.charAt(0)}</div>
+                        <OnboardingProviderLogo provider={provider} isSelected={isSelected} />
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm text-foreground truncate pr-6">{provider.name}</p>
                           <div className="flex flex-wrap gap-1 mt-0.5">
@@ -1109,9 +1170,7 @@ export default function OnboardingPage() {
                               >
                                 {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
                                 <div className="flex items-center gap-3">
-                                  <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                    isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
-                                  }`}>{provider.name.charAt(0)}</div>
+                                  <OnboardingProviderLogo provider={provider} isSelected={isSelected} />
                                   <div className="min-w-0 flex-1">
                                     <p className="font-medium text-sm text-foreground truncate pr-5">{provider.name}</p>
                                     {getMergedDisplaySubcategoryLabel(provider.category) && (
