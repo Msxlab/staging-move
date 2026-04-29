@@ -26,7 +26,6 @@ interface PricingSectionProps {
   ctaHref: string;
   ctaLabelLoggedIn: boolean;
   ctaIntent?: "anonymous" | "manage" | "upgrade";
-  showComparison?: boolean;
   campaign?: PublicCampaignForPricing | null;
   offers?: PublicOffersForPricing | null;
 }

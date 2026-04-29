@@ -48,7 +48,6 @@ export default async function PricingPage() {
         ctaLabelLoggedIn={!!userId}
         ctaIntent={ctaTarget.intent}
         offers={publicCampaign}
-        showComparison
       />
 
       <section className="container pb-4">
