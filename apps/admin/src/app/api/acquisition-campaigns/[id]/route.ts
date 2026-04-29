@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import {
-  INDIVIDUAL_ANNUAL_PRICE_LABEL,
   INDIVIDUAL_ANNUAL_TRIAL_DAYS,
 } from "@/lib/shared-billing";
+import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
+
+const ACTIVE_CAMPAIGN_CONFLICT_RESPONSE = {
+  code: "ACTIVE_CAMPAIGN_CONFLICT",
+  error: "Another active Individual Annual trial campaign already exists. Pause or end it before activating this one.",
+};
 
 function normalizeCode(value: unknown) {
   return String(value || "")
@@ -35,12 +40,42 @@ function mutableCampaignData(body: any) {
   if (body.trialDays !== undefined) data.trialDays = body.trialDays ? Number(body.trialDays) : null;
   if (body.freeAccessDays !== undefined) data.freeAccessDays = body.freeAccessDays ? Number(body.freeAccessDays) : null;
   if (body.stripePriceId !== undefined) data.stripePriceId = body.stripePriceId || null;
-  if (body.displayPriceLabel !== undefined) data.displayPriceLabel = body.displayPriceLabel || INDIVIDUAL_ANNUAL_PRICE_LABEL;
+  if (body.displayPriceLabel !== undefined) {
+    data.displayPriceLabel =
+      typeof body.displayPriceLabel === "string" && body.displayPriceLabel.trim()
+        ? body.displayPriceLabel.trim()
+        : null;
+  }
   if (body.newUsersOnly !== undefined) data.newUsersOnly = Boolean(body.newUsersOnly);
   if (body.startsAt !== undefined) data.startsAt = body.startsAt ? new Date(body.startsAt) : null;
   if (body.endsAt !== undefined) data.endsAt = body.endsAt ? new Date(body.endsAt) : null;
   if (body.maxRedemptions !== undefined) data.maxRedemptions = body.maxRedemptions ? Number(body.maxRedemptions) : null;
   return data;
+}
+
+function windowsOverlap(aStart?: Date | string | null, aEnd?: Date | string | null, bStart?: Date | string | null, bEnd?: Date | string | null) {
+  const aStartMs = aStart ? new Date(aStart).getTime() : Number.NEGATIVE_INFINITY;
+  const aEndMs = aEnd ? new Date(aEnd).getTime() : Number.POSITIVE_INFINITY;
+  const bStartMs = bStart ? new Date(bStart).getTime() : Number.NEGATIVE_INFINITY;
+  const bEndMs = bEnd ? new Date(bEnd).getTime() : Number.POSITIVE_INFINITY;
+  return aStartMs <= bEndMs && bStartMs <= aEndMs;
+}
+
+async function findActiveCampaignConflict(client: any, candidate: any, excludeId: string) {
+  if (candidate.status !== "ACTIVE") return null;
+  const campaigns = await client.acquisitionCampaign.findMany({
+    where: {
+      status: "ACTIVE",
+      plan: candidate.plan,
+      accessType: candidate.accessType,
+      billingInterval: candidate.billingInterval ?? null,
+      id: { not: excludeId },
+    },
+    select: { id: true, startsAt: true, endsAt: true },
+  });
+  return campaigns.find((campaign: any) =>
+    windowsOverlap(candidate.startsAt, candidate.endsAt, campaign.startsAt, campaign.endsAt),
+  ) || null;
 }
 
 export async function GET(
@@ -81,18 +116,41 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const data = mutableCampaignData(body);
-    const campaign = await (prisma as any).acquisitionCampaign.update({ where: { id }, data });
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "UPDATE",
-        entityType: "AcquisitionCampaign",
-        entityId: id,
-        changes: JSON.stringify(data),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+    const existing = await (prisma as any).acquisitionCampaign.findUnique({ where: { id } });
+    if (!existing) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+    const merged = { ...existing, ...data };
+    const priceValidation = await validateStripeCampaignPrice(merged);
+    if (!priceValidation.ok) {
+      return NextResponse.json(
+        { code: priceValidation.code, error: priceValidation.error },
+        { status: 422 },
+      );
+    }
+    if (priceValidation.displayPriceLabel !== undefined) {
+      data.displayPriceLabel = priceValidation.displayPriceLabel;
+      merged.displayPriceLabel = priceValidation.displayPriceLabel;
+    }
+
+    const result = await (prisma as any).$transaction(async (tx: any) => {
+      const conflict = await findActiveCampaignConflict(tx, merged, id);
+      if (conflict) return { conflict };
+      const campaign = await tx.acquisitionCampaign.update({ where: { id }, data });
+      await tx.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "UPDATE",
+          entityType: "AcquisitionCampaign",
+          entityId: id,
+          changes: JSON.stringify(data),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+      return { campaign };
     });
-    return NextResponse.json({ campaign });
+    if (result.conflict) {
+      return NextResponse.json(ACTIVE_CAMPAIGN_CONFLICT_RESPONSE, { status: 409 });
+    }
+    return NextResponse.json({ campaign: result.campaign, priceValidation });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

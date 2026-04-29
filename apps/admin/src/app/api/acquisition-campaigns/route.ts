@@ -5,6 +5,12 @@ import {
   INDIVIDUAL_ANNUAL_PRICE_LABEL,
   INDIVIDUAL_ANNUAL_TRIAL_DAYS,
 } from "@/lib/shared-billing";
+import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
+
+const ACTIVE_CAMPAIGN_CONFLICT_RESPONSE = {
+  code: "ACTIVE_CAMPAIGN_CONFLICT",
+  error: "Another active Individual Annual trial campaign already exists. Pause or end it before activating this one.",
+};
 
 function normalizeCode(value: unknown) {
   return String(value || "")
@@ -15,6 +21,10 @@ function normalizeCode(value: unknown) {
 
 function campaignData(body: any, adminId?: string) {
   const accessType = body.accessType === "FREE_ACCESS" ? "FREE_ACCESS" : "FREE_TRIAL";
+  const displayPriceLabel =
+    typeof body.displayPriceLabel === "string" && body.displayPriceLabel.trim()
+      ? body.displayPriceLabel.trim()
+      : null;
   const data: any = {
     name: String(body.name || "").trim(),
     code: normalizeCode(body.code),
@@ -25,7 +35,7 @@ function campaignData(body: any, adminId?: string) {
     trialDays: accessType === "FREE_TRIAL" ? Number(body.trialDays || INDIVIDUAL_ANNUAL_TRIAL_DAYS) : null,
     freeAccessDays: accessType === "FREE_ACCESS" ? Number(body.freeAccessDays || 30) : null,
     stripePriceId: accessType === "FREE_TRIAL" ? (body.stripePriceId || null) : null,
-    displayPriceLabel: body.displayPriceLabel || INDIVIDUAL_ANNUAL_PRICE_LABEL,
+    displayPriceLabel: displayPriceLabel || (accessType === "FREE_TRIAL" ? null : INDIVIDUAL_ANNUAL_PRICE_LABEL),
     requiresPaymentMethod: accessType === "FREE_TRIAL",
     autoRenew: accessType === "FREE_TRIAL",
     newUsersOnly: body.newUsersOnly !== false,
@@ -39,6 +49,31 @@ function campaignData(body: any, adminId?: string) {
   };
   if (adminId) data.createdByAdminId = adminId;
   return data;
+}
+
+function windowsOverlap(aStart?: Date | string | null, aEnd?: Date | string | null, bStart?: Date | string | null, bEnd?: Date | string | null) {
+  const aStartMs = aStart ? new Date(aStart).getTime() : Number.NEGATIVE_INFINITY;
+  const aEndMs = aEnd ? new Date(aEnd).getTime() : Number.POSITIVE_INFINITY;
+  const bStartMs = bStart ? new Date(bStart).getTime() : Number.NEGATIVE_INFINITY;
+  const bEndMs = bEnd ? new Date(bEnd).getTime() : Number.POSITIVE_INFINITY;
+  return aStartMs <= bEndMs && bStartMs <= aEndMs;
+}
+
+async function findActiveCampaignConflict(client: any, candidate: any, excludeId?: string) {
+  if (candidate.status !== "ACTIVE") return null;
+  const campaigns = await client.acquisitionCampaign.findMany({
+    where: {
+      status: "ACTIVE",
+      plan: candidate.plan,
+      accessType: candidate.accessType,
+      billingInterval: candidate.billingInterval ?? null,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: { id: true, startsAt: true, endsAt: true },
+  });
+  return campaigns.find((campaign: any) =>
+    windowsOverlap(candidate.startsAt, candidate.endsAt, campaign.startsAt, campaign.endsAt),
+  ) || null;
 }
 
 export async function GET() {
@@ -78,18 +113,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Free Access days must be at least 1." }, { status: 400 });
     }
 
-    const campaign = await (prisma as any).acquisitionCampaign.create({ data });
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "CREATE",
-        entityType: "AcquisitionCampaign",
-        entityId: campaign.id,
-        changes: JSON.stringify({ code: campaign.code, accessType: campaign.accessType }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+    const priceValidation = await validateStripeCampaignPrice(data);
+    if (!priceValidation.ok) {
+      return NextResponse.json(
+        { code: priceValidation.code, error: priceValidation.error },
+        { status: 422 },
+      );
+    }
+    if (priceValidation.displayPriceLabel !== undefined) {
+      data.displayPriceLabel = priceValidation.displayPriceLabel;
+    }
+
+    const result = await (prisma as any).$transaction(async (tx: any) => {
+      const conflict = await findActiveCampaignConflict(tx, data);
+      if (conflict) return { conflict };
+      const campaign = await tx.acquisitionCampaign.create({ data });
+      await tx.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "CREATE",
+          entityType: "AcquisitionCampaign",
+          entityId: campaign.id,
+          changes: JSON.stringify({ code: campaign.code, accessType: campaign.accessType }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+      return { campaign };
     });
-    return NextResponse.json({ campaign }, { status: 201 });
+    if (result.conflict) {
+      return NextResponse.json(ACTIVE_CAMPAIGN_CONFLICT_RESPONSE, { status: 409 });
+    }
+    return NextResponse.json({ campaign: result.campaign, priceValidation }, { status: 201 });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

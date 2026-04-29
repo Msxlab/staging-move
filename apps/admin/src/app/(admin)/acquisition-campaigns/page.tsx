@@ -27,6 +27,18 @@ type Campaign = {
   redemptions?: Array<{ id: string; createdAt: string; user?: { id: string; email: string } }>;
 };
 
+type PriceValidationFeedback = {
+  ok: boolean;
+  warning?: string;
+  error?: string;
+  skipped?: boolean;
+  canonicalDisplayPriceLabel?: string | null;
+  price?: {
+    currency: string;
+    interval: string | null;
+  };
+} | null;
+
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 const emptyForm = {
@@ -52,6 +64,7 @@ export default function AcquisitionCampaignsPage() {
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [priceValidation, setPriceValidation] = useState<PriceValidationFeedback>(null);
 
   async function load() {
     setLoading(true);
@@ -75,6 +88,18 @@ export default function AcquisitionCampaignsPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function showPriceValidation(feedback: PriceValidationFeedback) {
+    setPriceValidation(feedback || null);
+    if (!feedback) return;
+    if (feedback.warning) {
+      toast.warning(feedback.warning);
+    } else if (feedback.error) {
+      toast.error(feedback.error);
+    } else if (feedback.canonicalDisplayPriceLabel) {
+      toast.success(`Stripe price validated: ${feedback.canonicalDisplayPriceLabel} USD, annual`);
+    }
+  }
+
   async function createCampaign() {
     setSaving(true);
     try {
@@ -90,6 +115,7 @@ export default function AcquisitionCampaignsPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to create campaign.");
+      showPriceValidation(data.priceValidation || null);
       toast.success("Campaign created");
       setForm(emptyForm);
       await load();
@@ -109,6 +135,7 @@ export default function AcquisitionCampaignsPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to update campaign.");
+      showPriceValidation(data.priceValidation || null);
       toast.success("Campaign updated");
       await load();
     } catch (error: any) {
@@ -139,6 +166,7 @@ export default function AcquisitionCampaignsPage() {
         <h1 className="text-3xl font-bold text-foreground">Acquisition Campaigns</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage Individual Free Access and Free Trial campaigns without changing existing redemption snapshots.
+          Public site updates within 60 seconds after activation.
         </p>
       </div>
 
@@ -205,6 +233,23 @@ export default function AcquisitionCampaignsPage() {
             New users only
           </label>
         </div>
+        {priceValidation ? (
+          <div
+            className={`mt-4 rounded-lg border px-3 py-2 text-sm ${
+              priceValidation.error
+                ? "border-red-500/30 bg-red-500/10 text-red-300"
+                : priceValidation.warning
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+            }`}
+          >
+            {priceValidation.error ||
+              priceValidation.warning ||
+              (priceValidation.skipped
+                ? "Stripe price validation skipped for this no-payment campaign."
+                : `Stripe price validated: ${priceValidation.canonicalDisplayPriceLabel || "configured price"} USD, annual`)}
+          </div>
+        ) : null}
         <button
           type="button"
           onClick={() => void createCampaign()}
