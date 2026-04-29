@@ -2,12 +2,22 @@ import { describe, expect, it } from "vitest";
 import { buildServiceLimitCopy } from "./service-limit-upsell";
 
 describe("buildServiceLimitCopy", () => {
-  it("produces the exact contract title and CTAs for the service-limit prompt", () => {
-    const copy = buildServiceLimitCopy({ accessType: "FREE_ACCESS", limit: 10 });
+  it("uses active campaign copy for eligible Free Access users", () => {
+    const copy = buildServiceLimitCopy({
+      accessType: "FREE_ACCESS",
+      limit: 10,
+      campaign: {
+        code: "SPRING90",
+        publicHeadline: "Start with 90 days free",
+        displayPriceLabel: "$79/year",
+        trialDays: 90,
+      },
+    });
     expect(copy.title).toBe("You've reached your service limit");
     expect(copy.body).toContain("Free Access includes up to 10 active services");
-    expect(copy.body).toContain("Start Individual Annual with 3 months free");
-    expect(copy.primary).toBe("Start 3 months free");
+    expect(copy.body).toContain("Start with 90 days free");
+    expect(copy.body).toContain("$79/year after trial");
+    expect(copy.primary).toBe("Start with 90 days free");
     expect(copy.secondary).toBe("Maybe later");
   });
 
@@ -18,6 +28,7 @@ describe("buildServiceLimitCopy", () => {
     const copy = buildServiceLimitCopy(null);
     expect(copy.body).toContain("Free Access includes up to 10 active services");
     expect(copy.body).not.toContain("Free Trial");
+    expect(copy.primary).toBe("Upgrade to Individual Annual");
   });
 
   it("uses the API-provided limit instead of the default", () => {
@@ -48,8 +59,24 @@ describe("buildServiceLimitCopy", () => {
   });
 
   it("labels Free Trial users with the Free Trial tier when still eligible", () => {
-    const copy = buildServiceLimitCopy({ accessType: "FREE_TRIAL", limit: 10 });
+    const copy = buildServiceLimitCopy({
+      accessType: "FREE_TRIAL",
+      limit: 10,
+      campaign: {
+        code: "SPRING90",
+        publicHeadline: "Start with 90 days free",
+        displayPriceLabel: "$79/year",
+        trialDays: 90,
+      },
+    });
     expect(copy.body).toContain("Free Trial includes up to 10");
-    expect(copy.primary).toBe("Start 3 months free");
+    expect(copy.primary).toBe("Start with 90 days free");
+  });
+
+  it("falls back safely when no campaign is available", () => {
+    const copy = buildServiceLimitCopy({ accessType: "FREE_ACCESS", limit: 10 });
+    expect(copy.body).toContain("Upgrade to Individual Annual");
+    expect(copy.body).not.toContain("3 months free");
+    expect(copy.primary).toBe("Upgrade to Individual Annual");
   });
 });

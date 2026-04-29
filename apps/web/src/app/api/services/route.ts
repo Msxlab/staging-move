@@ -15,6 +15,7 @@ import {
   duplicateServiceError,
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
+import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
 
@@ -148,6 +149,15 @@ export async function POST(request: NextRequest) {
           status === "CANCEL_AT_PERIOD_END" ||
           status === "TRIAL_CANCELED")
       );
+      const publicCampaign = eligibleForTrial ? await getPublicCampaignViewModel() : null;
+      const campaign = publicCampaign
+        ? {
+            code: publicCampaign.campaignCode,
+            publicHeadline: publicCampaign.publicHeadline,
+            displayPriceLabel: publicCampaign.displayPriceLabel,
+            trialDays: publicCampaign.trialDays,
+          }
+        : null;
       return serviceError(
         limitErrorCode(limitCheck.code),
         limitCheck.reason || "Subscription required to add services.",
@@ -160,6 +170,12 @@ export async function POST(request: NextRequest) {
           accessType,
           plan,
           eligibleForTrial,
+          subscription: {
+            accessType,
+            plan,
+            eligibleForTrial,
+          },
+          campaign,
           upgradePath: "/settings/subscription",
         },
       );

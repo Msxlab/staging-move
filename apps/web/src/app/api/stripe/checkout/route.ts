@@ -14,6 +14,7 @@ import {
   buildSignupSnapshot,
   campaignToSnapshotText,
   findAcquisitionCampaign,
+  findActivePublicIndividualAnnualTrialCampaign,
   getRequestHashSnapshot,
   hashForSnapshot,
 } from "@/lib/acquisition-campaigns";
@@ -57,8 +58,18 @@ export async function POST(request: NextRequest) {
     const cycle: "monthly" | "yearly" =
       rawCycle === "yearly" ? "yearly" : "monthly";
 
-    const campaign = await findAcquisitionCampaign(campaignCode);
+    const requestedCampaignCode =
+      typeof campaignCode === "string" ? campaignCode.trim() : "";
+    const campaign = requestedCampaignCode
+      ? await findAcquisitionCampaign(requestedCampaignCode, { allowDefaultFallback: false })
+      : await findActivePublicIndividualAnnualTrialCampaign();
     if (!campaign) {
+      if (!requestedCampaignCode) {
+        return NextResponse.json(
+          { code: "OFFER_UNAVAILABLE", error: "This offer is not currently available." },
+          { status: 409 },
+        );
+      }
       return NextResponse.json(
         { code: "CAMPAIGN_NOT_FOUND", error: "This offer is no longer available." },
         { status: 404 },

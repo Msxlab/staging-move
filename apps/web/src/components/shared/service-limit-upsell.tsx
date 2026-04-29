@@ -11,6 +11,17 @@ export interface ServiceLimitDetails {
   accessType?: string | null;
   plan?: string | null;
   eligibleForTrial?: boolean | null;
+  subscription?: {
+    accessType?: string | null;
+    plan?: string | null;
+    eligibleForTrial?: boolean | null;
+  } | null;
+  campaign?: {
+    code?: string | null;
+    publicHeadline?: string | null;
+    displayPriceLabel?: string | null;
+    trialDays?: number | null;
+  } | null;
   upgradePath?: string | null;
 }
 
@@ -27,10 +38,23 @@ interface ServiceLimitUpsellProps {
 
 const DEFAULT_LIMIT = 10;
 
+function formatTrialLabel(days?: number | null) {
+  const normalizedDays = Number(days || 0);
+  if (normalizedDays <= 0) return null;
+  if (normalizedDays === 90) return "3 months";
+  if (normalizedDays % 30 === 0) {
+    const months = normalizedDays / 30;
+    return `${months} month${months === 1 ? "" : "s"}`;
+  }
+  return `${normalizedDays} day${normalizedDays === 1 ? "" : "s"}`;
+}
+
 export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
   const limit = details?.limit ?? DEFAULT_LIMIT;
-  const accessType = details?.accessType || null;
-  const eligibleForTrial = details?.eligibleForTrial ?? true;
+  const accessType = details?.subscription?.accessType ?? details?.accessType ?? null;
+  const eligibleForTrial =
+    details?.subscription?.eligibleForTrial ?? details?.eligibleForTrial ?? true;
+  const campaign = details?.campaign || null;
 
   // Paid users hit the Individual Annual ceiling — there's no higher tier
   // to upsell into, so the modal switches to a contact-support shape and
@@ -44,6 +68,23 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
     };
   }
 
+  if (campaign) {
+    const trialLabel = formatTrialLabel(campaign.trialDays);
+    const headline =
+      campaign.publicHeadline ||
+      (trialLabel ? `Start ${trialLabel} free` : "Upgrade to Individual Annual");
+    const priceCopy = campaign.displayPriceLabel
+      ? `${campaign.displayPriceLabel}${trialLabel ? " after trial" : ""}`
+      : "annual billing";
+    const tier = accessType === "FREE_TRIAL" ? "Free Trial" : "Free Access";
+    return {
+      title: "You've reached your service limit",
+      body: `${tier} includes up to ${limit} active services. ${headline} to keep adding services. ${priceCopy}.`,
+      primary: headline,
+      secondary: "Maybe later",
+    };
+  }
+
   const tier =
     accessType === "FREE_TRIAL"
       ? "Free Trial"
@@ -52,8 +93,8 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
         : "Free Access";
   return {
     title: "You've reached your service limit",
-    body: `${tier} includes up to ${limit} active services. Start Individual Annual with 3 months free to keep adding services.`,
-    primary: "Start 3 months free",
+    body: `${tier} includes up to ${limit} active services. Upgrade to Individual Annual to keep adding services.`,
+    primary: "Upgrade to Individual Annual",
     secondary: "Maybe later",
   };
 }
@@ -75,7 +116,8 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
   if (!open) return null;
 
   const copy = buildServiceLimitCopy(details);
-  const eligibleForTrial = details?.eligibleForTrial ?? true;
+  const eligibleForTrial =
+    details?.subscription?.eligibleForTrial ?? details?.eligibleForTrial ?? true;
   const targetPath = details?.upgradePath || "/settings/subscription";
 
   function handleUpgrade() {

@@ -11,7 +11,8 @@ describe("subscription acquisition copy", () => {
     const source = readRepoFile("src/components/marketing/pricing-section.tsx");
 
     expect(source).toContain("Individual Annual");
-    expect(source).toContain("3 months free, then annual billing");
+    expect(source).toContain("campaign?.publicHeadline");
+    expect(source).toContain("campaign?.displayPriceLabel");
     expect(source).not.toContain("FAMILY");
     expect(source).not.toContain("PRO");
   });
@@ -22,6 +23,8 @@ describe("subscription acquisition copy", () => {
     expect(source).toContain("Today");
     expect(source).toContain("Trial");
     expect(source).toContain("Annual plan starts");
+    expect(source).toContain("/api/acquisition/public-trial-campaign");
+    expect(source).toContain("publicCampaign?.publicHeadline");
     expect(source).toContain("buildTrialConsentLabel");
     expect(source.toLowerCase()).not.toContain("refund");
   });

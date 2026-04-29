@@ -33,6 +33,7 @@ import {
 } from "@locateflow/shared";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
+import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
 import { AppStoreCTA } from "@/components/marketing/app-store-cta";
 import { MobileMockup } from "@/components/marketing/mobile-mockup";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
@@ -71,6 +72,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const revalidate = 60;
+
 export default async function LandingPage() {
   const session = await getUserSession();
   const userId = session?.userId ?? null;
@@ -78,7 +81,10 @@ export default async function LandingPage() {
   // CTA below resolves a state-aware destination so eligible Free Access
   // users are not silently funnelled past the trial offer.
   const primaryHref = userId ? "/dashboard" : "/sign-up";
-  const ctaTarget = await resolveMarketingCtaTarget(userId);
+  const [ctaTarget, publicCampaign] = await Promise.all([
+    resolveMarketingCtaTarget(userId),
+    getPublicCampaignViewModel(),
+  ]);
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   // Server-side translation — getTranslations resolves the locale from
   // the request config and returns a synchronous `t()`. The landing is
@@ -316,6 +322,7 @@ export default async function LandingPage() {
         ctaHref={ctaTarget.href}
         ctaLabelLoggedIn={!!userId}
         ctaIntent={ctaTarget.intent}
+        campaign={publicCampaign}
       />
 
       {/* Current workflow coverage */}

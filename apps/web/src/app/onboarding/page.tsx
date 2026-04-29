@@ -460,6 +460,8 @@ export default function OnboardingPage() {
             accessType: data.accessType ?? null,
             plan: data.plan ?? null,
             eligibleForTrial: data.eligibleForTrial ?? true,
+            subscription: data.subscription ?? null,
+            campaign: data.campaign ?? null,
             upgradePath: data.upgradePath ?? "/settings/subscription",
           });
           throw new Error(message);

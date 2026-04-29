@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   getStripePriceIdForPlan: vi.fn(),
   ensureSubscriptionDefaults: vi.fn(),
   findAcquisitionCampaign: vi.fn(),
+  findActivePublicIndividualAnnualTrialCampaign: vi.fn(),
   assertCampaignAvailable: vi.fn(),
   buildCheckoutConsentSnapshot: vi.fn(),
   buildSignupSnapshot: vi.fn(),
@@ -42,6 +43,7 @@ vi.mock("@/lib/billing", () => ({
 }));
 vi.mock("@/lib/acquisition-campaigns", () => ({
   findAcquisitionCampaign: mocks.findAcquisitionCampaign,
+  findActivePublicIndividualAnnualTrialCampaign: mocks.findActivePublicIndividualAnnualTrialCampaign,
   assertCampaignAvailable: mocks.assertCampaignAvailable,
   buildCheckoutConsentSnapshot: mocks.buildCheckoutConsentSnapshot,
   buildSignupSnapshot: mocks.buildSignupSnapshot,
@@ -98,7 +100,7 @@ describe("stripe checkout route", () => {
     });
     subscriptionMock.update.mockResolvedValue({});
     mocks.getStripePriceIdForPlan.mockResolvedValue("price_monthly");
-    mocks.findAcquisitionCampaign.mockResolvedValue({
+    const activeCampaign = {
       id: "camp_1",
       name: "Individual Annual Trial",
       code: "INDIVIDUAL90",
@@ -111,7 +113,9 @@ describe("stripe checkout route", () => {
       requiresPaymentMethod: true,
       autoRenew: true,
       newUsersOnly: true,
-    });
+    };
+    mocks.findAcquisitionCampaign.mockResolvedValue(activeCampaign);
+    mocks.findActivePublicIndividualAnnualTrialCampaign.mockResolvedValue(activeCampaign);
     mocks.buildSignupSnapshot.mockReturnValue({ campaignCode: "INDIVIDUAL90" });
     mocks.campaignToSnapshotText.mockReturnValue("{\"campaignCode\":\"INDIVIDUAL90\"}");
     mocks.buildCheckoutConsentSnapshot.mockReturnValue("{\"checkoutDisclosureTextHash\":\"hash_1\"}");
@@ -201,6 +205,116 @@ describe("stripe checkout route", () => {
         }),
       }),
     );
+  });
+
+  it("uses the active public campaign when no campaign code is provided", async () => {
+    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.findActivePublicIndividualAnnualTrialCampaign).toHaveBeenCalled();
+    expect(mocks.findAcquisitionCampaign).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription_data: expect.objectContaining({
+          metadata: expect.objectContaining({ campaignCode: "INDIVIDUAL90" }),
+        }),
+      }),
+    );
+  });
+
+  it("does not start a hidden default trial when no active public campaign exists", async () => {
+    mocks.findActivePublicIndividualAnnualTrialCampaign.mockResolvedValueOnce(null);
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({
+      code: "OFFER_UNAVAILABLE",
+      error: "This offer is not currently available.",
+    });
+    expect(mocks.findAcquisitionCampaign).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("uses an explicit campaign code only when that campaign exists", async () => {
+    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+    mocks.findAcquisitionCampaign.mockResolvedValueOnce({
+      id: "camp_spring",
+      name: "Spring Trial",
+      code: "SPRING90",
+      status: "ACTIVE",
+      accessType: "FREE_TRIAL",
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+      trialDays: 90,
+      displayPriceLabel: "$79/year",
+      requiresPaymentMethod: true,
+      autoRenew: true,
+      newUsersOnly: true,
+    });
+
+    const response = await POST(
+      checkoutRequest({
+        plan: "INDIVIDUAL",
+        cycle: "yearly",
+        campaignCode: "spring90",
+        acceptedSubscriptionTerms: true,
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.findAcquisitionCampaign).toHaveBeenCalledWith("spring90", {
+      allowDefaultFallback: false,
+    });
+    expect(mocks.findActivePublicIndividualAnnualTrialCampaign).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription_data: expect.objectContaining({
+          metadata: expect.objectContaining({ campaignCode: "SPRING90" }),
+        }),
+      }),
+    );
+  });
+
+  it("rejects explicit inactive campaigns", async () => {
+    mocks.findAcquisitionCampaign.mockResolvedValueOnce({
+      id: "camp_old",
+      name: "Old Trial",
+      code: "OLD90",
+      status: "PAUSED",
+      accessType: "FREE_TRIAL",
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+      trialDays: 90,
+      displayPriceLabel: "$79/year",
+      requiresPaymentMethod: true,
+      autoRenew: true,
+      newUsersOnly: true,
+    });
+    mocks.assertCampaignAvailable.mockImplementationOnce(() => {
+      throw new Error("Campaign is not active.");
+    });
+
+    const response = await POST(
+      checkoutRequest({
+        plan: "INDIVIDUAL",
+        cycle: "yearly",
+        campaignCode: "OLD90",
+        acceptedSubscriptionTerms: true,
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body).toMatchObject({ code: "CAMPAIGN_UNAVAILABLE" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
 
   it("lets a Free Access user (status=ACTIVE, provider=ADMIN) start the annual trial", async () => {

@@ -5,26 +5,58 @@ import { Check, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 
+type PublicCampaignForPricing = {
+  publicHeadline: string;
+  publicSubheadline: string | null;
+  displayPriceLabel: string;
+  trialDays: number;
+  ctaText: string;
+  priceCopy: string;
+  trialLabel: string | null;
+};
+
 interface PricingSectionProps {
   ctaHref: string;
   ctaLabelLoggedIn: boolean;
   ctaIntent?: "anonymous" | "manage" | "upgrade";
   showComparison?: boolean;
+  campaign?: PublicCampaignForPricing | null;
 }
 
-function resolveCtaLabel(intent: PricingSectionProps["ctaIntent"], loggedIn: boolean): string {
+function resolveCtaLabel(
+  intent: PricingSectionProps["ctaIntent"],
+  loggedIn: boolean,
+  campaign?: PublicCampaignForPricing | null,
+): string {
   if (intent === "manage") return "Manage subscription";
-  if (intent === "upgrade") return "Continue with annual";
-  return loggedIn ? "Manage subscription" : "Start with 3 months free";
+  if (intent === "upgrade") return campaign?.ctaText || "Continue with annual";
+  return loggedIn ? "Manage subscription" : campaign?.ctaText || "Create account";
+}
+
+function splitPriceLabel(label: string) {
+  const [amount, suffix] = label.split("/");
+  return {
+    amount: amount || label,
+    suffix: suffix ? `/${suffix}` : "",
+  };
 }
 
 export function PricingSection({
   ctaHref,
   ctaLabelLoggedIn,
   ctaIntent,
+  campaign,
 }: PricingSectionProps) {
   const plan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
-  const yearlyPrice = plan.yearlyPriceLabel || "$79/year";
+  const yearlyPrice = campaign?.displayPriceLabel || plan.yearlyPriceLabel || "$79/year";
+  const price = splitPriceLabel(yearlyPrice);
+  const headline = campaign?.publicHeadline || plan.displayName;
+  const subheadline =
+    campaign?.publicSubheadline ||
+    "One calm place to track addresses, services, renewal dates, moving tasks, and exports.";
+  const planIntro = campaign?.trialLabel
+    ? `${campaign.trialLabel} free, then annual billing`
+    : "Individual Annual billing";
 
   return (
     <section id="pricing" className="container py-20">
@@ -33,16 +65,16 @@ export function PricingSection({
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           Individual Annual
         </div>
-        <h2 className="text-3xl font-bold mb-4">Start with 3 months free</h2>
+        <h2 className="text-3xl font-bold mb-4">{headline}</h2>
         <p className="text-muted-foreground text-lg">
-          One calm place to track addresses, services, renewal dates, moving tasks, and exports.
+          {subheadline}
         </p>
       </div>
 
       <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-2xl border-2 border-primary bg-card p-7 shadow-lg">
           <div className="mb-5">
-            <p className="text-sm font-medium text-primary">3 months free, then annual billing</p>
+            <p className="text-sm font-medium text-primary">{planIntro}</p>
             <h3 className="mt-2 text-2xl font-semibold">{plan.displayName}</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Built for one person keeping household services and moving details organized.
@@ -50,9 +82,13 @@ export function PricingSection({
           </div>
 
           <div className="mb-6">
-            <span className="text-5xl font-bold tracking-tight">{yearlyPrice.split("/")[0]}</span>
-            <span className="text-muted-foreground">/year after trial</span>
-            <p className="mt-1 text-xs text-muted-foreground">Today: $0</p>
+            <span className="text-5xl font-bold tracking-tight">{price.amount}</span>
+            <span className="text-muted-foreground">
+              {campaign?.trialLabel ? `${price.suffix} after trial` : price.suffix}
+            </span>
+            {campaign?.trialLabel ? (
+              <p className="mt-1 text-xs text-muted-foreground">Today: $0</p>
+            ) : null}
           </div>
 
           <ul className="space-y-2.5 text-sm">
@@ -66,7 +102,7 @@ export function PricingSection({
 
           <Link href={ctaHref} className="mt-7 block">
             <Button className="w-full">
-              {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn)}
+              {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn, campaign)}
             </Button>
           </Link>
           <p className="mt-3 text-center text-[11px] text-muted-foreground">

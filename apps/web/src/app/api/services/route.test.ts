@@ -39,6 +39,23 @@ vi.mock("@/lib/plan-limits", () => ({
   canCreateService: vi.fn(() => Promise.resolve({ allowed: true })),
 }));
 
+vi.mock("@/lib/acquisition-campaigns", () => ({
+  getPublicCampaignViewModel: vi.fn(() =>
+    Promise.resolve({
+      campaignCode: "SPRING90",
+      publicHeadline: "Start with 90 days free",
+      publicSubheadline: "Individual Annual starts after your trial.",
+      checkoutDisclosureCopy: null,
+      displayPriceLabel: "$79/year",
+      trialDays: 90,
+      billingInterval: "YEAR",
+      ctaText: "Start 90 days free",
+      priceCopy: "$79/year after trial",
+      trialLabel: "3 months",
+    }),
+  ),
+}));
+
 vi.mock("@/lib/move-task-sync", () => ({
   safeSyncMoveTasksForAddress: vi.fn(() => Promise.resolve({ attemptedPlans: 0, generatedCount: 0, skippedCount: 0, failedPlanIds: [] })),
 }));
@@ -46,6 +63,7 @@ vi.mock("@/lib/move-task-sync", () => ({
 import { prisma } from "@/lib/db";
 import { requireDbUserId, requireVerifiedUser } from "@/lib/auth";
 import { canCreateService } from "@/lib/plan-limits";
+import { getPublicCampaignViewModel } from "@/lib/acquisition-campaigns";
 import { safeSyncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { GET, POST } from "./route";
 
@@ -61,6 +79,7 @@ const mockServiceProvider = prisma.serviceProvider as unknown as { findUnique: M
 const mockCustomProvider = prisma.userCustomProvider as unknown as { findFirst: Mock };
 const mockSubscription = prisma.subscription as unknown as { findUnique: Mock };
 const mockCanCreateService = canCreateService as unknown as Mock;
+const mockGetPublicCampaignViewModel = getPublicCampaignViewModel as unknown as Mock;
 const mockSafeSyncMoveTasksForAddress = safeSyncMoveTasksForAddress as unknown as Mock;
 
 function makeRequest(search = "") {
@@ -85,6 +104,18 @@ describe("services route", () => {
       deletedAt: null,
     });
     mockCustomProvider.findFirst.mockResolvedValue(null);
+    mockGetPublicCampaignViewModel.mockResolvedValue({
+      campaignCode: "SPRING90",
+      publicHeadline: "Start with 90 days free",
+      publicSubheadline: "Individual Annual starts after your trial.",
+      checkoutDisclosureCopy: null,
+      displayPriceLabel: "$79/year",
+      trialDays: 90,
+      billingInterval: "YEAR",
+      ctaText: "Start 90 days free",
+      priceCopy: "$79/year after trial",
+      trialLabel: "3 months",
+    });
   });
 
   it("returns an empty service list for an authenticated new user", async () => {
@@ -397,7 +428,55 @@ describe("services route", () => {
       code: "SERVICE_LIMIT_REACHED",
       accessType: "FREE_ACCESS",
       eligibleForTrial: true,
+      subscription: {
+        accessType: "FREE_ACCESS",
+        plan: "FREE_TRIAL",
+        eligibleForTrial: true,
+      },
+      campaign: {
+        code: "SPRING90",
+        publicHeadline: "Start with 90 days free",
+        displayPriceLabel: "$79/year",
+        trialDays: 90,
+      },
     });
+  });
+
+  it("returns campaign=null when no active public campaign is available", async () => {
+    mockCanCreateService.mockResolvedValueOnce({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      reason: "Your FREE_ACCESS plan allows up to 10 services. Please upgrade.",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+    mockSubscription.findUnique.mockResolvedValueOnce({
+      status: "ACTIVE",
+      accessType: "FREE_ACCESS",
+      plan: "FREE_TRIAL",
+      provider: "ADMIN",
+      stripeSubscriptionId: null,
+    });
+    mockGetPublicCampaignViewModel.mockResolvedValueOnce(null);
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.campaign).toBeNull();
+    expect(body.subscription).toMatchObject({ eligibleForTrial: true });
   });
 
   it("marks real Stripe-backed paid users as eligibleForTrial=false", async () => {
@@ -435,7 +514,14 @@ describe("services route", () => {
     expect(body).toMatchObject({
       accessType: "PAID",
       eligibleForTrial: false,
+      subscription: {
+        accessType: "PAID",
+        plan: "INDIVIDUAL",
+        eligibleForTrial: false,
+      },
+      campaign: null,
     });
+    expect(mockGetPublicCampaignViewModel).not.toHaveBeenCalled();
   });
 
   it("returns FORBIDDEN when creating a service for another user's address", async () => {

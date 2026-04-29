@@ -9,7 +9,6 @@ import {
   buildCheckoutDisclosureText,
   buildTrialConsentLabel,
   deriveUserSubscriptionState,
-  INDIVIDUAL_ANNUAL_TRIAL_CAMPAIGN_CODE,
   type UnifiedEntitlementSnapshot,
 } from "@/lib/shared-billing";
 import { RevealModal } from "@/components/premium/reveal-modal";
@@ -26,6 +25,7 @@ type SubscriptionRecord = {
   trialEndsAt?: string | null;
   freeAccessEndsAt?: string | null;
   firstChargeAt?: string | null;
+  firstChargeAmount?: number | null;
   currentPeriodEndsAt?: string | null;
   stripeCurrentPeriodEnd?: string | null;
   premiumUntil?: string | null;
@@ -36,6 +36,18 @@ type SubscriptionRecord = {
 type ProfileResponse = {
   subscription?: SubscriptionRecord | null;
   entitlement?: UnifiedEntitlementSnapshot | null;
+};
+
+type PublicTrialCampaign = {
+  campaignCode: string;
+  publicHeadline: string;
+  publicSubheadline: string | null;
+  checkoutDisclosureCopy: string | null;
+  displayPriceLabel: string;
+  trialDays: number;
+  ctaText: string;
+  priceCopy: string;
+  trialLabel: string | null;
 };
 
 function addDays(date: Date, days: number) {
@@ -106,6 +118,7 @@ export default function SubscriptionManagementPage() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [waitingForActivation, setWaitingForActivation] = useState(false);
+  const [publicCampaign, setPublicCampaign] = useState<PublicTrialCampaign | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const successFlag = searchParams.get("success") === "true";
@@ -130,9 +143,20 @@ export default function SubscriptionManagementPage() {
     }
   }
 
+  async function loadPublicCampaign() {
+    try {
+      const response = await fetch("/api/acquisition/public-trial-campaign", { cache: "no-store" });
+      const data = (await response.json()) as { campaign?: PublicTrialCampaign | null };
+      setPublicCampaign(response.ok ? data.campaign || null : null);
+    } catch {
+      setPublicCampaign(null);
+    }
+  }
+
   useEffect(() => {
     setLoading(true);
     void load();
+    void loadPublicCampaign();
   }, []);
 
   // Stripe Checkout returns the user here while the `customer.subscription.*`
@@ -187,14 +211,22 @@ export default function SubscriptionManagementPage() {
   );
   const firstChargeDate = subscription?.firstChargeAt
     ? new Date(subscription.firstChargeAt)
-    : addDays(new Date(), 90);
+    : addDays(new Date(), publicCampaign?.trialDays || 90);
   const firstChargeLabel = formatDateLabel(firstChargeDate.toISOString());
-  const priceLabel = BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel || "$79/year";
+  const subscriptionPriceLabel = subscription?.firstChargeAmount
+    ? `$${subscription.firstChargeAmount}/year`
+    : BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel || "$79/year";
+  const offerPriceLabel = publicCampaign?.displayPriceLabel || subscriptionPriceLabel;
   const checkoutDisclosure = buildCheckoutDisclosureText({
     firstChargeAt: firstChargeDate,
-    firstChargeAmount: priceLabel,
+    firstChargeAmount: offerPriceLabel,
   });
-  const consentLabel = buildTrialConsentLabel(firstChargeDate);
+  const consentLabel = publicCampaign
+    ? buildTrialConsentLabel(firstChargeDate)
+    : "I understand checkout will show the current Individual Annual terms before I subscribe.";
+  const offerDisclosure = publicCampaign
+    ? publicCampaign.checkoutDisclosureCopy || checkoutDisclosure
+    : "Checkout will show today's due amount, billing interval, first charge date, and renewal terms before you subscribe.";
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
   // Trialing, active, and pending-checkout users have either already started
   // the annual plan or are mid-checkout — re-offering the trial CTA in those
@@ -220,7 +252,7 @@ export default function SubscriptionManagementPage() {
         body: JSON.stringify({
           plan: "INDIVIDUAL",
           cycle: "yearly",
-          campaignCode: INDIVIDUAL_ANNUAL_TRIAL_CAMPAIGN_CODE,
+          ...(publicCampaign?.campaignCode ? { campaignCode: publicCampaign.campaignCode } : {}),
           acceptedSubscriptionTerms: true,
         }),
       });
@@ -272,7 +304,7 @@ export default function SubscriptionManagementPage() {
   const primaryDetail = (() => {
     if (currentState === "FREE_ACCESS") return `Access ends on ${freeAccessEndLabel || "the scheduled end date"}.`;
     if (currentState === "FREE_ACCESS_EXPIRED") return "Choose the annual plan to continue full access.";
-    if (currentState === "TRIALING") return `Trial ends on ${trialEndLabel || "the scheduled trial end date"}. Next charge: ${priceLabel} on ${firstChargeLabel}.`;
+    if (currentState === "TRIALING") return `Trial ends on ${trialEndLabel || "the scheduled trial end date"}. Next charge: ${subscriptionPriceLabel} on ${firstChargeLabel}.`;
     if (currentState === "TRIAL_CANCELED") return `Your trial remains active until ${trialEndLabel || "the trial end date"}. You will not be billed.`;
     if (currentState === "ACTIVE") return `Renews on ${periodEndLabel || "the renewal date"}.`;
     if (currentState === "CANCEL_AT_PERIOD_END") return `Your plan remains active until ${periodEndLabel || "the period end date"}. It will not renew.`;
@@ -281,6 +313,18 @@ export default function SubscriptionManagementPage() {
     if (currentState === "PENDING_CHECKOUT") return "Activating your annual trial… we are confirming with Stripe. This usually takes a few seconds.";
     return "Review your current LocateFlow access.";
   })();
+  const offerHeadline = publicCampaign?.publicHeadline || "Upgrade to Individual Annual";
+  const offerSubheadline =
+    publicCampaign?.publicSubheadline ||
+    (publicCampaign
+      ? "Individual Annual, then annual billing."
+      : "Review the current Individual Annual offer before checkout.");
+  const offerTrialLabel = publicCampaign?.trialLabel || null;
+  const offerCtaLabel =
+    processing === "CHECKOUT"
+      ? "Opening checkout..."
+      : publicCampaign?.ctaText ||
+        (currentState === "FREE_ACCESS" ? "Continue with annual" : "Upgrade to Individual Annual");
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-8">
@@ -388,8 +432,8 @@ export default function SubscriptionManagementPage() {
                 <Sparkles className="h-5 w-5 text-emerald-300" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-foreground">Start with 3 months free</h2>
-                <p className="text-sm text-muted-foreground">Individual Annual, then annual billing.</p>
+                <h2 className="text-xl font-bold text-foreground">{offerHeadline}</h2>
+                <p className="text-sm text-muted-foreground">{offerSubheadline}</p>
               </div>
             </div>
 
@@ -398,10 +442,17 @@ export default function SubscriptionManagementPage() {
                 <p className="text-xs uppercase text-muted-foreground">Today</p>
                 <p className="mt-1 text-2xl font-bold text-foreground">$0</p>
               </div>
-              <div className="rounded-xl border border-border bg-background/40 p-4">
-                <p className="text-xs uppercase text-muted-foreground">Trial</p>
-                <p className="mt-1 text-2xl font-bold text-foreground">3 months</p>
-              </div>
+              {offerTrialLabel ? (
+                <div className="rounded-xl border border-border bg-background/40 p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Trial</p>
+                  <p className="mt-1 text-2xl font-bold text-foreground">{offerTrialLabel}</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-border bg-background/40 p-4">
+                  <p className="text-xs uppercase text-muted-foreground">Plan</p>
+                  <p className="mt-1 text-lg font-semibold text-foreground">Individual Annual</p>
+                </div>
+              )}
               <div className="rounded-xl border border-border bg-background/40 p-4">
                 <p className="text-xs uppercase text-muted-foreground">Annual plan starts</p>
                 <p className="mt-1 text-lg font-semibold text-foreground">{firstChargeLabel}</p>
@@ -412,7 +463,7 @@ export default function SubscriptionManagementPage() {
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
                 <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>{checkoutDisclosure}</p>
+                  <p>{offerDisclosure}</p>
                   <p>
                     Links:{" "}
                     <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
@@ -442,7 +493,7 @@ export default function SubscriptionManagementPage() {
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               <Check className="h-4 w-4" />
-              {processing === "CHECKOUT" ? "Opening checkout..." : currentState === "FREE_ACCESS" ? "Continue with annual" : "Start annual trial"}
+              {offerCtaLabel}
             </button>
           </div>
           ) : null}
