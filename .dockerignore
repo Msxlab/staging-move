@@ -12,5 +12,6 @@ dist
 out
 coverage
 .env
+.env.docker
 .env*.local
 apps/web/public/uploads

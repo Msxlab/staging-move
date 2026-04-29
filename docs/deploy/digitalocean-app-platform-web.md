@@ -14,6 +14,44 @@ The old `https://locateflow-staging-owew7.ondigitalocean.app/move-main/login` ad
 
 DigitalOcean component name: `web-staging`
 
+## Web Dockerfile Option
+
+Use this option when DigitalOcean buildpacks fail before app build while
+installing pnpm.
+
+DigitalOcean App Platform settings:
+
+- Build method: Dockerfile
+- Dockerfile path: `Dockerfile`
+- Source directory: repository root
+- HTTP port: `8080`
+- Build command: empty
+- Run command: empty, unless DigitalOcean requires an explicit command; then use `sh -c 'export DATABASE_URL="${DATABASE_URL:-$MYSQL_DATABASE_URL}"; exec node apps/web/server.js'`
+- Runtime env: keep the existing web env values. `DATABASE_URL` should be set to the managed MySQL connection string; the image also falls back to `MYSQL_DATABASE_URL` when `DATABASE_URL` is absent.
+
+Docker build args, if overriding the defaults:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://locateflow.com
+NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+NEXT_PUBLIC_IMGPROXY_URL=https://img.locateflow.com
+R2_BUCKET=locateflow
+```
+
+The Dockerfile builds with Node 22 and pnpm 9.15.0, installs dependencies with
+`pnpm install --frozen-lockfile --ignore-scripts`, then runs:
+
+```bash
+pnpm --filter @locateflow/db generate
+pnpm --filter @locateflow/web build
+```
+
+It copies the Next standalone server, `apps/web/.next/static`, and
+`apps/web/public` into the runtime image. The runtime command does not run
+migrations.
+
+## Web Buildpack Option
+
 Build command:
 
 ```bash
