@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   headersGet: vi.fn(),
   jwtVerify: vi.fn(),
   needsEmailVerificationGate: vi.fn(() => false),
+  rawUserFindUnique: vi.fn(),
   userFindUnique: vi.fn(),
   userLoginSessionFindFirst: vi.fn(),
   userLoginSessionUpdateMany: vi.fn(),
@@ -36,6 +37,11 @@ vi.mock("jose", () => ({
 }));
 
 vi.mock("@/lib/db", () => ({
+  rawPrisma: {
+    user: {
+      findUnique: mocks.rawUserFindUnique,
+    },
+  },
   prisma: {
     userLoginSession: {
       findFirst: mocks.userLoginSessionFindFirst,
@@ -69,6 +75,7 @@ vi.mock("@/lib/billing", () => ({
 import {
   createUserAuthDiagnostics,
   getUserSession,
+  requireDbUserId,
   requireVerifiedUser,
 } from "./user-auth";
 
@@ -94,6 +101,7 @@ describe("getUserSession duplicate cookies", () => {
       throw new Error("invalid token");
     });
     mocks.userLoginSessionUpdateMany.mockResolvedValue({ count: 0 });
+    mocks.rawUserFindUnique.mockResolvedValue({ id: "user-1", deletedAt: null });
     mocks.userFindUnique.mockResolvedValue({ id: "user-1", deletedAt: null });
     mocks.needsEmailVerificationGate.mockReturnValue(false);
   });
@@ -285,6 +293,168 @@ describe("getUserSession duplicate cookies", () => {
     expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
   });
 
+  it("returns the canonical DB session user id after the JWT user id matches", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      if (name.toLowerCase() === "cookie") return "user_session=valid-token";
+      if (name.toLowerCase() === "user-agent") return "Test Browser";
+      return null;
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-valid",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(requireDbUserId({ diagnostics })).resolves.toBe("user-1");
+
+    expect(diagnostics).toMatchObject({
+      dbSessionFound: true,
+      jwtUserFound: true,
+      jwtUserMatchesSession: true,
+      sessionUserFound: true,
+      dbUserFound: true,
+      finalFailureCode: null,
+    });
+    expect(mocks.rawUserFindUnique).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      select: { id: true, deletedAt: true },
+    });
+  });
+
+  it("invalidates a DB session when its userId does not match the JWT userId", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      if (name.toLowerCase() === "cookie") return "user_session=valid-token";
+      if (name.toLowerCase() === "user-agent") return "Test Browser";
+      return null;
+    });
+    mocks.jwtVerify.mockResolvedValueOnce({
+      payload: { userId: "jwt-user", email: "user@example.com" },
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-valid",
+      userId: "session-user",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(requireDbUserId({ diagnostics })).rejects.toThrow("UNAUTHORIZED");
+
+    expect(diagnostics).toMatchObject({
+      dbSessionFound: true,
+      jwtUserFound: true,
+      jwtUserMatchesSession: false,
+      sessionUserFound: null,
+      dbUserFound: null,
+      finalFailureCode: "SESSION_USER_MISMATCH",
+    });
+    expect(mocks.rawUserFindUnique).not.toHaveBeenCalled();
+    expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalledWith({
+      where: { tokenHash: expect.any(String), isActive: true },
+      data: { isActive: false },
+    });
+    expect(mocks.cookieSet).toHaveBeenCalledWith("user_session", "", expect.objectContaining({ maxAge: 0 }));
+  });
+
+  it("invalidates a DB session when the JWT is missing a user id claim", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      if (name.toLowerCase() === "cookie") return "user_session=valid-token";
+      if (name.toLowerCase() === "user-agent") return "Test Browser";
+      return null;
+    });
+    mocks.jwtVerify.mockResolvedValueOnce({
+      payload: { email: "user@example.com" },
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-valid",
+      userId: "session-user",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(requireDbUserId({ diagnostics })).rejects.toThrow("UNAUTHORIZED");
+
+    expect(diagnostics).toMatchObject({
+      dbSessionFound: true,
+      jwtUserFound: false,
+      jwtUserMatchesSession: false,
+      sessionUserFound: null,
+      dbUserFound: null,
+      finalFailureCode: "JWT_USER_NOT_FOUND",
+    });
+    expect(mocks.rawUserFindUnique).not.toHaveBeenCalled();
+    expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
+  });
+
+  it("reports DB_USER_NOT_FOUND only after a matching session user is hard-missing", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      if (name.toLowerCase() === "cookie") return "user_session=valid-token";
+      if (name.toLowerCase() === "user-agent") return "Test Browser";
+      return null;
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValue({
+      id: "session-valid",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+    });
+    mocks.rawUserFindUnique.mockResolvedValueOnce(null);
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(requireDbUserId({ diagnostics })).rejects.toThrow("UNAUTHORIZED");
+
+    expect(diagnostics).toMatchObject({
+      dbSessionFound: true,
+      jwtUserFound: true,
+      jwtUserMatchesSession: true,
+      sessionUserFound: false,
+      dbUserFound: false,
+      finalFailureCode: "DB_USER_NOT_FOUND",
+    });
+  });
+
+  it("reports ACCOUNT_DELETED when the matching session user is soft-deleted", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      if (name.toLowerCase() === "cookie") return "user_session=valid-token";
+      if (name.toLowerCase() === "user-agent") return "Test Browser";
+      return null;
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValue({
+      id: "session-valid",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+    });
+    mocks.rawUserFindUnique.mockResolvedValueOnce({
+      id: "user-1",
+      deletedAt: new Date("2026-04-29T12:00:00Z"),
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(requireDbUserId({ distinguishDeleted: true, diagnostics })).rejects.toThrow("ACCOUNT_DELETED");
+
+    expect(diagnostics).toMatchObject({
+      dbSessionFound: true,
+      jwtUserMatchesSession: true,
+      sessionUserFound: true,
+      dbUserFound: true,
+      finalFailureCode: "ACCOUNT_DELETED",
+    });
+  });
+
   it("throws EMAIL_VERIFICATION_REQUIRED with diagnostics for unverified users", async () => {
     mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
     mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
@@ -299,14 +469,13 @@ describe("getUserSession duplicate cookies", () => {
       expiresAt: new Date(Date.now() + 60_000),
       userAgent: "Test Browser",
     });
-    mocks.userFindUnique
-      .mockResolvedValueOnce({ id: "user-1", deletedAt: null })
-      .mockResolvedValueOnce({
-        id: "user-1",
-        emailVerifiedAt: null,
-        passwordHash: "hash",
-        oauthAccounts: [],
-      });
+    mocks.rawUserFindUnique.mockResolvedValueOnce({ id: "user-1", deletedAt: null });
+    mocks.userFindUnique.mockResolvedValueOnce({
+      id: "user-1",
+      emailVerifiedAt: null,
+      passwordHash: "hash",
+      oauthAccounts: [],
+    });
     mocks.needsEmailVerificationGate.mockReturnValueOnce(true);
     const diagnostics = createUserAuthDiagnostics();
 

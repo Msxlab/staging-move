@@ -9,7 +9,7 @@ import { cookies, headers } from "next/headers";
 import type { NextResponse } from "next/server";
 import { randomBytes, createHash } from "crypto";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/db";
+import { prisma, rawPrisma } from "@/lib/db";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
 import { needsEmailVerificationGate } from "@/lib/email-verification-gate";
 import {
@@ -246,6 +246,9 @@ export interface UserAuthDiagnostics {
   dbSessionFound: boolean | null;
   sessionExpired: boolean | null;
   fingerprintMatched: boolean | null;
+  jwtUserMatchesSession: boolean | null;
+  jwtUserFound: boolean | null;
+  sessionUserFound: boolean | null;
   dbUserFound: boolean | null;
   emailVerified: boolean | null;
   finalFailureCode: string | null;
@@ -258,6 +261,9 @@ export function createUserAuthDiagnostics(): UserAuthDiagnostics {
     dbSessionFound: null,
     sessionExpired: null,
     fingerprintMatched: null,
+    jwtUserMatchesSession: null,
+    jwtUserFound: null,
+    sessionUserFound: null,
     dbUserFound: null,
     emailVerified: null,
     finalFailureCode: null,
@@ -420,7 +426,26 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
 
     if (diagnostics) diagnostics.dbSessionFound = true;
 
-    if (typeof payload.userId !== "string" || typeof payload.email !== "string") {
+    const jwtUserId = typeof payload.userId === "string" ? payload.userId : null;
+    if (diagnostics) diagnostics.jwtUserFound = Boolean(jwtUserId);
+    if (!jwtUserId) {
+      if (diagnostics) diagnostics.jwtUserMatchesSession = false;
+      markAuthFailure(diagnostics, "JWT_USER_NOT_FOUND");
+      await invalidateSession();
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
+    }
+
+    if (record.userId !== jwtUserId) {
+      if (diagnostics) diagnostics.jwtUserMatchesSession = false;
+      markAuthFailure(diagnostics, "SESSION_USER_MISMATCH");
+      await invalidateSession();
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
+    }
+    if (diagnostics) diagnostics.jwtUserMatchesSession = true;
+
+    if (typeof payload.email !== "string") {
       markAuthFailure(diagnostics, "INVALID_CLAIMS");
       await invalidateSession();
       shouldClearCookie = shouldClearCookie || cameFromCookie;
@@ -459,13 +484,6 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
 
     if (diagnostics) diagnostics.fingerprintMatched = true;
 
-    if (record.userId !== payload.userId) {
-      markAuthFailure(diagnostics, "SESSION_USER_MISMATCH");
-      await invalidateSession();
-      shouldClearCookie = shouldClearCookie || cameFromCookie;
-      continue;
-    }
-
     if (record.expiresAt.getTime() <= Date.now()) {
       if (diagnostics) diagnostics.sessionExpired = true;
       markAuthFailure(diagnostics, "SESSION_EXPIRED");
@@ -480,7 +498,7 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
     }
 
     return {
-      userId: payload.userId as string,
+      userId: record.userId,
       email: payload.email as string,
       fp: (payload.fp as string) || undefined,
       fpMode:
@@ -543,17 +561,23 @@ export async function requireDbUserId(options: { distinguishDeleted?: boolean; d
   const session = await getUserSession({ diagnostics: options.diagnostics });
   if (!session) throw new Error("UNAUTHORIZED");
 
-  const user = await prisma.user.findUnique({
+  const user = await rawPrisma.user.findUnique({
     where: { id: session.userId },
     select: { id: true, deletedAt: true },
   });
   if (!user) {
-    if (options.diagnostics) options.diagnostics.dbUserFound = false;
+    if (options.diagnostics) {
+      options.diagnostics.dbUserFound = false;
+      options.diagnostics.sessionUserFound = false;
+    }
     markAuthFailure(options.diagnostics, "DB_USER_NOT_FOUND");
     await destroyUserSession();
     throw new Error("UNAUTHORIZED");
   }
-  if (options.diagnostics) options.diagnostics.dbUserFound = true;
+  if (options.diagnostics) {
+    options.diagnostics.dbUserFound = true;
+    options.diagnostics.sessionUserFound = true;
+  }
   if (user.deletedAt) {
     markAuthFailure(options.diagnostics, "ACCOUNT_DELETED");
     await destroyUserSession();
