@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { ApiGateError, apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { budgetSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { calculateBudgetPlan } from "@/lib/budget-planning";
@@ -87,6 +88,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch budgets:", error);
     return NextResponse.json({ error: "Failed to fetch budgets" }, { status: 500 });
   }
@@ -95,7 +98,10 @@ export async function GET(request: NextRequest) {
 // POST /api/budget
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser({
+      requireActiveSubscription: true,
+      subscriptionMessage: "An active subscription is required to manage budgets.",
+    });
 
     // Rate limit: 20 writes per minute
     const rlKey = getRateLimitKey(request, "budget:create");
@@ -115,7 +121,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Address not found" }, { status: 404 });
       }
       if (address.userId !== userId) {
-        return NextResponse.json({ error: "No permission to manage budget for this address" }, { status: 403 });
+        throw new ApiGateError("FORBIDDEN", "No permission to manage budget for this address");
       }
     }
 
@@ -161,6 +167,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ budget }, { status: 201 });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

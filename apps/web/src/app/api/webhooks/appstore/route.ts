@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { captureException, captureMessage } from "@/lib/sentry";
+import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
 import {
   verifyAppleJws,
   type AppleNotificationPayload,
@@ -60,16 +61,17 @@ export async function POST(request: NextRequest) {
     }
 
     // DB-backed idempotency — prevent double-processing across restarts.
-    try {
-      await prisma.processedWebhookEvent.create({
-        data: { id: outer.notificationUUID, source: "appstore" },
-      });
-    } catch (err: any) {
-      if (err?.code === "P2002") {
+    if (await hasProcessedWebhookEvent(outer.notificationUUID)) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
+    const complete = async (body: Record<string, unknown>) => {
+      const markResult = await markWebhookEventProcessed(outer.notificationUUID, "appstore");
+      if (markResult === "duplicate") {
         return NextResponse.json({ received: true, duplicate: true });
       }
-      throw err;
-    }
+      return NextResponse.json(body);
+    };
 
     const innerTransaction = outer.data?.signedTransactionInfo
       ? verifyAppleJws<AppleTransactionPayload>(outer.data.signedTransactionInfo)
@@ -85,13 +87,13 @@ export async function POST(request: NextRequest) {
       // TEST notifications from App Store Connect have no transaction payload.
       if (outer.notificationType === "TEST") {
         console.info("[APPSTORE WEBHOOK] received TEST notification");
-        return NextResponse.json({ received: true, test: true });
+        return complete({ received: true, test: true });
       }
       captureMessage(
         `[APPSTORE WEBHOOK] ${outer.notificationType}/${outer.subtype || "-"} missing originalTransactionId`,
         "warning",
       );
-      return NextResponse.json({ received: true, skipped: true });
+      return complete({ received: true, skipped: true });
     }
 
     // Find the owning user. The subscription row was linked during /api/mobile/iap/verify
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
       console.warn(
         `[APPSTORE WEBHOOK] no owner for originalTransactionId=${originalTransactionId} (${outer.notificationType})`,
       );
-      return NextResponse.json({ received: true, unowned: true });
+      return complete({ received: true, unowned: true });
     }
 
     const refreshed = await refreshAppleSubscriptionFor(originalTransactionId);
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
             `[APPSTORE WEBHOOK] owner conflict for ${originalTransactionId}`,
             "warning",
           );
-          return NextResponse.json({ received: true, conflict: true });
+          return complete({ received: true, conflict: true });
         }
         throw err;
       }
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    return complete({
       received: true,
       type: outer.notificationType,
       subtype: outer.subtype || null,

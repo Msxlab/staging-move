@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getProviderTrustPresentation } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse, entitlementErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { customProviderSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
@@ -74,9 +75,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    if (error?.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch custom providers:", error);
     return NextResponse.json({ error: "Failed to fetch custom providers" }, { status: 500 });
   }
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser();
     const rlKey = getRateLimitKey(request, "custom-provider:create");
     const [ipRl, userRl] = await Promise.all([
       rateLimit(rlKey, { limit: 20, windowSeconds: 60 }),
@@ -96,16 +96,7 @@ export async function POST(request: NextRequest) {
 
     const entitlement = await canCreateCustomProvider(userId);
     if (!entitlement.allowed) {
-      return NextResponse.json(
-        {
-          error: entitlement.reason,
-          code: entitlement.code,
-          upgradeRequired: entitlement.upgradeRequired,
-          current: entitlement.current,
-          limit: entitlement.limit,
-        },
-        { status: 403 },
-      );
+      return entitlementErrorResponse(entitlement, "CUSTOM_PROVIDER_LIMIT_REACHED");
     }
     const body = await request.json();
     const validated = customProviderSchema.parse(body);
@@ -182,9 +173,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ provider: presentCustomProvider(provider) }, { status: 201 });
   } catch (error: any) {
-    if (error?.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

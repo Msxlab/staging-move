@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse, entitlementErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { movingPlanSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { canCreateMovingDestinationAddress, canCreateMovingPlan } from "@/lib/plan-limits";
@@ -42,6 +43,8 @@ export async function GET() {
       plans: plans.map((plan) => ({ ...plan, status: normalizeMovingPlanStatus(plan.status) })),
     });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch moving plans:", error);
     return NextResponse.json({ error: "Failed to fetch moving plans" }, { status: 500 });
   }
@@ -50,7 +53,7 @@ export async function GET() {
 // POST /api/moving
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser();
 
     // Rate limit: 10 plans per minute
     const rlKey = getRateLimitKey(request, "moving:create");
@@ -69,18 +72,12 @@ export async function POST(request: NextRequest) {
     // Plan limit check
     const limitCheck = await canCreateMovingPlan(userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json(
-        { error: limitCheck.reason, code: limitCheck.code, upgradeRequired: limitCheck.upgradeRequired },
-        { status: 403 },
-      );
+      return entitlementErrorResponse(limitCheck, "MOVING_PLAN_LIMIT_REACHED");
     }
     if (needsNewDestinationAddress) {
       const addressLimitCheck = await canCreateMovingDestinationAddress(userId);
       if (!addressLimitCheck.allowed) {
-        return NextResponse.json(
-          { error: addressLimitCheck.reason, code: addressLimitCheck.code, upgradeRequired: addressLimitCheck.upgradeRequired },
-          { status: 403 },
-        );
+        return entitlementErrorResponse(addressLimitCheck, "ADDRESS_LIMIT_REACHED");
       }
     }
 
@@ -174,11 +171,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ plan, destinationAddressId, moveTaskSync }, { status: 201 });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
-    }
-    if (error?.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     if (typeof error?.message === "string" && error.message.startsWith("AUTH_NOT_CONFIGURED")) {
       return NextResponse.json({ error: error.message }, { status: 500 });

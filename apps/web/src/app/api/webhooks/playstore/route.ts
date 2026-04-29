@@ -29,6 +29,7 @@ import { prisma } from "@/lib/db";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { verifyPubsubOidcToken } from "@/lib/iap-google";
+import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
 import {
   applyIapStateToUser,
   findUserByIapIdentifier,
@@ -68,6 +69,7 @@ interface RtdnPayload {
 }
 
 export async function POST(request: NextRequest) {
+  let idempotencyId: string | null = null;
   try {
     // ── 1. Verify OIDC token from Pub/Sub (authenticity + audience). ──
     const authHeader = request.headers.get("authorization") || "";
@@ -120,16 +122,18 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 3. Idempotency (Pub/Sub may deliver the same messageId multiple times). ──
-    try {
-      await prisma.processedWebhookEvent.create({
-        data: { id: `playstore:${messageId}`, source: "playstore" },
-      });
-    } catch (err: any) {
-      if (err?.code === "P2002") {
+    idempotencyId = `playstore:${messageId}`;
+    if (await hasProcessedWebhookEvent(idempotencyId)) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
+    const complete = async (body: Record<string, unknown>) => {
+      const markResult = await markWebhookEventProcessed(idempotencyId!, "playstore");
+      if (markResult === "duplicate") {
         return NextResponse.json({ received: true, duplicate: true });
       }
-      throw err;
-    }
+      return NextResponse.json(body);
+    };
 
     // ── 4. Validate package name matches our app (defense in depth). ──
     const expectedPackage = await getRuntimeConfigValue("GOOGLE_PLAY_PACKAGE_NAME");
@@ -138,12 +142,12 @@ export async function POST(request: NextRequest) {
         `[PLAYSTORE WEBHOOK] package mismatch: ${rtdn.packageName} vs expected ${expectedPackage}`,
         "warning",
       );
-      return NextResponse.json({ received: true, skipped: "package_mismatch" });
+      return complete({ received: true, skipped: "package_mismatch" });
     }
 
     if (rtdn.testNotification) {
       console.info("[PLAYSTORE WEBHOOK] received TEST notification");
-      return NextResponse.json({ received: true, test: true });
+      return complete({ received: true, test: true });
     }
 
     // ── 5. Only subscription events drive our Subscription rows today. ──
@@ -162,11 +166,11 @@ export async function POST(request: NextRequest) {
           },
         });
       }
-      return NextResponse.json({ received: true, type: "voided" });
+      return complete({ received: true, type: "voided" });
     }
 
     if (!subNotif?.purchaseToken) {
-      return NextResponse.json({ received: true, skipped: "no_subscription" });
+      return complete({ received: true, skipped: "no_subscription" });
     }
 
     const owner = await findUserByIapIdentifier({ purchaseToken: subNotif.purchaseToken });
@@ -175,7 +179,7 @@ export async function POST(request: NextRequest) {
       console.warn(
         `[PLAYSTORE WEBHOOK] no owner for purchaseToken=${subNotif.purchaseToken.slice(0, 16)}... (${subNotif.notificationType})`,
       );
-      return NextResponse.json({ received: true, unowned: true });
+      return complete({ received: true, unowned: true });
     }
 
     const refreshed = await refreshGoogleSubscriptionFor(subNotif.purchaseToken);
@@ -189,7 +193,7 @@ export async function POST(request: NextRequest) {
           lastSyncedAt: new Date(),
         },
       });
-      return NextResponse.json({ received: true, revoked: true });
+      return complete({ received: true, revoked: true });
     }
 
     try {
@@ -200,17 +204,23 @@ export async function POST(request: NextRequest) {
           `[PLAYSTORE WEBHOOK] owner conflict for ${subNotif.purchaseToken.slice(0, 16)}...`,
           "warning",
         );
-        return NextResponse.json({ received: true, conflict: true });
+        return complete({ received: true, conflict: true });
       }
       throw err;
     }
 
-    return NextResponse.json({
+    return complete({
       received: true,
       type: subNotif.notificationType,
     });
   } catch (error: any) {
     if (error?.message === "GOOGLE_TEST_PURCHASE_IN_PRODUCTION") {
+      if (idempotencyId) {
+        const markResult = await markWebhookEventProcessed(idempotencyId, "playstore");
+        if (markResult === "duplicate") {
+          return NextResponse.json({ received: true, duplicate: true });
+        }
+      }
       return NextResponse.json({ received: true, skipped: "test_purchase_production" });
     }
     captureException(error, { route: "/api/webhooks/playstore" });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { z } from "zod";
 import { syncMoveTasksForPlans } from "@/lib/move-task-sync";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
@@ -44,6 +45,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ plan: { ...plan, status: normalizeMovingPlanStatus(plan.status) } });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to fetch moving plan:", error);
     return NextResponse.json({ error: "Failed to fetch moving plan" }, { status: 500 });
   }
@@ -53,7 +56,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser();
 
     const existing = await prisma.movingPlan.findUnique({ where: { id } });
     if (!existing || existing.userId !== userId || existing.deletedAt) {
@@ -89,6 +92,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     return NextResponse.json({ plan, moveTaskSync });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }
@@ -104,7 +109,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser();
 
     const existing = await prisma.movingPlan.findUnique({ where: { id } });
     if (!existing || existing.userId !== userId || existing.deletedAt) {
@@ -114,6 +119,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     await prisma.movingPlan.update({ where: { id }, data: { deletedAt: new Date() } });
     return NextResponse.json({ success: true });
   } catch (error) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     console.error("Failed to delete moving plan:", error);
     return NextResponse.json({ error: "Failed to delete moving plan" }, { status: 500 });
   }

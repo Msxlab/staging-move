@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlan } from "@/lib/billing";
-import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
+import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
+import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
 import {
   sendPaymentFailedEmail,
   sendSubscriptionActivatedEmail,
@@ -66,6 +67,51 @@ function fireAndLogEmail(promise: Promise<unknown>, context: string): void {
   });
 }
 
+function stripeLivemodeMismatchResponse(event: Stripe.Event) {
+  const productionLike = isBillingProductionLike(process.env);
+  const allowLiveOutsideProduction =
+    process.env.STRIPE_ALLOW_LIVE_WEBHOOKS_OUTSIDE_PRODUCTION === "true" ||
+    process.env.ALLOW_STRIPE_LIVE_EVENTS_IN_NON_PRODUCTION === "true";
+
+  if (productionLike && !event.livemode) {
+    console.warn("[WEBHOOK] Stripe testmode event rejected in production billing environment", {
+      eventId: event.id,
+      type: event.type,
+      appEnv: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+    });
+    return NextResponse.json(
+      {
+        code: "STRIPE_LIVEMODE_MISMATCH",
+        error: "Stripe event mode does not match this environment.",
+        expectedLivemode: true,
+        receivedLivemode: false,
+        ignored: true,
+      },
+      { status: 400 },
+    );
+  }
+
+  if (!productionLike && event.livemode && !allowLiveOutsideProduction) {
+    console.warn("[WEBHOOK] Stripe live event rejected outside production billing environment", {
+      eventId: event.id,
+      type: event.type,
+      appEnv: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+    });
+    return NextResponse.json(
+      {
+        code: "STRIPE_LIVEMODE_MISMATCH",
+        error: "Stripe event mode does not match this environment.",
+        expectedLivemode: false,
+        receivedLivemode: true,
+        ignored: true,
+      },
+      { status: 400 },
+    );
+  }
+
+  return null;
+}
+
 // POST /api/webhooks/stripe — Stripe webhook handler
 export async function POST(request: NextRequest) {
   try {
@@ -107,6 +153,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
+    const livemodeMismatch = stripeLivemodeMismatchResponse(event);
+    if (livemodeMismatch) return livemodeMismatch;
+
     // Replay protection — reject events older than 72 hours.
     //
     // Stripe retries failed webhooks for up to 3 days with exponential
@@ -124,16 +173,8 @@ export async function POST(request: NextRequest) {
     }
 
     // DB-backed idempotency — skip already-processed events (survives restarts)
-    try {
-      await prisma.processedWebhookEvent.create({
-        data: { id: event.id, source: "stripe" },
-      });
-    } catch (err: any) {
-      // Unique constraint violation = already processed
-      if (err?.code === "P2002") {
-        return NextResponse.json({ received: true, duplicate: true });
-      }
-      throw err;
+    if (await hasProcessedWebhookEvent(event.id)) {
+      return NextResponse.json({ received: true, duplicate: true });
     }
 
     switch (event.type) {
@@ -402,6 +443,11 @@ export async function POST(request: NextRequest) {
 
       default:
         captureMessage(`Unhandled Stripe event: ${event.type}`, "warning");
+    }
+
+    const markResult = await markWebhookEventProcessed(event.id, "stripe");
+    if (markResult === "duplicate") {
+      return NextResponse.json({ received: true, duplicate: true });
     }
 
     return NextResponse.json({ received: true });

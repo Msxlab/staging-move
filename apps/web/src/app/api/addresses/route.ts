@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse, entitlementErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { addressSchema } from "@/lib/validators";
 import { canCreateAddress } from "@/lib/plan-limits";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
 // POST /api/addresses
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser();
 
     // Rate limit: 20 writes per minute
     const rlKey = getRateLimitKey(request, "addr:create");
@@ -63,16 +64,7 @@ export async function POST(request: NextRequest) {
 
     const limitCheck = await canCreateAddress(userId);
     if (!limitCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: limitCheck.reason,
-          code: limitCheck.code,
-          upgradeRequired: limitCheck.upgradeRequired,
-          current: limitCheck.current,
-          limit: limitCheck.limit,
-        },
-        { status: 403 },
-      );
+      return entitlementErrorResponse(limitCheck, "ADDRESS_LIMIT_REACHED");
     }
 
     const body = await request.json();
@@ -108,6 +100,8 @@ export async function POST(request: NextRequest) {
       },
     }, { status: 201 });
   } catch (error: any) {
+    const gateResponse = apiGateErrorResponse(error);
+    if (gateResponse) return gateResponse;
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });
     }

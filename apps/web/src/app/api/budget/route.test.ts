@@ -21,16 +21,24 @@ vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
 }));
 
+vi.mock("@/lib/api-gates", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api-gates")>("@/lib/api-gates");
+  return {
+    ...actual,
+    requireAppMutationUser: vi.fn(),
+  };
+});
+
 vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: vi.fn(() => "budget-rate-key"),
   rateLimit: vi.fn(() => Promise.resolve({ success: true })),
 }));
 
 import { prisma } from "@/lib/db";
-import { requireDbUserId } from "@/lib/auth";
+import { requireAppMutationUser } from "@/lib/api-gates";
 import { POST } from "./route";
 
-const requireDbUserIdMock = requireDbUserId as unknown as Mock;
+const requireAppMutationUserMock = requireAppMutationUser as unknown as Mock;
 const budgetMock = prisma.budget as unknown as {
   findFirst: Mock;
   create: Mock;
@@ -41,7 +49,7 @@ const serviceMock = prisma.service as unknown as { findMany: Mock };
 describe("budget route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    requireDbUserIdMock.mockResolvedValue("user-1");
+    requireAppMutationUserMock.mockResolvedValue("user-1");
     budgetMock.findFirst.mockResolvedValue(null);
     budgetMock.create.mockImplementation(({ data }) => Promise.resolve({ id: "budget-1", ...data }));
     serviceMock.findMany.mockResolvedValue([
@@ -104,5 +112,31 @@ describe("budget route", () => {
         }),
       }),
     );
+  });
+
+  it.each([
+    ["UNAUTHORIZED", 401],
+    ["EMAIL_VERIFICATION_REQUIRED", 403],
+    ["LEGAL_ACCEPTANCE_REQUIRED", 403],
+    ["SUBSCRIPTION_REQUIRED", 403],
+  ])("returns a structured %s gate response", async (code, status) => {
+    requireAppMutationUserMock.mockRejectedValueOnce(new Error(code));
+
+    const response = await POST(
+      new Request("http://localhost/api/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          month: "2026-04-01",
+          year: 2026,
+          plannedExpenses: 300,
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(status);
+    expect(body.code).toBe(code);
+    expect(budgetMock.create).not.toHaveBeenCalled();
   });
 });

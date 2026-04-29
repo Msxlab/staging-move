@@ -1,22 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { apiGateErrorResponse, requireAppMutationUser } from "@/lib/api-gates";
 import { addressSchema } from "@/lib/validators";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
 import { syncMoveTasksForAddress } from "@/lib/move-task-sync";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
 import { decryptServiceSensitiveFields } from "@/lib/service-sensitive-fields";
-
-function authErrorResponse(error: unknown) {
-  if (error instanceof Error && error.message === "UNAUTHORIZED") {
-    return NextResponse.json(
-      { code: "UNAUTHORIZED", error: "Please sign in again." },
-      { status: 401 },
-    );
-  }
-  return null;
-}
 
 // GET /api/addresses/:id
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -50,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
   } catch (error) {
-    const authResponse = authErrorResponse(error);
+    const authResponse = apiGateErrorResponse(error);
     if (authResponse) return authResponse;
     console.error("Failed to fetch address:", error);
     return NextResponse.json({ error: "Failed to fetch address" }, { status: 500 });
@@ -60,7 +51,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 // PATCH /api/addresses/:id
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser();
     const { id } = await params;
 
     const existing = await prisma.address.findUnique({ where: { id } });
@@ -104,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       moveTaskSync,
     });
   } catch (error: any) {
-    const authResponse = authErrorResponse(error);
+    const authResponse = apiGateErrorResponse(error);
     if (authResponse) return authResponse;
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
@@ -117,7 +108,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 // DELETE /api/addresses/:id
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = await requireDbUserId();
+    const userId = await requireAppMutationUser();
     const { id } = await params;
 
     const existing = await prisma.address.findUnique({ where: { id } });
@@ -132,7 +123,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    const authResponse = authErrorResponse(error);
+    const authResponse = apiGateErrorResponse(error);
     if (authResponse) return authResponse;
     if (error?.code === "P2025") {
       return NextResponse.json({ error: "Address not found" }, { status: 404 });
