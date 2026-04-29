@@ -41,7 +41,13 @@ COPY packages/db/package.json packages/db/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
 RUN pnpm config set store-dir /pnpm/store \
- && pnpm install --frozen-lockfile --ignore-scripts
+ && pnpm install --frozen-lockfile --ignore-scripts \
+ && mkdir -p \
+      apps/web/node_modules \
+      apps/admin/node_modules \
+      apps/mobile/node_modules \
+      packages/db/node_modules \
+      packages/shared/node_modules
 
 FROM pnpm-base AS builder
 
