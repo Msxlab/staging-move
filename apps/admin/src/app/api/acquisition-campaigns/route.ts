@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     const priceValidation = await validateStripeCampaignPrice(data);
     if (!priceValidation.ok) {
       return NextResponse.json(
-        { code: priceValidation.code, error: priceValidation.error },
+        { code: priceValidation.code, error: priceValidation.error, priceValidation },
         { status: 422 },
       );
     }

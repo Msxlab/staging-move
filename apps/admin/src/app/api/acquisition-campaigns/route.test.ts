@@ -204,7 +204,13 @@ describe("admin acquisition campaigns create route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(422);
-    expect(body).toMatchObject({ code: "PRICE_VALIDATION_FAILED" });
+    expect(body).toMatchObject({
+      code: "PRICE_VALIDATION_FAILED",
+      priceValidation: {
+        ok: false,
+        error: "Stripe price is $99/year but displayed label is $79/year.",
+      },
+    });
     expect(mocks.campaignCreate).not.toHaveBeenCalled();
   });
 });

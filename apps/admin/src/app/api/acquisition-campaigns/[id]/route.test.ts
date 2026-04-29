@@ -150,7 +150,51 @@ describe("admin acquisition campaigns update route", () => {
     const body = await response.json();
 
     expect(response.status).toBe(422);
-    expect(body).toMatchObject({ code: "PRICE_VALIDATION_FAILED" });
+    expect(body).toMatchObject({
+      code: "PRICE_VALIDATION_FAILED",
+      priceValidation: { ok: false, error: "Stripe price is inactive." },
+    });
     expect(mocks.campaignUpdate).not.toHaveBeenCalled();
+  });
+
+  it("allows copy-only edits on an already ACTIVE campaign without revalidating Stripe price", async () => {
+    mocks.campaignFindUnique.mockResolvedValueOnce({
+      id: "camp_1",
+      name: "Individual Annual",
+      code: "INDIVIDUAL90",
+      status: "ACTIVE",
+      accessType: "FREE_TRIAL",
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+      trialDays: 90,
+      stripePriceId: "price_annual",
+      displayPriceLabel: "$79/year",
+      requiresPaymentMethod: true,
+      autoRenew: true,
+      startsAt: null,
+      endsAt: null,
+    });
+    mocks.validateStripeCampaignPrice.mockResolvedValueOnce({
+      ok: false,
+      code: "PRICE_VALIDATION_FAILED",
+      error: "Stripe price could not be validated.",
+    });
+
+    const response = await PATCH(request({
+      publicHeadline: "Start with 3 months free",
+      publicSubheadline: "Fresh public copy.",
+      checkoutDisclosureCopy: "Updated checkout disclosure.",
+    }), params());
+
+    expect(response.status).toBe(200);
+    expect(mocks.validateStripeCampaignPrice).not.toHaveBeenCalled();
+    expect(mocks.campaignUpdate).toHaveBeenCalledWith({
+      where: { id: "camp_1" },
+      data: expect.objectContaining({
+        publicHeadline: "Start with 3 months free",
+        publicSubheadline: "Fresh public copy.",
+        checkoutDisclosureCopy: "Updated checkout disclosure.",
+      }),
+    });
   });
 });

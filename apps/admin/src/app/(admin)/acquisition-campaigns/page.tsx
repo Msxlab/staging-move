@@ -238,6 +238,9 @@ export default function AcquisitionCampaignsPage() {
       );
       const data = await response.json();
       if (!response.ok) {
+        showPriceValidation(data.priceValidation || (data.code === "PRICE_VALIDATION_FAILED"
+          ? { ok: false, error: data.error || "Stripe price validation failed." }
+          : null));
         throw new Error(data.error || (isEditing ? "Failed to update campaign." : "Failed to create campaign."));
       }
       showPriceValidation(data.priceValidation || null);
@@ -259,7 +262,12 @@ export default function AcquisitionCampaignsPage() {
         body: JSON.stringify(patch),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to update campaign.");
+      if (!response.ok) {
+        showPriceValidation(data.priceValidation || (data.code === "PRICE_VALIDATION_FAILED"
+          ? { ok: false, error: data.error || "Stripe price validation failed." }
+          : null));
+        throw new Error(data.error || "Failed to update campaign.");
+      }
       showPriceValidation(data.priceValidation || null);
       toast.success("Campaign updated");
       await load();

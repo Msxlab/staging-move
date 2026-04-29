@@ -90,6 +90,20 @@ async function findActiveCampaignConflict(client: any, candidate: any, excludeId
   ) || null;
 }
 
+function requiresStripePriceValidation(existing: any, data: any) {
+  if (data.status === "ACTIVE" && existing.status !== "ACTIVE") return true;
+  for (const key of [
+    "accessType",
+    "billingInterval",
+    "trialDays",
+    "stripePriceId",
+    "displayPriceLabel",
+  ]) {
+    if (data[key] !== undefined) return true;
+  }
+  return false;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -131,16 +145,19 @@ export async function PATCH(
     const existing = await (prisma as any).acquisitionCampaign.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     const merged = { ...existing, ...data };
-    const priceValidation = await validateStripeCampaignPrice(merged);
-    if (!priceValidation.ok) {
-      return NextResponse.json(
-        { code: priceValidation.code, error: priceValidation.error },
-        { status: 422 },
-      );
-    }
-    if (priceValidation.displayPriceLabel !== undefined) {
-      data.displayPriceLabel = priceValidation.displayPriceLabel;
-      merged.displayPriceLabel = priceValidation.displayPriceLabel;
+    let priceValidation = null;
+    if (requiresStripePriceValidation(existing, data)) {
+      priceValidation = await validateStripeCampaignPrice(merged);
+      if (!priceValidation.ok) {
+        return NextResponse.json(
+          { code: priceValidation.code, error: priceValidation.error, priceValidation },
+          { status: 422 },
+        );
+      }
+      if (priceValidation.displayPriceLabel !== undefined) {
+        data.displayPriceLabel = priceValidation.displayPriceLabel;
+        merged.displayPriceLabel = priceValidation.displayPriceLabel;
+      }
     }
 
     const result = await (prisma as any).$transaction(async (tx: any) => {
