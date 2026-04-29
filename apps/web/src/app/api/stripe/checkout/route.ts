@@ -100,22 +100,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Block re-checkout if the user is already trialing or has an active paid
-    // annual subscription so a second checkout doesn't create a parallel
-    // Stripe subscription against the same customer.
+    // Block re-checkout only when the user already has a real Stripe-backed
+    // paid subscription. Admin-granted Free Access also writes status=ACTIVE
+    // (provider=ADMIN, no stripeSubscriptionId), and those users are exactly
+    // the ones who must be allowed to start the annual trial — so guarding
+    // on raw status alone would lock them out of the upgrade path.
     const existingSubscription = await prisma.subscription.findUnique({
       where: { userId },
-      select: { status: true, stripeSubscriptionId: true },
+      select: {
+        status: true,
+        provider: true,
+        accessType: true,
+        stripeSubscriptionId: true,
+      },
     });
-    if (existingSubscription?.status === "TRIALING") {
+    const hasRealStripeSubscription =
+      existingSubscription?.provider === "STRIPE" &&
+      Boolean(existingSubscription?.stripeSubscriptionId) &&
+      existingSubscription?.accessType !== "FREE_ACCESS";
+    if (hasRealStripeSubscription && existingSubscription?.status === "TRIALING") {
       return NextResponse.json(
         { code: "ALREADY_TRIALING", error: "Your annual trial is already active." },
         { status: 409 },
       );
     }
     if (
-      existingSubscription?.status === "ACTIVE" ||
-      existingSubscription?.status === "CANCEL_AT_PERIOD_END"
+      hasRealStripeSubscription &&
+      (existingSubscription?.status === "ACTIVE" ||
+        existingSubscription?.status === "CANCEL_AT_PERIOD_END")
     ) {
       return NextResponse.json(
         { code: "ALREADY_ACTIVE", error: "Your annual plan is active." },

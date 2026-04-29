@@ -194,12 +194,13 @@ export default function SubscriptionManagementPage() {
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
   // Trialing, active, and pending-checkout users have either already started
   // the annual plan or are mid-checkout — re-offering the trial CTA in those
-  // states confused users into thinking the trial hadn't begun.
-  const showAnnualTrialOffer = [
-    "FREE_ACCESS",
-    "FREE_ACCESS_EXPIRED",
-    "CANCELED",
-  ].includes(currentState);
+  // states confused users into thinking the trial hadn't begun. Also hide
+  // it while we're polling for Stripe activation so a Free Access user
+  // returning from Checkout doesn't see "Start annual trial" stacked under
+  // the "Activating…" banner.
+  const showAnnualTrialOffer =
+    !waitingForActivation &&
+    ["FREE_ACCESS", "FREE_ACCESS_EXPIRED", "CANCELED"].includes(currentState);
 
   async function startAnnualTrial() {
     if (!acceptedTerms) {

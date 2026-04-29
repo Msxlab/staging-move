@@ -200,4 +200,71 @@ describe("stripe checkout route", () => {
       }),
     );
   });
+
+  it("lets a Free Access user (status=ACTIVE, provider=ADMIN) start the annual trial", async () => {
+    // Admin-granted Free Access also writes status=ACTIVE — those users are
+    // exactly the ones who must be allowed to convert. Guarding on raw
+    // status alone here would 409 the entire upgrade path.
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      provider: "ADMIN",
+      accessType: "FREE_ACCESS",
+      status: "ACTIVE",
+      platform: "web",
+    });
+    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.sessionsCreate).toHaveBeenCalled();
+  });
+
+  it("blocks re-checkout for a real Stripe-backed paid annual subscription", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_paid",
+      stripeSubscriptionId: "sub_paid_123",
+      provider: "STRIPE",
+      accessType: "PAID",
+      status: "ACTIVE",
+      platform: "web",
+    });
+    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "ALREADY_ACTIVE" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("blocks re-checkout for a real Stripe-backed trial", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_trial",
+      stripeSubscriptionId: "sub_trial_123",
+      provider: "STRIPE",
+      accessType: "FREE_TRIAL",
+      status: "TRIALING",
+      platform: "web",
+    });
+    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "ALREADY_TRIALING" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
 });

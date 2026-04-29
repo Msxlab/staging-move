@@ -281,6 +281,12 @@ export function deriveUserSubscriptionState(
     if (subscription.cancelAtPeriodEnd) return "CANCEL_AT_PERIOD_END";
     return periodEnd && periodEnd <= now && subscription.canceledAt ? "CANCELED" : "ACTIVE";
   }
+  // Pending Stripe Checkout must beat the FREE_ACCESS branch below: a Free
+  // Access user that just kicked off a trial will carry both
+  // status=PENDING_CHECKOUT and accessType=FREE_ACCESS in the brief window
+  // before the Stripe webhook confirms. Surfacing FREE_ACCESS there would
+  // re-show the trial CTA on top of the "Activating…" banner.
+  if (status === "PENDING_CHECKOUT" || status === "PENDING_VALIDATION") return "PENDING_CHECKOUT";
 
   if (subscription.accessType === "FREE_ACCESS") {
     return freeAccessEndsAt && freeAccessEndsAt > now ? "FREE_ACCESS" : "FREE_ACCESS_EXPIRED";
@@ -292,10 +298,6 @@ export function deriveUserSubscriptionState(
     if (subscription.cancelAtPeriodEnd) return "CANCEL_AT_PERIOD_END";
     return periodEnd && periodEnd <= now && subscription.canceledAt ? "CANCELED" : "ACTIVE";
   }
-  // Stripe Checkout shell exists but the webhook hasn't confirmed yet — show
-  // a calm "activating" state instead of UNKNOWN so the user is not greeted
-  // by an error-shaped tile while their trial is being provisioned.
-  if (status === "PENDING_CHECKOUT" || status === "PENDING_VALIDATION") return "PENDING_CHECKOUT";
   if (status === "CANCELED" || status === "EXPIRED" || status === "UNPAID") return "CANCELED";
   return "UNKNOWN";
 }

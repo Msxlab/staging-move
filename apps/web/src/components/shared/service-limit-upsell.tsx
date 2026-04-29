@@ -30,7 +30,26 @@ const DEFAULT_LIMIT = 10;
 export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
   const limit = details?.limit ?? DEFAULT_LIMIT;
   const accessType = details?.accessType || null;
-  const tier = accessType === "FREE_ACCESS" ? "Free Access" : "Free Trial";
+  const eligibleForTrial = details?.eligibleForTrial ?? true;
+
+  // Paid users hit the Individual Annual ceiling — there's no higher tier
+  // to upsell into, so the modal switches to a contact-support shape and
+  // the primary CTA opens subscription management instead of checkout.
+  if (!eligibleForTrial || accessType === "PAID") {
+    return {
+      title: "You've reached your service limit",
+      body: `Your Individual Annual plan includes up to ${limit} active services. Contact support if you need additional capacity.`,
+      primary: "Manage subscription",
+      secondary: "Maybe later",
+    };
+  }
+
+  const tier =
+    accessType === "FREE_TRIAL"
+      ? "Free Trial"
+      : accessType === "FREE_ACCESS"
+        ? "Free Access"
+        : "Free Access";
   return {
     title: "You've reached your service limit",
     body: `${tier} includes up to ${limit} active services. Start Individual Annual with 3 months free to keep adding services.`,
@@ -121,7 +140,7 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
             onClick={handleUpgrade}
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
           >
-            {eligibleForTrial ? copy.primary : "Manage subscription"}
+            {copy.primary}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>

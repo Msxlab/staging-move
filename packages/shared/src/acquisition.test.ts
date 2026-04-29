@@ -138,6 +138,18 @@ describe("acquisition campaign helpers", () => {
     }, now)).toBe("PENDING_CHECKOUT");
   });
 
+  it("prefers PENDING_CHECKOUT over lingering accessType=FREE_ACCESS", () => {
+    // Free Access users carry accessType=FREE_ACCESS even after they kick
+    // off the annual trial. Without this ordering the settings page would
+    // still show "Free Access" and re-render the trial CTA on top of the
+    // "Activating…" banner during the brief window before Stripe confirms.
+    expect(deriveUserSubscriptionState({
+      accessType: "FREE_ACCESS",
+      status: "PENDING_CHECKOUT",
+      freeAccessEndsAt: "2026-05-28T12:00:00.000Z",
+    }, now)).toBe("PENDING_CHECKOUT");
+  });
+
   it("uses the minimal notification schedule and avoids refund-heavy reminders", () => {
     const freeTrial = getMinimalNotificationSchedule("FREE_TRIAL");
     const freeAccess = getMinimalNotificationSchedule("FREE_ACCESS");

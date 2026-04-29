@@ -107,11 +107,25 @@ export async function POST(request: NextRequest) {
     // Plan limit check
     const limitCheck = await canCreateService(userId);
     if (!limitCheck.allowed) {
-      let subscription: { status: string | null; accessType: string | null; plan: string | null } | null = null;
+      let subscription:
+        | {
+            status: string | null;
+            accessType: string | null;
+            plan: string | null;
+            provider: string | null;
+            stripeSubscriptionId: string | null;
+          }
+        | null = null;
       try {
         subscription = await prisma.subscription.findUnique({
           where: { userId },
-          select: { status: true, accessType: true, plan: true },
+          select: {
+            status: true,
+            accessType: true,
+            plan: true,
+            provider: true,
+            stripeSubscriptionId: true,
+          },
         });
       } catch {
         subscription = null;
@@ -119,11 +133,20 @@ export async function POST(request: NextRequest) {
       const status = subscription?.status || null;
       const accessType = subscription?.accessType || null;
       const plan = subscription?.plan || null;
+      // Free Access (provider=ADMIN) also writes status=ACTIVE — those users
+      // are still eligible for the annual trial, so the gate must not be
+      // raw status alone. Only a real Stripe-backed paid/trial subscription
+      // disqualifies the user from the trial offer.
+      const hasRealStripeSubscription =
+        subscription?.provider === "STRIPE" &&
+        Boolean(subscription?.stripeSubscriptionId) &&
+        subscription?.accessType !== "FREE_ACCESS";
       const eligibleForTrial = !(
-        status === "TRIALING" ||
-        status === "ACTIVE" ||
-        status === "CANCEL_AT_PERIOD_END" ||
-        status === "TRIAL_CANCELED"
+        hasRealStripeSubscription &&
+        (status === "TRIALING" ||
+          status === "ACTIVE" ||
+          status === "CANCEL_AT_PERIOD_END" ||
+          status === "TRIAL_CANCELED")
       );
       return serviceError(
         limitErrorCode(limitCheck.code),

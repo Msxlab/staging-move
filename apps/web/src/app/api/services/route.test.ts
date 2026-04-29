@@ -10,6 +10,7 @@ vi.mock("@/lib/db", () => ({
     address: { findUnique: vi.fn() },
     serviceProvider: { findUnique: vi.fn(), update: vi.fn() },
     userCustomProvider: { findFirst: vi.fn() },
+    subscription: { findUnique: vi.fn() },
   },
 }));
 
@@ -58,6 +59,7 @@ const mockService = prisma.service as unknown as {
 const mockAddress = prisma.address as unknown as { findUnique: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findUnique: Mock; update: Mock };
 const mockCustomProvider = prisma.userCustomProvider as unknown as { findFirst: Mock };
+const mockSubscription = prisma.subscription as unknown as { findUnique: Mock };
 const mockCanCreateService = canCreateService as unknown as Mock;
 const mockSafeSyncMoveTasksForAddress = safeSyncMoveTasksForAddress as unknown as Mock;
 
@@ -357,6 +359,83 @@ describe("services route", () => {
     });
     expect(mockAddress.findUnique).not.toHaveBeenCalled();
     expect(mockService.create).not.toHaveBeenCalled();
+  });
+
+  it("marks Free Access users as eligibleForTrial=true even when status is ACTIVE", async () => {
+    mockCanCreateService.mockResolvedValueOnce({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      reason: "Your FREE_TRIAL plan allows up to 10 services. Please upgrade.",
+      upgradeRequired: true,
+      current: 10,
+      limit: 10,
+    });
+    mockSubscription.findUnique.mockResolvedValueOnce({
+      status: "ACTIVE",
+      accessType: "FREE_ACCESS",
+      plan: "FREE_TRIAL",
+      provider: "ADMIN",
+      stripeSubscriptionId: null,
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      code: "SERVICE_LIMIT_REACHED",
+      accessType: "FREE_ACCESS",
+      eligibleForTrial: true,
+    });
+  });
+
+  it("marks real Stripe-backed paid users as eligibleForTrial=false", async () => {
+    mockCanCreateService.mockResolvedValueOnce({
+      allowed: false,
+      code: "SERVICE_LIMIT_REACHED",
+      reason: "Your INDIVIDUAL plan allows up to 100 services. Please upgrade.",
+      upgradeRequired: true,
+      current: 100,
+      limit: 100,
+    });
+    mockSubscription.findUnique.mockResolvedValueOnce({
+      status: "ACTIVE",
+      accessType: "PAID",
+      plan: "INDIVIDUAL",
+      provider: "STRIPE",
+      stripeSubscriptionId: "sub_paid_42",
+    });
+
+    const response = await POST(
+      new Request("http://localhost/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "address-1",
+          providerId: "provider-1",
+          category: "UTILITY_ELECTRIC",
+          providerName: "PSE&G",
+        }),
+      }) as any,
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({
+      accessType: "PAID",
+      eligibleForTrial: false,
+    });
   });
 
   it("returns FORBIDDEN when creating a service for another user's address", async () => {
