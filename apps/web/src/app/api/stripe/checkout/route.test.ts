@@ -172,6 +172,7 @@ describe("stripe checkout route", () => {
         mode: "subscription",
         line_items: [{ price: "price_yearly", quantity: 1 }],
         payment_method_collection: "always",
+        cancel_url: "https://locateflow.com/api/stripe/checkout/cancel",
         subscription_data: expect.objectContaining({
           trial_period_days: 90,
           metadata: expect.objectContaining({
@@ -222,6 +223,16 @@ describe("stripe checkout route", () => {
 
     expect(response.status).toBe(200);
     expect(mocks.sessionsCreate).toHaveBeenCalled();
+    expect(subscriptionMock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        data: expect.objectContaining({
+          status: "PENDING_CHECKOUT",
+          billingInterval: "YEAR",
+          campaignCode: "INDIVIDUAL90",
+        }),
+      }),
+    );
   });
 
   it("blocks re-checkout for a real Stripe-backed paid annual subscription", async () => {

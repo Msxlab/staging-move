@@ -91,6 +91,13 @@ function statusLabel(state: string) {
   return state.replaceAll("_", " ");
 }
 
+function isStripeCheckoutActivated(subscription: SubscriptionRecord | null | undefined) {
+  if (!subscription) return false;
+  if (subscription.provider !== "STRIPE") return false;
+  if (subscription.accessType === "FREE_ACCESS") return false;
+  return subscription.status === "TRIALING" || subscription.status === "ACTIVE";
+}
+
 export default function SubscriptionManagementPage() {
   const [subscription, setSubscription] = useState<SubscriptionRecord | null>(null);
   const [entitlement, setEntitlement] = useState<UnifiedEntitlementSnapshot | null>(null);
@@ -143,9 +150,7 @@ export default function SubscriptionManagementPage() {
       const data = await load();
       attempts += 1;
       const sub = data?.subscription || null;
-      const isActivated = Boolean(
-        sub && (sub.status === "TRIALING" || sub.status === "ACTIVE"),
-      );
+      const isActivated = isStripeCheckoutActivated(sub);
       if (isActivated || attempts >= maxAttempts) {
         if (!cancelled) setWaitingForActivation(false);
         return;
@@ -162,8 +167,7 @@ export default function SubscriptionManagementPage() {
     if (!justUpgradedTier) return;
     if (waitingForActivation) return;
     if (!subscription) return;
-    const stripeStatus = subscription.status;
-    if (stripeStatus !== "TRIALING" && stripeStatus !== "ACTIVE") return;
+    if (!isStripeCheckoutActivated(subscription)) return;
     setRevealOpen(true);
     router.replace("/settings/subscription", { scroll: false });
   }, [justUpgradedTier, router, waitingForActivation, subscription]);

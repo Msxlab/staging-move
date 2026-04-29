@@ -234,6 +234,7 @@ export async function POST(request: NextRequest) {
     await prisma.subscription.update({
       where: { userId },
       data: {
+        status: "PENDING_CHECKOUT",
         billingInterval: "YEAR",
         firstChargeAt,
         firstChargeAmount: Number.parseFloat(displayPrice.replace(/[^0-9.]/g, "")) || null,
@@ -296,7 +297,7 @@ export async function POST(request: NextRequest) {
       // The plan query param is read by subscription-management to decide
       // which tier sticker to celebrate in the reveal modal.
       success_url: `${appUrl}/settings/subscription?success=true&plan=${encodeURIComponent(plan)}&trial=true`,
-      cancel_url: `${appUrl}/settings/subscription?canceled=true`,
+      cancel_url: `${appUrl}/api/stripe/checkout/cancel`,
       metadata: {
         userId,
         plan,
