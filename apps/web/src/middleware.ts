@@ -300,6 +300,9 @@ function logMiddlewareAuthDiagnostic(
     jwtUserFound: null,
     sessionUserFound: null,
     dbUserFound: null,
+    canonicalUserFound: null,
+    canonicalUserDeleted: null,
+    userLookupClient: null,
     emailVerified: null,
     finalFailureCode: diagnostics.finalFailureCode,
   });

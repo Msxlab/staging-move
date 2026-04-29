@@ -43,6 +43,9 @@ function logServiceAuthDiagnostic(
     jwtUserFound: diagnostics?.jwtUserFound ?? null,
     sessionUserFound: diagnostics?.sessionUserFound ?? null,
     dbUserFound: diagnostics?.dbUserFound ?? null,
+    canonicalUserFound: diagnostics?.canonicalUserFound ?? null,
+    canonicalUserDeleted: diagnostics?.canonicalUserDeleted ?? null,
+    userLookupClient: diagnostics?.userLookupClient ?? null,
     emailVerified: diagnostics?.emailVerified ?? null,
     finalFailureCode: diagnostics?.finalFailureCode ?? failureCode,
   });

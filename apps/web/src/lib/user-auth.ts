@@ -31,12 +31,21 @@ export const BCRYPT_COST = 12;
 
 export type SessionClientType = "web" | "mobile";
 
+export type AuthenticatedSessionUser = {
+  id: string;
+  emailVerifiedAt: Date | null;
+  passwordHash: string | null;
+  deletedAt: Date | null;
+  oauthAccounts: Array<{ id: string }>;
+};
+
 export interface UserSessionClaims {
   userId: string;
   email: string;
   fp?: string;
   fpMode?: SessionClientType;
   sessionId?: string;
+  user?: AuthenticatedSessionUser;
 }
 
 export function shouldUseSecureSessionCookies(): boolean {
@@ -250,6 +259,9 @@ export interface UserAuthDiagnostics {
   jwtUserFound: boolean | null;
   sessionUserFound: boolean | null;
   dbUserFound: boolean | null;
+  canonicalUserFound: boolean | null;
+  canonicalUserDeleted: boolean | null;
+  userLookupClient: "raw" | null;
   emailVerified: boolean | null;
   finalFailureCode: string | null;
 }
@@ -265,6 +277,9 @@ export function createUserAuthDiagnostics(): UserAuthDiagnostics {
     jwtUserFound: null,
     sessionUserFound: null,
     dbUserFound: null,
+    canonicalUserFound: null,
+    canonicalUserDeleted: null,
+    userLookupClient: null,
     emailVerified: null,
     finalFailureCode: null,
   };
@@ -287,6 +302,31 @@ function addTokenCandidate(
   if (!trimmed || seen.has(trimmed)) return;
   seen.add(trimmed);
   candidates.push({ token: trimmed, source });
+}
+
+async function findCanonicalSessionUser(userId: string): Promise<AuthenticatedSessionUser | null> {
+  return rawPrisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      emailVerifiedAt: true,
+      passwordHash: true,
+      deletedAt: true,
+      oauthAccounts: { select: { id: true } },
+    },
+  });
+}
+
+function setCanonicalUserDiagnostics(
+  diagnostics: UserAuthDiagnostics | undefined,
+  user: AuthenticatedSessionUser | null,
+) {
+  if (!diagnostics) return;
+  diagnostics.userLookupClient = "raw";
+  diagnostics.canonicalUserFound = Boolean(user);
+  diagnostics.canonicalUserDeleted = user ? Boolean(user.deletedAt) : null;
+  diagnostics.sessionUserFound = Boolean(user);
+  diagnostics.dbUserFound = Boolean(user && !user.deletedAt);
 }
 
 function readCookieHeaderValues(cookieHeader: string | null, name: string): string[] {
@@ -492,6 +532,21 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
       continue;
     }
 
+    const user = await findCanonicalSessionUser(record.userId);
+    setCanonicalUserDiagnostics(diagnostics, user);
+    if (!user) {
+      markAuthFailure(diagnostics, "DB_USER_NOT_FOUND");
+      await invalidateSession();
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
+    }
+    if (user.deletedAt) {
+      markAuthFailure(diagnostics, "ACCOUNT_DELETED");
+      await invalidateSession();
+      shouldClearCookie = shouldClearCookie || cameFromCookie;
+      continue;
+    }
+
     if (diagnostics) {
       diagnostics.sessionExpired = false;
       diagnostics.finalFailureCode = null;
@@ -506,6 +561,7 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
           ? (payload.fpMode as SessionClientType)
           : undefined,
       sessionId: record.id,
+      user,
     };
   } catch {
     if (!diagnostics || diagnostics.jwtCandidateValidCount === 0) {
@@ -552,36 +608,26 @@ export async function destroyAllUserSessions(userId: string): Promise<void> {
   });
 }
 
-/**
- * Throw UNAUTHORIZED if no valid session cookie / DB row.
- * Also destroys stale soft-deleted sessions. Callers that need a distinct
- * user-facing deleted-account branch can opt into ACCOUNT_DELETED.
- */
-export async function requireDbUserId(options: { distinguishDeleted?: boolean; diagnostics?: UserAuthDiagnostics } = {}): Promise<string> {
-  const session = await getUserSession({ diagnostics: options.diagnostics });
-  if (!session) throw new Error("UNAUTHORIZED");
+type CanonicalUserSession = UserSessionClaims & { user: AuthenticatedSessionUser };
 
-  const user = await rawPrisma.user.findUnique({
-    where: { id: session.userId },
-    select: { id: true, deletedAt: true },
-  });
-  if (!user) {
-    if (options.diagnostics) {
-      options.diagnostics.dbUserFound = false;
-      options.diagnostics.sessionUserFound = false;
+async function requireCanonicalUserSession(
+  options: { distinguishDeleted?: boolean; diagnostics?: UserAuthDiagnostics } = {},
+): Promise<CanonicalUserSession> {
+  const session = await getUserSession({ diagnostics: options.diagnostics });
+  if (!session) {
+    if (
+      options.distinguishDeleted &&
+      options.diagnostics?.finalFailureCode === "ACCOUNT_DELETED"
+    ) {
+      throw new Error("ACCOUNT_DELETED");
     }
-    markAuthFailure(options.diagnostics, "DB_USER_NOT_FOUND");
-    await destroyUserSession();
     throw new Error("UNAUTHORIZED");
   }
-  if (options.diagnostics) {
-    options.diagnostics.dbUserFound = true;
-    options.diagnostics.sessionUserFound = true;
-  }
-  if (user.deletedAt) {
-    markAuthFailure(options.diagnostics, "ACCOUNT_DELETED");
-    await destroyUserSession();
-    throw new Error(options.distinguishDeleted ? "ACCOUNT_DELETED" : "UNAUTHORIZED");
+
+  if (!session.user) {
+    // Defensive only: getUserSession returns user for every successful DB-backed session.
+    markAuthFailure(options.diagnostics, "DB_USER_NOT_FOUND");
+    throw new Error("UNAUTHORIZED");
   }
 
   // Update lastActivity (non-blocking).
@@ -594,26 +640,22 @@ export async function requireDbUserId(options: { distinguishDeleted?: boolean; d
       .catch(() => null);
   }
 
-  return user.id;
+  return session as CanonicalUserSession;
+}
+
+/**
+ * Throw UNAUTHORIZED if no valid session cookie / DB row.
+ * Also destroys stale soft-deleted sessions. Callers that need a distinct
+ * user-facing deleted-account branch can opt into ACCOUNT_DELETED.
+ */
+export async function requireDbUserId(options: { distinguishDeleted?: boolean; diagnostics?: UserAuthDiagnostics } = {}): Promise<string> {
+  const session = await requireCanonicalUserSession(options);
+  return session.user.id;
 }
 
 export async function requireVerifiedUser(options: { diagnostics?: UserAuthDiagnostics } = {}): Promise<string> {
-  const userId = await requireDbUserId({ diagnostics: options.diagnostics });
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      emailVerifiedAt: true,
-      passwordHash: true,
-      oauthAccounts: { select: { id: true } },
-    },
-  });
-  if (!user) {
-    if (options.diagnostics) options.diagnostics.dbUserFound = false;
-    markAuthFailure(options.diagnostics, "DB_USER_NOT_FOUND");
-    throw new Error("UNAUTHORIZED");
-  }
-  if (options.diagnostics) options.diagnostics.dbUserFound = true;
+  const session = await requireCanonicalUserSession({ diagnostics: options.diagnostics });
+  const user = session.user;
 
   const emailVerified = !needsEmailVerificationGate(user);
   if (options.diagnostics) options.diagnostics.emailVerified = emailVerified;

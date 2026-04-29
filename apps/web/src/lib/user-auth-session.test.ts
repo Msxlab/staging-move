@@ -101,7 +101,13 @@ describe("getUserSession duplicate cookies", () => {
       throw new Error("invalid token");
     });
     mocks.userLoginSessionUpdateMany.mockResolvedValue({ count: 0 });
-    mocks.rawUserFindUnique.mockResolvedValue({ id: "user-1", deletedAt: null });
+    mocks.rawUserFindUnique.mockResolvedValue({
+      id: "user-1",
+      emailVerifiedAt: new Date("2026-04-29T12:00:00Z"),
+      passwordHash: "hash",
+      deletedAt: null,
+      oauthAccounts: [],
+    });
     mocks.userFindUnique.mockResolvedValue({ id: "user-1", deletedAt: null });
     mocks.needsEmailVerificationGate.mockReturnValue(false);
   });
@@ -317,11 +323,20 @@ describe("getUserSession duplicate cookies", () => {
       jwtUserMatchesSession: true,
       sessionUserFound: true,
       dbUserFound: true,
+      canonicalUserFound: true,
+      canonicalUserDeleted: false,
+      userLookupClient: "raw",
       finalFailureCode: null,
     });
     expect(mocks.rawUserFindUnique).toHaveBeenCalledWith({
       where: { id: "user-1" },
-      select: { id: true, deletedAt: true },
+      select: {
+        id: true,
+        emailVerifiedAt: true,
+        passwordHash: true,
+        deletedAt: true,
+        oauthAccounts: { select: { id: true } },
+      },
     });
   });
 
@@ -420,6 +435,9 @@ describe("getUserSession duplicate cookies", () => {
       jwtUserMatchesSession: true,
       sessionUserFound: false,
       dbUserFound: false,
+      canonicalUserFound: false,
+      canonicalUserDeleted: null,
+      userLookupClient: "raw",
       finalFailureCode: "DB_USER_NOT_FOUND",
     });
   });
@@ -450,7 +468,10 @@ describe("getUserSession duplicate cookies", () => {
       dbSessionFound: true,
       jwtUserMatchesSession: true,
       sessionUserFound: true,
-      dbUserFound: true,
+      dbUserFound: false,
+      canonicalUserFound: true,
+      canonicalUserDeleted: true,
+      userLookupClient: "raw",
       finalFailureCode: "ACCOUNT_DELETED",
     });
   });
@@ -469,11 +490,11 @@ describe("getUserSession duplicate cookies", () => {
       expiresAt: new Date(Date.now() + 60_000),
       userAgent: "Test Browser",
     });
-    mocks.rawUserFindUnique.mockResolvedValueOnce({ id: "user-1", deletedAt: null });
-    mocks.userFindUnique.mockResolvedValueOnce({
+    mocks.rawUserFindUnique.mockResolvedValueOnce({
       id: "user-1",
       emailVerifiedAt: null,
       passwordHash: "hash",
+      deletedAt: null,
       oauthAccounts: [],
     });
     mocks.needsEmailVerificationGate.mockReturnValueOnce(true);
@@ -483,8 +504,53 @@ describe("getUserSession duplicate cookies", () => {
 
     expect(diagnostics).toMatchObject({
       dbUserFound: true,
+      canonicalUserFound: true,
+      canonicalUserDeleted: false,
+      userLookupClient: "raw",
       emailVerified: false,
       finalFailureCode: "EMAIL_VERIFICATION_REQUIRED",
+    });
+    expect(mocks.userFindUnique).not.toHaveBeenCalled();
+  });
+
+  it("uses the canonical raw user for verified-user auth without a second soft-delete-filtered lookup", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      if (name.toLowerCase() === "cookie") return "user_session=valid-token";
+      if (name.toLowerCase() === "user-agent") return "Test Browser";
+      return null;
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-valid",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "Test Browser",
+    });
+    mocks.rawUserFindUnique.mockResolvedValueOnce({
+      id: "user-1",
+      emailVerifiedAt: new Date("2026-04-29T12:00:00Z"),
+      passwordHash: "hash",
+      deletedAt: null,
+      oauthAccounts: [],
+    });
+    mocks.userFindUnique.mockResolvedValueOnce(null);
+    mocks.needsEmailVerificationGate.mockReturnValueOnce(false);
+    const diagnostics = createUserAuthDiagnostics();
+
+    await expect(requireVerifiedUser({ diagnostics })).resolves.toBe("user-1");
+
+    expect(mocks.userFindUnique).not.toHaveBeenCalled();
+    expect(diagnostics).toMatchObject({
+      jwtUserFound: true,
+      jwtUserMatchesSession: true,
+      sessionUserFound: true,
+      dbUserFound: true,
+      canonicalUserFound: true,
+      canonicalUserDeleted: false,
+      userLookupClient: "raw",
+      emailVerified: true,
+      finalFailureCode: null,
     });
   });
 });
