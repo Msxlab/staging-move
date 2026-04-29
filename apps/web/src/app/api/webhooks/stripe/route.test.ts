@@ -67,12 +67,68 @@ function subscriptionUpdatedEvent(overrides: Record<string, unknown> = {}) {
         id: "sub_1",
         customer: "cus_1",
         status: "active",
+        metadata: { userId: "user_1", plan: "INDIVIDUAL", cycle: "yearly" },
         cancel_at_period_end: false,
         current_period_end: Math.floor(Date.now() / 1000) + 3600,
         trial_end: null,
         items: { data: [{ price: { id: "price_1" } }] },
       },
     },
+    ...overrides,
+  };
+}
+
+function trialingStripeSubscription(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "sub_trial_1",
+    customer: "cus_1",
+    status: "trialing",
+    metadata: { userId: "user_1", plan: "INDIVIDUAL", cycle: "yearly" },
+    cancel_at_period_end: false,
+    current_period_end: Math.floor(Date.now() / 1000) + 90 * 86_400,
+    trial_end: Math.floor(Date.now() / 1000) + 90 * 86_400,
+    items: { data: [{ price: { id: "price_1" } }] },
+    ...overrides,
+  };
+}
+
+function checkoutCompletedEvent(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "evt_checkout_1",
+    type: "checkout.session.completed",
+    created: Math.floor(Date.now() / 1000),
+    livemode: false,
+    data: {
+      object: {
+        id: "cs_test_1",
+        mode: "subscription",
+        customer: "cus_1",
+        subscription: "sub_trial_1",
+        client_reference_id: "user_1",
+        amount_total: 0,
+        currency: "usd",
+        metadata: {
+          userId: "user_1",
+          plan: "INDIVIDUAL",
+          cycle: "yearly",
+          accessType: "FREE_TRIAL",
+        },
+      },
+    },
+    ...overrides,
+  };
+}
+
+function localSubscription(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "local_sub_1",
+    userId: "user_1",
+    status: "PENDING_CHECKOUT",
+    accessType: "FREE_ACCESS",
+    provider: "ADMIN",
+    stripeCustomerId: "cus_1",
+    stripeSubscriptionId: null,
+    user: { id: "user_1", deletedAt: null },
     ...overrides,
   };
 }
@@ -99,7 +155,8 @@ describe("Stripe webhook idempotency and livemode", () => {
     processedMock.findUnique.mockResolvedValue(null);
     processedMock.create.mockResolvedValue({});
     subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
-    subscriptionMock.findFirst.mockResolvedValue(null);
+    subscriptionMock.findFirst.mockResolvedValue(localSubscription());
+    mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());
     mocks.sendSubscriptionActivatedEmail.mockResolvedValue({});
     mocks.sendSubscriptionCanceledEmail.mockResolvedValue({});
     mocks.sendPaymentFailedEmail.mockResolvedValue({});
@@ -115,6 +172,143 @@ describe("Stripe webhook idempotency and livemode", () => {
     await expect(second.json()).resolves.toMatchObject({ duplicate: true });
     expect(subscriptionMock.updateMany).toHaveBeenCalledTimes(1);
     expect(processedMock.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates local state to TRIALING for completed subscription checkout", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionsRetrieve).toHaveBeenCalledWith("sub_trial_1");
+    expect(subscriptionMock.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        data: expect.objectContaining({
+          status: "TRIALING",
+          provider: "STRIPE",
+          accessType: "FREE_TRIAL",
+          plan: "INDIVIDUAL",
+          stripeCustomerId: "cus_1",
+          stripeSubscriptionId: "sub_trial_1",
+          trialEndsAt: expect.any(Date),
+          firstChargeAt: expect.any(Date),
+        }),
+      }),
+    );
+    expect(processedMock.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("updates local state to TRIALING for customer.subscription.created", async () => {
+    mocks.constructEvent.mockReturnValue(subscriptionUpdatedEvent({
+      id: "evt_created_1",
+      type: "customer.subscription.created",
+      data: { object: trialingStripeSubscription() },
+    }));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        data: expect.objectContaining({
+          status: "TRIALING",
+          accessType: "FREE_TRIAL",
+          stripeSubscriptionId: "sub_trial_1",
+        }),
+      }),
+    );
+  });
+
+  it("maps subscription updates to TRIALING, ACTIVE, and CANCEL_AT_PERIOD_END", async () => {
+    mocks.constructEvent.mockReturnValueOnce(subscriptionUpdatedEvent({
+      id: "evt_trialing_1",
+      data: { object: trialingStripeSubscription() },
+    }));
+    await expect(POST(request())).resolves.toHaveProperty("status", 200);
+    expect(subscriptionMock.updateMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "TRIALING" }) }),
+    );
+
+    vi.clearAllMocks();
+    processedMock.findUnique.mockResolvedValue(null);
+    processedMock.create.mockResolvedValue({});
+    subscriptionMock.findFirst.mockResolvedValue(localSubscription({ status: "TRIALING" }));
+    subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
+    mocks.mapStripePriceIdToPlan.mockResolvedValue("INDIVIDUAL");
+    mocks.constructEvent.mockReturnValueOnce(subscriptionUpdatedEvent({
+      id: "evt_active_1",
+      data: { object: { ...trialingStripeSubscription(), id: "sub_active_1", status: "active", trial_end: null } },
+    }));
+    await expect(POST(request())).resolves.toHaveProperty("status", 200);
+    expect(subscriptionMock.updateMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "ACTIVE", accessType: "PAID" }) }),
+    );
+
+    vi.clearAllMocks();
+    processedMock.findUnique.mockResolvedValue(null);
+    processedMock.create.mockResolvedValue({});
+    subscriptionMock.findFirst.mockResolvedValue(localSubscription({ status: "ACTIVE" }));
+    subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
+    mocks.mapStripePriceIdToPlan.mockResolvedValue("INDIVIDUAL");
+    mocks.constructEvent.mockReturnValueOnce(subscriptionUpdatedEvent({
+      id: "evt_cancel_period_1",
+      data: {
+        object: {
+          ...trialingStripeSubscription(),
+          id: "sub_cancel_period_1",
+          status: "active",
+          trial_end: null,
+          cancel_at_period_end: true,
+        },
+      },
+    }));
+    await expect(POST(request())).resolves.toHaveProperty("status", 200);
+    expect(subscriptionMock.updateMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: "CANCEL_AT_PERIOD_END" }) }),
+    );
+  });
+
+  it("keeps checkout session events retryable when user metadata is missing", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent({
+      data: {
+        object: {
+          ...checkoutCompletedEvent().data.object,
+          client_reference_id: null,
+          metadata: { plan: "INDIVIDUAL", cycle: "yearly", accessType: "FREE_TRIAL" },
+        },
+      },
+    }));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(500);
+    expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
+    expect(processedMock.create).not.toHaveBeenCalled();
+  });
+
+  it("keeps webhook retryable when no local subscription/user can be mapped", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    subscriptionMock.findFirst.mockResolvedValue(null);
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(500);
+    expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
+    expect(processedMock.create).not.toHaveBeenCalled();
+  });
+
+  it("accepts testmode webhook events in staging", async () => {
+    process.env.APP_ENV = "staging";
+    mocks.constructEvent.mockReturnValue(subscriptionUpdatedEvent({ livemode: false }));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.updateMany).toHaveBeenCalled();
+    expect(processedMock.create).toHaveBeenCalled();
   });
 
   it("keeps an event retryable when handling fails before mutation", async () => {

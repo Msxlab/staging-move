@@ -26,6 +26,16 @@ describe("subscription acquisition copy", () => {
     expect(source.toLowerCase()).not.toContain("refund");
   });
 
+  it("settings renders the confirmed annual trial state from webhook-updated fields", () => {
+    const source = readRepoFile("src/components/settings/subscription-management.tsx");
+
+    expect(source).toContain('case "TRIALING":');
+    expect(source).toContain("Individual Annual Trial");
+    expect(source).toContain("isStripeCheckoutActivated");
+    expect(source).toContain('subscription.provider !== "STRIPE"');
+    expect(source).toContain('subscription.accessType === "FREE_ACCESS"');
+  });
+
   it("trial reminder seed copy is calm and does not headline refunds", () => {
     const source = readFileSync(
       path.join(process.cwd(), "../../packages/db/prisma/seed-data/email-templates.ts"),

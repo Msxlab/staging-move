@@ -170,6 +170,7 @@ describe("stripe checkout route", () => {
     expect(mocks.sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: "subscription",
+        client_reference_id: "user_1",
         line_items: [{ price: "price_yearly", quantity: 1 }],
         payment_method_collection: "always",
         cancel_url: "https://locateflow.com/api/stripe/checkout/cancel",
