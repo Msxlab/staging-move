@@ -13,8 +13,11 @@
  */
 
 import { Platform } from "react-native";
-import * as IAP from "expo-iap";
 import { api } from "@/lib/api";
+
+type ExpoIapModule = typeof import("expo-iap");
+
+declare const require: (moduleName: string) => unknown;
 
 type SubscriptionProduct = {
   id: string;
@@ -34,11 +37,29 @@ type VerifyResponse = {
 
 let connectionReady = false;
 let connecting: Promise<boolean> | null = null;
+let iapModule: ExpoIapModule | null | undefined;
+
+function getIapModule(): ExpoIapModule | null {
+  if (Platform.OS === "web") return null;
+  if (iapModule !== undefined) return iapModule;
+
+  try {
+    iapModule = require("expo-iap") as ExpoIapModule;
+  } catch (err) {
+    console.warn("[IAP] expo-iap native module unavailable:", err);
+    iapModule = null;
+  }
+
+  return iapModule;
+}
 
 async function ensureConnection(): Promise<boolean> {
   if (connectionReady) return true;
   if (connecting) return connecting;
   connecting = (async () => {
+    const IAP = getIapModule();
+    if (!IAP) return false;
+
     try {
       await IAP.initConnection();
       connectionReady = true;
@@ -55,6 +76,9 @@ async function ensureConnection(): Promise<boolean> {
 
 export async function closeConnection() {
   if (!connectionReady) return;
+  const IAP = getIapModule();
+  if (!IAP) return;
+
   try {
     await IAP.endConnection();
   } catch {
@@ -67,6 +91,8 @@ export async function fetchSubscriptionProducts(skus: string[]): Promise<Subscri
   if (skus.length === 0) return [];
   const ok = await ensureConnection();
   if (!ok) return [];
+  const IAP = getIapModule();
+  if (!IAP) return [];
 
   try {
     const products = await IAP.fetchProducts({ skus, type: "subs" });
@@ -104,6 +130,8 @@ export async function purchaseSubscription(opts: {
 }): Promise<PurchaseResult> {
   const ok = await ensureConnection();
   if (!ok) return { status: "error", message: "Store unavailable" };
+  const IAP = getIapModule();
+  if (!IAP) return { status: "error", message: "Store unavailable" };
 
   return new Promise<PurchaseResult>((resolve) => {
     let settled = false;
@@ -213,6 +241,8 @@ export async function purchaseSubscription(opts: {
 export async function restorePurchases(): Promise<PurchaseResult[]> {
   const ok = await ensureConnection();
   if (!ok) return [];
+  const IAP = getIapModule();
+  if (!IAP) return [];
 
   let items: any[] = [];
   try {
@@ -263,6 +293,9 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
 }
 
 export async function openNativeSubscriptionSettings(productId?: string) {
+  const IAP = getIapModule();
+  if (!IAP) return;
+
   try {
     await IAP.deepLinkToSubscriptions(productId ? { sku: productId } : undefined);
   } catch (err) {
