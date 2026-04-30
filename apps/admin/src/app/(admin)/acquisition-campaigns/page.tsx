@@ -82,10 +82,10 @@ const monthlyPaidPreset: typeof emptyForm = {
   accessType: "PAID",
   billingInterval: "MONTH",
   trialDays: "",
-  displayPriceLabel: "$9/month",
+  displayPriceLabel: "$9.99/month",
   publicHeadline: "Subscribe monthly",
   publicSubheadline: "Simple monthly billing. Cancel anytime.",
-  checkoutDisclosureCopy: "Today: $9. Your Individual Monthly subscription starts today and renews monthly until you cancel.",
+  checkoutDisclosureCopy: "Today: $9.99. Your Individual Monthly subscription starts today and renews monthly until you cancel.",
   newUsersOnly: false,
 };
 
