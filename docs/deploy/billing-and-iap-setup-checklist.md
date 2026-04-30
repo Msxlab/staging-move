@@ -21,7 +21,7 @@ Required web staging env:
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_INDIVIDUAL`
 - `STRIPE_PRICE_INDIVIDUAL_YEARLY` if yearly is enabled
-- `NEXT_PUBLIC_APP_URL=https://locateflow-staging-owew7.ondigitalocean.app`
+- `NEXT_PUBLIC_APP_URL=https://locateflow.com`
 
 Stripe Dashboard:
 
@@ -29,7 +29,7 @@ Stripe Dashboard:
 - Configure Customer Portal for self-service subscription management.
 - Create Individual monthly Price.
 - Create Individual yearly Price if enabled.
-- Add webhook endpoint: `https://locateflow-staging-owew7.ondigitalocean.app/api/webhooks/stripe`
+- Add webhook endpoint: `https://locateflow.com/api/webhooks/stripe`
 - Subscribe to checkout session, customer subscription, invoice/payment events already handled by the app.
 
 Local helper:
@@ -66,7 +66,7 @@ Google Play:
 - `GOOGLE_PLAY_PACKAGE_NAME=com.locateflow.mobile`
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`
-- `GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow-staging-owew7.ondigitalocean.app/api/webhooks/playstore`
+- `GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore`
 - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL`
 
 If IAP credentials are missing:

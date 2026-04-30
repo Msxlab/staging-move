@@ -1,5 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/link", () => ({
+  default: ({ href, children, ...props }: any) => (
+    <a href={typeof href === "string" ? href : href?.pathname || "#"} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
 import { PricingSection } from "./pricing-section";
 
 describe("PricingSection", () => {

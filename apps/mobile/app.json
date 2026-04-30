@@ -18,6 +18,7 @@
       "bundleIdentifier": "com.locateflow.mobile",
       "buildNumber": "1",
       "associatedDomains": [
+        "applinks:locateflow.com",
         "applinks:locateflow.app",
         "applinks:app.locateflow.com"
       ],
@@ -37,6 +38,11 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
+            {
+              "scheme": "https",
+              "host": "locateflow.com",
+              "pathPrefix": "/blog"
+            },
             {
               "scheme": "https",
               "host": "locateflow.app",
@@ -84,7 +90,8 @@
           }
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true

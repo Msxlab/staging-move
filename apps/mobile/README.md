@@ -30,6 +30,7 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ```
 EXPO_PUBLIC_API_URL=http://YOUR_LOCAL_IP:3000/api
+EXPO_PUBLIC_APP_URL=http://YOUR_LOCAL_IP:3000
 ```
 
 > **Note:** Use your machine's local IP (not `localhost`) for the API URL when testing on a physical device.
@@ -38,7 +39,7 @@ EXPO_PUBLIC_API_URL=http://YOUR_LOCAL_IP:3000/api
 
 ```bash
 # Android APK (for testing)
-eas build -p android --profile preview
+eas build -p android --profile staging-preview
 
 # Android AAB (for Google Play)
 eas build -p android --profile production

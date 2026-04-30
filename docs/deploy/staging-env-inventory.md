@@ -115,6 +115,11 @@ Place secrets in:
 | `SENTRY_PROJECT` | Only needed for source map upload if configured | Same | No | Optional | No | CI/build-only | No source map release upload. |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Optional public fallback | Optional public fallback | No | Optional if maps shown client-side | No | Public/client-safe | Address autocomplete may be unavailable. |
 | `GOOGLE_MAPS_API_KEY` | Optional server-side address autocomplete | Optional admin fallback | No | Recommended | Yes | Server-only | Address autocomplete may be unavailable. |
+| `PLACES_AUTOCOMPLETE_ENABLED` | Optional kill switch, default enabled | Optional visibility | No | Recommended | No | Server-only/runtime config | Set `false` to stop Google Places calls without redeploying. |
+| `PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT` | Optional, default `250` | No | No | Recommended | No | Server-only | Controls per-user daily prediction calls. |
+| `PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT` | Optional, default `1000` | No | No | Recommended | No | Server-only | Controls per-IP daily prediction calls. |
+| `PLACES_DETAILS_DAILY_USER_LIMIT` | Optional, default `250` | No | No | Recommended | No | Server-only | Controls per-user daily place-details calls. |
+| `PLACES_DETAILS_DAILY_IP_LIMIT` | Optional, default `1000` | No | No | Recommended | No | Server-only | Controls per-IP daily place-details calls. |
 | `R2_ENDPOINT` | Optional unless upload/imgproxy flows are tested | No | No | Required for upload/logo storage | No | Server-only URL | Upload/storage unavailable. |
 | `R2_REGION` | Optional | No | No | Required with R2/S3 | No | Server-only config | Upload/storage unavailable. |
 | `R2_BUCKET` | Optional | No | No | Required with R2/S3 | No | Server-only config | Upload/storage unavailable. |

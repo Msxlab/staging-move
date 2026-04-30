@@ -151,3 +151,62 @@ describe("rateLimit fail-closed mode", () => {
     expect(result.remaining).toBe(0);
   });
 });
+
+describe("rateLimit (Redis-backed)", () => {
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    vi.doUnmock("@upstash/ratelimit");
+    vi.doUnmock("@upstash/redis");
+    vi.resetModules();
+  });
+
+  it("uses the caller-provided limit and window for Redis limiters", async () => {
+    const constructors: unknown[] = [];
+    const limitMock = vi.fn(async () => ({
+      success: true,
+      remaining: 249,
+      reset: Date.now() + 86_400_000,
+    }));
+    const slidingWindow = vi.fn((limit: number, window: string) => ({ limit, window }));
+
+    vi.doMock("@upstash/ratelimit", () => {
+      class MockRatelimit {
+        static slidingWindow = slidingWindow;
+        limit = limitMock;
+
+        constructor(config: unknown) {
+          constructors.push(config);
+        }
+      }
+
+      return { Ratelimit: MockRatelimit };
+    });
+    vi.doMock("@upstash/redis", () => ({
+      Redis: class MockRedis {
+        constructor(_config: unknown) {}
+      },
+    }));
+
+    vi.resetModules();
+    process.env = {
+      ...originalEnv,
+      UPSTASH_REDIS_REST_URL: "https://redis.example.com",
+      UPSTASH_REDIS_REST_TOKEN: "token",
+    };
+
+    const { rateLimit: freshRateLimit } = await import("./rate-limit");
+
+    await freshRateLimit("places:autocomplete:daily:user:user-1:2026-04-30", {
+      limit: 250,
+      windowSeconds: 24 * 60 * 60,
+    });
+
+    expect(slidingWindow).toHaveBeenCalledWith(250, "86400 s");
+    expect(constructors).toHaveLength(1);
+    expect(constructors[0]).toEqual(expect.objectContaining({
+      analytics: true,
+      prefix: "rl:250:86400",
+    }));
+    expect(limitMock).toHaveBeenCalledWith("places:autocomplete:daily:user:user-1:2026-04-30");
+  });
+});
