@@ -73,12 +73,27 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [hydrate]);
 
   useEffect(() => {
+    const isOAuthCallbackUrl = (url: string) => {
+      try {
+        const parsed = new URL(url);
+        const host = parsed.hostname.toLowerCase();
+        const path = parsed.pathname.replace(/^\/+/, "").toLowerCase();
+        return parsed.protocol === "locateflow:" && ["oauth", "outh"].includes(host || path);
+      } catch {
+        return url.startsWith("locateflow://oauth") || url.startsWith("locateflow://outh");
+      }
+    };
+
     const readCode = (url: string | null) => {
-      if (!url || !url.startsWith("locateflow://oauth")) return null;
+      if (!url || !isOAuthCallbackUrl(url)) return null;
       const queryStart = url.indexOf("?");
       if (queryStart < 0) return null;
-      const params = new URLSearchParams(url.slice(queryStart + 1).split("#")[0]);
-      return params.get("code");
+      const query = url.slice(queryStart + 1).split("#")[0];
+      const params = new URLSearchParams(query);
+      const code = params.get("code");
+      if (code) return code;
+      const malformedCode = query.match(/^code\?([^&]+)/);
+      return malformedCode?.[1] ? decodeURIComponent(malformedCode[1]) : null;
     };
 
     const handleOAuthUrl = async (url: string | null) => {
@@ -141,16 +156,20 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
-    const inOnboarding = segments[0] === "onboarding";
+    const currentSegment = String(segments[0] || "");
+    const inAuthGroup = currentSegment === "(auth)";
+    const inOnboarding = currentSegment === "onboarding";
+    const inOAuthCallback = currentSegment === "oauth" || currentSegment === "outh";
 
-    if (!token && !inAuthGroup) {
+    if (!token && !inAuthGroup && !inOAuthCallback) {
       router.replace("/(auth)/sign-in");
       return;
     }
     if (!token || needsOnboarding === null) return;
 
     if (token && inAuthGroup) {
+      router.replace(needsOnboarding ? "/onboarding" : "/(tabs)");
+    } else if (token && inOAuthCallback) {
       router.replace(needsOnboarding ? "/onboarding" : "/(tabs)");
     } else if (token && !needsOnboarding && inOnboarding) {
       router.replace("/(tabs)");
