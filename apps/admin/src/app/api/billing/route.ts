@@ -3,9 +3,25 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
-import { getMonthlyPlanPrice } from "@/lib/billing";
+import { BILLING_PLAN_DEFINITIONS } from "@/lib/shared-billing";
 
 const MOBILE_BILLING_PROVIDERS = new Set(["APP_STORE", "PLAY_STORE"]);
+
+// Compute the monthly-equivalent revenue contribution of a single
+// subscription. Annual plans are amortized to monthly. Admin-granted Free
+// Access (provider=ADMIN, accessType=FREE_ACCESS) generates no revenue and
+// must not inflate MRR.
+function monthlyEquivalent(sub: any): number {
+  if (sub.accessType === "FREE_ACCESS") return 0;
+  if (sub.provider === "ADMIN" || sub.provider === "TRIAL") return 0;
+  const def = (BILLING_PLAN_DEFINITIONS as any)[sub.plan];
+  if (!def) return 0;
+  if (sub.billingInterval === "YEAR") {
+    if (typeof def.yearlyPriceUsd === "number") return def.yearlyPriceUsd / 12;
+    return (def.monthlyPriceUsd || 0);
+  }
+  return def.monthlyPriceUsd || 0;
+}
 
 function hasMissingStoreIdentifier(subscription: any) {
   if (subscription.provider === "APP_STORE") {
@@ -33,11 +49,6 @@ export async function GET(req: NextRequest) {
       include: { user: { select: { id: true, email: true, firstName: true, lastName: true, createdAt: true } } },
     }) as any[];
 
-    const planPrices: Record<string, number> = {
-      FREE_TRIAL: 0,
-      INDIVIDUAL: getMonthlyPlanPrice("INDIVIDUAL"),
-    };
-
     const activeSubs = allSubs.filter((s) => ["ACTIVE", "TRIALING"].includes(s.status));
     const canceledSubs = allSubs.filter((s) => s.status === "CANCELED");
     const mobileSubs = allSubs.filter((s) => MOBILE_BILLING_PROVIDERS.has(s.provider));
@@ -47,7 +58,7 @@ export async function GET(req: NextRequest) {
     const staleMobileSubs = mobileSubs.filter((s) => !s.lastValidatedAt || new Date(s.lastValidatedAt) < staleValidationThreshold);
     const missingStoreIdentifiers = mobileSubs.filter((s) => hasMissingStoreIdentifier(s));
 
-    const mrr = activeSubs.reduce((sum, s) => sum + (planPrices[s.plan] || 0), 0);
+    const mrr = activeSubs.reduce((sum, s) => sum + monthlyEquivalent(s), 0);
     const arr = mrr * 12;
 
     const planDistribution = allSubs.reduce((acc: Record<string, { total: number; active: number; revenue: number }>, s) => {
@@ -55,7 +66,7 @@ export async function GET(req: NextRequest) {
       acc[s.plan].total++;
       if (["ACTIVE", "TRIALING"].includes(s.status)) {
         acc[s.plan].active++;
-        acc[s.plan].revenue += planPrices[s.plan] || 0;
+        acc[s.plan].revenue += monthlyEquivalent(s);
       }
       return acc;
     }, {});
@@ -107,7 +118,7 @@ export async function GET(req: NextRequest) {
       d.setDate(d.getDate() - i);
       const key = d.toISOString().split("T")[0];
       const subsOnDay = allSubs.filter((s) => new Date(s.createdAt) <= d && (s.status === "ACTIVE" || s.status === "TRIALING" || (s.canceledAt && new Date(s.canceledAt) > d)));
-      dailyRevenue[key] = subsOnDay.reduce((sum, s) => sum + ((planPrices[s.plan] || 0) / 30), 0);
+      dailyRevenue[key] = subsOnDay.reduce((sum, s) => sum + (monthlyEquivalent(s) / 30), 0);
     }
 
     return NextResponse.json({
