@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendMoveReminderEmail } from "@/lib/email-service";
+import { createInAppNotification } from "@/lib/in-app-notifications";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
-import { buildWebNotificationSettings, groupNotificationPreferencesByUser } from "@/lib/notification-preferences";
+import { sendNotification } from "@/lib/notifications";
+import { buildWebNotificationSettings, groupNotificationPreferencesByUser, type StoredNotificationPreference } from "@/lib/notification-preferences";
 
 export const runtime = "nodejs";
+
+function isPushEnabled(records: StoredNotificationPreference[], type: string) {
+  return records.some((record) => record.channel === "PUSH" && record.type === type && record.enabled);
+}
 
 // Cron handler for move reminders — Send reminders 7, 3, 1 days before move
 async function handleCron(request: NextRequest) {
@@ -20,6 +26,9 @@ async function handleCron(request: NextRequest) {
     });
     const preferencesByUser = groupNotificationPreferencesByUser(preferenceRecords);
     let sent = 0;
+    let mirrored = 0;
+    let pushSent = 0;
+    const errors: string[] = [];
 
     for (const days of reminderDays) {
       const targetDate = new Date(now);
@@ -41,29 +50,75 @@ async function handleCron(request: NextRequest) {
       });
 
       for (const plan of plans) {
-        const notificationSettings = buildWebNotificationSettings(preferencesByUser.get(plan.userId) || []);
+        const userPreferences = preferencesByUser.get(plan.userId) || [];
+        const notificationSettings = buildWebNotificationSettings(userPreferences);
         if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.moveUpdate) continue;
         if (!plan.user.email) continue;
 
+        const fromCity = `${plan.fromAddress.city}, ${plan.fromAddress.state}`;
+        const toCity = `${plan.toAddress.city}, ${plan.toAddress.state}`;
+        const moveDateText = plan.moveDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        const dedupeKey = `cron:move-reminder:${plan.id}:${plan.moveDate.toISOString().slice(0, 10)}:${days}`;
         const success = await sendMoveReminderEmail({
           userEmail: plan.user.email,
           userName: plan.user.firstName || "",
-          fromCity: `${plan.fromAddress.city}, ${plan.fromAddress.state}`,
-          toCity: `${plan.toAddress.city}, ${plan.toAddress.state}`,
-          moveDate: plan.moveDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+          fromCity,
+          toCity,
+          moveDate: moveDateText,
           daysRemaining: days,
           userId: plan.userId,
-          dedupeKey: `cron:move-reminder:${plan.id}:${plan.moveDate.toISOString().slice(0, 10)}:${days}`,
+          dedupeKey,
           metadata: {
             userId: plan.userId,
             movingPlanId: plan.id,
           },
         });
-        if (success) sent++;
+        if (success) {
+          sent++;
+          try {
+            const notificationTitle = days === 1 ? "Your move is tomorrow" : `Your move is in ${days} days`;
+            const notificationBody = `Your move from ${fromCity} to ${toCity} is scheduled for ${moveDateText}.`;
+            const created = await createInAppNotification({
+              userId: plan.userId,
+              type: "MOVE_REMINDER",
+              title: notificationTitle,
+              body: notificationBody,
+              href: `/moving/${plan.id}`,
+              icon: "Calendar",
+              dedupeKey,
+              metadata: {
+                kind: "move-reminder",
+                movingPlanId: plan.id,
+                daysRemaining: days,
+                channelMirror: "EMAIL",
+              },
+            });
+            if (created) {
+              mirrored++;
+              if (isPushEnabled(userPreferences, "MOVE_ALERT")) {
+                const pushed = await sendNotification({
+                  userId: plan.userId,
+                  type: "PUSH",
+                  subject: notificationTitle,
+                  body: notificationBody,
+                  dedupeKey: `${dedupeKey}:push`,
+                  metadata: {
+                    kind: "move-reminder",
+                    movingPlanId: plan.id,
+                    daysRemaining: days,
+                  },
+                });
+                if (pushed) pushSent++;
+              }
+            }
+          } catch (mirrorError) {
+            errors.push(`In-app mirror failed for moving plan ${plan.id}: ${mirrorError}`);
+          }
+        }
       }
     }
 
-    return NextResponse.json({ success: true, sent });
+    return NextResponse.json({ success: true, sent, mirrored, pushSent, errors: errors.length > 0 ? errors : undefined });
   } catch (error) {
     console.error("Move reminders cron failed:", error);
     return NextResponse.json({ error: "Cron failed" }, { status: 500 });
