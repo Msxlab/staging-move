@@ -3,7 +3,7 @@
  * Falls back to in-memory when UPSTASH_REDIS_REST_URL is not configured.
  */
 
-import { Ratelimit } from "@upstash/ratelimit";
+import { Ratelimit, type Duration } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 // ── Redis-backed rate limiters (production) ──────────────────
@@ -25,31 +25,17 @@ const isProduction =
 const REDIS_DEGRADE_WINDOW_MS = 60 * 1000;
 const REDIS_REWARN_WINDOW_MS = 5 * 60 * 1000;
 
-let readLimiter: Ratelimit | null = null;
-let writeLimiter: Ratelimit | null = null;
+let redis: Redis | null = null;
+const redisLimiters = new Map<string, Ratelimit>();
 let redisDegradedUntil = 0;
 let missingRedisWarned = false;
 let redisFailureWarned = false;
 let lastRedisFailureWarningAt = 0;
 
 if (hasRedis) {
-  const redis = new Redis({
+  redis = new Redis({
     url: redisUrl!,
     token: redisToken!,
-  });
-
-  readLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(120, "60 s"),
-    analytics: true,
-    prefix: "rl:read",
-  });
-
-  writeLimiter = new Ratelimit({
-    redis,
-    limiter: Ratelimit.slidingWindow(30, "60 s"),
-    analytics: true,
-    prefix: "rl:write",
   });
 }
 
@@ -118,27 +104,60 @@ function shouldUseRedis() {
   return hasRedis && Date.now() >= redisDegradedUntil;
 }
 
+function normalizeLimitConfig(config: RateLimitConfig): Required<Pick<RateLimitConfig, "limit" | "windowSeconds">> & Pick<RateLimitConfig, "failClosed"> {
+  return {
+    ...config,
+    limit: Math.max(1, Math.floor(config.limit)),
+    windowSeconds: Math.max(1, Math.floor(config.windowSeconds)),
+  };
+}
+
+function redisDuration(windowSeconds: number): Duration {
+  return `${windowSeconds} s` as Duration;
+}
+
+function getRedisLimiter(config: Required<Pick<RateLimitConfig, "limit" | "windowSeconds">>) {
+  if (!redis) {
+    throw new Error("Redis client is not configured");
+  }
+
+  const limiterKey = `${config.limit}:${config.windowSeconds}`;
+  const cached = redisLimiters.get(limiterKey);
+  if (cached) return cached;
+
+  const limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(config.limit, redisDuration(config.windowSeconds)),
+    analytics: true,
+    prefix: `rl:${config.limit}:${config.windowSeconds}`,
+  });
+  redisLimiters.set(limiterKey, limiter);
+  return limiter;
+}
+
 export async function rateLimit(
   key: string,
   config: RateLimitConfig = { limit: 60, windowSeconds: 60 }
 ): Promise<RateLimitResult> {
+  const normalizedConfig = normalizeLimitConfig(config);
+
   if (!hasRedis && isProduction && !missingRedisWarned) {
     missingRedisWarned = true;
     console.error("[RATE-LIMIT] Redis is not configured in production, using in-memory degraded mode");
   }
 
-  if (!hasRedis && isProduction && config.failClosed) {
+  if (!hasRedis && isProduction && normalizedConfig.failClosed) {
     return {
       success: false,
       remaining: 0,
-      resetAt: Date.now() + Math.max(config.windowSeconds, 60) * 1000,
+      resetAt: Date.now() + Math.max(normalizedConfig.windowSeconds, 60) * 1000,
     };
   }
 
   // Use Redis if available and not in degraded mode
   if (shouldUseRedis()) {
     try {
-      const limiter = config.limit <= 30 ? writeLimiter! : readLimiter!;
+      const limiter = getRedisLimiter(normalizedConfig);
       const result = await limiter.limit(key);
       redisFailureWarned = false;
       return {
@@ -148,7 +167,7 @@ export async function rateLimit(
       };
     } catch (err) {
       enterRedisDegradedMode((err as Error)?.message || "Unknown Redis error", err);
-      if (isProduction && config.failClosed) {
+      if (isProduction && normalizedConfig.failClosed) {
         return {
           success: false,
           remaining: 0,
@@ -158,7 +177,7 @@ export async function rateLimit(
     }
   }
 
-  if (hasRedis && isProduction && config.failClosed && Date.now() < redisDegradedUntil) {
+  if (hasRedis && isProduction && normalizedConfig.failClosed && Date.now() < redisDegradedUntil) {
     return {
       success: false,
       remaining: 0,
@@ -167,7 +186,7 @@ export async function rateLimit(
   }
 
   // Controlled degrade fallback to in-memory
-  return memoryRateLimit(key, config.limit, config.windowSeconds);
+  return memoryRateLimit(key, normalizedConfig.limit, normalizedConfig.windowSeconds);
 }
 
 /**

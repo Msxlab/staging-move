@@ -1,6 +1,6 @@
 # Mobile Android Preview Build
 
-Goal: build an internal Android APK that talks to the current DigitalOcean App Platform staging API and supports real-device QA for the current product.
+Goal: build an internal Android APK that talks to the current DigitalOcean App Platform web/API and supports real-device QA for the current product.
 
 This does not prove iOS readiness and does not add mobile product features.
 
@@ -12,9 +12,9 @@ This does not prove iOS readiness and does not add mobile product features.
 - Android version code: `1`
 - iOS build number: `1`
 - EAS profile for staging device QA: `staging-preview`
-- Staging API URL in `staging-preview`: `https://locateflow-staging-owew7.ondigitalocean.app/api`
+- Active API URL in `preview`, `staging-preview`, and `production`: `https://locateflow.com/api`
 
-The existing `preview` profile is left intact. Use `staging-preview` for QA against DigitalOcean staging.
+Use `staging-preview` for internal QA builds. It currently targets the active DigitalOcean web/API domain.
 
 ## Staging API Protection Decision
 
@@ -39,7 +39,7 @@ Alternative if full platform protection is required:
 - Java for local builds.
 - Android SDK and `ANDROID_HOME` or `ANDROID_SDK_ROOT` for local builds.
 - Android signing credentials, or EAS-managed credentials.
-- Staging web/API deployment reachable from the device.
+- Web/API deployment reachable from the device.
 - Staging DB migrated and seeded with QA data.
 
 ## Verification Before Native Build
@@ -85,7 +85,7 @@ Expected result:
 
 - APK build completes.
 - APK installs on a real Android device or emulator.
-- API calls go to `https://locateflow-staging-owew7.ondigitalocean.app/api`.
+- API calls go to `https://locateflow.com/api`.
 - Login, onboarding, provider list/detail, custom provider create/edit/delete, moving plan, move task lifecycle, settings, support, and logout smoke pass.
 
 ## Exact Missing Prerequisites In This Workspace

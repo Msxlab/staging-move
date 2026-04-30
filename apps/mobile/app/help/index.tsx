@@ -92,7 +92,7 @@ export default function HelpScreen() {
     : articles;
 
   const handleContactUs = useCallback(async () => {
-    const supportUrl = "https://www.locateflow.app/contact";
+    const supportUrl = "https://locateflow.com/contact";
     const canOpen = await Linking.canOpenURL(supportUrl);
     if (canOpen) {
       await Linking.openURL(supportUrl);

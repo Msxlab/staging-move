@@ -121,6 +121,16 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
+    key: "PLACES_AUTOCOMPLETE_ENABLED",
+    label: "Places Autocomplete Enabled",
+    description: "Set to false to disable Google Places address autocomplete and details lookups without redeploying.",
+    scope: "GLOBAL",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+  },
+  {
     key: "R2_ENDPOINT",
     label: "R2 / S3 Endpoint",
     description: "S3-compatible endpoint for primary file storage. For Cloudflare R2 this is https://<account-id>.r2.cloudflarestorage.com.",

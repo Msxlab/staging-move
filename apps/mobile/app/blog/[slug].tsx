@@ -31,7 +31,7 @@ interface BlogPostDetail {
   author: { name: string };
 }
 
-const WEB_URL = process.env.EXPO_PUBLIC_APP_URL || "https://locateflow.app";
+const WEB_URL = process.env.EXPO_PUBLIC_APP_URL || "https://locateflow.com";
 
 function firstParam(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] || "" : value || "";

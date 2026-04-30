@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 /**
  * Blog stack — sits outside the tabs so we don't crowd the tab bar.
  * Reachable from More → Blog and from deep links (locateflow://blog,
- * https://locateflow.app/blog) once universal-link plumbing is in.
+ * https://locateflow.com/blog) once universal-link plumbing is in.
  */
 export default function BlogLayout() {
   return (
