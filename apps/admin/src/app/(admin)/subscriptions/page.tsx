@@ -15,6 +15,8 @@ interface Sub {
   status: string;
   provider: string;
   platform: string | null;
+  accessType: string | null;
+  billingInterval: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   stripeCurrentPeriodEnd: string | null;
@@ -28,6 +30,14 @@ interface Sub {
   createdAt: string;
   updatedAt: string;
   user: { id: string; email: string; firstName: string | null; lastName: string | null };
+}
+
+function stripeDashboardUrl(stripeCustomerId: string | null) {
+  if (!stripeCustomerId) return null;
+  // Live and test customer IDs share the cus_ prefix; the dashboard accepts
+  // either and redirects to the correct mode. Test-mode admins can swap to
+  // /test/customers if they prefer.
+  return `https://dashboard.stripe.com/customers/${encodeURIComponent(stripeCustomerId)}`;
 }
 
 const PLAN_COLORS: Record<string, string> = {
@@ -55,7 +65,7 @@ export default function SubscriptionsPage() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [detail, setDetail] = useState<Sub | null>(null);
-  const [filters, setFilters] = useState({ plan: "", status: "", provider: "", platform: "", dateFrom: "", dateTo: "" });
+  const [filters, setFilters] = useState({ plan: "", status: "", provider: "", platform: "", accessType: "", dateFrom: "", dateTo: "" });
   const perPage = 20;
 
   const fetchSubs = useCallback(async () => {
@@ -66,6 +76,7 @@ export default function SubscriptionsPage() {
       if (filters.status) params.set("status", filters.status);
       if (filters.provider) params.set("provider", filters.provider);
       if (filters.platform) params.set("platform", filters.platform);
+      if (filters.accessType) params.set("accessType", filters.accessType);
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
       if (filters.dateTo) params.set("dateTo", filters.dateTo);
 
@@ -210,7 +221,7 @@ export default function SubscriptionsPage() {
           <Filter className="h-3.5 w-3.5" /> Filters {activeFilterCount > 0 && <span className="rounded-full bg-primary px-1.5 text-[10px] text-primary-foreground">{activeFilterCount}</span>}
         </button>
         {activeFilterCount > 0 && (
-          <button onClick={() => { setFilters({ plan: "", status: "", provider: "", platform: "", dateFrom: "", dateTo: "" }); setPage(1); }} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent">
+          <button onClick={() => { setFilters({ plan: "", status: "", provider: "", platform: "", accessType: "", dateFrom: "", dateTo: "" }); setPage(1); }} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground hover:bg-accent">
             <X className="h-3 w-3" /> Clear
           </button>
         )}
@@ -218,7 +229,7 @@ export default function SubscriptionsPage() {
 
       {showFilters && (
         <div className="rounded-xl border border-border bg-card p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
             <div>
               <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Plan</label>
               <select value={filters.plan} onChange={(e) => { setFilters({ ...filters, plan: e.target.value }); setPage(1); }} className={inputCls}>
@@ -255,6 +266,16 @@ export default function SubscriptionsPage() {
                 <option value="ios">iOS</option>
                 <option value="android">Android</option>
                 <option value="unassigned">Unassigned</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">Access Type</label>
+              <select value={filters.accessType} onChange={(e) => { setFilters({ ...filters, accessType: e.target.value }); setPage(1); }} className={inputCls}>
+                <option value="">All Access</option>
+                <option value="PAID">Paid</option>
+                <option value="FREE_TRIAL">Free Trial</option>
+                <option value="FREE_ACCESS">Free Access</option>
+                <option value="none">Unassigned</option>
               </select>
             </div>
             <div>
@@ -405,7 +426,18 @@ export default function SubscriptionsPage() {
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex flex-wrap justify-end gap-2 pt-2">
+                {detail.provider === "STRIPE" && stripeDashboardUrl(detail.stripeCustomerId) ? (
+                  <a
+                    href={stripeDashboardUrl(detail.stripeCustomerId) || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
+                    title="Open this customer in the Stripe Dashboard"
+                  >
+                    Open in Stripe ↗
+                  </a>
+                ) : null}
                 <button onClick={() => { setDetail(null); router.push(`/users/${detail.user.id}`); }}
                   className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                   View User Profile

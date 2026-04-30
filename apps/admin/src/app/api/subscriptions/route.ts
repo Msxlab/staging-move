@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "";
     const provider = searchParams.get("provider") || "";
     const platform = searchParams.get("platform") || "";
+    const accessType = searchParams.get("accessType") || "";
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
 
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     if (status) where.status = status;
     if (provider) where.provider = provider;
     if (platform) where.platform = platform === "unassigned" ? null : platform;
+    if (accessType) where.accessType = accessType === "none" ? null : accessType;
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
@@ -41,7 +43,20 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [subscriptions, total, totalAll, activeCount, trialingCount, canceledCount, newThisMonth, planCounts, statusCounts, providerCounts, platformCounts] = await Promise.all([
+    const [
+      subscriptions,
+      total,
+      totalAll,
+      activeCount,
+      trialingCount,
+      canceledCount,
+      newThisMonth,
+      planCounts,
+      statusCounts,
+      providerCounts,
+      platformCounts,
+      accessTypeCounts,
+    ] = await Promise.all([
       prisma.subscription.findMany({
         where,
         include: {
@@ -61,6 +76,7 @@ export async function GET(request: NextRequest) {
       prisma.subscription.groupBy({ by: ["status"], _count: { id: true } }),
       prisma.subscription.groupBy({ by: ["provider"], _count: { id: true } }),
       prisma.subscription.groupBy({ by: ["platform"], _count: { id: true } }),
+      prisma.subscription.groupBy({ by: ["accessType"], _count: { id: true } }),
     ]);
 
     const planMap: Record<string, number> = {};
@@ -75,9 +91,12 @@ export async function GET(request: NextRequest) {
     const platformMap: Record<string, number> = {};
     platformCounts.forEach((p: any) => { platformMap[p.platform || "unassigned"] = p._count.id; });
 
+    const accessTypeMap: Record<string, number> = {};
+    accessTypeCounts.forEach((a: any) => { accessTypeMap[a.accessType || "none"] = a._count.id; });
+
     return NextResponse.json({
       subscriptions, total, page, perPage,
-      stats: { totalAll, activeCount, trialingCount, canceledCount, newThisMonth, planMap, statusMap, providerMap, platformMap },
+      stats: { totalAll, activeCount, trialingCount, canceledCount, newThisMonth, planMap, statusMap, providerMap, platformMap, accessTypeMap },
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {

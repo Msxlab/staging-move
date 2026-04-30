@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
           stripeCurrentPeriodEnd: periodEnd,
           canceledAt: null,
           lastSyncedAt: now,
+          version: { increment: 1 },
         },
       });
       return NextResponse.json({ status: nextStatus, autoRenew: true, currentPeriodEndsAt: periodEnd });
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
         stripeCurrentPeriodEnd: periodEnd,
         canceledAt: now,
         lastSyncedAt: now,
+        version: { increment: 1 },
       },
     });
 

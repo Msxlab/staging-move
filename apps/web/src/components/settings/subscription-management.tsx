@@ -127,7 +127,8 @@ export default function SubscriptionManagementPage() {
   const [entitlement, setEntitlement] = useState<UnifiedEntitlementSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedAnnualTerms, setAcceptedAnnualTerms] = useState(false);
+  const [acceptedMonthlyTerms, setAcceptedMonthlyTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [waitingForActivation, setWaitingForActivation] = useState(false);
   const [publicCampaign, setPublicCampaign] = useState<PublicTrialCampaign | null>(null);
@@ -243,14 +244,6 @@ export default function SubscriptionManagementPage() {
     firstChargeAt: firstChargeDate,
     firstChargeAmount: offerPriceLabel,
   });
-  const consentLabel = publicCampaign
-    ? buildTrialConsentLabel(firstChargeDate)
-    : monthlyOffer
-      ? "I understand my Individual Monthly subscription starts today and renews monthly until I cancel."
-      : "I understand checkout will show the current Individual terms before I subscribe.";
-  const offerDisclosure = publicCampaign
-    ? publicCampaign.checkoutDisclosureCopy || checkoutDisclosure
-    : monthlyDisclosure || "Checkout will show today's due amount, billing interval, first charge date, and renewal terms before you subscribe.";
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
   // Trialing, active, and pending-checkout users have either already started
   // the annual plan or are mid-checkout — re-offering the trial CTA in those
@@ -264,8 +257,8 @@ export default function SubscriptionManagementPage() {
     Boolean(publicCampaign || monthlyOffer);
 
   async function startAnnualTrial() {
-    if (!acceptedTerms) {
-      setError("Please review and accept the subscription terms to continue.");
+    if (!acceptedAnnualTerms) {
+      setError("Please review and accept the annual trial subscription terms to continue.");
       return;
     }
     setProcessing("CHECKOUT");
@@ -291,8 +284,8 @@ export default function SubscriptionManagementPage() {
   }
 
   async function startMonthlyPlan() {
-    if (!acceptedTerms) {
-      setError("Please review and accept the subscription terms to continue.");
+    if (!acceptedMonthlyTerms) {
+      setError("Please review and accept the monthly subscription terms to continue.");
       return;
     }
     setProcessing("MONTHLY_CHECKOUT");
@@ -484,8 +477,8 @@ export default function SubscriptionManagementPage() {
           </div>
 
           {showAnnualTrialOffer ? (
-          <div className="rounded-2xl border border-border bg-foreground/5 p-6 backdrop-blur-xl">
-            <div className="mb-4 flex items-center gap-3">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5">
                 <Sparkles className="h-5 w-5 text-emerald-300" />
               </div>
@@ -495,94 +488,116 @@ export default function SubscriptionManagementPage() {
               </div>
             </div>
 
-            {publicCampaign ? (
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-border bg-background/40 p-4">
-                  <p className="text-xs uppercase text-muted-foreground">Today</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">$0</p>
-                </div>
-                {offerTrialLabel ? (
-                <div className="rounded-xl border border-border bg-background/40 p-4">
-                  <p className="text-xs uppercase text-muted-foreground">Trial</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">{offerTrialLabel}</p>
-                </div>
-                ) : null}
-                <div className="rounded-xl border border-border bg-background/40 p-4">
-                  <p className="text-xs uppercase text-muted-foreground">Annual plan starts</p>
-                  <p className="mt-1 text-lg font-semibold text-foreground">{firstChargeLabel}</p>
-                </div>
-              </div>
-            ) : null}
+            <div className={publicCampaign && monthlyOffer ? "grid gap-4 md:grid-cols-2" : "space-y-4"}>
+              {publicCampaign ? (
+                <div className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-6">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-orange-300">
+                    Annual trial
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">{publicCampaign.publicHeadline}</h3>
+                  {publicCampaign.publicSubheadline ? (
+                    <p className="mt-1 text-sm text-muted-foreground">{publicCampaign.publicSubheadline}</p>
+                  ) : null}
 
-            {monthlyOffer ? (
-              <div className="mt-4 rounded-xl border border-border bg-background/40 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs uppercase text-muted-foreground">Monthly option</p>
-                    <h3 className="mt-1 text-lg font-semibold text-foreground">
+                  <div className="mt-4 grid gap-3 grid-cols-3">
+                    <div className="rounded-xl border border-border bg-background/40 p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Today</p>
+                      <p className="mt-1 text-xl font-bold text-foreground">$0</p>
+                    </div>
+                    {offerTrialLabel ? (
+                      <div className="rounded-xl border border-border bg-background/40 p-3">
+                        <p className="text-[11px] uppercase text-muted-foreground">Trial</p>
+                        <p className="mt-1 text-xl font-bold text-foreground">{offerTrialLabel}</p>
+                      </div>
+                    ) : null}
+                    <div className="rounded-xl border border-border bg-background/40 p-3">
+                      <p className="text-[11px] uppercase text-muted-foreground">Plan starts</p>
+                      <p className="mt-1 text-sm font-semibold text-foreground">{firstChargeLabel}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
+                    <div className="flex items-start gap-2">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                      <span>{publicCampaign.checkoutDisclosureCopy || checkoutDisclosure}</span>
+                    </div>
+                  </div>
+
+                  <label className="mt-3 flex items-start gap-2 rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5"
+                      checked={acceptedAnnualTerms}
+                      onChange={(event) => setAcceptedAnnualTerms(event.target.checked)}
+                    />
+                    <span>{buildTrialConsentLabel(firstChargeDate)}</span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => void startAnnualTrial()}
+                    disabled={processing === "CHECKOUT" || !acceptedAnnualTerms}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Check className="h-4 w-4" />
+                    {offerCtaLabel}
+                  </button>
+                </div>
+              ) : null}
+
+              {monthlyOffer ? (
+                <div className="rounded-2xl border border-border bg-foreground/5 p-6">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Monthly option
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="text-lg font-bold text-foreground">
                       {monthlyOffer.publicHeadline || "Subscribe monthly"}
                     </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {monthlyOffer.publicSubheadline || `${monthlyOffer.displayPriceLabel} with monthly renewal.`}
-                    </p>
+                    <span className="text-2xl font-bold text-foreground">{monthlyOffer.displayPriceLabel}</span>
                   </div>
-                  <div className="text-left sm:text-right">
-                    <p className="text-2xl font-bold text-foreground">{monthlyOffer.displayPriceLabel}</p>
-                    <p className="text-xs text-muted-foreground">Starts today</p>
-                  </div>
-                </div>
-              </div>
-            ) : null}
+                  {monthlyOffer.publicSubheadline ? (
+                    <p className="mt-1 text-sm text-muted-foreground">{monthlyOffer.publicSubheadline}</p>
+                  ) : null}
 
-            <div className="mt-4 rounded-xl border border-border bg-background/40 p-4">
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-300" />
-                <div className="space-y-2 text-sm text-muted-foreground">
-                  <p>{offerDisclosure}</p>
-                  <p>
-                    Links:{" "}
-                    <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
-                    {" | "}
-                    <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
-                    {" | "}
-                    <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
-                  </p>
+                  <div className="mt-4 rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
+                    <div className="flex items-start gap-2">
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                      <span>{monthlyDisclosure || `Today: ${monthlyOffer.displayPriceLabel}. Renews monthly until you cancel.`}</span>
+                    </div>
+                  </div>
+
+                  <label className="mt-3 flex items-start gap-2 rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5"
+                      checked={acceptedMonthlyTerms}
+                      onChange={(event) => setAcceptedMonthlyTerms(event.target.checked)}
+                    />
+                    <span>I understand my Individual Monthly subscription starts today and renews monthly until I cancel.</span>
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => void startMonthlyPlan()}
+                    disabled={processing === "MONTHLY_CHECKOUT" || !acceptedMonthlyTerms}
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Check className="h-4 w-4" />
+                    {monthlyCtaLabel}
+                  </button>
                 </div>
-              </div>
+              ) : null}
             </div>
 
-            <label className="mt-4 flex items-start gap-3 rounded-xl border border-border bg-background/40 p-4 text-sm text-muted-foreground">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={acceptedTerms}
-                onChange={(event) => setAcceptedTerms(event.target.checked)}
-              />
-              <span>{consentLabel}</span>
-            </label>
-
-            {publicCampaign ? (
-              <button
-                type="button"
-                onClick={() => void startAnnualTrial()}
-                disabled={processing === "CHECKOUT" || !acceptedTerms}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-              >
-                <Check className="h-4 w-4" />
-                {offerCtaLabel}
-              </button>
-            ) : null}
-            {monthlyOffer ? (
-              <button
-                type="button"
-                onClick={() => void startMonthlyPlan()}
-                disabled={processing === "MONTHLY_CHECKOUT" || !acceptedTerms}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60 sm:ml-3 sm:mt-4 sm:w-auto"
-              >
-                <Check className="h-4 w-4" />
-                {monthlyCtaLabel}
-              </button>
-            ) : null}
+            <div className="rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>Legal:</span>
+                <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
+                <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
+                <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
+              </div>
+            </div>
           </div>
           ) : null}
         </>

@@ -75,6 +75,28 @@ type IapProductsResponse = {
   android: { available: boolean; plans: { INDIVIDUAL: string | null } };
 };
 
+type PublicCampaignSummary = {
+  campaignCode: string;
+  accessType: string;
+  publicHeadline: string;
+  publicSubheadline: string | null;
+  checkoutDisclosureCopy: string | null;
+  displayPriceLabel: string;
+  trialDays: number | null;
+  billingInterval: string | null;
+  ctaText: string;
+  priceCopy: string;
+  trialLabel: string | null;
+};
+
+type PublicSubscriptionOffersResponse = {
+  campaign?: PublicCampaignSummary | null;
+  offers?: {
+    annualTrial?: PublicCampaignSummary | null;
+    monthlyPaid?: PublicCampaignSummary | null;
+  } | null;
+};
+
 function formatDateLabel(value?: string | null) {
   if (!value) return null;
   const date = new Date(value);
@@ -90,6 +112,8 @@ function LegacySubscriptionScreen() {
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [iapProducts, setIapProducts] = useState<IapProductsResponse | null>(null);
   const [localizedPrice, setLocalizedPrice] = useState<string | null>(null);
+  const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
+  const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
 
   const fetchSubscription = useCallback(async () => {
     const res = await api.get<any>("/api/profile");
@@ -101,6 +125,14 @@ function LegacySubscriptionScreen() {
   const fetchIapProducts = useCallback(async () => {
     const res = await api.get<IapProductsResponse>("/api/mobile/iap/products");
     if (res.data) setIapProducts(res.data);
+  }, []);
+
+  const fetchPublicOffers = useCallback(async () => {
+    const res = await api.get<PublicSubscriptionOffersResponse>("/api/acquisition/public-trial-campaign");
+    if (res.data) {
+      setAnnualOffer(res.data.offers?.annualTrial || res.data.campaign || null);
+      setMonthlyOffer(res.data.offers?.monthlyPaid || null);
+    }
   }, []);
 
   const storeSku = useMemo(() => {
@@ -140,9 +172,9 @@ function LegacySubscriptionScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchSubscription(), fetchIapProducts()]);
+    await Promise.all([fetchSubscription(), fetchIapProducts(), fetchPublicOffers()]);
     setLoading(false);
-  }, [fetchSubscription, fetchIapProducts]);
+  }, [fetchSubscription, fetchIapProducts, fetchPublicOffers]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -194,9 +226,44 @@ function LegacySubscriptionScreen() {
       return;
     }
 
-    // Fallback: open Stripe checkout in the system browser if the operator
-    // hasn't wired up IAP yet.
-    const res = await api.post<any>("/api/stripe/checkout", { plan: planKey });
+    // Stripe browser fallback. Mobile does not show the campaign disclosure
+    // panel inline, so surface it as a confirmation Alert and require an
+    // explicit "Continue" tap before the API call. The web checkout route
+    // requires `acceptedSubscriptionTerms: true`, so we cannot omit it; the
+    // confirmation tap is what backs the flag.
+    const targetCampaign = annualOffer || monthlyOffer || null;
+    const cycle: "yearly" | "monthly" = targetCampaign?.billingInterval === "MONTH" ? "monthly" : "yearly";
+    const disclosureBody =
+      targetCampaign?.checkoutDisclosureCopy ||
+      (cycle === "monthly"
+        ? `Today: ${targetCampaign?.displayPriceLabel || "the displayed price"}. Renews monthly until you cancel in Settings.`
+        : "Today: $0. Trial: 3 months. Your annual plan starts after the trial. Cancel before then in Settings.");
+    const headline = targetCampaign?.publicHeadline ||
+      (cycle === "monthly" ? "Subscribe monthly" : "Start with 3 months free");
+
+    const userConfirmed = await new Promise<boolean>((resolve) => {
+      Alert.alert(
+        headline,
+        `${disclosureBody}\n\nBy continuing, you accept the subscription terms shown at checkout.`,
+        [
+          { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
+          { text: "Continue", style: "default", onPress: () => resolve(true) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) },
+      );
+    });
+
+    if (!userConfirmed) {
+      setProcessingPlan(null);
+      return;
+    }
+
+    const res = await api.post<any>("/api/stripe/checkout", {
+      plan: planKey,
+      cycle,
+      acceptedSubscriptionTerms: true,
+      ...(targetCampaign?.campaignCode ? { campaignCode: targetCampaign.campaignCode } : {}),
+    });
     setProcessingPlan(null);
 
     if (res.error || !res.data?.url) {
@@ -207,7 +274,7 @@ function LegacySubscriptionScreen() {
 
     hapticSuccess();
     await openExternalUrl(res.data.url);
-  }, [openExternalUrl, iapAvailable, storeSku, fetchSubscription, t]);
+  }, [openExternalUrl, iapAvailable, storeSku, fetchSubscription, t, annualOffer, monthlyOffer]);
 
   const handleManageBilling = useCallback(async () => {
     setProcessingPlan("MANAGE");
@@ -313,7 +380,17 @@ function LegacySubscriptionScreen() {
           </Text>
         </View>
 
-        {PLANS.map((plan) => (
+        {PLANS.map((plan) => {
+          // Drive the FREE_TRIAL period label from the live annual campaign so
+          // it stays in sync with the actual trial length (currently 90 days,
+          // not the legacy 14). Falls back to the static label if no
+          // campaign has loaded yet.
+          const dynamicPeriod =
+            plan.key === "FREE_TRIAL"
+              ? annualOffer?.trialLabel ||
+                (annualOffer?.trialDays ? `${annualOffer.trialDays} days` : plan.period)
+              : plan.period;
+          return (
           <Card
             key={plan.key}
             variant={plan.key === currentPlanKey ? "glow" : "default"}
@@ -327,7 +404,7 @@ function LegacySubscriptionScreen() {
                 </View>
                 <Text style={styles.planPrice}>
                   {plan.key === "INDIVIDUAL" && localizedPrice ? localizedPrice : plan.price}
-                  <Text style={styles.planPeriod}> {plan.period}</Text>
+                  <Text style={styles.planPeriod}> {dynamicPeriod}</Text>
                 </Text>
               </View>
             </View>
@@ -390,7 +467,8 @@ function LegacySubscriptionScreen() {
               </TouchableOpacity>
             )}
           </Card>
-        ))}
+          );
+        })}
         {iapAvailable && (
           <TouchableOpacity
             style={styles.restoreBtn}

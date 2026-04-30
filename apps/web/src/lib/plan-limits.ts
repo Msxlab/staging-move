@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { isActiveSubscriptionStatus } from "@/lib/shared-billing";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
@@ -80,7 +81,12 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
       : false;
   }
 
-  const isActive = ["ACTIVE", "TRIALING", "TRIAL_CANCELED", "FREE_ACCESS"].includes(status) && !isTrialExpired;
+  // Use the canonical helper so CANCEL_AT_PERIOD_END and GRACE_PERIOD users
+  // keep their entitlement until the period actually ends. The literal list
+  // here previously dropped them straight to FREE_TRIAL limits the moment
+  // they clicked "cancel renewal" — punishing users who had paid for the
+  // remainder of the period.
+  const isActive = isActiveSubscriptionStatus(status) && !isTrialExpired;
   const limits = PLAN_LIMITS[effectivePlan] || PLAN_LIMITS.FREE_TRIAL;
 
   return { plan: effectivePlan, status, isActive, isTrialExpired, limits };

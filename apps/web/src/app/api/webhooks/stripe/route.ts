@@ -194,12 +194,19 @@ async function syncLocalSubscriptionFromStripe(input: {
   const priceId = input.stripeSubscription.items?.data?.[0]?.price?.id || null;
   const trialEnd = stripeDate(input.stripeSubscription.trial_end);
   const currentPeriodEnd = stripeDate(input.stripeSubscription.current_period_end);
+  // Prefer the actual Stripe price interval over the metadata.cycle hint.
+  // metadata.cycle is set at checkout creation, but the customer portal can
+  // switch the user between monthly and annual without updating it — relying
+  // on metadata alone silently mislabels the row.
+  const stripeInterval = input.stripeSubscription.items?.data?.[0]?.price?.recurring?.interval;
+  const derivedBillingInterval =
+    stripeInterval === "month" ? "MONTH" : stripeInterval === "year" ? "YEAR" : null;
   const updateData: Record<string, unknown> = {
     status: newStatus,
     provider: "STRIPE",
     platform: "web",
     accessType: stripeStatus === "trialing" || newStatus === "TRIAL_CANCELED" ? "FREE_TRIAL" : "PAID",
-    billingInterval: input.billingInterval || "YEAR",
+    billingInterval: derivedBillingInterval || input.billingInterval || "YEAR",
     trialEndsAt: trialEnd,
     firstChargeAt: trialEnd,
     autoRenew: !input.stripeSubscription.cancel_at_period_end,
@@ -213,6 +220,7 @@ async function syncLocalSubscriptionFromStripe(input: {
     gracePeriodEndsAt: null,
     lastSyncedAt: new Date(),
     plan: input.plan || "INDIVIDUAL",
+    version: { increment: 1 },
   };
 
   const result = await prisma.subscription.updateMany({
@@ -428,11 +436,17 @@ export async function POST(request: NextRequest) {
               select: { id: true, campaignId: true },
             });
             if (pendingRedemption) {
-              await (prisma as any).acquisitionRedemption.update({
-                where: { id: pendingRedemption.id },
+              // Gate the PENDING_CHECKOUT → REDEEMED flip on the current
+              // status so the count increment runs at most once per
+              // redemption. ProcessedWebhookEvent guards against most
+              // double-deliveries, but Stripe can still redeliver before
+              // the mark commits — the increment is not idempotent on its
+              // own.
+              const flipped = await (prisma as any).acquisitionRedemption.updateMany({
+                where: { id: pendingRedemption.id, status: "PENDING_CHECKOUT" },
                 data: { status: "REDEEMED" },
               });
-              if (pendingRedemption.campaignId) {
+              if (flipped.count > 0 && pendingRedemption.campaignId) {
                 await (prisma as any).acquisitionCampaign.update({
                   where: { id: pendingRedemption.campaignId },
                   data: { redemptionCount: { increment: 1 } },
@@ -495,8 +509,14 @@ export async function POST(request: NextRequest) {
         const stripePriceId = subscription.items?.data?.[0]?.price?.id;
         const plan = await mapStripePriceIdToPlan(stripePriceId);
 
+        // Scope by stripeSubscriptionId so a customer with multiple
+        // subscriptions (rare, but possible after admin reassignment)
+        // does not get every row CANCELED at once.
         await prisma.subscription.updateMany({
-          where: { stripeCustomerId },
+          where: {
+            stripeCustomerId,
+            stripeSubscriptionId: subscription.id,
+          },
           data: {
             status: "CANCELED",
             provider: "STRIPE",
@@ -505,6 +525,7 @@ export async function POST(request: NextRequest) {
             cancelAtPeriodEnd: false,
             canceledAt: new Date(),
             lastSyncedAt: new Date(),
+            version: { increment: 1 },
           },
         });
 
@@ -545,6 +566,7 @@ export async function POST(request: NextRequest) {
           cancelAtPeriodEnd: false,
           gracePeriodEndsAt: null,
           lastSyncedAt: new Date(),
+          version: { increment: 1 },
         };
         if (plan) updateData.plan = plan;
         if (stripePriceId) updateData.billingProductId = stripePriceId;
@@ -573,6 +595,7 @@ export async function POST(request: NextRequest) {
             platform: "web",
             gracePeriodEndsAt,
             lastSyncedAt: new Date(),
+            version: { increment: 1 },
           },
         });
 
@@ -597,8 +620,29 @@ export async function POST(request: NextRequest) {
         const charge = event.data.object as Stripe.Charge;
         const stripeCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
         if (stripeCustomerId) {
+          // Resolve the underlying subscription via the charge's invoice when
+          // possible — refunding one charge should not REFUND every sub on
+          // the customer if they have more than one.
+          let stripeSubscriptionId: string | null = null;
+          const invoiceRef = charge.invoice;
+          if (invoiceRef) {
+            const invoiceId = typeof invoiceRef === "string" ? invoiceRef : invoiceRef.id;
+            try {
+              const invoice = await stripe.invoices.retrieve(invoiceId);
+              if (invoice.subscription) {
+                stripeSubscriptionId = typeof invoice.subscription === "string"
+                  ? invoice.subscription
+                  : invoice.subscription.id;
+              }
+            } catch (err: any) {
+              console.warn("[WEBHOOK] charge.refunded invoice lookup failed:", err?.message);
+            }
+          }
+
           await prisma.subscription.updateMany({
-            where: { stripeCustomerId },
+            where: stripeSubscriptionId
+              ? { stripeCustomerId, stripeSubscriptionId }
+              : { stripeCustomerId },
             data: {
               status: "REFUNDED",
               provider: "STRIPE",
@@ -606,6 +650,7 @@ export async function POST(request: NextRequest) {
               autoRenew: false,
               cancelAtPeriodEnd: false,
               lastSyncedAt: new Date(),
+              version: { increment: 1 },
             },
           });
         }
@@ -637,6 +682,8 @@ function mapStripeStatus(stripeStatus: string): string {
     canceled: "CANCELED",
     unpaid: "UNPAID",
     incomplete: "INCOMPLETE",
+    incomplete_expired: "EXPIRED",
+    paused: "PAST_DUE",
   };
   return map[stripeStatus] || "UNKNOWN";
 }
