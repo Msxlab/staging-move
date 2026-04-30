@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Animated, Easing, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 const { width } = Dimensions.get("window");
 
-export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
+export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => void; ready?: boolean }) {
   const pinScale = useRef(new Animated.Value(0)).current;
   const pinY = useRef(new Animated.Value(-80)).current;
   const pinRotate = useRef(new Animated.Value(-0.05)).current;
@@ -19,9 +19,16 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
   const glowPulse = useRef(new Animated.Value(0.15)).current;
   const glowScale = useRef(new Animated.Value(0.8)).current;
   const overallOpacity = useRef(new Animated.Value(1)).current;
+  const [introDone, setIntroDone] = useState(false);
+  const didFinish = useRef(false);
+  const onFinishRef = useRef(onFinish);
 
   useEffect(() => {
-    Animated.sequence([
+    onFinishRef.current = onFinish;
+  }, [onFinish]);
+
+  useEffect(() => {
+    const introAnimation = Animated.sequence([
       // Phase 1: Pin drops with spring + slight rotation
       Animated.parallel([
         Animated.spring(pinScale, {
@@ -111,10 +118,13 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
           useNativeDriver: true,
         }),
       ]),
-    ]).start();
+    ]);
+    introAnimation.start(({ finished }) => {
+      if (finished) setIntroDone(true);
+    });
 
     // Glow breathing
-    Animated.loop(
+    const glowAnimation = Animated.loop(
       Animated.sequence([
         Animated.parallel([
           Animated.timing(glowPulse, {
@@ -145,19 +155,31 @@ export function AnimatedSplash({ onFinish }: { onFinish: () => void }) {
           }),
         ]),
       ])
-    ).start();
+    );
+    glowAnimation.start();
 
-    const timer = setTimeout(() => {
-      Animated.timing(overallOpacity, {
-        toValue: 0,
-        duration: 500,
-        easing: Easing.inOut(Easing.cubic),
-        useNativeDriver: true,
-      }).start(() => onFinish());
-    }, 3000);
+    return () => {
+      introAnimation.stop();
+      glowAnimation.stop();
+    };
+  }, [dotScale, flowOpacity, glowPulse, glowScale, pinRotate, pinScale, pinY, ringOpacity, ringScale, textOpacity, textY, wave1, wave2]);
 
-    return () => clearTimeout(timer);
-  }, []);
+  useEffect(() => {
+    if (!ready || !introDone || didFinish.current) return;
+    didFinish.current = true;
+
+    const fadeAnimation = Animated.timing(overallOpacity, {
+      toValue: 0,
+      duration: 500,
+      easing: Easing.inOut(Easing.cubic),
+      useNativeDriver: true,
+    });
+    fadeAnimation.start(({ finished }) => {
+      if (finished) onFinishRef.current();
+    });
+
+    return () => fadeAnimation.stop();
+  }, [introDone, overallOpacity, ready]);
 
   return (
     <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
@@ -293,13 +315,16 @@ function LoadingBar() {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(progress, {
+    const animation = Animated.timing(progress, {
       toValue: 1,
       duration: 2600,
       easing: Easing.inOut(Easing.cubic),
       useNativeDriver: false,
-    }).start();
-  }, []);
+    });
+    animation.start();
+
+    return () => animation.stop();
+  }, [progress]);
 
   return (
     <View style={styles.loadingTrack}>

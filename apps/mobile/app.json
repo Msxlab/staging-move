@@ -33,6 +33,7 @@
       },
       "package": "com.locateflow.mobile",
       "versionCode": 1,
+      "allowBackup": false,
       "intentFilters": [
         {
           "action": "VIEW",

@@ -17,6 +17,7 @@ import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { hapticWarning, hapticSuccess, hapticError } from "@/lib/haptics";
+import { Input } from "@/components/ui/Input";
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
@@ -97,13 +98,12 @@ export default function DeleteAccountScreen() {
           accessibilityHint='Type DELETE exactly to enable permanent account deletion'
         />
 
-        <TextInput
-          style={[styles.input, { marginTop: 12 }]}
+        <Input
+          containerStyle={{ marginTop: 12 }}
           placeholder={t("auth.password")}
-          placeholderTextColor={theme.colors.textMuted}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
-          secureTextEntry
+          isPassword
           autoCapitalize="none"
           autoCorrect={false}
           accessibilityLabel="Current password"

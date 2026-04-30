@@ -45,7 +45,17 @@
     "mfaRequired": "Introduce el código de 6 dígitos de tu app de autenticación.",
     "mfaCode": "Código de verificación",
     "useBackupCode": "Usar un código de respaldo",
-    "backupCode": "Código de respaldo"
+    "backupCode": "Código de respaldo",
+    "googleUnavailable": "Inicio con Google no disponible",
+    "appleUnavailable": "Inicio con Apple no disponible",
+    "socialSignInUnavailable": "El inicio con correo y contraseña está disponible ahora. El inicio social se activará cuando se agreguen las credenciales OAuth de administrador.",
+    "socialSignUpUnavailable": "El registro con correo y contraseña está disponible ahora. El inicio social se activará cuando se agreguen las credenciales OAuth de administrador.",
+    "acceptLegalBeforeAccount": "Revisa y acepta los Términos de uso y el Aviso legal antes de crear una cuenta.",
+    "acceptLegalBeforeProvider": "Revisa y acepta los Términos de uso y el Aviso legal antes de crear una cuenta con {{provider}}.",
+    "checkEmail": "Revisa tu correo",
+    "checkEmailDescription": "Enviamos un enlace de verificación a {{email}}.",
+    "requiredAcknowledgements": "Aceptaciones requeridas",
+    "requiredAcknowledgementsDescription": "Acéptalas antes de crear tu cuenta de LocateFlow."
   },
   "dashboard": {
     "welcome": "Bienvenido de vuelta",

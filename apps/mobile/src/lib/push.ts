@@ -15,6 +15,16 @@ import { api } from "./api";
 
 let registrationInFlight: Promise<boolean> | null = null;
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: true,
+    priority: Notifications.AndroidNotificationPriority.DEFAULT,
+  }),
+});
+
 async function ensurePermission(): Promise<boolean> {
   const { status } = await Notifications.getPermissionsAsync();
   if (status === "granted") return true;
@@ -29,6 +39,29 @@ async function getProjectId(): Promise<string | undefined> {
   return typeof fromConfig === "string" ? fromConfig : undefined;
 }
 
+async function ensureAndroidNotificationChannels() {
+  if (Platform.OS !== "android") return;
+
+  await Promise.all([
+    Notifications.setNotificationChannelAsync("default", {
+      name: "Default",
+      importance: Notifications.AndroidImportance.DEFAULT,
+    }),
+    Notifications.setNotificationChannelAsync("billing", {
+      name: "Billing",
+      importance: Notifications.AndroidImportance.DEFAULT,
+    }),
+    Notifications.setNotificationChannelAsync("move-alerts", {
+      name: "Move alerts",
+      importance: Notifications.AndroidImportance.HIGH,
+    }),
+    Notifications.setNotificationChannelAsync("marketing", {
+      name: "Updates and offers",
+      importance: Notifications.AndroidImportance.LOW,
+    }),
+  ]);
+}
+
 export async function registerForPushNotifications(): Promise<boolean> {
   if (registrationInFlight) return registrationInFlight;
 
@@ -39,12 +72,7 @@ export async function registerForPushNotifications(): Promise<boolean> {
       const granted = await ensurePermission();
       if (!granted) return false;
 
-      if (Platform.OS === "android") {
-        await Notifications.setNotificationChannelAsync("default", {
-          name: "Default",
-          importance: Notifications.AndroidImportance.DEFAULT,
-        });
-      }
+      await ensureAndroidNotificationChannels();
 
       const projectId = await getProjectId();
       const tokenRes = await Notifications.getExpoPushTokenAsync(

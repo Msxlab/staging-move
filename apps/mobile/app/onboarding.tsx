@@ -24,7 +24,9 @@ import {
   ChevronUp,
   Search,
   Sparkles,
+  Calendar,
 } from "lucide-react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import {
   getRecommendedProviders,
   getMergedDisplayCategoryIcon,
@@ -47,6 +49,7 @@ import {
   createAcceptedLegalConsents,
   getDefaultLegalConsents,
   getPendingLegalConsents,
+  hydratePendingLegalConsents,
   hasRequiredLegalConsents,
   setPendingLegalConsents,
 } from "@/lib/legal";
@@ -169,6 +172,7 @@ export default function OnboardingScreen() {
     latitude: null as number | null,
     longitude: null as number | null,
   });
+  const [showMoveDatePicker, setShowMoveDatePicker] = useState(false);
   const [createdDestinationAddressId, setCreatedDestinationAddressId] = useState<string | null>(null);
   const [createdMovingPlanId, setCreatedMovingPlanId] = useState<string | null>(null);
 
@@ -184,6 +188,7 @@ export default function OnboardingScreen() {
 
   useEffect(() => {
     const loadLegalConsents = async () => {
+      await hydratePendingLegalConsents();
       const pending = getPendingLegalConsents();
       if (pending) {
         setLegalConsents(pending);
@@ -281,7 +286,7 @@ export default function OnboardingScreen() {
       if (legalRes.error) throw new Error(legalRes.error);
       const res = await api.post<any>("/api/profile", profile);
       if (res.error) throw new Error(res.error);
-      setPendingLegalConsents(null);
+      await setPendingLegalConsents(null);
       return true;
     } catch (e: any) {
       setError(e.message || "Failed to save profile");
@@ -977,8 +982,53 @@ export default function OnboardingScreen() {
                         onChangeText={(v: string) => updateMoving("zip", v)} />
                     </View>
                   </View>
-                  <Input label="Move Date * (YYYY-MM-DD)" placeholder="2026-06-15" value={movingForm.moveDate}
-                    onChangeText={(v: string) => updateMoving("moveDate", v)} containerStyle={{ width: "100%" }} />
+                  <View style={{ width: "100%" }}>
+                    <Text style={styles.dateLabel}>Move Date *</Text>
+                    <TouchableOpacity
+                      style={styles.dateButton}
+                      onPress={() => setShowMoveDatePicker(true)}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel="Select move date"
+                    >
+                      <Calendar size={16} color={movingForm.moveDate ? theme.colors.primary : theme.colors.textMuted} />
+                      <Text style={[styles.dateButtonText, movingForm.moveDate ? { color: theme.colors.text } : undefined]}>
+                        {movingForm.moveDate
+                          ? new Date(`${movingForm.moveDate}T00:00:00`).toLocaleDateString(undefined, {
+                              weekday: "short",
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "Select move date..."}
+                      </Text>
+                    </TouchableOpacity>
+                    {showMoveDatePicker && (
+                      <DateTimePicker
+                        value={movingForm.moveDate ? new Date(`${movingForm.moveDate}T00:00:00`) : new Date()}
+                        mode="date"
+                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                        minimumDate={new Date()}
+                        onChange={(_event: any, date?: Date) => {
+                          setShowMoveDatePicker(Platform.OS === "ios");
+                          if (date) {
+                            updateMoving("moveDate", date.toISOString().slice(0, 10));
+                          }
+                        }}
+                        themeVariant="dark"
+                      />
+                    )}
+                    {Platform.OS === "ios" && showMoveDatePicker ? (
+                      <TouchableOpacity
+                        style={styles.dateDoneButton}
+                        onPress={() => setShowMoveDatePicker(false)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Done selecting move date"
+                      >
+                        <Text style={styles.dateDoneText}>Done</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
                   <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
                     <View style={{ flex: 1 }}>
                       <Button title={saving ? t("common.loading") : t("moving.newPlan")} onPress={handleComplete} loading={saving} fullWidth size="lg" />
@@ -1073,6 +1123,21 @@ const styles = StyleSheet.create({
   loadingBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 40, gap: 8 },
   loadingText: { fontSize: 14, color: theme.colors.textMuted },
   emptyText: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center", paddingVertical: 40 },
+  dateLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, marginBottom: 6 },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    minHeight: 48,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 14,
+  },
+  dateButtonText: { flex: 1, fontSize: 15, color: theme.colors.textMuted },
+  dateDoneButton: { alignSelf: "flex-end", marginTop: 4, paddingHorizontal: 8, paddingVertical: 6 },
+  dateDoneText: { color: theme.colors.primary, fontWeight: "600" },
   catSection: { marginBottom: 8, borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, overflow: "hidden" },
   catHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 12, backgroundColor: "rgba(255,255,255,0.02)" },
   catTitle: { fontSize: 14, fontWeight: "600", color: theme.colors.text, flex: 1 },
