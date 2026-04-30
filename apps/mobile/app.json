@@ -96,6 +96,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "aa33b70b-8158-4b17-944d-a34a03fc6b42"
+      }
+    },
+    "owner": "msxlab"
   }
 }
