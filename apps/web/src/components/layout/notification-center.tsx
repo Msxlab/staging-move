@@ -1,36 +1,87 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { useCallback, useEffect, useRef, useState, type ElementType } from "react";
+import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone } from "lucide-react";
 import Link from "next/link";
 
-interface Notification {
+interface FeedNotification {
   id: string;
-  type: "bill" | "system";
+  type: string;
   title: string;
-  description: string;
-  href?: string;
-  time: string;
+  body?: string | null;
+  href?: string | null;
+  icon?: string | null;
   read: boolean;
-  icon: React.ElementType;
-  color: string;
+  createdAt: string;
 }
 
-function getDaysUntilBill(billingDay: number): number {
-  const today = new Date();
-  const currentDay = today.getDate();
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  if (billingDay >= currentDay) return billingDay - currentDay;
-  return daysInMonth - currentDay + billingDay;
+function notificationPresentation(notification: FeedNotification): {
+  icon: ElementType;
+  iconColor: string;
+  bg: string;
+} {
+  const key = (notification.icon || notification.type || "").toUpperCase();
+  if (key.includes("BILL") || key.includes("RECEIPT")) {
+    return { icon: Receipt, iconColor: "text-amber-400", bg: "bg-amber-500/10" };
+  }
+  if (key.includes("CONTRACT") || key.includes("CLOCK")) {
+    return { icon: Clock, iconColor: "text-amber-400", bg: "bg-amber-500/10" };
+  }
+  if (key.includes("MOVE") || key.includes("CALENDAR")) {
+    return { icon: Calendar, iconColor: "text-cyan-400", bg: "bg-cyan-500/10" };
+  }
+  if (key.includes("MARKETING")) {
+    return { icon: Megaphone, iconColor: "text-rose-400", bg: "bg-rose-500/10" };
+  }
+  if (key.includes("FAILED") || key.includes("OVERDUE") || key.includes("ALERT")) {
+    return { icon: AlertTriangle, iconColor: "text-red-400", bg: "bg-red-500/10" };
+  }
+  if (key.includes("SYSTEM") || key.includes("INFO")) {
+    return { icon: Info, iconColor: "text-blue-400", bg: "bg-blue-500/10" };
+  }
+  return { icon: Bell, iconColor: "text-muted-foreground", bg: "bg-foreground/5" };
+}
+
+function formatNotificationTime(createdAt: string) {
+  const created = new Date(createdAt);
+  if (Number.isNaN(created.getTime())) return "";
+
+  const diffMs = Date.now() - created.getTime();
+  if (diffMs < 60_000) return "Now";
+
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d`;
+
+  return created.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<FeedNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const ref = useRef<HTMLDivElement>(null);
+
+  const fetchFeed = useCallback(async () => {
+    try {
+      const response = await fetch("/api/notifications/feed?limit=10", { cache: "no-store" });
+      if (!response.ok) throw new Error("Failed to load notifications");
+      const data = await response.json();
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.unreadCount || 0);
+    } catch {
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -41,67 +92,40 @@ export function NotificationCenter() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/services")
-      .then((r) => r.json())
-      .catch(() => ({ services: [] }))
-      .then((svcData) => {
-      const notifs: Notification[] = [];
-      const now = new Date();
+    void fetchFeed();
+  }, [fetchFeed]);
 
-      // Bill reminders
-      const services = svcData.services || [];
-      services.forEach((s: any) => {
-        if (!s.billingDay || !s.monthlyCost) return;
-        const days = getDaysUntilBill(s.billingDay);
-        if (days <= 3) {
-          notifs.push({
-            id: `bill-${s.id}`,
-            type: "bill",
-            title: days === 0 ? `${s.providerName} bill due today` : `${s.providerName} bill in ${days} day${days !== 1 ? "s" : ""}`,
-            description: `${formatCurrency(s.monthlyCost)} due on day ${s.billingDay}`,
-            href: `/services/${s.id}`,
-            time: days === 0 ? "Today" : `${days}d`,
-            read: false,
-            icon: days === 0 ? AlertTriangle : Receipt,
-            color: days === 0 ? "text-red-400" : "text-amber-400",
-          });
-        }
-      });
+  const toggleOpen = () => {
+    setOpen((current) => {
+      const next = !current;
+      if (next) {
+        setLoading(true);
+        void fetchFeed();
+      }
+      return next;
+    });
+  };
 
-      // Contract expiring
-      services.forEach((s: any) => {
-        if (!s.contractEndDate) return;
-        const endDate = new Date(s.contractEndDate);
-        const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysLeft > 0 && daysLeft <= 30) {
-          notifs.push({
-            id: `contract-${s.id}`,
-            type: "system",
-            title: `${s.providerName} contract expiring`,
-            description: `Ends in ${daysLeft} days (${endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })})`,
-            href: `/services/${s.id}`,
-            time: `${daysLeft}d`,
-            read: false,
-            icon: Clock,
-            color: "text-amber-400",
-          });
-        }
-      });
+  const markRead = async (notification: FeedNotification) => {
+    if (notification.read) return;
+    setNotifications((current) => current.map((item) => (
+      item.id === notification.id ? { ...item, read: true } : item
+    )));
+    setUnreadCount((current) => Math.max(0, current - 1));
+    await fetch(`/api/notifications/feed/${notification.id}`, { method: "PATCH" }).catch(() => {});
+  };
 
-      setNotifications(notifs);
-    }).finally(() => setLoading(false));
-  }, []);
-
-  const markRead = (id: string) => setReadIds((prev) => new Set(prev).add(id));
-  const markAllRead = () => setReadIds(new Set(notifications.map((n) => n.id)));
-
-  const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
+  const markAllRead = async () => {
+    setNotifications((current) => current.map((item) => ({ ...item, read: true })));
+    setUnreadCount(0);
+    await fetch("/api/notifications/feed?action=read-all", { method: "PATCH" }).catch(() => {});
+  };
 
   return (
     <div className="relative" ref={ref}>
       <button
         className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition"
-        onClick={() => setOpen(!open)}
+        onClick={toggleOpen}
         aria-label="Notifications"
       >
         <Bell className="h-[18px] w-[18px]" />
@@ -125,7 +149,7 @@ export function NotificationCenter() {
               )}
             </div>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} className="text-[10px] text-foreground/40 hover:text-foreground transition">
+              <button onClick={() => void markAllRead()} className="text-[10px] text-foreground/40 hover:text-foreground transition">
                 Mark all read
               </button>
             )}
@@ -143,35 +167,34 @@ export function NotificationCenter() {
               </div>
             ) : (
               notifications.map((notif) => {
-                const Icon = notif.icon;
-                const isRead = readIds.has(notif.id);
+                const presentation = notificationPresentation(notif);
+                const Icon = presentation.icon;
                 const inner = (
                   <div
-                    className={`flex items-start gap-3 px-4 py-3 hover:bg-foreground/[0.03] transition cursor-pointer border-b border-foreground/[0.03] ${!isRead ? "bg-orange-500/[0.03]" : ""}`}
-                    onClick={() => markRead(notif.id)}
+                    className={`flex items-start gap-3 px-4 py-3 hover:bg-foreground/[0.03] transition cursor-pointer border-b border-foreground/[0.03] ${!notif.read ? "bg-orange-500/[0.03]" : ""}`}
                   >
-                    <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${
-                      notif.type === "bill" ? "bg-amber-500/10" : "bg-foreground/5"
-                    }`}>
-                      <Icon className={`h-3.5 w-3.5 ${notif.color}`} />
+                    <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${presentation.bg}`}>
+                      <Icon className={`h-3.5 w-3.5 ${presentation.iconColor}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={`text-xs font-medium truncate ${isRead ? "text-muted-foreground" : "text-foreground"}`}>{notif.title}</p>
-                        {!isRead && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />}
+                        <p className={`text-xs font-medium truncate ${notif.read ? "text-muted-foreground" : "text-foreground"}`}>{notif.title}</p>
+                        {!notif.read && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />}
                       </div>
-                      <p className="text-[10px] text-foreground/40 mt-0.5">{notif.description}</p>
+                      {notif.body && <p className="text-[10px] text-foreground/40 mt-0.5 line-clamp-2">{notif.body}</p>}
                     </div>
-                    <span className="text-[10px] text-foreground/30 shrink-0">{notif.time}</span>
+                    <span className="text-[10px] text-foreground/30 shrink-0">{formatNotificationTime(notif.createdAt)}</span>
                   </div>
                 );
 
                 return notif.href ? (
-                  <Link key={notif.id} href={notif.href} onClick={() => { markRead(notif.id); setOpen(false); }}>
+                  <Link key={notif.id} href={notif.href} onClick={() => { void markRead(notif); setOpen(false); }}>
                     {inner}
                   </Link>
                 ) : (
-                  <div key={notif.id}>{inner}</div>
+                  <button key={notif.id} type="button" className="block w-full text-left" onClick={() => void markRead(notif)}>
+                    {inner}
+                  </button>
                 );
               })
             )}
