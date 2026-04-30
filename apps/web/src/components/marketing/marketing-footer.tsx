@@ -26,6 +26,7 @@ export async function MarketingFooter() {
               <Link href="/#features" className="block transition hover:text-foreground">{tLanding("section_features_title")}</Link>
               <Link href="/#pricing" className="block transition hover:text-foreground">{tPricing("title")}</Link>
               <Link href="/how-it-works" className="block transition hover:text-foreground">{tLanding("section_how_title")}</Link>
+              <Link href="/blog" className="block transition hover:text-foreground">Blog</Link>
               <Link href="/faq" className="block transition hover:text-foreground">FAQ</Link>
             </div>
           </div>
@@ -48,6 +49,8 @@ export async function MarketingFooter() {
             <div className="space-y-2 text-sm text-muted-foreground">
               <Link href="/help" className="block transition hover:text-foreground">{tHelp("title")}</Link>
               <Link href="/faq" className="block transition hover:text-foreground">FAQ</Link>
+              <Link href="/blog" className="block transition hover:text-foreground">Blog</Link>
+              <Link href="/blog/feed.xml" className="block transition hover:text-foreground">RSS</Link>
               <Link href="/contact" className="block transition hover:text-foreground">{tCommon("contact")}</Link>
             </div>
           </div>

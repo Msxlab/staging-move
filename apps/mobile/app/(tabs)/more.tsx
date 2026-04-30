@@ -21,6 +21,7 @@ import {
   LogOut,
   Ticket,
   Building2,
+  FileText,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/lib/auth-store";
@@ -82,6 +83,7 @@ export default function MoreScreen() {
         { icon: DollarSign, label: t("budget.title"), route: "/budget" },
         { icon: Search, label: t("providers.title"), route: "/providers" },
         { icon: Building2, label: "Custom Providers", route: "/custom-providers" },
+        { icon: FileText, label: "Blog", route: "/blog" },
         { icon: Bell, label: t("settings.notifications"), route: "/notifications" },
         { icon: Ticket, label: t("settings.support"), route: "/help/tickets" },
         { icon: HelpCircle, label: t("settings.help"), route: "/help" },

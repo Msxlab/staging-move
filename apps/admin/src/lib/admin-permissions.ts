@@ -36,6 +36,11 @@ export const ADMIN_RESOURCES = [
   "audit_logs",
   "admin_users",
   "settings",
+  // Blog (M14). Reads cover the admin list/edit UI; writes cover
+  // create/update; delete soft-deletes a post. Publish is an UPDATE on
+  // the lifecycle column (no separate flag) — tightly coupled to write
+  // because anyone who can edit the post should be able to ship it.
+  "blog",
 ] as const;
 
 export type AdminResource = (typeof ADMIN_RESOURCES)[number];
@@ -98,6 +103,12 @@ export function getDefaultPermissionsForRole(
   if (role === "MODERATOR") {
     // Moderators write only where moderation lives.
     if (resource === "reviews") {
+      return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
+    }
+    if (resource === "blog") {
+      // Editorial moderators draft + edit + publish, but not delete.
+      // Hard-delete stays with ADMIN/SUPER_ADMIN to avoid an editor
+      // accidentally wiping a post that's already been linked to.
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
     }
     return { ...READ_ONLY };
