@@ -345,3 +345,67 @@ tokens (mobile), plus Google / Apple OAuth. Configuration checklist:
 Delete these from any prior `.env` — they are no longer read:
 `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`, `DEV_AUTH_BYPASS`.
+
+## Blog & SEO (M14)
+
+The blog system reuses your existing MySQL database, R2 bucket, and
+imgproxy container — no new infrastructure required.
+
+### Required env
+
+| Var                          | Where used | Purpose |
+|------------------------------|------------|---------|
+| `INTERNAL_WEBHOOK_SECRET`    | web + admin | HMAC for the publish → revalidate webhook |
+| `ADMIN_JWT_SECRET`           | web + admin | Signs preview-token JWTs |
+| `R2_*` + `IMGPROXY_*`        | web + admin | Cover/inline image pipeline (already wired) |
+| `INDEXNOW_KEY` (optional)    | web         | Bing/Yandex push-indexing on publish |
+
+`INDEXNOW_KEY` is a 32-character hex string you choose once and never
+change:
+
+```bash
+openssl rand -hex 32
+```
+
+The web app serves it back at `/api/blog/indexnow-key/<key>` — no
+filesystem step needed. After your first deploy, register the host on
+[bing.com/indexnow](https://www.bing.com/indexnow) using that URL.
+
+### Migration
+
+Schema lives in `packages/db/prisma/schema.prisma`; the migration is
+in `prisma/migrations/20260430000000_blog_system/`. The first
+`docker compose ... up` after pulling these changes runs the
+`migrate` service automatically (`prisma migrate deploy`). Manually:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm migrate
+```
+
+### Cron
+
+Two new Ofelia jobs (already in `docker/ofelia.ini`):
+- `blog-publish` — every minute; promotes `SCHEDULED → PUBLISHED`.
+- `blog-cleanup` — daily 04:30 UTC; prunes BlogView and old
+  BlogRevision rows (90-day retention).
+
+### Search Console
+
+Submit `https://your-domain/sitemap.xml` once via Google Search
+Console + Bing Webmaster Tools. After that, Google rediscovers new
+posts via the sitemap (revalidated on every publish), and Bing/Yandex
+get instant pings via IndexNow.
+
+Feeds are available at `/blog/feed.xml` (RSS 2.0) and `/blog/atom.xml`
+(Atom 1.0).
+
+### AI crawler policy
+
+`apps/web/src/app/robots.ts` allows GPTBot, ClaudeBot, PerplexityBot,
+Google-Extended, CCBot, Applebot-Extended, OAI-SearchBot,
+ChatGPT-User, anthropic-ai, meta-externalagent, cohere-ai,
+DuckAssistBot, and YouBot. Bytespider (TikTok) is disallowed. To
+flip a bot, edit `AI_BOTS_ALLOW` / `AI_BOTS_DISALLOW` in that file.
+
+The site also publishes `/llms.txt` — a markdown index of docs +
+recent posts that AI answer-engines can ingest in one fetch.

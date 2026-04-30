@@ -32,6 +32,9 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
           <Link href="/how-it-works" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             {tLanding("section_how_title")}
           </Link>
+          <Link href="/blog" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+            Blog
+          </Link>
           <Link href="/faq" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
             FAQ
           </Link>

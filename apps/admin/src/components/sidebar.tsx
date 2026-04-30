@@ -29,6 +29,7 @@ import {
   LifeBuoy,
   Sparkles,
   Ticket,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -82,6 +83,7 @@ const navGroups: NavGroup[] = [
       { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell },
       { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail },
       { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },
+      { name: "Blog", nameKey: "blog", href: "/blog", icon: FileText },
       { name: "Waitlist", nameKey: "waitlist", href: "/waitlist", icon: Sparkles },
     ],
   },

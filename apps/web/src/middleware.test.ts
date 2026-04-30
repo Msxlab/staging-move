@@ -139,7 +139,7 @@ describe("web middleware auth boundaries", () => {
   });
 
   it("tries later duplicate session cookie values before rejecting protected API requests", async () => {
-    mocks.tryGetUserJwtSecretKey.mockReturnValue(new TextEncoder().encode("test-user-jwt-secret-32-characters"));
+    mocks.tryGetUserJwtSecretKey.mockReturnValue(new TextEncoder().encode("test-user-jwt-secret-32-characters") as any);
     mocks.jwtVerify.mockImplementation(async (token: string) => {
       if (token === "valid-token") return { payload: { userId: "user-1" } };
       throw new Error("stale token");
@@ -157,7 +157,7 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
     expect(mocks.jwtVerify).toHaveBeenCalledWith(
       "valid-token",
-      expect.any(Uint8Array),
+      expect.any(Uint8Array) as any,
       { algorithms: ["HS256"] },
     );
   });

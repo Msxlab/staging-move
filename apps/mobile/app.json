@@ -17,6 +17,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.locateflow.mobile",
       "buildNumber": "1",
+      "associatedDomains": [
+        "applinks:locateflow.app",
+        "applinks:app.locateflow.com"
+      ],
       "infoPlist": {
         "NSFaceIDUsageDescription": "LocateFlow uses Face ID for secure authentication."
       }
@@ -28,6 +32,28 @@
       },
       "package": "com.locateflow.mobile",
       "versionCode": 1,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "locateflow.app",
+              "pathPrefix": "/blog"
+            },
+            {
+              "scheme": "https",
+              "host": "app.locateflow.com",
+              "pathPrefix": "/blog"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "permissions": [
         "INTERNET",
         "VIBRATE",

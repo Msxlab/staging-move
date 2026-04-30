@@ -35,6 +35,7 @@ describe("/api/auth/me", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getUserSession.mockResolvedValue(null);
+    mocks.destroyUserSession.mockResolvedValue(undefined);
     mocks.userFindFirst.mockResolvedValue(null);
     mocks.rateLimit.mockResolvedValue({ success: true, resetAt: Date.now() + 60_000 });
   });
@@ -72,10 +73,10 @@ describe("/api/auth/me", () => {
   });
 
   it("returns a quiet logged-out state for optional checks when the session user no longer exists", async () => {
-    getUserSessionMock.mockResolvedValue({ userId: "user_1" });
-    userFindUniqueMock.mockResolvedValue(null);
+    mocks.getUserSession.mockResolvedValue({ userId: "user_1" });
+    mocks.userFindFirst.mockResolvedValue(null);
 
-    const response = await GET(makeRequest("/api/auth/me?optional=true"));
+    const response = await GET(request("/api/auth/me?optional=true"));
     const body = await response.json();
 
     expect(response.status).toBe(200);
