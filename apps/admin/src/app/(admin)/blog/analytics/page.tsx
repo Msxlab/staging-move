@@ -37,7 +37,7 @@ export default async function BlogAnalyticsPage() {
     prisma.blogView.groupBy({
       by: ["isBot"],
       where: { createdAt: { gte: since } },
-      _count: true,
+      _count: { _all: true },
     }),
   ]);
 
@@ -64,8 +64,8 @@ export default async function BlogAnalyticsPage() {
     .slice(0, 10);
 
   const totals = {
-    human: totalsByBot.find((t) => !t.isBot)?._count ?? 0,
-    bot: totalsByBot.find((t) => t.isBot)?._count ?? 0,
+    human: totalsByBot.find((t) => !t.isBot)?._count._all ?? 0,
+    bot: totalsByBot.find((t) => t.isBot)?._count._all ?? 0,
   };
   const totalAll = totals.human + totals.bot || 1;
 

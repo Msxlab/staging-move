@@ -44,19 +44,19 @@ export async function GET(req: NextRequest) {
       const movingByStatus = await prisma.movingPlan.groupBy({
         by: ["status"],
         where: { createdAt: { gte: start, lte: end } },
-        _count: true,
+        _count: { _all: true },
       });
       const movingStatusCounts = new Map<string, number>();
       movingByStatus.forEach((m) => {
         const status = normalizeMovingPlanStatus(m.status);
-        movingStatusCounts.set(status, (movingStatusCounts.get(status) || 0) + m._count);
+        movingStatusCounts.set(status, (movingStatusCounts.get(status) || 0) + m._count._all);
       });
 
       const [topStates, topProviders] = await Promise.all([
         prisma.address.groupBy({
           by: ["state"],
           where: { createdAt: { gte: start, lte: end } },
-          _count: true,
+          _count: { _all: true },
           orderBy: { _count: { state: "desc" } },
           take: 10,
         }),
@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
         dailyUsers,
         movingByStatus: Array.from(movingStatusCounts, ([status, count]) => ({ status, count })),
         topProviders: topProviders.map((p) => ({ name: p.name, popularityScore: p.popularityScore })),
-        topStates: topStates.map((s) => ({ state: s.state, count: s._count })),
+        topStates: topStates.map((s) => ({ state: s.state, count: s._count._all })),
       });
     }
 

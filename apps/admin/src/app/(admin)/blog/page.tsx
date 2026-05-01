@@ -106,14 +106,14 @@ export default async function BlogListPage({
     prisma.blogPost.groupBy({
       by: ["status"],
       where: { deletedAt: null },
-      _count: true,
+      _count: { _all: true },
     }),
   ]);
 
   const countByStatus = new Map<string, number>(
-    statusCounts.map((row) => [row.status, row._count]),
+    statusCounts.map((row) => [row.status, row._count._all]),
   );
-  const totalActive = statusCounts.reduce((sum, row) => sum + row._count, 0);
+  const totalActive = statusCounts.reduce((sum, row) => sum + row._count._all, 0);
   const tabCount = (key: StatusFilter): number =>
     key === "ALL" ? totalActive : countByStatus.get(key) ?? 0;
 
