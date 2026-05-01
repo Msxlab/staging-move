@@ -9,6 +9,8 @@
     "dev": "tsc --watch",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
+    "migrate:deploy": "prisma migrate deploy",
+    "migrate:status": "prisma migrate status",
     "push": "prisma db push",
     "seed": "tsx prisma/seed-master.ts",
     "seed:providers": "tsx prisma/seed-providers.ts",
