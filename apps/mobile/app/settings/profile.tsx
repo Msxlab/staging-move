@@ -16,22 +16,26 @@ import { ArrowLeft, Check } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 
 const AGE_RANGES = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"];
-const FAMILY_STATUS_VALUES = ["SINGLE", "COUPLE", "FAMILY", "ROOMMATES"] as const;
+const FAMILY_STATUS_VALUES = ["SINGLE", "COUPLE", "FAMILY", "OTHER"] as const;
+const MOVE_TYPES = ["PERSONAL", "BUSINESS", "VACATION"] as const;
+const IMMIGRATION_STATUSES = ["", "CITIZEN", "GREEN_CARD", "H1B", "L1", "F1", "OTHER_VISA"] as const;
 
 export default function ProfileSettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [pageLoading, setPageLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   // Family-status labels re-compute when the user flips language mid-session.
   const FAMILY_STATUSES: Array<{ value: (typeof FAMILY_STATUS_VALUES)[number]; label: string }> = [
     { value: "SINGLE", label: t("common.unknown", { defaultValue: "Single" }) },
     { value: "COUPLE", label: t("common.yes") },
     { value: "FAMILY", label: t("onboarding.goal_organize").split(" ")[0] },
-    { value: "ROOMMATES", label: t("common.more") },
+    { value: "OTHER", label: t("common.more") },
   ];
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -42,12 +46,27 @@ export default function ProfileSettingsScreen() {
     hasChildren: false,
     childrenCount: 0,
     hasPets: false,
+    petTypes: [] as string[],
     carCount: 0,
+    hasMotorcycle: false,
+    hasBoatRV: false,
+    needsStorage: false,
+    hasSenior: false,
+    hasDisability: false,
+    moveType: "PERSONAL",
+    isBusinessOwner: false,
+    isImmigrant: false,
+    immigrationStatus: "",
   });
 
   useEffect(() => {
     (async () => {
       const res = await api.get<any>("/api/profile");
+      if (res.error) {
+        setLoadError(res.error);
+        setPageLoading(false);
+        return;
+      }
       if (res.data) {
         const u = res.data.user || {};
         const p = res.data.profile || {};
@@ -59,7 +78,17 @@ export default function ProfileSettingsScreen() {
           hasChildren: p.hasChildren || false,
           childrenCount: p.childrenCount || 0,
           hasPets: p.hasPets || false,
+          petTypes: Array.isArray(p.petTypes) ? p.petTypes : [],
           carCount: p.carCount || 0,
+          hasMotorcycle: p.hasMotorcycle || false,
+          hasBoatRV: p.hasBoatRV || false,
+          needsStorage: p.needsStorage || false,
+          hasSenior: p.hasSenior || false,
+          hasDisability: p.hasDisability || false,
+          moveType: p.moveType || "PERSONAL",
+          isBusinessOwner: p.isBusinessOwner || false,
+          isImmigrant: p.isImmigrant || false,
+          immigrationStatus: p.immigrationStatus || "",
         });
       }
       setPageLoading(false);
@@ -70,11 +99,22 @@ export default function ProfileSettingsScreen() {
     setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSave = async () => {
-    if (!form.firstName) {
-      Alert.alert("Required", "First name is required.");
+    if (!form.firstName.trim() || !form.lastName.trim()) {
+      Alert.alert("Required", "First and last name are required.");
       return;
     }
     setSaving(true);
+    if (form.hasDisability || form.isImmigrant || form.immigrationStatus) {
+      const consentRes = await api.post("/api/consent", {
+        grants: [{ category: "SENSITIVE", granted: true }],
+      });
+      if (consentRes.error) {
+        setSaving(false);
+        hapticError();
+        Alert.alert("Consent required", consentRes.error);
+        return;
+      }
+    }
     const res = await api.post("/api/profile", form);
     setSaving(false);
     if (res.error) {
@@ -87,6 +127,56 @@ export default function ProfileSettingsScreen() {
   };
 
   if (pageLoading) return <LoadingScreen />;
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top"]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <ArrowLeft size={22} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Edit Profile</Text>
+          <View style={{ width: 44 }} />
+        </View>
+        <ErrorState
+          title="Profile unavailable"
+          message={loadError}
+          onRetry={() => {
+            setLoadError(null);
+            setPageLoading(true);
+            api.get<any>("/api/profile").then((res) => {
+              if (res.error) {
+                setLoadError(res.error);
+              } else if (res.data) {
+                const u = res.data.user || {};
+                const p = res.data.profile || {};
+                setForm({
+                  firstName: u.firstName || "",
+                  lastName: u.lastName || "",
+                  ageRange: p.ageRange || "",
+                  familyStatus: p.familyStatus || "SINGLE",
+                  hasChildren: p.hasChildren || false,
+                  childrenCount: p.childrenCount || 0,
+                  hasPets: p.hasPets || false,
+                  petTypes: Array.isArray(p.petTypes) ? p.petTypes : [],
+                  carCount: p.carCount || 0,
+                  hasMotorcycle: p.hasMotorcycle || false,
+                  hasBoatRV: p.hasBoatRV || false,
+                  needsStorage: p.needsStorage || false,
+                  hasSenior: p.hasSenior || false,
+                  hasDisability: p.hasDisability || false,
+                  moveType: p.moveType || "PERSONAL",
+                  isBusinessOwner: p.isBusinessOwner || false,
+                  isImmigrant: p.isImmigrant || false,
+                  immigrationStatus: p.immigrationStatus || "",
+                });
+              }
+            }).finally(() => setPageLoading(false));
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -183,6 +273,20 @@ export default function ProfileSettingsScreen() {
           />
         </View>
 
+        {form.hasPets ? (
+          <>
+            <Text style={styles.label}>Pet Types</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Dog, cat, bird"
+              placeholderTextColor={theme.colors.textMuted}
+              value={form.petTypes.join(", ")}
+              onChangeText={(value) => update("petTypes", value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 20))}
+              autoCapitalize="words"
+            />
+          </>
+        ) : null}
+
         <Text style={styles.label}>Number of Cars</Text>
         <TextInput
           style={styles.input}
@@ -192,6 +296,114 @@ export default function ProfileSettingsScreen() {
           onChangeText={(v) => update("carCount", parseInt(v) || 0)}
           keyboardType="number-pad"
         />
+
+        <Text style={styles.sectionLabel}>Move Type</Text>
+        <View style={styles.chipRow}>
+          {MOVE_TYPES.map((moveType) => (
+            <TouchableOpacity
+              key={moveType}
+              style={[styles.chip, form.moveType === moveType && styles.chipActive]}
+              onPress={() => update("moveType", moveType)}
+            >
+              <Text style={[styles.chipText, form.moveType === moveType && styles.chipTextActive]}>
+                {moveType.replace("_", " ")}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Business owner</Text>
+          <Switch
+            value={form.isBusinessOwner}
+            onValueChange={(v) => update("isBusinessOwner", v)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>Moving Needs</Text>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Motorcycle</Text>
+          <Switch
+            value={form.hasMotorcycle}
+            onValueChange={(v) => update("hasMotorcycle", v)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Boat or RV</Text>
+          <Switch
+            value={form.hasBoatRV}
+            onValueChange={(v) => update("hasBoatRV", v)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Storage needed</Text>
+          <Switch
+            value={form.needsStorage}
+            onValueChange={(v) => update("needsStorage", v)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Senior in household</Text>
+          <Switch
+            value={form.hasSenior}
+            onValueChange={(v) => update("hasSenior", v)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        <Text style={styles.sectionLabel}>Sensitive Profile</Text>
+        <Text style={styles.helpText}>
+          These fields are used only to tailor checklists and can be changed later.
+        </Text>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Disability accommodation</Text>
+          <Switch
+            value={form.hasDisability}
+            onValueChange={(v) => update("hasDisability", v)}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+        <View style={styles.switchRow}>
+          <Text style={styles.switchLabel}>Immigration-related tasks</Text>
+          <Switch
+            value={form.isImmigrant}
+            onValueChange={(v) => {
+              update("isImmigrant", v);
+              if (!v) update("immigrationStatus", "");
+            }}
+            trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+            thumbColor="#fff"
+          />
+        </View>
+
+        {form.isImmigrant ? (
+          <>
+            <Text style={styles.label}>Immigration Status</Text>
+            <View style={styles.chipRow}>
+              {IMMIGRATION_STATUSES.map((status) => (
+                <TouchableOpacity
+                  key={status || "NONE"}
+                  style={[styles.chip, form.immigrationStatus === status && styles.chipActive]}
+                  onPress={() => update("immigrationStatus", status)}
+                >
+                  <Text style={[styles.chipText, form.immigrationStatus === status && styles.chipTextActive]}>
+                    {status ? status.replace("_", " ") : "Prefer not to say"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        ) : null}
 
         <TouchableOpacity
           style={[styles.saveBtn, saving && { opacity: 0.6 }]}
@@ -255,6 +467,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: theme.colors.border,
   },
   switchLabel: { fontSize: 15, fontWeight: "500", color: theme.colors.text },
+  helpText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 18, marginBottom: 4 },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,

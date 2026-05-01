@@ -23,7 +23,18 @@ export const runtime = "nodejs";
  * Set RESEND_WEBHOOK_SECRET (whsec_…) in env. Resend will sign every
  * delivery with Svix-style headers; we reject anything we can't verify.
  */
+// Resend bounce/complaint events carry a single message+recipient
+// envelope; ~16KB is generous (the realistic ceiling is well under
+// 4KB). Cap here so signature verification can't be made to hash a
+// many-MB body.
+const RESEND_WEBHOOK_MAX_BODY_BYTES = 16 * 1024;
+
 export async function POST(request: NextRequest) {
+  const declaredLength = Number(request.headers.get("content-length") || 0);
+  if (declaredLength > RESEND_WEBHOOK_MAX_BODY_BYTES) {
+    return new NextResponse("Payload too large", { status: 413 });
+  }
+
   const secret = await getRuntimeConfigValue("RESEND_WEBHOOK_SECRET");
   if (!secret) {
     console.error("[RESEND] webhook called but RESEND_WEBHOOK_SECRET is not configured");
@@ -31,6 +42,9 @@ export async function POST(request: NextRequest) {
   }
 
   const rawBody = await request.text();
+  if (Buffer.byteLength(rawBody, "utf8") > RESEND_WEBHOOK_MAX_BODY_BYTES) {
+    return new NextResponse("Payload too large", { status: 413 });
+  }
   const verifyResult = verifyResendSignature(
     secret,
     {

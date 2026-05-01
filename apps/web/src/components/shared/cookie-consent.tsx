@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { Cookie, X } from "lucide-react";
 import { getStoredCookieConsent, setStoredCookieConsent } from "@/lib/consent";
+import { consentDenied, consentGranted } from "@/lib/analytics";
 
-export default function CookieConsent() {
+export default function CookieConsent({ analyticsNonce }: { analyticsNonce?: string }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -17,11 +18,13 @@ export default function CookieConsent() {
 
   const handleAccept = () => {
     setStoredCookieConsent("accepted");
+    consentGranted(analyticsNonce);
     setVisible(false);
   };
 
   const handleDecline = () => {
     setStoredCookieConsent("declined");
+    consentDenied();
     setVisible(false);
   };
 

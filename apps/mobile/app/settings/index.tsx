@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/lib/auth-store";
 import {
@@ -36,7 +36,7 @@ export default function SettingsScreen() {
   const initials =
     ((user?.firstName?.[0] || "") + (user?.lastName?.[0] || "")).toUpperCase() || "U";
 
-  const items = [
+  const items: Array<{ icon: typeof User; label: string; route: Href }> = [
     { icon: User, label: t("settings.profile"), route: "/settings/profile" },
     { icon: Bell, label: t("settings.notifications"), route: "/settings/notifications" },
     { icon: Shield, label: t("settings.privacy"), route: "/settings/privacy" },
@@ -58,7 +58,7 @@ export default function SettingsScreen() {
         {/* Profile Card */}
         <TouchableOpacity
           style={styles.profileCard}
-          onPress={() => router.push("/settings/profile" as any)}
+          onPress={() => router.push("/settings/profile")}
           activeOpacity={0.7}
         >
           <Avatar initials={initials} size={56} />
@@ -77,7 +77,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 key={item.label}
                 style={[styles.settingItem, i < items.length - 1 && styles.settingItemBorder]}
-                onPress={() => router.push(item.route as any)}
+                onPress={() => router.push(item.route)}
                 activeOpacity={0.6}
               >
                 <View style={styles.settingIcon}>

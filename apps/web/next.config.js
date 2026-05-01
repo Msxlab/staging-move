@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const path = require("path");
 
-const isDev = process.env.NODE_ENV !== "production";
-const sentryConnectSrc = "https://errors.locateflow.com";
 const appEnv = (process.env.APP_ENV || "").toLowerCase();
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+const appUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  process.env.SITE_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "";
 const isStagingLike =
   appEnv === "staging" ||
   appEnv === "preview" ||
@@ -42,35 +44,12 @@ const nextConfig = {
     ],
   },
   async headers() {
-    // Next.js App Router emits inline bootstrap/RSC hydration scripts. Until
-    // the web app moves to a per-request nonce CSP like the admin app, keeping
-    // 'unsafe-inline' here is required for production interactivity.
-    const scriptSrc = isDev
-      ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
-      : "script-src 'self' 'unsafe-inline'";
-    const connectSrc = isDev
-      ? "connect-src 'self' ws: http: https: https://api.stripe.com"
-      : `connect-src 'self' https://api.stripe.com ${sentryConnectSrc}`;
-
-    const csp = [
-      "default-src 'self'",
-      scriptSrc,
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com",
-      // Images are non-executable so a broad `https:` source is the
-      // conventional CSP baseline. This covers imgproxy (user-chosen
-      // IMG_DOMAIN), R2 public CDN, and legacy Cloudinary URLs without
-      // hard-coding hostnames into the CSP.
-      "img-src 'self' data: blob: https:",
-      connectSrc,
-      "frame-src 'self' https://js.stripe.com",
-      "worker-src 'self' blob:",
-    ].join("; ");
-
+    // Content-Security-Policy is emitted per-request from
+    // apps/web/src/middleware.ts (nonce + 'strict-dynamic') so it is
+    // intentionally NOT set here. Setting a static CSP alongside the
+    // dynamic one creates conflicts where browsers take the
+    // intersection and reject the nonce — exactly the weakening this
+    // migration removes.
     const headers = [
       { key: "X-Frame-Options", value: "DENY" },
       { key: "X-Content-Type-Options", value: "nosniff" },
@@ -82,7 +61,6 @@ const nextConfig = {
       { key: "X-DNS-Prefetch-Control", value: "off" },
       { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
       { key: "X-Download-Options", value: "noopen" },
-      { key: "Content-Security-Policy", value: csp },
     ];
     if (isStagingLike) {
       headers.push({ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" });

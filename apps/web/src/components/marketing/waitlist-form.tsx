@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 
 type Target =
   | "MOBILE_IOS"
@@ -68,6 +69,7 @@ export function WaitlistForm({
         const payload = await res.json().catch(() => null);
         throw new Error(payload?.error || "Something went wrong. Please try again.");
       }
+      trackEvent("waitlist_joined", { target, source });
       setState("success");
     } catch (err) {
       setState("error");

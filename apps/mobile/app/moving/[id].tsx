@@ -31,6 +31,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
@@ -55,6 +56,7 @@ export default function MovingDetailScreen() {
   const [stateGuideOpen, setStateGuideOpen] = useState(false);
   const [moveTasks, setMoveTasks] = useState<any[]>([]);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchMigration = useCallback(async (planId: string) => {
     const mRes = await api.get<any>("/api/moving/migration", { planId });
@@ -68,6 +70,10 @@ export default function MovingDetailScreen() {
 
   const fetch_ = useCallback(async () => {
     const res = await api.get<any>(`/api/moving/${id}`);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
     if (res.data) {
       const p = res.data.plan || res.data;
       const normalizedPlan = p ? { ...p, status: normalizeMovingPlanStatus(p.status) } : p;
@@ -77,10 +83,12 @@ export default function MovingDetailScreen() {
         await fetchMoveTasks(normalizedPlan.id);
       }
       if (normalizedPlan?.toAddress?.state) {
-        const srRes = await api.get<any>(`/api/state-rules?state=${encodeURIComponent(normalizedPlan.toAddress.state)}`);
+        const srRes = await api.get<any>("/api/state-rules", { state: normalizedPlan.toAddress.state });
         if (srRes.data?.rules?.length) setStateRules(srRes.data.rules[0]);
       }
+      setError(null);
     }
+    return true;
   }, [id, fetchMigration, fetchMoveTasks]);
 
   const generateMoveTasks = async () => {
@@ -157,14 +165,20 @@ export default function MovingDetailScreen() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetch_();
-    setLoading(false);
+    try {
+      await fetch_();
+    } finally {
+      setLoading(false);
+    }
   }, [fetch_]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetch_();
-    setRefreshing(false);
+    try {
+      await fetch_();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetch_]);
 
   useEffect(() => { load(); }, [load]);
@@ -183,7 +197,7 @@ export default function MovingDetailScreen() {
             router.back();
           } else {
             hapticError();
-            Alert.alert("Error", "Failed to delete plan.");
+            Alert.alert("Error", res.error);
           }
         },
       },
@@ -201,9 +215,11 @@ export default function MovingDetailScreen() {
           <Text style={styles.title}>Not Found</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: theme.colors.textTertiary }}>Plan not found.</Text>
-        </View>
+        <ErrorState
+          title={error ? "Moving plan unavailable" : "Plan not found"}
+          message={error || "This plan may have been removed."}
+          onRetry={load}
+        />
       </SafeAreaView>
     );
   }

@@ -42,8 +42,8 @@ export default function SignInScreen() {
       .catch(() => setOauthProviders(null));
   }, []);
 
-  const googleReady = oauthProviders?.google?.configured ?? true;
-  const appleReady = oauthProviders?.apple?.configured ?? true;
+  const googleReady = oauthProviders?.google?.configured === true;
+  const appleReady = oauthProviders?.apple?.configured === true;
   const showOAuthReadinessNote =
     Boolean(oauthProviders) && (!googleReady || !appleReady);
 
@@ -74,17 +74,31 @@ export default function SignInScreen() {
 
     await setSession(res.data.token, res.data.user);
     hapticSuccess();
-    registerForPushNotifications().catch(() => {});
     router.replace("/(tabs)");
   };
 
-  const openOAuth = (provider: "google" | "apple") => {
-    // OAuth on mobile hands off to an in-app browser. The server sets a session
-    // cookie at the end of the flow, which the WebView/browser can carry back
-    // via the expo-web-browser auth-session return URL. For simplicity in MVP
-    // we open the web URL and exchange the returned mobile code.
-    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
-    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
+  const openOAuth = async (provider: OAuthProvider) => {
+    setOauthLoading(provider);
+    setError("");
+    try {
+      const result = await startMobileOAuthSession(provider, setSession);
+      if (result.cancelled) {
+        return;
+      }
+      if (!result.success) {
+        setError(result.error || t("auth.invalid"));
+        hapticError();
+        return;
+      }
+      hapticSuccess();
+      void registerForPushNotifications().catch(() => null);
+      router.replace("/onboarding");
+    } catch (err: any) {
+      setError(err?.message || t("auth.invalid"));
+      hapticError();
+    } finally {
+      setOauthLoading(null);
+    }
   };
 
   return (

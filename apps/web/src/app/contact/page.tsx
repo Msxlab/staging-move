@@ -16,9 +16,9 @@ const contactPaths = [
   {
     icon: HelpCircle,
     title: "Product help",
-    description: "Browse guides and FAQs for onboarding, services, addresses, and moving workflows.",
-    href: "/help",
-    label: "Open Help Center",
+    description: "Browse public FAQs for onboarding, services, addresses, and moving workflows.",
+    href: "/faq",
+    label: "Read the FAQ",
   },
   {
     icon: KeyRound,
@@ -68,7 +68,7 @@ export default function ContactPage() {
 
       <PublicSection title="Fastest support routes">
         <p>
-          The fastest way to get help is usually through the Help Center for guidance, or by signing in if your request is tied to your specific account, subscription, or saved relocation data.
+          The fastest way to get help is usually through the public FAQ for general guidance, or by signing in if your request is tied to your specific account, subscription, or saved relocation data.
         </p>
       </PublicSection>
 
@@ -81,11 +81,11 @@ export default function ContactPage() {
       <div className="rounded-2xl border bg-background p-6">
         <h2 className="text-xl font-semibold text-foreground">Need to jump in right now?</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Start with Help Center articles or open the app directly to continue onboarding and manage your move.
+          Start with the public FAQ or open the app directly to continue onboarding and manage your move.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
-          <Link href="/help">
-            <Button variant="outline">Help Center</Button>
+          <Link href="/faq">
+            <Button variant="outline">FAQ</Button>
           </Link>
           <Link href="/onboarding">
             <Button>

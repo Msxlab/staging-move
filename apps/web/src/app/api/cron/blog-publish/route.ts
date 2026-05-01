@@ -16,17 +16,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { pingIndexNow } from "@/lib/blog/indexnow";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 function unauthorized(req: NextRequest): boolean {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) return true;
   // Accept either `Authorization: Bearer <secret>` (Ofelia cron — see
   // docker/ofelia.ini) or `x-cron-secret` (manual ops triggers). The
   // bearer form is the canonical one used by every other cron route.
-  const auth = req.headers.get("authorization") ?? "";
-  if (auth === `Bearer ${expected}`) return false;
-  const provided = req.headers.get("x-cron-secret") ?? "";
-  return provided !== expected;
+  // Both go through the constant-time comparator in verifyInternalAuth
+  // so neither path leaks timing.
+  const xCronSecret = req.headers.get("x-cron-secret");
+  const authHeader = req.headers.get("authorization");
+  const effective = authHeader || (xCronSecret ? `Bearer ${xCronSecret}` : null);
+  return !verifyInternalAuth(effective, "cron");
 }
 
 export async function POST(req: NextRequest) {

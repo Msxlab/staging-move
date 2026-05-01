@@ -212,10 +212,11 @@ describe("acquisition campaign helpers", () => {
     const freeAccess = getMinimalNotificationSchedule("FREE_ACCESS");
     const paidAnnual = getMinimalNotificationSchedule("PAID_ANNUAL");
 
-    expect(freeTrial.map((entry) => entry.daysBefore)).toEqual([null, 7, 1, null, null]);
+    const freeTrialDays = freeTrial.map((entry): number | null => entry.daysBefore);
+    expect(freeTrialDays).toEqual([null, 7, 1, null, null]);
     expect(freeAccess.map((entry) => entry.daysBefore)).toEqual([null, 7, 0]);
     expect(paidAnnual.map((entry) => entry.daysBefore)).toEqual([30, null, null]);
     expect([...freeTrial, ...freeAccess, ...paidAnnual].every((entry) => !entry.mentionsRefund)).toBe(true);
-    expect(freeTrial.some((entry) => entry.daysBefore === 21 || entry.daysBefore === 3)).toBe(false);
+    expect(freeTrialDays.some((daysBefore) => daysBefore === 21 || daysBefore === 3)).toBe(false);
   });
 });

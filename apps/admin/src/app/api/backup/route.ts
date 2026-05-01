@@ -5,6 +5,8 @@ import { createBackupArchive } from "@/lib/backup-archive";
 import {
   BACKUP_TABLE_ORDER,
   BACKUP_TABLES,
+  fetchAllRecords,
+  MAX_BACKUP_ROWS_PER_TABLE,
   normalizeBackupTables,
 } from "@/lib/backup-tables";
 import {
@@ -24,96 +26,35 @@ import {
 } from "@/lib/backup-policy";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 
-const BACKUP_TABLE_OPS = {
-  users: {
-    count: () => prisma.user.count(),
-    findRecords: () => prisma.user.findMany({ take: 50000 }),
-  },
-  oauthAccounts: {
-    count: () => prisma.oAuthAccount.count(),
-    findRecords: () => prisma.oAuthAccount.findMany({ take: 50000 }),
-  },
-  profiles: {
-    count: () => prisma.profile.count(),
-    findRecords: () => prisma.profile.findMany({ take: 50000 }),
-  },
-  dataConsents: {
-    count: () => prisma.dataConsent.count(),
-    findRecords: () => prisma.dataConsent.findMany({ take: 50000 }),
-  },
-  providers: {
-    count: () => prisma.serviceProvider.count(),
-    findRecords: () => prisma.serviceProvider.findMany({ take: 50000 }),
-  },
-  providerLogoCandidates: {
-    count: () => prisma.providerLogoCandidate.count(),
-    findRecords: () => prisma.providerLogoCandidate.findMany({ take: 50000 }),
-  },
-  providerCoverages: {
-    count: () => prisma.serviceProviderCoverage.count(),
-    findRecords: () => prisma.serviceProviderCoverage.findMany({ take: 50000 }),
-  },
-  addresses: {
-    count: () => prisma.address.count(),
-    findRecords: () => prisma.address.findMany({ take: 50000 }),
-  },
-  services: {
-    count: () => prisma.service.count(),
-    findRecords: () => prisma.service.findMany({ take: 50000 }),
-  },
-  movingPlans: {
-    count: () => prisma.movingPlan.count(),
-    findRecords: () => prisma.movingPlan.findMany({ take: 50000 }),
-  },
-  customProviders: {
-    count: () => prisma.userCustomProvider.count(),
-    findRecords: () => prisma.userCustomProvider.findMany({ take: 50000 }),
-  },
-  budgets: {
-    count: () => prisma.budget.count(),
-    findRecords: () => prisma.budget.findMany({ take: 50000 }),
-  },
-  subscriptions: {
-    count: () => prisma.subscription.count(),
-    findRecords: () => prisma.subscription.findMany({ take: 50000 }),
-  },
-  auditLogs: {
-    count: () => prisma.auditLog.count(),
-    findRecords: () => prisma.auditLog.findMany({ take: 50000 }),
-  },
-  notifications: {
-    count: () => prisma.notification.count(),
-    findRecords: () => prisma.notification.findMany({ take: 50000 }),
-  },
-  emailLogs: {
-    count: () => prisma.emailLog.count(),
-    findRecords: () => prisma.emailLog.findMany({ take: 50000 }),
-  },
-  moveTasks: {
-    count: () => prisma.moveTask.count(),
-    findRecords: () => prisma.moveTask.findMany({ take: 50000 }),
-  },
-  providerGovernanceIssues: {
-    count: () => prisma.providerGovernanceIssue.count(),
-    findRecords: () => prisma.providerGovernanceIssue.findMany({ take: 50000 }),
-  },
-  adminUsers: {
-    count: () => prisma.adminUser.count(),
-    findRecords: () => prisma.adminUser.findMany({ take: 50000 }),
-  },
-  adminPermissions: {
-    count: () => prisma.adminPermission.count(),
-    findRecords: () => prisma.adminPermission.findMany({ take: 50000 }),
-  },
-  adminLoginLogs: {
-    count: () => prisma.adminLoginLog.count(),
-    findRecords: () => prisma.adminLoginLog.findMany({ take: 50000 }),
-  },
-  adminAuditLogs: {
-    count: () => prisma.adminAuditLog.count(),
-    findRecords: () => prisma.adminAuditLog.findMany({ take: 50000 }),
-  },
-} as const;
+// Per-table count helpers. Record fetching is centralized in
+// `fetchAllRecords` from backup-tables.ts so the manual and cron paths
+// share the same paginated, ceiling-aware logic. Counts stay here
+// because they are model-specific Prisma calls and the registry is
+// intentionally framework-agnostic.
+const BACKUP_TABLE_COUNTS: Record<string, () => Promise<number>> = {
+  users: () => prisma.user.count(),
+  oauthAccounts: () => prisma.oAuthAccount.count(),
+  profiles: () => prisma.profile.count(),
+  dataConsents: () => prisma.dataConsent.count(),
+  providers: () => prisma.serviceProvider.count(),
+  providerLogoCandidates: () => prisma.providerLogoCandidate.count(),
+  providerCoverages: () => prisma.serviceProviderCoverage.count(),
+  addresses: () => prisma.address.count(),
+  services: () => prisma.service.count(),
+  movingPlans: () => prisma.movingPlan.count(),
+  customProviders: () => prisma.userCustomProvider.count(),
+  budgets: () => prisma.budget.count(),
+  subscriptions: () => prisma.subscription.count(),
+  auditLogs: () => prisma.auditLog.count(),
+  notifications: () => prisma.notification.count(),
+  emailLogs: () => prisma.emailLog.count(),
+  moveTasks: () => prisma.moveTask.count(),
+  providerGovernanceIssues: () => prisma.providerGovernanceIssue.count(),
+  adminUsers: () => prisma.adminUser.count(),
+  adminPermissions: () => prisma.adminPermission.count(),
+  adminLoginLogs: () => prisma.adminLoginLog.count(),
+  adminAuditLogs: () => prisma.adminAuditLog.count(),
+};
 
 function normalizeBackupRecord(backup: any, createdByLabel?: string) {
   const metadata = parseBackupRecordMetadata(backup.errorMessage);
@@ -167,8 +108,8 @@ export async function GET() {
     const stats: Record<string, number> = {};
     for (const key of BACKUP_TABLE_ORDER) {
       try {
-        const tableOps = BACKUP_TABLE_OPS[key as keyof typeof BACKUP_TABLE_OPS];
-        stats[key] = tableOps ? await tableOps.count() : 0;
+        const counter = BACKUP_TABLE_COUNTS[key];
+        stats[key] = counter ? await counter() : 0;
       } catch {
         stats[key] = 0;
       }
@@ -252,28 +193,36 @@ export async function POST(request: NextRequest) {
     backupId = backup.id;
     requireBackupCrypto(archivePolicy);
 
-    // Collect data
+    // Collect data via the central paginated fetcher. Any table that
+    // hits the per-table ceiling is recorded in `truncatedTables` so
+    // the resulting BackupRecord can be flagged PARTIAL — silent
+    // truncation past 50k rows was the bug this fixes.
     const backupData: Record<string, any[]> = {};
     const tableCounts: Record<string, number> = {};
+    const truncatedTables: string[] = [];
     let totalRecords = 0;
 
     for (const tableName of selectedTables) {
-      const tableOps =
-        BACKUP_TABLE_OPS[tableName as keyof typeof BACKUP_TABLE_OPS];
-      if (!tableOps) continue;
       try {
-        const records = await tableOps.findRecords();
-        backupData[tableName] = records;
-        tableCounts[tableName] = records.length;
-        totalRecords += records.length;
+        const result = await fetchAllRecords(prisma as any, tableName);
+        backupData[tableName] = result.records;
+        tableCounts[tableName] = result.fetched;
+        totalRecords += result.fetched;
+        if (result.truncated) truncatedTables.push(tableName);
       } catch (err) {
         console.error(`Failed to backup table ${tableName}:`, err);
         backupData[tableName] = [];
         tableCounts[tableName] = 0;
       }
     }
+    // If any table was truncated by the per-table ceiling, downgrade
+    // the type label so the operator sees PARTIAL instead of FULL.
+    const effectiveType = truncatedTables.length > 0 ? "PARTIAL" : type;
 
-    // Create JSON content
+    // Create JSON content. The archive metadata reflects the EFFECTIVE
+    // type — if any table was truncated by the per-table ceiling, the
+    // archive must label itself PARTIAL so a downstream restore drill
+    // can't be misled by the "FULL" in the filename.
     const createdAt = new Date();
     const createdAtIso = createdAt.toISOString();
     const content = JSON.stringify(
@@ -281,10 +230,12 @@ export async function POST(request: NextRequest) {
         metadata: {
           createdAt: createdAtIso,
           createdBy: session.email,
-          type,
+          type: effectiveType,
+          requestedType: type,
           format,
           tables: selectedTables,
           totalRecords,
+          truncatedTables,
         },
         data: backupData,
       },
@@ -292,7 +243,7 @@ export async function POST(request: NextRequest) {
       2,
     );
 
-    const fileName = `backup-${type.toLowerCase()}-${createdAtIso.slice(0, 10)}-${backup.id}.json`;
+    const fileName = `backup-${effectiveType.toLowerCase()}-${createdAtIso.slice(0, 10)}-${backup.id}.json`;
 
     // Encrypt backup data with AES-256-GCM
     const encrypted = encryptBackup(content);
@@ -308,11 +259,12 @@ export async function POST(request: NextRequest) {
         fileName,
         createdAt: createdAtIso,
         createdBy: session.email,
-        type,
+        type: effectiveType,
         format,
         tables: selectedTables,
         totalRecords,
         tableCounts,
+        truncatedTables,
       },
       rawContent: content,
       signature,
@@ -336,13 +288,18 @@ export async function POST(request: NextRequest) {
         totalRecords,
         tableCounts,
         archiveSizeWarning: sizeEvaluation.warning,
+        truncatedTables: truncatedTables.length > 0 ? truncatedTables : undefined,
+        maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
       },
     });
 
-    // Update backup record
+    // Update backup record. The `type` column is rewritten to the
+    // effective value so a list of historical backups doesn't show a
+    // truncated archive as "FULL".
     await prisma.backupRecord.update({
       where: { id: backup.id },
       data: {
+        type: effectiveType,
         status: "COMPLETED",
         fileName,
         fileSize,
@@ -360,7 +317,9 @@ export async function POST(request: NextRequest) {
         entityType: "BackupRecord",
         entityId: backup.id,
         changes: JSON.stringify({
-          type,
+          type: effectiveType,
+          requestedType: type,
+          truncatedTables,
           tables: selectedTables,
           recordCount: totalRecords,
           fileSize,
@@ -384,6 +343,7 @@ export async function POST(request: NextRequest) {
         backup: normalizeBackupRecord(
           {
             ...backup,
+            type: effectiveType,
             status: "COMPLETED",
             fileName,
             fileSize,
@@ -402,6 +362,8 @@ export async function POST(request: NextRequest) {
         isEncrypted: !!encrypted,
         offsite,
         archiveSizeWarning: sizeEvaluation.warning,
+        truncatedTables,
+        partial: truncatedTables.length > 0,
       },
       { status: 201 },
     );

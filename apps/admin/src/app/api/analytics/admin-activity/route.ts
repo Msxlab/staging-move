@@ -17,7 +17,13 @@ export async function GET(request: NextRequest) {
       _count: { id: true },
     });
 
-    const adminIds = adminActions.map((a) => a.adminUserId);
+    // adminUserId is nullable post-P0-2: when an admin is deleted, the
+    // audit row's FK is set to null instead of cascading. Filter the
+    // orphans out here — they bucket under "Deleted admin" in the
+    // per-admin breakdown rather than crashing the lookup.
+    const adminIds = adminActions
+      .map((a) => a.adminUserId)
+      .filter((id): id is string => Boolean(id));
     const admins = await prisma.adminUser.findMany({
       where: { id: { in: adminIds } },
       select: { id: true, email: true, firstName: true, lastName: true, role: true, lastLoginAt: true },
@@ -25,10 +31,22 @@ export async function GET(request: NextRequest) {
     const adminMap = new Map(admins.map((a) => [a.id, a]));
 
     const perAdmin = adminActions
-      .map((a) => ({
-        admin: adminMap.get(a.adminUserId) || { id: a.adminUserId, email: "Unknown", firstName: "?", lastName: "?", role: "?" },
-        actions: a._count.id,
-      }))
+      .map((a) => {
+        const adminId = a.adminUserId;
+        const admin = adminId ? adminMap.get(adminId) : undefined;
+        return {
+          admin:
+            admin ||
+            {
+              id: adminId || "deleted",
+              email: adminId ? "Unknown" : "Deleted admin",
+              firstName: "?",
+              lastName: "?",
+              role: "?",
+            },
+          actions: a._count.id,
+        };
+      })
       .sort((a, b) => b.actions - a.actions);
 
     // ── Action type breakdown (last 30d) ────────────────────

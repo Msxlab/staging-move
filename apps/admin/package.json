@@ -6,7 +6,7 @@
     "dev": "next dev -H 0.0.0.0 -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },

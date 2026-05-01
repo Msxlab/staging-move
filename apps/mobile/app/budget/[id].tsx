@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function BudgetDetailScreen() {
@@ -28,6 +29,7 @@ export default function BudgetDetailScreen() {
   const [budget, setBudget] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fmt = (n: number) =>
     new Intl.NumberFormat(i18n.language || "en", {
@@ -37,24 +39,37 @@ export default function BudgetDetailScreen() {
     }).format(n);
 
   const fetchBudget = useCallback(async () => {
-    const res = await api.get<any>(`/api/budget?id=${id}`);
-    if (res.data?.budgets?.length) {
-      setBudget(res.data.budgets[0]);
-    } else if (res.data?.budget) {
-      setBudget(res.data.budget);
+    const res = await api.get<any>("/api/budget", { id });
+    if (res.error) {
+      setError(res.error);
+      return false;
     }
+    if (res.data?.budget) {
+      setBudget(res.data.budget);
+      setError(null);
+    } else if (res.data?.budgets?.length) {
+      setBudget(res.data.budgets.find((item: any) => item.id === id) || null);
+      setError(null);
+    }
+    return true;
   }, [id]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchBudget();
-    setLoading(false);
+    try {
+      await fetchBudget();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchBudget]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchBudget();
-    setRefreshing(false);
+    try {
+      await fetchBudget();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchBudget]);
 
   useEffect(() => { load(); }, [load]);
@@ -71,9 +86,11 @@ export default function BudgetDetailScreen() {
           <Text style={styles.title}>Budget</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: theme.colors.textTertiary }}>Budget not found.</Text>
-        </View>
+        <ErrorState
+          title={error ? "Budget unavailable" : "Budget not found"}
+          message={error || "This budget may have been removed."}
+          onRetry={load}
+        />
       </SafeAreaView>
     );
   }

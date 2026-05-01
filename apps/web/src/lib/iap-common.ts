@@ -161,11 +161,22 @@ export async function applyIapStateToUser(opts: {
     lastSyncedAt: now,
   } as const;
 
-  return prisma.subscription.upsert({
-    where: { userId },
-    create: { userId, ...data },
-    update: data,
-  });
+  try {
+    return await prisma.subscription.upsert({
+      where: { userId },
+      create: { userId, ...data },
+      update: data,
+    });
+  } catch (error: any) {
+    if (
+      error?.code === "P2002" &&
+      Array.isArray(error?.meta?.target) &&
+      error.meta.target.includes("originalTransactionId")
+    ) {
+      throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
+    }
+    throw error;
+  }
 }
 
 /**

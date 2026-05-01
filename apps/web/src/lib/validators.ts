@@ -17,6 +17,15 @@ export const profileSchema = z.strictObject({
   needsStorage: z.boolean().default(false),
   hasSenior: z.boolean().default(false),
   hasDisability: z.boolean().default(false),
+  moveType: z.enum(["PERSONAL", "BUSINESS", "VACATION"]).default("PERSONAL"),
+  isBusinessOwner: z.boolean().default(false),
+  isImmigrant: z.boolean().default(false),
+  immigrationStatus: z
+    .union([
+      z.enum(["CITIZEN", "GREEN_CARD", "H1B", "L1", "F1", "OTHER_VISA"]),
+      z.literal(""),
+    ])
+    .default(""),
 });
 
 export type ProfileFormData = z.infer<typeof profileSchema>;

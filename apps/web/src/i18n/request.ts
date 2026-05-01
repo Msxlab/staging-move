@@ -7,8 +7,10 @@ import { LOCALE_COOKIE, resolveLocale } from "./config";
  *
  * We use COOKIE-BASED locale selection, not path-based
  * (`/en/...` vs `/es/...`). URL cleanliness wins for our audience;
- * SEO discoverability is handled via `<link rel="alternate" hreflang>`
- * tags on marketing pages. The locale resolves from:
+ * SEO hreflang should only be emitted for real alternate URLs. Today
+ * that is limited to localized blog URLs; marketing pages should not
+ * claim cookie-localized alternates until path-based locale URLs exist.
+ * The locale resolves from:
  *
  *   1. `NEXT_LOCALE` cookie (explicit user choice, persisted 1 year)
  *   2. `Accept-Language` request header (first-visit auto-detect)

@@ -14,17 +14,20 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { verifyInternalAuth } from "@/lib/internal-secrets";
 
 const VIEW_RETENTION_DAYS = 90;
 const REVISION_RETENTION_DAYS = 90;
 const DELETE_BATCH_SIZE = 10_000;
 
 function unauthorized(req: NextRequest): boolean {
-  const expected = process.env.CRON_SECRET;
-  if (!expected) return true;
-  const auth = req.headers.get("authorization") ?? "";
-  if (auth === `Bearer ${expected}`) return false;
-  return (req.headers.get("x-cron-secret") ?? "") !== expected;
+  // Constant-time check via verifyInternalAuth, mirroring every other
+  // cron route. Accepts the canonical `Authorization: Bearer <secret>`
+  // or the legacy `x-cron-secret` header.
+  const xCronSecret = req.headers.get("x-cron-secret");
+  const authHeader = req.headers.get("authorization");
+  const effective = authHeader || (xCronSecret ? `Bearer ${xCronSecret}` : null);
+  return !verifyInternalAuth(effective, "cron");
 }
 
 export async function GET(req: NextRequest) {

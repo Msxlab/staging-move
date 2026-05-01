@@ -28,6 +28,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { Button } from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface FAQ {
   id: string;
@@ -53,25 +54,38 @@ export default function HelpScreen() {
   const [search, setSearch] = useState("");
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<HelpArticle | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchHelp = useCallback(async () => {
     const res = await api.get<any>("/api/help");
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
     if (res.data) {
       setFaqs(res.data.faqs || []);
       setArticles(res.data.articles || []);
+      setError(null);
     }
+    return true;
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchHelp();
-    setLoading(false);
+    try {
+      await fetchHelp();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchHelp]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchHelp();
-    setRefreshing(false);
+    try {
+      await fetchHelp();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchHelp]);
 
   useEffect(() => { load(); }, [load]);
@@ -158,13 +172,17 @@ export default function HelpScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
+        {error ? (
+          <ErrorState title="Help unavailable" message={error} onRetry={load} />
+        ) : null}
+
         {/* Quick Actions */}
         <View style={styles.quickRow}>
           <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={handleContactUs}>
             <ExternalLink size={20} color={theme.colors.accent} />
             <Text style={styles.quickLabel}>{t("help.contact")}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={() => router.push("/help/tickets" as any)}>
+          <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={() => router.push("/help/tickets")}>
             <Ticket size={20} color={theme.colors.primary} />
             <Text style={styles.quickLabel}>{t("common.details")}</Text>
           </TouchableOpacity>

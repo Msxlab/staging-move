@@ -1,11 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, generateFingerprint, hashSessionToken } from "@/lib/auth";
 import { trackFailedLogin, trackSuccessfulLogin } from "@/lib/security-monitor";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
 import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
+
+// Body validation. The password length cap is bcrypt's effective input
+// limit (72 bytes) — anything longer is silently truncated by bcrypt
+// itself, so accepting longer input is both useless and a CPU-DoS
+// surface (callers could pass MB of "password" to burn CPU). The MFA
+// fields are mutually exclusive at the application layer; here we just
+// constrain shape so a corrupt request can't crash the route.
+const adminLoginSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email().max(254),
+    password: z.string().min(1).max(72),
+    mfaCode: z
+      .string()
+      .regex(/^\d{6}$/)
+      .optional(),
+    backupCode: z
+      .string()
+      .trim()
+      .min(8)
+      .max(16)
+      .optional(),
+  })
+  .strict();
 
 function parseLoginUA(ua: string) {
   const result = { browser: "Unknown", os: "Unknown", deviceType: "Desktop" };
@@ -211,11 +235,20 @@ function checkLoginRateLimitMemory(ip: string): { allowed: boolean; retryAfterSe
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, mfaCode, backupCode } = await request.json();
-
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
+
+    const parsed = adminLoginSchema.safeParse(body);
+    if (!parsed.success) {
+      // Generic message on shape failure — don't echo back the validator's
+      // path/issue list, which would leak the schema.
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 400 });
+    }
+    const { email, password, mfaCode, backupCode } = parsed.data;
 
     // SEC-005: Rate limiting
     const ip = resolveClientIP(request);
@@ -291,9 +324,18 @@ export async function POST(request: NextRequest) {
       if (mfaCode) {
         mfaValid = verifyTOTP(secret, mfaCode);
       } else if (backupCode) {
-        // Verify and consume backup code
+        // Verify and consume backup code. The DB column is a JSON string
+        // of hashes; if the row got corrupted (manual edit, partial
+        // migration), fall through to "invalid backup code" instead of
+        // crashing the whole login route.
         const originalBackupCodes = (admin as any).mfaBackupCodes || "[]";
-        const storedHashes: string[] = JSON.parse(originalBackupCodes);
+        let storedHashes: string[] = [];
+        try {
+          const decoded = JSON.parse(originalBackupCodes);
+          if (Array.isArray(decoded)) storedHashes = decoded.filter((h) => typeof h === "string");
+        } catch {
+          storedHashes = [];
+        }
         const matchIndex = await verifyBackupCode(backupCode, storedHashes);
         if (matchIndex >= 0) {
           // Remove used backup code

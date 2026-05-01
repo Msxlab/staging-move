@@ -37,6 +37,7 @@ import {
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import {
@@ -101,6 +102,7 @@ export default function ServicesScreen() {
   const [editingCost, setEditingCost] = useState<string | null>(null);
   const [costValue, setCostValue] = useState("");
   const [savingCost, setSavingCost] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
 
@@ -118,7 +120,7 @@ export default function ServicesScreen() {
     } else {
       setEditingCost(null);
       setCostValue("");
-      fetchServices();
+      void fetchServices();
     }
   };
 
@@ -127,10 +129,15 @@ export default function ServicesScreen() {
       api.get<any>("/api/services", selectedAddressId ? { addressId: selectedAddressId } : undefined),
       api.get<any>("/api/addresses"),
     ]);
+    if (servicesRes.error || addressesRes.error) {
+      setError(servicesRes.error || addressesRes.error || "Could not load services.");
+      return false;
+    }
     const svcs = servicesRes.data?.services || [];
     const nextAddresses = addressesRes.data?.addresses || [];
     setServices(svcs);
     setAddresses(nextAddresses);
+    setError(null);
 
     if (nextAddresses.length === 0) {
       setSelectedAddressId(null);
@@ -181,18 +188,25 @@ export default function ServicesScreen() {
         setChecklist(null);
       }
     } catch { /* non-blocking */ }
+    return true;
   }, [addressFilterInitialized, requestedAddressId, selectedAddressId]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchServices();
-    setLoading(false);
+    try {
+      await fetchServices();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchServices]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchServices();
-    setRefreshing(false);
+    try {
+      await fetchServices();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchServices]);
 
   useEffect(() => { load(); }, [load]);
@@ -217,7 +231,7 @@ export default function ServicesScreen() {
         </View>
         <TouchableOpacity
           style={[styles.addButton, addresses.length === 0 && { opacity: 0.5 }]}
-          onPress={() => router.push(selectedAddressId ? ({ pathname: "/services/new", params: { addressId: selectedAddressId } } as any) : ("/services/new" as any))}
+          onPress={() => router.push(selectedAddressId ? { pathname: "/services/new", params: { addressId: selectedAddressId } } : "/services/new")}
           disabled={addresses.length === 0}
           activeOpacity={0.7}
         >
@@ -357,7 +371,7 @@ export default function ServicesScreen() {
               {checklist.nextAction && !checklist.nextAction.isCompleted && (
                 <TouchableOpacity
                   style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 8, paddingVertical: 10, borderRadius: 10, backgroundColor: theme.colors.primary }}
-                  onPress={() => router.push("/services/new" as any)}
+                  onPress={() => router.push("/services/new")}
                   activeOpacity={0.7}
                 >
                   <Text style={{ fontSize: 13, fontWeight: "600", color: "#fff" }}>Add Next Service</Text>
@@ -368,18 +382,20 @@ export default function ServicesScreen() {
           );
         })()}
 
-        {filtered.length === 0 ? (
+        {error && services.length === 0 ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : filtered.length === 0 ? (
           <EmptyState
             icon={<Zap size={32} color={theme.colors.primary} />}
             title={filterCat ? "No services in this category" : "No services yet"}
             description="Add services to track your subscriptions and expenses."
             actionLabel="Add Service"
-            onAction={() => router.push("/services/new" as any)}
+            onAction={() => router.push("/services/new")}
           />
         ) : (
           <View style={styles.list}>
             {filtered.map((service: any) => (
-              <Card key={service.id} variant="default" onPress={() => editingCost !== service.id && router.push(`/services/${service.id}` as any)}>
+              <Card key={service.id} variant="default" onPress={() => editingCost !== service.id && router.push({ pathname: "/services/[id]", params: { id: service.id } })}>
                 <View style={styles.serviceTop}>
                   <View style={[styles.catDot, { backgroundColor: getServiceCategoryColor(service.category) + "30", borderColor: getServiceCategoryColor(service.category) + "50" }]}>
                     <Text style={styles.catIcon}>{getServiceCategoryIcon(service.category)}</Text>

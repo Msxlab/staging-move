@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -10,6 +11,17 @@ import { QueryProvider } from "@/components/query-provider";
 import { SessionTracker } from "@/components/tracking/session-tracker";
 import CookieConsent from "@/components/shared/cookie-consent";
 import { SiteSchemas } from "@/components/seo/site-schemas";
+import { GoogleAnalytics } from "@/components/tracking/google-analytics";
+import {
+  DEFAULT_OG_IMAGE,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  absoluteUrl,
+  getCanonicalSiteUrl,
+  getGoogleSiteVerification,
+  isNoIndexEnvironment,
+} from "@/lib/seo";
 
 // Edition VI · Geist for UI, Fraunces variable for display, Geist Mono for meta.
 // `display: "swap"` so the umber canvas paints immediately and Fraunces
@@ -40,21 +52,17 @@ const fraunces = Fraunces({
   fallback: ["Didot", "Georgia", "serif"],
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app";
-const APP_ENV = (process.env.APP_ENV || "").toLowerCase();
-const BLOCK_INDEXING =
-  APP_ENV === "staging" ||
-  APP_ENV === "preview" ||
-  /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i.test(SITE_URL);
+const SITE_URL = getCanonicalSiteUrl();
+const BLOCK_INDEXING = isNoIndexEnvironment(SITE_URL);
+const GOOGLE_SITE_VERIFICATION = getGoogleSiteVerification();
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "LocateFlow — Every provider tied to your address, in one place",
-    template: "%s · LocateFlow",
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Track every utility, bank, insurance, and subscription tied to each of your homes. Smart reminders, document OCR, and a one-click moving checklist when you relocate.",
+  description: SITE_DESCRIPTION,
   keywords: [
     "address management",
     "service provider tracker",
@@ -65,38 +73,30 @@ export const metadata: Metadata = {
     "household services",
     "relocation",
   ],
-  applicationName: "LocateFlow",
-  authors: [{ name: "LocateFlow" }],
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME }],
+  verification: GOOGLE_SITE_VERIFICATION
+    ? { google: GOOGLE_SITE_VERIFICATION }
+    : undefined,
   alternates: {
-    canonical: SITE_URL,
-    // The site is cookie-localized (one URL serves both languages),
-    // so each `hreflang` points back to the same canonical with a
-    // locale hint via cookie. `x-default` mirrors English so Google
-    // picks a sane fallback for unmapped regions.
-    languages: {
-      "en-US": SITE_URL,
-      "es-US": SITE_URL,
-      "x-default": SITE_URL,
-    },
+    canonical: "/",
   },
   openGraph: {
     type: "website",
-    url: SITE_URL,
-    siteName: "LocateFlow",
-    title: "LocateFlow — Every provider tied to your address, in one place",
-    description:
-      "Track every utility, bank, insurance, and subscription tied to each of your homes. One dashboard. Smart reminders. Never lose track again.",
+    url: absoluteUrl("/"),
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: [
-      { url: "/og-image.svg", width: 1200, height: 630, alt: "LocateFlow" },
+      { url: absoluteUrl(DEFAULT_OG_IMAGE), width: 1200, height: 630, alt: SITE_NAME },
     ],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "LocateFlow — Every provider tied to your address, in one place",
-    description:
-      "Track every utility, bank, insurance, and subscription tied to each of your homes.",
-    images: ["/og-image.svg"],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [absoluteUrl(DEFAULT_OG_IMAGE)],
   },
   robots: BLOCK_INDEXING
     ? {
@@ -129,6 +129,13 @@ export default async function RootLayout({
   // screen readers and Google's language detection agree with the UI.
   const locale = await getLocale();
   const messages = await getMessages();
+  // Per-request CSP nonce stamped by middleware. Any external script we
+  // emit ourselves (the register-sw bootstrap below) needs this nonce
+  // because the production CSP uses 'strict-dynamic' — the source list
+  // is ignored for non-nonced scripts. JSON-LD <script type="application/ld+json">
+  // tags are exempt from script-src per the CSP spec, so they don't
+  // need a nonce.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
@@ -154,13 +161,14 @@ export default async function RootLayout({
           <QueryProvider>
             <ThemeProvider>
               <SessionTracker />
+              <GoogleAnalytics nonce={nonce} />
               {children}
               <Toaster position="top-right" richColors />
-              <CookieConsent />
+              <CookieConsent analyticsNonce={nonce} />
             </ThemeProvider>
           </QueryProvider>
         </NextIntlClientProvider>
-        <script src="/register-sw.js" defer />
+        <script src="/register-sw.js" defer nonce={nonce} />
       </body>
     </html>
   );

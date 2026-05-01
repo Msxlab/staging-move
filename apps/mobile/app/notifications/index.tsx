@@ -6,6 +6,7 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,6 +14,7 @@ import { ArrowLeft, Bell, CheckCheck } from "lucide-react-native";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 interface FeedNotification {
@@ -32,41 +34,62 @@ export default function NotificationsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchFeed = useCallback(async () => {
     const res = await api.get<any>("/api/notifications/feed");
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
     if (res.data) {
       setNotifications(res.data.notifications || []);
       setUnreadCount(res.data.unreadCount || 0);
+      setError(null);
     }
+    return true;
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchFeed();
-    setLoading(false);
+    try {
+      await fetchFeed();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchFeed]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchFeed();
-    setRefreshing(false);
+    try {
+      await fetchFeed();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchFeed]);
 
   useEffect(() => { load(); }, [load]);
 
   const markRead = async (id: string) => {
-    await api.patch(`/api/notifications/feed/${id}`, {});
+    const res = await api.patch(`/api/notifications/feed/${id}`, {});
+    if (res.error) {
+      Alert.alert("Notifications", res.error);
+      return;
+    }
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     setUnreadCount((c) => Math.max(0, c - 1));
   };
 
   const markAllRead = async () => {
     setMarkingAll(true);
-    await api.patch("/api/notifications/feed?action=read-all", {});
+    const res = await api.patch("/api/notifications/feed?action=read-all", {});
+    setMarkingAll(false);
+    if (res.error) {
+      Alert.alert("Notifications", res.error);
+      return;
+    }
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
-    setMarkingAll(false);
   };
 
   if (loading) return <LoadingScreen />;
@@ -96,7 +119,9 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
-        {notifications.length === 0 ? (
+        {error && notifications.length === 0 ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : notifications.length === 0 ? (
           <Card variant="default" style={{ alignItems: "center", paddingVertical: 40 }}>
             <Bell size={32} color={theme.colors.textMuted} />
             <Text style={styles.emptyTitle}>No notifications</Text>

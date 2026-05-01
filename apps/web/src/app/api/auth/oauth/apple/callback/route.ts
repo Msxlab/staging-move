@@ -24,11 +24,15 @@ import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-r
 import { z } from "zod";
 import {
   MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE,
   MOBILE_OAUTH_REDIRECT_COOKIE,
+  MOBILE_OAUTH_STATE_COOKIE,
   buildMobileOAuthRedirectUrl,
   createMobileOAuthExchangeCode,
   isMobileOAuthClient,
+  normalizeMobileOAuthCodeChallenge,
   normalizeMobileOAuthRedirectUri,
+  normalizeMobileOAuthState,
 } from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
@@ -53,6 +57,8 @@ function clearAppleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_redirect");
   response.cookies.delete(MOBILE_OAUTH_CLIENT_COOKIE);
   response.cookies.delete(MOBILE_OAUTH_REDIRECT_COOKIE);
+  response.cookies.delete(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE);
+  response.cookies.delete(MOBILE_OAUTH_STATE_COOKIE);
   response.cookies.delete(LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }
@@ -215,16 +221,27 @@ export async function POST(request: NextRequest) {
       );
     }
     try {
+      // Pull the PKCE challenge stored at init time. May be null for
+      // older mobile builds; consumeMobileOAuthExchangeCode treats null
+      // as legacy-mode and skips the verifier check.
+      const mobileCodeChallenge = normalizeMobileOAuthCodeChallenge(
+        request.cookies.get(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE)?.value,
+      );
+      const mobileState = normalizeMobileOAuthState(
+        request.cookies.get(MOBILE_OAUTH_STATE_COOKIE)?.value,
+      );
       const handoffCode = await createMobileOAuthExchangeCode({
         userId,
         provider: "apple",
         redirectUri: mobileRedirectUri,
+        codeChallenge: mobileCodeChallenge,
       });
       return clearAppleOAuthCookies(
         NextResponse.redirect(buildMobileOAuthRedirectUrl({
           redirectUri: mobileRedirectUri,
           code: handoffCode,
           provider: "apple",
+          state: mobileState,
         })),
       );
     } catch (err) {

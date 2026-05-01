@@ -294,6 +294,7 @@ export default function NewServiceScreen() {
     }
     setSaving(false);
     if (res.error) {
+      await api.delete(`/api/custom-providers/${providerRes.data.provider.id}`).catch(() => null);
       hapticError();
       Alert.alert(t("common.retry"), res.error);
     } else {

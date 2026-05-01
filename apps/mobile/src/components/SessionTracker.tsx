@@ -1,11 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform, Dimensions } from "react-native";
 import { useSegments } from "expo-router";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 import { useAuthStore } from "@/lib/auth-store";
 import { api } from "@/lib/api";
-import { setAnalyticsSessionId, trackScreenView } from "@/lib/analytics";
+import {
+  getAnalyticsEnabled,
+  setAnalyticsEnabled,
+  setAnalyticsSessionId,
+  subscribeAnalyticsEnabled,
+  trackScreenView,
+} from "@/lib/analytics";
 
 function getDeviceInfo() {
   const brand = Device.brand || "Unknown";
@@ -36,13 +42,31 @@ function getDeviceInfo() {
 export function SessionTracker() {
   const isSignedIn = useAuthStore((s) => Boolean(s.user));
   const segments = useSegments();
+  const [analyticsAllowed, setAnalyticsAllowed] = useState(getAnalyticsEnabled());
   const sessionIdRef = useRef<string | null>(null);
   const pageViewsRef = useRef(0);
   const initializedRef = useRef(false);
 
+  useEffect(() => subscribeAnalyticsEnabled(setAnalyticsAllowed), []);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      initializedRef.current = false;
+      sessionIdRef.current = null;
+      setAnalyticsEnabled(false);
+      return;
+    }
+
+    api.get<any>("/api/consent")
+      .then((res) => {
+        setAnalyticsEnabled(res.data?.consents?.ANALYTICS?.granted === true);
+      })
+      .catch(() => setAnalyticsEnabled(false));
+  }, [isSignedIn]);
+
   // Create session on sign-in
   useEffect(() => {
-    if (!isSignedIn || initializedRef.current) return;
+    if (!isSignedIn || !analyticsAllowed || initializedRef.current) return;
     initializedRef.current = true;
 
     const info = getDeviceInfo();
@@ -52,14 +76,16 @@ export function SessionTracker() {
         if (res.data?.sessionId) {
           sessionIdRef.current = res.data.sessionId;
           setAnalyticsSessionId(res.data.sessionId);
+        } else if (res.data?.disabled) {
+          setAnalyticsEnabled(false);
         }
       })
       .catch(() => {});
-  }, [isSignedIn]);
+  }, [analyticsAllowed, isSignedIn]);
 
   // Update page views on navigation + track screen view event
   useEffect(() => {
-    if (!isSignedIn || !sessionIdRef.current) return;
+    if (!isSignedIn || !analyticsAllowed || !sessionIdRef.current) return;
     pageViewsRef.current += 1;
 
     api.patch<any>("/api/tracking/session", {
@@ -70,7 +96,7 @@ export function SessionTracker() {
     // Track granular screen view event
     const screenPath = "/" + segments.filter(Boolean).join("/");
     trackScreenView(screenPath);
-  }, [segments, isSignedIn]);
+  }, [segments, analyticsAllowed, isSignedIn]);
 
   return null;
 }

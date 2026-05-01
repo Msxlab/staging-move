@@ -6,7 +6,7 @@
  * store API and links the subscription to the authenticated user.
  *
  * Body:
- *   { platform: "ios",     transactionId: string, signedTransaction?: string }
+ *   { platform: "ios",     signedTransaction: string, transactionId?: string }
  *   { platform: "android", purchaseToken: string, productId: string }
  *
  * Returns: the unified entitlement snapshot (same shape as /api/profile).
@@ -34,23 +34,14 @@ const bodySchema = z
     z.object({
       platform: z.literal("ios"),
       transactionId: z.string().min(4).max(64).optional(),
-      signedTransaction: z.string().min(20).max(20000).optional(),
+      signedTransaction: z.string().min(20).max(20000),
     }),
     z.object({
       platform: z.literal("android"),
       purchaseToken: z.string().min(20).max(4000),
       productId: z.string().min(1).max(191),
     }),
-  ])
-  .superRefine((val, ctx) => {
-    if (val.platform === "ios" && !val.transactionId && !val.signedTransaction) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["signedTransaction"],
-        message: "transactionId or signedTransaction is required",
-      });
-    }
-  });
+  ]);
 
 export async function POST(request: NextRequest) {
   try {
@@ -97,9 +88,10 @@ export async function POST(request: NextRequest) {
           console.warn("[IAP] apple JWS verify failed:", (err as Error).message);
           return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
         }
+        if (parsed.data.transactionId && parsed.data.transactionId !== jwsPayload.transactionId) {
+          return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
+        }
         originalTransactionId = jwsPayload.originalTransactionId;
-      } else if (parsed.data.transactionId) {
-        originalTransactionId = parsed.data.transactionId;
       }
 
       if (!originalTransactionId) {

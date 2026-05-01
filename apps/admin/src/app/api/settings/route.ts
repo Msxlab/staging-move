@@ -1,10 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import {
   listRuntimeConfigCatalog,
   type RuntimeConfigCatalogItem,
 } from "@/lib/runtime-config";
+
+// grant_premium is a manual subscription override — billing accounting
+// drifts from Stripe the moment we issue one, so we cap how far that
+// drift can run. 365d is the longest term we sell; anything longer is
+// almost certainly a typo (e.g. 36500 instead of 365), and capping
+// here costs nothing because operators can extend by issuing a fresh
+// grant later.
+const GRANT_PREMIUM_MAX_DURATION_DAYS = 365;
+
+const grantPremiumSchema = z
+  .object({
+    userId: z.string().min(1).max(40).optional(),
+    email: z.string().email().max(254).optional(),
+    plan: z.enum(["INDIVIDUAL", "FAMILY"]).optional(),
+    durationDays: z
+      .number()
+      .int()
+      .min(1)
+      .max(GRANT_PREMIUM_MAX_DURATION_DAYS)
+      .optional(),
+    // Reason is required so the audit row carries operator intent —
+    // "why did this user get a free year" must always be answerable.
+    note: z.string().min(3).max(500),
+    confirmPassword: z.string().min(1).max(200),
+  })
+  .strict()
+  .refine((value) => Boolean(value.userId || value.email), {
+    message: "userId or email required",
+    path: ["userId"],
+  });
 
 function detectDatabaseLabel(databaseUrl: string | undefined) {
   if (!databaseUrl) return "Database URL missing";
@@ -250,14 +281,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "grant_premium") {
+      const parsed = grantPremiumSchema.safeParse(data);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Validation failed", details: parsed.error.errors },
+          { status: 400 },
+        );
+      }
+
       // Step-up auth: granting premium is a sensitive billing operation
-      const confirm = await requirePasswordConfirm(session, data.confirmPassword);
+      const confirm = await requirePasswordConfirm(session, parsed.data.confirmPassword);
       if (!confirm.confirmed) {
         return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
       }
 
-      // Grant premium to a user by email or userId
-      const { userId, email, plan, durationDays, note } = data;
+      const { userId, email, plan, durationDays, note } = parsed.data;
       let targetUserId = userId;
       if (!targetUserId && email) {
         const user = await prisma.user.findUnique({ where: { email } });

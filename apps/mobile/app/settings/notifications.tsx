@@ -17,6 +17,7 @@ import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { registerForPushNotifications } from "@/lib/push";
 
 interface Prefs {
   emailTaskReminders: boolean;
@@ -31,8 +32,8 @@ const DEFAULT_PREFS: Prefs = {
   emailTaskReminders: true,
   emailWeeklyDigest: false,
   emailMoveAlerts: true,
-  pushTaskReminders: true,
-  pushMoveAlerts: true,
+  pushTaskReminders: false,
+  pushMoveAlerts: false,
   pushStreakReminders: false,
 };
 
@@ -58,6 +59,16 @@ export default function NotificationSettingsScreen() {
 
   const handleSave = async () => {
     setSaving(true);
+    const wantsPush = prefs.pushTaskReminders || prefs.pushMoveAlerts || prefs.pushStreakReminders;
+    if (wantsPush) {
+      const registered = await registerForPushNotifications();
+      if (!registered) {
+        setSaving(false);
+        hapticError();
+        Alert.alert(t("notifications.title"), t("toast.networkError"));
+        return;
+      }
+    }
     const res = await api.put<any>("/api/notifications/preferences", prefs);
     setSaving(false);
     if (res.error) {

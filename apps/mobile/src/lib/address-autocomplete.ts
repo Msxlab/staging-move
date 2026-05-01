@@ -18,14 +18,14 @@ export {
 };
 
 export async function searchAddressAutocomplete(input: string, sessionToken: string) {
-  return api.get<AddressAutocompleteSearchResponse>("/api/address-autocomplete", {
+  return api.post<AddressAutocompleteSearchResponse>("/api/address-autocomplete", {
     input,
     sessionToken,
   });
 }
 
 export async function lookupAddressAutocomplete(placeId: string, sessionToken: string) {
-  return api.get<AddressAutocompleteDetailsResponse>("/api/address-autocomplete/details", {
+  return api.post<AddressAutocompleteDetailsResponse>("/api/address-autocomplete/details", {
     placeId,
     sessionToken,
   });

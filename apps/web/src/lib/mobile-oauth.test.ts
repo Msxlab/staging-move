@@ -28,6 +28,7 @@ import {
   consumeMobileOAuthExchangeCode,
   createMobileOAuthExchangeCode,
   normalizeMobileOAuthRedirectUri,
+  normalizeMobileOAuthState,
 } from "./mobile-oauth";
 
 function activeRecord() {
@@ -35,6 +36,7 @@ function activeRecord() {
     id: "handoff-1",
     usedAt: null,
     expiresAt: new Date(Date.now() + 60_000),
+    codeChallenge: null,
     user: {
       id: "user-1",
       email: "mobile@example.com",
@@ -60,6 +62,9 @@ describe("mobile OAuth handoff codes", () => {
   it("validates mobile redirect URIs against an allowlist", () => {
     expect(normalizeMobileOAuthRedirectUri("locateflow://oauth")).toBe("locateflow://oauth");
     expect(normalizeMobileOAuthRedirectUri("locateflow:///oauth")).toBe("locateflow:///oauth");
+    expect(normalizeMobileOAuthRedirectUri("https://app.locateflow.com/mobile/oauth")).toBe(
+      "https://app.locateflow.com/mobile/oauth",
+    );
     expect(normalizeMobileOAuthRedirectUri("exp://192.168.1.5:8081/--/oauth")).toBe(
       "exp://192.168.1.5:8081/--/oauth",
     );
@@ -72,6 +77,12 @@ describe("mobile OAuth handoff codes", () => {
     expect(normalizeMobileOAuthRedirectUri("locateflow://oauth")).toBe("locateflow://oauth");
     expect(normalizeMobileOAuthRedirectUri("locateflow:///oauth")).toBeNull();
     expect(normalizeMobileOAuthRedirectUri("exp://192.168.1.5:8081/--/oauth")).toBeNull();
+  });
+
+  it("validates mobile state values before echoing them to the native callback", () => {
+    expect(normalizeMobileOAuthState("abcDEF_123-456789")).toBe("abcDEF_123-456789");
+    expect(normalizeMobileOAuthState("bad state with spaces")).toBeNull();
+    expect(normalizeMobileOAuthState("short")).toBeNull();
   });
 
   it("creates a short-lived one-time code without putting bearer tokens in the redirect", async () => {
@@ -95,8 +106,10 @@ describe("mobile OAuth handoff codes", () => {
       redirectUri: "locateflow://oauth",
       code: "raw-handoff-code",
       provider: "google",
+      state: "mobile-state-123456",
     }).toString();
     expect(redirectUrl).toContain("code=raw-handoff-code");
+    expect(redirectUrl).toContain("state=mobile-state-123456");
     expect(redirectUrl).not.toContain("token=");
   });
 

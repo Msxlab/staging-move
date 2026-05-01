@@ -22,6 +22,9 @@ import {
   Zap,
   DollarSign,
   Truck,
+  Bell,
+  Ticket,
+  Crown,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
@@ -45,6 +48,9 @@ export default function ExportScreen() {
     { type: "services", title: t("services.title"), desc: "", icon: Zap, formats: ["CSV", "JSON"] },
     { type: "budget", title: t("budget.title"), desc: "", icon: DollarSign, formats: ["CSV", "JSON"] },
     { type: "moving", title: t("moving.title"), desc: "", icon: Truck, formats: ["JSON"] },
+    { type: "support", title: t("settings.support"), desc: "", icon: Ticket, formats: ["JSON"] },
+    { type: "notifications", title: t("notifications.title"), desc: "", icon: Bell, formats: ["JSON"] },
+    { type: "subscription", title: t("settings.subscription"), desc: "", icon: Crown, formats: ["JSON"] },
     { type: "full", title: t("settings.export"), desc: "", icon: Database, formats: ["JSON"] },
   ];
 
@@ -80,6 +86,7 @@ export default function ExportScreen() {
           message: `LocateFlow ${type} export`,
           title: `LocateFlow ${type} export (${format})`,
         });
+        await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
       }
     } catch (e: any) {
       hapticError();

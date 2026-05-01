@@ -140,10 +140,25 @@ export async function POST(request: NextRequest) {
       });
 
       if (campaign.id) {
-        await tx.acquisitionCampaign.update({
-          where: { id: campaign.id },
+        // Concurrency-safe cap enforcement: under load, the precondition
+        // check above can pass for two parallel requests when only one
+        // slot remains. We re-issue the increment as a conditional
+        // updateMany so the database resolves the race — the row only
+        // updates if redemptionCount is still below maxRedemptions at
+        // commit time. count === 0 means the cap closed in the gap;
+        // throw to roll back the subscription + redemption rows.
+        const cap = typeof campaign.maxRedemptions === "number" ? campaign.maxRedemptions : null;
+        const updated = await tx.acquisitionCampaign.updateMany({
+          where: {
+            id: campaign.id,
+            status: "ACTIVE",
+            ...(cap !== null ? { redemptionCount: { lt: cap } } : {}),
+          },
           data: { redemptionCount: { increment: 1 } },
         });
+        if (updated.count === 0) {
+          throw new Error("CAMPAIGN_FULL");
+        }
       }
 
       return { subscription, redemption };
@@ -157,6 +172,12 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error?.message === "CAMPAIGN_FULL") {
+      return NextResponse.json(
+        { code: "CAMPAIGN_UNAVAILABLE", error: "This offer is no longer available." },
+        { status: 409 },
+      );
     }
     console.error("Failed to redeem acquisition campaign:", error);
     return NextResponse.json({ error: "Failed to redeem campaign" }, { status: 500 });

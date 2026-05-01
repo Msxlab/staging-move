@@ -7,8 +7,14 @@ vi.mock("@/lib/db", () => ({
     userCustomProvider: { findMany: vi.fn() },
     moveTask: { findMany: vi.fn() },
     userEvent: { findMany: vi.fn() },
+    dataConsent: { findMany: vi.fn() },
+    supportTicket: { findMany: vi.fn() },
+    notification: { findMany: vi.fn() },
+    notificationPreference: { findMany: vi.fn() },
+    pushDevice: { findMany: vi.fn() },
     budget: { findMany: vi.fn() },
     movingPlan: { findMany: vi.fn() },
+    userSession: { findMany: vi.fn() },
     subscription: { findUnique: vi.fn() },
   },
 }));
@@ -31,8 +37,14 @@ const mockPrisma = {
   userCustomProvider: { findMany: prisma.userCustomProvider.findMany as Mock },
   moveTask: { findMany: prisma.moveTask.findMany as Mock },
   userEvent: { findMany: prisma.userEvent.findMany as Mock },
+  dataConsent: { findMany: (prisma as any).dataConsent.findMany as Mock },
+  supportTicket: { findMany: (prisma as any).supportTicket.findMany as Mock },
+  notification: { findMany: (prisma as any).notification.findMany as Mock },
+  notificationPreference: { findMany: (prisma as any).notificationPreference.findMany as Mock },
+  pushDevice: { findMany: (prisma as any).pushDevice.findMany as Mock },
   budget: { findMany: prisma.budget.findMany as Mock },
   movingPlan: { findMany: prisma.movingPlan.findMany as Mock },
+  userSession: { findMany: (prisma as any).userSession.findMany as Mock },
   subscription: { findUnique: (prisma as any).subscription.findUnique as Mock },
 };
 const mockRequireDbUserId = requireDbUserId as any;
@@ -50,9 +62,15 @@ describe("export route", () => {
     mockPrisma.userCustomProvider.findMany.mockResolvedValue([]);
     mockPrisma.moveTask.findMany.mockResolvedValue([]);
     mockPrisma.userEvent.findMany.mockResolvedValue([]);
+    mockPrisma.dataConsent.findMany.mockResolvedValue([]);
+    mockPrisma.supportTicket.findMany.mockResolvedValue([]);
+    mockPrisma.notification.findMany.mockResolvedValue([]);
+    mockPrisma.notificationPreference.findMany.mockResolvedValue([]);
+    mockPrisma.pushDevice.findMany.mockResolvedValue([]);
     mockPrisma.budget.findMany.mockResolvedValue([]);
     mockPrisma.movingPlan.findMany.mockResolvedValue([]);
-    mockPrisma.subscription.findUnique.mockRejectedValue(new Error("subscription gate should not run"));
+    mockPrisma.userSession.findMany.mockResolvedValue([]);
+    mockPrisma.subscription.findUnique.mockResolvedValue(null);
   });
 
   it("masks sensitive service fields in JSON exports", async () => {
@@ -189,6 +207,12 @@ describe("export route", () => {
     expect(data.moveTasks).toHaveLength(1);
     expect(data.customProviders[0].notes).toBeNull();
     expect(data.moveTasks[0].notes).toBeNull();
+    expect(mockPrisma.userCustomProvider.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1" } }),
+    );
+    expect(mockPrisma.moveTask.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
+    );
   });
 
   it("exports custom provider and move task notes only with includeNotes=true", async () => {
@@ -229,6 +253,11 @@ describe("export route", () => {
     expect(data.legalConsents).toHaveLength(1);
     expect(data.legalConsents[0].metadata.termsAccepted).toBe(true);
     expect(data.legalConsents[0].metadata.source).toBe("email_signup");
+    expect(mockPrisma.userEvent.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "user-1" }),
+      }),
+    );
   });
 
   it("does not gate data export on subscription state", async () => {

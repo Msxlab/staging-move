@@ -54,7 +54,14 @@ function resolveApiUrl() {
   return envApiUrl || "https://locateflow.com/api";
 }
 
-const API_URL = resolveApiUrl();
+function enforceProductionApiUrl(url: string) {
+  if (!__DEV__ && !/^https:\/\//i.test(url)) {
+    return "https://locateflow.com/api";
+  }
+  return url;
+}
+
+const API_URL = enforceProductionApiUrl(resolveApiUrl());
 
 import { getToken as getStoreToken, useAuthStore } from "@/lib/auth-store";
 
@@ -75,6 +82,7 @@ export const api = new ApiClient({
   baseUrl: API_URL,
   getToken,
   clientType: "mobile",
+  timeoutMs: 20_000,
   onUnauthorized: async () => {
     // Token invalid — wipe it so the user is routed back to sign-in.
     await useAuthStore.getState().clearSession().catch(() => {});

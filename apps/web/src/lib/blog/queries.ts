@@ -165,3 +165,17 @@ export async function listPublishedSlugs(limit = 5000): Promise<
     publishedAt: p.publishedAt!,
   }));
 }
+
+export async function listPublishedLocalesForSlug(slug: string): Promise<string[]> {
+  const posts = await prisma.blogPost.findMany({
+    where: {
+      slug,
+      status: "PUBLISHED",
+      publishedAt: { lte: NOW() },
+      noIndex: false,
+      deletedAt: null,
+    },
+    select: { locale: true },
+  });
+  return Array.from(new Set(posts.map((post) => post.locale)));
+}

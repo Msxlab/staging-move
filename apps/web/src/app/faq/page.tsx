@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ChevronDown, ArrowRight, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { JsonLd, breadcrumbSchema, faqPageSchema } from "@/components/seo/json-ld";
+import { absoluteUrl, SITE_URL } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
@@ -95,12 +97,26 @@ const groups: Array<{ title: string; items: Faq[] }> = [
 ];
 
 export default function FaqPage() {
+  const faqItems = groups.flatMap((group) => group.items).map((item) => ({
+    question: item.q,
+    answer: item.a,
+  }));
+
   return (
-    <PublicPageShell
-      eyebrow="FAQ"
-      title="Questions, answered."
-      description="What you'll probably want to know before you sign up. Grouped by the thing you're thinking about."
-    >
+    <>
+      <JsonLd id="ld-faq" data={faqPageSchema(faqItems)} />
+      <JsonLd
+        id="ld-faq-breadcrumb"
+        data={breadcrumbSchema([
+          { name: "Home", url: SITE_URL },
+          { name: "FAQ", url: absoluteUrl("/faq") },
+        ])}
+      />
+      <PublicPageShell
+        eyebrow="FAQ"
+        title="Questions, answered."
+        description="What you'll probably want to know before you sign up. Grouped by the thing you're thinking about."
+      >
       {groups.map((group) => (
         <PublicSection key={group.title} title={group.title}>
           <div className="space-y-3">
@@ -124,21 +140,17 @@ export default function FaqPage() {
 
       <PublicSection title="Still have a question?">
         <p>
-          The Help Center has step-by-step guides for every feature. If you can't find what you need, reach us through the contact page.
+          If you can't find what you need in the public FAQ, reach us through the contact page or sign in for account-specific support.
         </p>
         <div className="flex flex-wrap gap-3 pt-2">
-          <Link href="/help">
-            <Button size="lg">
-              <LifeBuoy className="mr-2 h-4 w-4" /> Open Help Center
-            </Button>
-          </Link>
           <Link href="/contact">
             <Button variant="outline" size="lg">
-              Contact us <ArrowRight className="ml-2 h-4 w-4" />
+              <LifeBuoy className="mr-2 h-4 w-4" /> Contact us <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
         </div>
       </PublicSection>
-    </PublicPageShell>
+      </PublicPageShell>
+    </>
   );
 }

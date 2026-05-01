@@ -85,14 +85,23 @@ export function webSiteSchema(ctx: SiteContext) {
     name: ctx.siteName,
     inLanguage: ["en-US", "es-US"],
     publisher: { "@id": `${ctx.siteUrl}#organization` },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${ctx.siteUrl}/blog?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
+  };
+}
+
+export function webPageSchema(
+  ctx: SiteContext,
+  input: { url: string; name: string; description: string; inLanguage?: string },
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${input.url}#webpage`,
+    url: input.url,
+    name: input.name,
+    description: input.description,
+    inLanguage: input.inLanguage || "en-US",
+    isPartOf: { "@id": `${ctx.siteUrl}#website` },
+    publisher: { "@id": `${ctx.siteUrl}#organization` },
   };
 }
 
@@ -100,20 +109,26 @@ export function softwareApplicationSchema(
   ctx: SiteContext,
   opts: { description: string; priceCurrency?: string; price?: string },
 ) {
-  return {
+  const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: ctx.siteName,
+    url: ctx.siteUrl,
     operatingSystem: "Web, iOS, Android",
     applicationCategory: "ProductivityApplication",
     description: opts.description,
-    offers: {
-      "@type": "Offer",
-      price: opts.price ?? "0",
-      priceCurrency: opts.priceCurrency ?? "USD",
-    },
     publisher: { "@id": `${ctx.siteUrl}#organization` },
   };
+
+  if (opts.price !== undefined) {
+    schema.offers = {
+      "@type": "Offer",
+      price: opts.price,
+      priceCurrency: opts.priceCurrency ?? "USD",
+    };
+  }
+
+  return schema;
 }
 
 export interface ArticleSchemaInput {

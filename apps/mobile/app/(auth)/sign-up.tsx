@@ -50,8 +50,8 @@ export default function SignUpScreen() {
       .catch(() => setOauthProviders(null));
   }, []);
 
-  const googleReady = oauthProviders?.google?.configured ?? true;
-  const appleReady = oauthProviders?.apple?.configured ?? true;
+  const googleReady = oauthProviders?.google?.configured === true;
+  const appleReady = oauthProviders?.apple?.configured === true;
   const legalAccepted = hasRequiredLegalConsents(legalConsents);
   const showOAuthReadinessNote =
     Boolean(oauthProviders) && (!googleReady || !appleReady);
@@ -84,15 +84,37 @@ export default function SignUpScreen() {
     setLoading(false);
   };
 
-  const openOAuth = async (provider: "google" | "apple") => {
+  const openOAuth = async (provider: OAuthProvider) => {
     if (!legalAccepted) {
       setError(t("auth.acceptLegalBeforeProvider", { provider: provider === "google" ? "Google" : "Apple" }));
       hapticError();
       return;
     }
-    await setPendingLegalConsents(createAcceptedLegalConsents(legalConsents));
-    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
-    void Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
+    setOauthLoading(provider);
+    setError("");
+    const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
+    try {
+      await setPendingLegalConsents(acceptedLegalConsents);
+      const result = await startMobileOAuthSession(provider, setSession);
+      if (result.cancelled) {
+        await setPendingLegalConsents(null);
+        return;
+      }
+      if (!result.success) {
+        await setPendingLegalConsents(null);
+        setError(result.error || t("auth.invalid"));
+        hapticError();
+        return;
+      }
+      hapticSuccess();
+      router.replace("/onboarding");
+    } catch (err: any) {
+      await setPendingLegalConsents(null);
+      setError(err?.message || t("auth.invalid"));
+      hapticError();
+    } finally {
+      setOauthLoading(null);
+    }
   };
 
   if (done) {

@@ -11,6 +11,10 @@ const MOBILE_NOTIFICATION_PREFERENCES = [
   { key: "pushStreakReminders", channel: "PUSH", type: "STREAK_REMINDER", enabled: false, frequency: "IMMEDIATE" },
 ] as const;
 
+const ALLOWED_CHANNELS = new Set(["EMAIL", "IN_APP", "PUSH"]);
+const ALLOWED_TYPES = new Set(MOBILE_NOTIFICATION_PREFERENCES.map((pref) => pref.type));
+const ALLOWED_FREQUENCIES = new Set(["IMMEDIATE", "DAILY_DIGEST", "WEEKLY"]);
+
 function buildPreferencesObject(records: any[]) {
   const recordMap = new Map(records.map((record: any) => [`${record.channel}:${record.type}`, record]));
 
@@ -62,7 +66,15 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ preferences: buildPreferencesObject(preferences) });
   }
 
-  const { channel, type, enabled, frequency } = body;
+  const { channel, type, enabled, frequency } = body || {};
+  if (
+    !ALLOWED_CHANNELS.has(channel) ||
+    !ALLOWED_TYPES.has(type) ||
+    typeof enabled !== "boolean" ||
+    (frequency !== undefined && !ALLOWED_FREQUENCIES.has(frequency))
+  ) {
+    return NextResponse.json({ error: "Invalid notification preference" }, { status: 400 });
+  }
 
   const pref = await prisma.notificationPreference.upsert({
     where: { userId_channel_type: { userId, channel, type } },

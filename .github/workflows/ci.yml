@@ -146,11 +146,21 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @locateflow/web exec playwright install --with-deps chromium webkit
 
+      - name: Verify required secrets are set
+        env:
+          USER_JWT_SECRET: ${{ secrets.USER_JWT_SECRET }}
+          ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
+        run: |
+          if [ -z "$USER_JWT_SECRET" ] || [ -z "$ADMIN_JWT_SECRET" ]; then
+            echo "::error::USER_JWT_SECRET and ADMIN_JWT_SECRET must be configured as repository secrets. Inline fallbacks were removed because they shipped a known JWT secret to anyone who could read this workflow file."
+            exit 1
+          fi
+
       - name: Run Playwright tests
         run: pnpm --filter @locateflow/web e2e
         env:
-          USER_JWT_SECRET: ${{ secrets.USER_JWT_SECRET || 'ci-user-jwt-secret-must-be-at-least-32-chars' }}
-          ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET || 'ci-admin-jwt-secret-must-be-at-least-32-chars' }}
+          USER_JWT_SECRET: ${{ secrets.USER_JWT_SECRET }}
+          ADMIN_JWT_SECRET: ${{ secrets.ADMIN_JWT_SECRET }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXT_PUBLIC_APP_URL: http://localhost:3000
 

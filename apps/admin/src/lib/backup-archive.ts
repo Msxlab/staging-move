@@ -8,6 +8,16 @@ export interface BackupArchiveMetadata {
   tables: string[];
   totalRecords: number;
   tableCounts: Record<string, number>;
+  // Names of tables whose rowcount hit the per-table ceiling and were
+  // truncated. Empty/omitted for FULL archives. P0-4 keeps this field
+  // in archive metadata so a restore tool can refuse to merge a
+  // PARTIAL backup over a FULL one without an explicit override.
+  truncatedTables?: string[];
+  // Tables the cron path could not enumerate (the per-table fetcher
+  // threw — usually a Prisma client/schema mismatch). Distinct from
+  // truncatedTables so a restore tool can tell "we tried and failed"
+  // vs. "we hit the row ceiling and stopped early."
+  failedTables?: string[];
 }
 
 export type BackupArchivePayload =

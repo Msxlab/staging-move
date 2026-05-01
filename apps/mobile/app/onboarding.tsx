@@ -54,7 +54,12 @@ import {
   setPendingLegalConsents,
 } from "@/lib/legal";
 
-const STEPS = ["Profile", "Address", "Services", "Moving"];
+const STEP_KEYS = [
+  "onboarding.step_profile",
+  "onboarding.step_address",
+  "onboarding.step_services",
+  "onboarding.step_moving",
+] as const;
 
 const FAMILY_STATUSES = [
   { value: "SINGLE", label: "Single" },
@@ -272,11 +277,11 @@ export default function OnboardingScreen() {
   // --- Step save handlers ---
   const saveProfile = async () => {
     if (!profile.firstName.trim() || !profile.lastName.trim()) {
-      setError("First name and last name are required.");
+      setError(t("onboarding.error_namesRequired"));
       return false;
     }
     if (!hasRequiredLegalConsents(legalConsents)) {
-      setError("You must accept the Terms of Use and Legal Disclaimer before continuing.");
+      setError(t("onboarding.error_legalRequired"));
       return false;
     }
     setError(""); setSaving(true);
@@ -284,23 +289,39 @@ export default function OnboardingScreen() {
       const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
       const legalRes = await api.post<any>("/api/legal/acceptance", { legalConsents: acceptedLegalConsents });
       if (legalRes.error) throw new Error(legalRes.error);
-      const res = await api.post<any>("/api/profile", profile);
+      const profilePayload = {
+        ...profile,
+        hasDisability: sensitiveOptIn ? profile.hasDisability : false,
+        isImmigrant: sensitiveOptIn ? profile.isImmigrant : false,
+        immigrationStatus: sensitiveOptIn ? profile.immigrationStatus : "",
+      };
+      const hasSensitiveProfileData =
+        profilePayload.hasDisability ||
+        profilePayload.isImmigrant ||
+        Boolean(profilePayload.immigrationStatus);
+      if (hasSensitiveProfileData) {
+        const consentRes = await api.post<any>("/api/consent", {
+          grants: [{ category: "SENSITIVE", granted: true }],
+        });
+        if (consentRes.error) throw new Error(consentRes.error);
+      }
+      const res = await api.post<any>("/api/profile", profilePayload);
       if (res.error) throw new Error(res.error);
       await setPendingLegalConsents(null);
       return true;
     } catch (e: any) {
-      setError(e.message || "Failed to save profile");
+      setError(e.message || t("onboarding.error_saveProfile"));
       return false;
     } finally { setSaving(false); }
   };
 
   const saveAddress = async () => {
     if (!address.street.trim() || !address.city.trim() || !address.state.trim() || !address.zip.trim()) {
-      setError("Street, city, state and ZIP are required.");
+      setError(t("onboarding.error_addressRequired"));
       return false;
     }
     if (address.state.length !== 2) {
-      setError("State must be a 2-letter code (e.g. TX, NJ).");
+      setError(t("onboarding.error_stateFormat"));
       return false;
     }
     setError(""); setSaving(true);
@@ -312,39 +333,46 @@ export default function OnboardingScreen() {
       setCreatedAddressId(res.data?.address?.id || createdAddressId || null);
       return true;
     } catch (e: any) {
-      setError(e.message || "Failed to save address");
+      setError(e.message || t("onboarding.error_saveAddress"));
       return false;
     } finally { setSaving(false); }
   };
 
   const saveServices = async () => {
     if (!createdAddressId) {
-      setError("No address found. Go back and add an address.");
+      setError(t("onboarding.error_addressMissing"));
       return false;
     }
-    let nextCreatedServiceIds = { ...createdServiceIds };
+    const nextCreatedServiceIds = { ...createdServiceIds };
     setError(""); setSaving(true);
     try {
+      // No providers selected — wipe any services we already created.
       if (selectedProviders.size === 0) {
-        for (const serviceId of Object.values(nextCreatedServiceIds)) {
-          const deleteRes = await api.delete(`/api/services/${serviceId}`);
-          if (deleteRes.error) throw new Error(deleteRes.error);
-        }
+        const deletes = Object.values(nextCreatedServiceIds).map((serviceId) =>
+          api.delete(`/api/services/${serviceId}`)
+        );
+        const results = await Promise.all(deletes);
+        const firstErr = results.find((r) => r.error);
+        if (firstErr) throw new Error(firstErr.error);
         setCreatedServiceIds({});
         return true;
       }
 
       const selectedProviderIds = new Set(selectedProviders.keys());
 
-      for (const [providerId, serviceId] of Object.entries(nextCreatedServiceIds)) {
-        if (!selectedProviderIds.has(providerId)) {
+      // Run delete (deselected) and upsert (selected) groups in parallel — the
+      // server treats these as independent records, so there's no ordering
+      // requirement and the user's wait time scales with the slowest call
+      // instead of the sum of all calls.
+      const deletions = Object.entries(nextCreatedServiceIds)
+        .filter(([providerId]) => !selectedProviderIds.has(providerId))
+        .map(async ([providerId, serviceId]) => {
           const deleteRes = await api.delete(`/api/services/${serviceId}`);
           if (deleteRes.error) throw new Error(deleteRes.error);
           delete nextCreatedServiceIds[providerId];
-        }
-      }
+        });
 
-      for (const [id, provider] of selectedProviders) {
+      const upserts = Array.from(selectedProviders).map(async ([id, provider]) => {
         const b = billingData[id] || {};
         const payload: any = {
           addressId: createdAddressId,
@@ -360,22 +388,24 @@ export default function OnboardingScreen() {
         if (nextCreatedServiceIds[id]) {
           const updateRes = await api.patch<any>(`/api/services/${nextCreatedServiceIds[id]}`, payload);
           if (updateRes.error) throw new Error(updateRes.error);
-          continue;
+          return;
         }
 
         const createRes = await api.post<any>("/api/services", payload);
         if (createRes.error) throw new Error(createRes.error);
 
         const serviceId = createRes.data?.service?.id;
-        if (!serviceId) throw new Error("Service saved but no service id was returned.");
+        if (!serviceId) throw new Error(t("onboarding.error_serviceIdMissing"));
         nextCreatedServiceIds[id] = serviceId;
-      }
+      });
+
+      await Promise.all([...deletions, ...upserts]);
 
       setCreatedServiceIds(nextCreatedServiceIds);
       return true;
     } catch (e: any) {
       setCreatedServiceIds(nextCreatedServiceIds);
-      setError(e.message || "Failed to save services");
+      setError(e.message || t("onboarding.error_saveServices"));
       return false;
     } finally { setSaving(false); }
   };
@@ -398,16 +428,16 @@ export default function OnboardingScreen() {
 
         return true;
       } catch (e: any) {
-        setError(e.message || "Failed to clean up moving plan setup.");
+        setError(e.message || t("onboarding.error_planCleanup"));
         return false;
       } finally { setSaving(false); }
     }
     if (!movingForm.city.trim() || !movingForm.state.trim() || !movingForm.zip.trim() || !movingForm.moveDate) {
-      setError("Please fill in destination city, state, ZIP, and move date.");
+      setError(t("onboarding.error_destinationRequired"));
       return false;
     }
     if (!createdAddressId) {
-      setError("No origin address found. Go back and add an address.");
+      setError(t("onboarding.error_originMissing"));
       return false;
     }
     setError(""); setSaving(true);
@@ -448,13 +478,13 @@ export default function OnboardingScreen() {
 
       const planId = planRes.data?.plan?.id;
       const destinationAddressId = planRes.data?.destinationAddressId || null;
-      if (!planId) throw new Error("Moving plan could not be created.");
+      if (!planId) throw new Error(t("onboarding.error_planMissing"));
 
       setCreatedDestinationAddressId(destinationAddressId);
       setCreatedMovingPlanId(planId);
       return planId as string;
     } catch (e: any) {
-      setError(e.message || "Failed to create moving plan");
+      setError(e.message || t("onboarding.error_savePlan"));
       return false;
     } finally { setSaving(false); }
   };
@@ -471,17 +501,17 @@ export default function OnboardingScreen() {
         throw new Error(profileRes.error);
       }
       if (profileRes.data?.onboardingCompleted !== true) {
-        throw new Error("Onboarding is not complete yet. Please review your profile and address information.");
+        throw new Error(t("onboarding.error_onboardingIncomplete"));
       }
       hapticSuccess();
       if (typeof planId === "string") {
-        router.replace(`/moving/${planId}` as any);
+        router.replace({ pathname: "/moving/[id]", params: { id: planId } });
       } else {
-        router.replace("/(tabs)" as any);
+        router.replace("/(tabs)");
       }
       return true;
     } catch (e: any) {
-      setError(e?.message || "Failed to complete onboarding. Please try again.");
+      setError(e?.message || t("onboarding.error_completeOnboarding"));
       return false;
     } finally { setSaving(false); }
   };
@@ -523,11 +553,13 @@ export default function OnboardingScreen() {
       >
         {/* Progress */}
         <View style={styles.progressRow}>
-          {STEPS.map((s, i) => (
-            <View key={s} style={[styles.progressDot, i <= step && styles.progressDotActive, i < step && styles.progressDotDone]} />
+          {STEP_KEYS.map((key, i) => (
+            <View key={key} style={[styles.progressDot, i <= step && styles.progressDotActive, i < step && styles.progressDotDone]} />
           ))}
         </View>
-        <Text style={styles.stepLabel}>Step {step + 1} of {STEPS.length} — {STEPS[step]}</Text>
+        <Text style={styles.stepLabel}>
+          {t("onboarding.stepIndicator", { current: step + 1, total: STEP_KEYS.length, label: t(STEP_KEYS[step]) })}
+        </Text>
 
         {error ? (
           <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>
@@ -542,21 +574,21 @@ export default function OnboardingScreen() {
           {step === 0 && (
             <View style={styles.stepContent}>
               <View style={styles.stepIcon}><User size={28} color={theme.colors.primary} /></View>
-              <Text style={styles.stepTitle}>Your Profile</Text>
-              <Text style={styles.stepDesc}>Help us personalize your experience</Text>
+              <Text style={styles.stepTitle}>{t("onboarding.profile_title")}</Text>
+              <Text style={styles.stepDesc}>{t("onboarding.profile_description")}</Text>
 
               <View style={[styles.row, { marginTop: 24 }]}>
                 <View style={{ flex: 1 }}>
-                  <Input label="First Name *" placeholder="John" value={profile.firstName}
+                  <Input label={`${t("auth.firstName")} *`} placeholder="John" value={profile.firstName}
                     onChangeText={(v: string) => updateProfile("firstName", v)} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Input label="Last Name *" placeholder="Doe" value={profile.lastName}
+                  <Input label={`${t("auth.lastName")} *`} placeholder="Doe" value={profile.lastName}
                     onChangeText={(v: string) => updateProfile("lastName", v)} />
                 </View>
               </View>
 
-              <Text style={styles.fieldLabel}>Age Range</Text>
+              <Text style={styles.fieldLabel}>{t("onboarding.ageRange")}</Text>
               <View style={styles.chipRow}>
                 {AGE_RANGES.map((age) => (
                   <TouchableOpacity key={age}
@@ -567,7 +599,7 @@ export default function OnboardingScreen() {
                 ))}
               </View>
 
-              <Text style={styles.fieldLabel}>Family Status</Text>
+              <Text style={styles.fieldLabel}>{t("onboarding.familyStatus")}</Text>
               <View style={styles.chipRow}>
                 {FAMILY_STATUSES.map((fs) => (
                   <TouchableOpacity key={fs.value}
@@ -578,9 +610,9 @@ export default function OnboardingScreen() {
                 ))}
               </View>
 
-              <Text style={styles.fieldLabel}>Household Details</Text>
+              <Text style={styles.fieldLabel}>{t("onboarding.household")}</Text>
               <Text style={{ fontSize: 12, color: theme.colors.textTertiary, marginBottom: 8 }}>
-                Tap the ones that apply — all optional. We use these only to tailor your checklist.
+                {t("onboarding.household_hint")}
               </Text>
               <View style={styles.toggleGrid}>
                 {COMMON_PROFILE_TOGGLES.map(({ key, label }) => (
@@ -611,6 +643,8 @@ export default function OnboardingScreen() {
                       // never retain sensitive data without consent.
                       setSensitiveOptIn(false);
                       updateProfile("hasDisability", false);
+                      updateProfile("isImmigrant", false);
+                      updateProfile("immigrationStatus", "");
                     } else {
                       setSensitiveOptIn(true);
                     }
@@ -632,11 +666,11 @@ export default function OnboardingScreen() {
                     {sensitiveOptIn && <Check size={14} color="#fff" />}
                   </View>
                   <Text style={{ flex: 1, color: theme.colors.text, fontSize: 13, fontWeight: "600" }}>
-                    Share accessibility details (optional)
+                    {t("onboarding.sensitive_optIn")}
                   </Text>
                 </TouchableOpacity>
                 <Text style={{ marginTop: 6, fontSize: 11, color: theme.colors.textTertiary, lineHeight: 16 }}>
-                  These fields are sensitive under US and EU privacy law. They&apos;re never required, never shared, and you can turn this off any time in Settings → Privacy.
+                  {t("onboarding.sensitive_hint")}
                 </Text>
                 {sensitiveOptIn && (
                   <View style={[styles.toggleGrid, { marginTop: 12 }]}>
@@ -650,7 +684,7 @@ export default function OnboardingScreen() {
                           <Text style={[styles.toggleChipText, (profile as any)[key] && styles.toggleChipTextActive]}>{label}</Text>
                         </TouchableOpacity>
                         <Text style={{ marginTop: 4, marginLeft: 4, fontSize: 11, color: theme.colors.textTertiary, lineHeight: 15 }}>
-                          Why we ask: {why}
+                          {t("onboarding.sensitive_why", { reason: why })}
                         </Text>
                       </View>
                     ))}
@@ -660,7 +694,7 @@ export default function OnboardingScreen() {
 
               {profile.hasChildren && (
                 <View style={styles.counterRow}>
-                  <Text style={styles.counterLabel}>Number of Children</Text>
+                  <Text style={styles.counterLabel}>{t("onboarding.childrenCount")}</Text>
                   <View style={styles.counter}>
                     <TouchableOpacity style={styles.counterBtn} onPress={() => updateProfile("childrenCount", Math.max(0, profile.childrenCount - 1))}>
                       <Text style={styles.counterBtnText}>−</Text>
@@ -674,7 +708,7 @@ export default function OnboardingScreen() {
               )}
 
               <View style={styles.counterRow}>
-                <Text style={styles.counterLabel}>Number of Cars</Text>
+                <Text style={styles.counterLabel}>{t("onboarding.carCount")}</Text>
                 <View style={styles.counter}>
                   <TouchableOpacity style={styles.counterBtn} onPress={() => updateProfile("carCount", Math.max(0, profile.carCount - 1))}>
                     <Text style={styles.counterBtnText}>−</Text>
@@ -686,7 +720,7 @@ export default function OnboardingScreen() {
                 </View>
               </View>
 
-              <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Move Type</Text>
+              <Text style={[styles.fieldLabel, { marginTop: 20 }]}>{t("onboarding.moveType")}</Text>
               <View style={styles.chipRow}>
                 {MOVE_TYPES.map((mt) => (
                   <TouchableOpacity key={mt.value}
@@ -703,16 +737,16 @@ export default function OnboardingScreen() {
                     style={[styles.toggleChip, profile.isBusinessOwner && styles.toggleChipActive]}
                     onPress={() => { hapticLight(); updateProfile("isBusinessOwner", !profile.isBusinessOwner); }}>
                     {profile.isBusinessOwner && <Check size={14} color={theme.colors.primary} />}
-                    <Text style={[styles.toggleChipText, profile.isBusinessOwner && styles.toggleChipTextActive]}>Business Owner</Text>
+                    <Text style={[styles.toggleChipText, profile.isBusinessOwner && styles.toggleChipTextActive]}>{t("onboarding.businessOwner")}</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
               {sensitiveOptIn ? (
                 <>
-                  <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Immigration Status (optional)</Text>
+                  <Text style={[styles.fieldLabel, { marginTop: 16 }]}>{t("onboarding.immigrationStatus")}</Text>
                   <Text style={{ fontSize: 11, color: theme.colors.textTertiary, marginBottom: 8, lineHeight: 15 }}>
-                    Why we ask: some states (CA, NY, WA) have different DMV document rules for new residents depending on visa status. Skip if it doesn&apos;t apply.
+                    {t("onboarding.immigration_why")}
                   </Text>
                   <View style={styles.chipRow}>
                     {IMMIGRATION_STATUSES.map((is_) => (
@@ -743,30 +777,30 @@ export default function OnboardingScreen() {
           {step === 1 && (
             <View style={styles.stepContent}>
               <View style={styles.stepIcon}><MapPin size={28} color={theme.colors.primary} /></View>
-              <Text style={styles.stepTitle}>Your Primary Address</Text>
-              <Text style={styles.stepDesc}>Where do you currently live?</Text>
+              <Text style={styles.stepTitle}>{t("onboarding.address_title")}</Text>
+              <Text style={styles.stepDesc}>{t("onboarding.address_description")}</Text>
 
-              <Input label="Nickname" placeholder="e.g. Home, Apartment" value={address.nickname}
+              <Input label={t("addresses.nickname")} placeholder="e.g. Home, Apartment" value={address.nickname}
                 onChangeText={(v: string) => updateAddress("nickname", v)} containerStyle={{ marginTop: 24, width: "100%" }} />
-              <AddressAutocompleteField label="Street Address *" placeholder="123 Main St" value={address.street}
+              <AddressAutocompleteField label={`${t("addresses.street")} *`} placeholder="123 Main St" value={address.street}
                 onValueChange={(value) => updateAddress("street", value)} onSelect={handleAddressAutocompleteSelect} containerStyle={{ marginTop: 12, width: "100%" }} />
 
               <View style={[styles.row, { marginTop: 12 }]}>
                 <View style={{ flex: 2 }}>
-                  <Input label="City *" placeholder="Austin" value={address.city}
+                  <Input label={`${t("addresses.city")} *`} placeholder="Austin" value={address.city}
                     onChangeText={(v: string) => updateAddress("city", v)} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Input label="State *" placeholder="TX" value={address.state} maxLength={2}
+                  <Input label={`${t("addresses.state")} *`} placeholder="TX" value={address.state} maxLength={2}
                     onChangeText={(v: string) => updateAddress("state", v.toUpperCase().slice(0, 2))} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Input label="ZIP *" placeholder="78701" value={address.zip} keyboardType="number-pad" maxLength={10}
+                  <Input label={`${t("addresses.zip")} *`} placeholder="78701" value={address.zip} keyboardType="number-pad" maxLength={10}
                     onChangeText={(v: string) => updateAddress("zip", v)} />
                 </View>
               </View>
 
-              <Text style={[styles.fieldLabel, { marginTop: 20 }]}>Type</Text>
+              <Text style={[styles.fieldLabel, { marginTop: 20 }]}>{t("onboarding.address_typeLabel")}</Text>
               <View style={styles.chipRow}>
                 {ADDRESS_TYPES.map((t) => (
                   <TouchableOpacity key={t.value}
@@ -777,7 +811,7 @@ export default function OnboardingScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.fieldLabel, { marginTop: 16 }]}>Ownership</Text>
+              <Text style={[styles.fieldLabel, { marginTop: 16 }]}>{t("onboarding.address_ownershipLabel")}</Text>
               <View style={styles.chipRow}>
                 {OWNERSHIP_TYPES.map((o) => (
                   <TouchableOpacity key={o.value}
@@ -794,15 +828,17 @@ export default function OnboardingScreen() {
           {step === 2 && (
             <View style={styles.stepContent}>
               <View style={styles.stepIcon}><Zap size={28} color={theme.colors.primary} /></View>
-              <Text style={styles.stepTitle}>Choose Your Providers</Text>
+              <Text style={styles.stepTitle}>{t("onboarding.providers_title")}</Text>
               <Text style={styles.stepDesc}>
-                {address.state ? `Showing for ${address.state}` : "All states"}
-                {selectedProviders.size > 0 ? ` · ${selectedProviders.size} selected` : ""}
+                {address.state
+                  ? t("onboarding.providers_showingState", { state: address.state })
+                  : t("onboarding.providers_allStates")}
+                {selectedProviders.size > 0 ? t("onboarding.providers_selectedSuffix", { count: selectedProviders.size }) : ""}
               </Text>
 
               <View style={styles.searchRow}>
                 <Search size={16} color={theme.colors.textMuted} />
-                <Input placeholder="Search providers..." value={providerSearch}
+                <Input placeholder={t("onboarding.providers_searchPlaceholder")} value={providerSearch}
                   onChangeText={setProviderSearch}
                   containerStyle={{ flex: 1, marginBottom: 0 }} />
               </View>
@@ -812,7 +848,7 @@ export default function OnboardingScreen() {
                 <View style={styles.recoSection}>
                   <View style={styles.recoHeader}>
                     <Sparkles size={16} color={theme.colors.amber.text} />
-                    <Text style={styles.recoTitle}>Recommended for You</Text>
+                    <Text style={styles.recoTitle}>{t("onboarding.providers_recommended")}</Text>
                   </View>
                   {recommended.map((provider: ScoredProvider) => {
                     const isSelected = selectedProviders.has(provider.id);
@@ -842,10 +878,10 @@ export default function OnboardingScreen() {
               {loadingProviders ? (
                 <View style={styles.loadingBox}>
                   <ActivityIndicator color={theme.colors.primary} />
-                  <Text style={styles.loadingText}>Loading providers...</Text>
+                  <Text style={styles.loadingText}>{t("onboarding.providers_loading")}</Text>
                 </View>
               ) : sortedCats.length === 0 ? (
-                <Text style={styles.emptyText}>No providers found.</Text>
+                <Text style={styles.emptyText}>{t("onboarding.providers_empty")}</Text>
               ) : (
                 <View style={{ marginTop: 12, width: "100%" }}>
                   {sortedCats.map((cat) => {
@@ -886,7 +922,7 @@ export default function OnboardingScreen() {
                                   <View style={styles.providerMetaRow}>
                                     <View style={[styles.scopeBadge, provider.scope === "FEDERAL" ? styles.scopeFederal : styles.scopeState]}>
                                       <Text style={[styles.scopeText, provider.scope === "FEDERAL" ? styles.scopeFederalText : styles.scopeStateText]}>
-                                        {provider.scope === "FEDERAL" ? "Federal" : (provider.states || []).join(", ")}
+                                        {provider.scope === "FEDERAL" ? t("onboarding.scopeFederal") : (provider.states || []).join(", ")}
                                       </Text>
                                     </View>
                                     {bd?.monthlyCost ? (
@@ -903,7 +939,7 @@ export default function OnboardingScreen() {
                                   <Text style={{ fontSize: 11, color: theme.colors.textMuted }}>$</Text>
                                   <View style={{ flex: 1, maxWidth: 120, backgroundColor: theme.colors.surface, borderRadius: 8, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: 10, paddingVertical: 6 }}>
                                     <TextInput
-                                      placeholder="Cost"
+                                      placeholder={t("onboarding.billingCost")}
                                       placeholderTextColor={theme.colors.textMuted}
                                       keyboardType="decimal-pad"
                                       style={{ fontSize: 12, color: theme.colors.text, padding: 0 }}
@@ -917,7 +953,7 @@ export default function OnboardingScreen() {
                                       onPress={() => setBillingData((prev) => ({ ...prev, [provider.id]: { monthlyCost: prev[provider.id]?.monthlyCost || "", billingCycle: cycle } }))}
                                       style={{ paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primaryFaded : theme.colors.surface, borderWidth: 1, borderColor: (bd?.billingCycle || "MONTHLY") === cycle ? "rgba(249,115,22,0.4)" : theme.colors.border }}>
                                       <Text style={{ fontSize: 10, fontWeight: "600", color: (bd?.billingCycle || "MONTHLY") === cycle ? theme.colors.primary : theme.colors.textMuted }}>
-                                        {cycle === "MONTHLY" ? "Mo" : "Yr"}
+                                        {cycle === "MONTHLY" ? t("onboarding.billingCycle_monthly") : t("onboarding.billingCycle_yearly")}
                                       </Text>
                                     </TouchableOpacity>
                                   ))}
@@ -940,23 +976,23 @@ export default function OnboardingScreen() {
               <View style={[styles.stepIcon, { backgroundColor: theme.colors.successFaded, borderColor: "rgba(16,185,129,0.3)" }]}>
                 <Truck size={28} color={theme.colors.success} />
               </View>
-              <Text style={styles.stepTitle}>Do you have a move planned?</Text>
+              <Text style={styles.stepTitle}>{t("onboarding.moving_title")}</Text>
               <Text style={styles.stepDesc}>
-                If yes, we&apos;ll generate a personalized checklist with tasks and deadlines. If not, you can add one any time from the Moving tab.
+                {t("onboarding.moving_description")}
               </Text>
 
               {wantsToMove === null && (
                 <View style={{ marginTop: 32, gap: 12, width: "100%" }}>
-                  <Button title="Yes, plan my move" onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="lg" />
-                  <Button title="Not right now" onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
+                  <Button title={t("onboarding.moving_yes")} onPress={() => { hapticLight(); setWantsToMove(true); }} fullWidth size="lg" />
+                  <Button title={t("onboarding.moving_no")} onPress={() => { hapticLight(); setWantsToMove(false); }} variant="ghost" fullWidth size="lg" />
                 </View>
               )}
 
               {wantsToMove === false && (
                 <View style={{ marginTop: 24, alignItems: "center", gap: 12, width: "100%" }}>
                   <Check size={40} color={theme.colors.success} style={{ opacity: 0.5 }} />
-                  <Text style={[styles.stepDesc, { marginTop: 0 }]}>No problem! You can create a moving plan anytime from the Moving tab.</Text>
-                  <Button title="Go to Dashboard" onPress={handleComplete} loading={saving} fullWidth size="lg" />
+                  <Text style={[styles.stepDesc, { marginTop: 0 }]}>{t("onboarding.moving_skipped")}</Text>
+                  <Button title={t("onboarding.goToDashboard")} onPress={handleComplete} loading={saving} fullWidth size="lg" />
                 </View>
               )}
 
@@ -964,32 +1000,32 @@ export default function OnboardingScreen() {
                 <View style={{ marginTop: 20, gap: 12, width: "100%" }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                     <MapPin size={16} color={theme.colors.primary} />
-                    <Text style={{ fontSize: 14, fontWeight: "700", color: theme.colors.text }}>Where are you moving to?</Text>
+                    <Text style={{ fontSize: 14, fontWeight: "700", color: theme.colors.text }}>{t("onboarding.moving_destinationHeader")}</Text>
                   </View>
-                  <AddressAutocompleteField label="Street Address" placeholder="123 New St (optional)" value={movingForm.street}
+                  <AddressAutocompleteField label={t("addresses.street")} placeholder="123 New St (optional)" value={movingForm.street}
                     onValueChange={(value) => updateMoving("street", value)} onSelect={handleMovingAutocompleteSelect} containerStyle={{ width: "100%" }} />
                   <View style={[styles.row]}>
                     <View style={{ flex: 2 }}>
-                      <Input label="City *" placeholder="Austin" value={movingForm.city}
+                      <Input label={`${t("addresses.city")} *`} placeholder="Austin" value={movingForm.city}
                         onChangeText={(v: string) => updateMoving("city", v)} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Input label="State *" placeholder="TX" value={movingForm.state} maxLength={2}
+                      <Input label={`${t("addresses.state")} *`} placeholder="TX" value={movingForm.state} maxLength={2}
                         onChangeText={(v: string) => updateMoving("state", v.toUpperCase().slice(0, 2))} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Input label="ZIP *" placeholder="78701" value={movingForm.zip} keyboardType="number-pad" maxLength={10}
+                      <Input label={`${t("addresses.zip")} *`} placeholder="78701" value={movingForm.zip} keyboardType="number-pad" maxLength={10}
                         onChangeText={(v: string) => updateMoving("zip", v)} />
                     </View>
                   </View>
                   <View style={{ width: "100%" }}>
-                    <Text style={styles.dateLabel}>Move Date *</Text>
+                    <Text style={styles.dateLabel}>{t("onboarding.moving_dateLabel")}</Text>
                     <TouchableOpacity
                       style={styles.dateButton}
                       onPress={() => setShowMoveDatePicker(true)}
                       activeOpacity={0.7}
                       accessibilityRole="button"
-                      accessibilityLabel="Select move date"
+                      accessibilityLabel={t("onboarding.moving_dateA11y")}
                     >
                       <Calendar size={16} color={movingForm.moveDate ? theme.colors.primary : theme.colors.textMuted} />
                       <Text style={[styles.dateButtonText, movingForm.moveDate ? { color: theme.colors.text } : undefined]}>
@@ -1000,7 +1036,7 @@ export default function OnboardingScreen() {
                               day: "numeric",
                               year: "numeric",
                             })
-                          : "Select move date..."}
+                          : t("onboarding.moving_datePlaceholder")}
                       </Text>
                     </TouchableOpacity>
                     {showMoveDatePicker && (
@@ -1023,9 +1059,9 @@ export default function OnboardingScreen() {
                         style={styles.dateDoneButton}
                         onPress={() => setShowMoveDatePicker(false)}
                         accessibilityRole="button"
-                        accessibilityLabel="Done selecting move date"
+                        accessibilityLabel={t("onboarding.moving_dateDoneA11y")}
                       >
-                        <Text style={styles.dateDoneText}>Done</Text>
+                        <Text style={styles.dateDoneText}>{t("common.done")}</Text>
                       </TouchableOpacity>
                     ) : null}
                   </View>

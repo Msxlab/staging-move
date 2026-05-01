@@ -14,6 +14,7 @@ import { create } from "zustand";
 import { tokenCache } from "@/lib/auth";
 
 const TOKEN_KEY = "locateflow.session";
+const AUTH_REFRESH_TIMEOUT_MS = 12_000;
 
 export interface AuthUser {
   id: string;
@@ -62,18 +63,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async refreshUser(apiBaseUrl) {
     const { token } = get();
     if (!token) return;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), AUTH_REFRESH_TIMEOUT_MS);
     try {
       const res = await fetch(`${apiBaseUrl}/api/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "x-client-type": "mobile",
+        },
+        signal: controller.signal,
       });
-      if (!res.ok) {
+      if (res.status === 401) {
         await get().clearSession();
         return;
       }
+      if (!res.ok) return;
       const data = await res.json();
       if (data?.user) set({ user: data.user });
     } catch {
       /* network error — keep prior state */
+    } finally {
+      clearTimeout(timeout);
     }
   },
 }));

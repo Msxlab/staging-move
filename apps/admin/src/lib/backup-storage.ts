@@ -35,6 +35,12 @@ export interface BackupArchiveRecordMetadata {
   totalRecords: number | null;
   tableCounts: Record<string, number>;
   archiveSizeWarning?: string | null;
+  // Names of tables whose rowcount hit the per-table ceiling. Omitted
+  // for FULL archives; populated when the archive is PARTIAL so the
+  // record's metadata matches the archive's own self-description.
+  truncatedTables?: string[];
+  failedTables?: string[];
+  maxRowsPerTable?: number;
 }
 
 export interface BackupRecordMetadata {

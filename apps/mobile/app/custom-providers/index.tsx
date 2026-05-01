@@ -15,6 +15,7 @@ import { api } from "@/lib/api";
 import { theme } from "@/lib/theme";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 interface CustomProvider {
@@ -84,7 +85,7 @@ export default function CustomProvidersScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>Custom Providers</Text>
         <TouchableOpacity
-          onPress={() => router.push("/services/new?mode=manual" as any)}
+          onPress={() => router.push({ pathname: "/services/new", params: { mode: "manual" } })}
           style={styles.addBtn}
           accessibilityRole="button"
           accessibilityLabel="Add custom provider"
@@ -117,15 +118,15 @@ export default function CustomProvidersScreen() {
           />
         </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        {providers.length === 0 ? (
+        {error ? (
+          <ErrorState message={error} onRetry={() => loadProviders()} />
+        ) : providers.length === 0 ? (
           <EmptyState
             icon={<Building2 size={32} color={theme.colors.primary} />}
             title="No custom providers yet"
             description="Add local providers like a dentist, gym, law office, or utility from the manual service flow."
             actionLabel="Add local provider"
-            onAction={() => router.push("/services/new?mode=manual" as any)}
+            onAction={() => router.push({ pathname: "/services/new", params: { mode: "manual" } })}
           />
         ) : (
           <View style={styles.list}>
@@ -133,7 +134,7 @@ export default function CustomProvidersScreen() {
               <TouchableOpacity
                 key={provider.id}
                 style={styles.card}
-                onPress={() => router.push(`/custom-providers/${provider.id}` as any)}
+                onPress={() => router.push({ pathname: "/custom-providers/[id]", params: { id: provider.id } })}
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${provider.name}`}
@@ -212,7 +213,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   searchInput: { flex: 1, color: theme.colors.text, fontSize: 15, paddingVertical: 12 },
-  error: { color: theme.colors.error, fontSize: 13, marginBottom: 12 },
   list: { gap: 12 },
   card: {
     flexDirection: "row",

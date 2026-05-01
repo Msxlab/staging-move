@@ -31,8 +31,20 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Apple App Store Server Notifications v2 envelopes are a single
+// signedPayload JWS — even the chunkiest in-app purchase event is
+// well under 64KB. The middleware exempts /api/webhooks/* from the
+// global body-size limit so JWS verification can run on the raw
+// bytes; re-introduce a per-route ceiling so a hostile client can't
+// stream MB-scale junk hoping verifyAppleJws gives up.
+const APPSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
+
 export async function POST(request: NextRequest) {
   try {
+    const declaredLength = Number(request.headers.get("content-length") || 0);
+    if (declaredLength > APPSTORE_WEBHOOK_MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+    }
     const body = await request.json().catch(() => null);
     const signedPayload = body && typeof body.signedPayload === "string" ? body.signedPayload : null;
     if (!signedPayload) {

@@ -3,7 +3,7 @@ import { profileSchema } from "@/lib/validators";
 import { buildOnboardingProfilePayload } from "./onboarding-profile-payload";
 
 describe("buildOnboardingProfilePayload", () => {
-  it("strips UI-only onboarding fields before profile POST", () => {
+  it("keeps persisted mobile profile fields and strips UI-only onboarding fields", () => {
     const payload = buildOnboardingProfilePayload(
       {
         firstName: "Taylor",
@@ -22,7 +22,7 @@ describe("buildOnboardingProfilePayload", () => {
         hasBoatRV: false,
         moveType: "BUSINESS",
         isImmigrant: true,
-        immigrationStatus: "VISA",
+        immigrationStatus: "H1B",
         isBusinessOwner: true,
         businessType: "LLC",
         isMilitary: true,
@@ -30,10 +30,12 @@ describe("buildOnboardingProfilePayload", () => {
       } as any,
     );
 
-    expect(payload).not.toHaveProperty("moveType");
-    expect(payload).not.toHaveProperty("isImmigrant");
-    expect(payload).not.toHaveProperty("immigrationStatus");
-    expect(payload).not.toHaveProperty("isBusinessOwner");
+    expect(payload).toEqual(expect.objectContaining({
+      moveType: "BUSINESS",
+      isImmigrant: true,
+      immigrationStatus: "H1B",
+      isBusinessOwner: true,
+    }));
     expect(payload).not.toHaveProperty("businessType");
     expect(payload).not.toHaveProperty("isMilitary");
     expect(payload).not.toHaveProperty("sensitiveOptIn");

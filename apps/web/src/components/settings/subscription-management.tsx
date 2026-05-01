@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, Crown, ShieldCheck, Sparkles } from "lucide-react";
@@ -13,6 +13,7 @@ import {
 } from "@/lib/shared-billing";
 import { RevealModal } from "@/components/premium/reveal-modal";
 import { planToStickerTier } from "@/components/premium/premium-sticker";
+import { trackEvent } from "@/lib/analytics";
 
 type SubscriptionRecord = {
   plan?: string | null;
@@ -139,6 +140,7 @@ export default function SubscriptionManagementPage() {
   const justUpgradedPlan = successFlag ? searchParams.get("plan") : null;
   const justUpgradedTier = planToStickerTier(justUpgradedPlan);
   const [revealOpen, setRevealOpen] = useState(false);
+  const activationTrackedRef = useRef(false);
 
   async function load() {
     setError(null);
@@ -211,6 +213,14 @@ export default function SubscriptionManagementPage() {
     if (waitingForActivation) return;
     if (!subscription) return;
     if (!isStripeCheckoutActivated(subscription)) return;
+    if (!activationTrackedRef.current) {
+      activationTrackedRef.current = true;
+      const cycle = subscription.billingInterval === "MONTH" ? "monthly" : "yearly";
+      trackEvent(subscription.status === "TRIALING" ? "trial_started" : "subscription_started", {
+        plan: "individual",
+        cycle,
+      });
+    }
     setRevealOpen(true);
     router.replace("/settings/subscription", { scroll: false });
   }, [justUpgradedTier, router, waitingForActivation, subscription]);
@@ -263,6 +273,7 @@ export default function SubscriptionManagementPage() {
     }
     setProcessing("CHECKOUT");
     setError(null);
+    trackEvent("checkout_started", { plan: "individual", cycle: "yearly", has_trial: true });
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -290,6 +301,7 @@ export default function SubscriptionManagementPage() {
     }
     setProcessing("MONTHLY_CHECKOUT");
     setError(null);
+    trackEvent("checkout_started", { plan: "individual", cycle: "monthly", has_trial: false });
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -511,7 +523,7 @@ export default function SubscriptionManagementPage() {
                       </div>
                     ) : null}
                     <div className="rounded-xl border border-border bg-background/40 p-3">
-                      <p className="text-[11px] uppercase text-muted-foreground">Plan starts</p>
+                      <p className="text-[11px] uppercase text-muted-foreground">Annual plan starts</p>
                       <p className="mt-1 text-sm font-semibold text-foreground">{firstChargeLabel}</p>
                     </div>
                   </div>

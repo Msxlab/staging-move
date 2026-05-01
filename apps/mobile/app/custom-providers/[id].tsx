@@ -25,6 +25,7 @@ import { api } from "@/lib/api";
 import { theme } from "@/lib/theme";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
 
@@ -54,10 +55,19 @@ export default function CustomProviderDetailScreen() {
   const [provider, setProvider] = useState<CustomProvider | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadProvider = useCallback(async () => {
     const res = await api.get<{ provider?: CustomProvider }>(`/api/custom-providers/${id}`);
-    if (res.data?.provider) setProvider(res.data.provider);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
+    if (res.data?.provider) {
+      setProvider(res.data.provider);
+      setError(null);
+    }
+    return true;
   }, [id]);
 
   useEffect(() => {
@@ -112,9 +122,11 @@ export default function CustomProviderDetailScreen() {
           <Text style={styles.title}>Not Found</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={styles.center}>
-          <Text style={styles.emptyText}>Custom provider not found.</Text>
-        </View>
+        <ErrorState
+          title={error ? "Custom provider unavailable" : "Custom provider not found"}
+          message={error || "This custom provider may have been removed."}
+          onRetry={loadProvider}
+        />
       </SafeAreaView>
     );
   }
@@ -137,7 +149,7 @@ export default function CustomProviderDetailScreen() {
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>Custom Provider</Text>
-        <TouchableOpacity onPress={() => router.push(`/custom-providers/${provider.id}/edit` as any)} style={styles.iconBtn}>
+        <TouchableOpacity onPress={() => router.push({ pathname: "/custom-providers/[id]/edit", params: { id: provider.id } })} style={styles.iconBtn}>
           <Edit size={18} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
@@ -212,7 +224,7 @@ export default function CustomProviderDetailScreen() {
                 <TouchableOpacity
                   key={service.id}
                   style={[styles.serviceRow, index < provider.services!.length - 1 && styles.infoRowBorder]}
-                  onPress={() => router.push(`/services/${service.id}` as any)}
+                  onPress={() => router.push({ pathname: "/services/[id]", params: { id: service.id } })}
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={styles.serviceName}>{service.providerName}</Text>
@@ -225,7 +237,7 @@ export default function CustomProviderDetailScreen() {
           </>
         ) : null}
 
-        <TouchableOpacity style={styles.editBtn} onPress={() => router.push(`/custom-providers/${provider.id}/edit` as any)}>
+        <TouchableOpacity style={styles.editBtn} onPress={() => router.push({ pathname: "/custom-providers/[id]/edit", params: { id: provider.id } })}>
           <Edit size={16} color={theme.colors.primary} />
           <Text style={styles.editText}>Edit Custom Provider</Text>
         </TouchableOpacity>

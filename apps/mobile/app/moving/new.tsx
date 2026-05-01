@@ -262,7 +262,7 @@ export default function NewMovingPlanScreen() {
     }
 
     hapticSuccess();
-    router.replace(`/moving/${planId}` as any);
+    router.replace({ pathname: "/moving/[id]", params: { id: planId } });
   };
 
   return (
@@ -292,7 +292,7 @@ export default function NewMovingPlanScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.warningBtn}
-                onPress={() => router.push("/addresses/new" as any)}
+                onPress={() => router.push("/addresses/new")}
               >
                 <Text style={styles.warningBtnText}>{t("addresses.newTitle")}</Text>
               </TouchableOpacity>

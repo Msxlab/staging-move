@@ -42,9 +42,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const body = await req.json().catch(() => null);
   const { searchParams } = new URL(req.url);
-  const token = searchParams.get("token");
+  const token = typeof body?.token === "string" ? body.token : searchParams.get("token");
   if (!token) return NextResponse.json({ error: "token required" }, { status: 400 });
+  if (token.length < 10 || token.length > 255) {
+    return NextResponse.json({ error: "Invalid token" }, { status: 400 });
+  }
 
   await prisma.pushDevice.deleteMany({ where: { userId, token } });
   return NextResponse.json({ ok: true });
