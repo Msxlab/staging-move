@@ -16,6 +16,7 @@
     "seed:expanded": "tsx prisma/seed-providers-expanded.ts",
     "seed:government": "tsx prisma/seed-providers-government.ts",
     "seed:admin": "tsx prisma/seed-admin.ts",
+    "seed:blog": "tsx prisma/seed-blog.ts",
     "seed:master": "tsx prisma/seed-master.ts",
     "seed:all": "tsx prisma/seed-master.ts && tsx prisma/seed-admin.ts",
     "studio": "prisma studio"

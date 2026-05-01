@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import { getLocale } from "next-intl/server";
 import { isBlogLocale } from "@locateflow/shared";
 import { listPublicPosts } from "@/lib/blog/queries";
@@ -10,7 +11,7 @@ import { blogPostPath } from "@/lib/blog/urls";
  * component; benefits from the same ISR window the /blog list uses
  * (publish webhook revalidates `/`). Renders nothing if there are no
  * posts so an empty blog doesn't push a sad ghost section onto a
- * marketing page.
+ * marketing page. Visual language matches the new magazine-style blog.
  */
 export async function LatestBlogPosts() {
   let listing;
@@ -29,48 +30,66 @@ export async function LatestBlogPosts() {
   if (listing.items.length === 0) return null;
 
   return (
-    <section className="py-16 border-t" aria-labelledby="latest-blog-heading">
+    <section className="border-t py-20" aria-labelledby="latest-blog-heading">
       <div className="container">
-        <div className="mb-8 flex items-end justify-between">
-          <h2 id="latest-blog-heading" className="text-3xl font-semibold tracking-tight">
-            From the blog
-          </h2>
+        <div className="mb-10 flex items-end justify-between gap-4">
+          <div>
+            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
+              The Field Guide
+            </span>
+            <h2
+              id="latest-blog-heading"
+              className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl"
+            >
+              From the blog
+            </h2>
+          </div>
           <Link
             href="/blog"
-            className="text-sm text-muted-foreground hover:text-foreground"
+            className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition hover:text-primary"
           >
-            View all →
+            All stories
+            <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
-        <ul className="grid gap-8 md:grid-cols-3">
+        <ul className="grid gap-x-8 gap-y-12 md:grid-cols-3">
           {listing.items.map((p) => (
             <li key={`${p.locale}-${p.slug}`}>
               <Link href={blogPostPath(p.slug, p.locale)} className="group block">
-                {p.ogImageUrl ? (
-                  <div className="aspect-[1200/630] relative overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-card/40">
+                  {p.ogImageUrl ? (
                     <Image
                       src={p.ogImageUrl}
                       alt={p.title}
                       fill
                       sizes="(min-width: 768px) 33vw, 100vw"
-                      className="object-cover transition-transform group-hover:scale-105"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                     />
+                  ) : (
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary)/0.15),transparent_60%)]"
+                    />
+                  )}
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                    {p.category ? p.category.name : "Field Notes"} · {p.readingMinutes} min
                   </div>
-                ) : (
-                  <div className="aspect-[1200/630] rounded-lg bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900" />
-                )}
-                <h3 className="mt-3 text-lg font-medium tracking-tight group-hover:underline">
-                  {p.title}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>
-                <p className="mt-2 text-xs text-zinc-500">
-                  {new Date(p.publishedAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}{" "}
-                  · {p.readingMinutes} min
-                </p>
+                  <h3 className="font-display text-xl font-semibold leading-tight tracking-tight transition group-hover:text-primary">
+                    {p.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground line-clamp-2">
+                    {p.excerpt}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(p.publishedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
               </Link>
             </li>
           ))}

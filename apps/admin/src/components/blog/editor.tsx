@@ -121,15 +121,20 @@ export function BlogEditor({ initialContent, onChange, disabled }: BlogEditorPro
       aria-label={label}
       aria-pressed={!!active}
       disabled={disabled}
-      className={`px-2 py-1 text-sm border rounded ${active ? "bg-zinc-200 dark:bg-zinc-700" : ""}`}
+      className={
+        "rounded-md border px-2 py-1 text-sm transition disabled:opacity-50 " +
+        (active
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "border-border bg-background text-foreground hover:bg-accent")
+      }
     >
       {children}
     </button>
   );
 
   return (
-    <div className="border rounded-md">
-      <div className="flex flex-wrap gap-1 p-2 border-b bg-zinc-50 dark:bg-zinc-900">
+    <div className="rounded-lg border border-border bg-card">
+      <div className="flex flex-wrap items-center gap-1 border-b border-border bg-muted/40 p-2">
         <Btn
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           active={editor.isActive("heading", { level: 2 })}
@@ -192,14 +197,16 @@ export function BlogEditor({ initialContent, onChange, disabled }: BlogEditorPro
         <Btn onClick={insertImage} label="Insert image">
           🖼
         </Btn>
-        {uploading ? <span className="text-xs px-2 py-1 text-zinc-500">Uploading…</span> : null}
+        {uploading ? (
+          <span className="ml-2 text-xs text-muted-foreground">Uploading…</span>
+        ) : null}
         {uploadError ? (
-          <span className="text-xs px-2 py-1 text-red-600">{uploadError}</span>
+          <span className="ml-2 text-xs text-destructive">{uploadError}</span>
         ) : null}
       </div>
       <EditorContent
         editor={editor}
-        className="prose prose-zinc dark:prose-invert max-w-none p-4 min-h-[300px] focus:outline-none"
+        className="prose prose-zinc max-w-none p-6 min-h-[420px] focus:outline-none dark:prose-invert"
       />
     </div>
   );

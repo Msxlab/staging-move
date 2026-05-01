@@ -6,6 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CalendarClock, Eye, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { BlogEditor } from "./editor";
+import { CoverImageUploader } from "./cover-image-uploader";
+import { CategoryPicker } from "./category-picker";
+import { SeoScore } from "./seo-score";
 
 type BlogStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
 type BlogLocale = "en" | "es";
@@ -17,6 +20,7 @@ interface LoadedPost {
   title: string;
   excerpt: string;
   contentJson: object | null;
+  contentText?: string | null;
   status: BlogStatus;
   publishedAt: string | null;
   scheduledAt: string | null;
@@ -26,6 +30,7 @@ interface LoadedPost {
   noIndex: boolean;
   ogImageKey: string | null;
   ogImageAlt: string | null;
+  categoryId: string | null;
 }
 
 interface FormState {
@@ -41,6 +46,7 @@ interface FormState {
   ogImageKey: string;
   ogImageAlt: string;
   scheduledAt: string;
+  categoryId: string | null;
 }
 
 const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
@@ -79,7 +85,24 @@ function normalizePost(post: LoadedPost): FormState {
     ogImageKey: post.ogImageKey || "",
     ogImageAlt: post.ogImageAlt || "",
     scheduledAt: toLocalInputValue(post.scheduledAt),
+    categoryId: post.categoryId ?? null,
   };
+}
+
+function tiptapToText(doc: object | null | undefined): string {
+  if (!doc || typeof doc !== "object") return "";
+  // Cheap client-side text extractor for the SEO body-length lint.
+  // The server is the source of truth (renderBlogContent → htmlToText)
+  // and writes `contentText` on save; this is only a live preview.
+  const out: string[] = [];
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== "object") return;
+    const n = node as { type?: string; text?: string; content?: unknown[] };
+    if (typeof n.text === "string") out.push(n.text);
+    if (Array.isArray(n.content)) n.content.forEach(walk);
+  };
+  walk(doc);
+  return out.join(" ");
 }
 
 async function readError(res: Response): Promise<string> {
@@ -105,6 +128,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
     ogImageKey: "",
     ogImageAlt: "",
     scheduledAt: "",
+    categoryId: null,
   });
 
   const isExisting = !!postId;
@@ -183,6 +207,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           noIndex: form.noIndex,
           ogImageKey: form.ogImageKey.trim() || null,
           ogImageAlt: form.ogImageAlt.trim() || null,
+          categoryId: form.categoryId,
           scheduledAt: fromLocalInputValue(form.scheduledAt) ?? null,
         }),
       });
@@ -389,6 +414,32 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
 
         <aside className="space-y-4">
           <section className="rounded-lg border border-border bg-card p-4">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">Cover image</h2>
+            <CoverImageUploader
+              ogImageKey={form.ogImageKey}
+              ogImageAlt={form.ogImageAlt}
+              onChange={({ ogImageKey, ogImageAlt }) =>
+                setForm((f) => ({ ...f, ogImageKey, ogImageAlt }))
+              }
+              disabled={saving}
+            />
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">Discoverability</h2>
+            <SeoScore
+              title={form.title}
+              seoTitle={form.seoTitle}
+              excerpt={form.excerpt}
+              seoDescription={form.seoDescription}
+              slug={form.slug}
+              ogImageKey={form.ogImageKey}
+              ogImageAlt={form.ogImageAlt}
+              contentText={post?.contentText ?? tiptapToText(form.contentJson)}
+            />
+          </section>
+
+          <section className="rounded-lg border border-border bg-card p-4">
             <h2 className="mb-3 text-sm font-semibold text-foreground">Post settings</h2>
             <div className="space-y-3">
               <div>
@@ -402,6 +453,9 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   className={inputClass}
                   placeholder="moving-checklist"
                 />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Lowercase, dashes only. Leave empty to auto-generate from the title.
+                </p>
               </div>
               <div>
                 <label className={labelClass} htmlFor="blog-locale">
@@ -417,6 +471,12 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   <option value="es">Spanish (US)</option>
                 </select>
               </div>
+              <CategoryPicker
+                locale={form.locale}
+                value={form.categoryId}
+                onChange={(categoryId) => setForm((f) => ({ ...f, categoryId }))}
+                disabled={saving}
+              />
               <div>
                 <label className={labelClass} htmlFor="blog-excerpt">
                   Excerpt
@@ -447,7 +507,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           </section>
 
           <section className="rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">SEO</h2>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">SEO meta</h2>
             <div className="space-y-3">
               <div>
                 <label className={labelClass} htmlFor="seo-title">
@@ -459,11 +519,12 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   onChange={(e) => setForm((f) => ({ ...f, seoTitle: e.target.value }))}
                   className={inputClass}
                   maxLength={200}
+                  placeholder="Falls back to the post title"
                 />
               </div>
               <div>
                 <label className={labelClass} htmlFor="seo-description">
-                  SEO description
+                  Meta description
                 </label>
                 <textarea
                   id="seo-description"
@@ -472,6 +533,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   className={inputClass}
                   rows={3}
                   maxLength={320}
+                  placeholder="Falls back to the excerpt"
                 />
               </div>
               <div>
@@ -495,36 +557,6 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                 />
                 Noindex this post
               </label>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">Cover image</h2>
-            <div className="space-y-3">
-              <div>
-                <label className={labelClass} htmlFor="og-image-key">
-                  R2 object key
-                </label>
-                <input
-                  id="og-image-key"
-                  value={form.ogImageKey}
-                  onChange={(e) => setForm((f) => ({ ...f, ogImageKey: e.target.value }))}
-                  className={inputClass}
-                  placeholder="blog/2026-04/admin-id/image.webp"
-                />
-              </div>
-              <div>
-                <label className={labelClass} htmlFor="og-image-alt">
-                  Alt text
-                </label>
-                <input
-                  id="og-image-alt"
-                  value={form.ogImageAlt}
-                  onChange={(e) => setForm((f) => ({ ...f, ogImageAlt: e.target.value }))}
-                  className={inputClass}
-                  maxLength={200}
-                />
-              </div>
             </div>
           </section>
         </aside>
