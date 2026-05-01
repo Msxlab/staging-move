@@ -8,7 +8,7 @@ repository without production Google account access.
 ## Environment Variables
 
 - `DATABASE_URL`: required in production so blog pages, blog sitemap entries, and `llms.txt` can resolve published content.
-- `NEXT_PUBLIC_SITE_URL`: canonical public origin, for example `https://locateflow.app`.
+- `NEXT_PUBLIC_SITE_URL`: canonical public origin, for example `https://locateflow.com`.
 - `SITE_URL`: server-side canonical public origin fallback.
 - `NEXT_PUBLIC_APP_URL`: existing app URL used by auth, billing, email, and legacy links.
 - `APP_ENV`: `production`, `staging`, `preview`, or `development`. Only `production` should be indexable.
@@ -19,7 +19,7 @@ repository without production Google account access.
 
 Production canonical URLs must be HTTPS public origins. Do not set
 `NEXT_PUBLIC_SITE_URL` or `SITE_URL` to localhost, internal hosts, staging,
-preview, or Vercel preview URLs. The code falls back to `https://locateflow.app`
+preview, or Vercel preview URLs. The code falls back to `https://locateflow.com`
 for unsafe production canonical values, but deployment config should still be
 fixed before indexing.
 

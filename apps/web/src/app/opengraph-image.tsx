@@ -100,7 +100,7 @@ export default function OpengraphImage() {
             }}
           />
           <span style={{ fontSize: 20, color: "#fb923c", fontWeight: 600 }}>
-            locateflow.app
+            locateflow.com
           </span>
         </div>
       </div>
