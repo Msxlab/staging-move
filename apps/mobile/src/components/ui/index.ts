@@ -4,6 +4,7 @@ export { Input } from "./Input";
 export { Badge } from "./Badge";
 export { Avatar } from "./Avatar";
 export { EmptyState } from "./EmptyState";
+export { ErrorState } from "./ErrorState";
 export { LoadingScreen, LoadingOverlay } from "./LoadingScreen";
 export { LogoBrand } from "./LogoBrand";
 export { GradientProgress } from "./GradientProgress";

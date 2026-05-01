@@ -64,16 +64,24 @@ app/                  # Expo Router screens
 │   ├── services.tsx  # Services list
 │   └── more.tsx      # Settings & features menu
 ├── onboarding.tsx    # New user onboarding wizard
-├── settings/         # Settings screens
+├── addresses/        # Address detail / new / edit
+├── blog/             # Blog index + post detail (deep link target)
+├── budget/           # Budget tracking
+├── custom-providers/ # User-defined providers
+├── help/             # Help center + support tickets
+├── moving/           # Moving plan detail / new
+├── notifications/    # Notification inbox
 ├── providers/        # Provider search & detail
-├── badges/           # Badge collection
-├── assistant/        # AI chat assistant
+├── services/         # Service detail / new / edit
+├── settings/         # Settings screens
 └── _layout.tsx       # Root layout (auth hydration, theme, routing)
 
 src/
-├── components/ui/    # Reusable UI components
+├── components/       # AnimatedSplash, SessionTracker, ui/, address/, legal/, provider/
 ├── hooks/            # React Query data hooks
-├── lib/              # API client, auth-store, theme, haptics, push
+├── i18n/             # i18next config + en/es message catalogs
+├── lib/              # API client, auth-store, iap, push, sentry, theme, haptics
+├── store/            # Zustand stores (app-level)
 └── styles/           # Global styling helpers
 ```
 

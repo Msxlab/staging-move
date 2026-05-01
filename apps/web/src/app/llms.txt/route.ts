@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { blogPostUrl } from "@/lib/blog/urls";
+import { SITE_URL, isNoIndexEnvironment } from "@/lib/seo";
 
 /**
  * `/llms.txt` — emerging-standard discovery file for AI crawlers.
@@ -17,15 +19,21 @@ import { blogPostUrl } from "@/lib/blog/urls";
  * the publish webhook calls `revalidatePath('/llms.txt')` on demand
  * when an editor publishes so freshness never lags more than seconds.
  */
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
-const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app").replace(/\/+$/, "");
-const APP_ENV = (process.env.APP_ENV || "").toLowerCase();
-const BLOCK_INDEXING =
-  APP_ENV === "staging" ||
-  APP_ENV === "preview" ||
-  /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i.test(APP_URL);
+const APP_URL = SITE_URL;
+const STAGING_HOST_PATTERN = /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i;
+const BLOCK_INDEXING = isNoIndexEnvironment(APP_URL);
+
+async function requestHostLooksStaging() {
+  const h = await headers();
+  const host =
+    h.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    h.get("host")?.split(",")[0]?.trim() ||
+    "";
+  return STAGING_HOST_PATTERN.test(host);
+}
 
 const STATIC_DOCS = [
   { title: "How LocateFlow works", path: "/how-it-works", note: "Product overview." },
@@ -34,11 +42,12 @@ const STATIC_DOCS = [
   { title: "Security", path: "/security", note: "Data handling, encryption, MFA." },
   { title: "Privacy policy", path: "/privacy", note: "What we collect and why." },
   { title: "Terms of service", path: "/terms", note: "Legal terms." },
+  { title: "Billing policy", path: "/billing-policy", note: "Subscription, cancellation, and refund terms." },
   { title: "Contact", path: "/contact", note: "Reach the team." },
 ];
 
 export async function GET() {
-  if (BLOCK_INDEXING) {
+  if (BLOCK_INDEXING || (await requestHostLooksStaging())) {
     // Staging/preview: emit a deliberately empty file so accidental
     // crawls of these hosts don't pull synthetic content into model
     // training datasets.
@@ -79,9 +88,13 @@ export async function GET() {
   const lines: string[] = [];
   lines.push("# LocateFlow");
   lines.push("");
+  lines.push("Last updated: 2026-05-01");
+  lines.push("");
   lines.push(
-    "> Track every utility, bank, insurance, and subscription tied to each of your homes — one dashboard, smart reminders, a one-click moving checklist when you relocate.",
+    "> LocateFlow is a web app for organizing address-tied services, renewal reminders, moving tasks, household documents, and exportable relocation records.",
   );
+  lines.push("");
+  lines.push("Public crawl policy: search and answer-engine retrieval crawlers may read the public pages listed here. Authenticated app routes, admin routes, token routes, and private APIs are intentionally excluded.");
   lines.push("");
   lines.push("## Docs");
   for (const doc of STATIC_DOCS) {
@@ -103,7 +116,6 @@ export async function GET() {
   lines.push(`- Sitemap: ${APP_URL}/sitemap.xml`);
   lines.push(`- RSS: ${APP_URL}/blog/feed.xml`);
   lines.push(`- Atom: ${APP_URL}/blog/atom.xml`);
-  lines.push(`- JSON API: ${APP_URL}/api/blog/posts`);
   lines.push("");
 
   return new NextResponse(lines.join("\n"), {

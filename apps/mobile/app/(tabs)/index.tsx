@@ -7,7 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   MapPin,
@@ -23,6 +23,7 @@ import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import type { DashboardStats } from "@locateflow/shared";
@@ -42,6 +43,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
   const [isPremium, setIsPremium] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     const [res, addrRes, movingRes] = await Promise.all([
@@ -49,7 +51,12 @@ export default function DashboardScreen() {
       api.get<any>("/api/addresses"),
       api.get<any>("/api/moving"),
     ]);
+    if (res.error || addrRes.error || movingRes.error) {
+      setError(res.error || addrRes.error || movingRes.error || "Could not load dashboard.");
+      return false;
+    }
     if (res.data) {
+      setError(null);
       const profileData = res.data.profile || res.data;
       const sub = res.data.subscription || {};
       const hasPremium = sub.plan && sub.plan !== "FREE_TRIAL" && (sub.status === "ACTIVE" || (sub.premiumUntil && new Date(sub.premiumUntil) > new Date()));
@@ -132,18 +139,25 @@ export default function DashboardScreen() {
         } catch { /* non-blocking */ }
       }
     }
+    return true;
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchDashboard();
-    setLoading(false);
+    try {
+      await fetchDashboard();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchDashboard]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchDashboard();
-    setRefreshing(false);
+    try {
+      await fetchDashboard();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchDashboard]);
 
   useEffect(() => {
@@ -152,7 +166,13 @@ export default function DashboardScreen() {
 
   if (loading) return <LoadingScreen />;
 
-  const statCards = [
+  const statCards: Array<{
+    icon: typeof MapPin;
+    label: string;
+    value: string;
+    color: { bg: string; border: string; text: string };
+    route: Href;
+  }> = [
     {
       icon: MapPin,
       label: t("dashboard.stat_addresses"),
@@ -191,12 +211,12 @@ export default function DashboardScreen() {
             {isPremium && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(245,158,11,0.12)", borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" }}>
                 <Text style={{ fontSize: 10, color: "#fbbf24" }}>{"✦"}</Text>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: "#fbbf24", letterSpacing: 0.3 }}>Premium</Text>
+                <Text style={{ fontSize: 10, fontWeight: "700", color: "#fbbf24", letterSpacing: 0.3 }}>{t("dashboard.premiumBadge")}</Text>
               </View>
             )}
           </View>
         </View>
-        <TouchableOpacity style={styles.notifButton} onPress={() => router.push("/notifications" as any)}>
+        <TouchableOpacity style={styles.notifButton} onPress={() => router.push("/notifications")}>
           <Bell size={22} color={theme.colors.textSecondary} />
         </TouchableOpacity>
       </View>
@@ -213,6 +233,10 @@ export default function DashboardScreen() {
           />
         }
       >
+        {error ? (
+          <ErrorState title="Dashboard unavailable" message={error} onRetry={load} />
+        ) : null}
+
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {statCards.map((card) => {
@@ -227,7 +251,7 @@ export default function DashboardScreen() {
                     borderColor: card.color.border,
                   },
                 ]}
-                onPress={() => router.push(card.route as any)}
+                onPress={() => router.push(card.route)}
                 activeOpacity={0.7}
               >
                 <Icon size={20} color={card.color.text} />
@@ -335,17 +359,17 @@ export default function DashboardScreen() {
         {/* Quick Actions */}
         <Text style={styles.sectionTitle}>{t("dashboard.quickActions")}</Text>
         <View style={styles.quickActions}>
-          {[
-            { label: t("addresses.newTitle"), icon: MapPin, route: "/addresses/new" },
-            { label: t("services.newTitle"), icon: Zap, route: "/services/new" },
-            { label: t("moving.newPlan"), icon: Truck, route: "/moving/new" },
-          ].map((action) => {
+          {([
+            { label: t("addresses.newTitle"), icon: MapPin, route: "/addresses/new" as Href },
+            { label: t("services.newTitle"), icon: Zap, route: "/services/new" as Href },
+            { label: t("moving.newPlan"), icon: Truck, route: "/moving/new" as Href },
+          ]).map((action) => {
             const Icon = action.icon;
             return (
               <TouchableOpacity
                 key={action.label}
                 style={styles.quickAction}
-                onPress={() => router.push(action.route as any)}
+                onPress={() => router.push(action.route)}
                 activeOpacity={0.7}
               >
                 <View style={styles.quickActionIcon}>

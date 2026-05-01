@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { ProviderCard, type ProviderCardData } from "@/components/provider/ProviderCard";
 import { CategoryChipRow, type CategoryChip } from "@/components/provider/CategoryChipRow";
@@ -57,11 +58,17 @@ export default function ProvidersScreen() {
   const [page, setPage] = useState(1);
   const [primaryAddress, setPrimaryAddress] = useState<AddressOption | null>(null);
   const [addressLoaded, setAddressLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Load primary address once
   useEffect(() => {
     (async () => {
       const res = await api.get<{ addresses: AddressOption[] }>("/api/addresses");
+      if (res.error) {
+        setError(res.error);
+        setAddressLoaded(true);
+        return;
+      }
       const addrs = res.data?.addresses || [];
       const primary = addrs.find((a) => a.isPrimary) || addrs[0] || null;
       setPrimaryAddress(primary);
@@ -75,8 +82,14 @@ export default function ProvidersScreen() {
     if (primaryAddress?.state) params.state = primaryAddress.state;
     if (primaryAddress?.zip) params.zip = primaryAddress.zip;
     const res = await api.get<{ providers: Provider[] }>("/api/providers", params);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
     setProviders(res.data?.providers || []);
+    setError(null);
     setPage(1);
+    return true;
   }, [search, primaryAddress]);
 
   const fetchRecommendations = useCallback(async () => {
@@ -84,6 +97,10 @@ export default function ProvidersScreen() {
     const res = await api.get<RecommendationsResponse>("/api/providers/recommendations", {
       addressId: primaryAddress.id,
     });
+    if (res.error) {
+      setRecommended([]);
+      return false;
+    }
     const clusters = res.data?.clusters || [];
     const urgent = clusters
       .filter((c) => c.tier === "CRITICAL" || c.tier === "IMPORTANT")
@@ -97,18 +114,25 @@ export default function ProvidersScreen() {
       unique.push(p);
     }
     setRecommended(unique.slice(0, 10));
+    return true;
   }, [primaryAddress]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchProviders(), fetchRecommendations()]);
-    setLoading(false);
+    try {
+      await Promise.all([fetchProviders(), fetchRecommendations()]);
+    } finally {
+      setLoading(false);
+    }
   }, [fetchProviders, fetchRecommendations]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchProviders(), fetchRecommendations()]);
-    setRefreshing(false);
+    try {
+      await Promise.all([fetchProviders(), fetchRecommendations()]);
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchProviders, fetchRecommendations]);
 
   // Re-fetch on address load + search change
@@ -165,7 +189,7 @@ export default function ProvidersScreen() {
                 : "Urgent & important providers tailored to you"
             }
             providers={recommended}
-            onPressProvider={(id) => router.push(`/providers/${id}` as any)}
+            onPressProvider={(id) => router.push({ pathname: "/providers/[id]", params: { id } })}
           />
         ) : null}
       </View>
@@ -174,6 +198,9 @@ export default function ProvidersScreen() {
 
   const renderEmpty = useCallback(() => {
     if (loading) return null;
+    if (error) {
+      return <ErrorState message={error} onRetry={load} />;
+    }
     if (search) {
       return (
         <EmptyState
@@ -207,7 +234,7 @@ export default function ProvidersScreen() {
         description="Pull to refresh or check your connection."
       />
     );
-  }, [loading, search, selectedCat, selectedLabel, primaryAddress, clearSearch]);
+  }, [loading, error, load, search, selectedCat, selectedLabel, primaryAddress, clearSearch]);
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -279,7 +306,7 @@ export default function ProvidersScreen() {
               <ProviderCard
                 provider={item}
                 variant="full"
-                onPress={() => router.push(`/providers/${item.id}` as any)}
+                onPress={() => router.push({ pathname: "/providers/[id]", params: { id: item.id } })}
               />
             </View>
           )}

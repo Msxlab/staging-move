@@ -8,8 +8,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
+        "EXPO_PUBLIC_API_URL": "http://localhost:3000/api",
+        "EXPO_PUBLIC_APP_URL": "http://localhost:3000"
       }
     },
     "development-simulator": {
@@ -24,8 +24,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
+        "EXPO_PUBLIC_API_URL": "https://staging.locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://staging.locateflow.com"
       }
     },
     "staging-preview": {
@@ -34,8 +34,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
+        "EXPO_PUBLIC_API_URL": "https://staging.locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://staging.locateflow.com"
       }
     },
     "production": {
@@ -49,14 +49,9 @@
   "submit": {
     "production": {
       "android": {
-        "serviceAccountKeyPath": "./google-services.json",
         "track": "production"
       },
-      "ios": {
-        "appleId": "YOUR_APPLE_ID",
-        "ascAppId": "YOUR_ASC_APP_ID",
-        "appleTeamId": "YOUR_TEAM_ID"
-      }
+      "ios": {}
     }
   }
 }

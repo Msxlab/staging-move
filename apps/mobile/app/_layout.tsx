@@ -3,7 +3,6 @@ import { Alert, Linking } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { theme } from "@/lib/theme";
@@ -11,6 +10,7 @@ import { createQueryClient } from "@/lib/query-client";
 import * as SplashScreen from "expo-splash-screen";
 import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionTracker } from "@/components/SessionTracker";
 import { initI18n } from "@/i18n/config";
 import { initMobileSentry } from "@/lib/sentry";
@@ -20,7 +20,10 @@ import {
   hasRequiredLegalConsents,
   setPendingLegalConsents,
 } from "@/lib/legal";
-import { registerForPushNotifications } from "@/lib/push";
+import {
+  exchangeMobileOAuthCallbackUrl,
+  readMobileOAuthCallback,
+} from "@/lib/mobile-oauth-handoff";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,35 +39,13 @@ initMobileSentry();
 // initI18n returns a promise that the splash screen masks, so the
 // first painted screen already renders in the right locale.
 const i18nReady = initI18n().catch(() => undefined);
-const HANDLED_OAUTH_CODES_STORAGE_KEY = "locateflow.handledOAuthCodes";
-
-async function hasHandledOAuthCode(code: string) {
-  try {
-    const raw = await AsyncStorage.getItem(HANDLED_OAUTH_CODES_STORAGE_KEY);
-    const codes = raw ? JSON.parse(raw) : [];
-    return Array.isArray(codes) && codes.includes(code);
-  } catch {
-    return false;
-  }
-}
-
-async function rememberHandledOAuthCode(code: string) {
-  try {
-    const raw = await AsyncStorage.getItem(HANDLED_OAUTH_CODES_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    const codes = Array.isArray(parsed) ? parsed : [];
-    const next = [code, ...codes.filter((item: unknown) => typeof item === "string" && item !== code)].slice(0, 20);
-    await AsyncStorage.setItem(HANDLED_OAUTH_CODES_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    /* best effort */
-  }
-}
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
   const { token, user, loading, hydrate, refreshUser, setSession } = useAuthStore();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+  const handledOAuthCodes = useRef<Set<string>>(new Set());
 
   // 1) On mount, load the persisted token from SecureStore.
   useEffect(() => {
@@ -72,51 +53,29 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [hydrate]);
 
   useEffect(() => {
-    const isOAuthCallbackUrl = (url: string) => {
-      try {
-        const parsed = new URL(url);
-        const host = parsed.hostname.toLowerCase();
-        const path = parsed.pathname.replace(/^\/+/, "").toLowerCase();
-        return parsed.protocol === "locateflow:" && ["oauth", "outh"].includes(host || path);
-      } catch {
-        return url.startsWith("locateflow://oauth") || url.startsWith("locateflow://outh");
-      }
-    };
-
-    const readCode = (url: string | null) => {
-      if (!url || !isOAuthCallbackUrl(url)) return null;
-      const queryStart = url.indexOf("?");
-      if (queryStart < 0) return null;
-      const query = url.slice(queryStart + 1).split("#")[0];
-      const params = new URLSearchParams(query);
-      const code = params.get("code");
-      if (code) return code;
-      const malformedCode = query.match(/^code\?([^&]+)/);
-      return malformedCode?.[1] ? decodeURIComponent(malformedCode[1]) : null;
-    };
-
     const handleOAuthUrl = async (url: string | null) => {
-      const code = readCode(url);
+      const callback = readMobileOAuthCallback(url);
+      const code = callback?.code;
       if (!code || handledOAuthCodes.current.has(code)) return;
-      if (await hasHandledOAuthCode(code)) return;
       handledOAuthCodes.current.add(code);
 
-      const res = await api.post<{ token?: string; user?: any }>("/api/mobile/auth/exchange", { code });
-      if (res.error || !res.data?.token || !res.data.user) {
+      let exchanged: { token?: string; user?: any } | null = null;
+      try {
+        exchanged = await exchangeMobileOAuthCallbackUrl(url);
+      } catch (err: any) {
         handledOAuthCodes.current.delete(code);
-        Alert.alert("Sign-in failed", res.error || "Could not complete mobile sign-in.");
+        Alert.alert("Sign-in failed", err?.message || "Could not complete mobile sign-in.");
         return;
       }
-      await rememberHandledOAuthCode(code);
+      if (!exchanged?.token || !exchanged.user) return;
 
-      await setSession(res.data.token, res.data.user);
+      await setSession(exchanged.token, exchanged.user);
       await hydratePendingLegalConsents();
       const pendingLegalConsents = getPendingLegalConsents();
       if (hasRequiredLegalConsents(pendingLegalConsents)) {
         await api.post("/api/legal/acceptance", { legalConsents: pendingLegalConsents }).catch(() => null);
         await setPendingLegalConsents(null);
       }
-      registerForPushNotifications().catch(() => {});
       router.replace("/onboarding");
     };
 
@@ -144,9 +103,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     api.get<any>("/api/profile").then((res) => {
       if (cancelled) return;
+      if (res.error) {
+        const message = res.error.toLowerCase();
+        setNeedsOnboarding(message.includes("legal") || message.includes("onboarding") ? true : false);
+        return;
+      }
       setNeedsOnboarding(res.data?.onboardingCompleted !== true);
     }).catch(() => {
-      if (!cancelled) setNeedsOnboarding(true);
+      if (!cancelled) setNeedsOnboarding(false);
     });
     return () => { cancelled = true; };
   }, [token, loading]);
@@ -158,9 +122,11 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     const currentSegment = String(segments[0] || "");
     const inAuthGroup = currentSegment === "(auth)";
     const inOnboarding = currentSegment === "onboarding";
-    const inOAuthCallback = currentSegment === "oauth" || currentSegment === "outh";
+    const inOAuthCallback = currentSegment === "oauth";
+    const inPasswordReset = currentSegment === "reset-password";
+    const inPublicBlog = currentSegment === "blog";
 
-    if (!token && !inAuthGroup && !inOAuthCallback) {
+    if (!token && !inAuthGroup && !inOAuthCallback && !inPasswordReset && !inPublicBlog) {
       router.replace("/(auth)/sign-in");
       return;
     }
@@ -222,10 +188,12 @@ export default function RootLayout() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthGuard>
-        <RootNavigator />
-      </AuthGuard>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthGuard>
+          <RootNavigator />
+        </AuthGuard>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

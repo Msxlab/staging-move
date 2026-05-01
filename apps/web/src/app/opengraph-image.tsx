@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "LocateFlow — Address & Moving Management";
+export const alt = "LocateFlow - Address and moving management";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -77,7 +77,7 @@ export default function OpengraphImage() {
             maxWidth: 900,
           }}
         >
-          Manage addresses, services, and relocations — all in one place.
+          Manage addresses, services, and relocations - all in one place.
         </div>
         <div
           style={{

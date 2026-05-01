@@ -1,11 +1,58 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { parsePaginationParams } from "@/lib/pagination";
+import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
 
 const SUPPORTED_ADMIN_SEND_CHANNELS = ["IN_APP"] as const;
+type SupportedChannel = (typeof SUPPORTED_ADMIN_SEND_CHANNELS)[number];
+
+// Notification types the admin send path is allowed to emit. Free-string
+// types previously let an admin store arbitrary `type` values which the
+// rest of the app then can't filter against. Lock to the canonical list.
+const ADMIN_SENDABLE_TYPES = [
+  "SYSTEM",
+  "ANNOUNCEMENT",
+  "MAINTENANCE",
+  "BILLING",
+  "SUPPORT",
+] as const;
+
+// Broadcast safety nets:
+//   - BROADCAST_BATCH_SIZE keeps each createMany small enough to avoid
+//     a long lock and an OOM if user count is large.
+//   - BROADCAST_MAX_USERS rejects audiences over a known threshold;
+//     above this size the operator should use a worker job (which does
+//     not exist yet) rather than synchronously fanning out at request
+//     time. P1-2 will additionally require step-up above this cap.
+const BROADCAST_BATCH_SIZE = 5_000;
+const BROADCAST_MAX_USERS = 100_000;
+
+// sendAt tolerance: scheduled delivery is not implemented (see the
+// `schedulingEnabled: false` capability advertised by GET). Until a
+// worker exists, sendAt may only describe a moment within ±5s of now —
+// past timestamps must surface as a validation error so an operator
+// who typed "yesterday" doesn't silently get an immediate broadcast.
+const SEND_AT_TOLERANCE_MS = 5_000;
+
+const notificationCreateSchema = z
+  .object({
+    type: z.enum(ADMIN_SENDABLE_TYPES).optional(),
+    title: z.string().trim().min(1).max(200),
+    body: z.string().trim().min(1).max(2_000),
+    href: z.string().trim().max(500).optional(),
+    channel: z.enum(SUPPORTED_ADMIN_SEND_CHANNELS).optional(),
+    userId: z.string().trim().min(1).max(60).optional(),
+    broadcast: z.boolean().optional(),
+    sendAt: z
+      .string()
+      .datetime({ offset: true })
+      .optional(),
+  })
+  .strict();
 
 export async function GET(req: NextRequest) {
   try {
@@ -73,58 +120,91 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canCreate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const body = await req.json();
-    const { type, title, body: msgBody, href, channel = "IN_APP", userId, broadcast, sendAt } = body;
-
-    if (!title || !msgBody) {
-      return NextResponse.json({ error: "Title and body required" }, { status: 400 });
-    }
-
-    if (!SUPPORTED_ADMIN_SEND_CHANNELS.includes(channel)) {
+    const raw = await req.json().catch(() => null);
+    const parsed = notificationCreateSchema.safeParse(raw);
+    if (!parsed.success) {
       return NextResponse.json(
-        {
-          error:
-            "This admin send path only supports immediate in-app notifications. Email and push delivery are disabled until a real worker/provider path is enabled.",
-        },
+        { error: "Invalid notification payload", details: parsed.error.errors },
         { status: 400 },
       );
     }
+    const { type, title, body: msgBody, href, broadcast, sendAt, userId } = parsed.data;
+    const channel: SupportedChannel = parsed.data.channel ?? "IN_APP";
+    const resolvedType = type ?? "SYSTEM";
 
+    const now = Date.now();
     const requestedSendAt = sendAt ? new Date(sendAt) : null;
-    if (requestedSendAt && Number.isNaN(requestedSendAt.getTime())) {
-      return NextResponse.json({ error: "Invalid sendAt value" }, { status: 400 });
-    }
-    if (requestedSendAt && requestedSendAt.getTime() > Date.now() + 5000) {
-      return NextResponse.json(
-        {
-          error:
-            "Scheduled notification delivery is not enabled yet. Send immediately for now.",
-        },
-        { status: 400 },
-      );
+    if (requestedSendAt) {
+      const ts = requestedSendAt.getTime();
+      if (ts < now - SEND_AT_TOLERANCE_MS) {
+        return NextResponse.json(
+          { error: "sendAt must not be in the past." },
+          { status: 400 },
+        );
+      }
+      if (ts > now + SEND_AT_TOLERANCE_MS) {
+        return NextResponse.json(
+          {
+            error:
+              "Scheduled notification delivery is not enabled yet. Send immediately for now.",
+          },
+          { status: 400 },
+        );
+      }
     }
     const deliveredAt = new Date();
 
     if (broadcast) {
-      const users = await prisma.user.findMany({ select: { id: true } });
-      const notifications = users.map((u: { id: string }) => ({
-        userId: u.id,
-        type: type || "SYSTEM",
-        title,
-        body: msgBody,
-        href: href || null,
-        channel,
-        sent: true,
-        sentAt: deliveredAt,
-        sendAt: deliveredAt,
-      }));
+      // Hard cap on audience size — synchronous fan-out at request time
+      // is not a substitute for a worker. Above the cap the operator
+      // must use a dedicated batch job (not yet implemented). Step-up
+      // requirement on broadcast comes in P1-2.
+      const audienceSize = await prisma.user.count();
+      if (audienceSize > BROADCAST_MAX_USERS) {
+        return NextResponse.json(
+          {
+            error:
+              `Broadcast audience of ${audienceSize} exceeds the synchronous cap of ${BROADCAST_MAX_USERS}. Use a worker job for audiences this large.`,
+          },
+          { status: 413 },
+        );
+      }
 
-      await prisma.notification.createMany({ data: notifications });
+      // Stream user IDs in batches and write one createMany per batch
+      // with skipDuplicates so a retried request doesn't double-send.
+      let cursor: string | undefined;
+      let writtenCount = 0;
+      // Loop until we've drained the user table; cursor-based so memory
+      // stays bounded even at the 100k cap.
+      for (;;) {
+        const batch = await prisma.user.findMany({
+          select: { id: true },
+          orderBy: { id: "asc" },
+          take: BROADCAST_BATCH_SIZE,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        });
+        if (batch.length === 0) break;
+        const rows = batch.map((u: { id: string }) => ({
+          userId: u.id,
+          type: resolvedType,
+          title,
+          body: msgBody,
+          href: href || null,
+          channel,
+          sent: true,
+          sentAt: deliveredAt,
+          sendAt: deliveredAt,
+        }));
+        const result = await prisma.notification.createMany({ data: rows, skipDuplicates: true });
+        writtenCount += result.count;
+        cursor = batch[batch.length - 1].id;
+        if (batch.length < BROADCAST_BATCH_SIZE) break;
+      }
 
       await prisma.notificationQueue.create({
         data: {
           broadcast: true,
-          type: type || "SYSTEM",
+          type: resolvedType,
           title,
           body: msgBody,
           href,
@@ -136,23 +216,21 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "SEND_NOTIFICATION",
-          entityType: "Notification",
-          entityId: "broadcast",
-          changes: JSON.stringify({
-            broadcast: true,
-            channel,
-            type: type || "SYSTEM",
-            count: users.length,
-          }),
-          ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+      await writeAdminAudit(session, {
+        action: "SEND_NOTIFICATION",
+        entityType: "Notification",
+        entityId: "broadcast",
+        metadata: {
+          broadcast: true,
+          channel,
+          type: resolvedType,
+          audience: audienceSize,
+          written: writtenCount,
         },
+        request: getAuditRequestMeta(req),
       });
 
-      return NextResponse.json({ success: true, count: users.length });
+      return NextResponse.json({ success: true, count: writtenCount });
     }
 
     if (!userId) {
@@ -162,7 +240,7 @@ export async function POST(req: NextRequest) {
     const notification = await prisma.notification.create({
       data: {
         userId,
-        type: type || "SYSTEM",
+        type: resolvedType,
         title,
         body: msgBody,
         href,
@@ -173,20 +251,17 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "SEND_NOTIFICATION",
-        entityType: "Notification",
-        entityId: notification.id,
-        changes: JSON.stringify({
-          broadcast: false,
-          userId,
-          channel,
-          type: type || "SYSTEM",
-        }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+    await writeAdminAudit(session, {
+      action: "SEND_NOTIFICATION",
+      entityType: "Notification",
+      entityId: notification.id,
+      metadata: {
+        broadcast: false,
+        userId,
+        channel,
+        type: resolvedType,
       },
+      request: getAuditRequestMeta(req),
     });
 
     return NextResponse.json(notification);

@@ -18,6 +18,15 @@ function parseStoredLegalConsents(metadata: string | null | undefined) {
   }
 }
 
+async function hasCurrentDataConsent(userId: string, category: string): Promise<boolean> {
+  const consent = await prisma.dataConsent.findFirst({
+    where: { userId, category },
+    orderBy: { createdAt: "desc" },
+    select: { granted: true },
+  });
+  return consent?.granted === true;
+}
+
 // GET /api/profile
 export async function GET() {
   try {
@@ -151,6 +160,20 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const storesSensitiveProfileData =
+    validated.hasDisability === true ||
+    validated.isImmigrant === true ||
+    Boolean(validated.immigrationStatus);
+  if (storesSensitiveProfileData && !(await hasCurrentDataConsent(userId, "SENSITIVE"))) {
+    return NextResponse.json(
+      {
+        error: "Sensitive profile consent is required before saving disability or immigration information.",
+        code: "SENSITIVE_CONSENT_REQUIRED",
+      },
+      { status: 400 },
+    );
+  }
+
   // Step 4: Update user name
   try {
     await prisma.user.update({
@@ -162,7 +185,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (err: any) {
     console.error("[PROFILE POST] User update failed:", err?.message);
-    return NextResponse.json({ error: `User update failed: ${err?.message}` }, { status: 500 });
+    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
   }
 
   // Step 5: Upsert profile
@@ -180,6 +203,10 @@ export async function POST(request: NextRequest) {
       needsStorage: validated.needsStorage,
       hasSenior: validated.hasSenior,
       hasDisability: validated.hasDisability,
+      moveType: validated.moveType || "PERSONAL",
+      isBusinessOwner: validated.moveType === "BUSINESS" ? validated.isBusinessOwner : false,
+      isImmigrant: validated.isImmigrant,
+      immigrationStatus: validated.immigrationStatus || null,
     };
 
     const profile = await prisma.profile.upsert({
@@ -191,6 +218,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ profile, legalConsents: existingLegalConsents }, { status: 200 });
   } catch (err: any) {
     console.error("[PROFILE POST] Profile upsert failed:", err?.message);
-    return NextResponse.json({ error: `Profile save failed: ${err?.message}` }, { status: 500 });
+    return NextResponse.json({ error: "Failed to save profile" }, { status: 500 });
   }
 }

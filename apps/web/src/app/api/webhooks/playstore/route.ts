@@ -68,9 +68,19 @@ interface RtdnPayload {
   testNotification?: { version: string };
 }
 
+// Pub/Sub wraps a single base64 RTDN payload — even with attributes
+// the envelope stays well under 64KB. Cap here so a hostile client
+// (or a misbehaving Pub/Sub push) can't waste OIDC verification on a
+// multi-MB body.
+const PLAYSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
+
 export async function POST(request: NextRequest) {
   let idempotencyId: string | null = null;
   try {
+    const declaredLength = Number(request.headers.get("content-length") || 0);
+    if (declaredLength > PLAYSTORE_WEBHOOK_MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+    }
     // ── 1. Verify OIDC token from Pub/Sub (authenticity + audience). ──
     const authHeader = request.headers.get("authorization") || "";
     const oidcToken = authHeader.toLowerCase().startsWith("bearer ")

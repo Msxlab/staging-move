@@ -4,7 +4,7 @@ import { requireDbUserId } from "@/lib/auth";
 import { decrypt } from "@/lib/shared-encryption";
 import { LEGAL_CONSENT_EVENT } from "@/lib/legal";
 
-// GET /api/export?type=addresses|services|budget|moving|moveTasks|customProviders|legal|full&format=csv|json&includeNotes=true
+// GET /api/export?type=addresses|services|budget|moving|moveTasks|customProviders|legal|support|notifications|subscription|analytics|full&format=csv|json&includeNotes=true
 //
 // `notes` is a free-form, encrypted field; decrypting it into the export
 // default would produce an exported plaintext copy that can easily leak via
@@ -125,6 +125,8 @@ export async function GET(request: NextRequest) {
         })
       ).map((provider) => ({
         ...provider,
+        phone: provider.phone ? maskValue(provider.phone) : provider.phone,
+        email: provider.email ? maskEmail(provider.email) : provider.email,
         notes: exportPlainNotes(provider.notes),
       }));
     }
@@ -227,11 +229,169 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    if (type === "legal" || type === "full") {
+      data.dataConsents = await prisma.dataConsent.findMany({
+        where: { userId },
+        select: {
+          category: true,
+          granted: true,
+          version: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }
+
+    if (type === "support" || type === "full") {
+      data.supportTickets = await prisma.supportTicket.findMany({
+        where: { userId },
+        select: {
+          subject: true,
+          category: true,
+          priority: true,
+          status: true,
+          platform: true,
+          resolvedAt: true,
+          closedAt: true,
+          createdAt: true,
+          updatedAt: true,
+          messages: {
+            where: { isInternal: false },
+            select: {
+              senderType: true,
+              content: true,
+              attachmentUrl: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+    }
+
+    if (type === "notifications" || type === "full") {
+      const [notifications, notificationPreferences, pushDevices] = await Promise.all([
+        prisma.notification.findMany({
+          where: { userId },
+          select: {
+            type: true,
+            title: true,
+            body: true,
+            href: true,
+            channel: true,
+            read: true,
+            readAt: true,
+            sent: true,
+            sentAt: true,
+            sendAt: true,
+            expiresAt: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.notificationPreference.findMany({
+          where: { userId },
+          select: {
+            channel: true,
+            type: true,
+            enabled: true,
+            frequency: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+          orderBy: [{ channel: "asc" }, { type: "asc" }],
+        }),
+        prisma.pushDevice.findMany({
+          where: { userId },
+          select: {
+            platform: true,
+            deviceName: true,
+            lastSeenAt: true,
+            createdAt: true,
+          },
+          orderBy: { lastSeenAt: "desc" },
+        }),
+      ]);
+      data.notifications = notifications;
+      data.notificationPreferences = notificationPreferences;
+      data.pushDevices = pushDevices;
+    }
+
+    if (type === "subscription" || type === "full") {
+      data.subscription = await prisma.subscription.findUnique({
+        where: { userId },
+        select: {
+          plan: true,
+          status: true,
+          provider: true,
+          platform: true,
+          billingProductId: true,
+          appStoreEnvironment: true,
+          currentPeriodEndsAt: true,
+          gracePeriodEndsAt: true,
+          trialEndsAt: true,
+          canceledAt: true,
+          cancelAtPeriodEnd: true,
+          accessType: true,
+          billingInterval: true,
+          campaignCode: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+    }
+
+    if (type === "analytics" || type === "full") {
+      const [sessions, events] = await Promise.all([
+        prisma.userSession.findMany({
+          where: { userId },
+          select: {
+            browser: true,
+            os: true,
+            device: true,
+            deviceType: true,
+            platform: true,
+            language: true,
+            pageViews: true,
+            sessionStart: true,
+            sessionEnd: true,
+            lastActivity: true,
+          },
+          orderBy: { sessionStart: "desc" },
+          take: 500,
+        }),
+        prisma.userEvent.findMany({
+          where: { userId },
+          select: {
+            event: true,
+            page: true,
+            metadata: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 1000,
+        }),
+      ]);
+      data.analyticsSessions = sessions;
+      data.analyticsEvents = events;
+    }
+
     if (format === "csv") {
       // Convert to CSV - flatten the primary data type
       let csvContent = "";
-      const dataKey = type === "full" ? "services" : type;
+      const dataKeyMap: Record<string, string> = {
+        budget: "budgets",
+        moving: "movingPlans",
+        support: "supportTickets",
+        notifications: "notifications",
+        subscription: "subscription",
+        analytics: "analyticsEvents",
+        legal: "legalConsents",
+      };
+      const dataKey = type === "full" ? "services" : (dataKeyMap[type] || type);
       const items = data[dataKey as keyof typeof data] || [];
+      const listItems = Array.isArray(items) ? items : items ? [items] : [];
 
       // Prevent CSV formula injection: prefix dangerous characters with a single quote
       const safeCsvValue = (v: string): string => {
@@ -242,8 +402,8 @@ export async function GET(request: NextRequest) {
         return v;
       };
 
-      if (items.length > 0) {
-        const flatItems = items.map((item: any) => {
+      if (listItems.length > 0) {
+        const flatItems = listItems.map((item: any) => {
           const flat: Record<string, string> = {};
           for (const [key, val] of Object.entries(item)) {
             if (

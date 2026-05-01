@@ -1,20 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getUserSession } from "@/lib/auth";
-import { COOKIE_CONSENT_COOKIE_NAME, parseCookieConsentStatus } from "@/lib/consent";
-
-function hasRequestAnalyticsConsent(request: NextRequest) {
-  return parseCookieConsentStatus(request.cookies.get(COOKIE_CONSENT_COOKIE_NAME)?.value) === "accepted";
-}
+import { getConsentedTrackingSession } from "@/lib/tracking-consent";
 
 // POST /api/tracking/event — track a single user event
 export async function POST(request: NextRequest) {
   try {
-    if (!hasRequestAnalyticsConsent(request)) {
+    const tracking = await getConsentedTrackingSession(request);
+    if (tracking.disabled) {
       return NextResponse.json({ success: true, disabled: true });
     }
 
-    const authSession = await getUserSession();
+    const authSession = tracking.authSession;
     if (!authSession) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -46,11 +42,12 @@ export async function POST(request: NextRequest) {
 // POST /api/tracking/event/batch — track multiple events at once
 export async function PUT(request: NextRequest) {
   try {
-    if (!hasRequestAnalyticsConsent(request)) {
+    const tracking = await getConsentedTrackingSession(request);
+    if (tracking.disabled) {
       return NextResponse.json({ success: true, count: 0, disabled: true });
     }
 
-    const authSession = await getUserSession();
+    const authSession = tracking.authSession;
     if (!authSession) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }

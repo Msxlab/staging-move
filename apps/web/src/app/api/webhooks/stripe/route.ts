@@ -308,10 +308,26 @@ function stripeLivemodeMismatchResponse(event: Stripe.Event) {
   return null;
 }
 
+// Stripe-published guidance lists 256KB as the realistic upper bound
+// for webhook payloads (a maximally fat invoice.payment_succeeded with
+// many line items is well under this). The middleware exempts
+// /api/webhooks/* from the global body-size limit so signature
+// verification can run on the raw bytes — re-introduce a per-route
+// ceiling here so a hostile client can't stream a multi-megabyte body
+// at us hoping the constructEvent buffer trips on it.
+const STRIPE_WEBHOOK_MAX_BODY_BYTES = 256 * 1024;
+
 // POST /api/webhooks/stripe — Stripe webhook handler
 export async function POST(request: NextRequest) {
   try {
+    const declaredLength = Number(request.headers.get("content-length") || 0);
+    if (declaredLength > STRIPE_WEBHOOK_MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+    }
     const body = await request.text();
+    if (Buffer.byteLength(body, "utf8") > STRIPE_WEBHOOK_MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+    }
     const signature = request.headers.get("stripe-signature");
 
     if (!signature) {
@@ -547,9 +563,18 @@ export async function POST(request: NextRequest) {
       }
 
       case "invoice.payment_succeeded": {
-        // Handles recurring payment success — ensures plan stays ACTIVE
+        // Handles recurring payment success — ensures plan stays ACTIVE.
+        //
+        // Scope the update to (stripeCustomerId, stripeSubscriptionId)
+        // whenever the invoice has a subscription. Multi-subscription
+        // customers must not have unrelated rows flipped to ACTIVE on
+        // one sub's renewal. For non-subscription invoices (rare; e.g.
+        // ad-hoc charges) we fall back to the customer scope.
         const invoice = event.data.object as Stripe.Invoice;
         const stripeCustomerId = String(invoice.customer);
+        const stripeSubscriptionId = invoice.subscription
+          ? String(invoice.subscription)
+          : null;
         const stripePriceId = invoice.lines?.data?.[0]?.price?.id;
         const plan = await mapStripePriceIdToPlan(stripePriceId);
 
@@ -570,25 +595,35 @@ export async function POST(request: NextRequest) {
         };
         if (plan) updateData.plan = plan;
         if (stripePriceId) updateData.billingProductId = stripePriceId;
-        if (invoice.subscription) {
-          updateData.stripeSubscriptionId = String(invoice.subscription);
+        if (stripeSubscriptionId) {
+          updateData.stripeSubscriptionId = stripeSubscriptionId;
         }
 
         await prisma.subscription.updateMany({
-          where: { stripeCustomerId },
+          where: stripeSubscriptionId
+            ? { stripeCustomerId, stripeSubscriptionId }
+            : { stripeCustomerId },
           data: updateData,
         });
         break;
       }
 
       case "invoice.payment_failed": {
+        // Same multi-sub scoping rule as invoice.payment_succeeded:
+        // scope to the invoice's subscription when known so unrelated
+        // subs on the same customer don't get flipped to PAST_DUE.
         const invoice = event.data.object as Stripe.Invoice;
         const stripeCustomerId = String(invoice.customer);
+        const stripeSubscriptionId = invoice.subscription
+          ? String(invoice.subscription)
+          : null;
         const gracePeriodEndsAt = new Date();
         gracePeriodEndsAt.setUTCDate(gracePeriodEndsAt.getUTCDate() + 7);
 
         await prisma.subscription.updateMany({
-          where: { stripeCustomerId },
+          where: stripeSubscriptionId
+            ? { stripeCustomerId, stripeSubscriptionId }
+            : { stripeCustomerId },
           data: {
             status: "PAST_DUE",
             provider: "STRIPE",

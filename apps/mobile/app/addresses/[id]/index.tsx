@@ -114,7 +114,7 @@ export default function AddressDetailScreen() {
           {address.nickname || "Address"}
         </Text>
         <TouchableOpacity
-          onPress={() => router.push(`/addresses/${id}/edit` as any)}
+          onPress={() => router.push({ pathname: "/addresses/[id]/edit", params: { id: String(id) } })}
           style={styles.backBtn}
         >
           <Edit size={18} color={theme.colors.text} />
@@ -179,7 +179,7 @@ export default function AddressDetailScreen() {
           <Text style={styles.sectionTitle}>Services</Text>
           <TouchableOpacity
             style={styles.addSmall}
-            onPress={() => router.push(({ pathname: "/services/new", params: { addressId: id } } as any))}
+            onPress={() => router.push({ pathname: "/services/new", params: { addressId: String(id) } })}
           >
             <Plus size={16} color={theme.colors.primary} />
             <Text style={styles.addSmallText}>Add</Text>
@@ -198,7 +198,7 @@ export default function AddressDetailScreen() {
               <Card
                 key={s.id}
                 variant="default"
-                onPress={() => router.push(`/services/${s.id}` as any)}
+                onPress={() => router.push({ pathname: "/services/[id]", params: { id: s.id } })}
               >
                 <View style={styles.serviceRow}>
                   <Zap size={16} color={theme.colors.cyan.text} />

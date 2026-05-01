@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // ==================== PROFILE ====================
 
-export const profileSchema = z.object({
+export const profileSchema = z.strictObject({
   firstName: z.string().min(1, "First name is required").max(50),
   lastName: z.string().min(1, "Last name is required").max(50),
   ageRange: z.string().optional(),
@@ -10,20 +10,29 @@ export const profileSchema = z.object({
   hasChildren: z.boolean().default(false),
   childrenCount: z.number().min(0).max(20).default(0),
   hasPets: z.boolean().default(false),
-  petTypes: z.array(z.string()).default([]),
+  petTypes: z.array(z.string()).max(20).default([]),
   carCount: z.number().min(0).max(20).default(0),
   hasMotorcycle: z.boolean().default(false),
   hasBoatRV: z.boolean().default(false),
   needsStorage: z.boolean().default(false),
   hasSenior: z.boolean().default(false),
   hasDisability: z.boolean().default(false),
+  moveType: z.enum(["PERSONAL", "BUSINESS", "VACATION"]).default("PERSONAL"),
+  isBusinessOwner: z.boolean().default(false),
+  isImmigrant: z.boolean().default(false),
+  immigrationStatus: z
+    .union([
+      z.enum(["CITIZEN", "GREEN_CARD", "H1B", "L1", "F1", "OTHER_VISA"]),
+      z.literal(""),
+    ])
+    .default(""),
 });
 
 export type ProfileFormData = z.infer<typeof profileSchema>;
 
 // ==================== ADDRESS ====================
 
-export const addressSchema = z.object({
+export const addressSchema = z.strictObject({
   type: z.enum(["HOME", "WORK", "VACATION", "TEMPORARY", "STORAGE", "OTHER"]),
   nickname: z.string().max(50).optional(),
   street: z.string().min(1, "Street address is required").max(200),
@@ -36,17 +45,25 @@ export const addressSchema = z.object({
   ownership: z.enum(["OWNER", "RENTER", "FAMILY", "OTHER"]),
   startDate: z.string().min(1, "Move-in date is required"),
   endDate: z.string().optional(),
+  formattedAddress: z.string().max(500).nullable().optional(),
+  placeId: z.string().max(191).nullable().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 export type AddressFormData = z.infer<typeof addressSchema>;
 
 // ==================== SERVICE ====================
 
-export const serviceSchema = z.object({
+export const serviceSchema = z.strictObject({
   addressId: z.string().min(1, "Address is required"),
+  providerId: z.string().max(30).optional(),
+  customProviderId: z.string().max(30).optional(),
   category: z.string().min(1, "Category is required"),
   subCategory: z.string().optional(),
   providerName: z.string().min(1, "Provider name is required").max(200),
+  migrationAction: z.enum(["TRANSFER", "SWITCH", "NEW", "CANCEL", "KEEP"]).optional(),
+  previousServiceId: z.string().max(30).optional(),
   accountNumber: z.string().max(100).optional(),
   username: z.string().max(100).optional(),
   website: z.string().url().optional().or(z.literal("")),
@@ -63,21 +80,68 @@ export const serviceSchema = z.object({
 
 export type ServiceFormData = z.infer<typeof serviceSchema>;
 
+export const customProviderSchema = z.strictObject({
+  name: z.string().min(1, "Provider name is required").max(200),
+  category: z.string().min(1, "Category is required").max(50),
+  description: z.string().max(1000).optional().or(z.literal("")),
+  website: z.string().url().optional().or(z.literal("")),
+  phone: z.string().max(30).optional().or(z.literal("")),
+  email: z.string().email().optional().or(z.literal("")),
+  addressLine1: z.string().max(200).optional().or(z.literal("")),
+  addressLine2: z.string().max(200).optional().or(z.literal("")),
+  city: z.string().max(100).optional().or(z.literal("")),
+  state: z.string().length(2, "Use 2-letter state code").optional().or(z.literal("")),
+  zipCode: z.string().regex(/^\d{5}(-\d{4})?$/, "Invalid ZIP code").optional().or(z.literal("")),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+  providerType: z.enum([
+    "LOCAL_BUSINESS",
+    "PROFESSIONAL_SERVICE",
+    "HEALTHCARE",
+    "LEGAL",
+    "DENTAL",
+    "PHYSICAL_THERAPY",
+    "GYM",
+    "OTHER",
+  ]).default("OTHER"),
+});
+
+export type CustomProviderFormData = z.infer<typeof customProviderSchema>;
+
 // ==================== MOVING PLAN ====================
 
-export const movingPlanSchema = z.object({
+export const movingPlanSchema = z.strictObject({
   fromAddressId: z.string().min(1, "Origin address is required"),
-  toAddressId: z.string().min(1, "Destination address is required"),
+  toAddressId: z.string().min(1, "Destination address is required").optional(),
+  destinationAddress: addressSchema.optional(),
   moveDate: z.string().min(1, "Move date is required"),
   isTemporary: z.boolean().default(false),
   estimatedDuration: z.number().min(1).optional(),
+}).superRefine((value, ctx) => {
+  const hasExistingDestination = Boolean(value.toAddressId);
+  const hasInlineDestination = Boolean(value.destinationAddress);
+
+  if (!hasExistingDestination && !hasInlineDestination) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["toAddressId"],
+      message: "Destination address is required",
+    });
+  }
+
+  if (hasExistingDestination && hasInlineDestination) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["destinationAddress"],
+      message: "Choose either an existing destination or a new destination",
+    });
+  }
 });
 
 export type MovingPlanFormData = z.infer<typeof movingPlanSchema>;
 
 // ==================== TASK ====================
 
-export const taskSchema = z.object({
+export const taskSchema = z.strictObject({
   title: z.string().min(1, "Title is required").max(200),
   description: z.string().max(1000).optional(),
   category: z.string().optional(),
@@ -91,14 +155,15 @@ export type TaskFormData = z.infer<typeof taskSchema>;
 
 // ==================== BUDGET ====================
 
-export const budgetSchema = z.object({
+export const budgetSchema = z.strictObject({
   addressId: z.string().optional(),
   month: z.string().min(1, "Month is required"),
   year: z.number().min(2020).max(2100),
   plannedIncome: z.number().min(0).optional(),
   actualIncome: z.number().min(0).optional(),
   plannedExpenses: z.number().min(0).optional(),
-  actualExpenses: z.number().min(0),
+  actualExpenses: z.number().min(0).optional(),
+  categoryBreakdown: z.union([z.string(), z.record(z.number().min(0))]).optional(),
   notes: z.string().max(1000).optional(),
 });
 

@@ -112,6 +112,12 @@ model MobileOAuthCode {
   codeHash    String    @unique @db.VarChar(64)
   provider    String    @db.VarChar(20)
   redirectUri String    @db.VarChar(500)
+  // PKCE code_challenge (base64url(SHA-256(verifier))). When set, the
+  // mobile client must present a matching code_verifier at the
+  // /api/mobile/auth/exchange step. NULL preserves backwards compat
+  // with mobile builds that pre-date P0-6 — they exchange without PKCE
+  // and continue to work until those builds age out.
+  codeChallenge String?  @db.VarChar(128)
   expiresAt   DateTime
   usedAt      DateTime?
   createdAt   DateTime  @default(now())
@@ -497,11 +503,16 @@ model MovingPlan {
   userId String @db.VarChar(30)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Explicit ON DELETE RESTRICT — the SQL FK already behaves this way
+  // (Prisma's MySQL default for required relations) but we name it here
+  // so future schema sync can't silently drift to Cascade and quietly
+  // wipe move history when an Address is hard-deleted. Soft-delete on
+  // Address remains the canonical user-facing path.
   fromAddressId String  @db.VarChar(30)
-  fromAddress   Address @relation("FromAddress", fields: [fromAddressId], references: [id])
+  fromAddress   Address @relation("FromAddress", fields: [fromAddressId], references: [id], onDelete: Restrict)
 
   toAddressId String  @db.VarChar(30)
-  toAddress   Address @relation("ToAddress", fields: [toAddressId], references: [id])
+  toAddress   Address @relation("ToAddress", fields: [toAddressId], references: [id], onDelete: Restrict)
 
   moveDate          DateTime
   isTemporary       Boolean  @default(false)
@@ -1044,9 +1055,15 @@ model AdminPermission {
 }
 
 model AdminAuditLog {
-  id          String    @id @default(cuid()) @db.VarChar(30)
-  adminUserId String    @db.VarChar(30)
-  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  id String @id @default(cuid()) @db.VarChar(30)
+
+  // adminUserId is NULLABLE and onDelete: SetNull — the audit trail must
+  // outlive the AdminUser row so investigations don't lose their actor
+  // when an admin is deleted. The application's writeAdminAudit helper
+  // denormalizes adminEmail/adminRole into `changes.actor` so the row
+  // remains attributable even after this FK is null.
+  adminUserId String?    @db.VarChar(30)
+  adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
 
   action     String  @db.VarChar(20)
   entityType String  @db.VarChar(50)

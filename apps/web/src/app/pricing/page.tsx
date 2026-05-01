@@ -8,7 +8,8 @@ import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { getUserSession } from "@/lib/user-auth";
 import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
-import { absoluteUrl, SITE_NAME } from "@/lib/seo";
+import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { JsonLd, breadcrumbSchema, softwareApplicationSchema } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
   title: `Pricing · ${SITE_NAME}`,
@@ -39,9 +40,27 @@ export default async function PricingPage() {
     { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
   ];
+  const schemaContext = {
+    siteUrl: SITE_URL,
+    siteName: SITE_NAME,
+    logoUrl: absoluteUrl("/logo.svg"),
+  };
 
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd
+        id="ld-pricing-software"
+        data={softwareApplicationSchema(schemaContext, {
+          description: SITE_DESCRIPTION,
+        })}
+      />
+      <JsonLd
+        id="ld-pricing-breadcrumb"
+        data={breadcrumbSchema([
+          { name: "Home", url: SITE_URL },
+          { name: "Pricing", url: absoluteUrl("/pricing") },
+        ])}
+      />
       <MarketingHeader userId={userId} />
       <PricingSection
         ctaHref={ctaTarget.href}

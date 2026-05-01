@@ -28,6 +28,161 @@ export function maskProviderIdentifier(value: string | null | undefined): string
   return `${prefix}****${trimmed.slice(-4)}`;
 }
 
+/**
+ * Mask an IP address by zeroing the last 8 bits (IPv4) or the last 80
+ * bits / 5 hextets (IPv6). Keeps enough of the address to identify a
+ * geographic region or ISP without exposing a specific subscriber.
+ */
+export function maskIpAddress(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  // IPv4
+  const ipv4 = trimmed.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/);
+  if (ipv4) return `${ipv4[1]}.0`;
+  // IPv6 — drop everything after the third hextet
+  if (trimmed.includes(":")) {
+    const parts = trimmed.split(":");
+    return `${parts.slice(0, 3).join(":")}::`;
+  }
+  return "[redacted]";
+}
+
+/**
+ * Truncate a User-Agent string to a coarse "client family" so admins
+ * can recognise patterns ("a bunch of Chrome on Windows logins") without
+ * the full fingerprint surface that the raw UA would expose. Anything
+ * longer than the cap is replaced with the family marker only.
+ */
+export function summarizeUserAgent(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const ua = value.trim();
+  if (!ua) return null;
+  let browser = "Unknown";
+  if (/Edg/i.test(ua)) browser = "Edge";
+  else if (/OPR|Opera/i.test(ua)) browser = "Opera";
+  else if (/Chrome/i.test(ua)) browser = "Chrome";
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) browser = "Safari";
+  else if (/Firefox/i.test(ua)) browser = "Firefox";
+  let os = "Unknown";
+  if (/Windows/i.test(ua)) os = "Windows";
+  else if (/Mac OS|Macintosh/i.test(ua)) os = "macOS";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/iPhone|iPad|iOS/i.test(ua)) os = "iOS";
+  else if (/Linux/i.test(ua)) os = "Linux";
+  return `${browser} on ${os}`;
+}
+
+/**
+ * Field-level redaction policy for the admin user-detail endpoint.
+ *
+ * Every admin role currently has `users:canRead` (VIEWER baseline), but
+ * a VIEWER does not need raw IPs, full user-agents, OAuth provider IDs,
+ * GDPR request payloads, or impersonation context. ADMIN gets enough
+ * to investigate; SUPER_ADMIN gets the unredacted view.
+ *
+ * The shape of the returned object mirrors the input — fields that are
+ * removed simply become null/undefined; consumers must tolerate either.
+ */
+export type AdminRoleForRedaction = "VIEWER" | "MODERATOR" | "ADMIN" | "SUPER_ADMIN" | string;
+
+interface RedactionPayload {
+  user?: any;
+  sessions?: any[];
+  recentEvents?: any[];
+  pushDevices?: any[];
+  loginSessions?: any[];
+  gdprRequests?: any[];
+  adminNotes?: any[];
+  auditLogs?: any[];
+  [key: string]: any;
+}
+
+export function redactUserDetail<T extends RedactionPayload>(
+  payload: T,
+  role: AdminRoleForRedaction,
+): T {
+  // SUPER_ADMIN: no redaction.
+  if (role === "SUPER_ADMIN") return payload;
+
+  const isAdmin = role === "ADMIN";
+  const cloned: any = { ...payload };
+
+  // User block — mask email for VIEWER/MODERATOR, scrub OAuth provider hints.
+  if (cloned.user) {
+    const u = { ...cloned.user };
+    if (!isAdmin) {
+      u.email = maskEmail(u.email);
+      // Remove OAuth provider/providerId hints entirely for low-priv readers.
+      if (Array.isArray(u.oauthAccounts)) {
+        u.oauthAccounts = u.oauthAccounts.map((acc: any) => ({
+          id: acc.id,
+          provider: acc.provider,
+          createdAt: acc.createdAt,
+        }));
+      }
+      // Strip token metadata that exposes verification/reset history.
+      delete u.emailVerificationTokens;
+      delete u.passwordResetTokens;
+      // Strip consent log; viewers don't need this for routine ops.
+      delete u.dataConsents;
+    }
+    cloned.user = u;
+  }
+
+  // Session-shaped collections: redact IPs and UAs for non-ADMIN.
+  const redactSessionLike = (rows: any[] | undefined) => {
+    if (!Array.isArray(rows)) return rows;
+    return rows.map((row) => {
+      const next = { ...row };
+      if (!isAdmin) {
+        if ("ipAddress" in next) next.ipAddress = maskIpAddress(next.ipAddress);
+        if ("userAgent" in next) next.userAgent = summarizeUserAgent(next.userAgent);
+      }
+      // impersonation context is always SUPER_ADMIN-only context.
+      if ("impersonatedByAdminId" in next && !isAdmin) {
+        next.impersonatedByAdminId = next.impersonatedByAdminId ? "[redacted]" : null;
+      }
+      return next;
+    });
+  };
+
+  cloned.sessions = redactSessionLike(cloned.sessions);
+  cloned.loginSessions = redactSessionLike(cloned.loginSessions);
+  cloned.recentEvents = redactSessionLike(cloned.recentEvents);
+
+  // Push devices: even ADMIN sees deviceName masked beyond first 12 chars
+  // because raw deviceName often includes the user's chosen device label.
+  if (Array.isArray(cloned.pushDevices) && !isAdmin) {
+    cloned.pushDevices = cloned.pushDevices.map((d: any) => ({
+      ...d,
+      deviceName: typeof d?.deviceName === "string" && d.deviceName.length > 12
+        ? `${d.deviceName.slice(0, 12)}…`
+        : d?.deviceName ?? null,
+    }));
+  }
+
+  // GDPR requests: VIEWER/MODERATOR see only metadata (status/type/dates),
+  // never the requestData payload which can contain free-form user input.
+  if (Array.isArray(cloned.gdprRequests) && !isAdmin) {
+    cloned.gdprRequests = cloned.gdprRequests.map((r: any) => ({
+      id: r.id,
+      type: r.type,
+      status: r.status,
+      createdAt: r.createdAt,
+      completedAt: r.completedAt,
+    }));
+  }
+
+  // Admin notes: hidden from VIEWER/MODERATOR — these are operator-only.
+  if (!isAdmin) {
+    cloned.adminNotes = [];
+  }
+
+  return cloned as T;
+}
+
+
 export function validateCsvFileMetadata(file: {
   name?: unknown;
   size?: unknown;

@@ -84,7 +84,7 @@ export default function PrivacyPage() {
           Data is generally retained for as long as your account and related workflows need it, or until you remove the relevant records. Some operational logs may be retained longer for security and auditing.
         </p>
         <p>
-          If you need help with deletion, access, or correction requests, use the account settings available inside the app or the support routes listed in the Help Center.
+          If you need help with deletion, access, or correction requests, use the account settings available inside the app or reach us through the Contact page.
         </p>
       </PublicSection>
     </PublicPageShell>

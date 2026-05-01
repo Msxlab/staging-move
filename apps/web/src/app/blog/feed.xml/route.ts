@@ -13,8 +13,7 @@ export const revalidate = 600;
 import { NextResponse } from "next/server";
 import { listPublicPosts } from "@/lib/blog/queries";
 import { blogPostUrl } from "@/lib/blog/urls";
-
-const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app").replace(/\/+$/, "");
+import { SITE_URL } from "@/lib/seo";
 
 function escapeXml(s: string): string {
   return s

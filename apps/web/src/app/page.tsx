@@ -45,6 +45,7 @@ import { HardStats } from "@/components/marketing/hard-stats";
 import { MovingMomentMock } from "@/components/marketing/moving-moment-mock";
 import { BilingualShowcase } from "@/components/marketing/bilingual-showcase";
 import { TestimonialQuote } from "@/components/marketing/testimonial-quote";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export const metadata: Metadata = {
   title: SITE_TITLE,
@@ -125,10 +126,7 @@ export default async function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
-      />
+      <JsonLd id="ld-home-software" data={structuredData} />
       <MarketingHeader userId={userId} />
 
       {/* Hero — text left, phone mock right (md+). The phone is the wound *and*

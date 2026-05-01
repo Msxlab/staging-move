@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -31,6 +31,7 @@ import {
   type ProviderTrustSummary,
 } from "@locateflow/shared";
 import { getProviderEmptyStateCopy } from "@/lib/provider-empty-state";
+import { trackEvent } from "@/lib/analytics";
 
 export interface AddressOption {
   id: string;
@@ -175,6 +176,7 @@ export function ProvidersClient({
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [recs, setRecs] = useState<RecommendationsResponse | null>(null);
   const [recsLoading, setRecsLoading] = useState(false);
+  const lastTrackedSearchRef = useRef("");
 
   // Load providers for selected state/zip via the public API (cached/revalidated server-side)
   const fetchProviders = useCallback(async (state: string | null, zip: string | null, q: string) => {
@@ -220,6 +222,19 @@ export function ProvidersClient({
     const t = setTimeout(() => fetchProviders(selectedState, selectedZip, search.trim()), 250);
     return () => clearTimeout(t);
   }, [selectedState, selectedZip, search, fetchProviders]);
+
+  useEffect(() => {
+    const normalized = search.trim().toLowerCase();
+    if (normalized.length < 2 || normalized === lastTrackedSearchRef.current) return;
+    const t = window.setTimeout(() => {
+      lastTrackedSearchRef.current = normalized;
+      trackEvent("provider_search", {
+        query_length: normalized.length,
+        has_category_filter: Boolean(categoryFilter),
+      });
+    }, 700);
+    return () => window.clearTimeout(t);
+  }, [categoryFilter, search]);
 
   // Build distinct categories from visible providers, sorted by provider count
   const categoryCounts = useMemo(() => {

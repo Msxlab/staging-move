@@ -13,10 +13,9 @@ import Image from "next/image";
 import { getLocale } from "next-intl/server";
 import { listPublicPosts } from "@/lib/blog/queries";
 import { blogPostPath } from "@/lib/blog/urls";
+import { SITE_URL } from "@/lib/seo";
 
 export const revalidate = 300;
-
-const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app").replace(/\/+$/, "");
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -25,11 +24,6 @@ export async function generateMetadata(): Promise<Metadata> {
       "Stories, guides, and product updates from the LocateFlow team — moving smarter, tracking every provider in one place.",
     alternates: {
       canonical: `${SITE_URL}/blog`,
-      languages: {
-        "en-US": `${SITE_URL}/blog`,
-        "es-US": `${SITE_URL}/blog`,
-        "x-default": `${SITE_URL}/blog`,
-      },
     },
     openGraph: {
       type: "website",

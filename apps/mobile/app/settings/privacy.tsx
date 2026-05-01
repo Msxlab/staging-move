@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Switch,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -26,6 +27,7 @@ import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { hapticWarning } from "@/lib/haptics";
 import { api } from "@/lib/api";
+import { setAnalyticsEnabled } from "@/lib/analytics";
 
 interface AccountSecurityState {
   account: {
@@ -58,6 +60,10 @@ export default function PrivacySettingsScreen() {
   const [security, setSecurity] = useState<AccountSecurityState | null>(null);
   const [loadingSecurity, setLoadingSecurity] = useState(true);
   const [securityBusy, setSecurityBusy] = useState(false);
+  const [analyticsConsent, setAnalyticsConsent] = useState(false);
+  const [consentBusy, setConsentBusy] = useState(false);
+  const [loadingConsents, setLoadingConsents] = useState(true);
+  const [consentError, setConsentError] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -68,9 +74,43 @@ export default function PrivacySettingsScreen() {
     setLoadingSecurity(false);
   }
 
+  async function loadConsents() {
+    const res = await api.get<any>("/api/consent");
+    if (res.error) {
+      setConsentError(res.error);
+      setLoadingConsents(false);
+      return;
+    }
+    const granted = res.data?.consents?.ANALYTICS?.granted === true;
+    setAnalyticsConsent(granted);
+    setAnalyticsEnabled(granted);
+    setConsentError(null);
+    setLoadingConsents(false);
+  }
+
   useEffect(() => {
     loadSecurity();
+    loadConsents().catch(() => {
+      setConsentError("Privacy preferences could not be loaded.");
+      setLoadingConsents(false);
+    });
   }, []);
+
+  const updateAnalyticsConsent = async (granted: boolean) => {
+    setConsentBusy(true);
+    const res = await api.post<any>("/api/consent", {
+      grants: [{ category: "ANALYTICS", granted }],
+    });
+    setConsentBusy(false);
+    if (res.error) {
+      setConsentError(res.error);
+      Alert.alert("Privacy", res.error);
+      return;
+    }
+    setAnalyticsConsent(granted);
+    setAnalyticsEnabled(granted);
+    setConsentError(null);
+  };
 
   const setPassword = async () => {
     if (!newPassword || newPassword !== confirmPassword) {
@@ -121,7 +161,7 @@ export default function PrivacySettingsScreen() {
         {
           text: t("common.continue"),
           onPress: () => {
-            router.push("/settings/export" as any);
+            router.push("/settings/export");
           },
         },
       ]
@@ -139,7 +179,7 @@ export default function PrivacySettingsScreen() {
           text: t("common.continue"),
           style: "destructive",
           onPress: () => {
-            router.push("/settings/delete-account" as any);
+            router.push("/settings/delete-account");
           },
         },
       ]
@@ -288,6 +328,41 @@ export default function PrivacySettingsScreen() {
           )}
         </Card>
 
+        <Card variant="default" style={{ marginBottom: 12 }}>
+          <View style={styles.consentRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.infoTitle}>Analytics</Text>
+              <Text style={styles.infoDesc}>
+                Allow mobile usage analytics for product quality and reliability reporting.
+              </Text>
+            </View>
+            <Switch
+              value={analyticsConsent}
+              onValueChange={updateAnalyticsConsent}
+              disabled={consentBusy || loadingConsents || Boolean(consentError)}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+          {loadingConsents ? (
+            <Text style={styles.mutedText}>Loading privacy preferences...</Text>
+          ) : consentError ? (
+            <View style={styles.inlineErrorRow}>
+              <Text style={styles.errorText}>{consentError}</Text>
+              <Button
+                title="Try again"
+                onPress={() => {
+                  setLoadingConsents(true);
+                  setConsentError(null);
+                  void loadConsents();
+                }}
+                variant="outline"
+                size="sm"
+              />
+            </View>
+          ) : null}
+        </Card>
+
         {/* Info Cards */}
         {infoItems.map((item) => {
           const Icon = item.icon;
@@ -349,8 +424,10 @@ const styles = StyleSheet.create({
   },
   infoTitle: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
   infoDesc: { fontSize: 13, color: theme.colors.textTertiary, marginTop: 4, lineHeight: 18 },
+  consentRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   mutedText: { fontSize: 12, color: theme.colors.textTertiary, lineHeight: 17 },
   errorText: { fontSize: 12, color: theme.colors.error, lineHeight: 17 },
+  inlineErrorRow: { gap: 10, marginTop: 12 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", gap: 12, marginBottom: 14 },
   badgeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   subheading: { fontSize: 12, fontWeight: "700", color: theme.colors.textSecondary, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 },

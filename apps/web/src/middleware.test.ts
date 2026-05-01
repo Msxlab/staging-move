@@ -80,6 +80,79 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("x-middleware-next")).toBe("1");
   });
 
+  it("lets public blog pages render without a session", async () => {
+    const indexResponse = await middleware(request("https://locateflow.com/blog"));
+    const postResponse = await middleware(request("https://locateflow.com/blog/moving-checklist"));
+
+    expect(indexResponse.status).toBe(200);
+    expect(indexResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("lets public blog API routes reach route-level handling without a session", async () => {
+    const listResponse = await middleware(request("https://locateflow.com/api/blog/posts"));
+    const postResponse = await middleware(request("https://locateflow.com/api/blog/posts/moving-checklist"));
+    const imageResponse = await middleware(request("https://locateflow.com/api/blog/image?key=blog/test.jpg"));
+    const indexNowResponse = await middleware(request("https://locateflow.com/api/blog/indexnow-key/test-key"));
+    const viewResponse = await middleware(
+      request("https://locateflow.com/api/blog/view", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug: "moving-checklist", locale: "en" }),
+      }),
+    );
+    const revalidateResponse = await middleware(
+      request("https://locateflow.com/api/blog/revalidate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ slug: "moving-checklist", locale: "en" }),
+      }),
+    );
+
+    expect(listResponse.status).toBe(200);
+    expect(listResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(imageResponse.status).toBe(200);
+    expect(imageResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(indexNowResponse.status).toBe(200);
+    expect(indexNowResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(viewResponse.status).toBe(200);
+    expect(viewResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(revalidateResponse.status).toBe(200);
+    expect(revalidateResponse.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("does not make unrelated /api/blog paths public by prefix accident", async () => {
+    const response = await middleware(request("https://locateflow.com/api/blog/posts-admin"));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body.code).toBe("UNAUTHORIZED");
+  });
+
+  it("adds noindex headers to public auth pages", async () => {
+    const response = await middleware(request("https://locateflow.com/sign-up"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+  });
+
+  it("adds noindex headers to API responses", async () => {
+    const response = await middleware(request("https://locateflow.com/api/auth/me"));
+
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+  });
+
+  it("keeps the app help center private and noindexed until a public SSR help center exists", async () => {
+    const response = await middleware(request("https://locateflow.com/help"));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://locateflow.com/sign-in?redirect=%2Fhelp");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+  });
+
   it("adds baseline security headers to middleware responses", async () => {
     const response = await middleware(request("https://locateflow.com/help"));
 

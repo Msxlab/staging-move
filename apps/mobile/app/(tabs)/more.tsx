@@ -7,8 +7,9 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, type Href } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   User,
   DollarSign,
@@ -24,6 +25,7 @@ import {
   FileText,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
+import Constants from "expo-constants";
 import { useAuthStore } from "@/lib/auth-store";
 import { theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
@@ -31,17 +33,19 @@ import { hapticLight, hapticWarning } from "@/lib/haptics";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import { api } from "@/lib/api";
 import { unregisterPushNotifications } from "@/lib/push";
+import { clearSensitiveLocalState } from "@/lib/local-cleanup";
 
 interface MenuItem {
   icon: any;
   label: string;
-  route?: string;
+  route?: Href;
   color?: string;
   onPress?: () => void;
 }
 
 export default function MoreScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const clearSession = useAuthStore((s) => s.clearSession);
@@ -61,6 +65,7 @@ export default function MoreScreen() {
           await unregisterPushNotifications().catch(() => {});
           await api.post("/api/auth/logout").catch(() => {});
           await clearSession();
+          await clearSensitiveLocalState(queryClient);
           router.replace("/(auth)/sign-in");
         },
       },
@@ -104,7 +109,7 @@ export default function MoreScreen() {
         {/* Profile Card */}
         <TouchableOpacity
           style={styles.profileCard}
-          onPress={() => router.push("/settings/profile" as any)}
+          onPress={() => router.push("/settings/profile")}
           activeOpacity={0.7}
         >
           <Avatar initials={initials} size={48} />
@@ -136,7 +141,7 @@ export default function MoreScreen() {
                     onPress={() => {
                       hapticLight();
                       if (item.onPress) item.onPress();
-                      else if (item.route) router.push(item.route as any);
+                      else if (item.route) router.push(item.route);
                     }}
                     activeOpacity={0.6}
                   >
@@ -167,7 +172,7 @@ export default function MoreScreen() {
           <Text style={styles.signOutText}>{t("common.signOut")}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.version}>LocateFlow v1.0.0</Text>
+        <Text style={styles.version}>LocateFlow v{Constants.expoConfig?.version ?? "0.0.0"}</Text>
       </ScrollView>
     </SafeAreaView>
   );

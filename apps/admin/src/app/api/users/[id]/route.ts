@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
-import { maskProviderIdentifier } from "@/lib/privacy";
+import { maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
 
 const RESTORABLE_GDPR_DELETE_SOURCES = new Set(["admin", "admin_bulk"]);
 
@@ -21,7 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
+    const session = await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
     const { id } = await params;
 
     const userRecord = await prisma.user.findUnique({
@@ -269,17 +269,25 @@ export async function GET(
       }),
     ]);
 
-    return NextResponse.json({
-      user,
-      auditLogs,
-      sessions,
-      recentEvents,
-      eventCounts,
-      pushDevices,
-      loginSessions,
-      gdprRequests,
-      adminNotes,
-    });
+    // Field-level redaction by role. VIEWER/MODERATOR receive a masked
+    // email, no IPs/UAs, no OAuth provider IDs, no GDPR request bodies,
+    // no token metadata, no admin notes. ADMIN sees IPs/UAs and notes
+    // but still no impersonation context. SUPER_ADMIN is unredacted.
+    const redacted = redactUserDetail(
+      {
+        user,
+        auditLogs,
+        sessions,
+        recentEvents,
+        eventCounts,
+        pushDevices,
+        loginSessions,
+        gdprRequests,
+        adminNotes,
+      },
+      session.role,
+    );
+    return NextResponse.json(redacted);
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

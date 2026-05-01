@@ -21,6 +21,7 @@ import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 export default function BudgetScreen() {
@@ -37,22 +38,37 @@ export default function BudgetScreen() {
     }).format(n);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchBudgets = useCallback(async () => {
     const res = await api.get<any>("/api/budget");
-    if (res.data) setBudgets(res.data.budgets || res.data || []);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
+    if (res.data) {
+      setBudgets(res.data.budgets || res.data || []);
+      setError(null);
+    }
+    return true;
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchBudgets();
-    setLoading(false);
+    try {
+      await fetchBudgets();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchBudgets]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchBudgets();
-    setRefreshing(false);
+    try {
+      await fetchBudgets();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchBudgets]);
 
   useEffect(() => { load(); }, [load]);
@@ -69,7 +85,7 @@ export default function BudgetScreen() {
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={styles.title}>{t("budget.title")}</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/budget/new" as any)}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => router.push("/budget/new")}>
           <Plus size={20} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -98,18 +114,20 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
-        {budgets.length === 0 ? (
+        {error && budgets.length === 0 ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : budgets.length === 0 ? (
           <EmptyState
             icon={<DollarSign size={32} color={theme.colors.primary} />}
             title={t("empty.budgets")}
             description={t("empty.budgetsDescription")}
             actionLabel={t("empty.addBudget")}
-            onAction={() => router.push("/budget/new" as any)}
+            onAction={() => router.push("/budget/new")}
           />
         ) : (
           <View style={styles.list}>
             {budgets.map((budget: any) => (
-              <TouchableOpacity key={budget.id} activeOpacity={0.7} onPress={() => router.push(`/budget/${budget.id}` as any)}>
+              <TouchableOpacity key={budget.id} activeOpacity={0.7} onPress={() => router.push({ pathname: "/budget/[id]", params: { id: budget.id } })}>
               <Card variant="default">
                 <View style={styles.budgetHeader}>
                   <Text style={styles.budgetMonth}>{budget.month} {budget.year}</Text>

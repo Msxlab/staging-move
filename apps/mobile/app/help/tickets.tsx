@@ -16,6 +16,7 @@ import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -54,22 +55,37 @@ export default function TicketsScreen() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [category, setCategory] = useState("GENERAL");
+  const [error, setError] = useState<string | null>(null);
 
   const fetchTickets = useCallback(async () => {
     const res = await api.get<any>("/api/tickets");
-    if (res.data) setTickets(res.data.tickets || []);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
+    if (res.data) {
+      setTickets(res.data.tickets || []);
+      setError(null);
+    }
+    return true;
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchTickets();
-    setLoading(false);
+    try {
+      await fetchTickets();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchTickets]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchTickets();
-    setRefreshing(false);
+    try {
+      await fetchTickets();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchTickets]);
 
   useEffect(() => { load(); }, [load]);
@@ -157,7 +173,9 @@ export default function TicketsScreen() {
           </Card>
         )}
 
-        {tickets.length === 0 && !showCreate ? (
+        {error && tickets.length === 0 && !showCreate ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : tickets.length === 0 && !showCreate ? (
           <Card variant="default" style={{ alignItems: "center", paddingVertical: 40 }}>
             <MessageCircle size={32} color={theme.colors.textMuted} />
             <Text style={styles.emptyTitle}>No tickets yet</Text>
@@ -172,7 +190,7 @@ export default function TicketsScreen() {
                 <TouchableOpacity
                   key={ticket.id}
                   style={styles.ticketRow}
-                  onPress={() => router.push(`/help/tickets/${ticket.id}` as any)}
+                  onPress={() => router.push({ pathname: "/help/tickets/[id]", params: { id: ticket.id } })}
                   activeOpacity={0.7}
                 >
                   <View style={{ flex: 1 }}>

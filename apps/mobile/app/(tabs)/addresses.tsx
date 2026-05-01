@@ -31,6 +31,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 import type { Address } from "@locateflow/shared";
@@ -49,24 +50,37 @@ export default function AddressesScreen() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchAddresses = useCallback(async () => {
     const res = await api.get<any>("/api/addresses");
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
     if (res.data) {
       setAddresses(res.data.addresses || []);
+      setError(null);
     }
+    return true;
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchAddresses();
-    setLoading(false);
+    try {
+      await fetchAddresses();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchAddresses]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchAddresses();
-    setRefreshing(false);
+    try {
+      await fetchAddresses();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchAddresses]);
 
   useEffect(() => {
@@ -91,7 +105,7 @@ export default function AddressesScreen() {
                 setAddresses((prev) => prev.filter((a) => a.id !== id));
               } else {
                 hapticError();
-                Alert.alert(t("common.retry"), t("common.retry"));
+                Alert.alert(t("common.retry"), res.error);
               }
             },
           },
@@ -131,7 +145,7 @@ export default function AddressesScreen() {
         </View>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => router.push("/addresses/new" as any)}
+          onPress={() => router.push("/addresses/new")}
           activeOpacity={0.7}
         >
           <Plus size={20} color="#fff" />
@@ -149,13 +163,15 @@ export default function AddressesScreen() {
           />
         }
       >
-        {addresses.length === 0 ? (
+        {error && addresses.length === 0 ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : addresses.length === 0 ? (
           <EmptyState
             icon={<MapPin size={32} color={theme.colors.primary} />}
             title={t("addresses.empty")}
             description={t("addresses.emptyDescription")}
             actionLabel={t("addresses.newTitle")}
-            onAction={() => router.push("/addresses/new" as any)}
+            onAction={() => router.push("/addresses/new")}
           />
         ) : (
           <View style={styles.list}>
@@ -173,7 +189,7 @@ export default function AddressesScreen() {
                   key={address.id}
                   variant="default"
                   onPress={() =>
-                    router.push(`/addresses/${address.id}` as any)
+                    router.push({ pathname: "/addresses/[id]", params: { id: address.id } })
                   }
                 >
                   {/* Top Row */}
@@ -238,7 +254,7 @@ export default function AddressesScreen() {
                     </Text>
                     <TouchableOpacity
                       style={styles.viewServicesBtn}
-                      onPress={() => router.push(({ pathname: "/(tabs)/services", params: { addressId: address.id } } as any))}
+                      onPress={() => router.push({ pathname: "/(tabs)/services", params: { addressId: address.id } })}
                     >
                       <Text style={styles.viewServicesText}>{t("common.view")}</Text>
                       <ChevronRight size={14} color={theme.colors.primary} />
@@ -250,7 +266,7 @@ export default function AddressesScreen() {
                     <TouchableOpacity
                       style={styles.actionBtn}
                       onPress={() =>
-                        router.push(`/addresses/${address.id}/edit` as any)
+                        router.push({ pathname: "/addresses/[id]/edit", params: { id: address.id } })
                       }
                     >
                       <Edit size={14} color={theme.colors.textTertiary} />
@@ -259,7 +275,7 @@ export default function AddressesScreen() {
                     <TouchableOpacity
                       style={styles.actionBtn}
                       onPress={() =>
-                        router.push(({ pathname: "/services/new", params: { addressId: address.id } } as any))
+                        router.push({ pathname: "/services/new", params: { addressId: address.id } })
                       }
                     >
                       <Zap size={14} color={theme.colors.textTertiary} />

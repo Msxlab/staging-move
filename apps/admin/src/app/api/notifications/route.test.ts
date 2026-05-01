@@ -48,9 +48,13 @@ describe("admin notification send boundaries", () => {
     }));
 
     expect(res.status).toBe(400);
-    await expect(res.json()).resolves.toMatchObject({
-      error: expect.stringContaining("only supports immediate in-app notifications"),
-    });
+    const body = await res.json();
+    expect(body.error).toBe("Invalid notification payload");
+    // The Zod enum rejection should call out the channel field so the
+    // operator knows which input was wrong — a generic 400 with no
+    // detail is what regressed in the prior pass and what the original
+    // assertion was guarding against.
+    expect(JSON.stringify(body.details)).toContain("channel");
     expect(mocks.prisma.notification.create).not.toHaveBeenCalled();
     expect(mocks.prisma.notificationQueue.create).not.toHaveBeenCalled();
   });

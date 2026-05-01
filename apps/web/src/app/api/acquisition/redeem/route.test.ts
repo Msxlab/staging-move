@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
   subscriptionUpsert: vi.fn(),
   redemptionCreate: vi.fn(),
-  campaignUpdate: vi.fn(),
+  campaignUpdateMany: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({ requireDbUserId: mocks.requireDbUserId }));
@@ -69,12 +69,12 @@ describe("Free Access redemption route", () => {
       freeAccessEndsAt: new Date("2026-05-28T00:00:00.000Z"),
     });
     mocks.redemptionCreate.mockResolvedValue({ id: "redemption_1" });
-    mocks.campaignUpdate.mockResolvedValue({});
+    mocks.campaignUpdateMany.mockResolvedValue({ count: 1 });
     mocks.transaction.mockImplementation(async (callback: any) =>
       callback({
         subscription: { upsert: mocks.subscriptionUpsert },
         acquisitionRedemption: { create: mocks.redemptionCreate },
-        acquisitionCampaign: { update: mocks.campaignUpdate },
+        acquisitionCampaign: { updateMany: mocks.campaignUpdateMany },
       }),
     );
   });
@@ -110,5 +110,62 @@ describe("Free Access redemption route", () => {
 
     expect(response.status).toBe(400);
     expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when the campaign cap closes between precondition and atomic increment", async () => {
+    // Precondition passes (no precondition throw, default mock), but the
+    // database-side updateMany finds the row already at maxRedemptions
+    // and reports count=0. The transaction must roll back.
+    mocks.findAcquisitionCampaign.mockResolvedValueOnce({
+      id: "camp_capped",
+      name: "Capped",
+      code: "FREE30",
+      status: "ACTIVE",
+      accessType: "FREE_ACCESS",
+      plan: "INDIVIDUAL",
+      freeAccessDays: 30,
+      newUsersOnly: true,
+      maxRedemptions: 100,
+      redemptionCount: 99,
+    });
+    mocks.campaignUpdateMany.mockResolvedValueOnce({ count: 0 });
+
+    const response = await POST(redeemRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "CAMPAIGN_UNAVAILABLE" });
+    expect(mocks.campaignUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: "camp_capped",
+          status: "ACTIVE",
+          redemptionCount: { lt: 100 },
+        }),
+        data: { redemptionCount: { increment: 1 } },
+      }),
+    );
+  });
+
+  it("omits the redemptionCount predicate when maxRedemptions is unset (uncapped campaign)", async () => {
+    mocks.findAcquisitionCampaign.mockResolvedValueOnce({
+      id: "camp_uncapped",
+      name: "Uncapped",
+      code: "FREE30",
+      status: "ACTIVE",
+      accessType: "FREE_ACCESS",
+      plan: "INDIVIDUAL",
+      freeAccessDays: 30,
+      newUsersOnly: true,
+    });
+
+    const response = await POST(redeemRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.campaignUpdateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "camp_uncapped", status: "ACTIVE" },
+      }),
+    );
   });
 });

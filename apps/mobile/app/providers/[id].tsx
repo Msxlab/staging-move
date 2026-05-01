@@ -29,6 +29,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
@@ -85,6 +86,7 @@ export default function ProviderDetailScreen() {
   const [recMeta, setRecMeta] = useState<RecMeta | null>(null);
   const [primaryAddress, setPrimaryAddress] = useState<AddressOption | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const tier = useMemo<string | null>(() => {
     if (!provider || !recMeta?.clusters) return null;
@@ -102,6 +104,11 @@ export default function ProviderDetailScreen() {
     setLoading(true);
 
     const addrRes = await api.get<{ addresses: AddressOption[] }>("/api/addresses");
+    if (addrRes.error) {
+      setError(addrRes.error);
+      setLoading(false);
+      return;
+    }
     const addrs = addrRes.data?.addresses || [];
     const primary = addrs.find((a) => a.isPrimary) || addrs[0] || null;
     setPrimaryAddress(primary);
@@ -115,10 +122,19 @@ export default function ProviderDetailScreen() {
         ? api.get<RecMeta>("/api/providers/recommendations", { addressId: primary.id })
         : Promise.resolve({ data: null } as { data: RecMeta | null }),
     ]);
+    if (detailRes.error) {
+      setError(detailRes.error);
+      setProvider(null);
+      setAlternatives([]);
+      setRecMeta(null);
+      setLoading(false);
+      return;
+    }
 
     setProvider(detailRes.data?.provider || null);
     setAlternatives(detailRes.data?.alternatives || []);
     setRecMeta(recRes.data || null);
+    setError(null);
     setLoading(false);
   }, [providerId]);
 
@@ -174,12 +190,11 @@ export default function ProviderDetailScreen() {
           <Text style={styles.title}>Provider</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Provider not found</Text>
-          <Text style={styles.emptyText}>
-            This provider may have been removed or is no longer available.
-          </Text>
-        </View>
+        <ErrorState
+          title={error ? "Provider unavailable" : "Provider not found"}
+          message={error || "This provider may have been removed or is no longer available."}
+          onRetry={loadAll}
+        />
       </SafeAreaView>
     );
   }
@@ -400,7 +415,7 @@ export default function ProviderDetailScreen() {
                   key={alt.id}
                   provider={alt}
                   variant="compact"
-                  onPress={() => router.replace(`/providers/${alt.id}` as any)}
+                  onPress={() => router.replace({ pathname: "/providers/[id]", params: { id: alt.id } })}
                 />
               ))}
             </ScrollView>

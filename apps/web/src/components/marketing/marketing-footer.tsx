@@ -6,7 +6,6 @@ export async function MarketingFooter() {
   const tCommon = await getTranslations("common");
   const tLanding = await getTranslations("landing");
   const tLegal = await getTranslations("legal");
-  const tHelp = await getTranslations("help");
   const tPricing = await getTranslations("pricing");
 
   return (
@@ -47,7 +46,6 @@ export async function MarketingFooter() {
           <div>
             <h4 className="mb-3 text-sm font-semibold">{tCommon("help")}</h4>
             <div className="space-y-2 text-sm text-muted-foreground">
-              <Link href="/help" className="block transition hover:text-foreground">{tHelp("title")}</Link>
               <Link href="/faq" className="block transition hover:text-foreground">FAQ</Link>
               <Link href="/blog" className="block transition hover:text-foreground">Blog</Link>
               <Link href="/blog/feed.xml" className="block transition hover:text-foreground">RSS</Link>

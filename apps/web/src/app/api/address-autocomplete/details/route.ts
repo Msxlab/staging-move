@@ -3,7 +3,22 @@ import { requireDbUserId } from "@/lib/auth";
 import { lookupAddressAutocomplete } from "@/lib/address-autocomplete";
 import { enforcePlacesCostControls, isPlacesAutocompleteEnabled } from "../cost-controls";
 
-export async function GET(request: NextRequest) {
+async function readDetailsInput(request: NextRequest, source: "query" | "body") {
+  if (source === "query") {
+    const { searchParams } = new URL(request.url);
+    return {
+      placeId: searchParams.get("placeId") || "",
+      sessionToken: searchParams.get("sessionToken"),
+    };
+  }
+  const body = await request.json().catch(() => ({}));
+  return {
+    placeId: typeof body?.placeId === "string" ? body.placeId : "",
+    sessionToken: typeof body?.sessionToken === "string" ? body.sessionToken : null,
+  };
+}
+
+async function handleDetails(request: NextRequest, source: "query" | "body") {
   try {
     const userId = await requireDbUserId();
 
@@ -15,9 +30,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const { searchParams } = new URL(request.url);
-    const placeId = searchParams.get("placeId") || "";
-    const sessionToken = searchParams.get("sessionToken");
+    const { placeId, sessionToken } = await readDetailsInput(request, source);
     if (!placeId.trim()) {
       return NextResponse.json({ error: "placeId is required" }, { status: 400 });
     }
@@ -34,4 +47,12 @@ export async function GET(request: NextRequest) {
     console.error("Address autocomplete details failed:", error);
     return NextResponse.json({ error: "Failed to resolve address" }, { status: 500 });
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleDetails(request, "query");
+}
+
+export async function POST(request: NextRequest) {
+  return handleDetails(request, "body");
 }

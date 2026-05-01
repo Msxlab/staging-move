@@ -1,13 +1,17 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/db";
 import { blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
-
-const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app").replace(/\/+$/, "");
+import { SITE_URL, isNoIndexEnvironment, staticLastModified } from "@/lib/seo";
 
 export const revalidate = 600; // 10 min — publish webhook also forces revalidate
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if (isNoIndexEnvironment(SITE_URL)) {
+    return [];
+  }
+
   const now = new Date();
+  const staticLastmod = staticLastModified();
 
   // Static marketing/legal pages — order roughly mirrors human nav.
   // Priority is a hint, not a directive; Google ignores absolute
@@ -22,15 +26,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/pricing", changeFrequency: "weekly", priority: 0.9 },
     { path: "/blog", changeFrequency: "daily", priority: 0.9 },
     { path: "/faq", changeFrequency: "monthly", priority: 0.7 },
-    { path: "/sign-in", changeFrequency: "monthly", priority: 0.6 },
-    { path: "/sign-up", changeFrequency: "monthly", priority: 0.7 },
-    { path: "/forgot-password", changeFrequency: "yearly", priority: 0.3 },
     { path: "/contact", changeFrequency: "monthly", priority: 0.5 },
     { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
     { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
     { path: "/cookie-policy", changeFrequency: "yearly", priority: 0.3 },
     { path: "/disclaimer", changeFrequency: "yearly", priority: 0.3 },
     { path: "/refund", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/billing-policy", changeFrequency: "yearly", priority: 0.3 },
     { path: "/acceptable-use", changeFrequency: "yearly", priority: 0.3 },
     { path: "/dpa", changeFrequency: "yearly", priority: 0.3 },
     { path: "/security", changeFrequency: "yearly", priority: 0.3 },
@@ -39,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticEntries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({
     url: `${SITE_URL}${r.path}`,
-    lastModified: now,
+    lastModified: staticLastmod,
     changeFrequency: r.changeFrequency,
     priority: r.priority,
   }));
@@ -61,13 +63,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       orderBy: { publishedAt: "desc" },
       take: 5000,
     });
+    const localesBySlug = posts.reduce((map, post) => {
+      const locales = map.get(post.slug) || [];
+      if (!locales.includes(post.locale)) locales.push(post.locale);
+      map.set(post.slug, locales);
+      return map;
+    }, new Map<string, string[]>());
     blogEntries = posts.map((p) => ({
       url: blogPostUrl(SITE_URL, p.slug, p.locale),
       lastModified: p.updatedAt,
       changeFrequency: "weekly",
       priority: 0.6,
       alternates: {
-        languages: blogHreflangUrls(SITE_URL, p.slug),
+        languages: blogHreflangUrls(SITE_URL, p.slug, localesBySlug.get(p.slug)),
       },
     }));
   } catch {

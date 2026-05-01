@@ -16,6 +16,9 @@ vi.mock("@/lib/db", () => ({
     profile: {
       upsert: vi.fn(),
     },
+    dataConsent: {
+      findFirst: vi.fn(),
+    },
     address: {
       findFirst: vi.fn(),
     },
@@ -41,6 +44,7 @@ import { POST } from "./route";
 const mockUser = prisma.user as unknown as { update: Mock };
 const mockUserEvent = prisma.userEvent as unknown as { findFirst: Mock; create: Mock };
 const mockProfile = prisma.profile as unknown as { upsert: Mock };
+const mockDataConsent = prisma.dataConsent as unknown as { findFirst: Mock };
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/profile", {
@@ -63,6 +67,7 @@ describe("profile route", () => {
     mockUserEvent.create.mockResolvedValue({});
     mockUser.update.mockResolvedValue({});
     mockProfile.upsert.mockResolvedValue({ id: "profile-1", userId: "user-1" });
+    mockDataConsent.findFirst.mockResolvedValue(null);
   });
 
   it("accepts the real onboarding step-0 payload for a new user", async () => {
@@ -101,8 +106,12 @@ describe("profile route", () => {
       }),
     );
     const upsertArg = mockProfile.upsert.mock.calls[0][0];
-    expect(upsertArg.create).not.toHaveProperty("moveType");
-    expect(upsertArg.create).not.toHaveProperty("isImmigrant");
+    expect(upsertArg.create).toEqual(expect.objectContaining({
+      moveType: "PERSONAL",
+      isBusinessOwner: false,
+      isImmigrant: false,
+      immigrationStatus: null,
+    }));
     expect(upsertArg.create).not.toHaveProperty("businessType");
     expect(upsertArg.create).not.toHaveProperty("sensitiveOptIn");
   });
@@ -217,6 +226,8 @@ describe("profile route", () => {
       hasMotorcycle: false,
       hasBoatRV: false,
       moveType: "BUSINESS",
+      isBusinessOwner: true,
+      unexpectedRootField: true,
       legalConsents: {
         termsAccepted: true,
         disclaimerAccepted: true,
@@ -230,6 +241,33 @@ describe("profile route", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toBe("Validation failed");
+    expect(mockProfile.upsert).not.toHaveBeenCalled();
+  });
+
+  it("requires sensitive consent before saving sensitive profile fields", async () => {
+    const response = await POST(makeRequest({
+      firstName: "Taylor",
+      lastName: "Mover",
+      familyStatus: "SINGLE",
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      petTypes: [],
+      carCount: 0,
+      hasSenior: false,
+      hasDisability: true,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      moveType: "PERSONAL",
+      isBusinessOwner: false,
+      isImmigrant: false,
+      immigrationStatus: "",
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("SENSITIVE_CONSENT_REQUIRED");
     expect(mockProfile.upsert).not.toHaveBeenCalled();
   });
 });

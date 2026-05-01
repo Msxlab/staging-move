@@ -182,11 +182,12 @@ function LegacySubscriptionScreen() {
     void fetchSubscription();
   }, [fetchSubscription]));
 
-  const currentPlanKey = subscription?.plan || "FREE_TRIAL";
-  const currentStatus = subscription?.status || "TRIALING";
+  const hasServerSubscription = Boolean(subscription?.plan && subscription?.status);
+  const currentPlanKey = hasServerSubscription ? subscription?.plan || null : null;
+  const currentStatus = hasServerSubscription ? subscription?.status || "UNKNOWN" : "NO_SUBSCRIPTION";
   const currentProvider = subscription?.provider || null;
   const currentPlan = useMemo(
-    () => PLANS.find((plan) => plan.key === currentPlanKey) || PLANS[0],
+    () => currentPlanKey ? PLANS.find((plan) => plan.key === currentPlanKey) || null : null,
     [currentPlanKey]
   );
   const periodEndLabel = formatDateLabel(
@@ -200,12 +201,12 @@ function LegacySubscriptionScreen() {
     const canOpen = await Linking.canOpenURL(url);
     if (!canOpen) {
       hapticError();
-      Alert.alert("Unavailable", "This billing link could not be opened on your device.");
+      Alert.alert(t("settings.subscription_unavailable"), t("settings.subscription_linkUnavailable"));
       return;
     }
 
     await Linking.openURL(url);
-  }, []);
+  }, [t]);
 
   const handleUpgrade = useCallback(async (planKey: "INDIVIDUAL") => {
     setProcessingPlan(planKey);
@@ -236,18 +237,20 @@ function LegacySubscriptionScreen() {
     const disclosureBody =
       targetCampaign?.checkoutDisclosureCopy ||
       (cycle === "monthly"
-        ? `Today: ${targetCampaign?.displayPriceLabel || "the displayed price"}. Renews monthly until you cancel in Settings.`
-        : "Today: $0. Trial: 3 months. Your annual plan starts after the trial. Cancel before then in Settings.");
+        ? t("settings.subscription_disclosureMonthly", { price: targetCampaign?.displayPriceLabel || "the displayed price" })
+        : t("settings.subscription_disclosureAnnual"));
     const headline = targetCampaign?.publicHeadline ||
-      (cycle === "monthly" ? "Subscribe monthly" : "Start with 3 months free");
+      (cycle === "monthly"
+        ? t("settings.subscription_subscribeMonthly")
+        : t("settings.subscription_subscribeAnnualTrial"));
 
     const userConfirmed = await new Promise<boolean>((resolve) => {
       Alert.alert(
         headline,
-        `${disclosureBody}\n\nBy continuing, you accept the subscription terms shown at checkout.`,
+        t("settings.subscription_continueDisclosure", { disclosure: disclosureBody }),
         [
-          { text: "Cancel", style: "cancel", onPress: () => resolve(false) },
-          { text: "Continue", style: "default", onPress: () => resolve(true) },
+          { text: t("common.cancel"), style: "cancel", onPress: () => resolve(false) },
+          { text: t("common.continue"), style: "default", onPress: () => resolve(true) },
         ],
         { cancelable: true, onDismiss: () => resolve(false) },
       );
@@ -291,7 +294,7 @@ function LegacySubscriptionScreen() {
 
     if (res.error || !res.data?.url) {
       hapticError();
-      Alert.alert("Billing unavailable", res.error || "Failed to open billing portal.");
+      Alert.alert(t("settings.subscription_billingUnavailable"), res.error || t("settings.subscription_billingPortalFailed"));
       return;
     }
 
@@ -307,19 +310,19 @@ function LegacySubscriptionScreen() {
     const hit = results.find((r) => r.status === "ok");
     if (hit) {
       hapticSuccess();
-      Alert.alert("Restored", "Your active subscription was restored.");
+      Alert.alert(t("settings.subscription_restored"), t("settings.subscription_restoredDescription"));
       await fetchSubscription();
     } else {
       hapticError();
-      Alert.alert("Nothing to restore", "No active subscription was found for this store account.");
+      Alert.alert(t("settings.subscription_nothingToRestore"), t("settings.subscription_nothingToRestoreDescription"));
     }
-  }, [iapAvailable, fetchSubscription]);
+  }, [iapAvailable, fetchSubscription, t]);
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel="Go back" accessibilityHint="Returns to settings">
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yBack")} accessibilityHint={t("settings.subscription_a11yBackHint")}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={styles.title}>{t("settings.subscription")}</Text>
@@ -340,8 +343,8 @@ function LegacySubscriptionScreen() {
           onPress={() => router.back()}
           style={styles.backBtn}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
-          accessibilityHint="Returns to settings"
+          accessibilityLabel={t("settings.subscription_a11yBack")}
+          accessibilityHint={t("settings.subscription_a11yBackHint")}
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
@@ -356,13 +359,15 @@ function LegacySubscriptionScreen() {
               <Crown size={18} color={theme.colors.amber.text} />
             </View>
             <View>
-              <Text style={styles.currentPlanTitle}>{currentPlan.name}</Text>
+              <Text style={styles.currentPlanTitle}>
+                {currentPlan?.name || t("settings.subscription_noActivePlan", { defaultValue: "No active subscription" })}
+              </Text>
               <Text style={styles.currentPlanMeta}>
                 {periodEndLabel
                   ? t("settings.subscription_renews", { date: periodEndLabel })
                   : trialEndLabel
                     ? t("settings.subscription_renews", { date: trialEndLabel })
-                    : t("settings.subscription_manage")}
+                    : t("settings.subscription_choosePlan", { defaultValue: "Choose a plan to start." })}
               </Text>
             </View>
           </View>
@@ -426,8 +431,8 @@ function LegacySubscriptionScreen() {
                   onPress={handleManageBilling}
                   disabled={processingPlan === "MANAGE"}
                   accessibilityRole="button"
-                  accessibilityLabel="Manage billing"
-                  accessibilityHint="Opens the billing portal"
+                  accessibilityLabel={t("settings.subscription_a11yManage")}
+                  accessibilityHint={t("settings.subscription_a11yManageHint")}
                   accessibilityState={{ disabled: processingPlan === "MANAGE" }}
                 >
                   {processingPlan === "MANAGE" ? (
@@ -437,12 +442,12 @@ function LegacySubscriptionScreen() {
                   )}
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel="Current plan" accessibilityState={{ disabled: true }}>
+                <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yCurrent")} accessibilityState={{ disabled: true }}>
                   <Text style={styles.currentBtnText}>{t("pricing.cta_current")}</Text>
                 </TouchableOpacity>
               )
             ) : plan.key === "FREE_TRIAL" ? (
-              <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel="Free trial plan information" accessibilityState={{ disabled: true }}>
+              <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yTrial")} accessibilityState={{ disabled: true }}>
                 <Text style={styles.currentBtnText}>{t("pricing.cta_trial")}</Text>
               </TouchableOpacity>
             ) : (
@@ -452,8 +457,8 @@ function LegacySubscriptionScreen() {
                 onPress={() => handleUpgrade("INDIVIDUAL")}
                 disabled={processingPlan === plan.key}
                 accessibilityRole="button"
-                accessibilityLabel={`Upgrade to ${plan.name}`}
-                accessibilityHint="Opens secure checkout in your browser"
+                accessibilityLabel={t("settings.subscription_a11yUpgrade", { plan: plan.name })}
+                accessibilityHint={t("settings.subscription_a11yUpgradeHint")}
                 accessibilityState={{ disabled: processingPlan === plan.key }}
               >
                 {processingPlan === plan.key ? (
@@ -476,14 +481,14 @@ function LegacySubscriptionScreen() {
             onPress={handleRestore}
             disabled={processingPlan === "RESTORE"}
             accessibilityRole="button"
-            accessibilityLabel="Restore purchases"
-            accessibilityHint="Syncs an existing subscription from your store account"
+            accessibilityLabel={t("settings.subscription_a11yRestore")}
+            accessibilityHint={t("settings.subscription_a11yRestoreHint")}
             accessibilityState={{ disabled: processingPlan === "RESTORE" }}
           >
             {processingPlan === "RESTORE" ? (
               <ActivityIndicator color={theme.colors.primary} />
             ) : (
-              <Text style={styles.restoreBtnText}>Restore purchases</Text>
+              <Text style={styles.restoreBtnText}>{t("settings.subscription_restoreButton")}</Text>
             )}
           </TouchableOpacity>
         )}

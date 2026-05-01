@@ -1,9 +1,52 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
 import { maskEmail } from "@/lib/privacy";
+
+// Mass-assignment hardening. POST and PUT bodies both go through these
+// allowlists — `id`, `slug` (on PUT), `createdAt`, `createdBy`, and any
+// other server-managed column must never be settable from the client.
+// Variables is a JSON document; we don't peek inside it because legacy
+// templates use varied shapes, but we cap the serialized size.
+const variablesSchema = z
+  .union([
+    z.array(z.unknown()).max(200),
+    z.record(z.unknown()),
+  ])
+  .optional();
+
+const templateCategorySchema = z.enum([
+  "SYSTEM",
+  "TRANSACTIONAL",
+  "MARKETING",
+  "NOTIFICATION",
+]).optional();
+
+const templateCreateSchema = z
+  .object({
+    slug: z
+      .string()
+      .trim()
+      .min(1)
+      .max(80)
+      .regex(/^[a-z0-9][a-z0-9-]*$/),
+    name: z.string().trim().min(1).max(200),
+    subject: z.string().trim().min(1).max(255),
+    body: z.string().min(1).max(200_000),
+    category: templateCategorySchema,
+    variables: variablesSchema,
+    isActive: z.boolean().optional(),
+  })
+  .strict();
+
+// Slug is intentionally omitted from update — renaming a template slug
+// silently breaks every send-by-slug call site. Slug rename should be a
+// dedicated migration, not a stealth field on the regular PUT.
+const templateUpdateSchema = templateCreateSchema.omit({ slug: true }).partial().strict();
 
 function parseMetadata(value: string | null | undefined): Record<string, unknown> {
   if (!value) return {};
@@ -122,24 +165,34 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canCreate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { slug, name, subject, body, category, variables, isActive } = await req.json();
-    if (!slug || !name || !subject || !body) return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const raw = await req.json().catch(() => null);
+    const parsed = templateCreateSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid template payload" }, { status: 400 });
+    }
+    const { slug, name, subject, body, category, variables, isActive } = parsed.data;
 
     const existing = await prisma.emailTemplate.findUnique({ where: { slug } });
     if (existing) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
 
     const template = await prisma.emailTemplate.create({
-      data: { slug, name, subject, body, category: category || "SYSTEM", variables: variables ? JSON.stringify(variables) : null, isActive: isActive ?? true, createdBy: session.adminId },
-    });
-    await prisma.adminAuditLog.create({
       data: {
-        adminUserId: session.adminId,
-        action: "CREATE_EMAIL_TEMPLATE",
-        entityType: "EmailTemplate",
-        entityId: template.id,
-        changes: JSON.stringify({ slug: template.slug, name: template.name, isActive: template.isActive }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        slug,
+        name,
+        subject,
+        body,
+        category: category ?? "SYSTEM",
+        variables: variables !== undefined ? JSON.stringify(variables) : null,
+        isActive: isActive ?? true,
+        createdBy: session.adminId,
       },
+    });
+    await writeAdminAudit(session, {
+      action: "CREATE_EMAIL_TPL",
+      entityType: "EmailTemplate",
+      entityId: template.id,
+      after: { slug: template.slug, name: template.name, isActive: template.isActive },
+      request: getAuditRequestMeta(req),
     });
     return NextResponse.json(template);
   } catch (e: any) {
@@ -152,27 +205,37 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canUpdate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { id, name, subject, body, category, variables, isActive } = await req.json();
-    if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    const raw = (await req.json().catch(() => null)) as Record<string, unknown> | null;
+    if (!raw || typeof raw !== "object") {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    const { id, ...rest } = raw as { id?: unknown } & Record<string, unknown>;
+    if (typeof id !== "string" || !id) {
+      return NextResponse.json({ error: "ID required" }, { status: 400 });
+    }
+    const parsed = templateUpdateSchema.safeParse(rest);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid template payload" }, { status: 400 });
+    }
     const existing = await prisma.emailTemplate.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Template not found" }, { status: 404 });
 
+    const { variables, ...updateRest } = parsed.data;
     const template = await prisma.emailTemplate.update({
       where: { id },
-      data: { name, subject, body, category, variables: variables ? JSON.stringify(variables) : undefined, isActive, updatedBy: session.adminId },
-    });
-    await prisma.adminAuditLog.create({
       data: {
-        adminUserId: session.adminId,
-        action: "UPDATE_EMAIL_TEMPLATE",
-        entityType: "EmailTemplate",
-        entityId: template.id,
-        changes: JSON.stringify({
-          before: { name: existing.name, subject: existing.subject, isActive: existing.isActive },
-          after: { name: template.name, subject: template.subject, isActive: template.isActive },
-        }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        ...updateRest,
+        ...(variables !== undefined ? { variables: JSON.stringify(variables) } : {}),
+        updatedBy: session.adminId,
       },
+    });
+    await writeAdminAudit(session, {
+      action: "UPDATE_EMAIL_TPL",
+      entityType: "EmailTemplate",
+      entityId: template.id,
+      before: { name: existing.name, subject: existing.subject, isActive: existing.isActive },
+      after: { name: template.name, subject: template.subject, isActive: template.isActive },
+      request: getAuditRequestMeta(req),
     });
     return NextResponse.json(template);
   } catch (e: any) {
@@ -198,15 +261,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
     await prisma.emailTemplate.delete({ where: { id } });
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "DELETE_EMAIL_TEMPLATE",
-        entityType: "EmailTemplate",
-        entityId: id,
-        changes: JSON.stringify({ slug: existing.slug, name: existing.name }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "DELETE_EMAIL_TPL",
+      entityType: "EmailTemplate",
+      entityId: id,
+      before: { slug: existing.slug, name: existing.name },
+      request: getAuditRequestMeta(req),
     });
     return NextResponse.json({ success: true });
   } catch (e: any) {

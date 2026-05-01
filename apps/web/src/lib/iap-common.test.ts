@@ -25,7 +25,8 @@ vi.mock("@/lib/iap-google", () => ({
   mapGoogleSubscriptionState: vi.fn(() => "ACTIVE"),
 }));
 
-import { normalizeGoogleResult } from "./iap-common";
+import { applyIapStateToUser, normalizeGoogleResult, type NormalizedIapState } from "./iap-common";
+import { prisma } from "@/lib/db";
 
 const originalEnv = { ...process.env };
 
@@ -49,5 +50,32 @@ describe("IAP normalization", () => {
         },
       }),
     ).rejects.toThrow("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
+  });
+
+  it("maps original transaction unique races to a controlled ownership error", async () => {
+    vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockRejectedValue({
+      code: "P2002",
+      meta: { target: ["originalTransactionId"] },
+    });
+
+    const state: NormalizedIapState = {
+      platform: "ios",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "individual.ios",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state }))
+      .rejects
+      .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
   });
 });

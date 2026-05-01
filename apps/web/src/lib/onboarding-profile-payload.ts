@@ -13,6 +13,10 @@ export interface OnboardingProfileState {
   needsStorage: boolean;
   hasMotorcycle: boolean;
   hasBoatRV: boolean;
+  moveType?: string;
+  isBusinessOwner?: boolean;
+  isImmigrant?: boolean;
+  immigrationStatus?: string;
 }
 
 export function buildOnboardingProfilePayload(
@@ -33,5 +37,9 @@ export function buildOnboardingProfilePayload(
     needsStorage: profile.needsStorage,
     hasMotorcycle: profile.hasMotorcycle,
     hasBoatRV: profile.hasBoatRV,
+    moveType: profile.moveType || "PERSONAL",
+    isBusinessOwner: profile.isBusinessOwner || false,
+    isImmigrant: profile.isImmigrant || false,
+    immigrationStatus: profile.immigrationStatus || "",
   };
 }

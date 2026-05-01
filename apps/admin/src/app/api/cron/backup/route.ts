@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { createBackupArchive } from "@/lib/backup-archive";
-import { BACKUP_TABLE_ORDER } from "@/lib/backup-tables";
+import {
+  BACKUP_TABLE_ORDER,
+  fetchAllRecords,
+  MAX_BACKUP_ROWS_PER_TABLE,
+} from "@/lib/backup-tables";
 import { serializeBackupRecordMetadata, uploadBackupArchive } from "@/lib/backup-storage";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
@@ -14,30 +18,6 @@ import {
   requireBackupCrypto,
   requireOffsiteStored,
 } from "@/lib/backup-policy";
-
-const BACKUP_TABLE_FETCHERS = {
-  users: () => prisma.user.findMany({ take: 50000 }),
-  oauthAccounts: () => prisma.oAuthAccount.findMany({ take: 50000 }),
-  profiles: () => prisma.profile.findMany({ take: 50000 }),
-  dataConsents: () => prisma.dataConsent.findMany({ take: 50000 }),
-  providers: () => prisma.serviceProvider.findMany({ take: 50000 }),
-  providerCoverages: () => prisma.serviceProviderCoverage.findMany({ take: 50000 }),
-  addresses: () => prisma.address.findMany({ take: 50000 }),
-  services: () => prisma.service.findMany({ take: 50000 }),
-  movingPlans: () => prisma.movingPlan.findMany({ take: 50000 }),
-  customProviders: () => prisma.userCustomProvider.findMany({ take: 50000 }),
-  moveTasks: () => prisma.moveTask.findMany({ take: 50000 }),
-  budgets: () => prisma.budget.findMany({ take: 50000 }),
-  subscriptions: () => prisma.subscription.findMany({ take: 50000 }),
-  notifications: () => prisma.notification.findMany({ take: 50000 }),
-  emailLogs: () => prisma.emailLog.findMany({ take: 50000 }),
-  auditLogs: () => prisma.auditLog.findMany({ take: 50000 }),
-  providerGovernanceIssues: () => prisma.providerGovernanceIssue.findMany({ take: 50000 }),
-  adminUsers: () => prisma.adminUser.findMany({ take: 50000 }),
-  adminPermissions: () => prisma.adminPermission.findMany({ take: 50000 }),
-  adminLoginLogs: () => prisma.adminLoginLog.findMany({ take: 50000 }),
-  adminAuditLogs: () => prisma.adminAuditLog.findMany({ take: 50000 }),
-} as const;
 
 const STALE_BACKUP_ALERT_MS = 24 * 60 * 60 * 1000;
 
@@ -83,21 +63,23 @@ export async function POST(request: NextRequest) {
     backupId = backup.id;
     requireBackupCrypto(archivePolicy);
 
-    // Collect data from all tables
+    // Collect data from all tables. Cron and manual backup share the
+    // same paginated fetcher so both observe the same per-table ceiling
+    // and label PARTIAL when truncation occurs.
     const backupData: Record<string, any[]> = {};
     const selectedTables = BACKUP_TABLE_ORDER;
     const tableCounts: Record<string, number> = {};
     const failedTables: string[] = [];
+    const truncatedTables: string[] = [];
     let totalRecords = 0;
 
     for (const tableName of selectedTables) {
       try {
-        const fetchRecords = BACKUP_TABLE_FETCHERS[tableName as keyof typeof BACKUP_TABLE_FETCHERS];
-        if (!fetchRecords) continue;
-        const records = await fetchRecords();
-        backupData[tableName] = records;
-        tableCounts[tableName] = records.length;
-        totalRecords += records.length;
+        const result = await fetchAllRecords(prisma as any, tableName);
+        backupData[tableName] = result.records;
+        tableCounts[tableName] = result.fetched;
+        totalRecords += result.fetched;
+        if (result.truncated) truncatedTables.push(tableName);
       } catch (err) {
         console.error(`[CRON-BACKUP] Failed to fetch ${tableName}:`, err);
         backupData[tableName] = [];
@@ -118,6 +100,14 @@ export async function POST(request: NextRequest) {
         `Backup ${backup.id} completed with empty data for tables: ${failedTables.join(", ")}.`,
       );
     }
+    if (truncatedTables.length > 0) {
+      await dispatchBackupAlert(
+        "BACKUP_TRUNCATED",
+        `Backup ${backup.id} hit the per-table ceiling of ${MAX_BACKUP_ROWS_PER_TABLE} for tables: ${truncatedTables.join(", ")}. Archive marked PARTIAL.`,
+      );
+    }
+    const effectiveType =
+      truncatedTables.length > 0 || failedTables.length > 0 ? "PARTIAL" : "FULL";
 
     const createdAt = new Date();
     const createdAtIso = createdAt.toISOString();
@@ -125,10 +115,13 @@ export async function POST(request: NextRequest) {
       metadata: {
         createdAt: createdAtIso,
         createdBy: "CRON",
-        type: "FULL",
+        type: effectiveType,
+        requestedType: "FULL",
         format: "JSON",
         tables: selectedTables,
         totalRecords,
+        truncatedTables,
+        failedTables,
       },
       data: backupData,
     }, null, 2);
@@ -148,11 +141,13 @@ export async function POST(request: NextRequest) {
         fileName,
         createdAt: createdAtIso,
         createdBy: "CRON",
-        type: "FULL",
+        type: effectiveType,
         format: "JSON",
         tables: selectedTables,
         totalRecords,
         tableCounts,
+        truncatedTables,
+        failedTables,
       },
       rawContent: jsonContent,
       signature,
@@ -178,13 +173,19 @@ export async function POST(request: NextRequest) {
         totalRecords,
         tableCounts,
         archiveSizeWarning: sizeEvaluation.warning,
+        truncatedTables: truncatedTables.length > 0 ? truncatedTables : undefined,
+        failedTables: failedTables.length > 0 ? failedTables : undefined,
+        maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
       },
     });
 
-    // Update backup record
+    // Update backup record. The `type` column is set to PARTIAL whenever
+    // any table was truncated or failed, so dashboards never present a
+    // truncated archive as FULL.
     await prisma.backupRecord.update({
       where: { id: backup.id },
       data: {
+        type: effectiveType,
         status: "COMPLETED",
         recordCount: totalRecords,
         fileSize,

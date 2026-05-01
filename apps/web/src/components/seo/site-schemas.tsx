@@ -1,17 +1,15 @@
 import type { ReactElement } from "react";
 import { JsonLd, organizationSchema, webSiteSchema } from "./json-ld";
+import { SITE_URL } from "@/lib/seo";
 
 /**
  * Sitewide JSON-LD block injected from the root layout.
  *
- * `Organization` + `WebSite` together give Google enough signal to
- * resolve the brand entity (knowledge panel) and to render the
- * sitelinks search box on SERP. Keeping them in one component means
- * adding a third schema (e.g. AggregateRating once we have reviews)
- * is one edit.
+ * `Organization` + `WebSite` together give crawlers enough signal to
+ * resolve the brand entity. SearchAction is intentionally omitted until
+ * a public site-search route exists.
  */
 
-const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app").replace(/\/+$/, "");
 const LOGO_PATH = "/logo.svg";
 
 export function SiteSchemas(): ReactElement {

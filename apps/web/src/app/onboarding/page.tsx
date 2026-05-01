@@ -31,6 +31,7 @@ import {
   ServiceLimitUpsell,
   type ServiceLimitDetails,
 } from "@/components/shared/service-limit-upsell";
+import { trackEvent } from "@/lib/analytics";
 
 const STEPS = [
   { icon: User, label: "Profile" },
@@ -571,12 +572,15 @@ export default function OnboardingPage() {
     const planId = await saveMovingPlan();
     if (planId === false) return;
     if (typeof planId === "string") {
+      trackEvent("moving_plan_started", { source: "onboarding" });
       await recordOnboardingProgress("COMPLETED");
+      trackEvent("onboarding_completed", { created_moving_plan: true });
       router.push(`/moving/${planId}`);
       return;
     }
     await recordOnboardingProgress("MOVING_SKIPPED");
     await recordOnboardingProgress("COMPLETED");
+    trackEvent("onboarding_completed", { created_moving_plan: false });
     router.push("/dashboard");
   };
 

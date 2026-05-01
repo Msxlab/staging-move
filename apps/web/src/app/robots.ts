@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
+import { getCanonicalSiteUrl, isNoIndexEnvironment } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app";
-const APP_ENV = (process.env.APP_ENV || "").toLowerCase();
+const APP_URL = getCanonicalSiteUrl();
 
 function hostLooksLikeStaging(host: string | null): boolean {
   if (!host) return false;
@@ -28,9 +28,7 @@ async function requestHost(): Promise<string | null> {
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const host = await requestHost();
   const shouldBlockIndexing =
-    APP_ENV === "staging" ||
-    APP_ENV === "preview" ||
-    /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i.test(APP_URL) ||
+    isNoIndexEnvironment(APP_URL) ||
     hostLooksLikeStaging(host);
 
   if (shouldBlockIndexing) {
@@ -55,38 +53,36 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     "/budget/",
     "/providers",
     "/providers/",
+    "/help",
+    "/help/",
+    "/support",
+    "/support/",
+    "/notifications",
+    "/notifications/",
+    "/onboarding",
+    "/onboarding/",
+    "/expenses",
+    "/expenses/",
     "/api/",
     "/verify-email/",
     "/reset-password/",
     "/blog/preview/", // signed-token preview links — never index
   ];
 
-  // Explicit Allow for known AI crawlers gives us two things:
-  //   1. A clear signal that this content is opt-in for AI training
-  //      and answer-engine retrieval (so cited responses can link
-  //      back to the canonical post).
-  //   2. A single place to flip the policy per-bot if the analytics
-  //      dashboard later shows a bot abusing rate limits.
-  // Bytespider (TikTok) defaults to Disallow because the value-back
-  // is unclear and it's been flagged for aggressive scraping; flip
-  // to Allow if needed.
-  const AI_BOTS_ALLOW = [
-    "GPTBot",
-    "ChatGPT-User",
+  // Search/retrieval crawlers may access public pages so answer engines can
+  // cite canonical URLs. Broad training crawlers are opted out by default.
+  const AI_SEARCH_BOTS_ALLOW = [
     "OAI-SearchBot",
-    "ClaudeBot",
-    "Claude-Web",
-    "anthropic-ai",
+    "ChatGPT-User",
     "PerplexityBot",
+    "ClaudeBot",
+  ];
+  const AI_TRAINING_BOTS_DISALLOW = [
+    "GPTBot",
     "Google-Extended",
     "CCBot",
-    "Applebot-Extended",
-    "meta-externalagent",
-    "cohere-ai",
-    "DuckAssistBot",
-    "YouBot",
+    "Bytespider",
   ];
-  const AI_BOTS_DISALLOW = ["Bytespider"];
 
   return {
     rules: [
@@ -95,12 +91,12 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         allow: "/",
         disallow: PRIVATE_PATHS,
       },
-      ...AI_BOTS_ALLOW.map((userAgent) => ({
+      ...AI_SEARCH_BOTS_ALLOW.map((userAgent) => ({
         userAgent,
         allow: "/",
         disallow: PRIVATE_PATHS,
       })),
-      ...AI_BOTS_DISALLOW.map((userAgent) => ({
+      ...AI_TRAINING_BOTS_DISALLOW.map((userAgent) => ({
         userAgent,
         disallow: "/",
       })),

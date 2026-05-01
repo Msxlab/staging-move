@@ -165,7 +165,6 @@ export async function purchaseSubscription(opts: {
                 signedTransaction:
                   purchase?.jwsRepresentation ||
                   purchase?.jwsRepresentationIos ||
-                  purchase?.transactionReceipt ||
                   undefined,
                 transactionId: purchase?.transactionId || purchase?.originalTransactionIdentifierIOS,
               }
@@ -174,6 +173,14 @@ export async function purchaseSubscription(opts: {
                 purchaseToken: purchase?.purchaseToken,
                 productId: purchase?.productId || opts.productId,
               };
+
+        if (Platform.OS === "ios" && !verifyBody.signedTransaction) {
+          finish({
+            status: "error",
+            message: "StoreKit signed transaction is missing. Please try again.",
+          });
+          return;
+        }
 
         const res = await api.post<VerifyResponse>("/api/mobile/iap/verify", verifyBody);
 
@@ -280,6 +287,13 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
           };
 
     try {
+      if (Platform.OS === "ios" && !body.signedTransaction) {
+        results.push({
+          status: "error",
+          message: "StoreKit signed transaction is missing.",
+        });
+        continue;
+      }
       const res = await api.post<VerifyResponse>("/api/mobile/iap/verify", body);
       if (res.error || !res.data?.success) {
         results.push({

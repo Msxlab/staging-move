@@ -15,6 +15,7 @@ import { ArrowLeft, Send, Lock } from "lucide-react-native";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 
@@ -41,23 +42,38 @@ export default function TicketDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const fetchTicket = useCallback(async () => {
     const res = await api.get<any>(`/api/tickets/${id}`);
-    if (res.data) setTicket(res.data.ticket);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
+    if (res.data) {
+      setTicket(res.data.ticket);
+      setError(null);
+    }
+    return true;
   }, [id]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchTicket();
-    setLoading(false);
+    try {
+      await fetchTicket();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchTicket]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchTicket();
-    setRefreshing(false);
+    try {
+      await fetchTicket();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchTicket]);
 
   useEffect(() => { load(); }, [load]);
@@ -112,9 +128,11 @@ export default function TicketDetailScreen() {
           <Text style={styles.title}>Ticket</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: theme.colors.textTertiary }}>Ticket not found.</Text>
-        </View>
+        <ErrorState
+          title={error ? "Ticket unavailable" : "Ticket not found"}
+          message={error || "This ticket may have been removed."}
+          onRetry={load}
+        />
       </SafeAreaView>
     );
   }

@@ -41,10 +41,12 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
     const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
     const addressId = searchParams.get("addressId");
     const month = searchParams.get("month");
 
     const where: any = { userId, deletedAt: null };
+    if (id) where.id = id;
     if (addressId) where.addressId = addressId;
     if (month) where.month = new Date(month);
 
@@ -53,13 +55,15 @@ export async function GET(request: NextRequest) {
       orderBy: { month: "desc" },
     });
 
-    const summaryMonth = month ? monthDateFromInput(month) : new Date();
+    const selectedBudget = id ? budgets[0] : null;
+    const summaryMonth = month ? monthDateFromInput(month) : (selectedBudget?.month || new Date());
+    const summaryAddressId = addressId || selectedBudget?.addressId || null;
     const services = await prisma.service.findMany({
       where: {
         userId,
         deletedAt: null,
         isActive: true,
-        ...(addressId ? { addressId } : {}),
+        ...(summaryAddressId ? { addressId: summaryAddressId } : {}),
       },
       select: {
         id: true,
@@ -73,11 +77,12 @@ export async function GET(request: NextRequest) {
         createdAt: true,
       },
     });
-    const serviceBudget = calculateBudgetPlan(services, { month: summaryMonth, addressId });
+    const serviceBudget = calculateBudgetPlan(services, { month: summaryMonth, addressId: summaryAddressId });
     const monthlyBudgetLimit = budgets[0]?.plannedExpenses || 0;
 
     return NextResponse.json({
       budgets,
+      budget: selectedBudget,
       summary: {
         monthlyCommitted: serviceBudget.monthlyCommitted,
         monthlyBudgetLimit,

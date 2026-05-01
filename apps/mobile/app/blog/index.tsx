@@ -101,7 +101,7 @@ export default function BlogListScreen() {
   }, [load]);
 
   const openPost = useCallback((slug: string, locale: string) => {
-    router.push({ pathname: "/blog/[slug]", params: { slug, locale } } as any);
+    router.push({ pathname: "/blog/[slug]", params: { slug, locale } });
   }, [router]);
 
   if (loading) {

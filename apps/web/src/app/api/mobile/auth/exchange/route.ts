@@ -11,6 +11,16 @@ export const runtime = "nodejs";
 
 const exchangeSchema = z.object({
   code: z.string().min(16).max(300),
+  // Optional PKCE code_verifier. New mobile builds always send this;
+  // older builds omit it. The server enforces presence based on the
+  // MobileOAuthCode row's stored codeChallenge — see
+  // consumeMobileOAuthExchangeCode for the policy.
+  code_verifier: z
+    .string()
+    .min(43)
+    .max(128)
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -35,7 +45,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.errors }, { status: 400 });
   }
 
-  const exchanged = await consumeMobileOAuthExchangeCode(parsed.data.code);
+  const exchanged = await consumeMobileOAuthExchangeCode(parsed.data.code, {
+    codeVerifier: parsed.data.code_verifier,
+  });
   if (!exchanged.ok) {
     const status = exchanged.error === "ACCOUNT_UNAVAILABLE" ? 403 : 400;
     return NextResponse.json({ error: "OAuth handoff could not be completed.", code: exchanged.error }, { status });

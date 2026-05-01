@@ -28,6 +28,7 @@ import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 
@@ -37,22 +38,37 @@ export default function ServiceDetailScreen() {
   const [service, setService] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetch_ = useCallback(async () => {
     const res = await api.get<any>(`/api/services/${id}`);
-    if (res.data) setService(res.data.service || res.data);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
+    if (res.data) {
+      setService(res.data.service || res.data);
+      setError(null);
+    }
+    return true;
   }, [id]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetch_();
-    setLoading(false);
+    try {
+      await fetch_();
+    } finally {
+      setLoading(false);
+    }
   }, [fetch_]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetch_();
-    setRefreshing(false);
+    try {
+      await fetch_();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetch_]);
 
   useEffect(() => { load(); }, [load]);
@@ -71,7 +87,7 @@ export default function ServiceDetailScreen() {
             router.back();
           } else {
             hapticError();
-            Alert.alert("Error", "Failed to delete service.");
+            Alert.alert("Error", res.error);
           }
         },
       },
@@ -89,9 +105,11 @@ export default function ServiceDetailScreen() {
           <Text style={styles.title}>Not Found</Text>
           <View style={{ width: 44 }} />
         </View>
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: theme.colors.textTertiary }}>Service not found.</Text>
-        </View>
+        <ErrorState
+          title={error ? "Service unavailable" : "Service not found"}
+          message={error || "This service may have been removed."}
+          onRetry={load}
+        />
       </SafeAreaView>
     );
   }
@@ -217,7 +235,7 @@ export default function ServiceDetailScreen() {
         ) : null}
 
         {/* Actions */}
-        <TouchableOpacity style={styles.editBtn} onPress={() => router.push(`/services/${id}/edit` as any)}>
+        <TouchableOpacity style={styles.editBtn} onPress={() => router.push({ pathname: "/services/[id]/edit", params: { id: String(id) } })}>
           <Edit size={16} color={theme.colors.primary} />
           <Text style={styles.editText}>Edit Service</Text>
         </TouchableOpacity>

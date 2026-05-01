@@ -23,11 +23,15 @@ import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import {
   MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE,
   MOBILE_OAUTH_REDIRECT_COOKIE,
+  MOBILE_OAUTH_STATE_COOKIE,
   buildMobileOAuthRedirectUrl,
   createMobileOAuthExchangeCode,
   isMobileOAuthClient,
+  normalizeMobileOAuthCodeChallenge,
   normalizeMobileOAuthRedirectUri,
+  normalizeMobileOAuthState,
 } from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
@@ -43,6 +47,8 @@ function clearGoogleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_redirect");
   response.cookies.delete(MOBILE_OAUTH_CLIENT_COOKIE);
   response.cookies.delete(MOBILE_OAUTH_REDIRECT_COOKIE);
+  response.cookies.delete(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE);
+  response.cookies.delete(MOBILE_OAUTH_STATE_COOKIE);
   response.cookies.delete(LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE);
   return response;
 }
@@ -167,16 +173,27 @@ export async function GET(request: NextRequest) {
       );
     }
     try {
+      // Pull the PKCE challenge stored at init time. May be null for
+      // older mobile builds; consumeMobileOAuthExchangeCode treats null
+      // as legacy-mode and skips the verifier check.
+      const mobileCodeChallenge = normalizeMobileOAuthCodeChallenge(
+        request.cookies.get(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE)?.value,
+      );
+      const mobileState = normalizeMobileOAuthState(
+        request.cookies.get(MOBILE_OAUTH_STATE_COOKIE)?.value,
+      );
       const handoffCode = await createMobileOAuthExchangeCode({
         userId,
         provider: "google",
         redirectUri: mobileRedirectUri,
+        codeChallenge: mobileCodeChallenge,
       });
       return clearGoogleOAuthCookies(
         NextResponse.redirect(buildMobileOAuthRedirectUrl({
           redirectUri: mobileRedirectUri,
           code: handoffCode,
           provider: "google",
+          state: mobileState,
         })),
       );
     } catch (err) {

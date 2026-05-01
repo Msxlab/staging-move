@@ -104,7 +104,7 @@ export async function unregisterPushNotifications(): Promise<void> {
     );
     const token = tokenRes.data;
     if (!token) return;
-    await api.delete(`/api/push/register?token=${encodeURIComponent(token)}`);
+    await api.delete("/api/push/register", { token });
   } catch {
     /* best-effort */
   }

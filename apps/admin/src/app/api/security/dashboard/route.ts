@@ -122,10 +122,15 @@ export async function GET() {
     }
 
     // ── Unique login IPs per admin (detect unusual patterns) ──
+    // adminUserId is nullable because P0-2 changed the FK to onDelete:
+    // SetNull so audit entries survive admin deletion. Skip the orphaned
+    // rows here — there's no admin to attribute the IP set to.
     const loginIPMap: Record<string, Set<string>> = {};
     for (const login of recentLogins) {
-      if (!loginIPMap[login.adminUserId]) loginIPMap[login.adminUserId] = new Set();
-      loginIPMap[login.adminUserId].add(login.ipAddress || "unknown");
+      const adminId = login.adminUserId;
+      if (!adminId) continue;
+      if (!loginIPMap[adminId]) loginIPMap[adminId] = new Set();
+      loginIPMap[adminId].add(login.ipAddress || "unknown");
     }
     const multiIPAdmins = Object.entries(loginIPMap)
       .filter(([, ips]) => ips.size > 3)
@@ -247,7 +252,7 @@ function generateRecommendations(input: RecommendationInput): Array<{ severity: 
   } else {
     const daysSinceBackup = (Date.now() - new Date(input.lastBackup).getTime()) / (24 * 60 * 60 * 1000);
     if (daysSinceBackup > 7) {
-      recs.push({ severity: "MEDIUM", message: `Last backup was ${Math.round(daysSinceBackup)} days ago. Consider creating a fresh backuprisma.` });
+      recs.push({ severity: "MEDIUM", message: `Last backup was ${Math.round(daysSinceBackup)} days ago. Consider creating a fresh backup.` });
     }
   }
 

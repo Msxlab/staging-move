@@ -22,6 +22,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { normalizeMovingPlanStatus } from "@locateflow/shared";
 
@@ -39,22 +40,37 @@ export default function MovingScreen() {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPlans = useCallback(async () => {
     const res = await api.get<any>("/api/moving");
-    if (res.data) setPlans(res.data.plans || []);
+    if (res.error) {
+      setError(res.error);
+      return false;
+    }
+    if (res.data) {
+      setPlans(res.data.plans || []);
+      setError(null);
+    }
+    return true;
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await fetchPlans();
-    setLoading(false);
+    try {
+      await fetchPlans();
+    } finally {
+      setLoading(false);
+    }
   }, [fetchPlans]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchPlans();
-    setRefreshing(false);
+    try {
+      await fetchPlans();
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchPlans]);
 
   useEffect(() => { load(); }, [load]);
@@ -70,7 +86,7 @@ export default function MovingScreen() {
         </View>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={() => router.push("/moving/new" as any)}
+          onPress={() => router.push("/moving/new")}
           activeOpacity={0.7}
         >
           <Plus size={20} color="#fff" />
@@ -82,13 +98,15 @@ export default function MovingScreen() {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
-        {plans.length === 0 ? (
+        {error && plans.length === 0 ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : plans.length === 0 ? (
           <EmptyState
             icon={<Truck size={32} color={theme.colors.primary} />}
             title={t("moving.checklistEmpty")}
             description={t("moving.subtitle")}
             actionLabel={t("moving.newPlan")}
-            onAction={() => router.push("/moving/new" as any)}
+            onAction={() => router.push("/moving/new")}
           />
         ) : (
           <View style={styles.list}>
@@ -97,7 +115,7 @@ export default function MovingScreen() {
               const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
               return (
-                <Card key={plan.id} variant="default" onPress={() => router.push(`/moving/${plan.id}` as any)}>
+                <Card key={plan.id} variant="default" onPress={() => router.push({ pathname: "/moving/[id]", params: { id: plan.id } })}>
                   <View style={styles.planTop}>
                     <View style={styles.planIcon}>
                       <Truck size={20} color={theme.colors.primary} />

@@ -42,15 +42,14 @@ export default function NewBudgetScreen() {
   };
 
   const handleSave = async () => {
-    if (!form.month.trim() || !form.year.trim() || !form.actualExpenses.trim()) {
+    if (!form.month.trim() || !form.year.trim()) {
       Alert.alert(t("common.retry"), t("validation.required"));
       return;
     }
 
     const parsedYear = Number.parseInt(form.year, 10);
-    const parsedActualExpenses = Number.parseFloat(form.actualExpenses);
 
-    if (Number.isNaN(parsedYear) || Number.isNaN(parsedActualExpenses)) {
+    if (Number.isNaN(parsedYear)) {
       Alert.alert(t("common.retry"), t("validation.invalidNumber"));
       return;
     }
@@ -58,12 +57,12 @@ export default function NewBudgetScreen() {
     const payload: Record<string, unknown> = {
       month: form.month,
       year: parsedYear,
-      actualExpenses: parsedActualExpenses,
     };
 
     if (form.plannedIncome.trim()) payload.plannedIncome = Number.parseFloat(form.plannedIncome);
     if (form.actualIncome.trim()) payload.actualIncome = Number.parseFloat(form.actualIncome);
     if (form.plannedExpenses.trim()) payload.plannedExpenses = Number.parseFloat(form.plannedExpenses);
+    if (form.actualExpenses.trim()) payload.actualExpenses = Number.parseFloat(form.actualExpenses);
     if (form.notes.trim()) payload.notes = form.notes.trim();
 
     setSaving(true);
@@ -141,7 +140,7 @@ export default function NewBudgetScreen() {
         />
         <TextInput
           style={[styles.input, styles.inputSpacing]}
-          placeholder={`${t("budget.actualExpenses")} *`}
+          placeholder={t("budget.actualExpenses")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.actualExpenses}
           onChangeText={(value) => update("actualExpenses", value.replace(/[^0-9.]/g, ""))}

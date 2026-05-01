@@ -9,9 +9,13 @@ import {
 import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 import {
   MOBILE_OAUTH_CLIENT_COOKIE,
+  MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE,
   MOBILE_OAUTH_REDIRECT_COOKIE,
+  MOBILE_OAUTH_STATE_COOKIE,
   isMobileOAuthClient,
+  normalizeMobileOAuthCodeChallenge,
   normalizeMobileOAuthRedirectUri,
+  normalizeMobileOAuthState,
 } from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
@@ -38,6 +42,18 @@ export async function GET(request: NextRequest) {
   if (isMobileOAuthClient(client) && !mobileRedirectUri) {
     return NextResponse.json({ error: "Invalid mobile OAuth redirect URI." }, { status: 400 });
   }
+  // PKCE challenge from the mobile client. Optional during the
+  // backwards-compat window — see google/route.ts for rationale.
+  const mobileCodeChallenge = isMobileOAuthClient(client)
+    ? normalizeMobileOAuthCodeChallenge(request.nextUrl.searchParams.get("mobileCodeChallenge"))
+    : null;
+  const rawMobileState = request.nextUrl.searchParams.get("mobileState");
+  const mobileState = isMobileOAuthClient(client)
+    ? normalizeMobileOAuthState(rawMobileState)
+    : null;
+  if (isMobileOAuthClient(client) && rawMobileState && !mobileState) {
+    return NextResponse.json({ error: "Invalid mobile OAuth state." }, { status: 400 });
+  }
 
   const url = appleAuthorizeUrl({ clientId, redirectUri, state });
 
@@ -59,6 +75,12 @@ export async function GET(request: NextRequest) {
   if (mobileRedirectUri) {
     res.cookies.set(MOBILE_OAUTH_CLIENT_COOKIE, "mobile", cookieOpts);
     res.cookies.set(MOBILE_OAUTH_REDIRECT_COOKIE, mobileRedirectUri, cookieOpts);
+    if (mobileCodeChallenge) {
+      res.cookies.set(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE, mobileCodeChallenge, cookieOpts);
+    }
+    if (mobileState) {
+      res.cookies.set(MOBILE_OAUTH_STATE_COOKIE, mobileState, cookieOpts);
+    }
   }
   return res;
 }

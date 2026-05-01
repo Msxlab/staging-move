@@ -7,7 +7,6 @@ import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
 // ── Public routes (no auth required) ───────────────────────────
 const PUBLIC_PATHS = [
   "/",
-  "/help",
   "/privacy",
   "/terms",
   "/disclaimer",
@@ -15,6 +14,7 @@ const PUBLIC_PATHS = [
   "/contact",
   "/pricing",
   "/how-it-works",
+  "/blog",
   "/faq",
   "/security",
   "/refund",
@@ -52,12 +52,23 @@ const PUBLIC_API_EXACT = [
   // session cookie enters the browser. The route validates a short-lived
   // HMAC-signed token delivered by POST body, not by URL query string.
   "/api/auth/impersonate-handoff",
+  "/api/blog/revalidate",
+  "/api/blog/view",
 ];
-const PUBLIC_API_GET = ["/api/providers"];
+const PUBLIC_API_GET = [
+  "/api/providers",
+  "/api/blog/image",
+  "/api/blog/indexnow-key",
+  "/api/blog/posts",
+];
+
+function matchesPathOrChild(pathname: string, path: string): boolean {
+  return pathname === path || pathname.startsWith(path + "/");
+}
 
 function isPublicPath(pathname: string): boolean {
   for (const p of PUBLIC_PATHS) {
-    if (pathname === p || pathname.startsWith(p + "/")) return true;
+    if (matchesPathOrChild(pathname, p)) return true;
   }
   return false;
 }
@@ -71,7 +82,7 @@ function isPublicApi(pathname: string, method: string): boolean {
   }
   if (method === "GET") {
     for (const p of PUBLIC_API_GET) {
-      if (pathname.startsWith(p)) return true;
+      if (matchesPathOrChild(pathname, p)) return true;
     }
   }
   return false;
@@ -426,9 +437,38 @@ function hostLooksLikeStaging(host: string | null): boolean {
   );
 }
 
+function pathShouldNoIndex(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/moving") ||
+    pathname.startsWith("/services") ||
+    pathname.startsWith("/addresses") ||
+    pathname.startsWith("/budget") ||
+    pathname.startsWith("/providers") ||
+    pathname.startsWith("/support") ||
+    pathname.startsWith("/notifications") ||
+    pathname.startsWith("/expenses") ||
+    pathname.startsWith("/onboarding") ||
+    pathname.startsWith("/help") ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/verify-email") ||
+    pathname.startsWith("/unsubscribe") ||
+    pathname.startsWith("/offline")
+  );
+}
+
 function applyStagingNoIndex(request: NextRequest, response: NextResponse): NextResponse {
   const appEnv = (process.env.APP_ENV || "").toLowerCase();
-  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "";
   const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || null;
   const host = request.headers.get("host")?.split(",")[0]?.trim() || null;
   const shouldNoIndex =
@@ -439,20 +479,87 @@ function applyStagingNoIndex(request: NextRequest, response: NextResponse): Next
     hostLooksLikeStaging(host) ||
     hostLooksLikeStaging(request.nextUrl.hostname);
 
-  if (shouldNoIndex) {
+  if (shouldNoIndex || pathShouldNoIndex(request.nextUrl.pathname)) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   }
   return applySecurityHeaders(request, response);
 }
 
+// ── CSP nonce ──────────────────────────────────────────────────
+// Per-request 128-bit base64url nonce. Mirrors the admin app pattern
+// (apps/admin/src/middleware.ts) so the web app's CSP can drop the
+// `'unsafe-inline'` allowance on script-src while keeping Next.js's
+// hydration scripts working — Next.js auto-attaches the nonce to its
+// generated <Script> tags when it sees `x-nonce` on the request, and
+// `'strict-dynamic'` extends trust to scripts loaded by those nonced
+// roots.
+//
+// Server components read the nonce via `headers().get("x-nonce")` and
+// stamp it on any inline <script> they emit (see apps/web/src/app/layout.tsx).
+const NONCE_BYTES = 16;
+
+function generateCspNonce(): string {
+  const bytes = new Uint8Array(NONCE_BYTES);
+  crypto.getRandomValues(bytes);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary)
+    .replace(/=+$/, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+
+function buildCspHeader(nonce: string, isDev: boolean): string {
+  const sentryConnectSrc = "https://errors.locateflow.com";
+  const googleScriptSrc = "https://www.googletagmanager.com";
+  const googleConnectSrc =
+    "https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net";
+  const scriptSrc = isDev
+    ? `'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic' ${googleScriptSrc}`
+    : `'self' 'nonce-${nonce}' 'strict-dynamic' ${googleScriptSrc}`;
+  // CSP3 ignores `'unsafe-inline'` when a nonce is present, so we keep it
+  // as a CSP2 fallback for older browsers without weakening modern
+  // ones. Google Fonts is allowed explicitly.
+  const styleSrc = `'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`;
+  const connectSrc = isDev
+    ? "'self' ws: http: https: https://api.stripe.com"
+    : `'self' https://api.stripe.com ${sentryConnectSrc} ${googleConnectSrc}`;
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    `style-src ${styleSrc}`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "font-src 'self' https://fonts.gstatic.com",
+    // Images are non-executable; broad `https:` is the conventional CSP
+    // baseline — covers imgproxy, R2 public CDN, legacy Cloudinary URLs.
+    "img-src 'self' data: blob: https:",
+    `connect-src ${connectSrc}`,
+    "frame-src 'self' https://js.stripe.com",
+    "worker-src 'self' blob:",
+  ].join("; ");
+}
+
 function nextWithCurrentPath(request: NextRequest): NextResponse {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-locateflow-pathname", request.nextUrl.pathname);
-  return NextResponse.next({
+  // Generate the per-request nonce here so both the request (server
+  // components reading via headers()) and the response (CSP header) see
+  // the same value. API routes also pass through this helper but their
+  // CSP header is a no-op for JSON responses.
+  const nonce = generateCspNonce();
+  requestHeaders.set("x-nonce", nonce);
+  const response = NextResponse.next({
     request: {
       headers: requestHeaders,
     },
   });
+  response.headers.set("x-nonce", nonce);
+  const isDev = process.env.NODE_ENV !== "production";
+  response.headers.set("Content-Security-Policy", buildCspHeader(nonce, isDev));
+  return response;
 }
 
 function applySecurityHeaders(request: NextRequest, response: NextResponse): NextResponse {

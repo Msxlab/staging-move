@@ -13,7 +13,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { isBlogLocale } from "@locateflow/shared";
-import { getPublicPostBySlug, listPublishedSlugs } from "@/lib/blog/queries";
+import {
+  getPublicPostBySlug,
+  listPublishedLocalesForSlug,
+  listPublishedSlugs,
+} from "@/lib/blog/queries";
 import { blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
 import {
   JsonLd,
@@ -21,10 +25,9 @@ import {
   breadcrumbSchema,
 } from "@/components/seo/json-ld";
 import { BlogViewTracker } from "@/components/blog/view-tracker";
+import { SITE_URL } from "@/lib/seo";
 
 export const revalidate = 3600;
-
-const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app").replace(/\/+$/, "");
 
 export async function generateStaticParams() {
   // Pre-render the most recent posts at build time. Older posts still
@@ -62,6 +65,8 @@ export async function generateMetadata({
   if (!post) return { title: "Not found" };
 
   const url = blogPostUrl(SITE_URL, post.slug, post.locale);
+  const publishedLocales = await listPublishedLocalesForSlug(post.slug).catch(() => [post.locale]);
+  const hreflangLocales = publishedLocales.length > 0 ? publishedLocales : [post.locale];
 
   return {
     title: post.seo.title,
@@ -69,7 +74,7 @@ export async function generateMetadata({
     robots: post.seo.noIndex ? { index: false, follow: false } : undefined,
     alternates: {
       canonical: post.seo.canonicalUrl || url,
-      languages: blogHreflangUrls(SITE_URL, post.slug),
+      languages: blogHreflangUrls(SITE_URL, post.slug, hreflangLocales),
     },
     openGraph: {
       type: "article",

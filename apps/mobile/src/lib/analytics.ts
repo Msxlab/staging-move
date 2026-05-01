@@ -9,6 +9,8 @@ import { api } from "./api";
 let _sessionId: string | null = null;
 let _eventQueue: Array<{ event: string; page?: string; sessionId?: string; metadata?: any }> = [];
 let _flushTimer: ReturnType<typeof setTimeout> | null = null;
+let _analyticsEnabled = false;
+const _enabledListeners = new Set<(enabled: boolean) => void>();
 
 const FLUSH_INTERVAL_MS = 8000;
 const MAX_QUEUE_SIZE = 15;
@@ -17,11 +19,37 @@ export function setAnalyticsSessionId(id: string) {
   _sessionId = id;
 }
 
+export function setAnalyticsEnabled(enabled: boolean) {
+  if (_analyticsEnabled === enabled) return;
+  _analyticsEnabled = enabled;
+  if (!enabled) {
+    _sessionId = null;
+    _eventQueue = [];
+    if (_flushTimer) {
+      clearTimeout(_flushTimer);
+      _flushTimer = null;
+    }
+  }
+  _enabledListeners.forEach((listener) => listener(enabled));
+}
+
+export function getAnalyticsEnabled() {
+  return _analyticsEnabled;
+}
+
+export function subscribeAnalyticsEnabled(listener: (enabled: boolean) => void) {
+  _enabledListeners.add(listener);
+  return () => {
+    _enabledListeners.delete(listener);
+  };
+}
+
 export function trackEvent(
   event: string,
   screen?: string,
   metadata?: Record<string, any>
 ) {
+  if (!_analyticsEnabled) return;
   _eventQueue.push({
     event,
     page: screen,
@@ -42,7 +70,7 @@ async function flushEvents() {
     _flushTimer = null;
   }
 
-  if (_eventQueue.length === 0) return;
+  if (!_analyticsEnabled || _eventQueue.length === 0) return;
 
   const batch = _eventQueue.splice(0, 50);
 

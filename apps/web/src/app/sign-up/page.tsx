@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
+import { trackEvent } from "@/lib/analytics";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -26,6 +27,10 @@ export default function SignUpPage() {
   const tLegal = useTranslations("legal");
   const tToast = useTranslations("toast");
   const tLanding = useTranslations("landing");
+
+  useEffect(() => {
+    trackEvent("sign_up_started", { method: "email" });
+  }, []);
 
   useEffect(() => {
     fetch("/api/auth/oauth/providers", { cache: "no-store" })
@@ -53,6 +58,7 @@ export default function SignUpPage() {
       setError(oauthProviders?.google?.message || tAuth("error_unavailable"));
       return;
     }
+    trackEvent("sign_up_started", { method: "google" });
     window.location.href = "/api/auth/oauth/google?redirect=/onboarding";
   }
 
@@ -61,6 +67,7 @@ export default function SignUpPage() {
       setError(oauthProviders?.apple?.message || tAuth("error_unavailable"));
       return;
     }
+    trackEvent("sign_up_started", { method: "apple" });
     window.location.href = "/api/auth/oauth/apple?redirect=/onboarding";
   }
 
@@ -85,6 +92,7 @@ export default function SignUpPage() {
         setLoading(false);
         return;
       }
+      trackEvent("sign_up_completed", { method: "email" });
       setDone(true);
       setLoading(false);
     } catch {

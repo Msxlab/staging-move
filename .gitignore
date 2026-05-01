@@ -40,6 +40,13 @@ packages/db/prisma/*.db-journal
 packages/db/*.db
 packages/db/*.db-journal
 
+# Migration data dumps must never be committed — historical PII / hashed
+# admin credentials / pre-launch tester rows. The existing
+# packages/db/prisma/_migration-data.json file in git history is being
+# scrubbed (P0-1); this rule prevents accidental re-add.
+packages/db/prisma/_migration-data.json
+packages/db/prisma/_migration-data*.json
+
 # uploads
 apps/web/public/uploads/
 
