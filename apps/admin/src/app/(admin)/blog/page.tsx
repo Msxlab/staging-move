@@ -84,36 +84,64 @@ export default async function BlogListPage({
     ];
   }
 
-  const [posts, statusCounts] = await Promise.all([
-    prisma.blogPost.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        locale: true,
-        status: true,
-        publishedAt: true,
-        scheduledAt: true,
-        updatedAt: true,
-        viewCount: true,
-        author: { select: { firstName: true, lastName: true } },
-        category: { select: { name: true } },
-      },
-      orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-      take: 200,
-    }),
-    prisma.blogPost.groupBy({
-      by: ["status"],
-      where: { deletedAt: null },
-      _count: { _all: true },
-    }),
-  ]);
+  // Defensive fetch: if either query throws (mismatched Prisma client,
+  // missing migration, RBAC edge case) we still want to render the
+  // shell with an actionable message instead of a 500. The error is
+  // also logged so it surfaces in server logs / Sentry.
+  type PostRow = {
+    id: string;
+    title: string;
+    slug: string;
+    locale: string;
+    status: string;
+    publishedAt: Date | null;
+    scheduledAt: Date | null;
+    updatedAt: Date;
+    viewCount: number;
+    author: { firstName: string | null; lastName: string | null } | null;
+    category: { name: string } | null;
+  };
+  let posts: PostRow[] = [];
+  let statusCounts: Array<{ status: string; _count: number }> = [];
+  let loadError: string | null = null;
+  try {
+    const [postsResult, countsResult] = await Promise.all([
+      prisma.blogPost.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          locale: true,
+          status: true,
+          publishedAt: true,
+          scheduledAt: true,
+          updatedAt: true,
+          viewCount: true,
+          author: { select: { firstName: true, lastName: true } },
+          category: { select: { name: true } },
+        },
+        orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
+        take: 200,
+      }),
+      prisma.blogPost.groupBy({
+        by: ["status"],
+        where: { deletedAt: null },
+        _count: true,
+      }),
+    ]);
+    posts = postsResult as PostRow[];
+    statusCounts = (countsResult as Array<{ status: string; _count: number }>) ?? [];
+  } catch (e) {
+    console.error("[admin/blog] list query failed:", e);
+    loadError =
+      e instanceof Error ? e.message : "The blog catalog couldn't be loaded.";
+  }
 
   const countByStatus = new Map<string, number>(
-    statusCounts.map((row) => [row.status, row._count._all]),
+    statusCounts.map((row) => [row.status, row._count]),
   );
-  const totalActive = statusCounts.reduce((sum, row) => sum + row._count._all, 0);
+  const totalActive = statusCounts.reduce((sum, row) => sum + row._count, 0);
   const tabCount = (key: StatusFilter): number =>
     key === "ALL" ? totalActive : countByStatus.get(key) ?? 0;
 
@@ -214,7 +242,17 @@ export default async function BlogListPage({
         </div>
       </div>
 
-      {posts.length === 0 ? (
+      {loadError ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6">
+          <p className="text-sm font-medium text-destructive">Couldn&apos;t load the catalog.</p>
+          <p className="mt-2 text-xs text-muted-foreground">{loadError}</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Most often this means the database is mid-migration or the Prisma client is out of date.
+            Run <code className="rounded bg-muted px-1.5 py-0.5">pnpm --filter @locateflow/db generate</code>{" "}
+            then redeploy.
+          </p>
+        </div>
+      ) : posts.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border bg-card/40 p-12 text-center">
           <p className="text-base font-medium text-foreground">
             {query
@@ -284,7 +322,7 @@ export default async function BlogListPage({
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">{dateLabel}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
-                      {p.viewCount.toLocaleString()}
+                      {(p.viewCount ?? 0).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1">
@@ -337,7 +375,7 @@ export default async function BlogListPage({
                     </span>
                     <span className="uppercase text-muted-foreground">{p.locale}</span>
                     <span className="text-muted-foreground">
-                      {p.viewCount.toLocaleString()} views
+                      {(p.viewCount ?? 0).toLocaleString()} views
                     </span>
                   </div>
                 </li>
