@@ -13,8 +13,12 @@
  */
 
 import { Platform } from "react-native";
-import * as IAP from "expo-iap";
 import { api } from "@/lib/api";
+import { captureException } from "@/lib/sentry";
+
+type ExpoIapModule = typeof import("expo-iap");
+
+declare const require: (moduleName: string) => unknown;
 
 type SubscriptionProduct = {
   id: string;
@@ -34,17 +38,42 @@ type VerifyResponse = {
 
 let connectionReady = false;
 let connecting: Promise<boolean> | null = null;
+let iapModule: ExpoIapModule | null | undefined;
+
+function reportIapIssue(message: string, error: unknown) {
+  captureException(error, { area: "iap", message });
+  if (__DEV__) {
+    console.warn(message, error);
+  }
+}
+
+function getIapModule(): ExpoIapModule | null {
+  if (Platform.OS === "web") return null;
+  if (iapModule !== undefined) return iapModule;
+
+  try {
+    iapModule = require("expo-iap") as ExpoIapModule;
+  } catch (err) {
+    reportIapIssue("[IAP] expo-iap native module unavailable", err);
+    iapModule = null;
+  }
+
+  return iapModule;
+}
 
 async function ensureConnection(): Promise<boolean> {
   if (connectionReady) return true;
   if (connecting) return connecting;
   connecting = (async () => {
+    const IAP = getIapModule();
+    if (!IAP) return false;
+
     try {
       await IAP.initConnection();
       connectionReady = true;
       return true;
     } catch (err) {
-      console.warn("[IAP] initConnection failed:", err);
+      reportIapIssue("[IAP] initConnection failed", err);
       return false;
     } finally {
       connecting = null;
@@ -55,6 +84,9 @@ async function ensureConnection(): Promise<boolean> {
 
 export async function closeConnection() {
   if (!connectionReady) return;
+  const IAP = getIapModule();
+  if (!IAP) return;
+
   try {
     await IAP.endConnection();
   } catch {
@@ -67,6 +99,8 @@ export async function fetchSubscriptionProducts(skus: string[]): Promise<Subscri
   if (skus.length === 0) return [];
   const ok = await ensureConnection();
   if (!ok) return [];
+  const IAP = getIapModule();
+  if (!IAP) return [];
 
   try {
     const products = await IAP.fetchProducts({ skus, type: "subs" });
@@ -79,7 +113,7 @@ export async function fetchSubscriptionProducts(skus: string[]): Promise<Subscri
       currency: typeof p.currency === "string" ? p.currency : typeof p.currencyCode === "string" ? p.currencyCode : undefined,
     }));
   } catch (err) {
-    console.warn("[IAP] fetchProducts failed:", err);
+    reportIapIssue("[IAP] fetchProducts failed", err);
     return [];
   }
 }
@@ -104,6 +138,8 @@ export async function purchaseSubscription(opts: {
 }): Promise<PurchaseResult> {
   const ok = await ensureConnection();
   if (!ok) return { status: "error", message: "Store unavailable" };
+  const IAP = getIapModule();
+  if (!IAP) return { status: "error", message: "Store unavailable" };
 
   return new Promise<PurchaseResult>((resolve) => {
     let settled = false;
@@ -154,7 +190,7 @@ export async function purchaseSubscription(opts: {
         try {
           await IAP.finishTransaction({ purchase, isConsumable: false });
         } catch (err) {
-          console.warn("[IAP] finishTransaction failed:", err);
+          reportIapIssue("[IAP] finishTransaction failed", err);
         }
 
         finish({
@@ -213,12 +249,14 @@ export async function purchaseSubscription(opts: {
 export async function restorePurchases(): Promise<PurchaseResult[]> {
   const ok = await ensureConnection();
   if (!ok) return [];
+  const IAP = getIapModule();
+  if (!IAP) return [];
 
   let items: any[] = [];
   try {
     items = (await IAP.getAvailablePurchases()) || [];
   } catch (err) {
-    console.warn("[IAP] getAvailablePurchases failed:", err);
+    reportIapIssue("[IAP] getAvailablePurchases failed", err);
     return [];
   }
 
@@ -263,9 +301,12 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
 }
 
 export async function openNativeSubscriptionSettings(productId?: string) {
+  const IAP = getIapModule();
+  if (!IAP) return;
+
   try {
     await IAP.deepLinkToSubscriptions(productId ? { sku: productId } : undefined);
   } catch (err) {
-    console.warn("[IAP] deepLinkToSubscriptions failed:", err);
+    reportIapIssue("[IAP] deepLinkToSubscriptions failed", err);
   }
 }

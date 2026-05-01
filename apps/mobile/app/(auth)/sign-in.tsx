@@ -78,22 +78,13 @@ export default function SignInScreen() {
     router.replace("/(tabs)");
   };
 
-  const openOAuth = async (provider: OAuthProvider) => {
-    setError("");
-    setOauthLoading(provider);
-    const result = await startMobileOAuthSession(provider, setSession);
-    setOauthLoading(null);
-
-    if (result.success) {
-      hapticSuccess();
-      registerForPushNotifications().catch(() => {});
-      router.replace("/onboarding");
-      return;
-    }
-    if (result.error && !result.cancelled) {
-      setError(result.error);
-      hapticError();
-    }
+  const openOAuth = (provider: "google" | "apple") => {
+    // OAuth on mobile hands off to an in-app browser. The server sets a session
+    // cookie at the end of the flow, which the WebView/browser can carry back
+    // via the expo-web-browser auth-session return URL. For simplicity in MVP
+    // we open the web URL and exchange the returned mobile code.
+    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
+    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
   };
 
   return (
@@ -114,14 +105,14 @@ export default function SignInScreen() {
         {!requiresMfa && (
           <>
             <Button
-              title={oauthLoading === "google" ? t("common.loading") : googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
+              title={googleReady ? t("auth.continueWithGoogle") : t("auth.googleUnavailable")}
               variant="outline"
               onPress={() => openOAuth("google")}
               disabled={!googleReady || Boolean(oauthLoading)}
               style={styles.oauthBtn}
             />
             <Button
-              title={oauthLoading === "apple" ? t("common.loading") : appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
+              title={appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
               variant="primary"
               onPress={() => openOAuth("apple")}
               disabled={!appleReady || Boolean(oauthLoading)}
@@ -130,7 +121,7 @@ export default function SignInScreen() {
 
             {showOAuthReadinessNote ? (
               <Text style={styles.oauthNote}>
-                Password sign-in is available now. Social sign-in will turn on after admin OAuth credentials are added.
+                {t("auth.socialSignInUnavailable")}
               </Text>
             ) : null}
 
@@ -153,7 +144,7 @@ export default function SignInScreen() {
               placeholder={t("auth.password")}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              isPassword
               autoComplete="password"
               leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
             />
@@ -164,9 +155,9 @@ export default function SignInScreen() {
           <Input
             placeholder={t("auth.mfaCode")}
             value={mfaCode}
-            onChangeText={(v) => setMfaCode(v.replace(/\D/g, "").slice(0, 6))}
-            keyboardType="number-pad"
-            maxLength={6}
+            onChangeText={(v) => setMfaCode(v.replace(/\s/g, "").slice(0, 12))}
+            autoCapitalize="characters"
+            maxLength={12}
             autoFocus
           />
         )}
@@ -180,7 +171,7 @@ export default function SignInScreen() {
               : t("auth.signIn")
           }
           onPress={handleSubmit}
-          disabled={loading || !email || !password || (requiresMfa && mfaCode.length !== 6)}
+          disabled={loading || !email || !password || (requiresMfa && mfaCode.length < 6)}
           rightIcon={<ArrowRight size={16} color="#fff" />}
           style={{ marginTop: 12 }}
         />

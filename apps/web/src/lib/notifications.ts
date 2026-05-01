@@ -10,6 +10,18 @@ export interface NotificationPayload {
   metadata?: Record<string, unknown>;
 }
 
+interface ExpoPushTicket {
+  status?: "ok" | "error";
+  id?: string;
+  message?: string;
+  details?: {
+    error?: string;
+  };
+}
+
+const EXPO_PUSH_SEND_URL = "https://exp.host/--/api/v2/push/send";
+const EXPO_PUSH_BATCH_SIZE = 100;
+
 /**
  * Send a notification via the configured channel.
  * Email uses Resend. SMS and push deliberately fail closed until provider
@@ -71,8 +83,84 @@ async function sendPush(payload: NotificationPayload): Promise<boolean> {
     return false;
   }
 
-  console.error("[PUSH] NOTIFICATION_PUSH_ENABLED is true, but no push provider is implemented.");
-  return false;
+  const devices = await prisma.pushDevice.findMany({
+    where: { userId: payload.userId },
+    select: { token: true },
+  });
+  if (devices.length === 0) return false;
+
+  const messages = devices.map((device) => ({
+    to: device.token,
+    title: payload.subject,
+    body: toPushBody(payload.body),
+    sound: "default",
+    data: {
+      ...(payload.metadata || {}),
+      dedupeKey: payload.dedupeKey || null,
+    },
+  }));
+
+  let successCount = 0;
+  const invalidTokens = new Set<string>();
+
+  for (let i = 0; i < messages.length; i += EXPO_PUSH_BATCH_SIZE) {
+    const batch = messages.slice(i, i + EXPO_PUSH_BATCH_SIZE);
+    const batchDevices = devices.slice(i, i + EXPO_PUSH_BATCH_SIZE);
+    const response = await fetch(EXPO_PUSH_SEND_URL, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip, deflate",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(batch),
+    });
+
+    if (!response.ok) {
+      console.error(`[PUSH] Expo send failed with status ${response.status}`);
+      continue;
+    }
+
+    const result = await response.json().catch(() => null) as { data?: ExpoPushTicket[] | ExpoPushTicket } | null;
+    const tickets = Array.isArray(result?.data)
+      ? result.data
+      : result?.data
+        ? [result.data]
+        : [];
+
+    tickets.forEach((ticket, index) => {
+      if (ticket.status === "ok") {
+        successCount++;
+        return;
+      }
+
+      const token = batchDevices[index]?.token;
+      if (token && ticket.details?.error === "DeviceNotRegistered") {
+        invalidTokens.add(token);
+        return;
+      }
+
+      console.error("[PUSH] Expo ticket error:", ticket.message || ticket.details?.error || "unknown");
+    });
+  }
+
+  if (invalidTokens.size > 0) {
+    await prisma.pushDevice.deleteMany({
+      where: { token: { in: [...invalidTokens] } },
+    });
+  }
+
+  return successCount > 0;
+}
+
+function toPushBody(body: string) {
+  return body
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 180);
 }
 
 /**

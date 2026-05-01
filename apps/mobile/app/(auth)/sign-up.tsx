@@ -58,7 +58,7 @@ export default function SignUpScreen() {
 
   const handleSubmit = async () => {
     if (!legalAccepted) {
-      setError("Review and accept the Terms of Use and Legal Disclaimer before creating an account.");
+      setError(t("auth.acceptLegalBeforeAccount"));
       hapticError();
       return;
     }
@@ -84,36 +84,24 @@ export default function SignUpScreen() {
     setLoading(false);
   };
 
-  const openOAuth = async (provider: OAuthProvider) => {
+  const openOAuth = async (provider: "google" | "apple") => {
     if (!legalAccepted) {
-      setError(`Review and accept the Terms of Use and Legal Disclaimer before creating an account with ${provider === "google" ? "Google" : "Apple"}.`);
+      setError(t("auth.acceptLegalBeforeProvider", { provider: provider === "google" ? "Google" : "Apple" }));
       hapticError();
       return;
     }
-    setError("");
-    setOauthLoading(provider);
-    setPendingLegalConsents(createAcceptedLegalConsents(legalConsents));
-    const result = await startMobileOAuthSession(provider, setSession);
-    setOauthLoading(null);
-
-    if (result.success) {
-      hapticSuccess();
-      router.replace("/onboarding");
-      return;
-    }
-    if (result.error && !result.cancelled) {
-      setError(result.error);
-      hapticError();
-    }
+    await setPendingLegalConsents(createAcceptedLegalConsents(legalConsents));
+    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
+    void Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
   };
 
   if (done) {
     return (
       <ScrollView contentContainerStyle={styles.scroll}>
         <CheckCircle2 size={48} color="#34d399" style={{ alignSelf: "center" }} />
-        <Text style={styles.title}>{t("auth.checkEmail" as any, "Check your email")}</Text>
+        <Text style={styles.title}>{t("auth.checkEmail")}</Text>
         <Text style={styles.subtitle}>
-          {(t as any)("auth.checkEmailDescription", { email, defaultValue: `We sent a verification link to ${email}.` })}
+          {t("auth.checkEmailDescription", { email })}
         </Text>
         <Button
           title={t("auth.signIn")}
@@ -134,14 +122,14 @@ export default function SignUpScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Button
-          title={oauthLoading === "google" ? t("common.loading") : googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
+          title={googleReady ? t("auth.continueWithGoogle") : t("auth.googleUnavailable")}
           variant="outline"
           onPress={() => openOAuth("google")}
           disabled={!googleReady || Boolean(oauthLoading)}
           style={styles.oauthBtn}
         />
         <Button
-          title={oauthLoading === "apple" ? t("common.loading") : appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
+          title={appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
           variant="primary"
           onPress={() => openOAuth("apple")}
           disabled={!appleReady || Boolean(oauthLoading)}
@@ -150,7 +138,7 @@ export default function SignUpScreen() {
 
         {showOAuthReadinessNote ? (
           <Text style={styles.oauthNote}>
-            Email and password sign-up is available now. Social sign-in will turn on after admin OAuth credentials are added.
+            {t("auth.socialSignUpUnavailable")}
           </Text>
         ) : null}
 
@@ -177,15 +165,15 @@ export default function SignUpScreen() {
         />
         <Input
           placeholder={t("auth.password")} value={password} onChangeText={setPassword}
-          secureTextEntry autoComplete="password-new"
+          isPassword autoComplete="password-new"
           leftIcon={<Lock size={16} color={theme.colors.textMuted} />}
         />
 
         <LegalConsentPanel
           consents={legalConsents}
           onChange={setLegalConsents}
-          title="Required acknowledgements"
-          description="Accept these before creating your LocateFlow account."
+          title={t("auth.requiredAcknowledgements")}
+          description={t("auth.requiredAcknowledgementsDescription")}
           compact
         />
 

@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireDbUserId } from "@/lib/auth";
-import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
 import { lookupAddressAutocomplete } from "@/lib/address-autocomplete";
+import { enforcePlacesCostControls, isPlacesAutocompleteEnabled } from "../cost-controls";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireDbUserId();
+    const userId = await requireDbUserId();
 
-    const key = getRateLimitKey(request, "places:details");
-    const limited = await rateLimit(key, { limit: 45, windowSeconds: 60 });
-    if (!limited.success) {
-      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+    if (!await isPlacesAutocompleteEnabled()) {
+      return NextResponse.json({
+        enabled: false,
+        result: null,
+        code: "PLACES_AUTOCOMPLETE_DISABLED",
+      });
     }
 
     const { searchParams } = new URL(request.url);
@@ -19,6 +21,9 @@ export async function GET(request: NextRequest) {
     if (!placeId.trim()) {
       return NextResponse.json({ error: "placeId is required" }, { status: 400 });
     }
+
+    const costControlResponse = await enforcePlacesCostControls(request, userId, "details");
+    if (costControlResponse) return costControlResponse;
 
     const result = await lookupAddressAutocomplete(placeId, sessionToken);
     return NextResponse.json(result);

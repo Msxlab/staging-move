@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendContractReminderEmail } from "@/lib/email-service";
+import { createInAppNotification } from "@/lib/in-app-notifications";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
-import { buildWebNotificationSettings, groupNotificationPreferencesByUser } from "@/lib/notification-preferences";
+import { sendNotification } from "@/lib/notifications";
+import { buildWebNotificationSettings, groupNotificationPreferencesByUser, type StoredNotificationPreference } from "@/lib/notification-preferences";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 export const runtime = "nodejs";
+
+function isPushEnabled(records: StoredNotificationPreference[], type: string) {
+  return records.some((record) => record.channel === "PUSH" && record.type === type && record.enabled);
+}
 
 async function handleCron(request: NextRequest) {
   try {
@@ -19,6 +25,9 @@ async function handleCron(request: NextRequest) {
       (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||
       "http://localhost:3000";
     let sent = 0;
+    let mirrored = 0;
+    let pushSent = 0;
+    const errors: string[] = [];
 
     for (const days of reminderDays) {
       const targetDate = new Date(now);
@@ -49,29 +58,73 @@ async function handleCron(request: NextRequest) {
       for (const service of services) {
         if (!service.user?.email) continue;
 
-        const notificationSettings = buildWebNotificationSettings(preferencesByUser.get(service.user.id) || []);
+        const userPreferences = preferencesByUser.get(service.user.id) || [];
+        const notificationSettings = buildWebNotificationSettings(userPreferences);
         if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.contractExpiring) continue;
 
+        const contractEndDateText = service.contractEndDate!.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        const dedupeKey = `cron:contract-reminder:${service.id}:${service.contractEndDate!.toISOString().slice(0, 10)}:${days}`;
         const success = await sendContractReminderEmail({
           userEmail: service.user.email,
           userName: [service.user.firstName, service.user.lastName].filter(Boolean).join(" ") || "there",
           serviceName: service.providerName,
-          contractEndDate: service.contractEndDate!.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+          contractEndDate: contractEndDateText,
           daysRemaining: days,
           serviceLink: `${appUrl}/services/${service.id}`,
           userId: service.user.id,
-          dedupeKey: `cron:contract-reminder:${service.id}:${service.contractEndDate!.toISOString().slice(0, 10)}:${days}`,
+          dedupeKey,
           metadata: {
             userId: service.user.id,
             serviceId: service.id,
           },
         });
 
-        if (success) sent++;
+        if (success) {
+          sent++;
+          try {
+            const notificationTitle = `${service.providerName} contract ends soon`;
+            const notificationBody = `${service.providerName} ends in ${days} day${days === 1 ? "" : "s"} on ${contractEndDateText}.`;
+            const created = await createInAppNotification({
+              userId: service.user.id,
+              type: "CONTRACT_EXPIRY",
+              title: notificationTitle,
+              body: notificationBody,
+              href: `/services/${service.id}`,
+              icon: "Clock",
+              dedupeKey,
+              metadata: {
+                kind: "contract-reminder",
+                serviceId: service.id,
+                daysRemaining: days,
+                channelMirror: "EMAIL",
+              },
+            });
+            if (created) {
+              mirrored++;
+              if (isPushEnabled(userPreferences, "CONTRACT_EXPIRY")) {
+                const pushed = await sendNotification({
+                  userId: service.user.id,
+                  type: "PUSH",
+                  subject: notificationTitle,
+                  body: notificationBody,
+                  dedupeKey: `${dedupeKey}:push`,
+                  metadata: {
+                    kind: "contract-reminder",
+                    serviceId: service.id,
+                    daysRemaining: days,
+                  },
+                });
+                if (pushed) pushSent++;
+              }
+            }
+          } catch (mirrorError) {
+            errors.push(`In-app mirror failed for ${service.providerName}: ${mirrorError}`);
+          }
+        }
       }
     }
 
-    return NextResponse.json({ success: true, sent });
+    return NextResponse.json({ success: true, sent, mirrored, pushSent, errors: errors.length > 0 ? errors : undefined });
   } catch (error) {
     console.error("Contract reminders cron failed:", error);
     return NextResponse.json({ error: "Cron failed" }, { status: 500 });

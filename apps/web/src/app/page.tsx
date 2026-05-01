@@ -37,6 +37,7 @@ import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaign
 import { AppStoreCTA } from "@/components/marketing/app-store-cta";
 import { MobileMockup } from "@/components/marketing/mobile-mockup";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
+import { LatestBlogPosts } from "@/components/marketing/latest-blog-posts";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { HeroPhoneMock } from "@/components/marketing/hero-phone-mock";
 import { RecognitionChipStorm } from "@/components/marketing/recognition-chip-storm";
@@ -324,6 +325,10 @@ export default async function LandingPage() {
         ctaIntent={ctaTarget.intent}
         offers={publicCampaign}
       />
+
+      {/* Latest blog posts — server component, ISR-cached. Renders
+          nothing if the blog hasn't published anything yet. */}
+      <LatestBlogPosts />
 
       {/* Current workflow coverage */}
       <section className="container py-20 border-t">

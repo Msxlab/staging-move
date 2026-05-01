@@ -24,6 +24,15 @@ config.resolver.disableHierarchicalLookup = false;
 // Remap @locateflow/shared to mobile-safe entry (excludes Node crypto)
 const sharedPkgRoot = path.resolve(monorepoRoot, "packages", "shared");
 const sharedMobileEntry = path.resolve(sharedPkgRoot, "src", "index.mobile.ts");
+const workspaceNodeModules = path.resolve(monorepoRoot, "node_modules");
+
+const singleReactModules = new Map([
+  ["react", path.resolve(workspaceNodeModules, "react", "index.js")],
+  ["react/jsx-runtime", path.resolve(workspaceNodeModules, "react", "jsx-runtime.js")],
+  ["react/jsx-dev-runtime", path.resolve(workspaceNodeModules, "react", "jsx-dev-runtime.js")],
+  ["react-dom", path.resolve(workspaceNodeModules, "react-dom", "index.js")],
+  ["react-dom/client", path.resolve(workspaceNodeModules, "react-dom", "client.js")],
+]);
 
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
@@ -32,6 +41,13 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     return {
       type: "sourceFile",
       filePath: sharedMobileEntry,
+    };
+  }
+  const singleReactPath = singleReactModules.get(moduleName);
+  if (singleReactPath) {
+    return {
+      type: "sourceFile",
+      filePath: singleReactPath,
     };
   }
   if (originalResolveRequest) {

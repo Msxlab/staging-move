@@ -45,7 +45,17 @@
     "mfaRequired": "Enter the 6-digit code from your authenticator app.",
     "mfaCode": "Verification code",
     "useBackupCode": "Use a backup code",
-    "backupCode": "Backup code"
+    "backupCode": "Backup code",
+    "googleUnavailable": "Google sign-in unavailable",
+    "appleUnavailable": "Apple sign-in unavailable",
+    "socialSignInUnavailable": "Password sign-in is available now. Social sign-in will turn on after admin OAuth credentials are added.",
+    "socialSignUpUnavailable": "Email and password sign-up is available now. Social sign-in will turn on after admin OAuth credentials are added.",
+    "acceptLegalBeforeAccount": "Review and accept the Terms of Use and Legal Disclaimer before creating an account.",
+    "acceptLegalBeforeProvider": "Review and accept the Terms of Use and Legal Disclaimer before creating an account with {{provider}}.",
+    "checkEmail": "Check your email",
+    "checkEmailDescription": "We sent a verification link to {{email}}.",
+    "requiredAcknowledgements": "Required acknowledgements",
+    "requiredAcknowledgementsDescription": "Accept these before creating your LocateFlow account."
   },
   "dashboard": {
     "welcome": "Welcome back",

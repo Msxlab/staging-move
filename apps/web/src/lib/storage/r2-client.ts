@@ -22,7 +22,12 @@ export interface R2Config {
   secretAccessKey: string;
 }
 
-export type UploadKind = "avatar" | "document" | "provider-logo" | "backup";
+export type UploadKind =
+  | "avatar"
+  | "document"
+  | "provider-logo"
+  | "backup"
+  | "blog";
 
 export const ALLOWED_UPLOAD_CONTENT_TYPES = new Set([
   "image/jpeg",
@@ -30,6 +35,18 @@ export const ALLOWED_UPLOAD_CONTENT_TYPES = new Set([
   "image/webp",
   "image/gif",
   "application/pdf",
+]);
+
+/**
+ * Tighter image-only set for blog uploads. SVG is intentionally
+ * excluded — embedded scripts make it an XSS surface even when served
+ * via imgproxy, and we don't need the format for cover/inline images.
+ */
+export const ALLOWED_BLOG_IMAGE_CONTENT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
 ]);
 
 function requireEnv(name: string): string {

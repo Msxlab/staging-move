@@ -8,7 +8,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://localhost:3000/api"
+        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
       }
     },
     "development-simulator": {
@@ -23,7 +24,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://app.locateflow.com/api"
+        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
       }
     },
     "staging-preview": {
@@ -32,13 +34,15 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow-staging-owew7.ondigitalocean.app/api"
+        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://app.locateflow.com/api"
+        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
       }
     }
   },

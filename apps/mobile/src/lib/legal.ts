@@ -2,6 +2,7 @@ import {
   getDefaultLegalConsents,
   type LegalConsentState,
 } from "@locateflow/shared";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export {
   LEGAL_CONSENT_EVENT,
@@ -20,11 +21,44 @@ export {
 } from "@locateflow/shared";
 
 let pendingLegalConsents: LegalConsentState | null = null;
+let hydratePromise: Promise<LegalConsentState | null> | null = null;
+
+const PENDING_LEGAL_CONSENTS_STORAGE_KEY = "locateflow.pendingLegalConsents";
 
 export function getPendingLegalConsents(): LegalConsentState | null {
   return pendingLegalConsents ? getDefaultLegalConsents(pendingLegalConsents) : null;
 }
 
-export function setPendingLegalConsents(consents: LegalConsentState | null) {
+export async function setPendingLegalConsents(consents: LegalConsentState | null): Promise<void> {
   pendingLegalConsents = consents ? getDefaultLegalConsents(consents) : null;
+  if (pendingLegalConsents) {
+    await AsyncStorage.setItem(
+      PENDING_LEGAL_CONSENTS_STORAGE_KEY,
+      JSON.stringify(pendingLegalConsents),
+    ).catch(() => {});
+  } else {
+    await AsyncStorage.removeItem(PENDING_LEGAL_CONSENTS_STORAGE_KEY).catch(() => {});
+  }
+}
+
+export async function hydratePendingLegalConsents(): Promise<LegalConsentState | null> {
+  if (pendingLegalConsents) return getPendingLegalConsents();
+  if (hydratePromise) return hydratePromise;
+
+  hydratePromise = (async () => {
+    try {
+      const raw = await AsyncStorage.getItem(PENDING_LEGAL_CONSENTS_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<LegalConsentState>;
+      pendingLegalConsents = getDefaultLegalConsents(parsed);
+      return getPendingLegalConsents();
+    } catch {
+      await AsyncStorage.removeItem(PENDING_LEGAL_CONSENTS_STORAGE_KEY).catch(() => {});
+      return null;
+    } finally {
+      hydratePromise = null;
+    }
+  })();
+
+  return hydratePromise;
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
 import { MapPin } from "lucide-react-native";
 import { Input } from "@/components/ui/Input";
 import { theme } from "@/lib/theme";
@@ -10,6 +10,10 @@ import {
   type AddressAutocompleteResult,
 } from "@/lib/address-autocomplete";
 import type { AddressAutocompletePrediction } from "@locateflow/shared";
+
+const GOOGLE_POWERED_BY_SRC = {
+  uri: "https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white3.png",
+};
 
 interface AddressAutocompleteFieldProps {
   label?: string;
@@ -109,6 +113,14 @@ export function AddressAutocompleteField({
               <Text style={styles.resultSecondary}>{prediction.secondaryText || prediction.description}</Text>
             </TouchableOpacity>
           ))}
+          <View style={styles.attributionFooter}>
+            <Image
+              source={GOOGLE_POWERED_BY_SRC}
+              style={styles.googleAttribution}
+              resizeMode="contain"
+              accessibilityLabel="Powered by Google"
+            />
+          </View>
         </View>
       ) : null}
     </View>
@@ -145,5 +157,17 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 12,
     color: theme.colors.textMuted,
+  },
+  attributionFooter: {
+    alignItems: "flex-end",
+    backgroundColor: "#ffffff",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  googleAttribution: {
+    width: 120,
+    height: 15,
   },
 });

@@ -40,7 +40,8 @@ function resolveApiUrl() {
       if (envApiUrl) {
         try {
           const envHost = new URL(envApiUrl).hostname;
-          if (envHost === expoHost) {
+          const envIsLocalhost = envHost === "localhost" || envHost === "127.0.0.1" || envHost === "0.0.0.0";
+          if (envHost === expoHost || !envIsLocalhost) {
             return envApiUrl;
           }
         } catch {}
@@ -50,12 +51,12 @@ function resolveApiUrl() {
     }
   }
 
-  return envApiUrl || "https://app.locateflow.com/api";
+  return envApiUrl || "https://locateflow.com/api";
 }
 
 const API_URL = resolveApiUrl();
 
-import { getToken as getStoreToken, clearToken as clearStoreToken } from "@/lib/auth-store";
+import { getToken as getStoreToken, useAuthStore } from "@/lib/auth-store";
 
 // Keep setTokenGetter as a no-op for any legacy callers (pre-migration).
 export function setTokenGetter(_fn: () => Promise<string | null>) {
@@ -76,7 +77,7 @@ export const api = new ApiClient({
   clientType: "mobile",
   onUnauthorized: async () => {
     // Token invalid — wipe it so the user is routed back to sign-in.
-    await clearStoreToken().catch(() => {});
+    await useAuthStore.getState().clearSession().catch(() => {});
   },
   onError: (error) => {
     if (__DEV__) {

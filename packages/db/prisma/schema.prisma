@@ -212,35 +212,35 @@ model Subscription {
   provider String  @default("TRIAL") @db.VarChar(30)
   platform String? @db.VarChar(20)
 
-  stripeCustomerId       String?   @unique @db.VarChar(191)
-  stripeSubscriptionId   String?   @unique @db.VarChar(191)
-  stripePriceId          String?   @db.VarChar(191)
-  stripeCurrentPeriodEnd DateTime?
-  billingProductId       String?   @db.VarChar(191)
-  originalTransactionId  String?   @unique @db.VarChar(191)
-  latestTransactionId    String?   @db.VarChar(191)
-  purchaseToken          String?   @db.Text
-  appStoreEnvironment    String?   @db.VarChar(30)
-  currentPeriodEndsAt    DateTime?
-  gracePeriodEndsAt      DateTime?
-  lastValidatedAt        DateTime?
-  lastSyncedAt           DateTime?
-  accessType             String?   @db.VarChar(30)
-  billingInterval        String?   @db.VarChar(20)
-  freeAccessEndsAt       DateTime?
-  cancelAtPeriodEnd      Boolean  @default(false)
-  firstChargeAt          DateTime?
-  firstChargeAmount      Float?
-  autoRenew              Boolean?
-  campaignId             String?   @db.VarChar(30)
-  campaignCode           String?   @db.VarChar(80)
-  campaignSnapshot       String?   @db.Text
-  checkoutConsentSnapshot String?  @db.Text
-  termsVersion           String?   @db.VarChar(30)
-  subscriptionPolicyVersion String? @db.VarChar(30)
-  refundPolicyVersion    String?   @db.VarChar(30)
-  acquisitionCampaign    AcquisitionCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  acquisitionRedemptions AcquisitionRedemption[]
+  stripeCustomerId          String?                 @unique @db.VarChar(191)
+  stripeSubscriptionId      String?                 @unique @db.VarChar(191)
+  stripePriceId             String?                 @db.VarChar(191)
+  stripeCurrentPeriodEnd    DateTime?
+  billingProductId          String?                 @db.VarChar(191)
+  originalTransactionId     String?                 @unique @db.VarChar(191)
+  latestTransactionId       String?                 @db.VarChar(191)
+  purchaseToken             String?                 @db.Text
+  appStoreEnvironment       String?                 @db.VarChar(30)
+  currentPeriodEndsAt       DateTime?
+  gracePeriodEndsAt         DateTime?
+  lastValidatedAt           DateTime?
+  lastSyncedAt              DateTime?
+  accessType                String?                 @db.VarChar(30)
+  billingInterval           String?                 @db.VarChar(20)
+  freeAccessEndsAt          DateTime?
+  cancelAtPeriodEnd         Boolean                 @default(false)
+  firstChargeAt             DateTime?
+  firstChargeAmount         Float?
+  autoRenew                 Boolean?
+  campaignId                String?                 @db.VarChar(30)
+  campaignCode              String?                 @db.VarChar(80)
+  campaignSnapshot          String?                 @db.Text
+  checkoutConsentSnapshot   String?                 @db.Text
+  termsVersion              String?                 @db.VarChar(30)
+  subscriptionPolicyVersion String?                 @db.VarChar(30)
+  refundPolicyVersion       String?                 @db.VarChar(30)
+  acquisitionCampaign       AcquisitionCampaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  acquisitionRedemptions    AcquisitionRedemption[]
 
   trialEndsAt DateTime?
   canceledAt  DateTime?
@@ -282,10 +282,10 @@ model AcquisitionCampaign {
   autoRenew             Boolean @default(false)
   newUsersOnly          Boolean @default(true)
 
-  startsAt       DateTime?
-  endsAt         DateTime?
-  maxRedemptions Int?
-  redemptionCount Int @default(0)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  maxRedemptions  Int?
+  redemptionCount Int       @default(0)
 
   internalNotes          String? @db.Text
   publicHeadline         String  @db.VarChar(200)
@@ -308,7 +308,7 @@ model AcquisitionCampaign {
 }
 
 model AcquisitionRedemption {
-  id     String @id @default(cuid()) @db.VarChar(30)
+  id String @id @default(cuid()) @db.VarChar(30)
 
   campaignId String?              @db.VarChar(30)
   campaign   AcquisitionCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
@@ -323,13 +323,13 @@ model AcquisitionRedemption {
   status     String @default("REDEEMED") @db.VarChar(30)
   snapshot   String @db.Text
 
-  consentAcceptedAt        DateTime?
-  consentIpHash            String? @db.VarChar(64)
-  consentUserAgentHash     String? @db.VarChar(64)
-  termsVersion             String? @db.VarChar(30)
-  subscriptionPolicyVersion String? @db.VarChar(30)
-  refundPolicyVersion      String? @db.VarChar(30)
-  checkoutDisclosureTextHash String? @db.VarChar(64)
+  consentAcceptedAt          DateTime?
+  consentIpHash              String?   @db.VarChar(64)
+  consentUserAgentHash       String?   @db.VarChar(64)
+  termsVersion               String?   @db.VarChar(30)
+  subscriptionPolicyVersion  String?   @db.VarChar(30)
+  refundPolicyVersion        String?   @db.VarChar(30)
+  checkoutDisclosureTextHash String?   @db.VarChar(64)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -958,13 +958,15 @@ model AdminUser {
   lastLoginAt DateTime?
   createdBy   String?   @db.VarChar(30)
 
-  permissions               AdminPermission[]
-  auditLogs                 AdminAuditLog[]
-  sessions                  AdminSession[]
-  loginLogs                 AdminLoginLog[]
-  runtimeConfigUpdates      RuntimeConfigEntry[]      @relation("RuntimeConfigUpdatedBy")
-  providerGovernanceReviews ProviderGovernanceIssue[] @relation("ProviderGovernanceReviewedBy")
-  acquisitionCampaignsCreated AcquisitionCampaign[] @relation("AcquisitionCampaignsCreated")
+  permissions                 AdminPermission[]
+  auditLogs                   AdminAuditLog[]
+  sessions                    AdminSession[]
+  loginLogs                   AdminLoginLog[]
+  runtimeConfigUpdates        RuntimeConfigEntry[]      @relation("RuntimeConfigUpdatedBy")
+  providerGovernanceReviews   ProviderGovernanceIssue[] @relation("ProviderGovernanceReviewedBy")
+  acquisitionCampaignsCreated AcquisitionCampaign[]     @relation("AcquisitionCampaignsCreated")
+  blogPosts                   BlogPost[]                @relation("BlogPostAuthor")
+  blogRevisions               BlogRevision[]            @relation("BlogRevisionAuthor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1456,4 +1458,161 @@ model WaitlistSignup {
   @@unique([email, target])
   @@index([target, createdAt])
   @@index([userId])
+}
+
+// ==================== BLOG (M14) ====================
+//
+// Public-facing content surface. Source of truth lives here so the
+// admin can edit/schedule/translate posts without code deploys, and
+// the same data feeds /blog (web), the mobile Blog tab, the homepage
+// "Latest" section, and the AI-discovery `/llms.txt` endpoint.
+//
+// Locale: only `en` and `es` are supported (US market). The
+// `[slug, locale]` unique pair lets the same article live in both
+// languages without slug collisions; `hreflang` alternates link them.
+//
+// Security:
+//   - `contentJson` is the editor's Tiptap output (canonical).
+//   - `contentHtml` is the server-side sanitized render (DOMPurify
+//     whitelist) — what we actually inject into pages.
+//   - `contentText` is plain text for search and AI crawlers.
+// All three are written together in a transaction; never trust
+// client-supplied HTML.
+
+enum BlogStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+model BlogPost {
+  id             String @id @default(cuid()) @db.VarChar(30)
+  slug           String @db.VarChar(191)
+  locale         String @default("en") @db.VarChar(8) // en | es
+  title          String @db.VarChar(200)
+  excerpt        String @db.VarChar(500)
+  contentJson    Json
+  contentHtml    String @db.LongText
+  contentText    String @db.LongText
+  readingMinutes Int    @default(3)
+
+  // SEO overrides (fall back to title/excerpt when null)
+  seoTitle       String? @db.VarChar(200)
+  seoDescription String? @db.VarChar(320)
+  canonicalUrl   String? @db.VarChar(500)
+  noIndex        Boolean @default(false)
+  ogImageKey     String? @db.VarChar(500) // R2 object key (signed via imgproxy at render)
+  ogImageAlt     String? @db.VarChar(200)
+
+  // Lifecycle
+  status      BlogStatus @default(DRAFT)
+  publishedAt DateTime?
+  scheduledAt DateTime?
+
+  // Authorship + taxonomy
+  authorId   String         @db.VarChar(30)
+  author     AdminUser      @relation("BlogPostAuthor", fields: [authorId], references: [id])
+  categoryId String?        @db.VarChar(30)
+  category   BlogCategory?  @relation(fields: [categoryId], references: [id])
+  tags       BlogPostTag[]
+  revisions  BlogRevision[]
+  views      BlogView[]
+
+  // Lightweight stats (denormalized — heavy queries hit BlogView)
+  viewCount  Int @default(0)
+  shareCount Int @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([slug, locale])
+  @@index([status, publishedAt])
+  @@index([locale, status, publishedAt])
+  @@index([categoryId])
+  @@index([scheduledAt])
+  @@index([authorId])
+  @@index([deletedAt])
+}
+
+model BlogCategory {
+  id          String  @id @default(cuid()) @db.VarChar(30)
+  slug        String  @db.VarChar(100)
+  locale      String  @default("en") @db.VarChar(8)
+  name        String  @db.VarChar(100)
+  description String? @db.VarChar(500)
+  order       Int     @default(0)
+
+  posts BlogPost[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, locale])
+  @@index([locale, order])
+}
+
+model BlogTag {
+  id     String        @id @default(cuid()) @db.VarChar(30)
+  slug   String        @db.VarChar(100)
+  locale String        @default("en") @db.VarChar(8)
+  name   String        @db.VarChar(100)
+  posts  BlogPostTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, locale])
+  @@index([locale])
+}
+
+model BlogPostTag {
+  postId String   @db.VarChar(30)
+  tagId  String   @db.VarChar(30)
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+}
+
+// Snapshot of every save — lets editors roll back, and gives admin a
+// changelog for moderation/audit purposes. Cleaned up by cron after
+// 90 days for inactive posts to keep the table small.
+model BlogRevision {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  postId      String    @db.VarChar(30)
+  post        BlogPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId    String    @db.VarChar(30)
+  author      AdminUser @relation("BlogRevisionAuthor", fields: [authorId], references: [id])
+  title       String    @db.VarChar(200)
+  contentJson Json
+  note        String?   @db.VarChar(500) // optional commit-style message
+
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@index([authorId])
+}
+
+// Lightweight view analytics — privacy-friendly (IP is hashed). The
+// `isBot` flag lets us split organic/AI/bot traffic in the admin
+// dashboard without storing raw user-agents long-term.
+model BlogView {
+  id        String   @id @default(cuid()) @db.VarChar(30)
+  postId    String   @db.VarChar(30)
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  ipHash    String   @db.VarChar(64) // SHA-256(ip + daily salt)
+  userAgent String?  @db.VarChar(300)
+  referrer  String?  @db.VarChar(500)
+  locale    String?  @db.VarChar(8)
+  isBot     Boolean  @default(false)
+  viewDay   String   @db.VarChar(10) // UTC yyyy-mm-dd for daily dedupe
+
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+  @@index([createdAt])
+  @@unique([postId, ipHash, viewDay])
 }

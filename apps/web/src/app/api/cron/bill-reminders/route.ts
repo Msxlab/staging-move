@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendBillReminderEmail } from "@/lib/email-service";
+import { createInAppNotification } from "@/lib/in-app-notifications";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { sendNotification } from "@/lib/notifications";
 import {
   buildWebNotificationSettings,
   getDaysUntilDate,
   getNextBillingDate,
   groupNotificationPreferencesByUser,
   MAX_WEB_NOTIFICATION_REMINDER_DAYS,
+  type StoredNotificationPreference,
 } from "@/lib/notification-preferences";
 
 /**
@@ -16,6 +19,10 @@ import {
  * Intended to be called by a cron job (e.g. Vercel Cron, GitHub Actions, or external scheduler).
  * Protected by CRON_SECRET header.
  */
+function isPushEnabled(records: StoredNotificationPreference[], types: string[]) {
+  return records.some((record) => record.channel === "PUSH" && types.includes(record.type) && record.enabled);
+}
+
 export async function GET(req: Request) {
   // SEC-003: Fail-closed — reject if no matching cron secret configured.
   if (!verifyInternalAuth(req.headers.get("authorization"), "cron")) {
@@ -67,11 +74,14 @@ export async function GET(req: Request) {
     const preferencesByUser = groupNotificationPreferencesByUser(preferences);
 
     let sentCount = 0;
+    let mirroredCount = 0;
+    let pushSentCount = 0;
     const errors: string[] = [];
 
     for (const svc of services) {
       if (!svc.user?.email) continue;
-      const notificationSettings = buildWebNotificationSettings(preferencesByUser.get(svc.user.id) || []);
+      const userPreferences = preferencesByUser.get(svc.user.id) || [];
+      const notificationSettings = buildWebNotificationSettings(userPreferences);
       if (!notificationSettings.config.emailEnabled || !notificationSettings.prefs.billReminder) continue;
 
       const dueDate = getNextBillingDate(svc.billingDay || currentDay, now);
@@ -80,23 +90,65 @@ export async function GET(req: Request) {
       if (!Number.isFinite(leadDays) || daysUntilDue !== leadDays) continue;
 
       try {
+        const dueDateText = dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const dedupeKey = `cron:bill-reminder:${svc.id}:${dueDate.toISOString().slice(0, 10)}:${daysUntilDue}`;
         const success = await sendBillReminderEmail({
           userEmail: svc.user.email,
           userName: [svc.user.firstName, svc.user.lastName].filter(Boolean).join(" ") || "User",
           serviceName: svc.providerName,
           category: (svc.category || "Service").replace(/_/g, " "),
           amount: svc.monthlyCost || 0,
-          dueDate: dueDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          dueDate: dueDateText,
           daysUntilDue,
           userId: svc.user.id,
-          dedupeKey: `cron:bill-reminder:${svc.id}:${dueDate.toISOString().slice(0, 10)}:${daysUntilDue}`,
+          dedupeKey,
           metadata: {
             userId: svc.user.id,
             serviceId: svc.id,
           },
         });
 
-        if (success) sentCount++;
+        if (success) {
+          sentCount++;
+          try {
+            const notificationBody = `${svc.providerName} is due ${daysUntilDue === 0 ? "today" : `in ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`} on ${dueDateText}.`;
+            const mirrored = await createInAppNotification({
+              userId: svc.user.id,
+              type: "BILL_REMINDER",
+              title: `Bill reminder: ${svc.providerName}`,
+              body: notificationBody,
+              href: `/services/${svc.id}`,
+              icon: "Receipt",
+              dedupeKey,
+              metadata: {
+                kind: "bill-reminder",
+                serviceId: svc.id,
+                daysUntilDue,
+                channelMirror: "EMAIL",
+              },
+            });
+            if (mirrored) {
+              mirroredCount++;
+              if (isPushEnabled(userPreferences, ["BILL_REMINDER", "TASK_REMINDER"])) {
+                const pushed = await sendNotification({
+                  userId: svc.user.id,
+                  type: "PUSH",
+                  subject: `Bill reminder: ${svc.providerName}`,
+                  body: notificationBody,
+                  dedupeKey: `${dedupeKey}:push`,
+                  metadata: {
+                    kind: "bill-reminder",
+                    serviceId: svc.id,
+                    daysUntilDue,
+                  },
+                });
+                if (pushed) pushSentCount++;
+              }
+            }
+          } catch (mirrorError) {
+            errors.push(`In-app mirror failed for ${svc.providerName}: ${mirrorError}`);
+          }
+        }
       } catch (err) {
         errors.push(`Failed for ${svc.providerName}: ${err}`);
       }
@@ -106,6 +158,8 @@ export async function GET(req: Request) {
       ok: true,
       processed: services.length,
       sent: sentCount,
+      mirrored: mirroredCount,
+      pushSent: pushSentCount,
       errors: errors.length > 0 ? errors : undefined,
       timestamp: now.toISOString(),
     });

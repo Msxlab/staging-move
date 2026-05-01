@@ -12,6 +12,8 @@ import {
   type AddressAutocompleteDetailsResponse,
 } from "@/lib/shared-address-autocomplete";
 
+const GOOGLE_POWERED_BY_SRC = "https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white3.png";
+
 interface AddressAutocompleteInputProps {
   id?: string;
   label?: string;
@@ -137,19 +139,28 @@ export function AddressAutocompleteInput({
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : enabled ? <MapPin className="h-4 w-4" /> : null}
         </div>
         {open && predictions.length > 0 ? (
-          <div className="absolute z-20 mt-2 max-h-64 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
-            {predictions.map((prediction) => (
-              <button
-                key={prediction.placeId}
-                type="button"
-                className="flex w-full flex-col items-start gap-1 border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-accent"
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => void handleSelect(prediction)}
-              >
-                <span className="text-sm font-medium text-foreground">{prediction.primaryText}</span>
-                <span className="text-xs text-muted-foreground">{prediction.secondaryText || prediction.description}</span>
-              </button>
-            ))}
+          <div className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-border bg-popover shadow-2xl">
+            <div className="max-h-56 overflow-y-auto">
+              {predictions.map((prediction) => (
+                <button
+                  key={prediction.placeId}
+                  type="button"
+                  className="flex w-full flex-col items-start gap-1 border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-accent"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => void handleSelect(prediction)}
+                >
+                  <span className="text-sm font-medium text-foreground">{prediction.primaryText}</span>
+                  <span className="text-xs text-muted-foreground">{prediction.secondaryText || prediction.description}</span>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end border-t border-border bg-white px-3 py-2">
+              <img
+                src={GOOGLE_POWERED_BY_SRC}
+                alt="Powered by Google"
+                className="h-[15px] w-[120px]"
+              />
+            </div>
           </div>
         ) : null}
       </div>

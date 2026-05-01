@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { SessionTracker } from "@/components/tracking/session-tracker";
 import CookieConsent from "@/components/shared/cookie-consent";
+import { SiteSchemas } from "@/components/seo/site-schemas";
 
 // Edition VI · Geist for UI, Fraunces variable for display, Geist Mono for meta.
 // `display: "swap"` so the umber canvas paints immediately and Fraunces
@@ -66,6 +67,18 @@ export const metadata: Metadata = {
   ],
   applicationName: "LocateFlow",
   authors: [{ name: "LocateFlow" }],
+  alternates: {
+    canonical: SITE_URL,
+    // The site is cookie-localized (one URL serves both languages),
+    // so each `hreflang` points back to the same canonical with a
+    // locale hint via cookie. `x-default` mirrors English so Google
+    // picks a sane fallback for unmapped regions.
+    languages: {
+      "en-US": SITE_URL,
+      "es-US": SITE_URL,
+      "x-default": SITE_URL,
+    },
+  },
   openGraph: {
     type: "website",
     url: SITE_URL,
@@ -136,6 +149,7 @@ export default async function RootLayout({
         <link rel="mask-icon" href="/logo-mark.svg" color="#D4846A" />
       </head>
       <body className={geistSans.className}>
+        {!BLOCK_INDEXING ? <SiteSchemas /> : null}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
             <ThemeProvider>

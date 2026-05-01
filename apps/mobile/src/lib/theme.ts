@@ -159,5 +159,5 @@ export function themeForScheme(scheme: "light" | "dark" | "unspecified" | null |
  */
 export function useAppTheme(): Theme {
   const scheme = useColorScheme();
-  return themeForScheme(scheme);
+  return themeForScheme(scheme === "light" || scheme === "dark" ? scheme : null);
 }

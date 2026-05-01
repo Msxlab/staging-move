@@ -17,6 +17,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.locateflow.mobile",
       "buildNumber": "1",
+      "associatedDomains": [
+        "applinks:locateflow.com",
+        "applinks:locateflow.app",
+        "applinks:app.locateflow.com"
+      ],
       "infoPlist": {
         "NSFaceIDUsageDescription": "LocateFlow uses Face ID for secure authentication."
       }
@@ -28,6 +33,34 @@
       },
       "package": "com.locateflow.mobile",
       "versionCode": 1,
+      "allowBackup": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "locateflow.com",
+              "pathPrefix": "/blog"
+            },
+            {
+              "scheme": "https",
+              "host": "locateflow.app",
+              "pathPrefix": "/blog"
+            },
+            {
+              "scheme": "https",
+              "host": "app.locateflow.com",
+              "pathPrefix": "/blog"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "permissions": [
         "INTERNET",
         "VIBRATE",
@@ -63,6 +96,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "aa33b70b-8158-4b17-944d-a34a03fc6b42"
+      }
+    },
+    "owner": "msxlab"
   }
 }
