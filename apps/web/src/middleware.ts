@@ -517,10 +517,11 @@ function buildCspHeader(nonce: string, isDev: boolean): string {
   const scriptSrc = isDev
     ? `'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic' ${googleScriptSrc}`
     : `'self' 'nonce-${nonce}' 'strict-dynamic' ${googleScriptSrc}`;
-  // CSP3 ignores `'unsafe-inline'` when a nonce is present, so we keep it
-  // as a CSP2 fallback for older browsers without weakening modern
-  // ones. Google Fonts is allowed explicitly.
-  const styleSrc = `'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`;
+  // Next/font, next-themes, and a few UI primitives emit small inline
+  // style blocks/attributes during hydration. Keep scripts nonce-locked,
+  // but allow inline styles explicitly so modern CSP3 browsers do not
+  // ignore the fallback because of a style nonce.
+  const styleSrc = `'self' 'unsafe-inline' https://fonts.googleapis.com`;
   const connectSrc = isDev
     ? "'self' ws: http: https: https://api.stripe.com"
     : `'self' https://api.stripe.com ${sentryConnectSrc} ${googleConnectSrc}`;

@@ -132,9 +132,8 @@ export default async function RootLayout({
   // Per-request CSP nonce stamped by middleware. Any external script we
   // emit ourselves (the register-sw bootstrap below) needs this nonce
   // because the production CSP uses 'strict-dynamic' — the source list
-  // is ignored for non-nonced scripts. JSON-LD <script type="application/ld+json">
-  // tags are exempt from script-src per the CSP spec, so they don't
-  // need a nonce.
+  // is ignored for non-nonced scripts. JSON-LD scripts read the same
+  // request nonce in their component and stamp it on each ld+json tag.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (

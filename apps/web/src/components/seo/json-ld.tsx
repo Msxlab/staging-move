@@ -11,6 +11,7 @@
  * Prevention Cheat Sheet "RULE #3.1 — JavaScript escapes".
  */
 import type { ReactElement } from "react";
+import { headers } from "next/headers";
 
 interface JsonLdProps {
   data: Record<string, unknown>;
@@ -40,11 +41,14 @@ function safeStringify(value: unknown): string {
     .join("\\u2029");
 }
 
-export function JsonLd({ data, id }: JsonLdProps): ReactElement {
+export async function JsonLd({ data, id }: JsonLdProps): Promise<ReactElement> {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <script
       type="application/ld+json"
       id={id}
+      nonce={nonce}
       // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: safeStringify(data) }}
     />
