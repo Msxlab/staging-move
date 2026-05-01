@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Linking } from "react-native";
+import React, { useEffect, useState } from "react";
+import * as Linking from "expo-linking";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
@@ -13,11 +13,7 @@ import { AnimatedSplash } from "@/components/AnimatedSplash";
 import { SessionTracker } from "@/components/SessionTracker";
 import { initI18n } from "@/i18n/config";
 import { initMobileSentry } from "@/lib/sentry";
-import {
-  getPendingLegalConsents,
-  hasRequiredLegalConsents,
-  setPendingLegalConsents,
-} from "@/lib/legal";
+import { completeMobileOAuthUrl } from "@/lib/mobile-oauth";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,7 +35,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
   const { token, user, loading, hydrate, refreshUser, setSession } = useAuthStore();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
-  const handledOAuthCodes = useRef<Set<string>>(new Set());
 
   // 1) On mount, load the persisted token from SecureStore.
   useEffect(() => {
@@ -47,29 +42,11 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [hydrate]);
 
   useEffect(() => {
-    const readCode = (url: string | null) => {
-      if (!url || !url.startsWith("locateflow://oauth")) return null;
-      const queryStart = url.indexOf("?");
-      if (queryStart < 0) return null;
-      const params = new URLSearchParams(url.slice(queryStart + 1).split("#")[0]);
-      return params.get("code");
-    };
-
     const handleOAuthUrl = async (url: string | null) => {
-      const code = readCode(url);
-      if (!code || handledOAuthCodes.current.has(code)) return;
-      handledOAuthCodes.current.add(code);
-
-      const res = await api.post<{ token?: string; user?: any }>("/api/mobile/auth/exchange", { code });
-      if (res.error || !res.data?.token || !res.data.user) return;
-
-      await setSession(res.data.token, res.data.user);
-      const pendingLegalConsents = getPendingLegalConsents();
-      if (hasRequiredLegalConsents(pendingLegalConsents)) {
-        await api.post("/api/legal/acceptance", { legalConsents: pendingLegalConsents }).catch(() => null);
-        setPendingLegalConsents(null);
+      const result = await completeMobileOAuthUrl(url, setSession);
+      if (result.success) {
+        router.replace("/onboarding");
       }
-      router.replace("/onboarding");
     };
 
     Linking.getInitialURL().then((url) => void handleOAuthUrl(url)).catch(() => {});

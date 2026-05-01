@@ -5,20 +5,41 @@ export const MOBILE_OAUTH_CLIENT_COOKIE = "oauth_client";
 export const MOBILE_OAUTH_REDIRECT_COOKIE = "oauth_mobile_redirect";
 
 const MOBILE_OAUTH_CODE_TTL_MS = 5 * 60 * 1000;
-const DEFAULT_MOBILE_REDIRECT_URIS = ["locateflow://oauth"];
+const DEFAULT_MOBILE_REDIRECT_URIS = ["locateflow://oauth", "locateflow:///oauth"];
 
-function allowedMobileRedirectUris() {
+function configuredMobileRedirectUris() {
   const configured = (process.env.MOBILE_OAUTH_REDIRECT_URIS || "")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  return configured.length > 0 ? configured : DEFAULT_MOBILE_REDIRECT_URIS;
+  return configured.length > 0
+    ? { uris: configured, fromConfig: true }
+    : { uris: DEFAULT_MOBILE_REDIRECT_URIS, fromConfig: false };
+}
+
+function isDevelopmentRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return process.env.NODE_ENV !== "production" && !["production", "staging", "preview"].includes(appEnv);
+}
+
+function isExpoDevelopmentRedirectUri(value: string): boolean {
+  if (!isDevelopmentRuntime()) return false;
+  try {
+    const url = new URL(value);
+    const pathParts = url.pathname.split("/").filter(Boolean);
+    return (url.protocol === "exp:" || url.protocol === "exps:") && pathParts.includes("oauth");
+  } catch {
+    return false;
+  }
 }
 
 export function normalizeMobileOAuthRedirectUri(raw: string | null | undefined): string | null {
   const value = (raw || "").trim();
   if (!value) return null;
-  return allowedMobileRedirectUris().includes(value) ? value : null;
+  const allowed = configuredMobileRedirectUris();
+  if (allowed.uris.includes(value)) return value;
+  if (!allowed.fromConfig && isExpoDevelopmentRedirectUri(value)) return value;
+  return null;
 }
 
 export function isMobileOAuthClient(value: string | null | undefined) {

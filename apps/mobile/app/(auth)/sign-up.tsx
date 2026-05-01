@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
-  TouchableOpacity, Linking,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail, Lock, User, CheckCircle2 } from "lucide-react-native";
@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { LegalConsentPanel } from "@/components/legal/LegalConsentPanel";
 import {
   createAcceptedLegalConsents,
@@ -19,6 +20,7 @@ import {
   hasRequiredLegalConsents,
   setPendingLegalConsents,
 } from "@/lib/legal";
+import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -28,14 +30,15 @@ interface OAuthProviderStatus {
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const setSession = useAuthStore((s) => s.setSession);
   const { t } = useTranslation();
-  const webBase = API_URL.replace(/\/api\/?$/, "");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
@@ -81,15 +84,27 @@ export default function SignUpScreen() {
     setLoading(false);
   };
 
-  const openOAuth = (provider: "google" | "apple") => {
+  const openOAuth = async (provider: OAuthProvider) => {
     if (!legalAccepted) {
       setError(`Review and accept the Terms of Use and Legal Disclaimer before creating an account with ${provider === "google" ? "Google" : "Apple"}.`);
       hapticError();
       return;
     }
+    setError("");
+    setOauthLoading(provider);
     setPendingLegalConsents(createAcceptedLegalConsents(legalConsents));
-    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
-    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
+    const result = await startMobileOAuthSession(provider, setSession);
+    setOauthLoading(null);
+
+    if (result.success) {
+      hapticSuccess();
+      router.replace("/onboarding");
+      return;
+    }
+    if (result.error && !result.cancelled) {
+      setError(result.error);
+      hapticError();
+    }
   };
 
   if (done) {
@@ -119,17 +134,17 @@ export default function SignUpScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Button
-          title={googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
+          title={oauthLoading === "google" ? t("common.loading") : googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
           variant="outline"
           onPress={() => openOAuth("google")}
-          disabled={!googleReady}
+          disabled={!googleReady || Boolean(oauthLoading)}
           style={styles.oauthBtn}
         />
         <Button
-          title={appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
+          title={oauthLoading === "apple" ? t("common.loading") : appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
           variant="primary"
           onPress={() => openOAuth("apple")}
-          disabled={!appleReady}
+          disabled={!appleReady || Boolean(oauthLoading)}
           style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
         />
 

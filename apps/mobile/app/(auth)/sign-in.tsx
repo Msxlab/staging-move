@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
-  TouchableOpacity, Linking,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail, Lock, ArrowRight } from "lucide-react-native";
@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { registerForPushNotifications } from "@/lib/push";
+import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -31,10 +32,9 @@ export default function SignInScreen() {
   const [mfaCode, setMfaCode] = useState("");
   const [requiresMfa, setRequiresMfa] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState("");
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
-
-  const webBase = API_URL.replace(/\/api\/?$/, "");
 
   useEffect(() => {
     api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
@@ -78,15 +78,22 @@ export default function SignInScreen() {
     router.replace("/(tabs)");
   };
 
-  const openOAuth = (provider: "google" | "apple") => {
-    // OAuth on mobile hands off to an in-app browser. The server sets a session
-    // cookie at the end of the flow, which the WebView/browser can carry back
-    // via the expo-web-browser auth-session return URL. For simplicity in MVP
-    // we just open the web URL — the user sees the /dashboard cookie session
-    // and can return to the app manually. A tighter flow (expo-auth-session)
-    // can be added post-MVP.
-    const mobileRedirectUri = encodeURIComponent("locateflow://oauth");
-    Linking.openURL(`${webBase}/api/auth/oauth/${provider}?client=mobile&mobileRedirectUri=${mobileRedirectUri}&redirect=/dashboard`);
+  const openOAuth = async (provider: OAuthProvider) => {
+    setError("");
+    setOauthLoading(provider);
+    const result = await startMobileOAuthSession(provider, setSession);
+    setOauthLoading(null);
+
+    if (result.success) {
+      hapticSuccess();
+      registerForPushNotifications().catch(() => {});
+      router.replace("/onboarding");
+      return;
+    }
+    if (result.error && !result.cancelled) {
+      setError(result.error);
+      hapticError();
+    }
   };
 
   return (
@@ -107,17 +114,17 @@ export default function SignInScreen() {
         {!requiresMfa && (
           <>
             <Button
-              title={googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
+              title={oauthLoading === "google" ? t("common.loading") : googleReady ? t("auth.continueWithGoogle") : "Google sign-in unavailable"}
               variant="outline"
               onPress={() => openOAuth("google")}
-              disabled={!googleReady}
+              disabled={!googleReady || Boolean(oauthLoading)}
               style={styles.oauthBtn}
             />
             <Button
-              title={appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
+              title={oauthLoading === "apple" ? t("common.loading") : appleReady ? t("auth.continueWithApple") : "Apple sign-in unavailable"}
               variant="primary"
               onPress={() => openOAuth("apple")}
-              disabled={!appleReady}
+              disabled={!appleReady || Boolean(oauthLoading)}
               style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
             />
 

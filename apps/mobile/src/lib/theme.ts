@@ -142,7 +142,7 @@ export const lightTheme = {
 } as unknown as Theme;
 
 /** Explicit opt-in: resolve a palette by name. */
-export function themeForScheme(scheme: "light" | "dark" | null | undefined): Theme {
+export function themeForScheme(scheme: "light" | "dark" | "unspecified" | null | undefined): Theme {
   return scheme === "light" ? lightTheme : theme;
 }
 

@@ -59,7 +59,19 @@ describe("mobile OAuth handoff codes", () => {
 
   it("validates mobile redirect URIs against an allowlist", () => {
     expect(normalizeMobileOAuthRedirectUri("locateflow://oauth")).toBe("locateflow://oauth");
+    expect(normalizeMobileOAuthRedirectUri("locateflow:///oauth")).toBe("locateflow:///oauth");
+    expect(normalizeMobileOAuthRedirectUri("exp://192.168.1.5:8081/--/oauth")).toBe(
+      "exp://192.168.1.5:8081/--/oauth",
+    );
     expect(normalizeMobileOAuthRedirectUri("https://evil.example/callback")).toBeNull();
+  });
+
+  it("uses the configured redirect allowlist when one is present", () => {
+    process.env.MOBILE_OAUTH_REDIRECT_URIS = "locateflow://oauth";
+
+    expect(normalizeMobileOAuthRedirectUri("locateflow://oauth")).toBe("locateflow://oauth");
+    expect(normalizeMobileOAuthRedirectUri("locateflow:///oauth")).toBeNull();
+    expect(normalizeMobileOAuthRedirectUri("exp://192.168.1.5:8081/--/oauth")).toBeNull();
   });
 
   it("creates a short-lived one-time code without putting bearer tokens in the redirect", async () => {
