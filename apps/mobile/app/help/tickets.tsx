@@ -29,7 +29,7 @@ const STATUS_LABEL: Record<string, string> = {
 const STATUS_COLOR: Record<string, string> = {
   OPEN: theme.colors.primary,
   IN_PROGRESS: "#f59e0b",
-  WAITING_USER: "#f97316",
+  WAITING_USER: "#D4846A",
   CLOSED: theme.colors.textMuted,
 };
 

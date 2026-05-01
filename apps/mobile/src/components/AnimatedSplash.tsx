@@ -1,23 +1,25 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, Animated, Easing, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Animated, Easing } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Path, Circle } from "react-native-svg";
 
-const { width } = Dimensions.get("window");
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
+// Edition VI · Champagne & Rose. Geometry mirrors apps/web/public/logo-mark.svg
+// (foil curve from start dot to rose pin) so the boot screen reads as the same
+// brand as the web sign-in.
 export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => void; ready?: boolean }) {
-  const pinScale = useRef(new Animated.Value(0)).current;
-  const pinY = useRef(new Animated.Value(-80)).current;
-  const pinRotate = useRef(new Animated.Value(-0.05)).current;
-  const dotScale = useRef(new Animated.Value(0)).current;
-  const ringScale = useRef(new Animated.Value(0.6)).current;
+  const markScale = useRef(new Animated.Value(0)).current;
+  const markY = useRef(new Animated.Value(-40)).current;
+  const sweep = useRef(new Animated.Value(0)).current;       // 0–1 along the foil curve
+  const pinScale = useRef(new Animated.Value(0)).current;    // rose pin pop-in
+  const ringScale = useRef(new Animated.Value(0.6)).current; // rose ripple
   const ringOpacity = useRef(new Animated.Value(0)).current;
-  const wave1 = useRef(new Animated.Value(0)).current;
-  const wave2 = useRef(new Animated.Value(0)).current;
   const textOpacity = useRef(new Animated.Value(0)).current;
-  const textY = useRef(new Animated.Value(30)).current;
+  const textY = useRef(new Animated.Value(24)).current;
   const flowOpacity = useRef(new Animated.Value(0)).current;
-  const glowPulse = useRef(new Animated.Value(0.15)).current;
-  const glowScale = useRef(new Animated.Value(0.8)).current;
+  const glowPulse = useRef(new Animated.Value(0.12)).current;
+  const glowScale = useRef(new Animated.Value(0.85)).current;
   const overallOpacity = useRef(new Animated.Value(1)).current;
   const [introDone, setIntroDone] = useState(false);
   const didFinish = useRef(false);
@@ -29,76 +31,54 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
 
   useEffect(() => {
     const introAnimation = Animated.sequence([
-      // Phase 1: Pin drops with spring + slight rotation
+      // Phase 1: Mark drops in
       Animated.parallel([
-        Animated.spring(pinScale, {
+        Animated.spring(markScale, {
           toValue: 1,
           tension: 50,
           friction: 7,
           useNativeDriver: true,
         }),
-        Animated.spring(pinY, {
+        Animated.spring(markY, {
           toValue: 0,
           tension: 45,
           friction: 8,
           useNativeDriver: true,
         }),
-        Animated.sequence([
-          Animated.timing(pinRotate, {
-            toValue: 0.03,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.spring(pinRotate, {
-            toValue: 0,
-            tension: 80,
-            friction: 6,
-            useNativeDriver: true,
-          }),
-        ]),
       ]),
-      // Phase 2: Dot scales in with ring burst
+      // Phase 2: Foil curve sweeps in (start dot already visible)
+      Animated.timing(sweep, {
+        toValue: 1,
+        duration: 700,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }),
+      // Phase 3: Rose pin pops at the end of the curve, ripple bursts
       Animated.parallel([
-        Animated.spring(dotScale, {
+        Animated.spring(pinScale, {
           toValue: 1,
           tension: 100,
           friction: 6,
           useNativeDriver: true,
         }),
         Animated.timing(ringOpacity, {
-          toValue: 0.6,
+          toValue: 0.55,
           duration: 200,
           useNativeDriver: true,
         }),
         Animated.timing(ringScale, {
-          toValue: 1.8,
-          duration: 600,
+          toValue: 1.9,
+          duration: 700,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]),
-      // Ring fades out
       Animated.timing(ringOpacity, {
         toValue: 0,
-        duration: 300,
+        duration: 350,
         useNativeDriver: true,
       }),
-      // Phase 3: Flow waves sweep in
-      Animated.stagger(120, [
-        Animated.timing(wave1, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(wave2, {
-          toValue: 1,
-          duration: 500,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]),
-      // Phase 4: Text slides up
+      // Phase 4: Wordmark slides up + foil "flow" fades in
       Animated.parallel([
         Animated.timing(textOpacity, {
           toValue: 1,
@@ -123,12 +103,12 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
       if (finished) setIntroDone(true);
     });
 
-    // Glow breathing
+    // Foil glow breathing
     const glowAnimation = Animated.loop(
       Animated.sequence([
         Animated.parallel([
           Animated.timing(glowPulse, {
-            toValue: 0.35,
+            toValue: 0.30,
             duration: 1400,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
@@ -142,19 +122,19 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
         ]),
         Animated.parallel([
           Animated.timing(glowPulse, {
-            toValue: 0.15,
+            toValue: 0.12,
             duration: 1400,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
           Animated.timing(glowScale, {
-            toValue: 0.8,
+            toValue: 0.85,
             duration: 1400,
             easing: Easing.inOut(Easing.sin),
             useNativeDriver: true,
           }),
         ]),
-      ])
+      ]),
     );
     glowAnimation.start();
 
@@ -162,7 +142,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
       introAnimation.stop();
       glowAnimation.stop();
     };
-  }, [dotScale, flowOpacity, glowPulse, glowScale, pinRotate, pinScale, pinY, ringOpacity, ringScale, textOpacity, textY, wave1, wave2]);
+  }, [flowOpacity, glowPulse, glowScale, markScale, markY, pinScale, ringOpacity, ringScale, sweep, textOpacity, textY]);
 
   useEffect(() => {
     if (!ready || !introDone || didFinish.current) return;
@@ -181,9 +161,17 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
     return () => fadeAnimation.stop();
   }, [introDone, overallOpacity, ready]);
 
+  // The foil curve has total length ≈ 88 SVG units; sweep 0→1 maps to
+  // strokeDashoffset 88→0 so the path "draws" left-to-right.
+  const FOIL_LEN = 88;
+  const dashOffset = sweep.interpolate({
+    inputRange: [0, 1],
+    outputRange: [FOIL_LEN, 0],
+  });
+
   return (
     <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
-      {/* Radial glow */}
+      {/* Foil radial glow */}
       <Animated.View
         style={[
           styles.glow,
@@ -191,103 +179,84 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
         ]}
       >
         <LinearGradient
-          colors={["rgba(249,115,22,0.35)", "rgba(251,191,36,0.08)", "transparent"]}
+          colors={["rgba(212,132,106,0.40)", "rgba(229,201,168,0.10)", "transparent"]}
           style={styles.glowGradient}
           start={{ x: 0.5, y: 0.5 }}
           end={{ x: 1, y: 1 }}
         />
       </Animated.View>
 
-      {/* Logo */}
+      {/* Mark — flow-curve with rose pin */}
       <View style={styles.logoArea}>
-        {/* Pin */}
         <Animated.View
           style={[
-            styles.pinContainer,
+            styles.markContainer,
             {
               transform: [
-                { scale: pinScale },
-                { translateY: pinY },
-                { rotate: pinRotate.interpolate({
-                  inputRange: [-0.1, 0, 0.1],
-                  outputRange: ["-6deg", "0deg", "6deg"],
-                }) },
+                { scale: markScale },
+                { translateY: markY },
               ],
             },
           ]}
         >
-          <View style={styles.pinOuter}>
-            <View style={styles.pinInner}>
-              {/* Dot with ring burst */}
-              <Animated.View
-                style={[
-                  styles.pinRing,
-                  { opacity: ringOpacity, transform: [{ scale: ringScale }] },
-                ]}
-              />
-              <Animated.View
-                style={[styles.pinDot, { transform: [{ scale: dotScale }] }]}
-              >
-                <LinearGradient
-                  colors={["#FBBF24", "#F97316"]}
-                  style={styles.dotGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                />
-              </Animated.View>
-            </View>
-            {/* Pin tip */}
-            <View style={styles.pinTip} />
-          </View>
-          <View style={styles.pinShadow} />
-        </Animated.View>
+          <Svg width={180} height={180} viewBox="0 0 100 100">
+            <Defs>
+              <SvgLinearGradient id="splash-foil" x1="0" y1="1" x2="1" y2="0">
+                <Stop offset="0%" stopColor="#B8936C" />
+                <Stop offset="45%" stopColor="#E5C9A8" />
+                <Stop offset="100%" stopColor="#F4E4D0" />
+              </SvgLinearGradient>
+              <SvgLinearGradient id="splash-rose" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0%" stopColor="#EDB99D" />
+                <Stop offset="100%" stopColor="#A85A42" />
+              </SvgLinearGradient>
+            </Defs>
 
-        {/* Flow waves */}
-        <View style={styles.wavesContainer}>
-          <Animated.View
-            style={[
-              styles.wave,
-              {
-                top: 2,
-                opacity: wave1,
-                transform: [
-                  { scaleX: wave1.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) },
-                  { translateX: wave1.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) },
-                ],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={["transparent", "#F97316", "#FBBF24", "#F97316", "transparent"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.waveGradient}
+            {/* Rose ripple */}
+            <AnimatedCircle
+              cx="80"
+              cy="40"
+              r="10"
+              fill="none"
+              stroke="url(#splash-rose)"
+              strokeWidth="1.5"
+              opacity={ringOpacity as unknown as number}
+              {...({ style: { transform: [{ scale: ringScale }] } } as any)}
             />
-          </Animated.View>
-          <Animated.View
-            style={[
-              styles.wave,
-              {
-                top: 12,
-                opacity: wave2.interpolate({ inputRange: [0, 1], outputRange: [0, 0.4] }),
-                transform: [
-                  { scaleX: wave2.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) },
-                  { translateX: wave2.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) },
-                ],
-              },
-            ]}
-          >
-            <LinearGradient
-              colors={["transparent", "#FBBF24", "#FB923C", "#FBBF24", "transparent"]}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={styles.waveGradient}
+
+            {/* Foil curve — animates dashoffset to "draw" itself */}
+            <AnimatedCircle cx="20" cy="65" r="4.5" fill="url(#splash-foil)" />
+            <AnimatedCircle cx="20" cy="65" r="1.5" fill="#0E0A07" />
+            <Path
+              d="M20 65 Q 30 32, 50 48 T 80 40"
+              stroke="url(#splash-foil)"
+              strokeWidth="3.25"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={FOIL_LEN}
+              {...({ strokeDashoffset: dashOffset } as any)}
             />
-          </Animated.View>
-        </View>
+
+            {/* Rose pin */}
+            <AnimatedCircle
+              cx="80"
+              cy="40"
+              r="7.25"
+              fill="url(#splash-rose)"
+              {...({ style: { transform: [{ scale: pinScale }] } } as any)}
+            />
+            <AnimatedCircle
+              cx="80"
+              cy="40"
+              r="2.5"
+              fill="#F5F1EA"
+              {...({ style: { transform: [{ scale: pinScale }] } } as any)}
+            />
+          </Svg>
+        </Animated.View>
       </View>
 
-      {/* Brand text */}
+      {/* Wordmark */}
       <Animated.View
         style={[
           styles.textContainer,
@@ -297,7 +266,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
         <Text style={styles.brandText}>
           <Text style={styles.brandLocate}>Locate</Text>
           <Animated.Text style={[styles.brandFlow, { opacity: flowOpacity }]}>
-            Flow
+            flow
           </Animated.Text>
         </Text>
         <Text style={styles.tagline}>Smart Relocation Management</Text>
@@ -340,7 +309,7 @@ function LoadingBar() {
         ]}
       >
         <LinearGradient
-          colors={["#EA580C", "#F97316", "#FBBF24"]}
+          colors={["#B8936C", "#E5C9A8", "#F4E4D0"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={{ flex: 1, borderRadius: 2 }}
@@ -357,7 +326,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "#0a0a0f",
+    backgroundColor: "#0E0A07",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
@@ -376,101 +345,36 @@ const styles = StyleSheet.create({
   },
   logoArea: {
     alignItems: "center",
-    marginBottom: 36,
+    marginBottom: 28,
   },
-  pinContainer: {
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  pinOuter: {
-    width: 100,
-    height: 120,
-    alignItems: "center",
-  },
-  pinInner: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: 3,
-    borderColor: "#F97316",
+  markContainer: {
+    width: 180,
+    height: 180,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(249, 115, 22, 0.06)",
-  },
-  pinTip: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 12,
-    borderRightWidth: 12,
-    borderTopWidth: 20,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: "#F97316",
-    marginTop: -2,
-  },
-  pinRing: {
-    position: "absolute",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: "#FBBF24",
-  },
-  pinDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    overflow: "hidden",
-  },
-  dotGradient: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 14,
-  },
-  pinShadow: {
-    width: 32,
-    height: 8,
-    borderRadius: 16,
-    backgroundColor: "rgba(249, 115, 22, 0.2)",
-    marginTop: 8,
-  },
-  wavesContainer: {
-    width: width * 0.55,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-  },
-  wave: {
-    position: "absolute",
-    width: "100%",
-    height: 3,
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  waveGradient: {
-    flex: 1,
-    borderRadius: 2,
   },
   textContainer: {
     alignItems: "center",
   },
   brandText: {
-    fontSize: 38,
-    fontWeight: "800",
+    fontSize: 40,
     letterSpacing: -1,
+    fontFamily: "Fraunces_400Regular",
   },
   brandLocate: {
-    color: "#ffffff",
+    color: "#F5F1EA",
+    fontFamily: "Fraunces_400Regular",
   },
   brandFlow: {
-    color: "#FBBF24",
+    color: "#E5C9A8",
+    fontStyle: "italic",
+    fontFamily: "Fraunces_400Regular_Italic",
   },
   tagline: {
-    color: "rgba(255, 255, 255, 0.25)",
+    color: "rgba(245, 241, 234, 0.30)",
     fontSize: 12,
     fontWeight: "600",
-    marginTop: 10,
+    marginTop: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
   },
@@ -482,7 +386,7 @@ const styles = StyleSheet.create({
   loadingTrack: {
     height: 3,
     borderRadius: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: "rgba(245, 241, 234, 0.06)",
     overflow: "hidden",
   },
   loadingFill: {

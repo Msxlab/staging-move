@@ -87,7 +87,9 @@ const styles = StyleSheet.create({
   glow: {
     backgroundColor: theme.colors.card,
     borderWidth: 1,
-    borderColor: "rgba(249, 115, 22, 0.2)",
+    // Rose ring (Edition VI) — matches `--line-rose` on web. The card
+    // shadow `theme.shadow.glow` already uses the rose hex.
+    borderColor: "rgba(212, 132, 106, 0.30)",
     ...theme.shadow.glow,
   },
   glass: {

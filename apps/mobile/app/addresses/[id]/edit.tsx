@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.4)",
+    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.4)",
   },
   chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
   chipTextActive: { color: theme.colors.primary },

@@ -9,13 +9,16 @@ interface BadgeProps {
   style?: ViewStyle;
 }
 
+// Variant borders read from the canonical tone tokens. The legacy keys
+// (orange/emerald/amber/sky) alias onto rose/sage/honey/slate in Edition
+// VI, so existing call sites flip palette without code changes.
 const variantStyles = {
-  primary: { bg: theme.colors.primaryFaded, border: "rgba(249,115,22,0.3)", text: theme.colors.orange.text },
-  success: { bg: theme.colors.successFaded, border: "rgba(16,185,129,0.3)", text: theme.colors.emerald.text },
-  warning: { bg: theme.colors.warningFaded, border: "rgba(245,158,11,0.3)", text: theme.colors.amber.text },
-  error: { bg: theme.colors.errorFaded, border: "rgba(239,68,68,0.3)", text: theme.colors.rose.text },
-  info: { bg: theme.colors.infoFaded, border: "rgba(59,130,246,0.3)", text: theme.colors.sky.text },
-  neutral: { bg: "rgba(255,255,255,0.05)", border: theme.colors.border, text: theme.colors.textTertiary },
+  primary: { bg: theme.colors.primaryFaded, border: theme.colors.orange.border, text: theme.colors.orange.text },
+  success: { bg: theme.colors.successFaded, border: theme.colors.emerald.border, text: theme.colors.emerald.text },
+  warning: { bg: theme.colors.warningFaded, border: theme.colors.amber.border, text: theme.colors.amber.text },
+  error: { bg: theme.colors.errorFaded, border: theme.colors.rose.border, text: theme.colors.rose.text },
+  info: { bg: theme.colors.infoFaded, border: theme.colors.sky.border, text: theme.colors.sky.text },
+  neutral: { bg: "rgba(245, 241, 234, 0.05)", border: theme.colors.border, text: theme.colors.textTertiary },
 };
 
 export function Badge({ label, variant = "neutral", size = "sm", style }: BadgeProps) {

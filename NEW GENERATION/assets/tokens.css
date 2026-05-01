@@ -1,0 +1,317 @@
+/* =========================================================================
+   LocateFlow — Edition VI · Champagne & Rose
+   Source of truth: packages/shared/src/design-tokens.ts +
+   apps/web/src/styles/globals.css.
+
+   This file is a reference snapshot for design/marketing. The legacy
+   `--brand-orange` and `--orange-*` names are intentionally preserved —
+   every Tailwind utility (`bg-orange-500`, `text-amber-400`, …) resolves
+   to the new rose / foil values, so the palette flips without touching
+   component code.
+   ========================================================================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
+
+:root,
+.dark {
+  /* ── Brand core (Champagne & Rose) ── */
+  --rose:          #D4846A;
+  --rose-light:    #EDB99D;
+  --rose-deep:     #A85A42;
+  --rose-dark:     #6A2E1C;
+
+  --foil-a:        #F4E4D0;
+  --foil-b:        #E5C9A8;
+  --foil-c:        #B8936C;
+  --foil:          #E5C9A8;
+  --foil-ink:      #8E6D4A;
+
+  --nude:          #E5C9A8;
+  --nude-deep:     #B8936C;
+
+  --sage:          #5EAD9A;
+  --sage-soft:     #8FC9B7;
+
+  /* Legacy brand aliases — flipped to rose / foil */
+  --brand-orange:        #D4846A;
+  --brand-orange-light:  #EDB99D;
+  --brand-orange-dark:   #A85A42;
+  --brand-amber:         #E5C9A8;
+
+  /* "orange" scale — now the rose scale (kept for `bg-orange-500` etc.) */
+  --orange-50:  #FBF1ED;
+  --orange-100: #F6E0D6;
+  --orange-200: #EDC0AC;
+  --orange-300: #E5A287;
+  --orange-400: #DC8B6F;
+  --orange-500: #D4846A;
+  --orange-600: #BC6C53;
+  --orange-700: #A85A42;
+  --orange-800: #8A4630;
+  --orange-900: #6A2E1C;
+
+  /* ── Surface / background (umber-near-black, slightly warm) ── */
+  --bg:            #0E0A07;
+  --bg-deep:       #070504;
+  --surface:       #13100B;
+  --surface-2:     #181410;
+  --surface-3:     #1F1A14;
+  --elevated:      #261F17;
+
+  /* ── Foreground / text ── */
+  --fg:            #F5F1EA;
+  --fg-1:          rgba(245, 241, 234, 1);
+  --fg-2:          rgba(245, 241, 234, 0.62);
+  --fg-3:          rgba(245, 241, 234, 0.38);
+  --fg-4:          rgba(245, 241, 234, 0.22);
+  --fg-muted:      rgba(245, 241, 234, 0.20);
+
+  /* ── Borders ── */
+  --line:          rgba(245, 241, 234, 0.08);
+  --line-2:        rgba(245, 241, 234, 0.14);
+  --line-foil:     rgba(229, 201, 168, 0.22);
+  --line-rose:     rgba(212, 132, 106, 0.30);
+  --border:        rgba(245, 241, 234, 0.08);
+  --border-strong: rgba(245, 241, 234, 0.14);
+  --border-focus:  rgba(212, 132, 106, 0.55);
+
+  /* ── Glass ── */
+  --glass-bg:      rgba(245, 241, 234, 0.04);
+  --glass-border:  rgba(245, 241, 234, 0.08);
+  --glass-hover:   rgba(245, 241, 234, 0.07);
+
+  /* ── Semantic — sage / honey / warm-red / dusted slate ── */
+  --success:       #5EAD9A;
+  --success-soft:  rgba(94, 173, 154, 0.12);
+  --warning:       #E3B04B;
+  --warning-soft:  rgba(227, 176, 75, 0.14);
+  --danger:        #C85A3E;
+  --danger-soft:   rgba(200, 90, 62, 0.14);
+  --info:          #8AA9C0;
+  --info-soft:     rgba(138, 169, 192, 0.12);
+
+  /* ── Tonal pairs — six tones ── */
+  --tone-rose-bg:    rgba(212, 132, 106, 0.10);
+  --tone-rose-br:    rgba(212, 132, 106, 0.22);
+  --tone-rose-fg:    #EDB99D;
+
+  --tone-foil-bg:    rgba(229, 201, 168, 0.09);
+  --tone-foil-br:    rgba(229, 201, 168, 0.22);
+  --tone-foil-fg:    #F4E4D0;
+
+  --tone-sage-bg:    rgba(94, 173, 154, 0.09);
+  --tone-sage-br:    rgba(94, 173, 154, 0.22);
+  --tone-sage-fg:    #8FC9B7;
+
+  --tone-honey-bg:   rgba(227, 176, 75, 0.09);
+  --tone-honey-br:   rgba(227, 176, 75, 0.22);
+  --tone-honey-fg:   #EFC878;
+
+  --tone-umber-bg:   rgba(184, 147, 108, 0.09);
+  --tone-umber-br:   rgba(184, 147, 108, 0.22);
+  --tone-umber-fg:   #D4B68F;
+
+  --tone-slate-bg:   rgba(138, 169, 192, 0.09);
+  --tone-slate-br:   rgba(138, 169, 192, 0.22);
+  --tone-slate-fg:   #B5CDDD;
+
+  /* Legacy tone aliases — orange→rose, emerald→sage, amber→honey, sky/cyan→slate */
+  --tone-orange-bg:  rgba(212, 132, 106, 0.10);
+  --tone-orange-br:  rgba(212, 132, 106, 0.22);
+  --tone-orange-fg:  #EDB99D;
+  --tone-emerald-bg: rgba(94, 173, 154, 0.09);
+  --tone-emerald-br: rgba(94, 173, 154, 0.22);
+  --tone-emerald-fg: #8FC9B7;
+  --tone-amber-bg:   rgba(227, 176, 75, 0.09);
+  --tone-amber-br:   rgba(227, 176, 75, 0.22);
+  --tone-amber-fg:   #EFC878;
+  --tone-sky-bg:     rgba(138, 169, 192, 0.09);
+  --tone-sky-br:     rgba(138, 169, 192, 0.22);
+  --tone-sky-fg:     #B5CDDD;
+  --tone-cyan-bg:    rgba(138, 169, 192, 0.09);
+  --tone-cyan-br:    rgba(138, 169, 192, 0.22);
+  --tone-cyan-fg:    #B5CDDD;
+
+  /* ── Radii ── */
+  --radius-sm:   6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+  --radius:     10px;             /* default shadcn --radius */
+
+  /* ── Spacing ── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:  12px;
+  --space-lg:  16px;
+  --space-xl:  20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 40px;
+  --space-5xl: 56px;
+  --space-6xl: 80px;
+
+  /* ── Shadows ── */
+  --shadow-xs:   0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm:   0 2px 6px rgba(0, 0, 0, 0.28);
+  --shadow-md:   0 6px 18px rgba(0, 0, 0, 0.40);
+  --shadow-lg:   0 20px 50px rgba(0, 0, 0, 0.55);
+  --shadow-xl:   0 40px 80px rgba(0, 0, 0, 0.60);
+  --shadow-rose: 0 0 20px rgba(212, 132, 106, 0.28);
+  --shadow-foil: 0 0 30px rgba(229, 201, 168, 0.16);
+  --shadow-glow: 0 0 20px rgba(212, 132, 106, 0.28);
+
+  /* ── Type ── */
+  --font-display: "Fraunces", "Didot", Georgia, serif;
+  --font-sans:    "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
+
+  --fs-xs:   11px;
+  --fs-sm:   12px;
+  --fs-base: 14px;
+  --fs-md:   15px;
+  --fs-lg:   16px;
+  --fs-xl:   18px;
+  --fs-2xl:  22px;
+  --fs-3xl:  28px;
+  --fs-4xl:  36px;
+  --fs-display:    48px;
+  --fs-display-lg: 72px;
+  --fs-display-xl: 96px;
+
+  --fw-light:    300;
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    800;
+
+  --lh-tight:   1.0;
+  --lh-snug:    1.15;
+  --lh-normal:  1.45;
+  --lh-relaxed: 1.7;
+
+  --tracking-tightest: -0.035em;
+  --tracking-tight:    -0.02em;
+  --tracking-normal:   0;
+  --tracking-wide:     0.04em;
+  --tracking-mono:     0.14em;
+}
+
+/* Light mode — Edition VI ivory paper, warm-deep-umber text */
+.light {
+  --bg:            #FBF7EC;
+  --surface:       #FFFFFF;
+  --surface-2:     #F7EEE3;
+  --surface-3:     #F0E4D2;
+  --elevated:      #FFFFFF;
+
+  --fg-1:          rgba(42, 31, 24, 1);
+  --fg-2:          rgba(42, 31, 24, 0.72);
+  --fg-3:          rgba(42, 31, 24, 0.50);
+  --fg-muted:      rgba(42, 31, 24, 0.30);
+
+  --line:          rgba(42, 31, 24, 0.08);
+  --line-2:        rgba(42, 31, 24, 0.14);
+  --border:        rgba(42, 31, 24, 0.08);
+  --border-strong: rgba(42, 31, 24, 0.14);
+
+  --glass-bg:      rgba(255, 255, 255, 0.70);
+  --glass-border:  rgba(42, 31, 24, 0.08);
+  --glass-hover:   rgba(42, 31, 24, 0.04);
+
+  --tone-rose-fg:    #8B3E28;
+  --tone-foil-fg:    #8E6D4A;
+  --tone-sage-fg:    #2F6F5F;
+  --tone-honey-fg:   #8B6A1F;
+  --tone-umber-fg:   #6A4F30;
+  --tone-slate-fg:   #456180;
+
+  --tone-orange-fg:  #8B3E28;
+  --tone-emerald-fg: #2F6F5F;
+  --tone-amber-fg:   #8B6A1F;
+  --tone-sky-fg:     #456180;
+  --tone-cyan-fg:    #456180;
+}
+
+/* =========================================================================
+   Semantic element defaults
+   ========================================================================= */
+html, body {
+  background: var(--bg);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, .h1 {
+  font-family: var(--font-display);
+  font-size: clamp(36px, 6vw, var(--fs-display-lg));
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-tightest);
+  line-height: var(--lh-tight);
+}
+h2, .h2 {
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-regular);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-snug);
+}
+h3, .h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-snug);
+}
+h4, .h4 {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+}
+p, .body {
+  font-size: var(--fs-base);
+  color: var(--fg-1);
+  line-height: var(--lh-normal);
+}
+.body-lg {
+  font-size: var(--fs-lg);
+  color: var(--fg-2);
+  line-height: var(--lh-relaxed);
+}
+.caption {
+  font-size: var(--fs-sm);
+  color: var(--fg-3);
+}
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  letter-spacing: var(--tracking-mono);
+}
+
+/* Stat-number style seen repeatedly in dashboards */
+.stat-number {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-black);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Glass surface helper */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Foil text helper — italic foil-gradient, used on the "flow" segment of
+   the wordmark and as a gilt accent on premium copy. */
+.foil-text {
+  background-image: linear-gradient(180deg, #F4E4D0 0%, #E5C9A8 50%, #B8936C 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}

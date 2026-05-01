@@ -31,20 +31,23 @@ import {
 // ──────────────────────────────────────────────────────────────────────
 
 const darkColors = {
-  primary: brandColors.orange,
-  primaryLight: brandColors.orangeLight,
-  primaryDark: brandColors.orangeDark,
-  primaryFaded: "rgba(249, 115, 22, 0.15)",
-  accent: brandColors.amber,
+  primary: brandColors.orange,            // rose #D4846A
+  primaryLight: brandColors.orangeLight,  // rose-light #EDB99D
+  primaryDark: brandColors.orangeDark,    // rose-deep #A85A42
+  // Faded primary — matches `tonesDark.rose.bg` (12% rose) instead of the
+  // legacy 15% orange. Keeps key faded surfaces (active-plan chip, hero
+  // ring) on the new palette.
+  primaryFaded: "rgba(212, 132, 106, 0.12)",
+  accent: brandColors.amber,              // foil champagne #E5C9A8
 
-  success: semanticColors.success,
-  successFaded: "rgba(16, 185, 129, 0.15)",
-  warning: semanticColors.warning,
-  warningFaded: "rgba(245, 158, 11, 0.15)",
-  error: semanticColors.danger,
-  errorFaded: "rgba(239, 68, 68, 0.15)",
-  info: semanticColors.info,
-  infoFaded: "rgba(59, 130, 246, 0.15)",
+  success: semanticColors.success,        // sage #5EAD9A
+  successFaded: "rgba(94, 173, 154, 0.12)",
+  warning: semanticColors.warning,        // honey #E3B04B
+  warningFaded: "rgba(227, 176, 75, 0.14)",
+  error: semanticColors.danger,           // warm-red #C85A3E
+  errorFaded: "rgba(200, 90, 62, 0.14)",
+  info: semanticColors.info,              // dusted slate #8AA9C0
+  infoFaded: "rgba(138, 169, 192, 0.12)",
 
   background: surfaceDark.background,
   surface: surfaceDark.surface,
@@ -56,19 +59,22 @@ const darkColors = {
   borderLight: borderDark.strong,
   borderFocus: borderDark.focus,
 
-  // Mobile glass uses slightly richer alpha than shared glassDark
-  // (keeps legacy visual weight for sheets & sticky chrome).
+  // Glass uses warm cream alpha (matches `glassDark` from shared tokens).
+  // The previous `rgba(255,255,255,…)` made sticky chrome read as cool
+  // white-on-near-black — Edition VI surfaces are warm umber, so the
+  // overlay tint must also be warm cream.
   glass: {
-    bg: "rgba(255, 255, 255, 0.06)",
-    border: "rgba(255, 255, 255, 0.12)",
-    highlight: "rgba(255, 255, 255, 0.08)",
+    bg: "rgba(245, 241, 234, 0.04)",
+    border: "rgba(245, 241, 234, 0.08)",
+    highlight: "rgba(245, 241, 234, 0.07)",
   },
 
-  // Mobile historically used hex white + 0.4 tertiary; keep those exact
-  // values for pixel parity with existing screens.
-  text: "#ffffff",
+  // Foreground — warm cream `#F5F1EA` on warm umber surfaces (Edition VI).
+  // The pure-white override was kept for pixel parity with the legacy
+  // dark theme; it now reads cooler than every other surface.
+  text: textDark.primary,
   textSecondary: textDark.secondary,
-  textTertiary: "rgba(255, 255, 255, 0.4)",
+  textTertiary: textDark.tertiary,
   textMuted: textDark.muted,
 
   orange: tonesDark.orange,
@@ -85,12 +91,11 @@ const darkColors = {
   },
 } as const;
 
-// Light palette — same brand orange, surfaces inverted, text darkened.
-// Tones chosen to hit WCAG AA on common Tailwind-ish contrast checks.
+// Light palette — Edition VI ivory paper, warm-deep-umber text.
 const lightColors = {
   ...darkColors,
 
-  primaryFaded: "rgba(249, 115, 22, 0.10)",
+  primaryFaded: "rgba(184, 90, 66, 0.10)",
 
   background: surfaceLight.background,
   surface: surfaceLight.surface,
@@ -103,12 +108,12 @@ const lightColors = {
   borderFocus: borderLight.focus,
 
   glass: {
-    bg: "rgba(15, 23, 42, 0.04)",
-    border: "rgba(15, 23, 42, 0.08)",
-    highlight: "rgba(15, 23, 42, 0.04)",
+    bg: "rgba(42, 31, 24, 0.04)",
+    border: "rgba(42, 31, 24, 0.08)",
+    highlight: "rgba(42, 31, 24, 0.04)",
   },
 
-  text: "#0f172a",
+  text: textLight.primary,
   textSecondary: textLight.secondary,
   textTertiary: textLight.tertiary,
   textMuted: textLight.muted,

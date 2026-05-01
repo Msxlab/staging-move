@@ -20,15 +20,16 @@ function GlassTabBarBackground() {
       <View
         style={[
           StyleSheet.absoluteFill,
-          { backgroundColor: "rgba(10, 10, 15, 0.65)" },
+          // Warm umber #0E0A07 at 65% — matches `--bg` on web.
+          { backgroundColor: "rgba(14, 10, 7, 0.65)" },
         ]}
       />
-      {/* Top glow line */}
+      {/* Top glow line — rose, matches the brand pin glow. */}
       <LinearGradient
-        colors={["rgba(249,115,22,0.15)", "rgba(249,115,22,0.03)", "transparent"]}
+        colors={["rgba(212,132,106,0.18)", "rgba(212,132,106,0.04)", "transparent"]}
         style={styles.topGlow}
       />
-      {/* Glass top border */}
+      {/* Glass top border — warm cream alpha. */}
       <View style={styles.glassBorder} />
     </View>
   );
@@ -43,7 +44,8 @@ export default function TabsLayout() {
         tabBarStyle: styles.tabBar,
         tabBarBackground: () => <GlassTabBarBackground />,
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: "rgba(255,255,255,0.3)",
+        // Inactive cream-on-warm to match Edition VI text alphas.
+        tabBarInactiveTintColor: theme.colors.textTertiary,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
       }}
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(245, 241, 234, 0.08)",
   },
   tabLabel: {
     fontSize: 11,

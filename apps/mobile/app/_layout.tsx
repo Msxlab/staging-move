@@ -9,6 +9,20 @@ import { useAuthStore } from "@/lib/auth-store";
 import { theme } from "@/lib/theme";
 import { createQueryClient } from "@/lib/query-client";
 import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts as useFraunces,
+  Fraunces_400Regular,
+  Fraunces_400Regular_Italic,
+  Fraunces_500Medium,
+  Fraunces_600SemiBold,
+} from "@expo-google-fonts/fraunces";
+import {
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+} from "@expo-google-fonts/geist";
+import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
 import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -229,16 +243,34 @@ export default function RootLayout() {
   const [i18nHydrated, setI18nHydrated] = useState(false);
   const [queryClient] = useState(() => createQueryClient());
 
+  // Edition VI · Champagne & Rose. Fraunces is the display face (Locate*flow*
+  // wordmark, hero copy); Geist is the UI face. Both are loaded on first
+  // boot and the splash is held until they resolve so the auth screen never
+  // flashes a system fallback for the brand wordmark.
+  const [fontsLoaded] = useFraunces({
+    Fraunces_400Regular,
+    Fraunces_400Regular_Italic,
+    Fraunces_500Medium,
+    Fraunces_600SemiBold,
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+    GeistMono_400Regular,
+    GeistMono_500Medium,
+  });
+
   useEffect(() => {
     SplashScreen.hideAsync();
     void i18nReady.then(() => setI18nHydrated(true));
   }, []);
 
-  // Hold the splash until i18n is ready AND the animated splash finishes.
-  // Both guards must pass; otherwise the first frame flashes EN copy
-  // before the user's ES preference applies.
-  if (showSplash || !i18nHydrated) {
-    return <AnimatedSplash ready={i18nHydrated} onFinish={() => setShowSplash(false)} />;
+  // Hold the splash until i18n + fonts are ready AND the animated splash
+  // finishes. All three guards must pass; otherwise the first frame flashes
+  // either EN copy (i18n) or system fallback (fonts) on the brand wordmark.
+  const ready = i18nHydrated && fontsLoaded;
+  if (showSplash || !ready) {
+    return <AnimatedSplash ready={ready} onFinish={() => setShowSplash(false)} />;
   }
 
   return (
