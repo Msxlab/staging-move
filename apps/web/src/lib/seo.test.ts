@@ -21,7 +21,7 @@ describe("SEO helpers", () => {
     const seo = await import("./seo");
 
     expect(seo.isNoIndexEnvironment("https://preview-locateflow.vercel.app")).toBe(true);
-    expect(seo.isNoIndexEnvironment("https://locateflow.app")).toBe(false);
+    expect(seo.isNoIndexEnvironment("https://locateflow.com")).toBe(false);
   });
 
   it("treats local development hosts as noindex", async () => {
@@ -38,15 +38,15 @@ describe("SEO helpers", () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "http://localhost:3000");
     const seo = await import("./seo");
 
-    expect(seo.getCanonicalSiteUrl()).toBe("https://locateflow.app");
+    expect(seo.getCanonicalSiteUrl()).toBe("https://locateflow.com");
   });
 
   it("builds absolute URLs without leaking query strings from the base", async () => {
     vi.resetModules();
     const seo = await import("./seo");
 
-    expect(seo.absoluteUrl("/pricing", "https://locateflow.app?utm=bad")).toBe(
-      "https://locateflow.app/pricing",
+    expect(seo.absoluteUrl("/pricing", "https://locateflow.com?utm=bad")).toBe(
+      "https://locateflow.com/pricing",
     );
   });
 });

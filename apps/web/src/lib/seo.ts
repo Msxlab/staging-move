@@ -4,7 +4,7 @@ export const SITE_DESCRIPTION =
   "Keep a living list of every utility, bank, insurance, and subscription tied to your homes. Never lose track of who has your address again.";
 export const DEFAULT_OG_IMAGE = "/og-image.svg";
 
-const DEFAULT_PUBLIC_SITE_URL = "https://locateflow.app";
+const DEFAULT_PUBLIC_SITE_URL = "https://locateflow.com";
 const DEFAULT_LOCAL_SITE_URL = "http://localhost:3000";
 const STAGING_HOST_PATTERN = /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i;
 const LOCAL_HOST_PATTERN = /^(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/i;

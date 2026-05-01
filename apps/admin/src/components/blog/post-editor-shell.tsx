@@ -55,7 +55,7 @@ const inputClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20";
 
 const labelClass = "mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground";
-const PUBLIC_WEB_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.app").replace(/\/+$/, "");
+const PUBLIC_WEB_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.com").replace(/\/+$/, "");
 
 function toLocalInputValue(value: string | null): string {
   if (!value) return "";
@@ -545,7 +545,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                   value={form.canonicalUrl}
                   onChange={(e) => setForm((f) => ({ ...f, canonicalUrl: e.target.value }))}
                   className={inputClass}
-                  placeholder="https://locateflow.app/blog/post"
+                  placeholder="https://locateflow.com/blog/post"
                 />
               </div>
               <label className="flex items-center gap-2 text-sm text-foreground">

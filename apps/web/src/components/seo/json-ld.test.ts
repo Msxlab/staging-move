@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { faqPageSchema, softwareApplicationSchema, webSiteSchema } from "./json-ld";
 
 const ctx = {
-  siteUrl: "https://locateflow.app",
+  siteUrl: "https://locateflow.com",
   siteName: "LocateFlow",
-  logoUrl: "https://locateflow.app/logo.svg",
+  logoUrl: "https://locateflow.com/logo.svg",
 };
 
 describe("JSON-LD schema builders", () => {
