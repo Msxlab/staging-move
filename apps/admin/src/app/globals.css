@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -63,9 +61,6 @@
   --shadow-rose: 0 0 20px rgba(212, 132, 106, 0.28);
   --shadow-foil: 0 0 30px rgba(229, 201, 168, 0.16);
 
-  --font-display: "Fraunces", "Didot", Georgia, serif;
-  --font-sans:    "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono:    "Geist Mono", "JetBrains Mono", ui-monospace, Consolas, monospace;
 }
 
 @layer base {
@@ -378,7 +373,7 @@
   transform: translateY(-1px);
 }
 .kpi-foil .kpi-value {
-  font-family: var(--fraunces), Didot, Georgia, serif;
+  font-family: var(--font-display), Didot, Georgia, serif;
   font-weight: 300;
   font-size: 2rem;
   letter-spacing: -0.02em;

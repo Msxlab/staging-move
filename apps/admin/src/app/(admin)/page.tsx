@@ -283,7 +283,7 @@ export default async function DashboardPage() {
                   <div className="text-right shrink-0">
                     <p
                       className="text-sm font-semibold text-foreground"
-                      style={{ fontFamily: "var(--fraunces), Georgia, serif", fontWeight: 400 }}
+                      style={{ fontFamily: "var(--font-display), Georgia, serif", fontWeight: 400 }}
                     >
                       {fmtUsd(row.mrr)}
                     </p>

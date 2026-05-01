@@ -151,10 +151,10 @@ const config: Config = {
         "2xl": "28px",
       },
       fontFamily: {
-        sans: ["Geist", "Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
-        display: ["Fraunces", "Didot", "Georgia", "serif"],
-        serif: ["Fraunces", "Didot", "Georgia", "serif"],
-        mono: ["Geist Mono", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
+        sans: ["var(--font-sans)", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+        display: ["var(--font-display)", "Didot", "Georgia", "serif"],
+        serif: ["var(--font-display)", "Didot", "Georgia", "serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "Consolas", "Courier New", "monospace"],
       },
       fontSize: {
         "brand-xs": ["11px", { lineHeight: "16px" }],

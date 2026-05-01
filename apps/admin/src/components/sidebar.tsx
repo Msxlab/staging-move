@@ -226,7 +226,7 @@ export function Sidebar() {
         <div className="flex flex-col leading-none">
           <span
             className="text-[1.1rem] tracking-[-0.025em] text-foreground"
-            style={{ fontFamily: "var(--fraunces), Didot, Georgia, serif", fontWeight: 400 }}
+            style={{ fontFamily: "var(--font-display), Didot, Georgia, serif", fontWeight: 400 }}
           >
             Locate<span className="foil-text">flow</span>
           </span>

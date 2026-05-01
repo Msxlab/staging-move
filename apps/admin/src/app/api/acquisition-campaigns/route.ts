@@ -19,6 +19,10 @@ function normalizeCode(value: unknown) {
     .replace(/[^A-Z0-9_-]/g, "");
 }
 
+function normalizeOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 function campaignData(body: any, adminId?: string) {
   const accessType = body.accessType === "FREE_ACCESS"
     ? "FREE_ACCESS"
@@ -44,7 +48,7 @@ function campaignData(body: any, adminId?: string) {
     billingInterval,
     trialDays: accessType === "FREE_TRIAL" ? Number(body.trialDays || INDIVIDUAL_ANNUAL_TRIAL_DAYS) : null,
     freeAccessDays: accessType === "FREE_ACCESS" ? Number(body.freeAccessDays || 30) : null,
-    stripePriceId: paymentRequired ? (body.stripePriceId || null) : null,
+    stripePriceId: paymentRequired ? normalizeOptionalString(body.stripePriceId) : null,
     displayPriceLabel: displayPriceLabel || (paymentRequired ? null : INDIVIDUAL_ANNUAL_PRICE_LABEL),
     requiresPaymentMethod: paymentRequired,
     autoRenew: paymentRequired,

@@ -42,7 +42,7 @@ export function AdminPageHeader({
         ) : null}
         <h1
           className="text-3xl md:text-4xl font-light tracking-tight text-foreground"
-          style={{ fontFamily: "var(--fraunces), Didot, Georgia, serif" }}
+          style={{ fontFamily: "var(--font-display), Didot, Georgia, serif" }}
         >
           {emMatch ? (
             <>
