@@ -65,7 +65,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const segments = useSegments();
   const { token, user, loading, hydrate, refreshUser, setSession } = useAuthStore();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
-  const handledOAuthCodes = useRef<Set<string>>(new Set());
 
   // 1) On mount, load the persisted token from SecureStore.
   useEffect(() => {

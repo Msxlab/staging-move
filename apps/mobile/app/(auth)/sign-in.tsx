@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
-  TouchableOpacity, Linking,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Mail, Lock, ArrowRight } from "lucide-react-native";
@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
-import { api, API_URL } from "@/lib/api";
+import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { registerForPushNotifications } from "@/lib/push";
+import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -31,10 +32,9 @@ export default function SignInScreen() {
   const [mfaCode, setMfaCode] = useState("");
   const [requiresMfa, setRequiresMfa] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState("");
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
-
-  const webBase = API_URL.replace(/\/api\/?$/, "");
 
   useEffect(() => {
     api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
@@ -108,14 +108,14 @@ export default function SignInScreen() {
               title={googleReady ? t("auth.continueWithGoogle") : t("auth.googleUnavailable")}
               variant="outline"
               onPress={() => openOAuth("google")}
-              disabled={!googleReady}
+              disabled={!googleReady || Boolean(oauthLoading)}
               style={styles.oauthBtn}
             />
             <Button
               title={appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
               variant="primary"
               onPress={() => openOAuth("apple")}
-              disabled={!appleReady}
+              disabled={!appleReady || Boolean(oauthLoading)}
               style={{ ...styles.oauthBtn, backgroundColor: "#000" }}
             />
 
