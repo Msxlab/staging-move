@@ -55,7 +55,13 @@
     "checkEmail": "Check your email",
     "checkEmailDescription": "We sent a verification link to {{email}}.",
     "requiredAcknowledgements": "Required acknowledgements",
-    "requiredAcknowledgementsDescription": "Accept these before creating your LocateFlow account."
+    "requiredAcknowledgementsDescription": "Accept these before creating your LocateFlow account.",
+    "verifyEmail_title": "Verify your email first",
+    "verifyEmail_body": "We need to confirm your email before saving changes. Tap the link in your inbox, then come back here.",
+    "verifyEmail_bodyFor": "Saving {{context}} requires a verified email. Tap the link in your inbox, then come back here.",
+    "verifyEmail_resend": "Resend verification email",
+    "verifyEmail_sentTitle": "Email sent",
+    "verifyEmail_sentBody": "We sent a fresh verification link to {{email}}."
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -121,7 +127,10 @@
     "actualIncome": "Actual income",
     "plannedExpenses": "Planned expenses",
     "actualExpenses": "Actual expenses",
-    "notes": "Notes"
+    "notes": "Notes",
+    "gate_subscriptionRequired_title": "Budgeting is a paid feature",
+    "gate_subscriptionRequired_body": "Creating and saving budgets needs an active LocateFlow subscription. You can still see this month's projections from the budget overview.",
+    "gate_subscriptionRequired_cta": "View plans"
   },
   "settings": {
     "title": "Settings",
@@ -240,5 +249,24 @@
     "services": "No services yet",
     "providers": "No providers match",
     "tasks": "You're all caught up"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "section_email": "Email",
+    "section_push": "Push",
+    "section_email_hint": "Sent to your account email.",
+    "section_push_hint": "Delivered to this device. Requires the system permission.",
+    "email_taskReminders_label": "Task reminders",
+    "email_taskReminders_desc": "Get an email when an open task is due soon.",
+    "email_weeklyDigest_label": "Weekly digest",
+    "email_weeklyDigest_desc": "Sunday recap of upcoming tasks and bills.",
+    "email_moveAlerts_label": "Move alerts",
+    "email_moveAlerts_desc": "Important changes on your active moving plan.",
+    "push_taskReminders_label": "Task reminders",
+    "push_taskReminders_desc": "Push the same task reminders to this device.",
+    "push_moveAlerts_label": "Move alerts",
+    "push_moveAlerts_desc": "Push notifications for active-move milestones.",
+    "push_streakReminders_label": "Streak reminders",
+    "push_streakReminders_desc": "Nudges to keep your weekly checklist streak alive."
   }
 }

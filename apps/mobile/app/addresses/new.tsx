@@ -22,6 +22,7 @@ import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type 
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -131,6 +132,8 @@ export default function NewAddressScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <EmailVerificationBanner context={t("addresses.title")} />
+
         {/* Type Selector */}
         <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
         <View style={styles.chipRow}>

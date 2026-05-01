@@ -9,6 +9,7 @@ import {
 } from "@/lib/legal";
 import { exchangeMobileOAuthCallbackUrl } from "@/lib/mobile-oauth-handoff";
 import { generatePkcePair, persistPkceVerifier } from "@/lib/pkce";
+import { captureException } from "@/lib/sentry";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -106,8 +107,18 @@ async function persistPendingLegalAcceptance() {
   const pendingLegalConsents = getPendingLegalConsents();
   if (!hasRequiredLegalConsents(pendingLegalConsents)) return;
 
-  await api.post("/api/legal/acceptance", { legalConsents: pendingLegalConsents }).catch(() => null);
-  setPendingLegalConsents(null);
+  // Only drop the pending blob when the server actually acknowledges.
+  // Previously this swallowed every failure and cleared the cache, which
+  // broke the consent paper trail under transient backend errors.
+  const res = await api.post("/api/legal/acceptance", { legalConsents: pendingLegalConsents });
+  if (res.error) {
+    captureException(new Error(`legal acceptance post failed: ${res.error}`), {
+      area: "mobile-oauth",
+      step: "persistPendingLegalAcceptance",
+    });
+    return;
+  }
+  await setPendingLegalConsents(null);
 }
 
 async function exchangeOAuthUrl(url: string, setSession: SetSession): Promise<MobileOAuthResult> {

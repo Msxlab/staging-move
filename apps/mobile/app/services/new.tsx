@@ -32,6 +32,7 @@ import { theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import {
   getRecommendedProviders,
   CATEGORY_META,
@@ -322,6 +323,10 @@ export default function NewServiceScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>{mode === "browse" ? "Add Services" : "Manual Add"}</Text>
         <View style={{ width: 44 }} />
+      </View>
+
+      <View style={{ paddingHorizontal: 20 }}>
+        <EmailVerificationBanner context={t("services.title")} />
       </View>
 
       {/* Mode toggle */}

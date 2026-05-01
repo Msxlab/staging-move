@@ -42,6 +42,7 @@ import { AddressAutocompleteField } from "@/components/address/address-autocompl
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LegalConsentPanel } from "@/components/legal/LegalConsentPanel";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
 import { useAuthStore } from "@/lib/auth-store";
@@ -779,6 +780,9 @@ export default function OnboardingScreen() {
               <View style={styles.stepIcon}><MapPin size={28} color={theme.colors.primary} /></View>
               <Text style={styles.stepTitle}>{t("onboarding.address_title")}</Text>
               <Text style={styles.stepDesc}>{t("onboarding.address_description")}</Text>
+              <View style={{ width: "100%", marginTop: 16 }}>
+                <EmailVerificationBanner context={t("addresses.title")} />
+              </View>
 
               <Input label={t("addresses.nickname")} placeholder="e.g. Home, Apartment" value={address.nickname}
                 onChangeText={(v: string) => updateAddress("nickname", v)} containerStyle={{ marginTop: 24, width: "100%" }} />

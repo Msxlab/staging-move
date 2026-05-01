@@ -98,18 +98,25 @@ export class ApiClient {
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     if (response.status === 401) {
       await this.config.onUnauthorized?.();
-      return { error: "Unauthorized" };
+      return { error: "Unauthorized", code: "UNAUTHORIZED" };
     }
 
     if (response.status === 429) {
       const retryAfter = response.headers.get("Retry-After");
-      return { error: `Rate limited. Retry after ${retryAfter || "60"} seconds.` };
+      return {
+        error: `Rate limited. Retry after ${retryAfter || "60"} seconds.`,
+        code: "RATE_LIMITED",
+      };
     }
 
     if (!response.ok) {
       try {
         const body = await response.json();
-        return { error: buildApiErrorMessage(response.status, body) };
+        const code = typeof body?.code === "string" ? body.code : undefined;
+        return {
+          error: buildApiErrorMessage(response.status, body),
+          ...(code ? { code } : {}),
+        };
       } catch {
         return { error: `Request failed with status ${response.status}` };
       }

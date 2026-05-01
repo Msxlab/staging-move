@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Check } from "lucide-react-native";
+import { ArrowLeft, Check, Crown } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -23,10 +23,17 @@ function getCurrentMonthValue() {
   return `${now.getFullYear()}-${month}-01`;
 }
 
+// Server-side gate code returned by /api/budget POST when the caller is on a
+// free trial / no active subscription. We pre-flight from /api/profile so the
+// UI can explain the gate inline instead of bouncing the user off a generic
+// 403 error after they fill out the form.
+const SUBSCRIPTION_GATE_CODE = "SUBSCRIPTION_REQUIRED";
+
 export default function NewBudgetScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
+  const [subscriptionRequired, setSubscriptionRequired] = useState<boolean | null>(null);
   const [form, setForm] = useState({
     month: getCurrentMonthValue(),
     year: String(new Date().getFullYear()),
@@ -36,6 +43,34 @@ export default function NewBudgetScreen() {
     actualExpenses: "",
     notes: "",
   });
+
+  // Pre-flight subscription check. The backend rejects POST /api/budget with
+  // SUBSCRIPTION_REQUIRED unless the user has an active paid plan, so we read
+  // the same shape from /api/profile.subscription and surface it inline.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await api.get<any>("/api/profile");
+      if (cancelled) return;
+      if (res.error) {
+        // Don't block the form on a profile read error — the POST will still
+        // surface SUBSCRIPTION_REQUIRED if the user genuinely lacks a plan.
+        setSubscriptionRequired(false);
+        return;
+      }
+      const sub = res.data?.subscription || {};
+      const plan = typeof sub.plan === "string" ? sub.plan : null;
+      const status = typeof sub.status === "string" ? sub.status : null;
+      const premiumUntil = sub.premiumUntil ? new Date(sub.premiumUntil) : null;
+      const hasPaidPlan =
+        Boolean(plan && plan !== "FREE_TRIAL") &&
+        (status === "ACTIVE" || (premiumUntil && premiumUntil.getTime() > Date.now()));
+      setSubscriptionRequired(!hasPaidPlan);
+    })().catch(() => {
+      if (!cancelled) setSubscriptionRequired(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const update = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -71,6 +106,12 @@ export default function NewBudgetScreen() {
 
     if (res.error) {
       hapticError();
+      // Translate the backend gate into the same inline upsell so a user who
+      // signed up for paid mid-flow doesn't get a generic alert.
+      if (res.code === SUBSCRIPTION_GATE_CODE) {
+        setSubscriptionRequired(true);
+        return;
+      }
       Alert.alert(t("common.retry"), res.error);
       return;
     }
@@ -78,6 +119,8 @@ export default function NewBudgetScreen() {
     hapticSuccess();
     router.back();
   };
+
+  const formDisabled = saving || subscriptionRequired === true;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -90,6 +133,25 @@ export default function NewBudgetScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {subscriptionRequired === true ? (
+          <View style={styles.gateCard}>
+            <View style={styles.gateIcon}>
+              <Crown size={18} color={theme.colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.gateTitle}>{t("budget.gate_subscriptionRequired_title")}</Text>
+              <Text style={styles.gateBody}>{t("budget.gate_subscriptionRequired_body")}</Text>
+              <TouchableOpacity
+                style={styles.gateCta}
+                onPress={() => router.push("/settings/subscription")}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.gateCtaText}>{t("budget.gate_subscriptionRequired_cta")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+
         <Text style={styles.label}>{t("budget.month")} *</Text>
         <TextInput
           style={styles.input}
@@ -158,9 +220,9 @@ export default function NewBudgetScreen() {
         />
 
         <TouchableOpacity
-          style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+          style={[styles.saveBtn, formDisabled && { opacity: 0.6 }]}
           onPress={handleSave}
-          disabled={saving}
+          disabled={formDisabled}
           activeOpacity={0.7}
         >
           {saving ? (
@@ -208,4 +270,22 @@ const styles = StyleSheet.create({
     paddingVertical: 16, marginTop: 28, ...theme.shadow.glow,
   },
   saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  gateCard: {
+    flexDirection: "row", gap: 12, padding: 14, borderRadius: theme.radius.xl,
+    borderWidth: 1, borderColor: "rgba(249,115,22,0.3)",
+    backgroundColor: theme.colors.primaryFaded, marginBottom: 16,
+  },
+  gateIcon: {
+    width: 36, height: 36, borderRadius: 12,
+    backgroundColor: "rgba(249,115,22,0.15)",
+    alignItems: "center", justifyContent: "center",
+  },
+  gateTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },
+  gateBody: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 4, lineHeight: 17 },
+  gateCta: {
+    alignSelf: "flex-start", marginTop: 10,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.primary,
+  },
+  gateCtaText: { fontSize: 12, fontWeight: "700", color: "#fff" },
 });
