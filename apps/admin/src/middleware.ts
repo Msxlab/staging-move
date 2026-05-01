@@ -149,11 +149,11 @@ export function buildCspHeader(nonce: string, isDev: boolean): string {
   const scriptSrc = isDev
     ? `'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic'`
     : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
-  // style-src nonce + `'unsafe-inline'` as CSP2 fallback only. CSP3
-  // browsers IGNORE `'unsafe-inline'` when a nonce is present, so the
-  // effective directive in modern browsers is nonce-only — which is
-  // exactly the hardening we want. Google Fonts is allowed explicitly.
-  const styleSrc = `'self' 'nonce-${nonce}' 'unsafe-inline' https://fonts.googleapis.com`;
+  // Admin UI libraries emit small inline style blocks/attributes during
+  // hydration. Keep scripts nonce-locked, but allow inline styles
+  // explicitly so CSP3 browsers do not ignore the fallback because of a
+  // style nonce.
+  const styleSrc = `'self' 'unsafe-inline' https://fonts.googleapis.com`;
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
