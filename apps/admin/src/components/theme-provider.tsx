@@ -10,13 +10,14 @@ import { useEffect, useState, type ReactNode } from "react";
  * the web and admin subdomains so the storage key is intentionally
  * admin-scoped.
  */
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children, nonce }: { children: ReactNode; nonce?: string }) {
   return (
     <NextThemesProvider
       attribute="class"
       defaultTheme="dark"
       enableSystem
       disableTransitionOnChange
+      nonce={nonce}
       storageKey="locateflow-admin-theme"
       themes={["light", "dark", "system"]}
     >

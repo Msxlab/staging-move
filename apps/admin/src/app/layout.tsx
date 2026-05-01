@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -48,6 +49,7 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
@@ -57,7 +59,7 @@ export default async function RootLayout({
     >
       <body className="min-h-screen bg-background font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <ThemeProvider>
+          <ThemeProvider nonce={nonce}>
             {children}
             <Toaster position="top-right" richColors />
           </ThemeProvider>

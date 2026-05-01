@@ -158,7 +158,7 @@ export default async function RootLayout({
         {!BLOCK_INDEXING ? <SiteSchemas /> : null}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
-            <ThemeProvider>
+            <ThemeProvider nonce={nonce}>
               <SessionTracker />
               <GoogleAnalytics nonce={nonce} />
               {children}
