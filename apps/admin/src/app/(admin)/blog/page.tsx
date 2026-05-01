@@ -47,6 +47,12 @@ const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> =
   ARCHIVED: Archive,
 };
 
+const PUBLIC_WEB_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://locateflow.com").replace(/\/+$/, "");
+
+function publicPostUrl(slug: string, locale: string): string {
+  return `${PUBLIC_WEB_URL}/blog/${slug}${locale === "es" ? "?locale=es" : ""}`;
+}
+
 function isStatus(value: string | undefined): value is Exclude<StatusFilter, "ALL"> {
   return value === "DRAFT" || value === "SCHEDULED" || value === "PUBLISHED" || value === "ARCHIVED";
 }
@@ -327,14 +333,15 @@ export default async function BlogListPage({
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex items-center gap-1">
                         {p.status === "PUBLISHED" ? (
-                          <Link
-                            href={`/blog/${p.slug}${p.locale === "es" ? "?locale=es" : ""}`}
+                          <a
+                            href={publicPostUrl(p.slug, p.locale)}
                             target="_blank"
+                            rel="noopener noreferrer"
                             className="rounded p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
                             aria-label="Open public post"
                           >
                             <Eye className="h-4 w-4" />
-                          </Link>
+                          </a>
                         ) : null}
                         <Link
                           href={`/blog/${p.id}/edit`}

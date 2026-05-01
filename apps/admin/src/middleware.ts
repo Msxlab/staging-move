@@ -206,8 +206,11 @@ function nextWithCsp(request: NextRequest): NextResponse {
   return applySecurityHeaders(response);
 }
 
-// Request body size limit (5MB for backup imports, 1MB for regular JSON)
+// Request body size limit (1MB for regular JSON, 10MB for multipart uploads,
+// 50MB for backup imports). Blog images are capped at 5MB in the route
+// itself, but multipart overhead can push the request above the file size.
 const MAX_JSON_BODY = 1 * 1024 * 1024; // 1MB
+const MAX_UPLOAD_BODY = 10 * 1024 * 1024; // 10MB
 const MAX_BACKUP_BODY = 50 * 1024 * 1024; // 50MB (backups can be large)
 
 function applyBodySizeLimit(req: NextRequest): NextResponse | null {
@@ -221,8 +224,10 @@ function applyBodySizeLimit(req: NextRequest): NextResponse | null {
   const size = parseInt(contentLength, 10);
   if (isNaN(size)) return null;
 
+  const contentType = req.headers.get("content-type") || "";
   const isBackupRoute = pathname.includes("/backup");
-  const limit = isBackupRoute ? MAX_BACKUP_BODY : MAX_JSON_BODY;
+  const isUpload = contentType.includes("multipart/form-data");
+  const limit = isBackupRoute ? MAX_BACKUP_BODY : isUpload ? MAX_UPLOAD_BODY : MAX_JSON_BODY;
 
   if (size > limit) {
     return NextResponse.json(

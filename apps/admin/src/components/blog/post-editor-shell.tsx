@@ -199,7 +199,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           title: form.title.trim(),
           slug: form.slug.trim(),
           locale: form.locale,
-          excerpt: form.excerpt,
+          excerpt: form.excerpt.trim() || undefined,
           contentJson: form.contentJson || emptyDoc,
           seoTitle: form.seoTitle.trim() || null,
           seoDescription: form.seoDescription.trim() || null,
