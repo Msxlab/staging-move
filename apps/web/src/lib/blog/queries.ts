@@ -84,6 +84,8 @@ export async function listPublicPosts(opts: {
 }
 
 export interface BlogPostDetail extends BlogListItem {
+  id: string;
+  categoryId: string | null;
   contentHtml: string;
   updatedAt: string;
   ogImageAlt: string | null;
@@ -118,6 +120,8 @@ export async function getPublicPostBySlug(
   if (!post) return null;
 
   return {
+    id: post.id,
+    categoryId: post.categoryId,
     slug: post.slug,
     locale: post.locale,
     title: post.title,
@@ -178,4 +182,86 @@ export async function listPublishedLocalesForSlug(slug: string): Promise<string[
     select: { locale: true },
   });
   return Array.from(new Set(posts.map((post) => post.locale)));
+}
+
+/**
+ * Up to `limit` other published posts for the article footer's
+ * "Keep reading" rail. Same-category posts win first; if the post has
+ * no category (or that bucket is empty) we fall back to the most recent
+ * posts in the same locale so the rail is never empty on a live blog.
+ */
+export async function listRelatedPosts(opts: {
+  excludePostId: string;
+  locale: string;
+  categoryId?: string | null;
+  limit?: number;
+}): Promise<BlogListItem[]> {
+  const limit = Math.min(Math.max(opts.limit ?? 3, 1), 8);
+  const baseWhere = {
+    status: "PUBLISHED" as const,
+    publishedAt: { lte: NOW() },
+    noIndex: false,
+    deletedAt: null,
+    locale: opts.locale,
+  };
+
+  const select = {
+    id: true,
+    slug: true,
+    locale: true,
+    title: true,
+    excerpt: true,
+    readingMinutes: true,
+    publishedAt: true,
+    ogImageKey: true,
+    category: { select: { slug: true, name: true } },
+  } as const;
+
+  type Row = {
+    id: string;
+    slug: string;
+    locale: string;
+    title: string;
+    excerpt: string;
+    readingMinutes: number;
+    publishedAt: Date | null;
+    ogImageKey: string | null;
+    category: { slug: string; name: string } | null;
+  };
+
+  let posts: Row[] = [];
+
+  if (opts.categoryId) {
+    posts = (await prisma.blogPost.findMany({
+      where: { ...baseWhere, categoryId: opts.categoryId, id: { not: opts.excludePostId } },
+      select,
+      orderBy: { publishedAt: "desc" },
+      take: limit,
+    })) as Row[];
+  }
+
+  if (posts.length < limit) {
+    const exclude = new Set<string>([opts.excludePostId, ...posts.map((p) => p.id)]);
+    const filler = (await prisma.blogPost.findMany({
+      where: {
+        ...baseWhere,
+        id: { notIn: Array.from(exclude) },
+      },
+      select,
+      orderBy: { publishedAt: "desc" },
+      take: limit - posts.length,
+    })) as Row[];
+    posts = [...posts, ...filler];
+  }
+
+  return posts.map((p) => ({
+    slug: p.slug,
+    locale: p.locale,
+    title: p.title,
+    excerpt: p.excerpt,
+    readingMinutes: p.readingMinutes,
+    publishedAt: p.publishedAt!.toISOString(),
+    ogImageUrl: safeOgUrl(p.ogImageKey),
+    category: p.category ? { slug: p.category.slug, name: p.category.name } : null,
+  }));
 }

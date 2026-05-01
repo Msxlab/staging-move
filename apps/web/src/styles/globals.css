@@ -989,3 +989,137 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+/* ----------------------------------------------------------------------
+ * Blog article prose — Edition VI palette overrides on top of
+ * @tailwindcss/typography. The `prose` base gives us spacing and
+ * sensible defaults; this layer retunes colors to the site theme
+ * (rose primary, foil quotes, Fraunces headings) so a published
+ * article reads like part of the marketing surface, not a foreign
+ * subdomain. Only color/typography is re-themed — sizing, list
+ * markers, table chrome, and code styling stay on Tailwind defaults.
+ * -------------------------------------------------------------------- */
+.blog-prose {
+  --tw-prose-body: hsl(var(--foreground) / 0.9);
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-lead: hsl(var(--muted-foreground));
+  --tw-prose-links: hsl(var(--primary));
+  --tw-prose-bold: hsl(var(--foreground));
+  --tw-prose-counters: hsl(var(--muted-foreground));
+  --tw-prose-bullets: hsl(var(--primary) / 0.55);
+  --tw-prose-hr: hsl(var(--border));
+  --tw-prose-quotes: hsl(var(--foreground));
+  --tw-prose-quote-borders: hsl(var(--primary) / 0.5);
+  --tw-prose-captions: hsl(var(--muted-foreground));
+  --tw-prose-code: hsl(var(--foreground));
+  --tw-prose-pre-code: hsl(var(--foreground));
+  --tw-prose-pre-bg: hsl(var(--muted));
+  --tw-prose-th-borders: hsl(var(--border));
+  --tw-prose-td-borders: hsl(var(--border));
+
+  --tw-prose-invert-body: hsl(var(--foreground) / 0.92);
+  --tw-prose-invert-headings: hsl(var(--foreground));
+  --tw-prose-invert-lead: hsl(var(--muted-foreground));
+  --tw-prose-invert-links: hsl(var(--primary));
+  --tw-prose-invert-bold: hsl(var(--foreground));
+  --tw-prose-invert-counters: hsl(var(--muted-foreground));
+  --tw-prose-invert-bullets: hsl(var(--primary) / 0.7);
+  --tw-prose-invert-hr: hsl(var(--border));
+  --tw-prose-invert-quotes: hsl(var(--foreground));
+  --tw-prose-invert-quote-borders: hsl(var(--primary) / 0.6);
+  --tw-prose-invert-captions: hsl(var(--muted-foreground));
+  --tw-prose-invert-code: hsl(var(--foreground));
+  --tw-prose-invert-pre-code: hsl(var(--foreground));
+  --tw-prose-invert-pre-bg: hsl(var(--muted));
+  --tw-prose-invert-th-borders: hsl(var(--border));
+  --tw-prose-invert-td-borders: hsl(var(--border));
+
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+.blog-prose :where(h2, h3, h4) {
+  font-family: var(--font-fraunces, "Fraunces"), Didot, Georgia, serif;
+  letter-spacing: -0.015em;
+}
+
+.blog-prose :where(h2) {
+  margin-top: 2.5em;
+  font-weight: 600;
+}
+
+.blog-prose :where(h3) {
+  margin-top: 2em;
+  font-weight: 600;
+}
+
+.blog-prose :where(a) {
+  font-weight: 500;
+  text-decoration-color: hsl(var(--primary) / 0.5);
+  text-underline-offset: 3px;
+  transition: color 150ms ease, text-decoration-color 150ms ease;
+}
+
+.blog-prose :where(a:hover) {
+  color: hsl(var(--primary));
+  text-decoration-color: hsl(var(--primary));
+}
+
+.blog-prose :where(blockquote) {
+  border-left-width: 3px;
+  border-radius: 0.25rem 0.5rem 0.5rem 0.25rem;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary) / 0.06) 0%,
+    transparent 100%
+  );
+  padding: 1.25rem 1.5rem;
+  font-style: italic;
+  font-family: var(--font-fraunces, "Fraunces"), Didot, Georgia, serif;
+}
+
+.blog-prose :where(blockquote p:first-of-type)::before,
+.blog-prose :where(blockquote p:last-of-type)::after {
+  content: none;
+}
+
+.blog-prose :where(figure) {
+  margin: 2.5em 0;
+}
+
+.blog-prose :where(img) {
+  border-radius: 1rem;
+  border: 1px solid hsl(var(--border));
+}
+
+.blog-prose :where(figcaption) {
+  text-align: center;
+  font-family: var(--font-geist-mono, ui-monospace), monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.blog-prose :where(code):not(pre code) {
+  background: hsl(var(--muted));
+  padding: 0.15em 0.45em;
+  border-radius: 0.35rem;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.blog-prose :where(code)::before,
+.blog-prose :where(code)::after {
+  content: none;
+}
+
+.blog-prose :where(hr) {
+  margin: 3em auto;
+  width: 4rem;
+  border-top-width: 2px;
+  border-color: hsl(var(--primary) / 0.4);
+}
+
+.blog-prose :where(table) {
+  font-size: 0.95em;
+}

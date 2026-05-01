@@ -1,41 +1,42 @@
 /**
- * Public /blog/<slug> — detail page.
+ * Public /blog/<slug> — detail page (magazine layout).
  *
  * Server component, ISR'd at 1 hour with on-demand revalidation when
  * the admin publishes/unpublishes. Renders the sanitized HTML
  * (already cleaned at write time), emits per-post JSON-LD (Article +
- * Breadcrumb), and sets canonical + hreflang.
+ * Breadcrumb), sets canonical + hreflang, and surfaces a "Keep
+ * reading" rail of category-related posts so the visit doesn't
+ * dead-end at the article footer.
  */
 
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getLocale } from "next-intl/server";
 import { isBlogLocale } from "@locateflow/shared";
 import {
   getPublicPostBySlug,
   listPublishedLocalesForSlug,
   listPublishedSlugs,
+  listRelatedPosts,
 } from "@/lib/blog/queries";
-import { blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
+import { blogHreflangUrls, blogPostPath, blogPostUrl } from "@/lib/blog/urls";
 import {
   JsonLd,
   articleSchema,
   breadcrumbSchema,
 } from "@/components/seo/json-ld";
 import { BlogViewTracker } from "@/components/blog/view-tracker";
+import { Button } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/seo";
 
 export const revalidate = 3600;
 
 export async function generateStaticParams() {
-  // Pre-render the most recent posts at build time. Older posts still
-  // resolve at request time via ISR — `dynamicParams` defaults to
-  // true, so anything outside this list rebuilds on demand.
   try {
     const slugs = await listPublishedSlugs(200);
-    // De-duplicate by slug (different locales share the URL).
     const unique = Array.from(new Map(slugs.map((s) => [s.slug, s])).values());
     return unique.map((s) => ({ slug: s.slug }));
   } catch {
@@ -98,6 +99,14 @@ export async function generateMetadata({
   };
 }
 
+function formatDate(value: string, locale: string): string {
+  return new Date(value).toLocaleDateString(locale, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export default async function BlogPostPage({
   params,
   searchParams,
@@ -123,8 +132,16 @@ export default async function BlogPostPage({
   };
   const inLanguage = post.locale === "es" ? "es-US" : "en-US";
 
+  // Related posts — same locale, prefer same category, fall back to recent.
+  const related = await listRelatedPosts({
+    excludePostId: post.id,
+    locale: post.locale,
+    categoryId: post.categoryId,
+    limit: 3,
+  }).catch(() => []);
+
   return (
-    <main className="max-w-3xl mx-auto px-4 py-12">
+    <article>
       <BlogViewTracker slug={post.slug} locale={post.locale} />
       <JsonLd
         id="ld-article"
@@ -148,75 +165,162 @@ export default async function BlogPostPage({
         ])}
       />
 
-      <nav className="text-xs text-zinc-500 mb-6" aria-label="Breadcrumb">
-        <Link href="/" className="hover:underline">
-          Home
-        </Link>{" "}
-        ·{" "}
-        <Link href="/blog" className="hover:underline">
-          Blog
-        </Link>
-      </nav>
-
-      <header className="mb-8">
-        {post.category ? (
-          <span className="text-xs uppercase tracking-wide text-zinc-500">
-            {post.category.name}
-          </span>
-        ) : null}
-        <h1 className="mt-1 text-4xl font-semibold tracking-tight leading-tight">
-          {post.title}
-        </h1>
-        <p className="mt-3 text-base text-zinc-600 dark:text-zinc-400">
-          {post.excerpt}
-        </p>
-        <p className="mt-4 text-xs text-zinc-500">
-          By {post.author.name} · {new Date(post.publishedAt).toLocaleDateString(locale, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          })}{" "}
-          · {post.readingMinutes} min read
-        </p>
+      {/* Article header — narrow column, magazine-grade typography */}
+      <header className="border-b border-border/60 bg-gradient-to-b from-primary/[0.04] to-transparent">
+        <div className="container max-w-3xl py-12 sm:py-16">
+          <nav className="mb-8 flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground" aria-label="Breadcrumb">
+            <Link href="/blog" className="inline-flex items-center gap-1.5 transition hover:text-primary">
+              <ArrowLeft className="h-3 w-3" />
+              All stories
+            </Link>
+            {post.category ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="text-primary/80">{post.category.name}</span>
+              </>
+            ) : null}
+          </nav>
+          <h1 className="font-display text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-4xl md:text-5xl">
+            {post.title}
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            {post.excerpt}
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold uppercase text-primary"
+              >
+                {post.author.name.slice(0, 1)}
+              </span>
+              <span className="font-medium text-foreground">{post.author.name}</span>
+            </span>
+            <span aria-hidden="true">·</span>
+            <time dateTime={post.publishedAt}>{formatDate(post.publishedAt, locale)}</time>
+            <span aria-hidden="true">·</span>
+            <span>{post.readingMinutes} min read</span>
+          </div>
+        </div>
       </header>
 
+      {/* Cover image — full-bleed but capped so the article retains its column rhythm */}
       {post.ogImageUrl ? (
-        <div className="aspect-[1200/630] relative overflow-hidden rounded-lg mb-10 bg-zinc-100 dark:bg-zinc-800">
-          <Image
-            src={post.ogImageUrl}
-            alt={post.ogImageAlt ?? post.title}
-            fill
-            priority
-            sizes="(min-width: 1024px) 768px, 100vw"
-            className="object-cover"
-          />
+        <div className="container max-w-5xl pt-8 sm:pt-12">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-3xl bg-card/40">
+            <Image
+              src={post.ogImageUrl}
+              alt={post.ogImageAlt ?? post.title}
+              fill
+              priority
+              sizes="(min-width: 1024px) 960px, 100vw"
+              className="object-cover"
+            />
+          </div>
         </div>
       ) : null}
 
-      {/*
-        contentHtml was sanitized at write time by `renderBlogContent`
-        in the admin pipeline (Tiptap JSON → HTML → sanitize-html
-        whitelist → DB). Injecting it here is safe because no public
-        write path can put unsanitized HTML in the column.
-      */}
-      <article
-        className="prose prose-zinc dark:prose-invert max-w-none"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: post.contentHtml }}
-      />
+      {/* Body — sanitized HTML rendered into our prose styles. The
+          `blog-prose` class is defined in globals.css with rose-tinted
+          links, foil-toned blockquotes, and Fraunces headings to match
+          the rest of the marketing surface. */}
+      <div className="container max-w-3xl py-12 sm:py-16">
+        <div
+          className="blog-prose prose prose-zinc max-w-none dark:prose-invert"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+        />
 
-      {post.tags.length > 0 ? (
-        <footer className="mt-12 pt-6 border-t flex flex-wrap gap-2 text-xs">
-          {post.tags.map((t) => (
-            <span
-              key={t.slug}
-              className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-            >
-              {t.name}
+        {post.tags.length > 0 ? (
+          <div className="mt-14 flex flex-wrap items-center gap-2 border-t border-border pt-8">
+            <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              Tags
             </span>
-          ))}
-        </footer>
+            {post.tags.map((t) => (
+              <span
+                key={t.slug}
+                className="rounded-full border border-border bg-card/60 px-3 py-1 text-xs text-muted-foreground"
+              >
+                {t.name}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+
+      {/* CTA bar — every article funnels back to the product. Rendered
+          before related posts so even bouncing readers see the offer. */}
+      <section className="border-y border-border bg-card/40">
+        <div className="container max-w-4xl py-14 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-primary">
+            Try LocateFlow
+          </p>
+          <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            Keep every provider, address, and renewal in one place.
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
+            Create a Free Access account in a minute. Annual trial terms and any payment requirement are shown before checkout.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link href="/sign-up">
+              <Button size="lg" className="px-8">
+                Start free access
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Keep reading — same-category first, then recents in same locale */}
+      {related.length > 0 ? (
+        <section className="container max-w-6xl py-16">
+          <div className="mb-8 flex items-end justify-between">
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Keep reading
+            </h2>
+            <Link
+              href="/blog"
+              className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground transition hover:text-primary"
+            >
+              All stories →
+            </Link>
+          </div>
+          <ul className="grid gap-x-8 gap-y-12 md:grid-cols-3">
+            {related.map((p) => (
+              <li key={`${p.locale}-${p.slug}`}>
+                <Link href={blogPostPath(p.slug, p.locale)} className="group block">
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border bg-card/40">
+                    {p.ogImageUrl ? (
+                      <Image
+                        src={p.ogImageUrl}
+                        alt={p.title}
+                        fill
+                        sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      />
+                    ) : (
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary)/0.15),transparent_60%)]"
+                      />
+                    )}
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                      {p.category ? p.category.name : "Field Notes"} · {p.readingMinutes} min
+                    </div>
+                    <h3 className="font-display text-lg font-semibold leading-tight text-foreground transition group-hover:text-primary">
+                      {p.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{p.excerpt}</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
-    </main>
+    </article>
   );
 }
