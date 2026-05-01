@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Database, FileSignature, Globe2, ShieldCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { LEGAL_CONTACTS, LEGAL_INFO, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: "Data Processing Addendum",
-  description: "LocateFlow's Data Processing Addendum for business and pro customers.",
+  description: "LocateFlow's Data Processing Addendum summary for customers processing personal data for others.",
   alternates: { canonical: "/dpa" },
 };
 
@@ -12,32 +13,43 @@ const highlights = [
   {
     icon: FileSignature,
     title: "Who this is for",
-    description: "Relocation managers, realtors, and any customer who uses LocateFlow to process personal data on behalf of identifiable individuals.",
+    description: "Customers who use LocateFlow to process personal data on behalf of clients, households, employees, or other identifiable people.",
   },
   {
     icon: Database,
     title: "Roles",
-    description: "The customer acts as the data controller for the personal data they enter. LocateFlow acts as a data processor for that data.",
+    description: "The customer is generally controller for personal data they enter; LocateFlow acts as processor for that customer data.",
   },
   {
     icon: ShieldCheck,
-    title: "Security commitments",
-    description: "LocateFlow maintains access controls, encryption in transit, and auditing suitable for the type of data typically stored in the product.",
+    title: "Security measures",
+    description: "LocateFlow uses access controls, TLS, logging, credential controls, and operational security practices appropriate to the data involved.",
   },
   {
     icon: Globe2,
-    title: "International transfers",
-    description: "Where data is transferred outside the customer's region, LocateFlow relies on standard contractual clauses or another lawful transfer mechanism.",
+    title: "Transfers",
+    description: "International transfer terms and SCCs require counsel-finalized paperwork before full business launch.",
   },
 ] as const;
 
 export default function DpaPage() {
   return (
     <PublicPageShell
-      eyebrow="Legal · For business / Pro customers"
+      eyebrow="Legal - Business data"
       title="Data Processing Addendum"
-      description="This page summarizes LocateFlow's Data Processing Addendum (DPA). It applies in addition to the Terms of Use when you use LocateFlow to process personal data about other identifiable individuals."
+      description="This DPA summary applies when a customer uses LocateFlow to process personal data about identifiable third parties. It requires legal counsel finalization before enterprise or regulated use."
     >
+      <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
+        <p>{policyLastUpdatedLabel()}</p>
+        <p>Legal entity: {LEGAL_INFO.legalEntityName}</p>
+        <p>
+          DPA contact:{" "}
+          <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow DPA inquiry")} className="underline">
+            {LEGAL_CONTACTS.dpa}
+          </a>
+        </p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -50,63 +62,66 @@ export default function DpaPage() {
         ))}
       </div>
 
-      <PublicSection title="1. Definitions">
+      <PublicSection title="1. Scope, duration, and roles">
         <p>
-          Capitalized terms used but not defined here have the meaning given in the LocateFlow <a href="/terms" className="underline">Terms of Use</a>. &quot;Personal Data&quot;, &quot;Data Subject&quot;, &quot;Data Controller&quot;, &quot;Data Processor&quot; and &quot;Processing&quot; have the meanings given under applicable data-protection law (including GDPR and CCPA, as applicable).
+          This DPA applies only to personal data that a customer submits to LocateFlow for processing on behalf of another identifiable person. The customer determines the purposes and means of processing. LocateFlow processes that data to provide, secure, support, and improve the service.
+        </p>
+        <p>
+          Processing lasts for the term of the customer's use of LocateFlow and any additional retention period described in the Privacy Policy, Terms, Billing Policy, security logs, backups, legal records, or processor records.
         </p>
       </PublicSection>
 
-      <PublicSection title="2. Role of the parties">
+      <PublicSection title="2. Data subjects and personal data">
         <p>
-          When you use LocateFlow to store or process Personal Data about identifiable individuals (for example, a client whose relocation you are managing), you are the Data Controller and LocateFlow is the Data Processor. You instruct LocateFlow to process Personal Data for the purposes of providing the service.
+          Data subjects may include customers, household members, clients, employees, contractors, support contacts, and other people whose relocation or service information is entered into LocateFlow.
+        </p>
+        <p>
+          Personal data may include identifiers, contact data, addresses, service-provider records, moving plans, task records, budget records, document metadata, notes, support messages, subscription records, consent records, device/session data, and security/audit logs.
         </p>
       </PublicSection>
 
-      <PublicSection title="3. Processing instructions">
+      <PublicSection title="3. Processing instructions and assistance">
         <p>
-          LocateFlow will process Personal Data only to (a) provide, operate, and secure the service; (b) comply with written instructions given through the product or through support channels; and (c) comply with applicable law. LocateFlow will not sell Personal Data and will not use it to build advertising profiles.
+          LocateFlow will process personal data only to provide the service, follow documented customer instructions, comply with law, secure the platform, prevent abuse, and support billing or account operations.
+        </p>
+        <p>
+          LocateFlow provides export, correction, deletion, and support workflows to help customers respond to data subject requests. Additional assistance may be provided where reasonable and legally required.
         </p>
       </PublicSection>
 
-      <PublicSection title="4. Sub-processors">
+      <PublicSection title="4. Subprocessors">
         <p>
-          LocateFlow relies on limited sub-processors for hosting, authentication, payments, transactional email, and error monitoring. A current list is available on request via the <a href="/contact" className="underline">Contact page</a>. LocateFlow imposes on each sub-processor written terms that are no less protective than those in this DPA.
+          Known subprocessor categories include hosting/database providers, Cloudflare R2 or object storage, Stripe, Apple App Store, Google Play, Resend or email delivery providers, Google Analytics/Google Tag Manager when configured, Google Maps/address autocomplete when configured, Expo or push notification providers, and Sentry/GlitchTip or error-monitoring providers when configured.
+        </p>
+        <p>
+          A production subprocessor list with legal names, locations, and processing purposes must be finalized before full business launch. Subprocessor questions can be sent to <a href={mailto(LEGAL_CONTACTS.dpa, "LocateFlow subprocessor inquiry")} className="underline">{LEGAL_CONTACTS.dpa}</a>.
         </p>
       </PublicSection>
 
-      <PublicSection title="5. Security">
+      <PublicSection title="5. Security measures">
         <p>
-          LocateFlow maintains technical and organizational measures including role-based access controls, encrypted transport (TLS), audit logging on sensitive operations, least-privilege credentials, and scheduled review of internal access. For more detail, see the <a href="/security" className="underline">Security overview</a>.
+          LocateFlow maintains technical and organizational measures such as TLS for transport, account authentication, optional MFA where supported, role-based access controls for internal tools, rate limiting, audit logging for sensitive operations, least-privilege credential practices, backup procedures, and incident review workflows.
+        </p>
+        <p>
+          These measures are not a certification. Specific enterprise audit rights, penetration-test sharing, security appendices, and technical-organizational-measures schedules require legal and security review.
         </p>
       </PublicSection>
 
-      <PublicSection title="6. Data subject rights">
+      <PublicSection title="6. Breach notice, deletion, and return">
         <p>
-          You are responsible for responding to requests from data subjects (access, deletion, rectification, portability, objection). LocateFlow provides in-product tools — export, account deletion, and data correction — to help you comply. On reasonable request, LocateFlow will provide additional assistance.
+          LocateFlow will notify affected customers without undue delay after becoming aware of a personal data breach that materially affects personal data processed under this DPA, with information reasonably available to support the customer's notification obligations.
+        </p>
+        <p>
+          At termination, LocateFlow will delete or return personal data according to available product tools and the Privacy Policy, subject to backup, legal-hold, billing, audit, fraud-prevention, and security exceptions.
         </p>
       </PublicSection>
 
-      <PublicSection title="7. Breach notification">
+      <PublicSection title="7. Transfers, precedence, and counsel review">
         <p>
-          LocateFlow will notify affected customers without undue delay after becoming aware of a personal data breach that materially affects the security of Personal Data processed under this DPA, together with the information reasonably required to meet the customer&apos;s own notification obligations.
+          International transfer terms, Standard Contractual Clauses, data-transfer impact assessments, liability allocation, audit rights, and jurisdiction-specific addenda must be finalized by legal counsel before LocateFlow relies on this DPA for enterprise or regulated customers.
         </p>
-      </PublicSection>
-
-      <PublicSection title="8. International transfers">
         <p>
-          Where Personal Data is transferred across borders, LocateFlow relies on Standard Contractual Clauses or another lawful transfer mechanism. LocateFlow will cooperate with reasonable customer requests regarding such transfers.
-        </p>
-      </PublicSection>
-
-      <PublicSection title="9. Return or deletion">
-        <p>
-          On termination, LocateFlow will delete or return Personal Data in accordance with the retention commitments in the Privacy Policy, subject to legal-hold and backup-rotation exceptions.
-        </p>
-      </PublicSection>
-
-      <PublicSection title="10. Accepting this DPA">
-        <p>
-          By using LocateFlow to process Personal Data about identifiable third parties, you accept this DPA. Business and Pro customers who require a counter-signed copy can request one via <a href="/contact" className="underline">/contact</a>.
+          If this DPA conflicts with the Terms, Privacy Policy, Billing Policy, Refund Policy, or Acceptable Use Policy, the document most specific to the subject controls unless a signed agreement says otherwise.
         </p>
       </PublicSection>
     </PublicPageShell>

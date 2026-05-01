@@ -125,7 +125,7 @@ export function PricingSection({
             </Button>
           </Link>
           <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            Full checkout terms are shown before you subscribe.
+            Trial length, price, renewal date, and payment method requirements are shown before you subscribe.
           </p>
         </div>
 
@@ -159,11 +159,12 @@ export function PricingSection({
             <p>Free Access and Free Trial are separate. Free Access does not require a payment method and does not auto-charge.</p>
             <p>The Individual Annual trial requires a payment method. Checkout shows today&apos;s due amount, trial length, first charge date, and annual renewal terms.</p>
             <p>The Individual Monthly option starts today and renews monthly when a monthly campaign is active.</p>
-            <p>You can cancel trial or renewal online from Settings.</p>
+            <p>You can cancel trial or renewal online from Settings. Refund eligibility is handled under the Refund Policy and store rules when applicable.</p>
           </div>
           <div className="mt-5 flex flex-wrap gap-3 text-sm">
             <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
             <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
+            <Link href="/refund" className="underline hover:text-foreground">Refund Policy</Link>
             <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
           </div>
         </div>

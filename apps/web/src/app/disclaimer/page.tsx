@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Database, FileWarning, Lock, ShieldAlert } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_DISCLAIMER_DOCUMENT } from "@/lib/legal";
+import { policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: LEGAL_DISCLAIMER_DOCUMENT.title,
@@ -25,6 +26,8 @@ export default function DisclaimerPage() {
       title={LEGAL_DISCLAIMER_DOCUMENT.title}
       description={LEGAL_DISCLAIMER_DOCUMENT.summary}
     >
+      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">

@@ -23,7 +23,7 @@ const CATEGORIES = [
 ] as const;
 type Category = (typeof CATEGORIES)[number];
 
-const CONSENT_TEXT_VERSION = "2026-04"; // bump when privacy policy changes
+const CONSENT_TEXT_VERSION = "2026-05-01"; // bump when privacy policy changes
 
 const postSchema = z.object({
   grants: z

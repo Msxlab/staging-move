@@ -349,7 +349,7 @@ export default function OnboardingPage() {
 
   const acceptLegal = async () => {
     if (!hasRequiredLegalConsents(legalConsents)) {
-      setError("You must accept the Terms of Use and Legal Disclaimer before continuing.");
+      setError("You must accept the Terms of Service and Legal Disclaimer before continuing.");
       return;
     }
 

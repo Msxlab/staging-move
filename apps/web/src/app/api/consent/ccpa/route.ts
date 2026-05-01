@@ -31,7 +31,7 @@ export const runtime = "nodejs";
 
 const CCPA_COOKIE = "ccpa_opt_out";
 const COOKIE_TTL_DAYS = 365;
-const CONSENT_TEXT_VERSION = "2026-04";
+const CONSENT_TEXT_VERSION = "2026-05-01";
 
 const postSchema = z.object({
   optOut: z.boolean(),

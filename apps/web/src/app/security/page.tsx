@@ -1,33 +1,34 @@
 import type { Metadata } from "next";
 import { Fingerprint, KeyRound, Lock, ServerCog } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { LEGAL_CONTACTS, STORE_PURCHASE_DISTINCTION, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: "Security",
-  description: "How LocateFlow protects accounts and the data you store.",
+  description: "How LocateFlow protects accounts and the data you store, with current security limitations stated plainly.",
   alternates: { canonical: "/security" },
 };
 
 const highlights = [
   {
     icon: Lock,
-    title: "Encryption",
-    description: "All traffic between your device and LocateFlow uses TLS. Sensitive fields at rest are encrypted using keys managed by our infrastructure provider.",
+    title: "Transport protection",
+    description: "LocateFlow uses TLS for browser and API traffic in production configurations.",
   },
   {
     icon: KeyRound,
     title: "Authentication",
-    description: "Password-based sign-in with optional OAuth (Google, Apple). Rate limiting and login lockouts protect against brute-force attempts.",
+    description: "Password sign-in, optional OAuth, rate limiting, login lockouts, and MFA support help protect accounts.",
   },
   {
     icon: Fingerprint,
-    title: "Session integrity",
-    description: "Sessions are tied to device signals and regenerated on sensitive actions such as password change. Suspicious sessions can be revoked.",
+    title: "Session controls",
+    description: "Session and device signals support account protection and session revocation where available.",
   },
   {
     icon: ServerCog,
-    title: "Operational rigor",
-    description: "Audit logs track admin actions. Dependencies and infrastructure receive scheduled security updates. Secrets never land in source control.",
+    title: "Operational controls",
+    description: "Access controls, audit logging, credential management, and monitoring are used according to role and environment.",
   },
 ] as const;
 
@@ -36,8 +37,10 @@ export default function SecurityPage() {
     <PublicPageShell
       eyebrow="Trust"
       title="Security overview"
-      description="A practical summary of the controls LocateFlow uses to protect your account and the data you store — written in plain English, not compliance jargon."
+      description="A practical summary of security practices LocateFlow uses today. This page does not claim SOC 2, HIPAA, PCI certification by LocateFlow, or perfect security."
     >
+      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -52,40 +55,53 @@ export default function SecurityPage() {
 
       <PublicSection title="Account protection">
         <p>
-          Passwords are hashed with a modern, salted, slow-hash algorithm — LocateFlow never stores them in the clear. Failed login attempts are throttled per account and per IP. OAuth sign-in (Google, Apple) is available as an alternative. Two-factor authentication via authenticator apps is supported and can be enabled from <em>Settings → Privacy &amp; Security</em>.
+          Passwords are stored as salted password hashes rather than plaintext. Failed login attempts are throttled. OAuth sign-in may be available when configured. Authenticator-app MFA is supported in account security settings where enabled.
         </p>
       </PublicSection>
 
-      <PublicSection title="Data in transit & at rest">
+      <PublicSection title="Data protection">
         <p>
-          All client traffic uses TLS 1.2 or higher. Databases, object storage, and backups are encrypted at rest using keys managed by our infrastructure provider. Access to production systems is restricted to a small number of authorized engineers and is audited.
+          LocateFlow uses TLS for traffic in production. Some sensitive application fields may be encrypted at the field level when configured, and infrastructure providers may provide at-rest encryption for databases, object storage, and backups depending on deployment.
+        </p>
+        <p>
+          Do not treat this page as a claim that every field, log, backup, processor copy, or third-party system is separately field-encrypted by LocateFlow.
         </p>
       </PublicSection>
 
-      <PublicSection title="Backups & recovery">
+      <PublicSection title="Access, logging, and monitoring">
         <p>
-          Production databases are backed up on a regular rolling schedule. Backups are encrypted at rest and retained only long enough to support operational recovery. Restore procedures are documented and periodically exercised.
+          Internal access should be limited to authorized operators who need it for support, security, billing, or operations. Admin actions and sensitive workflows may be logged for audit, fraud prevention, and incident review.
+        </p>
+        <p>
+          Secrets and credentials should be managed through environment configuration and secret-management practices. If a secret exposure is suspected, it should be rotated and investigated.
+        </p>
+      </PublicSection>
+
+      <PublicSection title="Backups and recovery">
+        <p>
+          LocateFlow maintains backup and recovery procedures appropriate to the deployment. Restore testing should be completed and documented before full production launch or enterprise commitments are made.
         </p>
       </PublicSection>
 
       <PublicSection title="Payment security">
+        <p>{STORE_PURCHASE_DISTINCTION}</p>
         <p>
-          LocateFlow does not store full credit-card numbers. Web billing is processed by <strong>Stripe</strong>; iOS and Android subscriptions are processed by Apple and Google. Those providers are PCI-DSS compliant and handle card data directly.
+          LocateFlow does not store full payment card numbers. Card entry and payment processing are handled by payment processors or app stores. Those providers may have their own PCI obligations and security practices.
         </p>
       </PublicSection>
 
       <PublicSection title="Responsible disclosure">
         <p>
-          Security researchers are welcome. If you believe you have found a vulnerability, contact us via the <a href="/contact" className="underline">Contact page</a> with a brief description, steps to reproduce, and any suggested remediation. Please do not publicly disclose the issue until we have had a reasonable opportunity to respond.
+          To report a vulnerability, email <a href={mailto(LEGAL_CONTACTS.security, "LocateFlow security disclosure")} className="underline">{LEGAL_CONTACTS.security}</a> with a brief description, steps to reproduce, affected URLs or account context, and any suggested remediation. Do not send passwords, payment card numbers, private keys, or real user data.
         </p>
         <p>
-          Do not exfiltrate real user data, degrade service, or attempt social-engineering attacks on our staff during testing. Acting in good faith keeps you within our safe-harbor expectations.
+          Good-faith testing should avoid service degradation, social engineering, persistence, data exfiltration, destructive actions, and public disclosure before LocateFlow has had a reasonable opportunity to respond.
         </p>
       </PublicSection>
 
       <PublicSection title="Incident response">
         <p>
-          If a security incident materially affects the confidentiality, integrity, or availability of customer data, LocateFlow will notify affected users and any required regulators without undue delay. See the <a href="/dpa" className="underline">Data Processing Addendum</a> for DPA-level breach-notification commitments.
+          If LocateFlow determines that a security incident materially affects customer data, LocateFlow will use reasonable efforts to notify affected users and regulators when required by applicable law. DPA-level breach terms are summarized in the Data Processing Addendum.
         </p>
       </PublicSection>
     </PublicPageShell>

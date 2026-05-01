@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Ban, Eye, MailMinus, UserCog } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { CcpaOptOutControls } from "@/components/shared/ccpa-opt-out-controls";
+import { LEGAL_CONTACTS, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: "California Privacy Notice (CCPA / CPRA)",
-  description: "Your privacy rights under California law.",
+  description: "California privacy rights, personal information categories, request methods, and Do Not Sell or Share controls.",
   alternates: { canonical: "/ccpa-privacy-notice" },
 };
 
@@ -12,32 +15,34 @@ const highlights = [
   {
     icon: Eye,
     title: "Right to know",
-    description: "Californians can request a summary of the categories and specific pieces of personal information LocateFlow has collected about them.",
+    description: "California residents can request categories and specific pieces of personal information collected about them.",
   },
   {
     icon: UserCog,
-    title: "Right to correct & delete",
-    description: "You can correct inaccurate data and request deletion of personal information LocateFlow holds about you, subject to legal exceptions.",
+    title: "Correct and delete",
+    description: "You can request correction or deletion, subject to legal, billing, audit, backup, fraud-prevention, and security exceptions.",
   },
   {
     icon: Ban,
-    title: "No sale of personal info",
-    description: "LocateFlow does not sell personal information and does not share it for cross-context behavioral advertising.",
+    title: "Do Not Sell or Share",
+    description: "LocateFlow does not sell user-entered relocation data and provides an opt-out path for sale/share requests.",
   },
   {
     icon: MailMinus,
-    title: "Opt-out & non-discrimination",
-    description: "You will not receive degraded service, higher prices, or reduced functionality for exercising your CCPA rights.",
+    title: "Non-discrimination",
+    description: "LocateFlow will not discriminate against you for exercising California privacy rights.",
   },
 ] as const;
 
 export default function CcpaNoticePage() {
   return (
     <PublicPageShell
-      eyebrow="Legal · California residents"
+      eyebrow="Legal - California residents"
       title="California Privacy Notice"
-      description="This notice applies to California residents and describes your rights under the California Consumer Privacy Act (CCPA), as amended by the California Privacy Rights Act (CPRA)."
+      description="This notice applies to California residents and describes rights under the California Consumer Privacy Act, as amended by the California Privacy Rights Act."
     >
+      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -50,56 +55,60 @@ export default function CcpaNoticePage() {
         ))}
       </div>
 
-      <PublicSection title="Categories of personal information we collect">
-        <p>Over the last twelve months, LocateFlow may have collected the following categories of personal information:</p>
+      <PublicSection title="Categories collected">
         <ul className="list-disc space-y-1 pl-6">
-          <li>Identifiers — name, email, account ID.</li>
-          <li>Commercial information — subscription plan, billing status.</li>
-          <li>Internet / network activity — product usage, device metadata, error diagnostics.</li>
-          <li>Geolocation-related data — addresses you add to the product (provided by you).</li>
-          <li>Inferences — service and provider recommendations derived from the data you enter.</li>
-          <li>Move workflow information - addresses, services, custom providers, move tasks, notes, and support records you create.</li>
+          <li>Identifiers: name, email, account ID, OAuth identifiers, IP address, device identifiers, and support identifiers.</li>
+          <li>Customer records and commercial information: subscription plan, billing status, Stripe or store purchase identifiers, invoices, refunds, and support requests.</li>
+          <li>Internet or network activity: product usage, analytics events, session records, user-agent, rate-limit, error, crash, and security logs.</li>
+          <li>Geolocation-related information: addresses, ZIP codes, destinations, service territories, and location context you provide or request.</li>
+          <li>Inferences: service suggestions, provider recommendations, task suggestions, budget summaries, and move workflow context derived from data you enter.</li>
+          <li>Sensitive personal information where applicable: account credentials, precise address records, optional sensitive profile fields, billing-related records, and security information.</li>
         </ul>
       </PublicSection>
 
-      <PublicSection title="Why we collect it">
+      <PublicSection title="Sources, purposes, and recipients">
         <p>
-          To operate the service (create an account, store your addresses and services, generate moving tasks and checklists), to process billing, to keep the product secure, to comply with law, and to improve the product experience.
+          Sources include you, your device, product interactions, support communications, payment processors, app stores, authentication providers, address/map providers, analytics tools when consented, and service providers that operate LocateFlow.
+        </p>
+        <p>
+          We use personal information to provide the service, process subscriptions, secure accounts, prevent abuse, provide support, send notices, maintain records, comply with law, debug errors, and improve reliability.
+        </p>
+        <p>
+          Recipients may include processors for hosting, database, storage, email, payments, app stores, analytics, maps/address autocomplete, push notifications, and error monitoring, plus authorities or third parties when legally required or necessary to protect rights and security.
         </p>
       </PublicSection>
 
-      <PublicSection title="How we disclose it">
+      <PublicSection title="Do Not Sell or Share">
         <p>
-          LocateFlow discloses limited personal information to trusted service providers bound by contract — for hosting, authentication, payments, transactional email, and error monitoring. See the <a href="/privacy" className="underline">Privacy Policy</a> and the <a href="/dpa" className="underline">DPA</a> for the complete picture.
+          LocateFlow does not sell user-entered relocation data for money or broker-style resale. LocateFlow also configures analytics to avoid ad personalization by default. Because California law defines "share" broadly, you may submit a Do Not Sell or Share request below.
         </p>
-        <p>
-          LocateFlow <strong>does not sell</strong> personal information for money or other valuable consideration, and <strong>does not share</strong> it for cross-context behavioral advertising.
-        </p>
+        <CcpaOptOutControls />
       </PublicSection>
 
-      <PublicSection title="Your California rights">
+      <PublicSection title="Your rights">
         <ul className="list-disc space-y-1 pl-6">
-          <li><strong>Right to know</strong> — what personal information we hold about you, its sources, purposes, and recipients.</li>
-          <li><strong>Right to delete</strong> — subject to legal and fraud-prevention exceptions.</li>
-          <li><strong>Right to correct</strong> — inaccurate personal information.</li>
-          <li><strong>Right to opt out</strong> — of sale or sharing (not applicable here, since we do neither).</li>
-          <li><strong>Right to limit</strong> — use of sensitive personal information beyond what is reasonably necessary.</li>
-          <li><strong>Right to non-discrimination</strong> — you will not receive degraded service or pricing for exercising any of these rights.</li>
+          <li>Know/access the categories and specific pieces of personal information collected about you.</li>
+          <li>Delete personal information, subject to exceptions for security, billing, legal, audit, backup, fraud-prevention, and operational needs.</li>
+          <li>Correct inaccurate personal information.</li>
+          <li>Opt out of sale or sharing where applicable.</li>
+          <li>Limit use of sensitive personal information where the law grants that right.</li>
+          <li>Use an authorized agent, subject to verification and proof of authority.</li>
+          <li>Receive non-discriminatory treatment for exercising your rights.</li>
         </ul>
       </PublicSection>
 
       <PublicSection title="How to submit a request">
         <p>
-          Use <em>Settings → Privacy &amp; Security → Privacy tools</em> to submit a verified CCPA request inside the app. You can also email us via the <a href="/contact" className="underline">Contact page</a>. We will verify your identity before acting on a rights request and will respond within the timeframe required by law.
+          Signed-in users can use Settings - Privacy and Security - Privacy tools where available. You can also email <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow California privacy request")} className="underline">{LEGAL_CONTACTS.privacy}</a>.
         </p>
         <p>
-          Authorized agents acting on your behalf must provide written proof of authorization. We may still require the underlying consumer to verify their identity directly.
+          We will verify your identity before acting on access, deletion, or correction requests. Authorized agents must provide written proof of authorization, and we may require the consumer to verify directly.
         </p>
       </PublicSection>
 
       <PublicSection title="Retention">
         <p>
-          Personal information is retained for as long as your account is active and as needed to provide the service, resolve disputes, enforce agreements, and comply with legal obligations. See the <a href="/privacy" className="underline">Privacy Policy</a> for more on retention windows.
+          LocateFlow retains personal information for as long as needed to provide the service and for security, billing, legal, tax, dispute, audit, backup, fraud-prevention, and operational purposes. See the <Link href="/privacy" className="underline">Privacy Policy</Link> for more context.
         </p>
       </PublicSection>
     </PublicPageShell>

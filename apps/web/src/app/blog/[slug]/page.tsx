@@ -256,10 +256,10 @@ export default async function BlogPostPage({
             Try LocateFlow
           </p>
           <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Keep every provider, address, and renewal in one place.
+            Keep provider records, addresses, and renewal reminders in one place.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            Create a Free Access account in a minute. Annual trial terms and any payment requirement are shown before checkout.
+            Create an account in a minute. Trial length, renewal date, price, and any payment requirement are shown before checkout.
           </p>
           <div className="mt-6 flex justify-center">
             <Link href="/sign-up">

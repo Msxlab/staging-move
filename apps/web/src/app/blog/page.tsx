@@ -40,7 +40,7 @@ export async function generateMetadata({
   return {
     title,
     description:
-      "Field-tested guides on moving smarter, tracking every provider in one place, and never paying for a service at an old address again.",
+      "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
     alternates: {
       canonical,
       types: {
@@ -53,7 +53,7 @@ export async function generateMetadata({
       url: canonical,
       title: page > 1 ? `LocateFlow Blog - Page ${page}` : "LocateFlow Blog",
       description:
-        "Field-tested guides on moving smarter, tracking every provider in one place, and never paying for a service at an old address again.",
+        "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
       siteName: "LocateFlow",
     },
   };
@@ -119,8 +119,8 @@ export default async function BlogIndexPage({
               <span className="italic text-primary">from the move.</span>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Practical, field-tested writing on moving smarter — keeping every provider, address,
-              and renewal in one place so nothing slips into the cracks.
+              Practical, field-tested writing on moving smarter - keeping provider records, addresses,
+              and renewal reminders in one place so fewer details slip through.
             </p>
           </div>
         </div>

@@ -1,43 +1,47 @@
 import type { Metadata } from "next";
-import { CalendarClock, CreditCard, FileText, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { CreditCard, FileText, RotateCcw, Store } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { LEGAL_CONTACTS, STORE_PURCHASE_DISTINCTION, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
-  title: "Billing Policy",
-  description: "LocateFlow billing, subscription, cancellation, and refund terms for Individual access.",
+  title: "Refund Policy",
+  description: "LocateFlow refund eligibility, refund request windows, and store-purchase refund handling.",
   alternates: { canonical: "/refund" },
 };
 
 const highlights = [
   {
-    icon: CreditCard,
-    title: "Free Access",
-    description: "No payment method is required and no automatic charge occurs. Access ends on the date shown in your account.",
-  },
-  {
-    icon: CalendarClock,
-    title: "Free Trial",
-    description: "A payment method is required. The Individual Annual plan starts after the trial unless you cancel before the first charge date.",
-  },
-  {
     icon: RotateCcw,
-    title: "Cancel online",
-    description: "You can cancel a trial or turn off annual renewal from Settings. Access continues through the applicable trial or paid period.",
+    title: "Cancellation is not always a refund",
+    description: "Cancellation stops future renewal where supported. Refund eligibility is evaluated separately under this policy.",
+  },
+  {
+    icon: CreditCard,
+    title: "Web purchases",
+    description: "Stripe web purchases are reviewed by LocateFlow support under the request windows below.",
+  },
+  {
+    icon: Store,
+    title: "Mobile store purchases",
+    description: "Apple App Store and Google Play purchases may require refund requests through the applicable store.",
   },
   {
     icon: FileText,
-    title: "Policy details",
-    description: "Refund windows and exceptions are listed here so normal product screens can stay calm and uncluttered.",
+    title: "Offer terms control",
+    description: "Promotional terms shown at checkout may set additional eligibility rules or deadlines.",
   },
 ] as const;
 
-export default function BillingPolicyPage() {
+export default function RefundPolicyPage() {
   return (
     <PublicPageShell
       eyebrow="Legal"
-      title="Billing Policy"
-      description="How Free Access, Free Trial, annual billing, cancellation, and refund requests work for LocateFlow Individual."
+      title="Refund Policy"
+      description="This policy explains how refund requests are handled for LocateFlow subscriptions. It does not replace the final offer terms shown at checkout or mobile store rules."
     >
+      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -50,42 +54,37 @@ export default function BillingPolicyPage() {
         ))}
       </div>
 
-      <PublicSection title="Free Access">
+      <PublicSection title="Web subscription refunds">
         <p>
-          Free Access is a cardless access mode. It does not require a credit card, does not create an automatic charge, and does not create a Stripe subscription unless an internal entitlement record is needed to track access.
+          For Stripe web purchases, a first annual charge after a trial may be eligible for a refund if you contact billing support within 14 days after that first annual charge.
         </p>
         <p>
-          When Free Access ends, the account moves to the limited, paywall, or read-only state supported by the current product. You may choose an annual plan from Settings.
-        </p>
-      </PublicSection>
-
-      <PublicSection title="Free Trial">
-        <p>
-          Free Trial is attached to Individual Annual. A payment method is required at checkout, and the checkout screen shows today's due amount, the trial length, the annual plan start date, the first charge amount and date, renewal interval, cancellation instructions, and policy links before you agree.
-        </p>
-        <p>
-          If you cancel before the trial ends, no first annual charge is made. Trial access continues until the trial end date unless support or an admin action changes the account.
+          Annual renewal charges may be eligible for a refund if you contact billing support within 7 days after the renewal charge. Monthly charges are generally non-refundable once the paid month begins, except where required by law or approved by support for a billing error or service issue.
         </p>
       </PublicSection>
 
-      <PublicSection title="Paid Individual Annual">
+      <PublicSection title="Mobile store refunds">
+        <p>{STORE_PURCHASE_DISTINCTION}</p>
         <p>
-          Paid Individual Annual subscriptions renew yearly unless renewal is canceled. You can cancel renewal online in Settings. Paid access continues through the current paid period after cancellation.
+          If you subscribed through Apple App Store or Google Play, refund requests may need to be submitted directly to Apple or Google. LocateFlow may not be able to issue a direct refund for store-managed purchases.
         </p>
       </PublicSection>
 
-      <PublicSection title="Refund request windows">
+      <PublicSection title="Refunds are not guaranteed">
         <p>
-          First annual charge after a trial: a full refund is available within 14 days if requested through support or a supported self-service refund request flow.
+          Refunds are generally not available after the applicable request window, after substantial use of a paid period, or when access was suspended for violation of the Terms or Acceptable Use Policy. Duplicate charges, unauthorized charges, major service outages, legal requirements, or support-approved exceptions may be reviewed case by case.
         </p>
         <p>
-          Annual renewal charge: a full refund is available within 7 days. After those windows, charges are generally non-refundable except for duplicate charges, unauthorized charges, major service outages, legal requirements, or support-approved exceptions.
+          Promotional, campaign, beta, or discounted offers may have different terms. The checkout page or store purchase screen controls if it states a different trial length, renewal date, price, or refund condition.
         </p>
       </PublicSection>
 
-      <PublicSection title="Data access after cancellation">
+      <PublicSection title="How to request a refund">
         <p>
-          Export and data deletion tools remain available according to LocateFlow's Privacy Policy and current product capabilities. Export important records before a retention period ends.
+          Email <a href={mailto(LEGAL_CONTACTS.billing, "LocateFlow refund request")} className="underline">{LEGAL_CONTACTS.billing}</a> with the account email, purchase platform, charge date, and a short description. Do not send payment card numbers or sensitive secrets.
+        </p>
+        <p>
+          See the <Link href="/billing-policy" className="underline">Billing Policy</Link> for subscription, renewal, failed payment, tax, and cancellation terms.
         </p>
       </PublicSection>
     </PublicPageShell>
