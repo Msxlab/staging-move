@@ -28,6 +28,9 @@ import { hapticError, hapticSuccess } from "@/lib/haptics";
 import {
   closeConnection,
   fetchSubscriptionProducts,
+  IAP_PURCHASE_FAILED_MESSAGE,
+  IAP_STORE_UNAVAILABLE_MESSAGE,
+  IAP_VERIFICATION_ERROR_MESSAGE,
   openNativeSubscriptionSettings,
   purchaseSubscription,
   restorePurchases,
@@ -208,30 +211,22 @@ function LegacySubscriptionScreen() {
     await Linking.openURL(url);
   }, [t]);
 
+  const getLocalizedIapError = useCallback((message?: string) => {
+    if (message === IAP_PURCHASE_FAILED_MESSAGE) return t("settings.subscription_purchaseFailed");
+    if (message === IAP_VERIFICATION_ERROR_MESSAGE) return t("settings.subscription_verificationError");
+    if (message === IAP_STORE_UNAVAILABLE_MESSAGE) return t("settings.subscription_storeUnavailable");
+    return message || t("toast.networkError");
+  }, [t]);
+
   const handleUpgrade = useCallback(async (planKey: "INDIVIDUAL") => {
     setProcessingPlan(planKey);
 
-    // Native IAP path — preferred on iOS/Android (required by store policy).
-    if (iapAvailable && storeSku) {
-      const result = await purchaseSubscription({ productId: storeSku });
-      setProcessingPlan(null);
-
-      if (result.status === "cancelled") return;
-      if (result.status === "error") {
-        hapticError();
-        Alert.alert(t("common.retry"), result.message || t("toast.networkError"));
-        return;
-      }
-      hapticSuccess();
-      await fetchSubscription();
-      return;
-    }
-
-    // Stripe browser fallback. Mobile does not show the campaign disclosure
-    // panel inline, so surface it as a confirmation Alert and require an
-    // explicit "Continue" tap before the API call. The web checkout route
-    // requires `acceptedSubscriptionTerms: true`, so we cannot omit it; the
-    // confirmation tap is what backs the flag.
+    // Disclosure gate runs before BOTH paths (IAP and Stripe). Apple's
+    // in-app paywall and Google Play's billing UI cover their own
+    // legal copy, but they do not surface the campaign-specific trial
+    // terms (length, first-charge date, cancel-by date) the admin
+    // configured. Showing the campaign disclosure on every checkout
+    // path keeps mobile parity with web.
     const targetCampaign = annualOffer || monthlyOffer || null;
     const cycle: "yearly" | "monthly" = targetCampaign?.billingInterval === "MONTH" ? "monthly" : "yearly";
     const disclosureBody =
@@ -261,6 +256,22 @@ function LegacySubscriptionScreen() {
       return;
     }
 
+    // Native IAP path — preferred on iOS/Android (required by store policy).
+    if (iapAvailable && storeSku) {
+      const result = await purchaseSubscription({ productId: storeSku });
+      setProcessingPlan(null);
+
+      if (result.status === "cancelled") return;
+      if (result.status === "error") {
+        hapticError();
+        Alert.alert(t("common.retry"), getLocalizedIapError(result.message));
+        return;
+      }
+      hapticSuccess();
+      await fetchSubscription();
+      return;
+    }
+
     const res = await api.post<any>("/api/stripe/checkout", {
       plan: planKey,
       cycle,
@@ -277,7 +288,7 @@ function LegacySubscriptionScreen() {
 
     hapticSuccess();
     await openExternalUrl(res.data.url);
-  }, [openExternalUrl, iapAvailable, storeSku, fetchSubscription, t, annualOffer, monthlyOffer]);
+  }, [openExternalUrl, iapAvailable, storeSku, fetchSubscription, t, annualOffer, monthlyOffer, getLocalizedIapError]);
 
   const handleManageBilling = useCallback(async () => {
     setProcessingPlan("MANAGE");

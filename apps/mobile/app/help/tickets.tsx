@@ -12,19 +12,13 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Plus, ChevronRight, MessageCircle, X } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-
-const STATUS_LABEL: Record<string, string> = {
-  OPEN: "Open",
-  IN_PROGRESS: "In Progress",
-  WAITING_USER: "Waiting for you",
-  CLOSED: "Closed",
-};
 
 const STATUS_COLOR: Record<string, string> = {
   OPEN: theme.colors.primary,
@@ -47,6 +41,7 @@ const CATEGORIES = ["GENERAL", "BUG", "BILLING", "ACCOUNT", "FEATURE_REQUEST"];
 
 export default function TicketsScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -91,8 +86,8 @@ export default function TicketsScreen() {
   useEffect(() => { load(); }, [load]);
 
   const handleCreate = async () => {
-    if (subject.trim().length < 5) { Alert.alert("Error", "Subject must be at least 5 characters."); return; }
-    if (message.trim().length < 10) { Alert.alert("Error", "Message must be at least 10 characters."); return; }
+    if (subject.trim().length < 5) { Alert.alert(t("tickets.errorTitle"), t("tickets.subjectMin")); return; }
+    if (message.trim().length < 10) { Alert.alert(t("tickets.errorTitle"), t("tickets.messageMin")); return; }
     setCreating(true);
     try {
       const res = await api.post<any>("/api/tickets", { subject, message, category, platform: "MOBILE" });
@@ -101,7 +96,7 @@ export default function TicketsScreen() {
         setSubject(""); setMessage(""); setCategory("GENERAL");
         await fetchTickets();
       } else {
-        Alert.alert("Error", res.error || "Failed to create ticket.");
+        Alert.alert(t("tickets.errorTitle"), res.error || t("tickets.createFailed"));
       }
     } finally {
       setCreating(false);
@@ -109,6 +104,7 @@ export default function TicketsScreen() {
   };
 
   if (loading) return <LoadingScreen />;
+  const dateLocale = (i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US";
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -116,7 +112,7 @@ export default function TicketsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>My Tickets</Text>
+        <Text style={styles.title}>{t("tickets.title")}</Text>
         <TouchableOpacity style={styles.addBtn} onPress={() => setShowCreate(true)}>
           <Plus size={20} color="#fff" />
         </TouchableOpacity>
@@ -130,21 +126,21 @@ export default function TicketsScreen() {
         {showCreate && (
           <Card variant="default" style={{ marginBottom: 16 }}>
             <View style={styles.createHeader}>
-              <Text style={styles.createTitle}>New Ticket</Text>
+              <Text style={styles.createTitle}>{t("tickets.newTitle")}</Text>
               <TouchableOpacity onPress={() => setShowCreate(false)}>
                 <X size={18} color={theme.colors.textMuted} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.fieldLabel}>Subject</Text>
+            <Text style={styles.fieldLabel}>{t("tickets.subject")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Brief description..."
+              placeholder={t("tickets.subjectPlaceholder")}
               placeholderTextColor={theme.colors.textMuted}
               value={subject}
               onChangeText={setSubject}
               maxLength={255}
             />
-            <Text style={styles.fieldLabel}>Category</Text>
+            <Text style={styles.fieldLabel}>{t("tickets.category")}</Text>
             <View style={styles.categoryRow}>
               {CATEGORIES.map((c) => (
                 <TouchableOpacity
@@ -153,15 +149,15 @@ export default function TicketsScreen() {
                   onPress={() => setCategory(c)}
                 >
                   <Text style={[styles.categoryChipText, category === c && styles.categoryChipTextActive]}>
-                    {c.replace("_", " ")}
+                    {t(`tickets.category_${c}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.fieldLabel}>Message</Text>
+            <Text style={styles.fieldLabel}>{t("tickets.message")}</Text>
             <TextInput
               style={[styles.input, styles.inputMulti]}
-              placeholder="Describe your issue..."
+              placeholder={t("tickets.messagePlaceholder")}
               placeholderTextColor={theme.colors.textMuted}
               value={message}
               onChangeText={setMessage}
@@ -169,7 +165,7 @@ export default function TicketsScreen() {
               numberOfLines={4}
               maxLength={5000}
             />
-            <Button title={creating ? "Submitting..." : "Submit Ticket"} onPress={handleCreate} disabled={creating} />
+            <Button title={creating ? t("tickets.submitting") : t("tickets.submit")} onPress={handleCreate} disabled={creating} />
           </Card>
         )}
 
@@ -178,8 +174,8 @@ export default function TicketsScreen() {
         ) : tickets.length === 0 && !showCreate ? (
           <Card variant="default" style={{ alignItems: "center", paddingVertical: 40 }}>
             <MessageCircle size={32} color={theme.colors.textMuted} />
-            <Text style={styles.emptyTitle}>No tickets yet</Text>
-            <Text style={styles.emptySubtitle}>Tap + to open a support ticket</Text>
+            <Text style={styles.emptyTitle}>{t("tickets.emptyTitle")}</Text>
+            <Text style={styles.emptySubtitle}>{t("tickets.emptySubtitle")}</Text>
           </Card>
         ) : (
           <View style={styles.list}>
@@ -196,14 +192,19 @@ export default function TicketsScreen() {
                   <View style={{ flex: 1 }}>
                     <View style={styles.ticketTop}>
                       <View style={[styles.statusBadge, { borderColor: `${color}40`, backgroundColor: `${color}15` }]}>
-                        <Text style={[styles.statusText, { color }]}>{STATUS_LABEL[ticket.status] || ticket.status}</Text>
+                        <Text style={[styles.statusText, { color }]}>{t(`tickets.status_${ticket.status}`, { defaultValue: ticket.status })}</Text>
                       </View>
-                      <Text style={styles.ticketDate}>{new Date(ticket.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Text>
+                      <Text style={styles.ticketDate}>{new Date(ticket.updatedAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}</Text>
                     </View>
                     <Text style={styles.ticketSubject} numberOfLines={1}>{ticket.subject}</Text>
                     {lastMsg && (
                       <Text style={styles.ticketPreview} numberOfLines={1}>
-                        {lastMsg.senderType === "ADMIN" ? "Support: " : "You: "}{lastMsg.content}
+                        {lastMsg.senderType === "ADMIN"
+                          ? t("tickets.supportPrefix")
+                          : lastMsg.senderType === "USER"
+                          ? t("tickets.youPrefix")
+                          : t("tickets.systemPrefix")}
+                        {lastMsg.content}
                       </Text>
                     )}
                   </View>

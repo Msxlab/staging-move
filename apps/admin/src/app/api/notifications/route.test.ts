@@ -38,12 +38,12 @@ describe("admin notification send boundaries", () => {
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
   });
 
-  it("rejects unsupported email delivery before creating records", async () => {
+  it("rejects unsupported delivery channels before creating records", async () => {
     const { POST } = await import("./route");
     const res = await POST(jsonRequest({
       title: "Policy update",
       body: "Please review the latest policy.",
-      channel: "EMAIL",
+      channel: "SMS",
       userId: "user_1",
     }));
 

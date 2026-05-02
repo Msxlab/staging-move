@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Calendar, CheckCircle2, Copy, Pause, Pencil, Play, Plus, RefreshCw, Save, Square, Ticket, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, BarChart3, Calendar, ChevronLeft, ChevronRight, CheckCircle2, Copy, Pause, Pencil, Play, Plus, RefreshCw, Save, Search, Square, Ticket, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 type Campaign = {
@@ -26,7 +26,19 @@ type Campaign = {
   publicHeadline: string;
   publicSubheadline: string | null;
   checkoutDisclosureCopy: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  createdByAdmin?: { email: string; firstName?: string | null; lastName?: string | null } | null;
   redemptions?: Array<{ id: string; createdAt: string; user?: { id: string; email: string } }>;
+};
+
+type RedemptionRow = {
+  id: string;
+  createdAt: string;
+  status: string;
+  accessType: string;
+  user?: { id: string; email: string; firstName?: string | null; lastName?: string | null } | null;
+  subscription?: { id: string; status: string; trialEndsAt?: string | null; freeAccessEndsAt?: string | null } | null;
 };
 
 type PriceValidationFeedback = {
@@ -245,8 +257,16 @@ function SlotCard({
   );
 }
 
+const PAGE_SIZE = 50;
+
 export default function AcquisitionCampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<"" | "DRAFT" | "ACTIVE" | "PAUSED" | "ENDED">("");
+  const [filterAccessType, setFilterAccessType] = useState<"" | "FREE_ACCESS" | "FREE_TRIAL" | "PAID">("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -254,6 +274,7 @@ export default function AcquisitionCampaignsPage() {
   const [priceValidation, setPriceValidation] = useState<PriceValidationFeedback>(null);
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<"hidden" | "create" | "edit">("hidden");
+  const [redemptionsFor, setRedemptionsFor] = useState<{ campaign: Campaign; rows: RedemptionRow[]; loading: boolean } | null>(null);
   const editingCampaign = campaigns.find((campaign) => campaign.id === editingCampaignId) || null;
 
   const slots = useMemo(() => {
@@ -266,23 +287,85 @@ export default function AcquisitionCampaignsPage() {
     };
   }, [campaigns]);
 
-  async function load() {
+  // Multi-active conflicts: flag every slot where two ACTIVE campaigns
+  // overlap, so editors notice before the public site silently picks
+  // "most recently updated."
+  const slotConflicts = useMemo(() => {
+    const now = new Date();
+    const live = campaigns.filter((campaign) => isCampaignLive(campaign, now));
+    const grouped = new Map<string, Campaign[]>();
+    for (const campaign of live) {
+      const key = `${campaign.accessType}:${campaign.billingInterval ?? "null"}`;
+      const list = grouped.get(key) ?? [];
+      list.push(campaign);
+      grouped.set(key, list);
+    }
+    return Array.from(grouped.entries())
+      .filter(([, list]) => list.length > 1)
+      .map(([key, list]) => ({ key, campaigns: list }));
+  }, [campaigns]);
+
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/acquisition-campaigns", { cache: "no-store" });
+      const params = new URLSearchParams();
+      if (filterStatus) params.set("status", filterStatus);
+      if (filterAccessType) params.set("accessType", filterAccessType);
+      if (searchQuery) params.set("q", searchQuery);
+      params.set("page", String(page));
+      params.set("pageSize", String(PAGE_SIZE));
+      const response = await fetch(`/api/acquisition-campaigns?${params.toString()}`, { cache: "no-store" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to load campaigns.");
       setCampaigns(data.campaigns || []);
+      setTotal(data.total ?? (data.campaigns?.length || 0));
     } catch (error: any) {
       toast.error(error?.message || "Failed to load campaigns.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [filterStatus, filterAccessType, searchQuery, page]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
+
+  // Reset to page 1 whenever filters change.
+  useEffect(() => {
+    setPage(1);
+  }, [filterStatus, filterAccessType, searchQuery]);
+
+  async function loadRedemptions(campaign: Campaign) {
+    setRedemptionsFor({ campaign, rows: [], loading: true });
+    try {
+      const response = await fetch(`/api/acquisition-campaigns/${campaign.id}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to load redemptions.");
+      setRedemptionsFor({ campaign, rows: data.campaign?.redemptions || [], loading: false });
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to load redemptions.");
+      setRedemptionsFor(null);
+    }
+  }
+
+  async function deleteCampaign(campaign: Campaign) {
+    if (campaign.redemptionCount > 0) {
+      toast.error("Cannot delete a campaign with redemptions. End it instead.");
+      return;
+    }
+    if (!window.confirm(`Delete campaign "${campaign.name}"? This cannot be undone.`)) return;
+    try {
+      const response = await fetch(`/api/acquisition-campaigns/${campaign.id}`, {
+        method: "DELETE",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Failed to delete campaign.");
+      toast.success("Campaign deleted");
+      await load();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to delete campaign.");
+    }
+  }
 
   function update(key: keyof typeof emptyForm, value: string | boolean) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -485,6 +568,29 @@ export default function AcquisitionCampaignsPage() {
           their own campaign. Public site updates within 60 seconds after activation.
         </p>
       </div>
+
+      {slotConflicts.length > 0 ? (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />
+            <div>
+              <p className="font-medium text-foreground">Multiple active campaigns detected</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                The public site picks the most recently updated one in each slot. Pause or end the
+                duplicates so the live offer is unambiguous.
+              </p>
+              <ul className="mt-2 space-y-1 text-xs text-foreground">
+                {slotConflicts.map((conflict) => (
+                  <li key={conflict.key}>
+                    <span className="font-mono text-[11px]">{conflict.key.replace(":", " · ")}</span>:{" "}
+                    {conflict.campaigns.map((c) => c.code).join(", ")}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <SlotCard
@@ -734,71 +840,228 @@ export default function AcquisitionCampaignsPage() {
       ) : null}
 
       <div className="rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-5 py-4">
-          <h2 className="font-semibold text-foreground">All Campaigns</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Drafts, paused, and ended campaigns live here. Activate to publish to the matching slot.
-          </p>
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-4">
+          <div>
+            <h2 className="font-semibold text-foreground">All Campaigns</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Drafts, paused, and ended campaigns live here. Activate to publish to the matching slot.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              value={filterStatus}
+              onChange={(event) => setFilterStatus(event.target.value as typeof filterStatus)}
+              aria-label="Filter by status"
+            >
+              <option value="">All statuses</option>
+              <option value="DRAFT">Draft</option>
+              <option value="ACTIVE">Active</option>
+              <option value="PAUSED">Paused</option>
+              <option value="ENDED">Ended</option>
+            </select>
+            <select
+              className="rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground"
+              value={filterAccessType}
+              onChange={(event) => setFilterAccessType(event.target.value as typeof filterAccessType)}
+              aria-label="Filter by access type"
+            >
+              <option value="">All types</option>
+              <option value="FREE_TRIAL">Free Trial</option>
+              <option value="FREE_ACCESS">Free Access</option>
+              <option value="PAID">Paid</option>
+            </select>
+            <form
+              className="relative"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setSearchQuery(searchInput.trim());
+              }}
+            >
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search name, code, headline..."
+                className="w-56 rounded-md border border-border bg-background py-1 pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </form>
+          </div>
         </div>
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Loading campaigns...</div>
         ) : campaigns.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">No campaigns yet.</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">No campaigns match these filters.</div>
         ) : (
           <div className="divide-y divide-border">
-            {campaigns.map((campaign) => (
-              <div key={campaign.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto]">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-foreground">{campaign.name}</h3>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{campaign.code}</span>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{campaign.status}</span>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{campaign.accessType.replace("_", " ")}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{campaign.publicHeadline}</p>
-                  <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-4">
-                    <span>Plan: Individual</span>
-                    <span>
-                      {campaign.accessType === "FREE_TRIAL"
-                        ? `Trial: ${campaign.trialDays || 90} days`
-                        : campaign.accessType === "PAID"
-                          ? `Billing: ${campaign.billingInterval === "YEAR" ? "Yearly" : "Monthly"}`
-                          : `Free Access: ${campaign.freeAccessDays || 0} days`}
-                    </span>
-                    <span>Payment method: {campaign.requiresPaymentMethod ? "Required" : "Not required"}</span>
-                    <span>Redemptions: {campaign.redemptionCount}{campaign.maxRedemptions ? ` / ${campaign.maxRedemptions}` : ""}</span>
-                  </div>
-                  {campaign.redemptions?.length ? (
-                    <div className="mt-3 text-xs text-muted-foreground">
-                      Recent redemptions: {campaign.redemptions.map((redemption) => redemption.user?.email || redemption.id).join(", ")}
+            {campaigns.map((campaign) => {
+              const creator = campaign.createdByAdmin;
+              const creatorLabel = creator
+                ? `${[creator.firstName, creator.lastName].filter(Boolean).join(" ") || creator.email}`
+                : null;
+              const updatedAt = campaign.updatedAt ? new Date(campaign.updatedAt) : null;
+              return (
+                <div key={campaign.id} className="grid gap-4 p-5 lg:grid-cols-[1fr_auto]">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-semibold text-foreground">{campaign.name}</h3>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{campaign.code}</span>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{campaign.status}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{campaign.accessType.replace("_", " ")}</span>
                     </div>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap items-start gap-2 lg:justify-end">
-                  <button onClick={() => startEditing(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
-                    <Pencil className="h-3.5 w-3.5" /> Edit
-                  </button>
-                  {campaign.status !== "ACTIVE" ? (
-                    <button onClick={() => void patchCampaign(campaign.id, { status: "ACTIVE" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
-                      <Play className="h-3.5 w-3.5" /> Activate
+                    <p className="mt-2 text-sm text-muted-foreground">{campaign.publicHeadline}</p>
+                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-4">
+                      <span>Plan: Individual</span>
+                      <span>
+                        {campaign.accessType === "FREE_TRIAL"
+                          ? `Trial: ${campaign.trialDays || 90} days`
+                          : campaign.accessType === "PAID"
+                            ? `Billing: ${campaign.billingInterval === "YEAR" ? "Yearly" : "Monthly"}`
+                            : `Free Access: ${campaign.freeAccessDays || 0} days`}
+                      </span>
+                      <span>Payment method: {campaign.requiresPaymentMethod ? "Required" : "Not required"}</span>
+                      <span>Redemptions: {campaign.redemptionCount}{campaign.maxRedemptions ? ` / ${campaign.maxRedemptions}` : ""}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                      {creatorLabel ? <span>Created by {creatorLabel}</span> : null}
+                      {updatedAt ? <span>Updated {updatedAt.toLocaleString()}</span> : null}
+                    </div>
+                    {campaign.redemptions?.length ? (
+                      <div className="mt-3 text-xs text-muted-foreground">
+                        Recent redemptions: {campaign.redemptions.map((redemption) => redemption.user?.email || redemption.id).join(", ")}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-wrap items-start gap-2 lg:justify-end">
+                    <button onClick={() => startEditing(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <Pencil className="h-3.5 w-3.5" /> Edit
                     </button>
-                  ) : (
-                    <button onClick={() => void patchCampaign(campaign.id, { status: "PAUSED" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
-                      <Pause className="h-3.5 w-3.5" /> Pause
+                    {campaign.status !== "ACTIVE" ? (
+                      <button onClick={() => void patchCampaign(campaign.id, { status: "ACTIVE" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                        <Play className="h-3.5 w-3.5" /> Activate
+                      </button>
+                    ) : (
+                      <button onClick={() => void patchCampaign(campaign.id, { status: "PAUSED" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                        <Pause className="h-3.5 w-3.5" /> Pause
+                      </button>
+                    )}
+                    <button onClick={() => void patchCampaign(campaign.id, { status: "ENDED" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <Square className="h-3.5 w-3.5" /> End
                     </button>
-                  )}
-                  <button onClick={() => void patchCampaign(campaign.id, { status: "ENDED" })} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
-                    <Square className="h-3.5 w-3.5" /> End
-                  </button>
-                  <button onClick={() => void duplicateCampaign(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
-                    <Copy className="h-3.5 w-3.5" /> Duplicate
-                  </button>
+                    <button onClick={() => void duplicateCampaign(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <Copy className="h-3.5 w-3.5" /> Duplicate
+                    </button>
+                    <button onClick={() => void loadRedemptions(campaign)} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs hover:bg-accent">
+                      <BarChart3 className="h-3.5 w-3.5" /> Redemptions
+                    </button>
+                    <button
+                      onClick={() => void deleteCampaign(campaign)}
+                      disabled={campaign.redemptionCount > 0}
+                      title={campaign.redemptionCount > 0 ? "End this campaign — it has redemptions on record." : "Delete draft / unused campaign"}
+                      className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
+
+        {total > PAGE_SIZE ? (
+          <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
+            <span>
+              Page {page} of {Math.max(1, Math.ceil(total / PAGE_SIZE))} · {total} campaigns
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page <= 1 || loading}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 disabled:opacity-40"
+              >
+                <ChevronLeft className="h-3 w-3" /> Prev
+              </button>
+              <button
+                onClick={() => setPage((current) => current + 1)}
+                disabled={page * PAGE_SIZE >= total || loading}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 disabled:opacity-40"
+              >
+                Next <ChevronRight className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
+
+      {redemptionsFor ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="redemptions-title"
+          className="fixed inset-0 z-50 flex items-end justify-end bg-foreground/30 backdrop-blur-sm"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setRedemptionsFor(null);
+          }}
+        >
+          <div className="flex h-full w-full max-w-xl flex-col border-l border-border bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <div>
+                <h3 id="redemptions-title" className="font-semibold text-foreground">Redemptions</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {redemptionsFor.campaign.name} · <span className="font-mono">{redemptionsFor.campaign.code}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setRedemptionsFor(null)}
+                className="rounded-md border border-border p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                aria-label="Close redemptions panel"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {redemptionsFor.loading ? (
+                <p className="text-sm text-muted-foreground">Loading redemptions...</p>
+              ) : redemptionsFor.rows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No redemptions yet.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {redemptionsFor.rows.map((row) => {
+                    const fullName = [row.user?.firstName, row.user?.lastName].filter(Boolean).join(" ");
+                    return (
+                      <li key={row.id} className="rounded-lg border border-border p-3 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="font-medium text-foreground">
+                              {fullName || row.user?.email || row.id}
+                            </p>
+                            {row.user?.email && fullName ? (
+                              <p className="text-muted-foreground">{row.user.email}</p>
+                            ) : null}
+                          </div>
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">{row.status}</span>
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-1 text-muted-foreground">
+                          <span>Access: {row.accessType.replace("_", " ")}</span>
+                          <span>Redeemed: {new Date(row.createdAt).toLocaleString()}</span>
+                          {row.subscription?.trialEndsAt ? (
+                            <span>Trial ends: {new Date(row.subscription.trialEndsAt).toLocaleDateString()}</span>
+                          ) : null}
+                          {row.subscription?.freeAccessEndsAt ? (
+                            <span>Free Access ends: {new Date(row.subscription.freeAccessEndsAt).toLocaleDateString()}</span>
+                          ) : null}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

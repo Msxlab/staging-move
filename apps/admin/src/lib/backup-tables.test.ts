@@ -37,10 +37,7 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "NotificationQueue",
   "NotificationPreference",
   "WaitlistSignup",
-  "BlogPost",
-  "BlogCategory",
-  "BlogTag",
-  "BlogPostTag",
+  "BlogPostTag", // composite-key join table; reconstructed from BlogPost rebuild
   "HelpArticle",
   "FAQ",
   "EmailTemplate",
@@ -50,8 +47,6 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "SupportTicket",
   "TicketMessage",
   "Reminder",
-  "AcquisitionCampaign",
-  "AcquisitionRedemption",
 ]);
 
 describe("backup table catalog", () => {

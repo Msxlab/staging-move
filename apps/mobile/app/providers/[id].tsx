@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Globe,
@@ -33,6 +34,12 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import {
+  getLocalizedCategoryLabel,
+  getLocalizedCoverageLabel,
+  getLocalizedCoverageMessage,
+  getLocalizedProviderDescription,
+} from "@/lib/provider-localization";
 import { ProviderCard, type ProviderCardData } from "@/components/provider/ProviderCard";
 import { getProviderTrustSummary } from "@locateflow/shared";
 
@@ -79,6 +86,7 @@ const CRITICAL_GOVERNMENT = new Set([
 export default function ProviderDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
+  const { t, i18n } = useTranslation();
   const providerId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [provider, setProvider] = useState<Provider | null>(null);
@@ -147,7 +155,7 @@ export default function ProviderDetailScreen() {
     const safeUrl = url.startsWith("http") ? url : `https://${url}`;
     const canOpen = await Linking.canOpenURL(safeUrl);
     if (!canOpen) {
-      Alert.alert("Unavailable", "This link could not be opened on your device.");
+      Alert.alert(t("settings.subscription_unavailable"), t("providers.linkUnavailable"));
       return;
     }
     await Linking.openURL(safeUrl);
@@ -158,7 +166,7 @@ export default function ProviderDetailScreen() {
     const telUrl = `tel:${phone}`;
     const canOpen = await Linking.canOpenURL(telUrl);
     if (!canOpen) {
-      Alert.alert("Unavailable", "Phone calls are not supported on this device.");
+      Alert.alert(t("settings.subscription_unavailable"), t("providers.phoneUnavailable"));
       return;
     }
     await Linking.openURL(telUrl);
@@ -183,16 +191,16 @@ export default function ProviderDetailScreen() {
             onPress={() => router.back()}
             style={styles.backBtn}
             accessibilityRole="button"
-            accessibilityLabel="Go back"
+            accessibilityLabel={t("common.back")}
           >
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Provider</Text>
+          <Text style={styles.title}>{t("services.providerName")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
-          title={error ? "Provider unavailable" : "Provider not found"}
-          message={error || "This provider may have been removed or is no longer available."}
+          title={error ? t("providers.providerUnavailable") : t("providers.providerNotFound")}
+          message={error || t("providers.providerRemoved")}
           onRetry={loadAll}
         />
       </SafeAreaView>
@@ -201,6 +209,10 @@ export default function ProviderDetailScreen() {
 
   const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
   const trust = provider.trust || getProviderTrustSummary(provider);
+  const categoryLabel = getLocalizedCategoryLabel(t, provider.category, getCategoryLabel(provider.category));
+  const providerDescription = getLocalizedProviderDescription(t, i18n.language, provider);
+  const coverageLabel = getLocalizedCoverageLabel(t, i18n.language, trust.coverageConfidence);
+  const coverageMessage = getLocalizedCoverageMessage(t, i18n.language, trust.coverageConfidence);
   const daysUntilMove = daysUntil(recMeta?.meta?.moveDate);
   const stateRuleDays = recMeta?.meta?.stateRule?.daysToUpdate;
   const showStateRule =
@@ -213,11 +225,11 @@ export default function ProviderDetailScreen() {
           onPress={() => router.back()}
           style={styles.backBtn}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("common.back")}
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Provider</Text>
+        <Text style={styles.title}>{t("services.providerName")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -226,11 +238,11 @@ export default function ProviderDetailScreen() {
           <View style={styles.criticalBanner} accessibilityRole="alert">
             <AlertTriangle size={18} color={theme.colors.error} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.criticalTitle}>Handle this before you move</Text>
+              <Text style={styles.criticalTitle}>{t("providers.handleBeforeMove")}</Text>
               <Text style={styles.criticalText}>
                 {daysUntilMove <= 0
-                  ? "Your move date has passed — set this up as soon as possible."
-                  : `Only ${daysUntilMove} day${daysUntilMove === 1 ? "" : "s"} left until your move.`}
+                  ? t("providers.moveDatePassed")
+                  : t("providers.daysUntilMove", { count: daysUntilMove })}
               </Text>
             </View>
           </View>
@@ -254,44 +266,44 @@ export default function ProviderDetailScreen() {
                 {provider.name}
               </Text>
               <Text style={styles.providerCategory}>
-                {getCategoryLabel(provider.category)}
+                {categoryLabel}
               </Text>
             </View>
           </View>
 
-          {provider.description ? (
-            <Text style={styles.providerDescription}>{provider.description}</Text>
+          {providerDescription ? (
+            <Text style={styles.providerDescription}>{providerDescription}</Text>
           ) : null}
 
           <View style={styles.badgesRow}>
-            <UiBadge label="Listed provider" variant="warning" />
-            <UiBadge label={trust.coverageConfidence.label} variant="info" />
-            {tier === "CRITICAL" ? <UiBadge label="Critical" variant="error" /> : null}
-            {tier === "IMPORTANT" ? <UiBadge label="Important" variant="warning" /> : null}
+            <UiBadge label={t("providers.listedProvider")} variant="warning" />
+            <UiBadge label={coverageLabel} variant="info" />
+            {tier === "CRITICAL" ? <UiBadge label={t("providers.critical")} variant="error" /> : null}
+            {tier === "IMPORTANT" ? <UiBadge label={t("providers.important")} variant="warning" /> : null}
           </View>
 
           <View style={styles.truthBox}>
             <AlertTriangle size={16} color={theme.colors.warning} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.truthTitle}>Unverified directory data</Text>
+              <Text style={styles.truthTitle}>{t("providers.unverifiedDirectoryData")}</Text>
               <Text style={styles.truthText}>
-                {trust.coverageConfidence.message} Confirm with the official provider before acting.
+                {coverageMessage} {t("providers.confirmOfficial")}
               </Text>
               <Text style={styles.truthText}>
-                Adding this provider only creates a LocateFlow service record; it does not update your address with the provider.
+                {t("providers.manualServiceRecord")}
               </Text>
             </View>
           </View>
 
           <Button
-            title="Track manually as service"
+            title={t("providers.trackManually")}
             onPress={goAddService}
             variant="gradient"
             size="lg"
             fullWidth
             icon={<Plus size={18} color="#fff" />}
             style={{ marginTop: 18 }}
-            accessibilityHint="Creates a new service entry linked to this provider"
+            accessibilityHint={t("providers.trackManuallyHint")}
           />
         </Card>
 
@@ -301,11 +313,13 @@ export default function ProviderDetailScreen() {
               <Users size={18} color={theme.colors.primary} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.usersTitle}>
-                  {formatCount(provider.userCount)} people
-                  {primaryAddress?.state ? ` in ${primaryAddress.state}` : ""} use this
+                  {t("providers.communitySignal", {
+                    count: formatCount(provider.userCount),
+                    state: primaryAddress?.state ? t("providers.communityState", { state: primaryAddress.state }) : "",
+                  })}
                 </Text>
                 <Text style={styles.usersText}>
-                  Community signal only; it does not verify availability or official status.
+                  {t("providers.communitySignalHint")}
                 </Text>
               </View>
             </View>
@@ -318,13 +332,15 @@ export default function ProviderDetailScreen() {
               <Clock size={18} color={theme.colors.warning} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.usersTitle}>
-                  {primaryAddress?.state ?? "Your state"} rule:{" "}
-                  {stateRuleDays} days to update
+                  {t("providers.stateRule", {
+                    state: primaryAddress?.state ?? t("providers.yourState"),
+                    days: stateRuleDays,
+                  })}
                 </Text>
                 <Text style={styles.usersText}>
                   {recMeta?.meta?.stateRule?.source
-                    ? `Source: ${recMeta.meta.stateRule.source}`
-                    : "Handle this within the window to avoid penalties."}
+                    ? t("providers.source", { source: recMeta.meta.stateRule.source })
+                    : t("providers.stateRuleFallback")}
                 </Text>
               </View>
             </View>
@@ -335,15 +351,15 @@ export default function ProviderDetailScreen() {
           <View style={styles.detailRow}>
             <MapPin size={16} color={theme.colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>Coverage</Text>
+              <Text style={styles.detailLabel}>{t("providers.coverage")}</Text>
               <Text style={styles.detailValue}>
                 {provider.scope === "FEDERAL"
-                  ? "National listing"
+                  ? t("providers.nationalListing")
                   : provider.states && provider.states.length > 0
                   ? provider.states.join(", ")
-                  : "Not specified"}
+                  : t("providers.notSpecified")}
               </Text>
-              <Text style={styles.detailHint}>{trust.coverageConfidence.label}</Text>
+              <Text style={styles.detailHint}>{coverageLabel}</Text>
             </View>
           </View>
 
@@ -351,7 +367,7 @@ export default function ProviderDetailScreen() {
             <View style={styles.detailRow}>
               <Tag size={16} color={theme.colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.detailLabel}>Tags</Text>
+                <Text style={styles.detailLabel}>{t("providers.tags")}</Text>
                 <Text style={styles.detailValue}>{provider.tags.join(", ")}</Text>
               </View>
             </View>
@@ -361,7 +377,7 @@ export default function ProviderDetailScreen() {
             <View style={styles.detailRow}>
               <TrendingUp size={16} color={theme.colors.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.detailLabel}>Popularity</Text>
+                <Text style={styles.detailLabel}>{t("providers.popularity")}</Text>
                 <Text style={styles.detailValue}>{provider.popularityScore}</Text>
               </View>
             </View>
@@ -374,10 +390,10 @@ export default function ProviderDetailScreen() {
             onPress={() => handleOpenLink(provider.website)}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={`Open website for ${provider.name}`}
+            accessibilityLabel={t("providers.openWebsiteA11y", { provider: provider.name })}
           >
             <Globe size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Open Website</Text>
+            <Text style={styles.actionText}>{t("providers.openWebsite")}</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -387,10 +403,10 @@ export default function ProviderDetailScreen() {
             onPress={() => handleCall(provider.phone)}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={`Call ${provider.name}`}
+            accessibilityLabel={t("providers.callProviderA11y", { provider: provider.name })}
           >
             <Phone size={16} color={theme.colors.primary} />
-            <Text style={styles.actionText}>Call Provider</Text>
+            <Text style={styles.actionText}>{t("providers.callProvider")}</Text>
           </TouchableOpacity>
         ) : null}
 
@@ -398,7 +414,7 @@ export default function ProviderDetailScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
-                Alternatives in {getCategoryLabel(provider.category)}
+                {t("providers.alternativesIn", { category: categoryLabel })}
               </Text>
               <Info size={14} color={theme.colors.textTertiary} />
             </View>

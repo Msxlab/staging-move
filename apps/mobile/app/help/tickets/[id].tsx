@@ -12,6 +12,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Send, Lock } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -37,6 +38,7 @@ interface Ticket {
 export default function TicketDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t, i18n } = useTranslation();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,7 +92,7 @@ export default function TicketDetailScreen() {
         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
       } else {
         hapticError();
-        Alert.alert("Error", res.error || "Failed to send reply.");
+        Alert.alert(t("tickets.errorTitle"), res.error || t("tickets.sendFailed"));
       }
     } finally {
       setSending(false);
@@ -98,10 +100,10 @@ export default function TicketDetailScreen() {
   };
 
   const handleClose = () => {
-    Alert.alert("Close Ticket", "Are you sure you want to close this ticket?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("tickets.closeTitle"), t("tickets.closeConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Close",
+        text: t("tickets.close"),
         style: "destructive",
         onPress: async () => {
           const res = await api.patch<any>(`/api/tickets/${id}`, {});
@@ -110,7 +112,7 @@ export default function TicketDetailScreen() {
             await fetchTicket();
           } else {
             hapticError();
-            Alert.alert("Error", "Failed to close ticket.");
+            Alert.alert(t("tickets.errorTitle"), t("tickets.closeFailed"));
           }
         },
       },
@@ -118,6 +120,7 @@ export default function TicketDetailScreen() {
   };
 
   if (loading) return <LoadingScreen />;
+  const dateLocale = (i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US";
   if (!ticket) {
     return (
       <SafeAreaView style={styles.container} edges={["top"]}>
@@ -125,12 +128,12 @@ export default function TicketDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Ticket</Text>
+          <Text style={styles.title}>{t("tickets.singleTitle")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
-          title={error ? "Ticket unavailable" : "Ticket not found"}
-          message={error || "This ticket may have been removed."}
+          title={error ? t("tickets.unavailable") : t("tickets.notFound")}
+          message={error || t("tickets.removed")}
           onRetry={load}
         />
       </SafeAreaView>
@@ -163,8 +166,10 @@ export default function TicketDetailScreen() {
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
       >
         <View style={styles.ticketMeta}>
-          <Text style={styles.metaText}>{ticket.status.replace("_", " ")} · {ticket.category}</Text>
-          <Text style={styles.metaText}>{new Date(ticket.createdAt).toLocaleDateString("en-US", { month: "long", day: "numeric" })}</Text>
+          <Text style={styles.metaText}>
+            {t(`tickets.status_${ticket.status}`, { defaultValue: ticket.status.replace("_", " ") })} · {t(`tickets.category_${ticket.category}`, { defaultValue: ticket.category })}
+          </Text>
+          <Text style={styles.metaText}>{new Date(ticket.createdAt).toLocaleDateString(dateLocale, { month: "long", day: "numeric" })}</Text>
         </View>
 
         {ticket.messages.map((msg) => {
@@ -172,9 +177,11 @@ export default function TicketDetailScreen() {
           const isSystem = msg.senderType === "SYSTEM";
           return (
             <View key={msg.id} style={[styles.msgBubble, isUser ? styles.msgUser : isSystem ? styles.msgSystem : styles.msgSupport]}>
-              <Text style={styles.msgSender}>{isUser ? "You" : isSystem ? "System" : "Support"}</Text>
+              <Text style={styles.msgSender}>
+                {isUser ? t("tickets.youSender") : isSystem ? t("tickets.systemSender") : t("tickets.supportSender")}
+              </Text>
               <Text style={[styles.msgText, isSystem && styles.msgTextSystem]}>{msg.content}</Text>
-              <Text style={styles.msgTime}>{new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</Text>
+              <Text style={styles.msgTime}>{new Date(msg.createdAt).toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}</Text>
             </View>
           );
         })}
@@ -182,13 +189,13 @@ export default function TicketDetailScreen() {
 
       {isClosed ? (
         <View style={styles.closedBanner}>
-          <Text style={styles.closedText}>This ticket is closed</Text>
+          <Text style={styles.closedText}>{t("tickets.closed")}</Text>
         </View>
       ) : (
         <View style={styles.replyBar}>
           <TextInput
             style={styles.replyInput}
-            placeholder="Write a reply..."
+            placeholder={t("tickets.replyPlaceholder")}
             placeholderTextColor={theme.colors.textMuted}
             value={reply}
             onChangeText={setReply}

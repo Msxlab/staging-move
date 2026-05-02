@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CalendarClock, Eye, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { BlogEditor } from "./editor";
 import { CoverImageUploader } from "./cover-image-uploader";
 import { CategoryPicker } from "./category-picker";
+import { TagPicker } from "./tag-picker";
 import { SeoScore } from "./seo-score";
 
 type BlogStatus = "DRAFT" | "SCHEDULED" | "PUBLISHED" | "ARCHIVED";
@@ -31,6 +32,7 @@ interface LoadedPost {
   ogImageKey: string | null;
   ogImageAlt: string | null;
   categoryId: string | null;
+  tags?: Array<{ tag: { id: string; slug: string; name: string; locale: string } }>;
 }
 
 interface FormState {
@@ -47,6 +49,7 @@ interface FormState {
   ogImageAlt: string;
   scheduledAt: string;
   categoryId: string | null;
+  tagIds: string[];
 }
 
 const emptyDoc = { type: "doc", content: [{ type: "paragraph" }] };
@@ -86,6 +89,7 @@ function normalizePost(post: LoadedPost): FormState {
     ogImageAlt: post.ogImageAlt || "",
     scheduledAt: toLocalInputValue(post.scheduledAt),
     categoryId: post.categoryId ?? null,
+    tagIds: (post.tags ?? []).map((entry) => entry.tag.id),
   };
 }
 
@@ -110,10 +114,14 @@ async function readError(res: Response): Promise<string> {
   return typeof body?.error === "string" ? body.error : `HTTP ${res.status}`;
 }
 
+const AUTOSAVE_INTERVAL_MS = 30_000;
+
 export function BlogPostEditorShell({ postId }: { postId?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(!!postId);
   const [saving, setSaving] = useState(false);
+  const [autosaving, setAutosaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [post, setPost] = useState<LoadedPost | null>(null);
   const [form, setForm] = useState<FormState>({
     title: "",
@@ -129,6 +137,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
     ogImageAlt: "",
     scheduledAt: "",
     categoryId: null,
+    tagIds: [],
   });
 
   const isExisting = !!postId;
@@ -137,6 +146,17 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
     if (!post?.slug) return null;
     return `${PUBLIC_WEB_URL}/blog/${post.slug}${post.locale === "es" ? "?locale=es" : ""}`;
   }, [post?.locale, post?.slug]);
+
+  // Autosave plumbing: snapshot the form into refs so the interval
+  // can compare without re-creating itself every keystroke. The
+  // interval reads the *latest* save function via a ref so the
+  // closure doesn't go stale during a long editing session.
+  const formSnapshotRef = useRef<string>("");
+  const lastSavedSnapshotRef = useRef<string>("");
+  const savePostRef = useRef<((options?: { silent?: boolean }) => Promise<boolean>) | null>(null);
+  useEffect(() => {
+    formSnapshotRef.current = JSON.stringify(form);
+  }, [form]);
 
   const loadPost = useCallback(async () => {
     if (!postId) return;
@@ -157,6 +177,43 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
   useEffect(() => {
     void loadPost();
   }, [loadPost]);
+
+  // After a load resets the form, mark the snapshot as "saved" so the
+  // autosave doesn't immediately fire just because we hydrated.
+  useEffect(() => {
+    if (!loading && post) {
+      lastSavedSnapshotRef.current = JSON.stringify(normalizePost(post));
+      formSnapshotRef.current = lastSavedSnapshotRef.current;
+    }
+  }, [loading, post]);
+
+  // Autosave: every 30s, if the form differs from what was last saved,
+  // POST a silent PATCH. Skip while a manual save is in flight or the
+  // post hasn't been created yet (no postId means there's nothing to
+  // patch — the user must hit "Create draft" first).
+  useEffect(() => {
+    if (!postId) return;
+    const interval = setInterval(() => {
+      if (saving || autosaving || loading) return;
+      if (!formSnapshotRef.current || formSnapshotRef.current === lastSavedSnapshotRef.current) return;
+      const fn = savePostRef.current;
+      if (!fn) return;
+      void (async () => {
+        const expectedSnapshot = formSnapshotRef.current;
+        setAutosaving(true);
+        try {
+          const ok = await fn({ silent: true });
+          if (ok) {
+            lastSavedSnapshotRef.current = expectedSnapshot;
+            setLastSavedAt(new Date());
+          }
+        } finally {
+          setAutosaving(false);
+        }
+      })();
+    }, AUTOSAVE_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [postId, saving, autosaving, loading]);
 
   async function createPost() {
     if (!form.title.trim()) {
@@ -190,7 +247,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
       await createPost();
       return false;
     }
-    setSaving(true);
+    if (!options.silent) setSaving(true);
     try {
       const res = await fetch(`/api/blog/posts/${postId}`, {
         method: "PATCH",
@@ -208,27 +265,44 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           ogImageKey: form.ogImageKey.trim() || null,
           ogImageAlt: form.ogImageAlt.trim() || null,
           categoryId: form.categoryId,
+          tagIds: form.tagIds,
           scheduledAt: fromLocalInputValue(form.scheduledAt) ?? null,
         }),
       });
       if (!res.ok) throw new Error(await readError(res));
-      const data = (await res.json()) as { post: Pick<LoadedPost, "id" | "slug" | "locale" | "status" | "title"> };
+      const data = (await res.json()) as { post: Pick<LoadedPost, "id" | "slug" | "locale" | "status" | "title">; revalidate?: { ok?: boolean; reason?: string } };
       setPost((current) =>
         current
           ? { ...current, ...data.post, ...form, scheduledAt: fromLocalInputValue(form.scheduledAt) ?? null }
           : null,
       );
       if (!options.silent) toast.success("Post saved");
+      if (data.revalidate && data.revalidate.ok === false) {
+        toast.warning(
+          data.revalidate.reason === "config-missing"
+            ? "Public cache refresh skipped — webhook secret missing."
+            : "Public cache refresh failed. The site will catch up within 10 minutes.",
+        );
+      }
+      lastSavedSnapshotRef.current = formSnapshotRef.current;
+      setLastSavedAt(new Date());
       return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save post");
       return false;
     } finally {
-      setSaving(false);
+      if (!options.silent) setSaving(false);
     }
   }
 
-  async function runLifecycle(action: "publish" | "schedule" | "unpublish") {
+  // Keep the autosave interval pointing at the latest savePost. We
+  // can't pass `savePost` directly into the dependency array of the
+  // autosave effect — it'd recreate the interval on every keystroke.
+  useEffect(() => {
+    savePostRef.current = savePost;
+  });
+
+  async function runLifecycle(action: "publish" | "schedule" | "unpublish" | "cancel-schedule") {
     if (!postId) {
       toast.error("Create the draft before publishing");
       return;
@@ -246,7 +320,28 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
         }),
       });
       if (!res.ok) throw new Error(await readError(res));
-      toast.success(action === "publish" ? "Published" : action === "schedule" ? "Scheduled" : "Unpublished");
+      const data = (await res.json().catch(() => ({}))) as {
+        revalidate?: { ok?: boolean; reason?: string };
+      };
+      toast.success(
+        action === "publish"
+          ? "Published"
+          : action === "schedule"
+            ? "Scheduled"
+            : action === "cancel-schedule"
+              ? "Schedule canceled"
+              : "Unpublished",
+      );
+      if (data.revalidate && data.revalidate.ok === false) {
+        // Publish committed, but the public cache didn't refresh. The
+        // 10-minute ISR safety net will catch up; warn so editors don't
+        // think the post never went live.
+        toast.warning(
+          data.revalidate.reason === "config-missing"
+            ? "Public cache refresh skipped — webhook secret missing. Ops has been notified."
+            : "Public cache refresh failed. The site will catch up within 10 minutes.",
+        );
+      }
       await loadPost();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Action failed");
@@ -317,6 +412,15 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
               ) : null}
             </p>
           ) : null}
+          {postId ? (
+            <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
+              {autosaving
+                ? "Autosaving..."
+                : lastSavedAt
+                  ? `Saved at ${lastSavedAt.toLocaleTimeString()}`
+                  : "Autosave runs every 30 seconds when idle."}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap gap-2">
           {postId ? (
@@ -341,15 +445,27 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
           </button>
           {postId ? (
             <>
-              <button
-                type="button"
-                onClick={() => void runLifecycle("schedule")}
-                disabled={saving || !form.scheduledAt}
-                className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
-              >
-                <CalendarClock className="h-4 w-4" />
-                Schedule
-              </button>
+              {post?.status === "SCHEDULED" ? (
+                <button
+                  type="button"
+                  onClick={() => void runLifecycle("cancel-schedule")}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+                >
+                  <CalendarClock className="h-4 w-4" />
+                  Cancel schedule
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void runLifecycle("schedule")}
+                  disabled={saving || !form.scheduledAt}
+                  className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+                >
+                  <CalendarClock className="h-4 w-4" />
+                  Schedule
+                </button>
+              )}
               {post?.status === "PUBLISHED" ? (
                 <button
                   type="button"
@@ -475,6 +591,12 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
                 locale={form.locale}
                 value={form.categoryId}
                 onChange={(categoryId) => setForm((f) => ({ ...f, categoryId }))}
+                disabled={saving}
+              />
+              <TagPicker
+                locale={form.locale}
+                value={form.tagIds}
+                onChange={(tagIds) => setForm((f) => ({ ...f, tagIds }))}
                 disabled={saving}
               />
               <div>

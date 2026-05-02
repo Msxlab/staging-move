@@ -22,7 +22,7 @@ import { requirePermission } from "@/lib/auth";
 import { revalidatePublicBlog } from "@/lib/blog-revalidate";
 
 const publishSchema = z.object({
-  action: z.enum(["publish", "schedule", "unpublish"]),
+  action: z.enum(["publish", "schedule", "unpublish", "cancel-schedule"]),
   scheduledAt: z.string().datetime().optional(),
 });
 
@@ -85,6 +85,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       );
     }
     next = { status: "SCHEDULED", publishedAt: null, scheduledAt: at };
+  } else if (body.action === "cancel-schedule") {
+    // Take a SCHEDULED post back to DRAFT — the cron worker will not
+    // pick it up after this. No-op against any other state so callers
+    // can fire it idempotently from the editor.
+    if (existing.status !== "SCHEDULED") {
+      return NextResponse.json({ error: "Only SCHEDULED posts can be unscheduled" }, { status: 409 });
+    }
+    next = { status: "DRAFT", publishedAt: null, scheduledAt: null };
   } else {
     // unpublish — only valid from PUBLISHED
     if (existing.status !== "PUBLISHED") {
@@ -115,10 +123,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
   });
 
-  // Revalidate when the post becomes (or stops being) public.
+  // Revalidate when the post becomes (or stops being) public. We await
+  // here so the admin caller can see whether the public cache actually
+  // got the message — silent failures during a misconfig had been
+  // masking 30+ minute "why isn't my post showing" incidents.
+  let revalidate: { ok: boolean; reason?: string } = { ok: true };
   if (next.status === "PUBLISHED" || existing.status === "PUBLISHED") {
-    void revalidatePublicBlog({ slug: existing.slug, locale: existing.locale });
+    const result = await revalidatePublicBlog({ slug: existing.slug, locale: existing.locale });
+    revalidate = result.ok ? { ok: true } : { ok: false, reason: result.reason };
   }
 
-  return NextResponse.json({ ok: true, status: next.status });
+  return NextResponse.json({ ok: true, status: next.status, revalidate });
 }

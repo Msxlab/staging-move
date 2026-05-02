@@ -13,6 +13,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { theme } from "@/lib/theme";
@@ -20,25 +21,29 @@ import { api } from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 
-const ADDRESS_TYPES = [
-  { value: "HOME", label: "Home" },
-  { value: "WORK", label: "Work" },
-  { value: "VACATION", label: "Vacation" },
-  { value: "TEMPORARY", label: "Temporary" },
-  { value: "STORAGE", label: "Storage" },
-  { value: "OTHER", label: "Other" },
-];
+const ADDRESS_TYPES = ["HOME", "WORK", "VACATION", "TEMPORARY", "STORAGE", "OTHER"] as const;
+const OWNERSHIP_TYPES = ["OWNER", "RENTER", "FAMILY", "OTHER"] as const;
 
-const OWNERSHIP_TYPES = [
-  { value: "OWNER", label: "Owner" },
-  { value: "RENTER", label: "Renter" },
-  { value: "FAMILY", label: "Family" },
-  { value: "OTHER", label: "Other" },
-];
+const ADDRESS_TYPE_LABEL_KEYS: Record<(typeof ADDRESS_TYPES)[number], string> = {
+  HOME: "addresses.type_primary",
+  WORK: "addresses.type_secondary",
+  VACATION: "addresses.type_vacation",
+  TEMPORARY: "addresses.type_temporary",
+  STORAGE: "addresses.type_storage",
+  OTHER: "addresses.type_other",
+};
+
+const OWNERSHIP_LABEL_KEYS: Record<(typeof OWNERSHIP_TYPES)[number], string> = {
+  OWNER: "addresses.ownership_owner",
+  RENTER: "addresses.ownership_renter",
+  FAMILY: "addresses.ownership_family",
+  OTHER: "addresses.type_other",
+};
 
 export default function EditAddressScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const [pageLoading, setPageLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -99,7 +104,15 @@ export default function EditAddressScreen() {
 
   const handleSave = async () => {
     if (!form.street || !form.city || !form.state || !form.zip) {
-      Alert.alert("Missing Fields", "Please fill in street, city, state, and ZIP.");
+      Alert.alert(t("validation.missingFields"), t("addresses.errorRequiredFields"));
+      return;
+    }
+    if (form.state.length !== 2) {
+      Alert.alert(t("validation.invalidState"), t("addresses.errorStateFormat"));
+      return;
+    }
+    if (!/^\d{5}(-\d{4})?$/.test(form.zip)) {
+      Alert.alert(t("validation.invalidZip"), t("addresses.errorZipFormat"));
       return;
     }
     setSaving(true);
@@ -107,7 +120,7 @@ export default function EditAddressScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.retry"), res.error);
     } else {
       hapticSuccess();
       router.back();
@@ -122,7 +135,7 @@ export default function EditAddressScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Address</Text>
+        <Text style={styles.title}>{t("addresses.editTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -131,39 +144,39 @@ export default function EditAddressScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.sectionLabel}>Type</Text>
+        <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
         <View style={styles.chipRow}>
-          {ADDRESS_TYPES.map((t) => (
+          {ADDRESS_TYPES.map((type) => (
             <TouchableOpacity
-              key={t.value}
-              style={[styles.chip, form.type === t.value && styles.chipActive]}
-              onPress={() => update("type", t.value)}
+              key={type}
+              style={[styles.chip, form.type === type && styles.chipActive]}
+              onPress={() => update("type", type)}
             >
-              <Text style={[styles.chipText, form.type === t.value && styles.chipTextActive]}>
-                {t.label}
+              <Text style={[styles.chipText, form.type === type && styles.chipTextActive]}>
+                {t(ADDRESS_TYPE_LABEL_KEYS[type])}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.label}>Nickname</Text>
+        <Text style={styles.label}>{t("addresses.nickname")}</Text>
         <TextInput
           style={styles.input}
-          placeholder='e.g., "Main Residence"'
+          placeholder={t("addresses.nicknameHint")}
           placeholderTextColor={theme.colors.textMuted}
           value={form.nickname}
           onChangeText={(v) => update("nickname", v)}
         />
 
         <AddressAutocompleteField
-          label="Street Address *"
+          label={t("addresses.street") + " *"}
           value={form.street}
           placeholder="123 Main Street"
           onValueChange={(value) => update("street", value)}
           onSelect={handleAutocompleteSelect}
         />
 
-        <Text style={styles.label}>Apt / Suite</Text>
+        <Text style={styles.label}>{t("addresses.street2")}</Text>
         <TextInput
           style={styles.input}
           placeholder="Apt 4B"
@@ -172,7 +185,7 @@ export default function EditAddressScreen() {
           onChangeText={(v) => update("street2", v)}
         />
 
-        <Text style={styles.label}>City *</Text>
+        <Text style={styles.label}>{t("addresses.city")} *</Text>
         <TextInput
           style={styles.input}
           placeholder="New York"
@@ -183,7 +196,7 @@ export default function EditAddressScreen() {
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>State *</Text>
+            <Text style={styles.label}>{t("addresses.state")} *</Text>
             <TextInput
               style={styles.input}
               placeholder="NY"
@@ -195,7 +208,7 @@ export default function EditAddressScreen() {
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>ZIP *</Text>
+            <Text style={styles.label}>{t("addresses.zip")} *</Text>
             <TextInput
               style={styles.input}
               placeholder="10001"
@@ -208,23 +221,23 @@ export default function EditAddressScreen() {
           </View>
         </View>
 
-        <Text style={styles.sectionLabel}>Ownership</Text>
+        <Text style={styles.sectionLabel}>{t("addresses.ownership")}</Text>
         <View style={styles.chipRow}>
-          {OWNERSHIP_TYPES.map((o) => (
+          {OWNERSHIP_TYPES.map((ownership) => (
             <TouchableOpacity
-              key={o.value}
-              style={[styles.chip, form.ownership === o.value && styles.chipActive]}
-              onPress={() => update("ownership", o.value)}
+              key={ownership}
+              style={[styles.chip, form.ownership === ownership && styles.chipActive]}
+              onPress={() => update("ownership", ownership)}
             >
-              <Text style={[styles.chipText, form.ownership === o.value && styles.chipTextActive]}>
-                {o.label}
+              <Text style={[styles.chipText, form.ownership === ownership && styles.chipTextActive]}>
+                {t(OWNERSHIP_LABEL_KEYS[ownership])}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Primary Address</Text>
+          <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
           <Switch
             value={form.isPrimary}
             onValueChange={(v) => update("isPrimary", v)}
@@ -244,7 +257,7 @@ export default function EditAddressScreen() {
           ) : (
             <>
               <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>Update Address</Text>
+              <Text style={styles.saveBtnText}>{t("addresses.update")}</Text>
             </>
           )}
         </TouchableOpacity>

@@ -12,21 +12,18 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
-const BILLING_CYCLES = [
-  { value: "MONTHLY", label: "Monthly" },
-  { value: "QUARTERLY", label: "Quarterly" },
-  { value: "YEARLY", label: "Yearly" },
-  { value: "ONE_TIME", label: "One-time" },
-];
+const BILLING_CYCLE_VALUES = ["MONTHLY", "QUARTERLY", "YEARLY", "ONE_TIME"] as const;
 
 export default function EditServiceScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -67,7 +64,7 @@ export default function EditServiceScreen() {
 
   const handleSave = async () => {
     if (!form.providerName.trim()) {
-      Alert.alert("Error", "Provider name is required.");
+      Alert.alert(t("tickets.errorTitle"), t("services.providerNameRequiredError"));
       return;
     }
     setSaving(true);
@@ -87,7 +84,7 @@ export default function EditServiceScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("tickets.errorTitle"), res.error);
     } else {
       hapticSuccess();
       router.back();
@@ -102,53 +99,55 @@ export default function EditServiceScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Service</Text>
+        <Text style={styles.title}>{t("services.editTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Text style={styles.label}>Provider Name *</Text>
-        <TextInput style={styles.input} value={form.providerName} onChangeText={(v) => update("providerName", v)} placeholderTextColor={theme.colors.textMuted} placeholder="Provider name" />
+        <Text style={styles.label}>{t("services.providerNameRequired")}</Text>
+        <TextInput style={styles.input} value={form.providerName} onChangeText={(v) => update("providerName", v)} placeholderTextColor={theme.colors.textMuted} placeholder={t("services.providerNamePlaceholder")} />
 
-        <Text style={styles.label}>Account Number</Text>
-        <TextInput style={styles.input} value={form.accountNumber} onChangeText={(v) => update("accountNumber", v)} placeholderTextColor={theme.colors.textMuted} placeholder="Account #" />
+        <Text style={styles.label}>{t("services.accountNumber")}</Text>
+        <TextInput style={styles.input} value={form.accountNumber} onChangeText={(v) => update("accountNumber", v)} placeholderTextColor={theme.colors.textMuted} placeholder={t("services.accountNumberPlaceholder")} />
 
-        <Text style={styles.label}>Monthly Cost ($)</Text>
+        <Text style={styles.label}>{t("services.monthlyCost")} ($)</Text>
         <TextInput style={styles.input} value={form.monthlyCost} onChangeText={(v) => update("monthlyCost", v)} placeholderTextColor={theme.colors.textMuted} placeholder="0.00" keyboardType="decimal-pad" />
 
-        <Text style={styles.label}>Billing Day (1-31)</Text>
+        <Text style={styles.label}>{t("services.billingDayWithRange")}</Text>
         <TextInput style={styles.input} value={form.billingDay} onChangeText={(v) => update("billingDay", v)} placeholderTextColor={theme.colors.textMuted} placeholder="15" keyboardType="number-pad" />
 
-        <Text style={styles.sectionLabel}>Billing Cycle</Text>
+        <Text style={styles.sectionLabel}>{t("services.billingCycle")}</Text>
         <View style={styles.chipRow}>
-          {BILLING_CYCLES.map((b) => (
+          {BILLING_CYCLE_VALUES.map((value) => (
             <TouchableOpacity
-              key={b.value}
-              style={[styles.chip, form.billingCycle === b.value && styles.chipActive]}
-              onPress={() => update("billingCycle", b.value)}
+              key={value}
+              style={[styles.chip, form.billingCycle === value && styles.chipActive]}
+              onPress={() => update("billingCycle", value)}
             >
-              <Text style={[styles.chipText, form.billingCycle === b.value && styles.chipTextActive]}>{b.label}</Text>
+              <Text style={[styles.chipText, form.billingCycle === value && styles.chipTextActive]}>
+                {t(`billingCycles.${value}`)}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        <Text style={styles.label}>Phone</Text>
+        <Text style={styles.label}>{t("common.phone")}</Text>
         <TextInput style={styles.input} value={form.phone} onChangeText={(v) => update("phone", v)} placeholderTextColor={theme.colors.textMuted} placeholder="(555) 123-4567" keyboardType="phone-pad" />
 
-        <Text style={styles.label}>Website</Text>
+        <Text style={styles.label}>{t("common.website")}</Text>
         <TextInput style={styles.input} value={form.website} onChangeText={(v) => update("website", v)} placeholderTextColor={theme.colors.textMuted} placeholder="https://..." keyboardType="url" autoCapitalize="none" />
 
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t("common.email")}</Text>
         <TextInput style={styles.input} value={form.email} onChangeText={(v) => update("email", v)} placeholderTextColor={theme.colors.textMuted} placeholder="support@..." keyboardType="email-address" autoCapitalize="none" />
 
-        <Text style={styles.label}>Notes</Text>
-        <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} value={form.notes} onChangeText={(v) => update("notes", v)} placeholderTextColor={theme.colors.textMuted} placeholder="Notes..." multiline />
+        <Text style={styles.label}>{t("services.notes")}</Text>
+        <TextInput style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]} value={form.notes} onChangeText={(v) => update("notes", v)} placeholderTextColor={theme.colors.textMuted} placeholder={t("services.notesPlaceholder")} multiline />
 
         <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving} activeOpacity={0.7}>
           {saving ? <ActivityIndicator color="#fff" /> : (
             <>
               <Check size={18} color="#fff" />
-              <Text style={styles.saveBtnText}>Save Changes</Text>
+              <Text style={styles.saveBtnText}>{t("common.saveChanges")}</Text>
             </>
           )}
         </TouchableOpacity>

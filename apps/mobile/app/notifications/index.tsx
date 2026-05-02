@@ -11,6 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Bell, CheckCheck } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -29,6 +30,7 @@ interface FeedNotification {
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [notifications, setNotifications] = useState<FeedNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -73,7 +75,7 @@ export default function NotificationsScreen() {
   const markRead = async (id: string) => {
     const res = await api.patch(`/api/notifications/feed/${id}`, {});
     if (res.error) {
-      Alert.alert("Notifications", res.error);
+      Alert.alert(t("notifications.title"), res.error);
       return;
     }
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
@@ -85,7 +87,7 @@ export default function NotificationsScreen() {
     const res = await api.patch("/api/notifications/feed?action=read-all", {});
     setMarkingAll(false);
     if (res.error) {
-      Alert.alert("Notifications", res.error);
+      Alert.alert(t("notifications.title"), res.error);
       return;
     }
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -94,15 +96,36 @@ export default function NotificationsScreen() {
 
   if (loading) return <LoadingScreen />;
 
+  const isSpanish = (i18n.language || "").toLowerCase().startsWith("es");
+  const dateLocale = isSpanish ? "es-ES" : "en-US";
+  const notificationTitle = (notif: FeedNotification) => {
+    if (!isSpanish) return notif.title;
+    return t(`notifications.feed_${notif.type || "GENERIC"}_title`, {
+      defaultValue: t("notifications.feed_GENERIC_title"),
+    });
+  };
+  const notificationBody = (notif: FeedNotification) => {
+    if (!isSpanish) return notif.body;
+    return t(`notifications.feed_${notif.type || "GENERIC"}_body`, {
+      defaultValue: t("notifications.feed_GENERIC_body"),
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
+        <Text style={styles.title}>{t("notifications.title")}</Text>
         {unreadCount > 0 ? (
-          <TouchableOpacity onPress={markAllRead} style={styles.markAllBtn} disabled={markingAll}>
+          <TouchableOpacity
+            onPress={markAllRead}
+            style={styles.markAllBtn}
+            disabled={markingAll}
+            accessibilityRole="button"
+            accessibilityLabel={t("notifications.markAllRead")}
+          >
             <CheckCheck size={18} color={theme.colors.primary} />
           </TouchableOpacity>
         ) : (
@@ -111,7 +134,7 @@ export default function NotificationsScreen() {
       </View>
 
       {unreadCount > 0 && (
-        <Text style={styles.unreadLabel}>{unreadCount} unread</Text>
+        <Text style={styles.unreadLabel}>{t("notifications.unread", { count: unreadCount })}</Text>
       )}
 
       <ScrollView
@@ -124,12 +147,14 @@ export default function NotificationsScreen() {
         ) : notifications.length === 0 ? (
           <Card variant="default" style={{ alignItems: "center", paddingVertical: 40 }}>
             <Bell size={32} color={theme.colors.textMuted} />
-            <Text style={styles.emptyTitle}>No notifications</Text>
-            <Text style={styles.emptySubtitle}>You'll see important updates here</Text>
+            <Text style={styles.emptyTitle}>{t("notifications.emptyTitle")}</Text>
+            <Text style={styles.emptySubtitle}>{t("notifications.emptySubtitle")}</Text>
           </Card>
         ) : (
           <View style={styles.list}>
-            {notifications.map((notif) => (
+            {notifications.map((notif) => {
+              const body = notificationBody(notif);
+              return (
               <TouchableOpacity
                 key={notif.id}
                 style={[styles.notifRow, !notif.read && styles.notifUnread]}
@@ -139,15 +164,16 @@ export default function NotificationsScreen() {
                 <View style={[styles.dot, { backgroundColor: notif.read ? "transparent" : theme.colors.primary }]} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.notifTitle, notif.read && styles.notifTitleRead]}>
-                    {notif.title}
+                    {notificationTitle(notif)}
                   </Text>
-                  {notif.body ? <Text style={styles.notifBody} numberOfLines={2}>{notif.body}</Text> : null}
+                  {body ? <Text style={styles.notifBody} numberOfLines={2}>{body}</Text> : null}
                   <Text style={styles.notifTime}>
-                    {new Date(notif.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    {new Date(notif.createdAt).toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric" })}
                   </Text>
                 </View>
               </TouchableOpacity>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>

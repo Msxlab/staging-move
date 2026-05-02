@@ -4,13 +4,9 @@ import { sendMoveReminderEmail } from "@/lib/email-service";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { sendNotification } from "@/lib/notifications";
-import { buildWebNotificationSettings, groupNotificationPreferencesByUser, type StoredNotificationPreference } from "@/lib/notification-preferences";
+import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 
 export const runtime = "nodejs";
-
-function isPushEnabled(records: StoredNotificationPreference[], type: string) {
-  return records.some((record) => record.channel === "PUSH" && record.type === type && record.enabled);
-}
 
 // Cron handler for move reminders — Send reminders 7, 3, 1 days before move
 async function handleCron(request: NextRequest) {
@@ -95,7 +91,7 @@ async function handleCron(request: NextRequest) {
             });
             if (created) {
               mirrored++;
-              if (isPushEnabled(userPreferences, "MOVE_ALERT")) {
+              if (isPushTypeEnabled(userPreferences, "MOVE_ALERT")) {
                 const pushed = await sendNotification({
                   userId: plan.userId,
                   type: "PUSH",

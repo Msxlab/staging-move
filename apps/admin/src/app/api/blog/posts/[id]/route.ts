@@ -74,6 +74,8 @@ const updateSchema = z.object({
   ogImageKey: z.string().max(500).nullable().optional(),
   ogImageAlt: z.string().max(200).nullable().optional(),
   categoryId: z.string().max(30).nullable().optional(),
+  /** Replace the post's tag set with this list of tag ids. Pass [] to clear. */
+  tagIds: z.array(z.string().max(30)).optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
   /** Optional commit-style note for the BlogRevision row. */
   revisionNote: z.string().max(500).optional(),
@@ -104,6 +106,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       contentJson: true,
       title: true,
       status: true,
+      seoTitle: true,
+      seoDescription: true,
+      canonicalUrl: true,
+      noIndex: true,
+      categoryId: true,
     },
   });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -171,12 +178,39 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data.excerpt = body.excerpt;
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
     const post = await tx.blogPost.update({
       where: { id },
       data,
       select: { id: true, slug: true, locale: true, status: true, title: true },
     });
+
+    if (body.tagIds !== undefined) {
+      // Replace the entire tag set. Cheapest correct approach: drop
+      // existing join rows and re-create. The set is small (we cap at
+      // ~10 tags per post in practice) so a delete+createMany is fine.
+      const targetIds = Array.from(new Set(body.tagIds));
+      // Validate all referenced tags exist + share the post's locale
+      // so we don't end up with cross-locale tag links.
+      if (targetIds.length > 0) {
+        const tags = await tx.blogTag.findMany({
+          where: { id: { in: targetIds }, locale: post.locale },
+          select: { id: true },
+        });
+        if (tags.length !== targetIds.length) {
+          throw new Error("INVALID_TAG_IDS");
+        }
+      }
+      await tx.blogPostTag.deleteMany({ where: { postId: id } });
+      if (targetIds.length > 0) {
+        await tx.blogPostTag.createMany({
+          data: targetIds.map((tagId) => ({ postId: id, tagId })),
+          skipDuplicates: true,
+        });
+      }
+    }
 
     if (contentChanged) {
       await tx.blogRevision.create({
@@ -190,28 +224,69 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       });
     }
 
+    // SEO-sensitive fields get before/after captured so we can answer
+    // "who flipped noindex on the launch post?" without a backup
+    // restore. Body changes stay in BlogRevision (full snapshot), not
+    // the audit log, since they can be enormous.
+    const seoSensitiveKeys = [
+      "slug",
+      "locale",
+      "title",
+      "seoTitle",
+      "seoDescription",
+      "canonicalUrl",
+      "noIndex",
+      "categoryId",
+    ] as const;
+    const seoBefore: Record<string, unknown> = {};
+    const seoAfter: Record<string, unknown> = {};
+    for (const key of seoSensitiveKeys) {
+      if (key in data) {
+        seoBefore[key] = (existing as Record<string, unknown>)[key] ?? null;
+        seoAfter[key] = (data as Record<string, unknown>)[key] ?? null;
+      }
+    }
+    const auditChanges: Record<string, unknown> = { fields: Object.keys(data) };
+    if (Object.keys(seoBefore).length > 0) {
+      auditChanges.before = seoBefore;
+      auditChanges.after = seoAfter;
+    }
+    if (body.tagIds !== undefined) {
+      auditChanges.tagIds = { count: body.tagIds.length };
+    }
     await tx.adminAuditLog.create({
       data: {
         adminUserId: session.adminId,
         action: "BLOG_UPDATE",
         entityType: "BlogPost",
         entityId: id,
-        // Don't echo the full body — the data shape is already
-        // captured by the BlogRevision row and the column mutations.
-        changes: JSON.stringify({ fields: Object.keys(data) }),
+        changes: JSON.stringify(auditChanges),
         ipAddress: req.headers.get("x-forwarded-for") || "unknown",
       },
     });
 
     return post;
   });
-
-  // Only invalidate the public site if the post is live.
-  if (existing.status === "PUBLISHED") {
-    void revalidatePublicBlog({ slug: updated.slug, locale: updated.locale });
+  } catch (e) {
+    if ((e as Error)?.message === "INVALID_TAG_IDS") {
+      return NextResponse.json(
+        { error: "One or more tag ids are invalid for this post's locale." },
+        { status: 400 },
+      );
+    }
+    throw e;
   }
 
-  return NextResponse.json({ post: updated });
+  // Only invalidate the public site if the post is live. Await the
+  // result here so the editor sees revalidate failures alongside the
+  // save toast — same pattern as the publish route.
+  let revalidate: { ok: boolean; reason?: string } | null = null;
+  if (existing.status === "PUBLISHED") {
+    const result = await revalidatePublicBlog({ slug: updated.slug, locale: updated.locale });
+    revalidate = result.ok ? { ok: true } : { ok: false, reason: result.reason };
+  }
+
+  return NextResponse.json({ post: updated, revalidate });
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

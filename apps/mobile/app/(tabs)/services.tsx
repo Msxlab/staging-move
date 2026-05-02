@@ -8,6 +8,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -91,7 +92,7 @@ function getServiceCategoryIcon(category: string): string {
 }
 
 export default function ServicesScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ addressId?: string | string[] }>();
   const [services, setServices] = useState<any[]>([]);
@@ -106,6 +107,7 @@ export default function ServicesScreen() {
   const [costValue, setCostValue] = useState("");
   const [savingCost, setSavingCost] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failedLogoUrls, setFailedLogoUrls] = useState<Record<string, boolean>>({});
 
   const requestedAddressId = Array.isArray(params.addressId) ? params.addressId[0] : params.addressId;
 
@@ -126,6 +128,16 @@ export default function ServicesScreen() {
       void fetchServices();
     }
   };
+
+  const serviceCategoryLabel = useCallback(
+    (category: string) => t(`categories.${category}`, { defaultValue: getServiceCategoryLabel(category) }),
+    [t],
+  );
+
+  const serviceBillingCycleLabel = useCallback(
+    (cycle: string) => t(`billingCycles.${cycle}`, { defaultValue: cycle.replace("_", " ") }),
+    [t],
+  );
 
   const fetchServices = useCallback(async () => {
     const [servicesRes, addressesRes] = await Promise.all([
@@ -219,7 +231,7 @@ export default function ServicesScreen() {
   const filtered = filterCat ? services.filter((s) => getMergedDisplayCategoryKey(s.category) === filterCat) : services;
   const totalMonthly = filtered.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
   const selectedAddress = selectedAddressId ? addresses.find((address) => address.id === selectedAddressId) : null;
-  const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => getServiceCategoryLabel(a).localeCompare(getServiceCategoryLabel(b)));
+  const categories = [...new Set(services.map((s) => getMergedDisplayCategoryKey(s.category)))].sort((a, b) => serviceCategoryLabel(a).localeCompare(serviceCategoryLabel(b)));
   const uncostedCount = filtered.filter((service) => !service.monthlyCost || service.monthlyCost <= 0).length;
 
   return (
@@ -229,7 +241,7 @@ export default function ServicesScreen() {
           <Text style={styles.title}>{t("services.title")}</Text>
           <Text style={styles.subtitle}>
             {selectedAddress ? `${selectedAddress.nickname || selectedAddress.city} · ` : ""}
-            {filtered.length} service{filtered.length !== 1 ? "s" : ""} · ${totalMonthly.toLocaleString()}/mo
+            {t("services.summaryLine", { count: filtered.length, total: totalMonthly.toLocaleString() })}
           </Text>
         </View>
         <TouchableOpacity
@@ -247,7 +259,7 @@ export default function ServicesScreen() {
           <View style={styles.summaryItem}>
             <MapPin size={15} color={theme.colors.primary} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.summaryLabel}>Viewing address</Text>
+              <Text style={styles.summaryLabel}>{t("services.viewingAddress")}</Text>
               <Text style={styles.summaryValue} numberOfLines={1}>
                 {selectedAddress ? (selectedAddress.nickname || `${selectedAddress.city}, ${selectedAddress.state}`) : t("common.all")}
               </Text>
@@ -256,18 +268,18 @@ export default function ServicesScreen() {
           <View style={styles.summaryItem}>
             <Wallet size={15} color={theme.colors.emerald.text} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.summaryLabel}>Budget tracked</Text>
-              <Text style={styles.summaryValue}>${totalMonthly.toLocaleString()}/mo</Text>
+              <Text style={styles.summaryLabel}>{t("services.budgetTracked")}</Text>
+              <Text style={styles.summaryValue}>{t("services.monthlyAmount", { amount: totalMonthly.toLocaleString() })}</Text>
             </View>
           </View>
         </View>
         {uncostedCount > 0 ? (
           <Text style={styles.summaryHint}>
-            {uncostedCount} {t("services.title").toLowerCase()} — {t("services.monthlyCost")}
+            {t("services.missingCostHint", { count: uncostedCount })}
           </Text>
         ) : (
           <Text style={styles.summaryHint}>
-            Monthly total updates from the services listed for the selected address.
+            {t("services.summaryHint")}
           </Text>
         )}
       </View>
@@ -278,7 +290,7 @@ export default function ServicesScreen() {
             style={[styles.addressChip, !selectedAddressId && styles.addressChipActive]}
             onPress={() => setSelectedAddressId(null)}
           >
-            <Text style={[styles.addressChipText, !selectedAddressId && styles.addressChipTextActive]}>All addresses</Text>
+            <Text style={[styles.addressChipText, !selectedAddressId && styles.addressChipTextActive]}>{t("addresses.all")}</Text>
           </TouchableOpacity>
           {addresses.map((address) => (
             <TouchableOpacity
@@ -301,7 +313,7 @@ export default function ServicesScreen() {
             style={[styles.filterChip, !filterCat && styles.filterChipActive]}
             onPress={() => setFilterCat(null)}
           >
-            <Text style={[styles.filterText, !filterCat && styles.filterTextActive]}>All</Text>
+            <Text style={[styles.filterText, !filterCat && styles.filterTextActive]}>{t("common.all")}</Text>
           </TouchableOpacity>
           {categories.map((cat) => (
             <TouchableOpacity
@@ -311,7 +323,7 @@ export default function ServicesScreen() {
             >
               <View style={[styles.filterDot, { backgroundColor: getServiceCategoryColor(cat) }]} />
               <Text style={[styles.filterText, filterCat === cat && styles.filterTextActive]} numberOfLines={1} ellipsizeMode="tail">
-                {getServiceCategoryIcon(cat)} {getServiceCategoryLabel(cat)}
+                {getServiceCategoryIcon(cat)} {serviceCategoryLabel(cat)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -335,7 +347,7 @@ export default function ServicesScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <CategoryIcon emoji={phase?.icon || ""} size={16} color={theme.colors.primary} />
                   <Text style={{ fontSize: 13, fontWeight: "700", color: theme.colors.text }}>
-                    {phase?.label || "Checklist"}
+                    {phase?.label || t("moving.checklist")}
                   </Text>
                 </View>
                 <Text style={{ fontSize: 12, fontWeight: "700", color: theme.colors.primary }}>
@@ -351,7 +363,7 @@ export default function ServicesScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, padding: 8, borderRadius: 8, backgroundColor: "rgba(239,68,68,0.08)" }}>
                   <AlertTriangle size={12} color="#C85A3E" />
                   <Text style={{ fontSize: 11, color: "#E08A6E", flex: 1 }} numberOfLines={1}>
-                    {checklist.overdueItems.length} overdue: {checklist.overdueItems[0]?.title}
+                    {t("moving.overdueSummary", { count: checklist.overdueItems.length, title: checklist.overdueItems[0]?.title })}
                   </Text>
                 </View>
               )}
@@ -366,7 +378,7 @@ export default function ServicesScreen() {
                     ) : null}
                   </View>
                   {item.estimatedMinutes ? (
-                    <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>~{item.estimatedMinutes}m</Text>
+                    <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>{t("common.minutesShort", { minutes: item.estimatedMinutes })}</Text>
                   ) : null}
                 </View>
               ))}
@@ -377,7 +389,7 @@ export default function ServicesScreen() {
                   onPress={() => router.push("/services/new")}
                   activeOpacity={0.7}
                 >
-                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#fff" }}>Add Next Service</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: "#fff" }}>{t("services.addNext")}</Text>
                   <ArrowRight size={14} color="#fff" />
                 </TouchableOpacity>
               )}
@@ -390,23 +402,36 @@ export default function ServicesScreen() {
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<Zap size={32} color={theme.colors.primary} />}
-            title={filterCat ? "No services in this category" : "No services yet"}
-            description="Add services to track your subscriptions and expenses."
-            actionLabel="Add Service"
+            title={filterCat ? t("services.emptyCategory") : t("services.empty")}
+            description={t("services.emptyDescription")}
+            actionLabel={t("services.newTitle")}
             onAction={() => router.push("/services/new")}
           />
         ) : (
           <View style={styles.list}>
-            {filtered.map((service: any) => (
+            {filtered.map((service: any) => {
+              const logoUrl = service.provider?.logoUrl || service.providerLogoUrl || service.logoUrl || null;
+              const showLogo = Boolean(logoUrl && !failedLogoUrls[logoUrl]);
+              return (
               <Card key={service.id} variant="default" onPress={() => editingCost !== service.id && router.push({ pathname: "/services/[id]", params: { id: service.id } })}>
                 <View style={styles.serviceTop}>
                   <View style={[styles.catDot, { backgroundColor: getServiceCategoryColor(service.category) + "30", borderColor: getServiceCategoryColor(service.category) + "50" }]}>
-                    <Text style={styles.catIcon}>{getServiceCategoryIcon(service.category)}</Text>
+                    {showLogo ? (
+                      <Image
+                        source={{ uri: logoUrl }}
+                        style={styles.serviceLogo}
+                        resizeMode="contain"
+                        accessibilityLabel={t("services.providerLogoA11y", { provider: service.provider?.name || service.providerName })}
+                        onError={() => setFailedLogoUrls((prev) => ({ ...prev, [logoUrl]: true }))}
+                      />
+                    ) : (
+                      <Text style={styles.catIcon}>{getServiceCategoryIcon(service.category)}</Text>
+                    )}
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.serviceName} numberOfLines={1}>{service.providerName}</Text>
                     <Text style={styles.serviceCategory} numberOfLines={1}>
-                      {getServiceCategoryLabel(service.category)}
+                      {t(`categories.${service.category}`, { defaultValue: getServiceCategoryLabel(service.category) })}
                       {service.address ? ` · ${service.address.nickname || service.address.city}` : ""}
                     </Text>
                   </View>
@@ -428,7 +453,7 @@ export default function ServicesScreen() {
                     ) : (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(245,158,11,0.1)", borderWidth: 1, borderColor: "rgba(245,158,11,0.25)" }}>
                         <DollarSign size={10} color="#E5C9A8" />
-                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#E5C9A8" }}>Add cost</Text>
+                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#E5C9A8" }}>{t("services.addCost")}</Text>
                       </View>
                     )}
                   </TouchableOpacity>
@@ -440,7 +465,7 @@ export default function ServicesScreen() {
                     <DollarSign size={14} color={theme.colors.textMuted} />
                     <TextInput
                       style={{ flex: 1, fontSize: 14, color: theme.colors.text, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 }}
-                      placeholder="Monthly cost"
+                      placeholder={t("services.monthlyCost")}
                       placeholderTextColor={theme.colors.textMuted}
                       keyboardType="decimal-pad"
                       value={costValue}
@@ -479,13 +504,14 @@ export default function ServicesScreen() {
                 </View>
 
                 <View style={styles.serviceFooter}>
-                  <UiBadge label={service.isActive ? "Active" : "Inactive"} variant={service.isActive ? "success" : "neutral"} />
+                  <UiBadge label={service.isActive ? t("services.statusActive") : t("services.statusInactive")} variant={service.isActive ? "success" : "neutral"} />
                   {service.billingCycle && (
-                    <UiBadge label={service.billingCycle.replace("_", " ")} variant="info" />
+                    <UiBadge label={serviceBillingCycleLabel(service.billingCycle)} variant="info" />
                   )}
                 </View>
               </Card>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -563,6 +589,7 @@ const styles = StyleSheet.create({
   list: { gap: 12 },
   serviceTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   catDot: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  serviceLogo: { width: 32, height: 32, borderRadius: 8 },
   catIcon: { fontSize: 16 },
   serviceName: { fontSize: 15, fontWeight: "700", color: theme.colors.text },
   serviceCategory: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },

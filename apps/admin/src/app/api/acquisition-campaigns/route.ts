@@ -97,21 +97,52 @@ async function findActiveCampaignConflict(client: any, candidate: any, excludeId
   ) || null;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
-    const campaigns = await (prisma as any).acquisitionCampaign.findMany({
-      orderBy: [{ updatedAt: "desc" }],
-      include: {
-        createdByAdmin: { select: { email: true, firstName: true, lastName: true } },
-        redemptions: {
-          orderBy: { createdAt: "desc" },
-          take: 5,
-          include: { user: { select: { id: true, email: true } } },
+    await requirePermission("acquisition_campaigns", "canRead", { minimumRole: "VIEWER" });
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const accessType = searchParams.get("accessType");
+    const q = (searchParams.get("q") || "").trim();
+    const page = Math.max(1, Number.parseInt(searchParams.get("page") || "1", 10) || 1);
+    const pageSize = Math.min(
+      100,
+      Math.max(10, Number.parseInt(searchParams.get("pageSize") || "50", 10) || 50),
+    );
+
+    const where: Record<string, unknown> = {};
+    if (status && ["DRAFT", "ACTIVE", "PAUSED", "ENDED"].includes(status)) {
+      where.status = status;
+    }
+    if (accessType && ["FREE_ACCESS", "FREE_TRIAL", "PAID"].includes(accessType)) {
+      where.accessType = accessType;
+    }
+    if (q) {
+      where.OR = [
+        { name: { contains: q } },
+        { code: { contains: q } },
+        { publicHeadline: { contains: q } },
+      ];
+    }
+
+    const [campaigns, total] = await Promise.all([
+      (prisma as any).acquisitionCampaign.findMany({
+        where,
+        orderBy: [{ updatedAt: "desc" }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          createdByAdmin: { select: { email: true, firstName: true, lastName: true } },
+          redemptions: {
+            orderBy: { createdAt: "desc" },
+            take: 5,
+            include: { user: { select: { id: true, email: true } } },
+          },
         },
-      },
-    });
-    return NextResponse.json({ campaigns });
+      }),
+      (prisma as any).acquisitionCampaign.count({ where }),
+    ]);
+    return NextResponse.json({ campaigns, total, page, pageSize });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -121,7 +152,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requirePermission("subscriptions", "canCreate", { minimumRole: "ADMIN" });
+    const session = await requirePermission("acquisition_campaigns", "canCreate", { minimumRole: "ADMIN" });
     const body = await request.json().catch(() => ({}));
     const data = campaignData(body, session.adminId);
     if (!data.name || !data.code) {

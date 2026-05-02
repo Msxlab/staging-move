@@ -6,19 +6,24 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { parsePaginationParams } from "@/lib/pagination";
 import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
+import { dispatchEmailBatch, dispatchPushBatch } from "@/lib/notify-dispatch";
 
-const SUPPORTED_ADMIN_SEND_CHANNELS = ["IN_APP"] as const;
+const SUPPORTED_ADMIN_SEND_CHANNELS = ["IN_APP", "EMAIL", "PUSH"] as const;
 type SupportedChannel = (typeof SUPPORTED_ADMIN_SEND_CHANNELS)[number];
 
 // Notification types the admin send path is allowed to emit. Free-string
 // types previously let an admin store arbitrary `type` values which the
 // rest of the app then can't filter against. Lock to the canonical list.
+// MARKETING / PROMO are gated by per-user opt-out inside notify-dispatch;
+// the operational types bypass opt-out.
 const ADMIN_SENDABLE_TYPES = [
   "SYSTEM",
   "ANNOUNCEMENT",
   "MAINTENANCE",
   "BILLING",
   "SUPPORT",
+  "MARKETING",
+  "PROMO",
 ] as const;
 
 // Broadcast safety nets:
@@ -101,7 +106,7 @@ export async function GET(req: NextRequest) {
         schedulingEnabled: false,
         workerEnabled: false,
         note:
-          "Admin-created notifications are delivered immediately as in-app records only. Email, push, and delayed delivery require a dedicated worker/provider path.",
+          "Admin-created notifications are always written to the in-app feed. EMAIL additionally fans out via Resend; PUSH additionally fans out via Expo (requires NOTIFICATION_PUSH_ENABLED=true). MARKETING/PROMO respect per-user opt-out. Scheduled delivery is not yet implemented.",
       },
       stats: {
         total: stats[0],
@@ -172,10 +177,15 @@ export async function POST(req: NextRequest) {
 
       // Stream user IDs in batches and write one createMany per batch
       // with skipDuplicates so a retried request doesn't double-send.
+      // The in-app feed row is always written (channel=IN_APP) so the
+      // user sees the message regardless of the chosen delivery channel.
+      // EMAIL and PUSH are extra fan-out on top of the feed row.
       let cursor: string | undefined;
       let writtenCount = 0;
-      // Loop until we've drained the user table; cursor-based so memory
-      // stays bounded even at the 100k cap.
+      let emailDelivered = 0;
+      let emailSkipped = 0;
+      let pushDelivered = 0;
+      let pushSkipped = 0;
       for (;;) {
         const batch = await prisma.user.findMany({
           select: { id: true },
@@ -184,19 +194,31 @@ export async function POST(req: NextRequest) {
           ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
         });
         if (batch.length === 0) break;
-        const rows = batch.map((u: { id: string }) => ({
-          userId: u.id,
+        const userIds = batch.map((u: { id: string }) => u.id);
+        const rows = userIds.map((uid: string) => ({
+          userId: uid,
           type: resolvedType,
           title,
           body: msgBody,
           href: href || null,
-          channel,
+          channel: "IN_APP",
           sent: true,
           sentAt: deliveredAt,
           sendAt: deliveredAt,
         }));
         const result = await prisma.notification.createMany({ data: rows, skipDuplicates: true });
         writtenCount += result.count;
+
+        if (channel === "EMAIL") {
+          const r = await dispatchEmailBatch({ userIds, type: resolvedType, title, body: msgBody, href });
+          emailDelivered += r.delivered;
+          emailSkipped += r.skipped;
+        } else if (channel === "PUSH") {
+          const r = await dispatchPushBatch({ userIds, type: resolvedType, title, body: msgBody, href });
+          pushDelivered += r.delivered;
+          pushSkipped += r.skipped;
+        }
+
         cursor = batch[batch.length - 1].id;
         if (batch.length < BROADCAST_BATCH_SIZE) break;
       }
@@ -226,11 +248,22 @@ export async function POST(req: NextRequest) {
           type: resolvedType,
           audience: audienceSize,
           written: writtenCount,
+          emailDelivered,
+          emailSkipped,
+          pushDelivered,
+          pushSkipped,
         },
         request: getAuditRequestMeta(req),
       });
 
-      return NextResponse.json({ success: true, count: writtenCount });
+      return NextResponse.json({
+        success: true,
+        count: writtenCount,
+        emailDelivered,
+        emailSkipped,
+        pushDelivered,
+        pushSkipped,
+      });
     }
 
     if (!userId) {
@@ -244,12 +277,26 @@ export async function POST(req: NextRequest) {
         title,
         body: msgBody,
         href,
-        channel,
+        channel: "IN_APP",
         sent: true,
         sentAt: deliveredAt,
         sendAt: deliveredAt,
       },
     });
+
+    let emailDelivered = 0;
+    let emailSkipped = 0;
+    let pushDelivered = 0;
+    let pushSkipped = 0;
+    if (channel === "EMAIL") {
+      const r = await dispatchEmailBatch({ userIds: [userId], type: resolvedType, title, body: msgBody, href });
+      emailDelivered = r.delivered;
+      emailSkipped = r.skipped;
+    } else if (channel === "PUSH") {
+      const r = await dispatchPushBatch({ userIds: [userId], type: resolvedType, title, body: msgBody, href });
+      pushDelivered = r.delivered;
+      pushSkipped = r.skipped;
+    }
 
     await writeAdminAudit(session, {
       action: "SEND_NOTIFICATION",
@@ -260,11 +307,15 @@ export async function POST(req: NextRequest) {
         userId,
         channel,
         type: resolvedType,
+        emailDelivered,
+        emailSkipped,
+        pushDelivered,
+        pushSkipped,
       },
       request: getAuditRequestMeta(req),
     });
 
-    return NextResponse.json(notification);
+    return NextResponse.json({ ...notification, emailDelivered, emailSkipped, pushDelivered, pushSkipped });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

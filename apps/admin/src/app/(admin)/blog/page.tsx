@@ -57,11 +57,14 @@ function isStatus(value: string | undefined): value is Exclude<StatusFilter, "AL
   return value === "DRAFT" || value === "SCHEDULED" || value === "PUBLISHED" || value === "ARCHIVED";
 }
 
-function buildHref(params: { status?: StatusFilter; locale?: string; q?: string }): string {
+const PAGE_SIZE = 50;
+
+function buildHref(params: { status?: StatusFilter; locale?: string; q?: string; page?: number }): string {
   const sp = new URLSearchParams();
   if (params.status && params.status !== "ALL") sp.set("status", params.status);
   if (params.locale && params.locale !== "all") sp.set("locale", params.locale);
   if (params.q?.trim()) sp.set("q", params.q.trim());
+  if (params.page && params.page > 1) sp.set("page", String(params.page));
   const qs = sp.toString();
   return qs ? `/blog?${qs}` : "/blog";
 }
@@ -69,7 +72,7 @@ function buildHref(params: { status?: StatusFilter; locale?: string; q?: string 
 export default async function BlogListPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; locale?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; locale?: string; q?: string; page?: string }>;
 }) {
   await requirePermission("blog", "canRead", { minimumRole: "MODERATOR" });
 
@@ -78,6 +81,7 @@ export default async function BlogListPage({
     sp.status && (sp.status === "ALL" || isStatus(sp.status)) ? (sp.status as StatusFilter) : "ALL";
   const activeLocale = sp.locale === "es" || sp.locale === "en" ? sp.locale : "all";
   const query = (sp.q ?? "").trim();
+  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
 
   const where: Record<string, unknown> = { deletedAt: null };
   if (isStatus(activeStatus)) where.status = activeStatus;
@@ -108,10 +112,11 @@ export default async function BlogListPage({
     category: { name: string } | null;
   };
   let posts: PostRow[] = [];
+  let totalMatching = 0;
   let statusCounts: Array<{ status: string; _count: number }> = [];
   let loadError: string | null = null;
   try {
-    const [postsResult, countsResult] = await Promise.all([
+    const [postsResult, totalResult, countsResult] = await Promise.all([
       prisma.blogPost.findMany({
         where,
         select: {
@@ -128,8 +133,10 @@ export default async function BlogListPage({
           category: { select: { name: true } },
         },
         orderBy: [{ status: "asc" }, { updatedAt: "desc" }],
-        take: 200,
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
       }),
+      prisma.blogPost.count({ where }),
       prisma.blogPost.groupBy({
         by: ["status"],
         where: { deletedAt: null },
@@ -137,12 +144,14 @@ export default async function BlogListPage({
       }),
     ]);
     posts = postsResult as PostRow[];
+    totalMatching = totalResult ?? 0;
     statusCounts = (countsResult as Array<{ status: string; _count: number }>) ?? [];
   } catch (e) {
     console.error("[admin/blog] list query failed:", e);
     loadError =
       e instanceof Error ? e.message : "The blog catalog couldn't be loaded.";
   }
+  const totalPages = Math.max(1, Math.ceil(totalMatching / PAGE_SIZE));
 
   const countByStatus = new Map<string, number>(
     statusCounts.map((row) => [row.status, row._count]),
@@ -391,6 +400,43 @@ export default async function BlogListPage({
           </ul>
         </div>
       )}
+
+      {totalPages > 1 ? (
+        <nav
+          aria-label="Pagination"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-xs text-muted-foreground"
+        >
+          <span>
+            Page {page} of {totalPages} · {totalMatching.toLocaleString()} posts
+          </span>
+          <div className="flex items-center gap-1">
+            {page > 1 ? (
+              <Link
+                href={buildHref({ status: activeStatus, locale: activeLocale, q: query, page: page - 1 })}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 hover:bg-accent"
+              >
+                Prev
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 opacity-40">
+                Prev
+              </span>
+            )}
+            {page < totalPages ? (
+              <Link
+                href={buildHref({ status: activeStatus, locale: activeLocale, q: query, page: page + 1 })}
+                className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 hover:bg-accent"
+              >
+                Next
+              </Link>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 opacity-40">
+                Next
+              </span>
+            )}
+          </div>
+        </nav>
+      ) : null}
     </div>
   );
 }

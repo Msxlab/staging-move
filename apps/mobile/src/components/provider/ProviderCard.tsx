@@ -1,11 +1,17 @@
 import React from "react";
 import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
 import { ChevronRight, MapPin, Users } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
+import {
+  getLocalizedCoverageLabel,
+  getLocalizedCoverageMessage,
+  getLocalizedProviderDescription,
+} from "@/lib/provider-localization";
 import {
   getProviderTrustSummary,
   type ProviderCoverageConfidence,
@@ -57,9 +63,14 @@ export function ProviderCard({
   style,
   badge,
 }: ProviderCardProps) {
+  const { t, i18n } = useTranslation();
   const iconEmoji = getCategoryIcon(provider.category);
   const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
   const trust = provider.trust || getProviderTrustSummary(provider);
+  const categoryLabel = t(`categories.${provider.category}`, { defaultValue: getCategoryLabel(provider.category) });
+  const description = getLocalizedProviderDescription(t, i18n.language, provider);
+  const coverageLabel = getLocalizedCoverageLabel(t, i18n.language, trust.coverageConfidence);
+  const coverageMessage = getLocalizedCoverageMessage(t, i18n.language, trust.coverageConfidence);
 
   if (variant === "compact") {
     return (
@@ -68,8 +79,8 @@ export function ProviderCard({
         onPress={onPress}
         style={StyleSheet.flatten([compactStyles.card, style])}
         accessibilityRole="button"
-        accessibilityLabel={`Open provider ${provider.name}`}
-        accessibilityHint={provider.description || getCategoryLabel(provider.category)}
+        accessibilityLabel={t("providers.openProviderA11y", { provider: provider.name })}
+        accessibilityHint={description || categoryLabel}
       >
         <View style={compactStyles.row}>
           {hasLogo ? (
@@ -87,7 +98,7 @@ export function ProviderCard({
         </Text>
         {showCategory ? (
           <Text style={compactStyles.category} numberOfLines={1}>
-            {getCategoryLabel(provider.category)}
+            {categoryLabel}
           </Text>
         ) : null}
 
@@ -95,7 +106,7 @@ export function ProviderCard({
           <View style={compactStyles.scopePill}>
             <MapPin size={10} color={theme.colors.textTertiary} />
             <Text style={compactStyles.scopeText} numberOfLines={1}>
-              {trust.coverageConfidence.label}
+              {coverageLabel}
             </Text>
           </View>
           {provider.userCount && provider.userCount > 0 ? (
@@ -115,8 +126,8 @@ export function ProviderCard({
       onPress={onPress}
       style={style}
       accessibilityRole="button"
-      accessibilityLabel={`Open provider ${provider.name}`}
-      accessibilityHint={provider.description || getCategoryLabel(provider.category)}
+      accessibilityLabel={t("providers.openProviderA11y", { provider: provider.name })}
+      accessibilityHint={description || categoryLabel}
     >
       <View style={fullStyles.top}>
         {hasLogo ? (
@@ -132,33 +143,33 @@ export function ProviderCard({
           </Text>
           {showCategory ? (
             <Text style={fullStyles.category} numberOfLines={1}>
-              {getCategoryLabel(provider.category)}
+              {categoryLabel}
             </Text>
           ) : null}
         </View>
         <ChevronRight size={16} color={theme.colors.textMuted} />
       </View>
 
-      {provider.description ? (
+      {description ? (
         <Text style={fullStyles.description} numberOfLines={2}>
-          {provider.description}
+          {description}
         </Text>
       ) : null}
 
       <View style={fullStyles.metaRow}>
-        <UiBadge label="Listed provider" variant="warning" />
-        <UiBadge label={trust.coverageConfidence.label} variant="info" />
+        <UiBadge label={t("providers.listedProvider")} variant="warning" />
+        <UiBadge label={coverageLabel} variant="info" />
         {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
         {provider.userCount && provider.userCount > 0 ? (
           <View style={fullStyles.users}>
             <Users size={11} color={theme.colors.textTertiary} />
-            <Text style={fullStyles.usersText}>{formatUsers(provider.userCount)} using</Text>
+            <Text style={fullStyles.usersText}>{t("providers.usingCount", { count: formatUsers(provider.userCount) })}</Text>
           </View>
         ) : null}
       </View>
 
       <Text style={fullStyles.caveat} numberOfLines={3}>
-        {trust.coverageConfidence.message} Manual tracking only; confirm with the official provider.
+        {coverageMessage} {t("providers.manualTrackingCaveat")}
       </Text>
 
       {provider.tags && provider.tags.length > 0 ? (

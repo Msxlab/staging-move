@@ -42,9 +42,9 @@ export default function NewAddressScreen() {
   const ADDRESS_TYPES = [
     { value: "HOME", label: t("addresses.type_primary") },
     { value: "WORK", label: t("addresses.type_secondary") },
-    { value: "VACATION", label: t("addresses.type_other") },
-    { value: "TEMPORARY", label: t("addresses.type_rental") },
-    { value: "STORAGE", label: t("addresses.type_other") },
+    { value: "VACATION", label: t("addresses.type_vacation") },
+    { value: "TEMPORARY", label: t("addresses.type_temporary") },
+    { value: "STORAGE", label: t("addresses.type_storage") },
     { value: "OTHER", label: t("addresses.type_other") },
   ];
 
@@ -89,15 +89,15 @@ export default function NewAddressScreen() {
 
   const handleSave = async () => {
     if (!form.street || !form.city || !form.state || !form.zip) {
-      Alert.alert("Missing Fields", "Please fill in street, city, state, and ZIP.");
+      Alert.alert(t("validation.missingFields"), t("addresses.errorRequiredFields"));
       return;
     }
     if (form.state.length !== 2) {
-      Alert.alert("Invalid State", "Please enter a 2-letter state code (e.g. NY, CA).");
+      Alert.alert(t("validation.invalidState"), t("addresses.errorStateFormat"));
       return;
     }
     if (!/^\d{5}(-\d{4})?$/.test(form.zip)) {
-      Alert.alert("Invalid ZIP", "Please enter a valid 5-digit ZIP code.");
+      Alert.alert(t("validation.invalidZip"), t("addresses.errorZipFormat"));
       return;
     }
     setLoading(true);
@@ -271,7 +271,7 @@ export default function NewAddressScreen() {
 
         {/* Primary Toggle */}
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{t("addresses.title")}</Text>
+          <Text style={styles.switchLabel}>{t("addresses.primary")}</Text>
           <Switch
             value={form.isPrimary}
             onValueChange={(v) => update("isPrimary", v)}

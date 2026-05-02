@@ -25,16 +25,14 @@ interface Prefs {
   emailMoveAlerts: boolean;
   pushTaskReminders: boolean;
   pushMoveAlerts: boolean;
-  pushStreakReminders: boolean;
 }
 
 const DEFAULT_PREFS: Prefs = {
   emailTaskReminders: true,
   emailWeeklyDigest: false,
   emailMoveAlerts: true,
-  pushTaskReminders: false,
-  pushMoveAlerts: false,
-  pushStreakReminders: false,
+  pushTaskReminders: true,
+  pushMoveAlerts: true,
 };
 
 export default function NotificationSettingsScreen() {
@@ -59,7 +57,7 @@ export default function NotificationSettingsScreen() {
 
   const handleSave = async () => {
     setSaving(true);
-    const wantsPush = prefs.pushTaskReminders || prefs.pushMoveAlerts || prefs.pushStreakReminders;
+    const wantsPush = prefs.pushTaskReminders || prefs.pushMoveAlerts;
     if (wantsPush) {
       const registered = await registerForPushNotifications();
       if (!registered) {
@@ -120,11 +118,6 @@ export default function NotificationSettingsScreen() {
           key: "pushMoveAlerts" as keyof Prefs,
           label: t("notifications.push_moveAlerts_label"),
           desc: t("notifications.push_moveAlerts_desc"),
-        },
-        {
-          key: "pushStreakReminders" as keyof Prefs,
-          label: t("notifications.push_streakReminders_label"),
-          desc: t("notifications.push_streakReminders_desc"),
         },
       ],
     },
