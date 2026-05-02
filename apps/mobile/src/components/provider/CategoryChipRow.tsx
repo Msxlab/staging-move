@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { LayoutGrid } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
@@ -23,6 +24,8 @@ interface CategoryChipRowProps {
  * `null` selection means "All". Chips display category icon + label + optional count.
  */
 export function CategoryChipRow({ categories, selected, onSelect, showAll = true }: CategoryChipRowProps) {
+  const { t } = useTranslation();
+
   return (
     <ScrollView
       horizontal
@@ -34,7 +37,7 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
           onPress={() => onSelect(null)}
           style={[styles.chip, selected === null && styles.chipSelected]}
           accessibilityRole="button"
-          accessibilityLabel="Show all categories"
+          accessibilityLabel={t("providers.showAllCategories")}
           accessibilityState={{ selected: selected === null }}
           activeOpacity={0.7}
         >
@@ -42,7 +45,7 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
             size={14}
             color={selected === null ? theme.colors.primary : theme.colors.textSecondary}
           />
-          <Text style={[styles.chipText, selected === null && styles.chipTextSelected]}>All</Text>
+          <Text style={[styles.chipText, selected === null && styles.chipTextSelected]}>{t("common.all")}</Text>
         </TouchableOpacity>
       ) : null}
 
@@ -55,7 +58,7 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
             onPress={() => onSelect(isSelected ? null : c.value)}
             style={[styles.chip, isSelected && styles.chipSelected]}
             accessibilityRole="button"
-            accessibilityLabel={`Filter by ${label}`}
+            accessibilityLabel={t("providers.filterByCategory", { category: label })}
             accessibilityState={{ selected: isSelected }}
             activeOpacity={0.7}
           >

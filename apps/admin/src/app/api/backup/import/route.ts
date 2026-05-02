@@ -141,6 +141,36 @@ const IMPORT_MODEL_OPS = {
       prisma.adminAuditLog.findUnique({ where: { id } }),
     createRecord: (data: any) => prisma.adminAuditLog.create({ data }),
   },
+  acquisitionCampaigns: {
+    count: () => prisma.acquisitionCampaign.count(),
+    findUniqueById: (id: string) =>
+      prisma.acquisitionCampaign.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.acquisitionCampaign.create({ data }),
+  },
+  acquisitionRedemptions: {
+    count: () => prisma.acquisitionRedemption.count(),
+    findUniqueById: (id: string) =>
+      prisma.acquisitionRedemption.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.acquisitionRedemption.create({ data }),
+  },
+  blogCategories: {
+    count: () => prisma.blogCategory.count(),
+    findUniqueById: (id: string) =>
+      prisma.blogCategory.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.blogCategory.create({ data }),
+  },
+  blogTags: {
+    count: () => prisma.blogTag.count(),
+    findUniqueById: (id: string) =>
+      prisma.blogTag.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.blogTag.create({ data }),
+  },
+  blogPosts: {
+    count: () => prisma.blogPost.count(),
+    findUniqueById: (id: string) =>
+      prisma.blogPost.findUnique({ where: { id } }),
+    createRecord: (data: any) => prisma.blogPost.create({ data }),
+  },
 } as const;
 
 function normalizeBackupData(input: unknown): Record<string, any[]> {

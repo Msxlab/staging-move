@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Building2,
@@ -52,6 +53,7 @@ interface CustomProvider {
 export default function CustomProviderDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const [provider, setProvider] = useState<CustomProvider | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -88,18 +90,18 @@ export default function CustomProviderDetailScreen() {
     if (!provider) return;
     hapticWarning();
     Alert.alert(
-      "Delete custom provider",
-      "This removes your private provider record from LocateFlow. It does not contact the provider or change external accounts.",
+      t("customProviders.deleteTitle"),
+      t("customProviders.deleteDescription"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             const res = await api.delete(`/api/custom-providers/${provider.id}`);
             if (res.error) {
               hapticError();
-              Alert.alert("Error", res.error);
+              Alert.alert(t("common.retry"), res.error);
               return;
             }
             hapticSuccess();
@@ -119,12 +121,12 @@ export default function CustomProviderDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Not Found</Text>
+          <Text style={styles.title}>{t("common.notFound")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
-          title={error ? "Custom provider unavailable" : "Custom provider not found"}
-          message={error || "This custom provider may have been removed."}
+          title={error ? t("customProviders.unavailable") : t("customProviders.notFound")}
+          message={error || t("customProviders.removedHint")}
           onRetry={loadProvider}
         />
       </SafeAreaView>
@@ -136,10 +138,10 @@ export default function CustomProviderDetailScreen() {
     .join(", ");
 
   const rows = [
-    provider.phone && { icon: Phone, label: "Phone", value: provider.phone, onPress: () => Linking.openURL(`tel:${provider.phone}`) },
-    provider.website && { icon: Globe, label: "Website", value: provider.website.replace(/^https?:\/\//, ""), onPress: () => Linking.openURL(provider.website!) },
-    provider.email && { icon: Mail, label: "Email", value: provider.email, onPress: () => Linking.openURL(`mailto:${provider.email}`) },
-    address && { icon: MapPin, label: "Address", value: address },
+    provider.phone && { icon: Phone, label: t("common.phone"), value: provider.phone, onPress: () => Linking.openURL(`tel:${provider.phone}`) },
+    provider.website && { icon: Globe, label: t("common.website"), value: provider.website.replace(/^https?:\/\//, ""), onPress: () => Linking.openURL(provider.website!) },
+    provider.email && { icon: Mail, label: t("common.email"), value: provider.email, onPress: () => Linking.openURL(`mailto:${provider.email}`) },
+    address && { icon: MapPin, label: t("addresses.title"), value: address },
   ].filter(Boolean) as Array<{ icon: any; label: string; value: string; onPress?: () => void }>;
 
   return (
@@ -148,7 +150,7 @@ export default function CustomProviderDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>Custom Provider</Text>
+        <Text style={styles.title} numberOfLines={1}>{t("customProviders.singularTitle")}</Text>
         <TouchableOpacity onPress={() => router.push({ pathname: "/custom-providers/[id]/edit", params: { id: provider.id } })} style={styles.iconBtn}>
           <Edit size={18} color={theme.colors.primary} />
         </TouchableOpacity>
@@ -166,28 +168,28 @@ export default function CustomProviderDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.heroName}>{provider.name}</Text>
-              <Text style={styles.heroMeta}>{provider.category.replace(/_/g, " ")}</Text>
+              <Text style={styles.heroMeta}>{t(`categories.${provider.category}`, { defaultValue: provider.category.replace(/_/g, " ") })}</Text>
             </View>
           </View>
           <View style={styles.badgeRow}>
-            <Badge label="User-added provider" variant="info" />
-            <Badge label="Manual tracking only" variant="warning" />
+            <Badge label={t("customProviders.userAddedBadge")} variant="info" />
+            <Badge label={t("providers.manualTrackingOnly")} variant="warning" />
           </View>
           <Text style={styles.caveat}>
-            {provider.availabilityCaveat || "This is your private provider record. Confirm details directly with the provider."}
+            {provider.availabilityCaveat || t("customProviders.privateRecordHint")}
           </Text>
         </Card>
 
         {provider.description ? (
           <>
-            <Text style={styles.sectionTitle}>Description</Text>
+            <Text style={styles.sectionTitle}>{t("common.description")}</Text>
             <Card variant="default"><Text style={styles.bodyText}>{provider.description}</Text></Card>
           </>
         ) : null}
 
         {rows.length > 0 ? (
           <>
-            <Text style={styles.sectionTitle}>Contact</Text>
+            <Text style={styles.sectionTitle}>{t("common.contact")}</Text>
             <Card variant="default">
               {rows.map((row, index) => {
                 const Icon = row.icon;
@@ -211,14 +213,14 @@ export default function CustomProviderDetailScreen() {
 
         {provider.notes ? (
           <>
-            <Text style={styles.sectionTitle}>Notes</Text>
+            <Text style={styles.sectionTitle}>{t("services.notes")}</Text>
             <Card variant="default"><Text style={styles.bodyText}>{provider.notes}</Text></Card>
           </>
         ) : null}
 
         {provider.services?.length ? (
           <>
-            <Text style={styles.sectionTitle}>Linked Services</Text>
+            <Text style={styles.sectionTitle}>{t("customProviders.linkedServices")}</Text>
             <Card variant="default">
               {provider.services.map((service, index) => (
                 <TouchableOpacity
@@ -228,9 +230,9 @@ export default function CustomProviderDetailScreen() {
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={styles.serviceName}>{service.providerName}</Text>
-                    <Text style={styles.serviceMeta}>{service.category.replace(/_/g, " ")}</Text>
+                    <Text style={styles.serviceMeta}>{t(`categories.${service.category}`, { defaultValue: service.category.replace(/_/g, " ") })}</Text>
                   </View>
-                  <Badge label={service.isActive ? "Active" : "Inactive"} variant={service.isActive ? "success" : "neutral"} />
+                  <Badge label={service.isActive ? t("services.statusActive") : t("services.statusInactive")} variant={service.isActive ? "success" : "neutral"} />
                 </TouchableOpacity>
               ))}
             </Card>
@@ -239,12 +241,12 @@ export default function CustomProviderDetailScreen() {
 
         <TouchableOpacity style={styles.editBtn} onPress={() => router.push({ pathname: "/custom-providers/[id]/edit", params: { id: provider.id } })}>
           <Edit size={16} color={theme.colors.primary} />
-          <Text style={styles.editText}>Edit Custom Provider</Text>
+          <Text style={styles.editText}>{t("customProviders.edit")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.deleteBtn} onPress={deleteProvider}>
           <Trash2 size={16} color={theme.colors.error} />
-          <Text style={styles.deleteText}>Delete Custom Provider</Text>
+          <Text style={styles.deleteText}>{t("customProviders.delete")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

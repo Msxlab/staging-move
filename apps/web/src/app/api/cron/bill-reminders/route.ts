@@ -9,8 +9,8 @@ import {
   getDaysUntilDate,
   getNextBillingDate,
   groupNotificationPreferencesByUser,
+  isPushTypeEnabled,
   MAX_WEB_NOTIFICATION_REMINDER_DAYS,
-  type StoredNotificationPreference,
 } from "@/lib/notification-preferences";
 
 /**
@@ -19,9 +19,6 @@ import {
  * Intended to be called by a cron job (e.g. Vercel Cron, GitHub Actions, or external scheduler).
  * Protected by CRON_SECRET header.
  */
-function isPushEnabled(records: StoredNotificationPreference[], types: string[]) {
-  return records.some((record) => record.channel === "PUSH" && types.includes(record.type) && record.enabled);
-}
 
 export async function GET(req: Request) {
   // SEC-003: Fail-closed — reject if no matching cron secret configured.
@@ -129,7 +126,7 @@ export async function GET(req: Request) {
             });
             if (mirrored) {
               mirroredCount++;
-              if (isPushEnabled(userPreferences, ["BILL_REMINDER", "TASK_REMINDER"])) {
+              if (isPushTypeEnabled(userPreferences, ["BILL_REMINDER", "TASK_REMINDER"])) {
                 const pushed = await sendNotification({
                   userId: svc.user.id,
                   type: "PUSH",

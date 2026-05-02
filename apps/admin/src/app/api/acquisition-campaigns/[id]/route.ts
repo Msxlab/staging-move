@@ -126,7 +126,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
+    await requirePermission("acquisition_campaigns", "canRead", { minimumRole: "VIEWER" });
     const { id } = await params;
     const campaign = await (prisma as any).acquisitionCampaign.findUnique({
       where: { id },
@@ -155,7 +155,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("subscriptions", "canUpdate", { minimumRole: "ADMIN" });
+    const session = await requirePermission("acquisition_campaigns", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const data = mutableCampaignData(body);
@@ -211,7 +211,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const session = await requirePermission("subscriptions", "canCreate", { minimumRole: "ADMIN" });
+    const session = await requirePermission("acquisition_campaigns", "canCreate", { minimumRole: "ADMIN" });
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     if (body.action !== "duplicate") {
@@ -261,5 +261,77 @@ export async function POST(
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     if (error?.code === "P2002") return NextResponse.json({ error: "Campaign code already exists." }, { status: 409 });
     return NextResponse.json({ error: "Failed to duplicate campaign" }, { status: 500 });
+  }
+}
+
+// Hard delete — refuses if any redemption row exists, since those carry
+// legal proof of consent that survives the campaign row. End the
+// campaign instead. Drafts and stale unused copies clean up freely.
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const session = await requirePermission("acquisition_campaigns", "canDelete", { minimumRole: "ADMIN" });
+    const { id } = await params;
+    const existing = await (prisma as any).acquisitionCampaign.findUnique({
+      where: { id },
+      select: { id: true, code: true, status: true, redemptionCount: true },
+    });
+    if (!existing) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+
+    if (existing.redemptionCount > 0) {
+      return NextResponse.json(
+        {
+          code: "CAMPAIGN_HAS_REDEMPTIONS",
+          error: "Cannot delete a campaign with redemptions. End it instead.",
+        },
+        { status: 409 },
+      );
+    }
+    // Belt-and-braces: also check the redemption table directly in case
+    // the denormalized counter ever drifts from the row count.
+    const redemptionRow = await (prisma as any).acquisitionRedemption.findFirst({
+      where: { campaignId: id },
+      select: { id: true },
+    });
+    if (redemptionRow) {
+      return NextResponse.json(
+        {
+          code: "CAMPAIGN_HAS_REDEMPTIONS",
+          error: "Cannot delete a campaign with redemptions. End it instead.",
+        },
+        { status: 409 },
+      );
+    }
+
+    await (prisma as any).$transaction(async (tx: any) => {
+      await tx.acquisitionCampaign.delete({ where: { id } });
+      await tx.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "DELETE",
+          entityType: "AcquisitionCampaign",
+          entityId: id,
+          changes: JSON.stringify({ code: existing.code, status: existing.status }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+    });
+    return NextResponse.json({ ok: true });
+  } catch (error: any) {
+    if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error?.code === "P2025") return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+    if (error?.code === "P2003") {
+      return NextResponse.json(
+        {
+          code: "CAMPAIGN_HAS_REDEMPTIONS",
+          error: "Cannot delete a campaign that is referenced elsewhere. End it instead.",
+        },
+        { status: 409 },
+      );
+    }
+    return NextResponse.json({ error: "Failed to delete campaign" }, { status: 500 });
   }
 }

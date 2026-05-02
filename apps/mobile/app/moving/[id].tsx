@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Truck,
@@ -47,6 +48,7 @@ const statusVariant: Record<string, "primary" | "success" | "warning" | "error" 
 export default function MovingDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t, i18n } = useTranslation();
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -98,7 +100,7 @@ export default function MovingDetailScreen() {
     setTaskBusy(null);
     if (res.error) {
       hapticError();
-      Alert.alert("Move tasks", res.error);
+      Alert.alert(t("moving.moveTasksAlert"), res.error);
       return;
     }
     hapticSuccess();
@@ -111,7 +113,7 @@ export default function MovingDetailScreen() {
     setTaskBusy(null);
     if (res.error) {
       hapticError();
-      Alert.alert("Move tasks", res.error);
+      Alert.alert(t("moving.moveTasksAlert"), res.error);
       return;
     }
     hapticSuccess();
@@ -120,11 +122,11 @@ export default function MovingDetailScreen() {
 
   const confirmCompleteMoveTask = (taskId: string) => {
     Alert.alert(
-      "Complete task locally?",
-      "This updates LocateFlow task and service records only. External provider accounts are not updated.",
+      t("moving.completeTaskTitle"),
+      t("moving.completeTaskBody"),
       [
-        { text: "Cancel", style: "cancel" },
-        { text: "Complete locally", onPress: () => updateMoveTask(taskId, "COMPLETE") },
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("moving.completeLocally"), onPress: () => updateMoveTask(taskId, "COMPLETE") },
       ],
     );
   };
@@ -141,11 +143,11 @@ export default function MovingDetailScreen() {
         if (plan) await fetchMigration(plan.id);
       } else {
         hapticError();
-        Alert.alert("Error", "Failed to save choice.");
+        Alert.alert(t("tickets.errorTitle"), t("moving.saveChoiceFailed"));
       }
     } catch {
       hapticError();
-      Alert.alert("Error", "Failed to save choice.");
+      Alert.alert(t("tickets.errorTitle"), t("moving.saveChoiceFailed"));
     } finally {
       setConfirming(null);
     }
@@ -185,10 +187,10 @@ export default function MovingDetailScreen() {
 
   const handleDelete = () => {
     hapticWarning();
-    Alert.alert("Delete Plan", "Are you sure? This will permanently delete this plan.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("moving.deleteTitle"), t("moving.deleteConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           const res = await api.delete(`/api/moving/${id}`);
@@ -197,7 +199,7 @@ export default function MovingDetailScreen() {
             router.back();
           } else {
             hapticError();
-            Alert.alert("Error", res.error);
+            Alert.alert(t("tickets.errorTitle"), res.error);
           }
         },
       },
@@ -212,12 +214,12 @@ export default function MovingDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Not Found</Text>
+          <Text style={styles.title}>{t("common.notFound")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
-          title={error ? "Moving plan unavailable" : "Plan not found"}
-          message={error || "This plan may have been removed."}
+          title={error ? t("moving.unavailable") : t("moving.notFound")}
+          message={error || t("moving.removed")}
           onRetry={load}
         />
       </SafeAreaView>
@@ -226,13 +228,14 @@ export default function MovingDetailScreen() {
 
   const daysUntil = Math.ceil((new Date(plan.moveDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   const isInterstateMove = plan.fromAddress?.state !== plan.toAddress?.state;
-  const moveScopeLabel = isInterstateMove ? "Interstate Move" : "Intrastate Move";
+  const dateLocale = (i18n.language || "").toLowerCase().startsWith("es") ? "es-ES" : "en-US";
+  const moveScopeLabel = isInterstateMove ? t("moving.interstateMove") : t("moving.intrastateMove");
   const scopeDetail = isInterstateMove
-    ? "Expect DMV, voter registration, tax, and provider switching tasks across states."
-    : "Expect utility transfers, local updates, and scheduling tasks within the same state.";
+    ? t("moving.interstateDetail")
+    : t("moving.intrastateDetail");
   const migrationSummaryLabel = migration
-    ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
-    : "Migration guidance appears automatically after your origin services are analyzed.";
+    ? t("moving.migrationSummary", { count: migration.transitionPlans?.length || migration.summary.total })
+    : t("moving.migrationEmpty");
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -240,7 +243,7 @@ export default function MovingDetailScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Moving Plan</Text>
+        <Text style={styles.title}>{t("moving.detailTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -259,12 +262,12 @@ export default function MovingDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.heroTitle}>
-                {plan.fromAddress?.city || "Origin"} → {plan.toAddress?.city || "Destination"}
+                {plan.fromAddress?.city || t("moving.origin")} → {plan.toAddress?.city || t("moving.destination")}
               </Text>
               <View style={styles.heroMeta}>
                 <Calendar size={12} color={theme.colors.textMuted} />
                 <Text style={styles.heroDate}>
-                  {new Date(plan.moveDate).toLocaleDateString("en-US", {
+                  {new Date(plan.moveDate).toLocaleDateString(dateLocale, {
                     month: "long", day: "numeric", year: "numeric",
                   })}
                 </Text>
@@ -272,9 +275,9 @@ export default function MovingDetailScreen() {
             </View>
           </View>
           <View style={styles.heroBadges}>
-            <UiBadge label={plan.status.replace("_", " ")} variant={statusVariant[plan.status] || "neutral"} />
-            {daysUntil > 0 && <UiBadge label={`${daysUntil} days left`} variant="warning" />}
-            {plan.isTemporary && <UiBadge label="Temporary" variant="info" />}
+            <UiBadge label={t(`moving.status_${plan.status}`, { defaultValue: plan.status.replace("_", " ") })} variant={statusVariant[plan.status] || "neutral"} />
+            {daysUntil > 0 && <UiBadge label={t("moving.daysLeft", { count: daysUntil })} variant="warning" />}
+            {plan.isTemporary && <UiBadge label={t("moving.temporary")} variant="info" />}
             <UiBadge label={moveScopeLabel} variant={isInterstateMove ? "warning" : "success"} />
           </View>
         </Card>
@@ -283,7 +286,7 @@ export default function MovingDetailScreen() {
         <View style={styles.addressCards}>
           <Card variant="default" style={{ flex: 1 }}>
             <MapPin size={16} color={theme.colors.orange.text} />
-            <Text style={styles.addrLabel}>From</Text>
+            <Text style={styles.addrLabel}>{t("moving.from")}</Text>
             <Text style={styles.addrValue} numberOfLines={2}>
               {plan.fromAddress?.street || "—"}{"\n"}
               {plan.fromAddress?.city}, {plan.fromAddress?.state}
@@ -291,7 +294,7 @@ export default function MovingDetailScreen() {
           </Card>
           <Card variant="default" style={{ flex: 1 }}>
             <MapPin size={16} color={theme.colors.emerald.text} />
-            <Text style={styles.addrLabel}>To</Text>
+            <Text style={styles.addrLabel}>{t("moving.to")}</Text>
             <Text style={styles.addrValue} numberOfLines={2}>
               {plan.toAddress?.street || "—"}{"\n"}
               {plan.toAddress?.city}, {plan.toAddress?.state}
@@ -300,7 +303,7 @@ export default function MovingDetailScreen() {
         </View>
 
         {/* Move Scope */}
-        <Text style={styles.sectionTitle}>Move Scope</Text>
+        <Text style={styles.sectionTitle}>{t("moving.moveScope")}</Text>
         <Card variant="default">
           <View style={styles.scopeHeader}>
             <View>
@@ -311,23 +314,23 @@ export default function MovingDetailScreen() {
           <Text style={styles.scopeBody}>{scopeDetail}</Text>
           <View style={styles.scopeGrid}>
             <View style={styles.scopeCard}>
-              <Text style={styles.scopeCardLabel}>Route</Text>
+              <Text style={styles.scopeCardLabel}>{t("moving.route")}</Text>
               <Text style={styles.scopeCardValue}>{plan.fromAddress?.city}, {plan.fromAddress?.state} → {plan.toAddress?.city}, {plan.toAddress?.state}</Text>
             </View>
             <View style={styles.scopeCard}>
-              <Text style={styles.scopeCardLabel}>Migration</Text>
+              <Text style={styles.scopeCardLabel}>{t("moving.migration")}</Text>
               <Text style={styles.scopeCardValue}>{migrationSummaryLabel}</Text>
             </View>
           </View>
         </Card>
 
-        <Text style={styles.sectionTitle}>Move Tasks</Text>
+        <Text style={styles.sectionTitle}>{t("moving.moveTasks")}</Text>
         <Card variant="default">
           <View style={styles.transitionHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.transitionTitle}>Task tracking</Text>
+              <Text style={styles.transitionTitle}>{t("moving.taskTracking")}</Text>
               <Text style={styles.transitionIntro}>
-                Completing tasks updates LocateFlow only. External provider accounts are not updated.
+                {t("moving.taskTrackingHint")}
               </Text>
             </View>
             <TouchableOpacity
@@ -335,11 +338,11 @@ export default function MovingDetailScreen() {
               onPress={generateMoveTasks}
               disabled={taskBusy === "generate"}
             >
-              <Text style={styles.migBtnPrimaryText}>{taskBusy === "generate" ? "Syncing" : "Generate"}</Text>
+              <Text style={styles.migBtnPrimaryText}>{taskBusy === "generate" ? t("moving.syncing") : t("moving.generate")}</Text>
             </TouchableOpacity>
           </View>
           {moveTasks.length === 0 ? (
-            <Text style={styles.emptyText}>No move tasks yet. Generate tasks after adding origin services.</Text>
+            <Text style={styles.emptyText}>{t("moving.noMoveTasks")}</Text>
           ) : (
             moveTasks.map((task, index) => {
               const done = task.status === "COMPLETED";
@@ -348,12 +351,12 @@ export default function MovingDetailScreen() {
                 <View key={task.id} style={[styles.taskRow, index > 0 && styles.migRowDivider]}>
                   <View style={{ flex: 1 }}>
                     <View style={styles.taskBadges}>
-                      <UiBadge label={task.status.replace(/_/g, " ")} variant={done ? "success" : dismissed ? "neutral" : "warning"} />
-                      <UiBadge label={`${task.confidence} confidence`} variant="neutral" />
+                      <UiBadge label={t(`moving.taskStatus_${task.status}`, { defaultValue: task.status.replace(/_/g, " ") })} variant={done ? "success" : dismissed ? "neutral" : "warning"} />
+                      <UiBadge label={t(`moving.confidence_${task.confidence}`, { defaultValue: `${task.confidence} confidence` })} variant="neutral" />
                     </View>
                     <Text style={styles.taskTitle}>{task.title}</Text>
                     {!!task.description && <Text style={styles.taskDescription}>{task.description}</Text>}
-                    <Text style={styles.taskCaveat}>Manual tracking only. Confirm with the official provider.</Text>
+                    <Text style={styles.taskCaveat}>{t("providers.manualTrackingCaveat")}</Text>
                   </View>
                   <View style={styles.taskActions}>
                     {!done && !dismissed && task.status === "SUGGESTED" && (
@@ -362,7 +365,7 @@ export default function MovingDetailScreen() {
                         disabled={taskBusy === task.id}
                         onPress={() => updateMoveTask(task.id, "ACCEPT")}
                       >
-                        <Text style={styles.migBtnText}>Accept</Text>
+                        <Text style={styles.migBtnText}>{t("moving.accept")}</Text>
                       </TouchableOpacity>
                     )}
                     {!done && !dismissed && (
@@ -371,7 +374,7 @@ export default function MovingDetailScreen() {
                         disabled={taskBusy === task.id}
                         onPress={() => confirmCompleteMoveTask(task.id)}
                       >
-                        <Text style={styles.migBtnPrimaryText}>Complete</Text>
+                        <Text style={styles.migBtnPrimaryText}>{t("moving.complete")}</Text>
                       </TouchableOpacity>
                     )}
                     {!done && !dismissed && (
@@ -380,7 +383,7 @@ export default function MovingDetailScreen() {
                         disabled={taskBusy === task.id}
                         onPress={() => updateMoveTask(task.id, "DISMISS")}
                       >
-                        <Text style={styles.migBtnText}>Dismiss</Text>
+                        <Text style={styles.migBtnText}>{t("moving.dismiss")}</Text>
                       </TouchableOpacity>
                     )}
                     {(done || dismissed) && (
@@ -389,7 +392,7 @@ export default function MovingDetailScreen() {
                         disabled={taskBusy === task.id}
                         onPress={() => updateMoveTask(task.id, "REOPEN")}
                       >
-                        <Text style={styles.migBtnText}>Reopen</Text>
+                        <Text style={styles.migBtnText}>{t("moving.reopen")}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -402,7 +405,7 @@ export default function MovingDetailScreen() {
         {/* Migration Panel */}
         {migration && migration.summary.total > 0 && (
           <View style={{ marginTop: 16 }}>
-            <Text style={styles.sectionTitle}>Service Migration</Text>
+            <Text style={styles.sectionTitle}>{t("moving.serviceMigration")}</Text>
             <Card variant="glow">
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <ArrowRightLeft size={16} color={theme.colors.primary} />
@@ -411,17 +414,17 @@ export default function MovingDetailScreen() {
                 </Text>
               </View>
               <Text style={{ fontSize: 12, color: theme.colors.textTertiary, marginBottom: 12 }}>
-                {(migration.transitionPlans?.length || 0)} manual guidance items · provider actions are not automatic
+                {t("moving.manualGuidanceItems", { count: migration.transitionPlans?.length || 0 })}
               </Text>
 
               {(migration.transitionPlans || []).length > 0 && (
                 <View style={styles.transitionPanel}>
                   <View style={styles.transitionHeader}>
-                    <Text style={styles.transitionTitle}>Move Transition Plan</Text>
-                    <UiBadge label="Manual tracking only" variant="warning" />
+                    <Text style={styles.transitionTitle}>{t("moving.transitionPlan")}</Text>
+                    <UiBadge label={t("providers.manualTrackingOnly")} variant="warning" />
                   </View>
                   <Text style={styles.transitionIntro}>
-                    Read-only guidance. LocateFlow does not update provider accounts or execute address changes.
+                    {t("moving.transitionIntro")}
                   </Text>
                   {migration.transitionPlans.map((planItem: any, i: number) => (
                     <View key={`tp-${planItem.serviceId || i}`} style={[styles.transitionItem, i > 0 && styles.migRowDivider]}>
@@ -451,7 +454,7 @@ export default function MovingDetailScreen() {
                 <View style={{ marginBottom: 12 }}>
                   <View style={styles.migSectionHeader}>
                     <Repeat size={14} color={theme.colors.primary} />
-                    <Text style={[styles.migSectionLabel, { color: theme.colors.primary }]}>Transfer ({migration.transfers.length})</Text>
+                    <Text style={[styles.migSectionLabel, { color: theme.colors.primary }]}>{t("moving.transfer")} ({migration.transfers.length})</Text>
                   </View>
                   {migration.transfers.map((item: any, i: number) => {
                     const sid = item.currentService?.id;
@@ -461,7 +464,7 @@ export default function MovingDetailScreen() {
                         <CategoryIcon emoji={item.icon} size={16} color={theme.colors.primary} />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.migRowText}>{item.currentService?.providerName}</Text>
-                          <Text style={styles.migRowSub}>Same provider serves destination</Text>
+                          <Text style={styles.migRowSub}>{t("moving.sameProviderServesDestination")}</Text>
                         </View>
                         {sid && (
                           <TouchableOpacity
@@ -469,7 +472,7 @@ export default function MovingDetailScreen() {
                             onPress={() => !confirmed && confirmAction(sid, "TRANSFER")}
                             disabled={confirmed || confirming === sid}
                           >
-                            <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? "Confirmed" : "Confirm"}</Text>
+                            <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? t("moving.confirmed") : t("moving.confirm")}</Text>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -482,7 +485,7 @@ export default function MovingDetailScreen() {
                 <View style={{ marginBottom: 12 }}>
                   <View style={styles.migSectionHeader}>
                     <ArrowRightLeft size={14} color={theme.colors.amber.text} />
-                    <Text style={[styles.migSectionLabel, { color: theme.colors.amber.text }]}>Switch ({migration.switches.length})</Text>
+                    <Text style={[styles.migSectionLabel, { color: theme.colors.amber.text }]}>{t("moving.switch")} ({migration.switches.length})</Text>
                   </View>
                   {migration.switches.map((item: any, i: number) => {
                     const sid = item.currentService?.id;
@@ -494,7 +497,7 @@ export default function MovingDetailScreen() {
                           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
                             <Text style={{ fontSize: 13, color: theme.colors.textMuted, textDecorationLine: "line-through" }}>{item.currentService?.providerName}</Text>
                             <ArrowRight size={12} color={theme.colors.amber.text} />
-                            <Text style={{ fontSize: 13, fontWeight: "600", color: theme.colors.amber.text }}>{item.recommendedProvider?.name || "Find new"}</Text>
+                            <Text style={{ fontSize: 13, fontWeight: "600", color: theme.colors.amber.text }}>{item.recommendedProvider?.name || t("moving.findNew")}</Text>
                           </View>
                         </View>
                         <View style={{ flexDirection: "row", gap: 6 }}>
@@ -507,7 +510,7 @@ export default function MovingDetailScreen() {
                                 providerId: item.recommendedProvider?.id,
                               })}
                             >
-                              <Text style={styles.migBtnPrimaryText}>Select</Text>
+                              <Text style={styles.migBtnPrimaryText}>{t("moving.select")}</Text>
                             </TouchableOpacity>
                           )}
                           {sid && (
@@ -516,7 +519,7 @@ export default function MovingDetailScreen() {
                               onPress={() => !confirmed && confirmAction(sid, "SWITCH")}
                               disabled={confirmed || confirming === sid}
                             >
-                              <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? "Confirmed" : "Confirm"}</Text>
+                              <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? t("moving.confirmed") : t("moving.confirm")}</Text>
                             </TouchableOpacity>
                           )}
                         </View>
@@ -530,7 +533,7 @@ export default function MovingDetailScreen() {
                 <View style={{ marginBottom: 12 }}>
                   <View style={styles.migSectionHeader}>
                     <PlusCircle size={14} color={theme.colors.primary} />
-                    <Text style={[styles.migSectionLabel, { color: theme.colors.primary }]}>New Needed ({migration.newNeeded.length})</Text>
+                    <Text style={[styles.migSectionLabel, { color: theme.colors.primary }]}>{t("moving.newNeeded")} ({migration.newNeeded.length})</Text>
                   </View>
                   {migration.newNeeded.map((item: any, i: number) => (
                     <View key={`new-${i}`} style={[styles.migRow, i > 0 && styles.migRowDivider]}>
@@ -548,7 +551,7 @@ export default function MovingDetailScreen() {
                           providerId: item.recommendedProvider?.id,
                         })}
                       >
-                        <Text style={styles.migBtnPrimaryText}>Add</Text>
+                        <Text style={styles.migBtnPrimaryText}>{t("common.add")}</Text>
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -559,7 +562,7 @@ export default function MovingDetailScreen() {
                 <View style={{ marginBottom: 12 }}>
                   <View style={styles.migSectionHeader}>
                     <Shield size={14} color={theme.colors.emerald.text} />
-                    <Text style={[styles.migSectionLabel, { color: theme.colors.emerald.text }]}>Keep ({migration.keeps.length})</Text>
+                    <Text style={[styles.migSectionLabel, { color: theme.colors.emerald.text }]}>{t("moving.keep")} ({migration.keeps.length})</Text>
                   </View>
                   {migration.keeps.map((item: any, i: number) => {
                     const sid = item.currentService?.id;
@@ -576,7 +579,7 @@ export default function MovingDetailScreen() {
                             onPress={() => !confirmed && confirmAction(sid, "KEEP")}
                             disabled={confirmed || confirming === sid}
                           >
-                            <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? "Confirmed" : "Confirm"}</Text>
+                            <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? t("moving.confirmed") : t("moving.confirm")}</Text>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -589,7 +592,7 @@ export default function MovingDetailScreen() {
                 <View>
                   <View style={styles.migSectionHeader}>
                     <XCircle size={14} color={theme.colors.error} />
-                    <Text style={[styles.migSectionLabel, { color: theme.colors.error }]}>Cancel ({migration.cancels.length})</Text>
+                    <Text style={[styles.migSectionLabel, { color: theme.colors.error }]}>{t("moving.cancel")} ({migration.cancels.length})</Text>
                   </View>
                   {migration.cancels.map((item: any, i: number) => {
                     const sid = item.currentService?.id;
@@ -599,7 +602,7 @@ export default function MovingDetailScreen() {
                         <CategoryIcon emoji={item.icon} size={16} color={theme.colors.error} />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.migRowText}>{item.currentService?.providerName}</Text>
-                          <Text style={styles.migRowSub}>No longer needed at destination</Text>
+                          <Text style={styles.migRowSub}>{t("moving.noLongerNeeded")}</Text>
                         </View>
                         {sid && (
                           <TouchableOpacity
@@ -607,7 +610,7 @@ export default function MovingDetailScreen() {
                             onPress={() => !confirmed && confirmAction(sid, "CANCEL")}
                             disabled={confirmed || confirming === sid}
                           >
-                            <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? "Confirmed" : "Confirm"}</Text>
+                            <Text style={[styles.migBtnText, confirmed && styles.migBtnTextConfirmed]}>{confirmed ? t("moving.confirmed") : t("moving.confirm")}</Text>
                           </TouchableOpacity>
                         )}
                       </View>
@@ -629,7 +632,7 @@ export default function MovingDetailScreen() {
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <BookOpen size={16} color={theme.colors.primary} />
-                <Text style={styles.stateGuideTitle}>State Guide — {plan.toAddress?.state}</Text>
+                <Text style={styles.stateGuideTitle}>{t("moving.stateGuide", { state: plan.toAddress?.state })}</Text>
               </View>
               {stateGuideOpen
                 ? <ChevronUp size={16} color={theme.colors.textMuted} />
@@ -640,31 +643,31 @@ export default function MovingDetailScreen() {
               <View style={styles.stateGuideBody}>
                 {stateRules.dmvRules && (
                   <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>DMV / Vehicle</Text>
+                    <Text style={styles.stateGuideSectionLabel}>{t("moving.dmvVehicle")}</Text>
                     <Text style={styles.stateGuideSectionText}>{stateRules.dmvRules}</Text>
                   </View>
                 )}
                 {stateRules.voterRegistration && (
                   <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>Voter Registration</Text>
+                    <Text style={styles.stateGuideSectionLabel}>{t("moving.voterRegistration")}</Text>
                     <Text style={styles.stateGuideSectionText}>{stateRules.voterRegistration}</Text>
                   </View>
                 )}
                 {stateRules.taxInfo && (
                   <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>State Tax</Text>
+                    <Text style={styles.stateGuideSectionLabel}>{t("moving.stateTax")}</Text>
                     <Text style={styles.stateGuideSectionText}>{stateRules.taxInfo}</Text>
                   </View>
                 )}
                 {stateRules.utilityInfo && (
                   <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>Utilities</Text>
+                    <Text style={styles.stateGuideSectionLabel}>{t("moving.utilities")}</Text>
                     <Text style={styles.stateGuideSectionText}>{stateRules.utilityInfo}</Text>
                   </View>
                 )}
                 {stateRules.insuranceRules && (
                   <View style={styles.stateGuideSection}>
-                    <Text style={styles.stateGuideSectionLabel}>Insurance</Text>
+                    <Text style={styles.stateGuideSectionLabel}>{t("moving.insurance")}</Text>
                     <Text style={styles.stateGuideSectionText}>{stateRules.insuranceRules}</Text>
                   </View>
                 )}
@@ -676,7 +679,7 @@ export default function MovingDetailScreen() {
         {/* Delete */}
         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
           <Trash2 size={16} color={theme.colors.error} />
-          <Text style={styles.deleteText}>Delete Plan</Text>
+          <Text style={styles.deleteText}>{t("moving.deletePlan")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

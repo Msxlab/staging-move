@@ -41,6 +41,13 @@ export const ADMIN_RESOURCES = [
   // the lifecycle column (no separate flag) — tightly coupled to write
   // because anyone who can edit the post should be able to ship it.
   "blog",
+  // Acquisition campaigns rewrite public pricing copy and bind Stripe
+  // price IDs to live checkout, so they need a tighter gate than the
+  // generic `subscriptions` permission (which is read by support /
+  // billing roles for refunds). Splitting the resource lets us let an
+  // ADMIN handle refunds without also letting them edit the homepage
+  // headline.
+  "acquisition_campaigns",
 ] as const;
 
 export type AdminResource = (typeof ADMIN_RESOURCES)[number];
@@ -110,6 +117,12 @@ export function getDefaultPermissionsForRole(
       // Hard-delete stays with ADMIN/SUPER_ADMIN to avoid an editor
       // accidentally wiping a post that's already been linked to.
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
+    }
+    if (resource === "acquisition_campaigns") {
+      // Read-only for moderators — the campaign editor binds Stripe
+      // prices and rewrites public pricing surfaces. Only ADMIN /
+      // SUPER_ADMIN should be activating offers.
+      return { ...READ_ONLY };
     }
     return { ...READ_ONLY };
   }

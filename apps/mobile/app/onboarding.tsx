@@ -35,6 +35,7 @@ import {
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
+import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
@@ -127,7 +128,7 @@ const IMMIGRATION_STATUSES = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -544,6 +545,10 @@ export default function OnboardingScreen() {
   const sortedCats = Object.keys(grouped).sort(
     (a, b) => getMergedDisplayCategoryOrder(a) - getMergedDisplayCategoryOrder(b)
   );
+  const categoryLabel = useCallback(
+    (category: string) => t(`categories.${category}`, { defaultValue: getMergedDisplayCategoryLabel(category) }),
+    [t],
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -856,6 +861,12 @@ export default function OnboardingScreen() {
                   </View>
                   {recommended.map((provider: ScoredProvider) => {
                     const isSelected = selectedProviders.has(provider.id);
+                    const reason = getLocalizedProviderReason(
+                      t,
+                      i18n.language,
+                      provider,
+                      categoryLabel(provider.category),
+                    );
                     return (
                       <TouchableOpacity
                         key={`rec-${provider.id}`}
@@ -869,7 +880,7 @@ export default function OnboardingScreen() {
                         <View style={{ flex: 1 }}>
                           <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
                           <Text style={styles.recoReason} numberOfLines={1}>
-                            {provider.matchReasons?.[0] || getMergedDisplayCategoryLabel(provider.category)}
+                            {reason}
                           </Text>
                         </View>
                         {isSelected && <Check size={16} color={theme.colors.primary} />}
@@ -896,7 +907,7 @@ export default function OnboardingScreen() {
                       <View key={cat} style={styles.catSection}>
                         <TouchableOpacity style={styles.catHeader} onPress={() => toggleCat(cat)}>
                           <Text style={styles.catIcon}>{getMergedDisplayCategoryIcon(cat)}</Text>
-                          <Text style={styles.catTitle} numberOfLines={1}>{getMergedDisplayCategoryLabel(cat)}</Text>
+                          <Text style={styles.catTitle} numberOfLines={1}>{categoryLabel(cat)}</Text>
                           <View style={styles.catRight}>
                             <Text style={styles.catCount}>{items.length}</Text>
                             {selectedCount > 0 && (
@@ -910,6 +921,7 @@ export default function OnboardingScreen() {
                         {isOpen && items.map((provider: ScoredProvider) => {
                           const sel = selectedProviders.has(provider.id);
                           const bd = billingData[provider.id];
+                          const description = getLocalizedProviderDescription(t, i18n.language, provider);
                           return (
                             <View key={provider.id}>
                               <TouchableOpacity
@@ -920,8 +932,8 @@ export default function OnboardingScreen() {
                                 </View>
                                 <View style={{ flex: 1 }}>
                                   <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
-                                  {provider.description ? (
-                                    <Text style={styles.providerDesc} numberOfLines={1}>{provider.description}</Text>
+                                  {description ? (
+                                    <Text style={styles.providerDesc} numberOfLines={1}>{description}</Text>
                                   ) : null}
                                   <View style={styles.providerMetaRow}>
                                     <View style={[styles.scopeBadge, provider.scope === "FEDERAL" ? styles.scopeFederal : styles.scopeState]}>

@@ -133,6 +133,21 @@ export function isWebNotificationEnabled(records: StoredNotificationPreference[]
   return !!settings.prefs[key];
 }
 
+// Push channel defaults to enabled once a user accepts OS permission. Only an
+// explicit `enabled: false` row turns it off, so freshly-registered devices
+// receive task/move pushes without first visiting the settings screen.
+export function isPushTypeEnabled(records: StoredNotificationPreference[], types: string | string[]): boolean {
+  const list = Array.isArray(types) ? types : [types];
+  let sawExplicit = false;
+  for (const record of records) {
+    if (record.channel !== "PUSH") continue;
+    if (!list.includes(record.type)) continue;
+    sawExplicit = true;
+    if (record.enabled) return true;
+  }
+  return !sawExplicit;
+}
+
 export function groupNotificationPreferencesByUser(records: StoredNotificationPreference[]) {
   return records.reduce<Map<string, StoredNotificationPreference[]>>((acc, record) => {
     if (!record.userId) return acc;

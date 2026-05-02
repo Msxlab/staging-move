@@ -11,6 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Building2, ChevronRight, Plus, Search } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { theme } from "@/lib/theme";
 import { Badge } from "@/components/ui/Badge";
@@ -32,6 +33,7 @@ interface CustomProvider {
 
 export default function CustomProvidersScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [providers, setProviders] = useState<CustomProvider[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -79,16 +81,16 @@ export default function CustomProvidersScreen() {
           onPress={() => router.back()}
           style={styles.backBtn}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
+          accessibilityLabel={t("common.back")}
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Custom Providers</Text>
+        <Text style={styles.title}>{t("customProviders.title")}</Text>
         <TouchableOpacity
           onPress={() => router.push({ pathname: "/services/new", params: { mode: "manual" } })}
           style={styles.addBtn}
           accessibilityRole="button"
-          accessibilityLabel="Add custom provider"
+          accessibilityLabel={t("customProviders.addA11y")}
         >
           <Plus size={20} color="#fff" />
         </TouchableOpacity>
@@ -100,9 +102,9 @@ export default function CustomProvidersScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
         <View style={styles.notice}>
-          <Badge label="User-added provider" variant="info" />
+          <Badge label={t("customProviders.userAddedBadge")} variant="info" />
           <Text style={styles.noticeText}>
-            These are private provider records for manual LocateFlow tracking. Confirm details directly with the provider.
+            {t("customProviders.noticeText")}
           </Text>
         </View>
 
@@ -111,7 +113,7 @@ export default function CustomProvidersScreen() {
           <TextInput
             value={search}
             onChangeText={handleSearch}
-            placeholder="Search your providers"
+            placeholder={t("customProviders.searchPlaceholder")}
             placeholderTextColor={theme.colors.textMuted}
             style={styles.searchInput}
             autoCapitalize="none"
@@ -123,9 +125,9 @@ export default function CustomProvidersScreen() {
         ) : providers.length === 0 ? (
           <EmptyState
             icon={<Building2 size={32} color={theme.colors.primary} />}
-            title="No custom providers yet"
-            description="Add local providers like a dentist, gym, law office, or utility from the manual service flow."
-            actionLabel="Add local provider"
+            title={t("customProviders.emptyTitle")}
+            description={t("customProviders.emptyDescription")}
+            actionLabel={t("customProviders.addLocalProvider")}
             onAction={() => router.push({ pathname: "/services/new", params: { mode: "manual" } })}
           />
         ) : (
@@ -137,7 +139,7 @@ export default function CustomProvidersScreen() {
                 onPress={() => router.push({ pathname: "/custom-providers/[id]", params: { id: provider.id } })}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel={`Open ${provider.name}`}
+                accessibilityLabel={t("providers.openProviderA11y", { provider: provider.name })}
               >
                 <View style={styles.cardIcon}>
                   <Building2 size={18} color={theme.colors.primary} />
@@ -145,11 +147,11 @@ export default function CustomProvidersScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{provider.name}</Text>
                   <Text style={styles.cardMeta} numberOfLines={1}>
-                    {provider.category.replace(/_/g, " ")}
+                    {t(`categories.${provider.category}`, { defaultValue: provider.category.replace(/_/g, " ") })}
                     {provider.city || provider.state ? ` - ${[provider.city, provider.state].filter(Boolean).join(", ")}` : ""}
                   </Text>
                   <Text style={styles.cardCaveat} numberOfLines={2}>
-                    {provider.availabilityCaveat || "Private user record. Manual tracking only."}
+                    {provider.availabilityCaveat || t("customProviders.defaultCaveat")}
                   </Text>
                 </View>
                 <ChevronRight size={18} color={theme.colors.textMuted} />

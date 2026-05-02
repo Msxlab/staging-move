@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
 import { MapPin } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/Input";
 import { theme } from "@/lib/theme";
 import {
@@ -36,6 +37,7 @@ export function AddressAutocompleteField({
   onSelect,
   onManualChange,
 }: AddressAutocompleteFieldProps) {
+  const { t } = useTranslation();
   const sessionTokenRef = useRef(createAddressAutocompleteSessionToken());
   const skipNextQueryRef = useRef<string | null>(null);
   const [predictions, setPredictions] = useState<AddressAutocompletePrediction[]>([]);
@@ -99,7 +101,7 @@ export function AddressAutocompleteField({
         }}
         rightIcon={loading ? <ActivityIndicator size="small" color={theme.colors.primary} /> : enabled ? <MapPin size={16} color={theme.colors.textMuted} /> : null}
       />
-      <Text style={styles.hint}>{hint || "Start typing for address suggestions, or continue manually."}</Text>
+      <Text style={styles.hint}>{hint || t("addresses.autocompleteHint")}</Text>
       {predictions.length > 0 ? (
         <View style={styles.resultsCard}>
           {predictions.map((prediction) => (

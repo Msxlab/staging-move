@@ -124,6 +124,10 @@ export type PurchaseResult =
   | { status: "duplicate" }
   | { status: "error"; message: string };
 
+export const IAP_PURCHASE_FAILED_MESSAGE = "IAP_PURCHASE_FAILED";
+export const IAP_VERIFICATION_ERROR_MESSAGE = "IAP_VERIFICATION_ERROR";
+export const IAP_STORE_UNAVAILABLE_MESSAGE = "IAP_STORE_UNAVAILABLE";
+
 /**
  * Kick off a subscription purchase and wait for backend verification.
  *
@@ -137,9 +141,9 @@ export async function purchaseSubscription(opts: {
   productId: string;
 }): Promise<PurchaseResult> {
   const ok = await ensureConnection();
-  if (!ok) return { status: "error", message: "Store unavailable" };
+  if (!ok) return { status: "error", message: IAP_STORE_UNAVAILABLE_MESSAGE };
   const IAP = getIapModule();
-  if (!IAP) return { status: "error", message: "Store unavailable" };
+  if (!IAP) return { status: "error", message: IAP_STORE_UNAVAILABLE_MESSAGE };
 
   return new Promise<PurchaseResult>((resolve) => {
     let settled = false;
@@ -208,7 +212,7 @@ export async function purchaseSubscription(opts: {
       } catch (err: any) {
         finish({
           status: "error",
-          message: err?.message || "Verification error",
+          message: err?.message || IAP_VERIFICATION_ERROR_MESSAGE,
         });
       }
     });
@@ -220,7 +224,7 @@ export async function purchaseSubscription(opts: {
       }
       finish({
         status: "error",
-        message: IAP.getUserFriendlyErrorMessage(err) || err?.message || "Purchase failed",
+        message: IAP.getUserFriendlyErrorMessage(err) || err?.message || IAP_PURCHASE_FAILED_MESSAGE,
       });
     });
 
@@ -240,7 +244,7 @@ export async function purchaseSubscription(opts: {
         } else {
           finish({
             status: "error",
-            message: IAP.getUserFriendlyErrorMessage(err) || err?.message || "Purchase failed",
+            message: IAP.getUserFriendlyErrorMessage(err) || err?.message || IAP_PURCHASE_FAILED_MESSAGE,
           });
         }
       }

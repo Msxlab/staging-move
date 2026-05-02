@@ -4,14 +4,10 @@ import { sendContractReminderEmail } from "@/lib/email-service";
 import { createInAppNotification } from "@/lib/in-app-notifications";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { sendNotification } from "@/lib/notifications";
-import { buildWebNotificationSettings, groupNotificationPreferencesByUser, type StoredNotificationPreference } from "@/lib/notification-preferences";
+import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 export const runtime = "nodejs";
-
-function isPushEnabled(records: StoredNotificationPreference[], type: string) {
-  return records.some((record) => record.channel === "PUSH" && record.type === type && record.enabled);
-}
 
 async function handleCron(request: NextRequest) {
   try {
@@ -101,7 +97,7 @@ async function handleCron(request: NextRequest) {
             });
             if (created) {
               mirrored++;
-              if (isPushEnabled(userPreferences, "CONTRACT_EXPIRY")) {
+              if (isPushTypeEnabled(userPreferences, ["CONTRACT_EXPIRY", "TASK_REMINDER"])) {
                 const pushed = await sendNotification({
                   userId: service.user.id,
                   type: "PUSH",

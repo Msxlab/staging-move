@@ -14,6 +14,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { theme } from "@/lib/theme";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -54,6 +55,7 @@ const CATEGORIES = Object.entries(CATEGORY_META)
 export default function EditCustomProviderScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -106,7 +108,7 @@ export default function EditCustomProviderScreen() {
 
   const save = async () => {
     if (!form.name.trim() || !form.category.trim()) {
-      Alert.alert("Required", "Name and category are required.");
+      Alert.alert(t("customProviders.requiredTitle"), t("customProviders.requiredNameCategory"));
       return;
     }
     setSaving(true);
@@ -117,7 +119,7 @@ export default function EditCustomProviderScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("tickets.errorTitle"), res.error);
       return;
     }
     hapticSuccess();
@@ -132,19 +134,19 @@ export default function EditCustomProviderScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Provider</Text>
+        <Text style={styles.title}>{t("customProviders.editTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <Text style={styles.notice}>
-            This is your private provider record. Editing it updates LocateFlow only and does not contact the provider.
+            {t("customProviders.editNotice")}
           </Text>
 
-          <Field label="Name *" value={form.name} onChangeText={(v) => update("name", v)} placeholder="Local dentist, gym, utility..." />
+          <Field label={t("customProviders.nameRequired")} value={form.name} onChangeText={(v) => update("name", v)} placeholder={t("customProviders.namePlaceholder")} />
 
-          <Text style={styles.sectionLabel}>Category *</Text>
+          <Text style={styles.sectionLabel}>{t("customProviders.categoryRequired")}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
             {CATEGORIES.map((category) => (
               <TouchableOpacity
@@ -152,12 +154,14 @@ export default function EditCustomProviderScreen() {
                 onPress={() => update("category", category.value)}
                 style={[styles.chip, form.category === category.value && styles.chipActive]}
               >
-                <Text style={[styles.chipText, form.category === category.value && styles.chipTextActive]}>{category.label}</Text>
+                <Text style={[styles.chipText, form.category === category.value && styles.chipTextActive]}>
+                  {t(`categories.${category.value}`, { defaultValue: category.label })}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          <Text style={styles.sectionLabel}>Provider Type</Text>
+          <Text style={styles.sectionLabel}>{t("customProviders.providerType")}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
             {PROVIDER_TYPES.map((type) => (
               <TouchableOpacity
@@ -165,35 +169,37 @@ export default function EditCustomProviderScreen() {
                 onPress={() => update("providerType", type)}
                 style={[styles.chip, form.providerType === type && styles.chipActive]}
               >
-                <Text style={[styles.chipText, form.providerType === type && styles.chipTextActive]}>{type.replace(/_/g, " ")}</Text>
+                <Text style={[styles.chipText, form.providerType === type && styles.chipTextActive]}>
+                  {t(`customProviders.type_${type}`, { defaultValue: type.replace(/_/g, " ") })}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          <Field label="Description" value={form.description} onChangeText={(v) => update("description", v)} multiline />
-          <Field label="Website" value={form.website} onChangeText={(v) => update("website", v)} placeholder="https://..." keyboardType="url" autoCapitalize="none" />
-          <Field label="Phone" value={form.phone} onChangeText={(v) => update("phone", v)} keyboardType="phone-pad" />
-          <Field label="Email" value={form.email} onChangeText={(v) => update("email", v)} keyboardType="email-address" autoCapitalize="none" />
-          <Field label="Address Line 1" value={form.addressLine1} onChangeText={(v) => update("addressLine1", v)} />
-          <Field label="Address Line 2" value={form.addressLine2} onChangeText={(v) => update("addressLine2", v)} />
+          <Field label={t("common.description")} value={form.description} onChangeText={(v) => update("description", v)} multiline />
+          <Field label={t("common.website")} value={form.website} onChangeText={(v) => update("website", v)} placeholder="https://..." keyboardType="url" autoCapitalize="none" />
+          <Field label={t("common.phone")} value={form.phone} onChangeText={(v) => update("phone", v)} keyboardType="phone-pad" />
+          <Field label={t("common.email")} value={form.email} onChangeText={(v) => update("email", v)} keyboardType="email-address" autoCapitalize="none" />
+          <Field label={t("customProviders.addressLine1")} value={form.addressLine1} onChangeText={(v) => update("addressLine1", v)} />
+          <Field label={t("customProviders.addressLine2")} value={form.addressLine2} onChangeText={(v) => update("addressLine2", v)} />
 
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Field label="City" value={form.city} onChangeText={(v) => update("city", v)} />
+              <Field label={t("addresses.city")} value={form.city} onChangeText={(v) => update("city", v)} />
             </View>
             <View style={{ width: 88 }}>
-              <Field label="State" value={form.state} onChangeText={(v) => update("state", v)} autoCapitalize="characters" maxLength={2} />
+              <Field label={t("addresses.state")} value={form.state} onChangeText={(v) => update("state", v)} autoCapitalize="characters" maxLength={2} />
             </View>
           </View>
 
-          <Field label="ZIP" value={form.zipCode} onChangeText={(v) => update("zipCode", v)} keyboardType="number-pad" maxLength={10} />
-          <Field label="Notes" value={form.notes} onChangeText={(v) => update("notes", v)} multiline />
+          <Field label={t("addresses.zip")} value={form.zipCode} onChangeText={(v) => update("zipCode", v)} keyboardType="number-pad" maxLength={10} />
+          <Field label={t("customProviders.notes")} value={form.notes} onChangeText={(v) => update("notes", v)} multiline />
 
           <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={save} disabled={saving}>
             {saving ? <ActivityIndicator color="#fff" /> : (
               <>
                 <Check size={18} color="#fff" />
-                <Text style={styles.saveText}>Save Changes</Text>
+                <Text style={styles.saveText}>{t("customProviders.saveChanges")}</Text>
               </>
             )}
           </TouchableOpacity>

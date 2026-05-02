@@ -106,6 +106,17 @@ export const BACKUP_TABLES = {
   adminPermissions: { model: "adminPermission", label: "Admin Permissions" },
   adminLoginLogs: { model: "adminLoginLog", label: "Admin Login Logs" },
   adminAuditLogs: { model: "adminAuditLog", label: "Admin Audit Logs" },
+  acquisitionCampaigns: {
+    model: "acquisitionCampaign",
+    label: "Acquisition Campaigns",
+  },
+  acquisitionRedemptions: {
+    model: "acquisitionRedemption",
+    label: "Acquisition Redemptions",
+  },
+  blogCategories: { model: "blogCategory", label: "Blog Categories" },
+  blogTags: { model: "blogTag", label: "Blog Tags" },
+  blogPosts: { model: "blogPost", label: "Blog Posts" },
 } as const;
 
 export type BackupTableName = keyof typeof BACKUP_TABLES;
@@ -133,6 +144,11 @@ export const BACKUP_TABLE_ORDER: BackupTableName[] = [
   "adminPermissions",
   "adminLoginLogs",
   "adminAuditLogs",
+  "acquisitionCampaigns",
+  "acquisitionRedemptions",
+  "blogCategories",
+  "blogTags",
+  "blogPosts",
 ];
 
 const BACKUP_TABLE_DEPENDENCIES: Partial<
@@ -164,6 +180,13 @@ const BACKUP_TABLE_DEPENDENCIES: Partial<
   adminPermissions: ["adminUsers"],
   adminLoginLogs: ["adminUsers"],
   adminAuditLogs: ["adminUsers"],
+  acquisitionCampaigns: ["adminUsers"],
+  acquisitionRedemptions: [
+    "users",
+    "subscriptions",
+    "acquisitionCampaigns",
+  ],
+  blogPosts: ["adminUsers", "blogCategories"],
 };
 
 const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
@@ -197,6 +220,8 @@ const BACKUP_TABLE_REPLACE_REQUIREMENTS: Partial<
   customProviders: ["services", "moveTasks", "providerGovernanceIssues"],
   services: ["moveTasks"],
   adminUsers: ["adminPermissions", "adminLoginLogs", "adminAuditLogs"],
+  acquisitionCampaigns: ["acquisitionRedemptions"],
+  blogCategories: ["blogPosts"],
 };
 
 export function isSupportedBackupTable(

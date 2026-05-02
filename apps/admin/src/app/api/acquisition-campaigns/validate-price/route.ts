@@ -4,7 +4,7 @@ import { validateStripeCampaignPrice } from "@/lib/stripe-campaign-validation";
 
 export async function POST(request: NextRequest) {
   try {
-    await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
+    await requirePermission("acquisition_campaigns", "canRead", { minimumRole: "VIEWER" });
     const body = await request.json().catch(() => ({}));
     const accessType = body.accessType === "FREE_ACCESS"
       ? "FREE_ACCESS"

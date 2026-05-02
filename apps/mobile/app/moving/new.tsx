@@ -180,7 +180,7 @@ export default function NewMovingPlanScreen() {
 
   const getLabel = (id: string) => {
     const a = addresses.find((addr) => addr.id === id);
-    if (!a) return "Select...";
+    if (!a) return t("common.select");
     return a.nickname || `${a.city}, ${a.state}`;
   };
 
@@ -188,26 +188,26 @@ export default function NewMovingPlanScreen() {
     if (form.destinationMode === "existing") {
       return getLabel(form.toAddressId);
     }
-    if (!form.destinationCity && !form.destinationState) return "New destination";
-    return `${form.destinationCity || "Destination"}${form.destinationState ? `, ${form.destinationState}` : ""}`;
+    if (!form.destinationCity && !form.destinationState) return t("moving.newDestination");
+    return `${form.destinationCity || t("moving.destination")}${form.destinationState ? `, ${form.destinationState}` : ""}`;
   };
 
   const handleSave = async () => {
     if (!form.fromAddressId || !form.moveDate) {
-      Alert.alert("Missing Fields", "Please select your origin and move date.");
+      Alert.alert(t("validation.missingFields"), t("moving.errorOriginAndDateRequired"));
       return;
     }
     if (form.destinationMode === "existing" && !form.toAddressId) {
-      Alert.alert("Missing Fields", "Please select a saved destination or switch to entering a new one.");
+      Alert.alert(t("validation.missingFields"), t("moving.errorDestinationSelectRequired"));
       return;
     }
     if (form.destinationMode === "new") {
       if (!form.destinationCity.trim() || !form.destinationState.trim() || !form.destinationZip.trim()) {
-        Alert.alert("Missing Fields", "Please enter destination city, state, and ZIP code.");
+        Alert.alert(t("validation.missingFields"), t("moving.errorDestinationRequired"));
         return;
       }
       if (form.destinationState.trim().length !== 2) {
-        Alert.alert("Invalid State", "Destination state must be a 2-letter code.");
+        Alert.alert(t("validation.invalidState"), t("moving.errorDestinationStateFormat"));
         return;
       }
     }
@@ -250,14 +250,14 @@ export default function NewMovingPlanScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.retry"), res.error);
       return;
     }
 
     const planId = res.data?.plan?.id;
     if (!planId) {
       hapticError();
-      Alert.alert("Error", "Moving plan could not be created.");
+      Alert.alert(t("common.retry"), t("moving.errorPlanCreateFailed"));
       return;
     }
 
@@ -417,7 +417,7 @@ export default function NewMovingPlanScreen() {
               )}
 
               {/* Move Date */}
-              <Text style={styles.label}>Move Date *</Text>
+              <Text style={styles.label}>{t("moving.moveDate")} *</Text>
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => setShowDatePicker(true)}
@@ -426,8 +426,8 @@ export default function NewMovingPlanScreen() {
                 <Calendar size={16} color={selectedDate ? theme.colors.primary : theme.colors.textMuted} />
                 <Text style={[styles.dateButtonText, selectedDate && { color: theme.colors.text }]}> 
                   {selectedDate
-                    ? selectedDate.toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric", year: "numeric" })
-                    : "Select move date..."}
+                    ? selectedDate.toLocaleDateString(i18n.language || "en", { weekday: "short", month: "long", day: "numeric", year: "numeric" })
+                    : t("moving.datePlaceholder")}
                 </Text>
               </TouchableOpacity>
               {showDatePicker && (
@@ -451,13 +451,13 @@ export default function NewMovingPlanScreen() {
                   style={{ alignSelf: "flex-end", marginTop: 4 }}
                   onPress={() => setShowDatePicker(false)}
                 >
-                  <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>Done</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.primary }}>{t("common.done")}</Text>
                 </TouchableOpacity>
               )}
 
               {/* Temporary Toggle */}
               <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>Temporary Move</Text>
+                <Text style={styles.switchLabel}>{t("moving.temporaryMove")}</Text>
                 <Switch
                   value={form.isTemporary}
                   onValueChange={(v) => update("isTemporary", v)}
@@ -468,10 +468,10 @@ export default function NewMovingPlanScreen() {
 
               {form.isTemporary && (
                 <>
-                  <Text style={styles.label}>Estimated Duration (days)</Text>
+                  <Text style={styles.label}>{t("moving.estimatedDurationDays")}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="e.g., 30"
+                    placeholder={t("moving.estimatedDurationPlaceholder")}
                     placeholderTextColor={theme.colors.textMuted}
                     value={form.estimatedDuration}
                     onChangeText={(v) => update("estimatedDuration", v)}
@@ -492,7 +492,7 @@ export default function NewMovingPlanScreen() {
                 ) : (
                   <>
                     <Check size={18} color="#fff" />
-                    <Text style={styles.saveBtnText}>Create Moving Plan</Text>
+                    <Text style={styles.saveBtnText}>{t("moving.createPlan")}</Text>
                   </>
                 )}
               </TouchableOpacity>

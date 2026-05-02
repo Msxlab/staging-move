@@ -145,9 +145,9 @@ export default function ProvidersScreen() {
     const counts = new Map<string, number>();
     for (const p of providers) counts.set(p.category, (counts.get(p.category) || 0) + 1);
     return Array.from(counts.entries())
-      .map(([value, count]) => ({ value, label: getCategoryLabel(value), count }))
+      .map(([value, count]) => ({ value, label: t(`categories.${value}`, { defaultValue: getCategoryLabel(value) }), count }))
       .sort((a, b) => getCategoryOrder(a.value) - getCategoryOrder(b.value));
-  }, [providers]);
+  }, [providers, t]);
 
   // Filter by category + paginate
   const filtered = useMemo(() => {
@@ -174,7 +174,7 @@ export default function ProvidersScreen() {
     setSearch("");
   }, []);
 
-  const selectedLabel = selectedCat ? getCategoryLabel(selectedCat) : null;
+  const selectedLabel = selectedCat ? t(`categories.${selectedCat}`, { defaultValue: getCategoryLabel(selectedCat) }) : null;
 
   const renderHeader = useCallback(() => {
     if (search) return null; // Hide recommendations while searching
@@ -182,11 +182,11 @@ export default function ProvidersScreen() {
       <View>
         {recommended.length > 0 ? (
           <RecommendedRow
-            title="For your move"
-            description={
-              primaryAddress?.state
-                ? `Urgent & important providers for ${primaryAddress.state}`
-                : "Urgent & important providers tailored to you"
+              title={t("providers.forYourMove")}
+              description={
+                primaryAddress?.state
+                ? t("providers.recommendedForState", { state: primaryAddress.state })
+                : t("providers.recommendedTailored")
             }
             providers={recommended}
             onPressProvider={(id) => router.push({ pathname: "/providers/[id]", params: { id } })}
@@ -207,7 +207,7 @@ export default function ProvidersScreen() {
           icon={<Search size={32} color={theme.colors.primary} />}
           title={t("empty.providers")}
           description={t("empty.providersDescription")}
-          actionLabel="Clear search"
+          actionLabel={t("common.clearSearch")}
           onAction={clearSearch}
         />
       );
@@ -216,13 +216,13 @@ export default function ProvidersScreen() {
       return (
         <EmptyState
           icon={<Search size={32} color={theme.colors.primary} />}
-          title="Nothing in this category"
+          title={t("providers.emptyCategory")}
           description={
             primaryAddress?.state
               ? `${t("empty.providers")} — ${selectedLabel} / ${primaryAddress.state}`
               : `${t("empty.providers")} — ${selectedLabel}`
           }
-          actionLabel="Show all"
+          actionLabel={t("common.showAll")}
           onAction={() => setSelectedCat(null)}
         />
       );
@@ -231,7 +231,7 @@ export default function ProvidersScreen() {
       <EmptyState
         icon={<Search size={32} color={theme.colors.primary} />}
         title={t("empty.providers")}
-        description="Pull to refresh or check your connection."
+        description={t("empty.providersConnection")}
       />
     );
   }, [loading, error, load, search, selectedCat, selectedLabel, primaryAddress, clearSearch]);
@@ -243,12 +243,12 @@ export default function ProvidersScreen() {
           onPress={() => router.back()}
           style={styles.backBtn}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
-          accessibilityHint="Returns to the previous screen"
+          accessibilityLabel={t("common.back")}
+          accessibilityHint={t("common.backHint")}
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Providers</Text>
+        <Text style={styles.title}>{t("providers.title")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -263,14 +263,14 @@ export default function ProvidersScreen() {
             onChangeText={setSearchInput}
             onSubmitEditing={submitSearch}
             returnKeyType="search"
-            accessibilityLabel="Search providers"
-            accessibilityHint="Filters providers by name, description, or tags"
+            accessibilityLabel={t("providers.searchA11y")}
+            accessibilityHint={t("providers.searchHint")}
           />
           {searchInput.length > 0 ? (
             <TouchableOpacity
               onPress={clearSearch}
               accessibilityRole="button"
-              accessibilityLabel="Clear search"
+              accessibilityLabel={t("common.clearSearch")}
             >
               <X size={16} color={theme.colors.textMuted} />
             </TouchableOpacity>
@@ -281,7 +281,7 @@ export default function ProvidersScreen() {
       <View style={styles.truthBanner}>
         <AlertTriangle size={15} color={theme.colors.warning} />
         <Text style={styles.truthText}>
-          Listed provider data is unverified. Availability may vary by address, and adding a provider is manual tracking only.
+          {t("providers.truthBanner")}
         </Text>
       </View>
 

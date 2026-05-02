@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -46,7 +46,7 @@ interface HelpArticle {
 
 export default function HelpScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [articles, setArticles] = useState<HelpArticle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,19 +56,74 @@ export default function HelpScreen() {
   const [selectedArticle, setSelectedArticle] = useState<HelpArticle | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const localFaqs = useMemo<FAQ[]>(
+    () => [
+      { id: "sync", question: t("help.faqDataSyncQuestion"), answer: t("help.faqDataSyncAnswer") },
+      { id: "provider", question: t("help.faqProviderQuestion"), answer: t("help.faqProviderAnswer") },
+      { id: "help-load", question: t("help.faqHelpQuestion"), answer: t("help.faqHelpAnswer") },
+    ],
+    [i18n.language, t],
+  );
+
+  const localArticles = useMemo<HelpArticle[]>(
+    () => [
+      {
+        id: "getting-started",
+        category: t("help.articleGettingStartedCategory"),
+        title: t("help.articleGettingStartedTitle"),
+        excerpt: t("help.articleGettingStartedExcerpt"),
+        content: t("help.articleGettingStartedContent"),
+      },
+      {
+        id: "providers",
+        category: t("help.articleProvidersCategory"),
+        title: t("help.articleProvidersTitle"),
+        excerpt: t("help.articleProvidersExcerpt"),
+        content: t("help.articleProvidersContent"),
+      },
+      {
+        id: "moving",
+        category: t("help.articleMovingCategory"),
+        title: t("help.articleMovingTitle"),
+        excerpt: t("help.articleMovingExcerpt"),
+        content: t("help.articleMovingContent"),
+      },
+    ],
+    [i18n.language, t],
+  );
+
+  const useLocalHelp = (i18n.language || "").toLowerCase().startsWith("es");
+
+  const applyLocalHelp = useCallback(() => {
+    setFaqs(localFaqs);
+    setArticles(localArticles);
+    setError(null);
+  }, [localArticles, localFaqs]);
+
   const fetchHelp = useCallback(async () => {
+    if (useLocalHelp) {
+      applyLocalHelp();
+      return true;
+    }
+
     const res = await api.get<any>("/api/help");
     if (res.error) {
-      setError(res.error);
-      return false;
+      applyLocalHelp();
+      return true;
     }
     if (res.data) {
-      setFaqs(res.data.faqs || []);
-      setArticles(res.data.articles || []);
+      const nextFaqs = res.data.faqs || [];
+      const nextArticles = res.data.articles || [];
+      if (nextFaqs.length === 0 && nextArticles.length === 0) {
+        applyLocalHelp();
+        return true;
+      }
+      setFaqs(nextFaqs);
+      setArticles(nextArticles);
       setError(null);
     }
     return true;
-  }, []);
+  }, [applyLocalHelp, useLocalHelp]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -173,7 +228,7 @@ export default function HelpScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
         {error ? (
-          <ErrorState title="Help unavailable" message={error} onRetry={load} />
+          <ErrorState title={t("help.unavailable")} message={error} onRetry={load} />
         ) : null}
 
         {/* Quick Actions */}
@@ -184,14 +239,14 @@ export default function HelpScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickCard} activeOpacity={0.7} onPress={() => router.push("/help/tickets")}>
             <Ticket size={20} color={theme.colors.primary} />
-            <Text style={styles.quickLabel}>{t("common.details")}</Text>
+            <Text style={styles.quickLabel}>{t("help.supportTickets")}</Text>
           </TouchableOpacity>
         </View>
 
         {/* Articles */}
         {filteredArticles.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>{t("help.title")}</Text>
+            <Text style={styles.sectionTitle}>{t("help.articlesTitle")}</Text>
             <View style={styles.list}>
               {filteredArticles.slice(0, 5).map((article) => (
                 <TouchableOpacity key={article.id} style={styles.articleItem} activeOpacity={0.6} onPress={() => setSelectedArticle(article)}>
@@ -208,14 +263,14 @@ export default function HelpScreen() {
         )}
 
         {/* FAQs */}
-        <Text style={styles.sectionTitle}>FAQ</Text>
+        <Text style={styles.sectionTitle}>{t("help.faqTitle")}</Text>
         {filteredFaqs.length === 0 ? (
           <Card variant="default">
             <Text style={styles.emptyText}>
               {t("common.none")}
             </Text>
             {search ? (
-              <Text style={styles.emptyHint}>Try a broader search, or open Contact Us if you need direct help.</Text>
+              <Text style={styles.emptyHint}>{t("help.emptySearchHint")}</Text>
             ) : null}
           </Card>
         ) : (

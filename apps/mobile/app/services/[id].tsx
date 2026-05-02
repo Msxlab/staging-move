@@ -24,6 +24,7 @@ import {
   FileText,
   Edit,
 } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
@@ -35,6 +36,7 @@ import { hapticSuccess, hapticError, hapticWarning } from "@/lib/haptics";
 export default function ServiceDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useTranslation();
   const [service, setService] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -75,10 +77,10 @@ export default function ServiceDetailScreen() {
 
   const handleDelete = () => {
     hapticWarning();
-    Alert.alert("Delete Service", "Are you sure? This cannot be undone.", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("services.deleteTitle"), t("services.deleteConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: async () => {
           const res = await api.delete(`/api/services/${id}`);
@@ -87,7 +89,7 @@ export default function ServiceDetailScreen() {
             router.back();
           } else {
             hapticError();
-            Alert.alert("Error", res.error);
+            Alert.alert(t("tickets.errorTitle"), res.error);
           }
         },
       },
@@ -102,12 +104,12 @@ export default function ServiceDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Not Found</Text>
+          <Text style={styles.title}>{t("common.notFound")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
-          title={error ? "Service unavailable" : "Service not found"}
-          message={error || "This service may have been removed."}
+          title={error ? t("services.unavailable") : t("services.notFound")}
+          message={error || t("services.removed")}
           onRetry={load}
         />
       </SafeAreaView>
@@ -117,41 +119,41 @@ export default function ServiceDetailScreen() {
   const infoRows = [
     service.address && {
       icon: MapPin,
-      label: "Address",
+      label: t("addresses.title"),
       value: service.address.nickname || `${service.address.city}, ${service.address.state}`,
     },
     service.monthlyCost > 0 && {
       icon: DollarSign,
-      label: "Monthly Cost",
+      label: t("services.monthlyCost"),
       value: `$${service.monthlyCost.toLocaleString()}`,
       color: theme.colors.emerald.text,
     },
     service.billingCycle && {
       icon: Calendar,
-      label: "Billing",
-      value: service.billingCycle.replace("_", " "),
+      label: t("services.billingCycle"),
+      value: t(`billingCycles.${service.billingCycle}`, { defaultValue: service.billingCycle.replace("_", " ") }),
     },
     service.phone && {
       icon: Phone,
-      label: "Phone",
+      label: t("common.phone"),
       value: service.phone,
       onPress: () => Linking.openURL(`tel:${service.phone}`),
     },
     service.website && {
       icon: Globe,
-      label: "Website",
+      label: t("common.website"),
       value: service.website.replace(/^https?:\/\//, ""),
       onPress: () => Linking.openURL(service.website),
     },
     service.email && {
       icon: Mail,
-      label: "Email",
+      label: t("common.email"),
       value: service.email,
       onPress: () => Linking.openURL(`mailto:${service.email}`),
     },
     service.accountNumber && {
       icon: FileText,
-      label: "Account #",
+      label: t("services.accountNumberShort"),
       value: service.accountNumber,
     },
   ].filter(Boolean) as any[];
@@ -183,16 +185,16 @@ export default function ServiceDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.heroName}>{service.providerName}</Text>
-              <Text style={styles.heroCat}>{service.category}</Text>
+              <Text style={styles.heroCat}>{t(`categories.${service.category}`, { defaultValue: service.category })}</Text>
             </View>
           </View>
           <View style={styles.heroBadges}>
             <UiBadge
-              label={service.isActive ? "Active" : "Inactive"}
+              label={service.isActive ? t("services.statusActive") : t("services.statusInactive")}
               variant={service.isActive ? "success" : "neutral"}
             />
             {service.billingCycle && (
-              <UiBadge label={service.billingCycle.replace("_", " ")} variant="info" />
+              <UiBadge label={t(`billingCycles.${service.billingCycle}`, { defaultValue: service.billingCycle.replace("_", " ") })} variant="info" />
             )}
           </View>
         </Card>
@@ -227,7 +229,7 @@ export default function ServiceDetailScreen() {
         {/* Notes */}
         {service.notes ? (
           <>
-            <Text style={styles.sectionTitle}>Notes</Text>
+            <Text style={styles.sectionTitle}>{t("services.notes")}</Text>
             <Card variant="default">
               <Text style={styles.notes}>{service.notes}</Text>
             </Card>
@@ -237,12 +239,12 @@ export default function ServiceDetailScreen() {
         {/* Actions */}
         <TouchableOpacity style={styles.editBtn} onPress={() => router.push({ pathname: "/services/[id]/edit", params: { id: String(id) } })}>
           <Edit size={16} color={theme.colors.primary} />
-          <Text style={styles.editText}>Edit Service</Text>
+          <Text style={styles.editText}>{t("services.editTitle")}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete}>
           <Trash2 size={16} color={theme.colors.error} />
-          <Text style={styles.deleteText}>Delete Service</Text>
+          <Text style={styles.deleteText}>{t("services.deleteService")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

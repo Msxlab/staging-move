@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -42,6 +43,7 @@ import {
   groupByMergedDisplayCategory,
 } from "@/lib/recommendation-engine";
 import type { ScoredProvider } from "@/lib/recommendation-engine";
+import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 
 // Billing cycle option labels are resolved at render time via t() —
 // see `billingCycles` below inside the component.
@@ -81,12 +83,12 @@ interface AddressOption {
 
 export default function NewServiceScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const billingCycles = [
     { value: "MONTHLY", label: t("services.billingCycle_monthly") },
     { value: "QUARTERLY", label: t("services.billingCycle_quarterly") },
     { value: "YEARLY", label: t("services.billingCycle_yearly") },
-    { value: "ONE_TIME", label: t("common.yes") },
+    { value: "ONE_TIME", label: t("billingCycles.ONE_TIME") },
   ];
   const params = useLocalSearchParams<{
     addressId?: string | string[];
@@ -110,6 +112,7 @@ export default function NewServiceScreen() {
   const [providerSearch, setProviderSearch] = useState("");
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
+  const [failedLogoUrls, setFailedLogoUrls] = useState<Record<string, boolean>>({});
 
   const [saving, setSaving] = useState(false);
 
@@ -266,7 +269,7 @@ export default function NewServiceScreen() {
     if (providerRes.error || !providerRes.data?.provider?.id) {
       setSaving(false);
       hapticError();
-      Alert.alert(t("common.retry"), providerRes.error || "Failed to add custom provider");
+      Alert.alert(t("common.retry"), providerRes.error || t("customProviders.addFailed"));
       return;
     }
 
@@ -277,7 +280,7 @@ export default function NewServiceScreen() {
       providerName: manualForm.providerName,
       billingCycle: manualForm.billingCycle,
       isActive: true,
-      notes: manualForm.notes || "User-added provider. Manual tracking only.",
+      notes: manualForm.notes || t("customProviders.defaultCaveat"),
     };
     if (manualForm.monthlyCost) payload.monthlyCost = parseFloat(manualForm.monthlyCost) || 0;
     if (manualForm.phone) payload.phone = manualForm.phone;
@@ -308,6 +311,31 @@ export default function NewServiceScreen() {
     setManualForm((prev) => ({ ...prev, [field]: value }));
 
   const selectedCount = selectedProviders.size;
+  const categoryLabel = useCallback(
+    (category: string) => t(`categories.${category}`, { defaultValue: getMergedDisplayCategoryLabel(category) }),
+    [t],
+  );
+
+  const renderProviderAvatar = (provider: ScoredProvider, isSelected: boolean) => {
+    const logoUrl = typeof provider.logoUrl === "string" ? provider.logoUrl.trim() : "";
+    const showLogo = Boolean(logoUrl && !failedLogoUrls[logoUrl]);
+
+    return (
+      <View style={[styles.providerAvatar, isSelected && styles.providerAvatarActive]}>
+        {showLogo ? (
+          <Image
+            source={{ uri: logoUrl }}
+            style={styles.providerLogo}
+            resizeMode="contain"
+            accessibilityLabel={t("services.providerLogoA11y", { provider: provider.name })}
+            onError={() => setFailedLogoUrls((prev) => ({ ...prev, [logoUrl]: true }))}
+          />
+        ) : (
+          <Text style={styles.providerAvatarText}>{provider.name.charAt(0)}</Text>
+        )}
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -316,12 +344,12 @@ export default function NewServiceScreen() {
           onPress={() => router.back()}
           style={styles.backBtn}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
-          accessibilityHint="Returns to the previous screen"
+          accessibilityLabel={t("common.back")}
+          accessibilityHint={t("common.backHint")}
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>{mode === "browse" ? "Add Services" : "Manual Add"}</Text>
+        <Text style={styles.title}>{mode === "browse" ? t("services.addServicesTitle") : t("services.manualAddTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -335,23 +363,23 @@ export default function NewServiceScreen() {
           style={[styles.modeBtn, mode === "browse" && styles.modeBtnActive]}
           onPress={() => setMode("browse")}
           accessibilityRole="button"
-          accessibilityLabel="Browse providers"
-          accessibilityHint="Shows recommended providers and provider categories"
+          accessibilityLabel={t("services.browseProviders")}
+          accessibilityHint={t("services.browseProvidersHint")}
           accessibilityState={{ selected: mode === "browse" }}
         >
           <Search size={14} color={mode === "browse" ? "#fff" : theme.colors.textTertiary} />
-          <Text style={[styles.modeBtnText, mode === "browse" && styles.modeBtnTextActive]}>Browse Providers</Text>
+          <Text style={[styles.modeBtnText, mode === "browse" && styles.modeBtnTextActive]}>{t("services.browseProviders")}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.modeBtn, mode === "manual" && styles.modeBtnActive]}
           onPress={() => setMode("manual")}
           accessibilityRole="button"
-          accessibilityLabel="Manual add"
-          accessibilityHint="Lets you add a provider manually"
+          accessibilityLabel={t("services.manualAddTitle")}
+          accessibilityHint={t("services.manualAddHint")}
           accessibilityState={{ selected: mode === "manual" }}
         >
           <Plus size={14} color={mode === "manual" ? "#fff" : theme.colors.textTertiary} />
-          <Text style={[styles.modeBtnText, mode === "manual" && styles.modeBtnTextActive]}>Manual Add</Text>
+          <Text style={[styles.modeBtnText, mode === "manual" && styles.modeBtnTextActive]}>{t("services.manualAddTitle")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -366,9 +394,9 @@ export default function NewServiceScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Address Selector (shared) ── */}
-        <Text style={styles.sectionLabel}>Select Address</Text>
+        <Text style={styles.sectionLabel}>{t("services.selectAddress")}</Text>
         {addresses.length === 0 ? (
-          <Text style={styles.hint}>No addresses found. Add an address first.</Text>
+          <Text style={styles.hint}>{t("services.noAddressesHint")}</Text>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
             <View style={styles.chipRow}>
@@ -397,7 +425,7 @@ export default function NewServiceScreen() {
           <View style={{ marginTop: 8 }}>
             {/* State label */}
             <Text style={styles.stateLabel}>
-              Showing providers for <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>{addr?.state || "all states"}</Text>
+              {t("services.showingProvidersFor")} <Text style={{ color: theme.colors.primary, fontWeight: "700" }}>{addr?.state || t("services.allStates")}</Text>
             </Text>
 
             {/* Selected chips */}
@@ -409,8 +437,8 @@ export default function NewServiceScreen() {
                     style={styles.selectedChip}
                     onPress={() => toggleProvider(p)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove ${p.name}`}
-                    accessibilityHint="Removes this provider from the selected list"
+                    accessibilityLabel={t("services.removeProviderA11y", { provider: p.name })}
+                    accessibilityHint={t("services.removeProviderHint")}
                   >
                     <Text style={styles.selectedChipText}>{p.name}</Text>
                     <X size={12} color="#fff" />
@@ -428,15 +456,15 @@ export default function NewServiceScreen() {
                 placeholderTextColor={theme.colors.textMuted}
                 value={providerSearch}
                 onChangeText={setProviderSearch}
-                accessibilityLabel="Search available providers"
-                accessibilityHint="Filters providers for the selected address"
+                accessibilityLabel={t("services.searchAvailableProviders")}
+                accessibilityHint={t("services.searchAvailableProvidersHint")}
               />
               {providerSearch.length > 0 && (
                 <TouchableOpacity
                   onPress={() => setProviderSearch("")}
                   accessibilityRole="button"
-                  accessibilityLabel="Clear provider search"
-                  accessibilityHint="Clears the current provider search text"
+                  accessibilityLabel={t("services.clearProviderSearch")}
+                  accessibilityHint={t("services.clearProviderSearchHint")}
                 >
                   <X size={16} color={theme.colors.textMuted} />
                 </TouchableOpacity>
@@ -448,11 +476,17 @@ export default function NewServiceScreen() {
               <View style={styles.recoSection}>
                 <View style={styles.recoHeader}>
                   <Sparkles size={16} color={theme.colors.amber.text} />
-                  <Text style={styles.recoTitle}>Recommended for You</Text>
+                  <Text style={styles.recoTitle}>{t("providers.recommendedForYou")}</Text>
                 </View>
                 <View style={styles.recoGrid}>
                   {recommended.map((provider: ScoredProvider) => {
                     const isSelected = selectedProviders.has(provider.id);
+                    const reason = getLocalizedProviderReason(
+                      t,
+                      i18n.language,
+                      provider,
+                      categoryLabel(provider.category),
+                    );
                     return (
                       <TouchableOpacity
                         key={`rec-${provider.id}`}
@@ -460,18 +494,16 @@ export default function NewServiceScreen() {
                         onPress={() => toggleProvider(provider)}
                         activeOpacity={0.7}
                         accessibilityRole="button"
-                        accessibilityLabel={`${isSelected ? "Selected" : "Select"} provider ${provider.name}`}
-                        accessibilityHint={provider.matchReasons?.[0] || getMergedDisplayCategoryLabel(provider.category)}
+                        accessibilityLabel={t(isSelected ? "providers.selectedProviderA11y" : "providers.selectProviderA11y", { provider: provider.name })}
+                        accessibilityHint={reason}
                         accessibilityState={{ selected: isSelected }}
                       >
                         <View style={styles.recoCardTop}>
-                          <View style={[styles.providerAvatar, isSelected && styles.providerAvatarActive]}>
-                            <Text style={styles.providerAvatarText}>{provider.name.charAt(0)}</Text>
-                          </View>
+                          {renderProviderAvatar(provider, isSelected)}
                           <View style={{ flex: 1 }}>
                             <Text style={styles.recoName} numberOfLines={1}>{provider.name}</Text>
                             <Text style={styles.recoReason} numberOfLines={1}>
-                              {provider.matchReasons?.[0] || getMergedDisplayCategoryLabel(provider.category)}
+                              {reason}
                             </Text>
                           </View>
                           {isSelected && <Check size={16} color={theme.colors.primary} />}
@@ -487,10 +519,10 @@ export default function NewServiceScreen() {
             {loadingProviders ? (
               <View style={styles.loadingBox}>
                 <ActivityIndicator color={theme.colors.primary} />
-                <Text style={styles.loadingText}>Loading providers...</Text>
+                <Text style={styles.loadingText}>{t("services.loadingProviders")}</Text>
               </View>
             ) : sortedCategories.length === 0 ? (
-              <Text style={styles.emptyText}>No providers found.</Text>
+              <Text style={styles.emptyText}>{t("providers.empty")}</Text>
             ) : (
               <View style={{ marginTop: 12 }}>
                 {sortedCategories.map((cat) => {
@@ -503,12 +535,12 @@ export default function NewServiceScreen() {
                         style={styles.catHeader}
                         onPress={() => toggleCat(cat)}
                         accessibilityRole="button"
-                        accessibilityLabel={`${isOpen ? "Collapse" : "Expand"} ${getMergedDisplayCategoryLabel(cat)}`}
-                        accessibilityHint={`Shows ${items.length} providers in this category`}
+                        accessibilityLabel={t(isOpen ? "common.collapse" : "common.expand", { label: categoryLabel(cat) })}
+                        accessibilityHint={t("providers.providersInCategoryHint", { count: items.length })}
                         accessibilityState={{ expanded: isOpen }}
                       >
                         <Text style={styles.catIcon}>{getMergedDisplayCategoryIcon(cat)}</Text>
-                        <Text style={styles.catTitle} numberOfLines={1}>{getMergedDisplayCategoryLabel(cat)}</Text>
+                        <Text style={styles.catTitle} numberOfLines={1}>{categoryLabel(cat)}</Text>
                         <Text style={styles.catCount}>{items.length}</Text>
                         {selectedInCat > 0 && (
                           <View style={styles.catBadge}>
@@ -519,6 +551,7 @@ export default function NewServiceScreen() {
                       </TouchableOpacity>
                       {isOpen && items.map((provider) => {
                         const sel = selectedProviders.has(provider.id);
+                        const description = getLocalizedProviderDescription(t, i18n.language, provider);
                         return (
                           <TouchableOpacity
                             key={provider.id}
@@ -526,22 +559,20 @@ export default function NewServiceScreen() {
                             onPress={() => toggleProvider(provider)}
                             activeOpacity={0.7}
                             accessibilityRole="button"
-                            accessibilityLabel={`${sel ? "Selected" : "Select"} provider ${provider.name}`}
-                            accessibilityHint={provider.description || getMergedDisplayCategoryLabel(provider.category)}
+                            accessibilityLabel={t(sel ? "providers.selectedProviderA11y" : "providers.selectProviderA11y", { provider: provider.name })}
+                            accessibilityHint={description || categoryLabel(provider.category)}
                             accessibilityState={{ selected: sel }}
                           >
-                            <View style={[styles.providerAvatar, sel && styles.providerAvatarActive]}>
-                              <Text style={styles.providerAvatarText}>{provider.name.charAt(0)}</Text>
-                            </View>
+                            {renderProviderAvatar(provider, sel)}
                             <View style={{ flex: 1 }}>
                               <Text style={styles.providerName} numberOfLines={1}>{provider.name}</Text>
-                              {provider.description ? (
-                                <Text style={styles.providerDesc} numberOfLines={1}>{provider.description}</Text>
+                              {description ? (
+                                <Text style={styles.providerDesc} numberOfLines={1}>{description}</Text>
                               ) : null}
                               <View style={styles.providerMeta}>
                                 <View style={[styles.scopeBadge, provider.scope === "FEDERAL" ? styles.scopeFederal : styles.scopeState]}>
                                   <Text style={[styles.scopeText, provider.scope === "FEDERAL" ? styles.scopeFederalText : styles.scopeStateText]}>
-                                    {provider.scope === "FEDERAL" ? "Federal" : (provider.states || []).join(", ")}
+                                    {provider.scope === "FEDERAL" ? t("providers.scopeFederal") : (provider.states || []).join(", ")}
                                   </Text>
                                 </View>
                                 {provider.website && (
@@ -568,7 +599,7 @@ export default function NewServiceScreen() {
             {!loadingProviders && (
               <TouchableOpacity style={styles.manualLink} onPress={() => setMode("manual")}>
                 <Plus size={14} color={theme.colors.primary} />
-                <Text style={styles.manualLinkText}>Can't find your provider? Add manually</Text>
+                <Text style={styles.manualLinkText}>{t("services.cantFindProvider")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -578,44 +609,47 @@ export default function NewServiceScreen() {
         {mode === "manual" && (
           <View style={{ marginTop: 8 }}>
             <View style={styles.manualTrustBox}>
-              <Text style={styles.manualTrustTitle}>User-added provider</Text>
+              <Text style={styles.manualTrustTitle}>{t("customProviders.userAddedBadge")}</Text>
               <Text style={styles.manualTrustText}>
-                This creates a private provider record for LocateFlow tracking only. It does not update an external account.
+                {t("services.manualTrustText")}
               </Text>
             </View>
-            <Text style={styles.sectionLabel}>Category *</Text>
+            <Text style={styles.sectionLabel}>{t("services.category")} *</Text>
             <View style={styles.chipRow}>
-              {MANUAL_CATEGORIES.map((c) => (
-                <TouchableOpacity
-                  key={c.value}
-                  style={[styles.chip, manualForm.category === c.value && styles.chipActive]}
-                  onPress={() => updateManual("category", c.value)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Select category ${c.label}`}
-                  accessibilityState={{ selected: manualForm.category === c.value }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <CategoryIcon emoji={c.icon} size={13} color={manualForm.category === c.value ? theme.colors.primary : theme.colors.textTertiary} />
-                    <Text style={[styles.chipText, manualForm.category === c.value && styles.chipTextActive]}>
-                      {c.label}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+              {MANUAL_CATEGORIES.map((c) => {
+                const label = t(`categories.${c.value}`, { defaultValue: c.label });
+                return (
+                  <TouchableOpacity
+                    key={c.value}
+                    style={[styles.chip, manualForm.category === c.value && styles.chipActive]}
+                    onPress={() => updateManual("category", c.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("services.selectCategoryA11y", { category: label })}
+                    accessibilityState={{ selected: manualForm.category === c.value }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <CategoryIcon emoji={c.icon} size={13} color={manualForm.category === c.value ? theme.colors.primary : theme.colors.textTertiary} />
+                      <Text style={[styles.chipText, manualForm.category === c.value && styles.chipTextActive]}>
+                        {label}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
 
-            <Text style={styles.label}>Provider Name *</Text>
+            <Text style={styles.label}>{t("services.providerName")} *</Text>
             <TextInput
               style={styles.input}
               placeholder={t("services.providerNamePlaceholder")}
               placeholderTextColor={theme.colors.textMuted}
               value={manualForm.providerName}
               onChangeText={(v) => updateManual("providerName", v)}
-              accessibilityLabel="Provider name"
-              accessibilityHint="Enter the name of the service provider"
+              accessibilityLabel={t("services.providerName")}
+              accessibilityHint={t("services.providerNameHint")}
             />
 
-            <Text style={styles.label}>Monthly Cost ($)</Text>
+            <Text style={styles.label}>{t("services.monthlyCost")} ($)</Text>
             <TextInput
               style={styles.input}
               placeholder="0.00"
@@ -623,11 +657,11 @@ export default function NewServiceScreen() {
               value={manualForm.monthlyCost}
               onChangeText={(v) => updateManual("monthlyCost", v)}
               keyboardType="decimal-pad"
-              accessibilityLabel="Monthly cost"
-              accessibilityHint="Enter the monthly cost for this service"
+              accessibilityLabel={t("services.monthlyCost")}
+              accessibilityHint={t("services.monthlyCostHint")}
             />
 
-            <Text style={styles.sectionLabel}>Billing Cycle</Text>
+            <Text style={styles.sectionLabel}>{t("services.billingCycle")}</Text>
             <View style={styles.chipRow}>
               {billingCycles.map((b) => (
                 <TouchableOpacity
@@ -642,7 +676,7 @@ export default function NewServiceScreen() {
               ))}
             </View>
 
-            <Text style={styles.label}>Phone</Text>
+            <Text style={styles.label}>{t("common.phone")}</Text>
             <TextInput
               style={styles.input}
               placeholder="(555) 123-4567"
@@ -650,11 +684,11 @@ export default function NewServiceScreen() {
               value={manualForm.phone}
               onChangeText={(v) => updateManual("phone", v)}
               keyboardType="phone-pad"
-              accessibilityLabel="Phone number"
-              accessibilityHint="Enter the provider phone number"
+              accessibilityLabel={t("common.phone")}
+              accessibilityHint={t("services.phoneHint")}
             />
 
-            <Text style={styles.label}>Website</Text>
+            <Text style={styles.label}>{t("common.website")}</Text>
             <TextInput
               style={styles.input}
               placeholder="https://example.com"
@@ -663,11 +697,11 @@ export default function NewServiceScreen() {
               onChangeText={(v) => updateManual("website", v)}
               keyboardType="url"
               autoCapitalize="none"
-              accessibilityLabel="Website"
-              accessibilityHint="Enter the provider website address"
+              accessibilityLabel={t("common.website")}
+              accessibilityHint={t("services.websiteHint")}
             />
 
-            <Text style={styles.label}>Notes</Text>
+            <Text style={styles.label}>{t("services.notes")}</Text>
             <TextInput
               style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]}
               placeholder={t("services.notesHint")}
@@ -675,8 +709,8 @@ export default function NewServiceScreen() {
               value={manualForm.notes}
               onChangeText={(v) => updateManual("notes", v)}
               multiline
-              accessibilityLabel="Notes"
-              accessibilityHint="Enter any optional notes for this service"
+              accessibilityLabel={t("services.notes")}
+              accessibilityHint={t("services.notesA11yHint")}
             />
 
             <TouchableOpacity
@@ -685,8 +719,8 @@ export default function NewServiceScreen() {
               disabled={saving}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="Save service"
-              accessibilityHint="Creates a manual service entry"
+              accessibilityLabel={t("services.save")}
+              accessibilityHint={t("services.saveServiceHint")}
               accessibilityState={{ disabled: saving }}
             >
               {saving ? (
@@ -694,7 +728,7 @@ export default function NewServiceScreen() {
               ) : (
                 <>
                   <Check size={18} color="#fff" />
-                  <Text style={styles.saveBtnText}>Save Service</Text>
+                  <Text style={styles.saveBtnText}>{t("services.save")}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -703,11 +737,11 @@ export default function NewServiceScreen() {
               style={styles.manualLink}
               onPress={() => setMode("browse")}
               accessibilityRole="button"
-              accessibilityLabel="Back to provider list"
-              accessibilityHint="Returns to the provider browsing mode"
+              accessibilityLabel={t("services.backToProviderList")}
+              accessibilityHint={t("services.backToProviderListHint")}
             >
               <Search size={14} color={theme.colors.primary} />
-              <Text style={styles.manualLinkText}>Back to provider list</Text>
+              <Text style={styles.manualLinkText}>{t("services.backToProviderList")}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -717,15 +751,15 @@ export default function NewServiceScreen() {
       {/* ── Floating bottom bar (browse mode, when providers selected) ── */}
       {mode === "browse" && selectedCount > 0 && (
         <View style={styles.floatingBar}>
-          <Text style={styles.floatingText}>{selectedCount} provider{selectedCount > 1 ? "s" : ""} selected</Text>
+          <Text style={styles.floatingText}>{t("services.selectedProviders", { count: selectedCount })}</Text>
           <TouchableOpacity
             style={[styles.floatingBtn, saving && { opacity: 0.6 }]}
             onPress={handleSaveAll}
             disabled={saving}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel={`Register ${selectedCount} selected provider${selectedCount > 1 ? "s" : ""}`}
-            accessibilityHint="Saves the currently selected providers as services"
+            accessibilityLabel={t("services.registerSelectedProviders", { count: selectedCount })}
+            accessibilityHint={t("services.registerSelectedProvidersHint")}
             accessibilityState={{ disabled: saving }}
           >
             {saving ? (
@@ -733,7 +767,7 @@ export default function NewServiceScreen() {
             ) : (
               <>
                 <Check size={16} color="#fff" />
-                <Text style={styles.floatingBtnText}>Register {selectedCount > 1 ? "All" : ""}</Text>
+                <Text style={styles.floatingBtnText}>{selectedCount > 1 ? t("services.registerAll") : t("services.register")}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -850,6 +884,12 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   providerAvatarActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  providerLogo: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: theme.colors.surface,
+  },
   providerAvatarText: { fontSize: 14, fontWeight: "700", color: theme.colors.textSecondary },
   providerName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
   providerDesc: { fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },

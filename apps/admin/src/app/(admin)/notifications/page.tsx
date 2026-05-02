@@ -61,16 +61,16 @@ interface UserSearchResult {
 
 const TYPES = [
   "SYSTEM",
-  "BILL_REMINDER",
-  "MOVE_REMINDER",
-  "REVIEW_STATUS",
+  "ANNOUNCEMENT",
+  "MAINTENANCE",
+  "BILLING",
+  "SUPPORT",
   "MARKETING",
-  "TASK_DUE",
-  "CONTRACT_EXPIRY",
+  "PROMO",
 ];
 
-const CHANNELS = ["IN_APP"];
-const DISABLED_CHANNELS = ["EMAIL", "PUSH"];
+const CHANNELS = ["IN_APP", "EMAIL", "PUSH"];
+const OPT_OUT_TYPES = new Set(["MARKETING", "PROMO"]);
 
 const EMPTY_STATS: Stats = {
   total: 0,
@@ -215,10 +215,17 @@ export default function NotificationsPage() {
       return;
     }
 
+    const channelExtra =
+      form.channel === "EMAIL"
+        ? ` · email delivered ${data.emailDelivered ?? 0}, skipped ${data.emailSkipped ?? 0}`
+        : form.channel === "PUSH"
+          ? ` · push delivered ${data.pushDelivered ?? 0}, skipped ${data.pushSkipped ?? 0}`
+          : "";
+
     toast.success(
       form.broadcast
-        ? `Broadcast sent to ${data.count} users`
-        : "Notification sent",
+        ? `Broadcast sent to ${data.count} users${channelExtra}`
+        : `Notification sent${channelExtra}`,
     );
     resetForm();
     load();
@@ -310,12 +317,13 @@ export default function NotificationsPage() {
           <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
           <div className="space-y-1 text-sm">
             <p className="font-medium text-foreground">
-              Scheduled delivery is not enabled yet.
+              Delivery is synchronous and unscheduled.
             </p>
             <p className="text-muted-foreground">
-              Operators can send immediate in-app notifications now. Email,
-              push, and delayed delivery are intentionally disabled until a real
-              worker/provider path is enabled.
+              Every send writes the in-app feed row immediately. EMAIL also
+              fans out via Resend; PUSH also fans out via Expo (requires
+              NOTIFICATION_PUSH_ENABLED=true). MARKETING and PROMO respect
+              per-user opt-out. Audiences over 100k must use a worker job.
             </p>
           </div>
         </div>
@@ -400,14 +408,16 @@ export default function NotificationsPage() {
                     {channel}
                   </option>
                 ))}
-                {DISABLED_CHANNELS.map((channel) => (
-                  <option key={channel} value={channel} disabled>
-                    {channel} — not live
-                  </option>
-                ))}
               </select>
               <p className="mt-1 text-xs text-muted-foreground">
-                Only in-app records are actually delivered by this admin flow.
+                {form.channel === "IN_APP"
+                  ? "Writes a row to each user's in-app feed."
+                  : form.channel === "EMAIL"
+                    ? "Mirrors to the in-app feed and emails each user."
+                    : "Mirrors to the in-app feed and pushes to all registered devices."}
+                {OPT_OUT_TYPES.has(form.type)
+                  ? " MARKETING/PROMO respects per-user opt-out."
+                  : ""}
               </p>
             </div>
             <div>
