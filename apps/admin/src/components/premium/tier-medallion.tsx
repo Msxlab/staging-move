@@ -35,7 +35,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
           y="49"
           textAnchor="middle"
           fill="#fff"
-          fontFamily="var(--fraunces), Georgia, serif"
+          fontFamily="var(--font-display), Georgia, serif"
           fontSize="22"
           fontStyle="italic"
         >
@@ -66,7 +66,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
           y="50"
           textAnchor="middle"
           fill="#E5C9A8"
-          fontFamily="var(--fraunces), Georgia, serif"
+          fontFamily="var(--font-display), Georgia, serif"
           fontSize="22"
           fontStyle="italic"
         >

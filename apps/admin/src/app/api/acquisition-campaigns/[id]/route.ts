@@ -51,7 +51,12 @@ function mutableCampaignData(body: any) {
   }
   if (body.trialDays !== undefined) data.trialDays = body.trialDays ? Number(body.trialDays) : null;
   if (body.freeAccessDays !== undefined) data.freeAccessDays = body.freeAccessDays ? Number(body.freeAccessDays) : null;
-  if (body.stripePriceId !== undefined) data.stripePriceId = body.stripePriceId || null;
+  if (body.stripePriceId !== undefined) {
+    data.stripePriceId =
+      typeof body.stripePriceId === "string" && body.stripePriceId.trim()
+        ? body.stripePriceId.trim()
+        : null;
+  }
   if (body.displayPriceLabel !== undefined) {
     data.displayPriceLabel =
       typeof body.displayPriceLabel === "string" && body.displayPriceLabel.trim()
@@ -90,6 +95,18 @@ async function findActiveCampaignConflict(client: any, candidate: any, excludeId
   ) || null;
 }
 
+function normalizePriceRelevantValue(value: unknown) {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  return value;
+}
+
+function priceRelevantValueChanged(existing: any, data: any, key: string) {
+  if (data[key] === undefined) return false;
+  return normalizePriceRelevantValue(existing[key]) !== normalizePriceRelevantValue(data[key]);
+}
+
 function requiresStripePriceValidation(existing: any, data: any) {
   if (data.status === "ACTIVE" && existing.status !== "ACTIVE") return true;
   for (const key of [
@@ -99,7 +116,7 @@ function requiresStripePriceValidation(existing: any, data: any) {
     "stripePriceId",
     "displayPriceLabel",
   ]) {
-    if (data[key] !== undefined) return true;
+    if (priceRelevantValueChanged(existing, data, key)) return true;
   }
   return false;
 }

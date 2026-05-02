@@ -1,11 +1,11 @@
 /**
  * Public /blog/<slug> — detail page (magazine layout).
  *
- * Server component, ISR'd at 1 hour with on-demand revalidation when
- * the admin publishes/unpublishes. Renders the sanitized HTML
- * (already cleaned at write time), emits per-post JSON-LD (Article +
- * Breadcrumb), sets canonical + hreflang, and surfaces a "Keep
- * reading" rail of category-related posts so the visit doesn't
+ * Server component rendered per request because locale resolution and
+ * JSON-LD nonce handling read request cookies/headers. Renders the
+ * sanitized HTML (already cleaned at write time), emits per-post JSON-LD
+ * (Article + Breadcrumb), sets canonical + hreflang, and surfaces a
+ * "Keep reading" rail of category-related posts so the visit doesn't
  * dead-end at the article footer.
  */
 
@@ -19,7 +19,6 @@ import { isBlogLocale } from "@locateflow/shared";
 import {
   getPublicPostBySlug,
   listPublishedLocalesForSlug,
-  listPublishedSlugs,
   listRelatedPosts,
 } from "@/lib/blog/queries";
 import { blogHreflangUrls, blogPostPath, blogPostUrl } from "@/lib/blog/urls";
@@ -32,17 +31,7 @@ import { BlogViewTracker } from "@/components/blog/view-tracker";
 import { Button } from "@/components/ui/button";
 import { SITE_URL } from "@/lib/seo";
 
-export const revalidate = 3600;
-
-export async function generateStaticParams() {
-  try {
-    const slugs = await listPublishedSlugs(200);
-    const unique = Array.from(new Map(slugs.map((s) => [s.slug, s])).values());
-    return unique.map((s) => ({ slug: s.slug }));
-  } catch {
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -256,10 +245,10 @@ export default async function BlogPostPage({
             Try LocateFlow
           </p>
           <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Keep every provider, address, and renewal in one place.
+            Keep provider records, addresses, and renewal reminders in one place.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-            Create a Free Access account in a minute. Annual trial terms and any payment requirement are shown before checkout.
+            Create an account in a minute. Trial length, renewal date, price, and any payment requirement are shown before checkout.
           </p>
           <div className="mt-6 flex justify-center">
             <Link href="/sign-up">

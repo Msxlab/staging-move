@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(249, 115, 22, 0.3)",
+    borderColor: "rgba(212, 132, 106, 0.30)",
   },
   ghost: {
     backgroundColor: "transparent",
@@ -151,7 +151,8 @@ const styles = StyleSheet.create({
   danger: {
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    borderColor: "rgba(239, 68, 68, 0.3)",
+    // Warm-red border to match `semanticColors.danger` (#C85A3E).
+    borderColor: "rgba(200, 90, 62, 0.30)",
   },
   outline: {
     backgroundColor: "transparent",

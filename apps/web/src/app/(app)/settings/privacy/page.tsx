@@ -667,7 +667,7 @@ export default function PrivacyPage() {
           <div className="flex items-center justify-between p-3 rounded-xl bg-foreground/[0.02] border border-border">
             <div>
               <p className="text-sm text-foreground/80">Download My Data</p>
-              <p className="text-[11px] text-foreground/40">Export all your data (GDPR compliant)</p>
+              <p className="text-[11px] text-foreground/40">Export supported account data</p>
             </div>
             <Link href="/settings/export">
               <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition">

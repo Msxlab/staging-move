@@ -22,6 +22,7 @@ import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type 
 import { theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -131,6 +132,8 @@ export default function NewAddressScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <EmailVerificationBanner context={t("addresses.title")} />
+
         {/* Type Selector */}
         <Text style={styles.sectionLabel}>{t("addresses.type")}</Text>
         <View style={styles.chipRow}>
@@ -339,7 +342,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.4)",
+    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.4)",
   },
   chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
   chipTextActive: { color: theme.colors.primary },

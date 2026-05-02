@@ -2,6 +2,10 @@ export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   message?: string;
+  // Stable machine-readable code from the server (e.g. "SUBSCRIPTION_REQUIRED",
+  // "EMAIL_VERIFICATION_REQUIRED"). Surfaced separately from `error` so screens
+  // can branch on the gate type instead of regexing the human-facing message.
+  code?: string;
 }
 
 export interface PaginatedResponse<T> {

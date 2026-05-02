@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: theme.colors.primaryFaded,
-    borderColor: "rgba(249,115,22,0.4)",
+    borderColor: "rgba(212, 132, 106,0.4)",
   },
   chipText: {
     fontSize: 13,
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   countPillSelected: {
-    backgroundColor: "rgba(249,115,22,0.25)",
+    backgroundColor: "rgba(212, 132, 106,0.25)",
   },
   countText: {
     fontSize: 11,

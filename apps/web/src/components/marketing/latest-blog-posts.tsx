@@ -8,10 +8,10 @@ import { blogPostPath } from "@/lib/blog/urls";
 
 /**
  * Homepage "Latest" strip — three most recent published posts. Server
- * component; benefits from the same ISR window the /blog list uses
- * (publish webhook revalidates `/`). Renders nothing if there are no
- * posts so an empty blog doesn't push a sad ghost section onto a
- * marketing page. Visual language matches the new magazine-style blog.
+ * component; resolves locale from the current request. Renders nothing
+ * if there are no posts so an empty blog doesn't push a sad ghost
+ * section onto a marketing page. Visual language matches the new
+ * magazine-style blog.
  */
 export async function LatestBlogPosts() {
   let listing;

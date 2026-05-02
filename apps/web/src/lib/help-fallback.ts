@@ -89,7 +89,7 @@ export const FALLBACK_HELP_ARTICLES: HelpArticleFallback[] = [
     viewCount: 0,
     helpfulYes: 0,
     helpfulNo: 0,
-    content: "Data export and account deletion controls are available from Settings. Export your data before deletion if you need a copy of addresses, services, moving plans, tasks, or account records.",
+    content: "Data export and account deletion controls are available from Settings. Export your data before deletion if you need a copy of supported records. Some backups, billing records, audit logs, legal records, and security records may be retained when needed.",
   },
   {
     id: "fallback-billing-basics",
@@ -146,6 +146,6 @@ export const FALLBACK_FAQS: FaqFallback[] = [
     id: "fallback-faq-export-delete",
     category: "Privacy",
     question: "Can I export or delete my data?",
-    answer: "Yes. Use Settings to export data or start account deletion.",
+    answer: "Yes. Use Settings to export supported data or start account deletion. Some backups, billing records, audit logs, legal records, and security records may be retained when needed.",
   },
 ];

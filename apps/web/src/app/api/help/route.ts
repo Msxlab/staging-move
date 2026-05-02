@@ -3,7 +3,8 @@ import { prisma } from "@/lib/db";
 import { FALLBACK_FAQS, FALLBACK_HELP_ARTICLES } from "@/lib/help-fallback";
 
 const blockedArticleSlugs = new Set(["family-sharing"]);
-const staleFutureScopePattern = /(Family Sharing|\bPro\b|Enterprise|300\+|community access|money-back guarantee|API access)/i;
+const staleFutureScopePattern =
+  /(Family Sharing|\bPro\b|Enterprise|300\+|community access|money-back guarantee|API access|regular security audits|all personal data is deleted immediately|permanently removed within 30 days|comply with applicable privacy laws)/i;
 
 function currentProductArticles<T extends { slug: string; title: string; excerpt: string | null; content: string }>(articles: T[]): T[] {
   return articles.filter((article) => {

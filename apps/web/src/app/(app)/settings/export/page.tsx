@@ -23,7 +23,7 @@ const exportOptions = [
   { title: "Services", description: "Export all services and billing info", icon: FileSpreadsheet, type: "services", formats: ["CSV", "JSON"] },
   { title: "Budget History", description: "Export monthly budget data", icon: FileSpreadsheet, type: "budget", formats: ["CSV", "JSON"] },
   { title: "Moving Plans", description: "Export plans with tasks and boxes", icon: FileText, type: "moving", formats: ["JSON"] },
-  { title: "Full Data Export", description: "Export all your data (GDPR compliant)", icon: Download, type: "full", formats: ["JSON"] },
+  { title: "Full Data Export", description: "Export supported account data", icon: Download, type: "full", formats: ["JSON"] },
 ];
 
 function generatePDF(address: AddressInfo, userName: string) {

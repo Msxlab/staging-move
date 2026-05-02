@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FileCheck2, Scale, ShieldAlert, ShieldCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_TERMS_DOCUMENT } from "@/lib/legal";
+import { LEGAL_CONTACTS, LEGAL_INFO, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: LEGAL_TERMS_DOCUMENT.title,
@@ -42,6 +43,18 @@ export default function TermsPage() {
       title={LEGAL_TERMS_DOCUMENT.title}
       description={LEGAL_TERMS_DOCUMENT.summary}
     >
+      <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
+        <p>{policyLastUpdatedLabel()}</p>
+        <p>Legal entity: {LEGAL_INFO.legalEntityName}</p>
+        <p>
+          Legal notices:{" "}
+          <a href={mailto(LEGAL_CONTACTS.legal, "LocateFlow legal notice")} className="underline">
+            {LEGAL_CONTACTS.legal}
+          </a>
+        </p>
+        <p>Mailing address: {LEGAL_INFO.companyAddress}</p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -64,11 +77,16 @@ export default function TermsPage() {
 
       <PublicSection title="Related legal notice">
         <p>
-          The separate disclaimer explains how user-entered data, third-party provider information, and legal-risk allocation are handled inside LocateFlow.
+          The separate policies below explain user-entered data, third-party provider information, billing, refunds, privacy, acceptable use, and legal-risk allocation inside LocateFlow.
         </p>
-        <Link href="/disclaimer" className="inline-flex text-sm font-medium text-primary hover:underline">
-          Read the User-Entered Data and Legal Risk Disclaimer
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/disclaimer" className="inline-flex text-sm font-medium text-primary hover:underline">Disclaimer</Link>
+          <Link href="/privacy" className="inline-flex text-sm font-medium text-primary hover:underline">Privacy Policy</Link>
+          <Link href="/billing-policy" className="inline-flex text-sm font-medium text-primary hover:underline">Billing Policy</Link>
+          <Link href="/refund" className="inline-flex text-sm font-medium text-primary hover:underline">Refund Policy</Link>
+          <Link href="/acceptable-use" className="inline-flex text-sm font-medium text-primary hover:underline">Acceptable Use</Link>
+          <Link href="/dpa" className="inline-flex text-sm font-medium text-primary hover:underline">DPA</Link>
+        </div>
       </PublicSection>
     </PublicPageShell>
   );

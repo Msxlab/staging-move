@@ -14,6 +14,36 @@ const _enabledListeners = new Set<(enabled: boolean) => void>();
 
 const FLUSH_INTERVAL_MS = 8000;
 const MAX_QUEUE_SIZE = 15;
+const PII_KEY_PATTERN =
+  /(email|e-mail|phone|address|street|zip|postal|name|user.?id|customer.?id|provider.?account|stripe|oauth|token|secret|password|query|search.?term|message|content|budget|lat|lng|latitude|longitude)/i;
+const SAFE_AGGREGATE_KEYS = new Set(["query_length"]);
+const EMAIL_VALUE_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LONG_DIGIT_PATTERN = /\d{7,}/;
+
+function sanitizeMetadata(metadata?: Record<string, any>) {
+  if (!metadata) return undefined;
+  const safe: Record<string, string | number | boolean | Array<string | number | boolean>> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (!SAFE_AGGREGATE_KEYS.has(key) && PII_KEY_PATTERN.test(key)) continue;
+    if (value === null || value === undefined) continue;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (!trimmed || EMAIL_VALUE_PATTERN.test(trimmed) || LONG_DIGIT_PATTERN.test(trimmed)) continue;
+      safe[key] = trimmed.slice(0, 120);
+      continue;
+    }
+    if (typeof value === "number" || typeof value === "boolean") {
+      safe[key] = value;
+      continue;
+    }
+    if (Array.isArray(value)) {
+      safe[key] = value
+        .filter((item): item is string | number | boolean => ["string", "number", "boolean"].includes(typeof item))
+        .slice(0, 10);
+    }
+  }
+  return Object.keys(safe).length ? safe : undefined;
+}
 
 export function setAnalyticsSessionId(id: string) {
   _sessionId = id;
@@ -54,7 +84,7 @@ export function trackEvent(
     event,
     page: screen,
     sessionId: _sessionId || undefined,
-    metadata,
+    metadata: sanitizeMetadata(metadata),
   });
 
   if (_eventQueue.length >= MAX_QUEUE_SIZE) {
@@ -95,7 +125,7 @@ export function trackTap(element: string, screen?: string) {
 }
 
 export function trackSearch(query: string, screen?: string) {
-  trackEvent("SEARCH", screen, { query });
+  trackEvent("SEARCH", screen, { query_length: query.length });
 }
 
 export function trackFormSubmit(form: string, screen?: string) {

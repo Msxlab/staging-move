@@ -42,7 +42,7 @@ export default function CookieConsent({ analyticsNonce }: { analyticsNonce?: str
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold text-foreground mb-1">Cookie Preferences</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              We use cookies to improve your experience and analyze site usage. You can accept all cookies or decline non-essential ones.{" "}
+              We use necessary storage to run the site and optional analytics to understand usage. You can accept analytics or decline non-essential analytics.{" "}
               <a href="/cookie-policy" className="text-primary hover:text-primary/80 underline">
                 Learn more
               </a>

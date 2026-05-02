@@ -46,7 +46,7 @@ export function LandingThemeToggle() {
               <motion.span
                 layoutId="landing-theme-pill"
                 aria-hidden="true"
-                className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/10 ring-1 ring-orange-500/40 shadow-[0_0_18px_-4px_rgba(249,115,22,0.5)]"
+                className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/10 ring-1 ring-orange-500/40 shadow-[0_0_18px_-4px_rgba(212,132,106,0.5)]"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             )}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Ban, ShieldAlert, UsersRound, Wrench } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: "Acceptable Use Policy",
@@ -38,6 +39,8 @@ export default function AcceptableUsePage() {
       title="Acceptable Use Policy"
       description="LocateFlow is an organizational tool for relocation workflows. This page lists the uses we allow and the uses that will get an account suspended."
     >
+      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -57,6 +60,9 @@ export default function AcceptableUsePage() {
           <li>Infringe on intellectual property, privacy, publicity, or contractual rights of any person or entity.</li>
           <li>Store personal data about other identifiable individuals without a lawful basis and, where required, their consent.</li>
           <li>Use the product to phish, spam, defraud, launder money, or facilitate any criminal activity.</li>
+          <li>Abuse trials, promotions, refunds, payment disputes, chargebacks, or billing systems.</li>
+          <li>Abuse support channels, submit false reports, or use support to harass LocateFlow personnel or other users.</li>
+          <li>Misuse provider directory data, provider recommendations, or public-source data for scraping, resale, harassment, or unauthorized outreach.</li>
           <li>Attempt to gain unauthorized access to any account, server, database, or network connected to the service.</li>
           <li>Circumvent plan limits, authentication, rate limiting, or any technical restriction.</li>
           <li>Scrape the product, reverse engineer it, or build a competing service from its output or data.</li>

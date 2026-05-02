@@ -87,19 +87,45 @@ export default function NotificationSettingsScreen() {
 
   const sections = [
     {
-      title: t("notifications.type_billReminder"),
+      title: t("notifications.section_email"),
+      hint: t("notifications.section_email_hint"),
       items: [
-        { key: "emailTaskReminders" as keyof Prefs, label: t("notifications.type_billReminder"), desc: "" },
-        { key: "emailWeeklyDigest" as keyof Prefs, label: t("notifications.type_system"), desc: "" },
-        { key: "emailMoveAlerts" as keyof Prefs, label: t("notifications.type_moveReminder"), desc: "" },
+        {
+          key: "emailTaskReminders" as keyof Prefs,
+          label: t("notifications.email_taskReminders_label"),
+          desc: t("notifications.email_taskReminders_desc"),
+        },
+        {
+          key: "emailWeeklyDigest" as keyof Prefs,
+          label: t("notifications.email_weeklyDigest_label"),
+          desc: t("notifications.email_weeklyDigest_desc"),
+        },
+        {
+          key: "emailMoveAlerts" as keyof Prefs,
+          label: t("notifications.email_moveAlerts_label"),
+          desc: t("notifications.email_moveAlerts_desc"),
+        },
       ],
     },
     {
-      title: t("notifications.title"),
+      title: t("notifications.section_push"),
+      hint: t("notifications.section_push_hint"),
       items: [
-        { key: "pushTaskReminders" as keyof Prefs, label: t("notifications.type_billReminder"), desc: "" },
-        { key: "pushMoveAlerts" as keyof Prefs, label: t("notifications.type_moveReminder"), desc: "" },
-        { key: "pushStreakReminders" as keyof Prefs, label: t("notifications.type_contractEnding"), desc: "" },
+        {
+          key: "pushTaskReminders" as keyof Prefs,
+          label: t("notifications.push_taskReminders_label"),
+          desc: t("notifications.push_taskReminders_desc"),
+        },
+        {
+          key: "pushMoveAlerts" as keyof Prefs,
+          label: t("notifications.push_moveAlerts_label"),
+          desc: t("notifications.push_moveAlerts_desc"),
+        },
+        {
+          key: "pushStreakReminders" as keyof Prefs,
+          label: t("notifications.push_streakReminders_label"),
+          desc: t("notifications.push_streakReminders_desc"),
+        },
       ],
     },
   ];
@@ -118,6 +144,7 @@ export default function NotificationSettingsScreen() {
         {sections.map((section) => (
           <View key={section.title} style={styles.section}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
+            {section.hint ? <Text style={styles.sectionHint}>{section.hint}</Text> : null}
             <View style={styles.card}>
               {section.items.map((item, i) => (
                 <View
@@ -177,6 +204,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary,
     textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8, marginLeft: 4,
+  },
+  sectionHint: {
+    fontSize: 12, color: theme.colors.textMuted, lineHeight: 16,
+    marginLeft: 4, marginBottom: 8,
   },
   card: {
     backgroundColor: theme.colors.card, borderRadius: theme.radius.xl,

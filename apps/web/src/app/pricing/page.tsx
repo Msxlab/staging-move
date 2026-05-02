@@ -14,17 +14,17 @@ import { JsonLd, breadcrumbSchema, softwareApplicationSchema } from "@/component
 export const metadata: Metadata = {
   title: `Pricing · ${SITE_NAME}`,
   description:
-    "Simple pricing for LocateFlow's current moving workflow: free trial and Individual plan.",
+    "Simple pricing for LocateFlow's current moving workflow, current offers, and Individual plan.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: `Pricing · ${SITE_NAME}`,
     description:
-      "Free trial and Individual plan for LocateFlow's current moving workflow.",
+      "Current offers and Individual plan for LocateFlow's current moving workflow.",
     url: absoluteUrl("/pricing"),
   },
 };
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function PricingPage() {
   const session = await getUserSession();
@@ -38,6 +38,7 @@ export default async function PricingPage() {
   const faqs = [
     { q: tPricing("faq_trial_q"), a: tPricing("faq_trial_a") },
     { q: tPricing("faq_cancel_q"), a: tPricing("faq_cancel_a") },
+    { q: tPricing("faq_refund_q"), a: tPricing("faq_refund_a") },
     { q: tPricing("faq_data_q"), a: tPricing("faq_data_a") },
   ];
   const schemaContext = {

@@ -52,6 +52,7 @@ const PUBLIC_API_EXACT = [
   // session cookie enters the browser. The route validates a short-lived
   // HMAC-signed token delivered by POST body, not by URL query string.
   "/api/auth/impersonate-handoff",
+  "/api/consent/ccpa",
   "/api/blog/revalidate",
   "/api/blog/view",
 ];

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Cookie, LockKeyhole, MonitorSmartphone, SlidersHorizontal } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { CookiePreferenceControls } from "@/components/shared/cookie-preference-controls";
+import { LEGAL_CONTACTS, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: "Cookie Policy",
-  description: "How LocateFlow uses cookies and browser storage.",
+  description: "How LocateFlow uses cookies, local storage, consent records, analytics, and mobile analytics.",
   alternates: {
     canonical: "/cookie-policy",
   },
@@ -13,23 +16,23 @@ export const metadata: Metadata = {
 const highlights = [
   {
     icon: Cookie,
-    title: "Essential cookies",
-    description: "Core browser storage and cookies may be used to keep sessions, authentication, and app navigation working correctly.",
+    title: "Necessary storage",
+    description: "Session, auth, locale, security, CSRF, and consent storage keep the site and app working.",
   },
   {
     icon: LockKeyhole,
-    title: "Security uses",
-    description: "Security protections may rely on temporary tokens, session controls, or request validation to help protect accounts and APIs.",
+    title: "Security storage",
+    description: "Temporary tokens, session controls, rate-limit signals, and request validation help protect accounts and APIs.",
   },
   {
     icon: SlidersHorizontal,
-    title: "Preference storage",
-    description: "Theme choices, onboarding state, and other product preferences may be stored locally to improve continuity across visits.",
+    title: "Preferences",
+    description: "Local storage may remember theme, onboarding, consent, language, install prompts, and user-facing preferences.",
   },
   {
     icon: MonitorSmartphone,
-    title: "Device experience",
-    description: "Some browser storage is used to support responsive experiences, installs, and product behavior across devices.",
+    title: "Analytics",
+    description: "Web analytics is consent-gated; mobile analytics is controlled separately through in-app consent.",
   },
 ] as const;
 
@@ -38,8 +41,10 @@ export default function CookiePolicyPage() {
     <PublicPageShell
       eyebrow="Legal"
       title="Cookie Policy"
-      description="This page explains the limited ways LocateFlow may use cookies or browser storage to operate sign-in, security, and product experience features."
+      description="This page explains how LocateFlow uses cookies, browser storage, consent records, analytics tags, and similar technologies."
     >
+      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
       <div className="grid gap-4 md:grid-cols-2">
         {highlights.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -52,24 +57,52 @@ export default function CookiePolicyPage() {
         ))}
       </div>
 
-      <PublicSection title="What LocateFlow may store in the browser">
+      <PublicSection title="Categories of storage">
+        <ul className="list-disc space-y-1 pl-6">
+          <li>Necessary: sign-in, session, locale, security, CSRF, rate-limit, consent, and app routing storage.</li>
+          <li>Preferences: theme, onboarding state, language, remembered product preferences, and install-prompt state.</li>
+          <li>Analytics: Google Analytics or Google Tag Manager tags when configured and accepted, plus consent-gated internal signed-in usage events.</li>
+          <li>Marketing: LocateFlow does not currently load advertising cookies through the public cookie banner. If marketing tags are added later, this policy and consent UI should be updated before use.</li>
+        </ul>
+      </PublicSection>
+
+      <PublicSection title="Consent behavior">
         <p>
-          LocateFlow may use cookies, local storage, and similar browser mechanisms for essential product needs such as sign-in state, security validation, preferences, app installation prompts, and continuity between visits.
+          The public cookie banner lets visitors accept analytics or decline non-essential analytics storage. The browser stores the choice in local storage under <code>locateflow_cookie_consent</code> and mirrors it to a first-party <code>cookie_consent</code> cookie for server-side consent checks.
+        </p>
+        <p>
+          If you decline, Google analytics storage is denied and internal analytics tracking is disabled. Necessary cookies and storage may still be used because the service cannot operate securely without them.
+        </p>
+        <CookiePreferenceControls />
+      </PublicSection>
+
+      <PublicSection title="Google Analytics and Google Tag Manager">
+        <p>
+          LocateFlow supports Google Analytics 4 and Google Tag Manager when configured. These tags should not load until analytics consent is accepted. Ad storage, ad user data, and ad personalization are set to denied by default in the current implementation.
+        </p>
+        <p>
+          Web analytics events are designed to avoid raw email, phone, address, name, provider account ID, Stripe ID, OAuth ID, token, support message, budget detail, and raw search query values.
         </p>
       </PublicSection>
 
-      <PublicSection title="Why this storage is used">
+      <PublicSection title="Mobile analytics">
         <p>
-          Browser storage helps maintain secure sessions, remember user-facing preferences, support navigation, and reduce unnecessary friction when returning to the app.
+          Mobile analytics is controlled through in-app consent and does not use the web cookie banner. Mobile apps may send screen views, taps, errors, feature use, and aggregate search metadata when analytics consent is enabled.
         </p>
+      </PublicSection>
+
+      <PublicSection title="CCPA opt-out relationship">
         <p>
-          If third-party integrations such as authentication, billing, or infrastructure tooling are enabled, those providers may also use their own cookies or device identifiers as part of their services.
+          California opt-out requests may be recorded separately through account settings or the California privacy endpoint. Anonymous opt-out state may use a first-party <code>ccpa_opt_out</code> cookie. See the <Link href="/ccpa-privacy-notice" className="underline">California Privacy Notice</Link>.
         </p>
       </PublicSection>
 
       <PublicSection title="Managing cookies and storage">
         <p>
-          Most browsers let you clear cookies, remove site storage, or block future storage. Doing so can affect sign-in, remembered settings, and other product behaviors that rely on those mechanisms.
+          You can use the controls above, browser settings, or device settings to clear or block storage. Blocking necessary storage may prevent sign-in, checkout, security checks, preferences, or app features from working.
+        </p>
+        <p>
+          Questions can be sent to <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow cookie question")} className="underline">{LEGAL_CONTACTS.privacy}</a>.
         </p>
       </PublicSection>
     </PublicPageShell>

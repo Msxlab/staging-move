@@ -1,12 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, HelpCircle, KeyRound, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  CreditCard,
+  FileSignature,
+  HelpCircle,
+  Mail,
+  MapPin,
+  Scale,
+  ShieldAlert,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import {
+  CONTACT_CONFIGURATION_NOTE,
+  LEGAL_CONTACTS,
+  LEGAL_INFO,
+  mailto,
+  policyLastUpdatedLabel,
+} from "@/lib/legal-info";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "How to reach the right LocateFlow support path.",
+  description: "Legal, privacy, billing, security, and support contact paths for LocateFlow.",
   alternates: {
     canonical: "/contact",
   },
@@ -15,32 +32,55 @@ export const metadata: Metadata = {
 const contactPaths = [
   {
     icon: HelpCircle,
-    title: "Product help",
-    description: "Browse public FAQs for onboarding, services, addresses, and moving workflows.",
-    href: "/faq",
-    label: "Read the FAQ",
+    title: "General support",
+    description: "Product questions, account access, onboarding, and non-urgent support.",
+    email: LEGAL_CONTACTS.support,
+    subject: "LocateFlow support request",
   },
   {
-    icon: KeyRound,
-    title: "Existing account support",
-    description: "Sign in to manage your account, update settings, or continue your relocation workflow.",
-    href: "/sign-in",
-    label: "Sign In",
+    icon: CreditCard,
+    title: "Billing support",
+    description: "Subscription, checkout, cancellation, renewal, invoice, or refund questions.",
+    email: LEGAL_CONTACTS.billing,
+    subject: "LocateFlow billing request",
   },
   {
     icon: ShieldCheck,
-    title: "Privacy and data requests",
-    description: "Review privacy expectations and use in-app account controls when you need account or data-management help.",
-    href: "/privacy",
-    label: "Review Privacy Policy",
+    title: "Privacy requests",
+    description: "Access, correction, export, deletion, California privacy, or data rights requests.",
+    email: LEGAL_CONTACTS.privacy,
+    subject: "LocateFlow privacy request",
   },
   {
-    icon: Sparkles,
-    title: "New to LocateFlow",
-    description: "Open onboarding to explore the product and start organizing your move, addresses, and services.",
-    href: "/onboarding",
-    label: "Open App",
+    icon: Scale,
+    title: "Legal notices",
+    description: "Formal legal notices, terms questions, or policy questions.",
+    email: LEGAL_CONTACTS.legal,
+    subject: "LocateFlow legal notice",
   },
+  {
+    icon: ShieldAlert,
+    title: "Security disclosure",
+    description: "Vulnerability reports, responsible disclosure, or account security concerns.",
+    email: LEGAL_CONTACTS.security,
+    subject: "LocateFlow security disclosure",
+  },
+  {
+    icon: FileSignature,
+    title: "DPA and subprocessors",
+    description: "Data Processing Addendum, subprocessor, or business-customer privacy inquiries.",
+    email: LEGAL_CONTACTS.dpa,
+    subject: "LocateFlow DPA inquiry",
+  },
+] as const;
+
+const policyLinks = [
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Billing Policy", href: "/billing-policy" },
+  { label: "Refund Policy", href: "/refund" },
+  { label: "Security", href: "/security" },
+  { label: "DPA", href: "/dpa" },
 ] as const;
 
 export default function ContactPage() {
@@ -48,8 +88,10 @@ export default function ContactPage() {
     <PublicPageShell
       eyebrow="Support"
       title="Contact LocateFlow"
-      description="Use the path below that best matches your request so it reaches the right product workflow as quickly as possible."
+      description="Use the contact path that matches your request. Do not send passwords, payment card numbers, private keys, or other sensitive secrets by email."
     >
+      <p className="text-sm text-muted-foreground">{policyLastUpdatedLabel()}</p>
+
       <div className="grid gap-4 md:grid-cols-2">
         {contactPaths.map((item) => (
           <div key={item.title} className="rounded-2xl border bg-muted/30 p-5">
@@ -58,38 +100,52 @@ export default function ContactPage() {
             </div>
             <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-            <Link href={item.href} className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline">
-              {item.label}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <a
+              href={mailto(item.email, item.subject)}
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+            >
+              <Mail className="h-4 w-4" />
+              {item.email}
+            </a>
           </div>
         ))}
       </div>
 
-      <PublicSection title="Fastest support routes">
-        <p>
-          The fastest way to get help is usually through the public FAQ for general guidance, or by signing in if your request is tied to your specific account, subscription, or saved relocation data.
-        </p>
+      <PublicSection title="Mailing address">
+        <div className="flex items-start gap-3">
+          <MapPin className="mt-1 h-4 w-4 shrink-0 text-primary" />
+          <div>
+            <p className="font-medium text-foreground">{LEGAL_INFO.legalEntityName}</p>
+            <p>{LEGAL_INFO.companyAddress}</p>
+            <p className="text-xs">{CONTACT_CONFIGURATION_NOTE}</p>
+          </div>
+        </div>
       </PublicSection>
 
-      <PublicSection title="What to include when asking for help">
-        <p>
-          Include the part of the product you were using, the type of address or service workflow involved, the page where the issue happened, and what result you expected. That makes it easier to route the request correctly.
-        </p>
+      <PublicSection title="Policy links">
+        <div className="flex flex-wrap gap-3">
+          {policyLinks.map((link) => (
+            <Link key={link.href} href={link.href}>
+              <Button variant="outline" size="sm">
+                {link.label}
+              </Button>
+            </Link>
+          ))}
+        </div>
       </PublicSection>
 
       <div className="rounded-2xl border bg-background p-6">
-        <h2 className="text-xl font-semibold text-foreground">Need to jump in right now?</h2>
+        <h2 className="text-xl font-semibold text-foreground">Need account-specific help?</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Start with the public FAQ or open the app directly to continue onboarding and manage your move.
+          Sign in when your request involves saved addresses, services, subscriptions, exports, deletion, or support tickets tied to your account.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/faq">
             <Button variant="outline">FAQ</Button>
           </Link>
-          <Link href="/onboarding">
+          <Link href="/sign-in">
             <Button>
-              Open LocateFlow
+              Sign in
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>

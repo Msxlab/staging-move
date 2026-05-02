@@ -32,6 +32,7 @@ import { theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { api } from "@/lib/api";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import {
   getRecommendedProviders,
   CATEGORY_META,
@@ -322,6 +323,10 @@ export default function NewServiceScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>{mode === "browse" ? "Add Services" : "Manual Add"}</Text>
         <View style={{ width: 44 }} />
+      </View>
+
+      <View style={{ paddingHorizontal: 20 }}>
+        <EmailVerificationBanner context={t("services.title")} />
       </View>
 
       {/* Mode toggle */}
@@ -781,13 +786,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, marginRight: 8,
   },
   addrChipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.4)",
+    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.4)",
   },
   addrChipText: { fontSize: 13, fontWeight: "600", color: theme.colors.textTertiary },
   addrChipTextActive: { color: theme.colors.primary },
 
   // Selected chips
-  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(249,115,22,0.2)" },
+  selectedChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10, padding: 10, borderRadius: 12, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(212, 132, 106,0.2)" },
   selectedChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, backgroundColor: theme.colors.primary },
   selectedChipText: { fontSize: 12, fontWeight: "600", color: "#fff" },
 
@@ -812,7 +817,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", padding: 10, borderRadius: 12,
     borderWidth: 1, borderColor: theme.colors.border, backgroundColor: "rgba(255,255,255,0.02)",
   },
-  recoCardActive: { borderColor: "rgba(249,115,22,0.4)", backgroundColor: theme.colors.primaryFaded },
+  recoCardActive: { borderColor: "rgba(212, 132, 106,0.4)", backgroundColor: theme.colors.primaryFaded },
   recoCardTop: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
   recoName: { fontSize: 14, fontWeight: "600", color: theme.colors.text },
   recoReason: { fontSize: 11, color: theme.colors.textTertiary, marginTop: 1 },
@@ -828,7 +833,7 @@ const styles = StyleSheet.create({
   catCount: { fontSize: 11, color: theme.colors.textMuted },
   catBadge: {
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 10,
-    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(249,115,22,0.3)",
+    backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(212, 132, 106,0.3)",
   },
   catBadgeText: { fontSize: 10, fontWeight: "700", color: theme.colors.primary },
 
@@ -895,7 +900,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border,
   },
   chipActive: {
-    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(249,115,22,0.4)",
+    backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.4)",
   },
   chipText: { fontSize: 13, fontWeight: "500", color: theme.colors.textTertiary },
   chipTextActive: { color: theme.colors.primary },

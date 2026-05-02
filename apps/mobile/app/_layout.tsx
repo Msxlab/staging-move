@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Linking } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -8,12 +9,26 @@ import { useAuthStore } from "@/lib/auth-store";
 import { theme } from "@/lib/theme";
 import { createQueryClient } from "@/lib/query-client";
 import * as SplashScreen from "expo-splash-screen";
+import {
+  useFonts as useFraunces,
+  Fraunces_400Regular,
+  Fraunces_400Regular_Italic,
+  Fraunces_500Medium,
+  Fraunces_600SemiBold,
+} from "@expo-google-fonts/fraunces";
+import {
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+} from "@expo-google-fonts/geist";
+import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
 import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionTracker } from "@/components/SessionTracker";
 import { initI18n } from "@/i18n/config";
-import { initMobileSentry } from "@/lib/sentry";
+import { initMobileSentry, captureException } from "@/lib/sentry";
 import {
   getPendingLegalConsents,
   hydratePendingLegalConsents,
@@ -24,6 +39,29 @@ import {
   exchangeMobileOAuthCallbackUrl,
   readMobileOAuthCallback,
 } from "@/lib/mobile-oauth-handoff";
+
+// Cache the last known onboarding-completion flag so a transient /api/profile
+// failure does not silently route a brand-new account into (tabs). Cache hits
+// keep returning users unblocked; cache miss defaults to "needs onboarding"
+// which is the safe direction to fail on.
+const ONBOARDING_CACHE_KEY = "locateflow.onboardingCompleted";
+async function readOnboardingCache(): Promise<boolean | null> {
+  try {
+    const raw = await AsyncStorage.getItem(ONBOARDING_CACHE_KEY);
+    if (raw === "true") return true;
+    if (raw === "false") return false;
+    return null;
+  } catch {
+    return null;
+  }
+}
+async function writeOnboardingCache(completed: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ONBOARDING_CACHE_KEY, completed ? "true" : "false");
+  } catch {
+    /* best effort */
+  }
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -73,8 +111,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       await hydratePendingLegalConsents();
       const pendingLegalConsents = getPendingLegalConsents();
       if (hasRequiredLegalConsents(pendingLegalConsents)) {
-        await api.post("/api/legal/acceptance", { legalConsents: pendingLegalConsents }).catch(() => null);
-        await setPendingLegalConsents(null);
+        // Only clear the pending blob when the server actually acknowledges
+        // the acceptance — a transient 5xx/timeout must NOT silently drop the
+        // record, otherwise the consent chain is broken and onboarding has to
+        // re-prompt without a paper trail.
+        const legalRes = await api.post("/api/legal/acceptance", { legalConsents: pendingLegalConsents });
+        if (!legalRes.error) {
+          await setPendingLegalConsents(null);
+        }
       }
       router.replace("/onboarding");
     };
@@ -94,6 +138,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [token, user, refreshUser]);
 
   // 3) Check onboarding completion after login.
+  //
+  // Failure-mode policy: a transient /api/profile failure (5xx, timeout,
+  // network) must NOT silently bypass onboarding for a brand-new account.
+  // Resolution order:
+  //   1. Server returns a real answer  → trust it, write to cache.
+  //   2. Server returns a legal/onboarding error → needsOnboarding = true.
+  //   3. Server is unreachable → fall back to cached completion if any
+  //      (returning users stay unblocked); otherwise default to true so a
+  //      brand-new account is held on /onboarding instead of bouncing into
+  //      (tabs) without a profile row or legal consent.
   useEffect(() => {
     if (loading) return;
     if (!token) {
@@ -101,16 +155,30 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       return;
     }
     let cancelled = false;
-    api.get<any>("/api/profile").then((res) => {
+    api.get<any>("/api/profile").then(async (res) => {
       if (cancelled) return;
       if (res.error) {
         const message = res.error.toLowerCase();
-        setNeedsOnboarding(message.includes("legal") || message.includes("onboarding") ? true : false);
+        if (message.includes("legal") || message.includes("onboarding")) {
+          setNeedsOnboarding(true);
+          return;
+        }
+        // Generic failure (timeout / 5xx / network). Use cached value if we
+        // have one, else default to "needs onboarding" — safer for a brand-
+        // new account than the previous default of false.
+        const cached = await readOnboardingCache();
+        if (cancelled) return;
+        setNeedsOnboarding(cached === true ? false : true);
         return;
       }
-      setNeedsOnboarding(res.data?.onboardingCompleted !== true);
-    }).catch(() => {
-      if (!cancelled) setNeedsOnboarding(false);
+      const completed = res.data?.onboardingCompleted === true;
+      setNeedsOnboarding(!completed);
+      void writeOnboardingCache(completed);
+    }).catch(async () => {
+      if (cancelled) return;
+      const cached = await readOnboardingCache();
+      if (cancelled) return;
+      setNeedsOnboarding(cached === true ? false : true);
     });
     return () => { cancelled = true; };
   }, [token, loading]);
@@ -175,16 +243,34 @@ export default function RootLayout() {
   const [i18nHydrated, setI18nHydrated] = useState(false);
   const [queryClient] = useState(() => createQueryClient());
 
+  // Edition VI · Champagne & Rose. Fraunces is the display face (Locate*flow*
+  // wordmark, hero copy); Geist is the UI face. Both are loaded on first
+  // boot and the splash is held until they resolve so the auth screen never
+  // flashes a system fallback for the brand wordmark.
+  const [fontsLoaded] = useFraunces({
+    Fraunces_400Regular,
+    Fraunces_400Regular_Italic,
+    Fraunces_500Medium,
+    Fraunces_600SemiBold,
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+    GeistMono_400Regular,
+    GeistMono_500Medium,
+  });
+
   useEffect(() => {
     SplashScreen.hideAsync();
     void i18nReady.then(() => setI18nHydrated(true));
   }, []);
 
-  // Hold the splash until i18n is ready AND the animated splash finishes.
-  // Both guards must pass; otherwise the first frame flashes EN copy
-  // before the user's ES preference applies.
-  if (showSplash || !i18nHydrated) {
-    return <AnimatedSplash ready={i18nHydrated} onFinish={() => setShowSplash(false)} />;
+  // Hold the splash until i18n + fonts are ready AND the animated splash
+  // finishes. All three guards must pass; otherwise the first frame flashes
+  // either EN copy (i18n) or system fallback (fonts) on the brand wordmark.
+  const ready = i18nHydrated && fontsLoaded;
+  if (showSplash || !ready) {
+    return <AnimatedSplash ready={ready} onFinish={() => setShowSplash(false)} />;
   }
 
   return (

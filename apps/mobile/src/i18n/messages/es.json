@@ -55,7 +55,13 @@
     "checkEmail": "Revisa tu correo",
     "checkEmailDescription": "Enviamos un enlace de verificación a {{email}}.",
     "requiredAcknowledgements": "Aceptaciones requeridas",
-    "requiredAcknowledgementsDescription": "Acéptalas antes de crear tu cuenta de LocateFlow."
+    "requiredAcknowledgementsDescription": "Acéptalas antes de crear tu cuenta de LocateFlow.",
+    "verifyEmail_title": "Verifica tu correo primero",
+    "verifyEmail_body": "Necesitamos confirmar tu correo antes de guardar cambios. Toca el enlace en tu bandeja de entrada y vuelve aquí.",
+    "verifyEmail_bodyFor": "Guardar {{context}} requiere un correo verificado. Toca el enlace en tu bandeja de entrada y vuelve aquí.",
+    "verifyEmail_resend": "Reenviar correo de verificación",
+    "verifyEmail_sentTitle": "Correo enviado",
+    "verifyEmail_sentBody": "Enviamos un nuevo enlace de verificación a {{email}}."
   },
   "dashboard": {
     "welcome": "Bienvenido de vuelta",
@@ -121,7 +127,10 @@
     "actualIncome": "Ingreso real",
     "plannedExpenses": "Gasto planeado",
     "actualExpenses": "Gasto real",
-    "notes": "Notas"
+    "notes": "Notas",
+    "gate_subscriptionRequired_title": "Los presupuestos son una función de pago",
+    "gate_subscriptionRequired_body": "Crear y guardar presupuestos requiere una suscripción activa de LocateFlow. Aún puedes ver las proyecciones de este mes desde el resumen de presupuesto.",
+    "gate_subscriptionRequired_cta": "Ver planes"
   },
   "settings": {
     "title": "Configuración",
@@ -240,5 +249,24 @@
     "services": "Aún no hay servicios",
     "providers": "No hay proveedores",
     "tasks": "Todo al día"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "section_email": "Correo",
+    "section_push": "Push",
+    "section_email_hint": "Se envían al correo de tu cuenta.",
+    "section_push_hint": "Se entregan en este dispositivo. Requiere el permiso del sistema.",
+    "email_taskReminders_label": "Recordatorios de tareas",
+    "email_taskReminders_desc": "Recibe un correo cuando una tarea esté por vencer.",
+    "email_weeklyDigest_label": "Resumen semanal",
+    "email_weeklyDigest_desc": "Resumen del domingo con tareas y facturas próximas.",
+    "email_moveAlerts_label": "Alertas de mudanza",
+    "email_moveAlerts_desc": "Cambios importantes en tu plan de mudanza activo.",
+    "push_taskReminders_label": "Recordatorios de tareas",
+    "push_taskReminders_desc": "Envía los mismos recordatorios a este dispositivo.",
+    "push_moveAlerts_label": "Alertas de mudanza",
+    "push_moveAlerts_desc": "Notificaciones push para hitos de la mudanza activa.",
+    "push_streakReminders_label": "Recordatorios de racha",
+    "push_streakReminders_desc": "Avisos para mantener viva tu racha semanal."
   }
 }

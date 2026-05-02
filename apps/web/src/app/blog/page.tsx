@@ -1,11 +1,10 @@
 /**
  * Public /blog — list page.
  *
- * Server component, ISR'd at 5 minutes (the publish webhook also
- * forces revalidation so freshness rarely lags). Magazine-style
- * layout: a featured hero card for the latest post, then the rest
- * in a two-column grid. Falls back to English if the visitor's
- * locale has no published posts yet.
+ * Server component rendered per request because locale resolution reads
+ * request cookies/headers. Magazine-style layout: a featured hero card
+ * for the latest post, then the rest in a two-column grid. Falls back
+ * to English if the visitor's locale has no published posts yet.
  */
 
 import type { Metadata } from "next";
@@ -17,7 +16,7 @@ import { listPublicPosts } from "@/lib/blog/queries";
 import { blogPostPath } from "@/lib/blog/urls";
 import { SITE_URL } from "@/lib/seo";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 function normalizePageParam(value: string | undefined): number {
   return Math.max(parseInt(value ?? "1", 10) || 1, 1);
@@ -40,7 +39,7 @@ export async function generateMetadata({
   return {
     title,
     description:
-      "Field-tested guides on moving smarter, tracking every provider in one place, and never paying for a service at an old address again.",
+      "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
     alternates: {
       canonical,
       types: {
@@ -53,7 +52,7 @@ export async function generateMetadata({
       url: canonical,
       title: page > 1 ? `LocateFlow Blog - Page ${page}` : "LocateFlow Blog",
       description:
-        "Field-tested guides on moving smarter, tracking every provider in one place, and never paying for a service at an old address again.",
+        "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
       siteName: "LocateFlow",
     },
   };
@@ -119,8 +118,8 @@ export default async function BlogIndexPage({
               <span className="italic text-primary">from the move.</span>
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Practical, field-tested writing on moving smarter — keeping every provider, address,
-              and renewal in one place so nothing slips into the cracks.
+              Practical, field-tested writing on moving smarter - keeping provider records, addresses,
+              and renewal reminders in one place so fewer details slip through.
             </p>
           </div>
         </div>

@@ -16,7 +16,7 @@ import { PublicPageShell, PublicSection } from "@/components/marketing/public-pa
 export const metadata: Metadata = {
   title: "How It Works",
   description:
-    "See how LocateFlow keeps every provider tied to your address in sync — from first signup to moving day.",
+    "See how LocateFlow helps organize providers, addresses, reminders, documents, and moving tasks without replacing provider confirmation.",
   alternates: {
     canonical: "/how-it-works",
   },
@@ -27,7 +27,7 @@ const steps = [
     step: "01",
     icon: MapPin,
     title: "Add your addresses",
-    body: "Start with the home you live in today. Tie additional properties — rentals, parents' house, a second home — so every provider has a clear owner.",
+    body: "Start with the home you live in today. Add rentals, a family address, or a second home when you have permission to manage those records.",
     detail:
       "We keep each address as its own surface. Services attach to the address, not your account, so moving a single property doesn't disturb the rest.",
   },
@@ -35,15 +35,15 @@ const steps = [
     step: "02",
     icon: Zap,
     title: "Log every service",
-    body: "Utility, bank, insurance, streaming, gym, HOA — whatever shows up on a statement. Photo a bill and we'll pull the provider, plan, and billing cycle.",
+    body: "Utility, bank, insurance, streaming, gym, HOA - whatever shows up on a statement. Add the provider details you want to track.",
     detail:
-      "OCR + provider match means you log once and the record stays. No spreadsheets, no duplicate entries when a plan renews.",
+      "Document capture and provider matching may assist entry when available, but you should confirm provider, plan, billing, and contract details before relying on them.",
   },
   {
     step: "03",
     icon: Bell,
     title: "Stay ahead of renewals",
-    body: "LocateFlow watches due dates, auto-renew windows, and annual price changes. You get a gentle nudge before money leaves your account.",
+    body: "LocateFlow helps track due dates, auto-renew windows, and price notes you enter. You can get reminders before a date you saved becomes urgent.",
     detail:
       "Reminders arrive in the app and by email. Snooze, mark handled, or jump straight to the provider login - your choice.",
   },
@@ -51,9 +51,9 @@ const steps = [
     step: "04",
     icon: Truck,
     title: "Move without the list",
-    body: "When you relocate, the moving checklist generates itself from your services and your destination state's requirements.",
+    body: "When you relocate, the moving checklist uses your saved services and destination context to suggest tasks.",
     detail:
-      "51 US states with rule coverage. Transfer, cancel, or re-open — each service has the right action for the address it's tied to.",
+      "Guidance may include US state and DC context, but requirements and provider processes change. Verify each task with the provider or agency before acting.",
   },
 ] as const;
 
@@ -61,7 +61,7 @@ const pillars = [
   {
     icon: Shield,
     title: "Private by default",
-    body: "Your data stays yours. Encrypted at rest, never sold, and available for 30 days after cancellation.",
+    body: "Your account data is scoped to your account. LocateFlow uses access controls and privacy tools and does not sell user-entered relocation data.",
   },
   {
     icon: FileText,
@@ -71,7 +71,7 @@ const pillars = [
   {
     icon: CheckCircle2,
     title: "Export anytime",
-    body: "CSV, PDF, or per-address packet. No lock-in — if you leave, you leave with everything.",
+    body: "Export tools help you download supported account records. Some backups, billing, audit, legal, and security records may be retained when needed.",
   },
 ] as const;
 
@@ -79,8 +79,8 @@ export default function HowItWorksPage() {
   return (
     <PublicPageShell
       eyebrow="How it works"
-      title="Every provider tied to your address, in sync."
-      description="Most people keep their service list in memory, email threads, and three browser tabs. LocateFlow replaces all of that with one place that notices when something changes."
+      title="Providers, addresses, and moving tasks in one place."
+      description="Most people keep their service list in memory, email threads, and three browser tabs. LocateFlow gives you one place to organize the records and reminders you need to verify."
     >
       <PublicSection title="The four things you'll do">
         <div className="grid gap-6 md:grid-cols-2">
@@ -119,15 +119,15 @@ export default function HowItWorksPage() {
         <ul className="space-y-3">
           <li className="flex items-start gap-3">
             <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />
-            <span><strong className="text-foreground">Monday.</strong> Your internet bill is up for renewal in 6 days — tap to review the new plan, swap, or keep going.</span>
+            <span><strong className="text-foreground">Monday.</strong> Your internet bill renewal date is in 6 days - tap to review your saved record and decide what to confirm with the provider.</span>
           </li>
           <li className="flex items-start gap-3">
             <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />
-            <span><strong className="text-foreground">Wednesday.</strong> Snapped a new HOA statement on the porch — log-a-service flow reads it and attaches the PDF to the right address.</span>
+            <span><strong className="text-foreground">Wednesday.</strong> Add a new HOA statement and attach the document to the right address so it is easier to find later.</span>
           </li>
           <li className="flex items-start gap-3">
             <CheckCircle2 className="h-4 w-4 mt-1 text-success shrink-0" />
-            <span><strong className="text-foreground">Friday.</strong> Closing on a new place in 6 weeks — the move checklist already knows which services need a transfer and which need a fresh signup.</span>
+            <span><strong className="text-foreground">Friday.</strong> Closing on a new place in 6 weeks - your checklist suggests which services may need transfer, cancellation, or new setup.</span>
           </li>
         </ul>
       </PublicSection>
@@ -136,7 +136,7 @@ export default function HowItWorksPage() {
         <div className="flex flex-wrap gap-3 pt-2">
           <Link href="/sign-up">
             <Button size="lg">
-              Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
+              Get started <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
           <Link href="/pricing">
@@ -144,7 +144,9 @@ export default function HowItWorksPage() {
           </Link>
         </div>
         <p className="text-xs text-muted-foreground">
-          No credit card required · Cancel anytime · Your data stays available for 30 days after cancellation.
+          Trial length, renewal date, price, and payment method requirements are shown at checkout. See the{" "}
+          <Link href="/billing-policy" className="underline">Billing Policy</Link>{" "}
+          and <Link href="/disclaimer" className="underline">Disclaimer</Link> before relying on provider or moving guidance.
         </p>
       </PublicSection>
     </PublicPageShell>

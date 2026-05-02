@@ -23,6 +23,9 @@ export const ALLOWED_BLOG_IMAGE_MIME = new Set([
 ]);
 
 export const MAX_BLOG_IMAGE_BYTES = 5 * 1024 * 1024;
+export const BLOG_UPLOAD_IMAGE_AUDIT_ACTION = "BLOG_UPLOAD_IMAGE";
+export const BLOG_DELETE_IMAGE_AUDIT_ACTION = "BLOG_DELETE_IMAGE";
+export const ADMIN_AUDIT_ENTITY_ID_MAX = 30;
 
 interface R2Cfg {
   endpoint: string;
@@ -50,6 +53,31 @@ function getR2Cfg(): R2Cfg {
 
 function sha256Hex(input: string | Buffer): string {
   return createHash("sha256").update(input).digest("hex");
+}
+
+export function getBlogImageAuditEntityId(key: string): string {
+  const normalized = key.trim();
+  if (!normalized) return "blog-image";
+  if (normalized.length <= ADMIN_AUDIT_ENTITY_ID_MAX) return normalized;
+  return `img_${sha256Hex(normalized).slice(0, ADMIN_AUDIT_ENTITY_ID_MAX - 4)}`;
+}
+
+export function getBlogImageKeyFromAuditRow(row: {
+  entityId?: string | null;
+  changes?: string | null;
+}): string | null {
+  if (row.changes) {
+    try {
+      const parsed = JSON.parse(row.changes) as { key?: unknown };
+      if (typeof parsed.key === "string" && parsed.key.trim()) {
+        return parsed.key.trim();
+      }
+    } catch {
+      /* fall back to legacy entityId below */
+    }
+  }
+  const fallback = row.entityId?.trim();
+  return fallback || null;
 }
 
 function hmac(key: Buffer | string, data: string): Buffer {

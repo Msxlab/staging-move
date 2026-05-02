@@ -6,9 +6,7 @@ import Svg, {
   Stop,
   Path,
   Circle,
-  G,
 } from "react-native-svg";
-import { theme } from "@/lib/theme";
 
 interface LogoBrandProps {
   size?: "sm" | "md" | "lg";
@@ -17,82 +15,54 @@ interface LogoBrandProps {
 
 const SIZES = {
   sm: { icon: 32, fontSize: 0, gap: 0 },
-  md: { icon: 48, fontSize: 20, gap: 8 },
-  lg: { icon: 72, fontSize: 28, gap: 12 },
+  md: { icon: 48, fontSize: 22, gap: 10 },
+  lg: { icon: 72, fontSize: 30, gap: 14 },
 } as const;
 
+// Edition VI · Champagne & Rose. Mirrors apps/web/public/logo-mark.svg and
+// apps/web/src/components/marketing/logo.tsx so the mobile auth screens read
+// as the same brand as the web sign-in.
 export function LogoBrand({ size = "md", showText = true }: LogoBrandProps) {
   const s = SIZES[size];
+  const markSize = s.icon;
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.iconWrap,
-          {
-            width: s.icon,
-            height: s.icon,
-            borderRadius: s.icon * 0.3,
-          },
-        ]}
+      <Svg
+        width={markSize}
+        height={markSize}
+        viewBox="0 0 100 100"
+        fill="none"
       >
-        <Svg
-          width={s.icon * 0.7}
-          height={s.icon * 0.7}
-          viewBox="0 0 64 64"
+        <Defs>
+          <LinearGradient id="lf-foil" x1="0" y1="1" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#B8936C" />
+            <Stop offset="45%" stopColor="#E5C9A8" />
+            <Stop offset="100%" stopColor="#F4E4D0" />
+          </LinearGradient>
+          <LinearGradient id="lf-rose" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0%" stopColor="#EDB99D" />
+            <Stop offset="100%" stopColor="#A85A42" />
+          </LinearGradient>
+        </Defs>
+
+        <Path
+          d="M20 65 Q 30 32, 50 48 T 80 40"
+          stroke="url(#lf-foil)"
+          strokeWidth="3.25"
           fill="none"
-        >
-          <Defs>
-            <LinearGradient id="pinGrad" x1="20" y1="8" x2="44" y2="56">
-              <Stop offset="0%" stopColor="#FB923C" />
-              <Stop offset="100%" stopColor="#F97316" />
-            </LinearGradient>
-            <LinearGradient id="dotGrad" x1="26" y1="30" x2="38" y2="42">
-              <Stop offset="0%" stopColor="#FBBF24" />
-              <Stop offset="100%" stopColor="#F97316" />
-            </LinearGradient>
-            <LinearGradient id="waveGrad" x1="12" y1="48" x2="52" y2="48">
-              <Stop offset="0%" stopColor="#F97316" stopOpacity="0.6" />
-              <Stop offset="50%" stopColor="#FBBF24" stopOpacity="0.9" />
-              <Stop offset="100%" stopColor="#F97316" stopOpacity="0.4" />
-            </LinearGradient>
-          </Defs>
-          {/* Subtle glow */}
-          <Circle cx="32" cy="32" r="22" fill="#F97316" opacity={0.06} />
-          {/* Pin body outline */}
-          <Path
-            d="M32 10C32 10 18 26 18 36C18 43.7 24.3 50 32 50C39.7 50 46 43.7 46 36C46 26 32 10 32 10Z"
-            stroke="url(#pinGrad)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="url(#pinGrad)"
-            fillOpacity={0.08}
-          />
-          {/* Inner dot */}
-          <Circle cx="32" cy="35" r="6" fill="url(#dotGrad)" />
-          {/* Flow waves */}
-          <Path
-            d="M16 50C20 47 24 51 28 48C32 45 36 49 40 46C44 43 48 47 52 45"
-            stroke="url(#waveGrad)"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            fill="none"
-          />
-          <Path
-            d="M14 54C18 51 22 55 26 52C30 49 34 53 38 50C42 47 46 51 50 49"
-            stroke="url(#waveGrad)"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            fill="none"
-            opacity={0.4}
-          />
-        </Svg>
-      </View>
+          strokeLinecap="round"
+        />
+        <Circle cx="20" cy="65" r="4.5" fill="url(#lf-foil)" />
+        <Circle cx="20" cy="65" r="1.5" fill="#0E0A07" />
+        <Circle cx="80" cy="40" r="7.25" fill="url(#lf-rose)" />
+        <Circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
+      </Svg>
+
       {showText && s.fontSize > 0 && (
         <Text style={[styles.brandText, { fontSize: s.fontSize, marginTop: s.gap }]}>
           <Text style={styles.brandLocate}>Locate</Text>
-          <Text style={styles.brandFlow}>Flow</Text>
+          <Text style={styles.brandFlow}>flow</Text>
         </Text>
       )}
     </View>
@@ -103,22 +73,19 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
   },
-  iconWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(249, 115, 22, 0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(249, 115, 22, 0.25)",
-    ...theme.shadow.glow,
-  },
   brandText: {
-    fontWeight: "800",
-    letterSpacing: -0.5,
+    letterSpacing: -0.55,
+    fontFamily: "Fraunces_400Regular",
   },
   brandLocate: {
-    color: "#ffffff",
+    color: "#F5F1EA",
+    fontFamily: "Fraunces_400Regular",
   },
   brandFlow: {
-    color: "#FBBF24",
+    // Italic foil "flow" — falls back to color-only if Fraunces italic isn't
+    // loaded yet (the variable font is loaded at app init in app/_layout.tsx).
+    color: "#E5C9A8",
+    fontStyle: "italic",
+    fontFamily: "Fraunces_400Regular_Italic",
   },
 });
