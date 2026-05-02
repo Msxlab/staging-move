@@ -9,7 +9,7 @@
  * Why server-side PUT (vs presigned URL handed to the browser):
  *   - We never expose the signing key.
  *   - Mime/size/RBAC live in one place.
- *   - Audit log row is guaranteed (browser can't drop it).
+ *   - Audit log write is server-side and best-effort after upload.
  * Cost is bandwidth — fine for blog images that cap at 5 MiB.
  */
 
@@ -21,9 +21,12 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import {
   ALLOWED_BLOG_IMAGE_MIME,
+  BLOG_UPLOAD_IMAGE_AUDIT_ACTION,
+  getBlogImageAuditEntityId,
   MAX_BLOG_IMAGE_BYTES,
   uploadBlogImage,
 } from "@/lib/blog-uploads";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
   let session;
@@ -78,17 +81,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Upload failed" }, { status: 502 });
   }
 
-  // Audit row so we can trace who uploaded which key, and reconcile
-  // R2 contents against the DB later (orphan-image cleanup cron).
+  // Keep the full R2 object key in `changes`; AdminAuditLog.entityId is
+  // intentionally capped at 30 chars in the schema.
+  const requestMeta = getAuditRequestMeta(req);
   await prisma.adminAuditLog.create({
     data: {
       adminUserId: session.adminId,
-      action: "BLOG_UPLOAD_IMAGE",
-      entityType: "BlogPost",
-      entityId: result.key, // we don't have a postId yet; key is unique
+      action: BLOG_UPLOAD_IMAGE_AUDIT_ACTION,
+      entityType: "BlogImage",
+      entityId: getBlogImageAuditEntityId(result.key),
       changes: JSON.stringify({ key: result.key, bytes: result.bytes, mime: result.contentType }),
-      ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+      ipAddress: requestMeta.ipAddress,
     },
+  }).catch((err) => {
+    console.error("[blog-upload] audit write failed:", err);
   });
 
   return NextResponse.json({

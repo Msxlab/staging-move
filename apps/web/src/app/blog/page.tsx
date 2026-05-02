@@ -1,11 +1,10 @@
 /**
  * Public /blog — list page.
  *
- * Server component, ISR'd at 5 minutes (the publish webhook also
- * forces revalidation so freshness rarely lags). Magazine-style
- * layout: a featured hero card for the latest post, then the rest
- * in a two-column grid. Falls back to English if the visitor's
- * locale has no published posts yet.
+ * Server component rendered per request because locale resolution reads
+ * request cookies/headers. Magazine-style layout: a featured hero card
+ * for the latest post, then the rest in a two-column grid. Falls back
+ * to English if the visitor's locale has no published posts yet.
  */
 
 import type { Metadata } from "next";
@@ -17,7 +16,7 @@ import { listPublicPosts } from "@/lib/blog/queries";
 import { blogPostPath } from "@/lib/blog/urls";
 import { SITE_URL } from "@/lib/seo";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 function normalizePageParam(value: string | undefined): number {
   return Math.max(parseInt(value ?? "1", 10) || 1, 1);
