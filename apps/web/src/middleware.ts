@@ -3,6 +3,7 @@ import { jwtVerify } from "jose";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { checkIPAccess } from "@/lib/ip-rules";
 import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
+import { getCanonicalSiteUrl, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
 
 // ── Public routes (no auth required) ───────────────────────────
 const PUBLIC_PATHS = [
@@ -433,16 +434,6 @@ function applyLocaleCookie(
   return response;
 }
 
-function hostLooksLikeStaging(host: string | null): boolean {
-  if (!host) return false;
-  const normalized = host.toLowerCase();
-  return (
-    normalized.includes("staging") ||
-    normalized.endsWith(".ondigitalocean.app") ||
-    normalized.endsWith(".vercel.app")
-  );
-}
-
 function pathShouldNoIndex(pathname: string): boolean {
   return (
     pathname.startsWith("/api/") ||
@@ -469,21 +460,11 @@ function pathShouldNoIndex(pathname: string): boolean {
 }
 
 function applyStagingNoIndex(request: NextRequest, response: NextResponse): NextResponse {
-  const appEnv = (process.env.APP_ENV || "").toLowerCase();
-  const configuredUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.SITE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "";
   const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || null;
   const host = request.headers.get("host")?.split(",")[0]?.trim() || null;
   const shouldNoIndex =
-    appEnv === "staging" ||
-    appEnv === "preview" ||
-    /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i.test(configuredUrl) ||
-    hostLooksLikeStaging(forwardedHost) ||
-    hostLooksLikeStaging(host) ||
-    hostLooksLikeStaging(request.nextUrl.hostname);
+    isNoIndexEnvironment(getCanonicalSiteUrl()) ||
+    shouldBlockForRequestHosts([forwardedHost, host, request.nextUrl.hostname]);
 
   if (shouldNoIndex || pathShouldNoIndex(request.nextUrl.pathname)) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");

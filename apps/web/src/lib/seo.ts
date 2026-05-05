@@ -10,6 +10,7 @@ const DEFAULT_PUBLIC_SITE_URL = "https://locateflow.com";
 const DEFAULT_LOCAL_SITE_URL = "http://localhost:3000";
 const STAGING_HOST_PATTERN = /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i;
 const LOCAL_HOST_PATTERN = /^(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/i;
+const PRODUCTION_PUBLIC_HOSTS = new Set(["locateflow.com", "www.locateflow.com"]);
 
 export function normalizeSiteUrl(
   value: string | null | undefined,
@@ -51,6 +52,36 @@ export function isUnsafePublicSiteUrl(siteUrl: string) {
   }
 }
 
+export function normalizeHost(value: string | null | undefined) {
+  const raw = (value || "").split(",")[0]?.trim() || "";
+  if (!raw) return "";
+  try {
+    return new URL(raw).hostname.toLowerCase().replace(/\.$/, "");
+  } catch {
+    const normalized = raw.toLowerCase().replace(/\.$/, "");
+    if (normalized.startsWith("[")) {
+      const end = normalized.indexOf("]");
+      return end > 0 ? normalized.slice(1, end) : normalized;
+    }
+    return normalized.replace(/:\d+$/, "");
+  }
+}
+
+export function isProductionPublicHost(host: string | null | undefined) {
+  return PRODUCTION_PUBLIC_HOSTS.has(normalizeHost(host));
+}
+
+export function isStagingLikeHost(host: string | null | undefined) {
+  const normalized = normalizeHost(host);
+  return Boolean(normalized) && STAGING_HOST_PATTERN.test(normalized);
+}
+
+export function shouldBlockForRequestHosts(hosts: Array<string | null | undefined>) {
+  const hasProductionHost = hosts.some(isProductionPublicHost);
+  if (hasProductionHost) return false;
+  return hosts.some(isStagingLikeHost);
+}
+
 export function getCanonicalSiteUrl() {
   const normalized = normalizeSiteUrl(
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -70,15 +101,21 @@ export const SITE_URL = getCanonicalSiteUrl();
 
 export function isNoIndexEnvironment(siteUrl = SITE_URL) {
   const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
-  return (
+  const explicitNoIndexEnv =
     appEnv === "staging" ||
     appEnv === "preview" ||
     appEnv === "development" ||
-    appEnv === "test" ||
-    process.env.NODE_ENV !== "production" ||
-    STAGING_HOST_PATTERN.test(siteUrl) ||
-    isUnsafePublicSiteUrl(siteUrl)
-  );
+    appEnv === "test";
+
+  if (explicitNoIndexEnv) return true;
+  if (isUnsafePublicSiteUrl(siteUrl)) return true;
+
+  // APP_ENV is the deployment's explicit business environment. Treat a
+  // production APP_ENV with a safe public canonical as indexable even if a
+  // platform accidentally injects a non-production NODE_ENV.
+  if (appEnv === "production") return false;
+
+  return process.env.NODE_ENV !== "production" || STAGING_HOST_PATTERN.test(siteUrl);
 }
 
 export function getGoogleSiteVerification() {

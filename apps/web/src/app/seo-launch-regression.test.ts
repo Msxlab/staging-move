@@ -14,6 +14,12 @@ function mockRequestHost(host: string) {
   }));
 }
 
+function mockRequestHosts(headers: Record<string, string>) {
+  vi.doMock("next/headers", () => ({
+    headers: vi.fn(async () => new Headers(headers)),
+  }));
+}
+
 function mockBlogPosts(posts: unknown[] = []) {
   vi.doMock("@/lib/db", () => ({
     prisma: {
@@ -65,6 +71,21 @@ describe("production SEO launch surfaces", () => {
     await expect(robots()).resolves.toEqual({
       rules: [{ userAgent: "*", disallow: "/" }],
     });
+  });
+
+  it("allows production crawlers when a production forwarded host reaches a staging-named origin", async () => {
+    productionEnv();
+    mockRequestHosts({
+      "x-forwarded-host": "locateflow.com",
+      host: "locateflow-staging-owew7.ondigitalocean.app",
+    });
+    const { default: robots } = await import("./robots");
+
+    const result = await robots();
+    const serialized = JSON.stringify(result);
+
+    expect(serialized).toContain('"allow":"/"');
+    expect(serialized).not.toBe(JSON.stringify({ rules: [{ userAgent: "*", disallow: "/" }] }));
   });
 
   it("generates a non-empty production sitemap with only canonical public URLs", async () => {

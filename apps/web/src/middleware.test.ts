@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
@@ -32,8 +32,17 @@ function request(url: string, init?: any) {
 describe("web middleware auth boundaries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://locateflow.com");
+    vi.stubEnv("SITE_URL", "https://locateflow.com");
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://locateflow.com");
     mocks.tryGetUserJwtSecretKey.mockReturnValue(null);
     mocks.jwtVerify.mockRejectedValue(new Error("invalid token"));
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("redirects protected pages to sign-in when no session cookie remains", async () => {
@@ -106,6 +115,26 @@ describe("web middleware auth boundaries", () => {
       expect(response.headers.get("location")).toBeNull();
       expect(response.headers.get("x-robots-tag")).toBeNull();
     }
+  });
+
+  it("does not noindex a production request just because the origin host is staging-named", async () => {
+    const response = await middleware(
+      request("https://locateflow-staging-owew7.ondigitalocean.app/about", {
+        headers: { "x-forwarded-host": "locateflow.com" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-robots-tag")).toBeNull();
+  });
+
+  it("keeps direct staging host requests noindexed", async () => {
+    const response = await middleware(
+      request("https://locateflow-staging-owew7.ondigitalocean.app/about"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
   });
 
   it("lets public blog API routes reach route-level handling without a session", async () => {

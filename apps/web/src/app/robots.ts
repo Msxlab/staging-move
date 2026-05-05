@@ -1,35 +1,26 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
-import { getCanonicalSiteUrl, isNoIndexEnvironment } from "@/lib/seo";
+import { getCanonicalSiteUrl, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
 const APP_URL = getCanonicalSiteUrl();
 
-function hostLooksLikeStaging(host: string | null): boolean {
-  if (!host) return false;
-  const normalized = host.toLowerCase();
-  return (
-    normalized.includes("staging") ||
-    normalized.endsWith(".ondigitalocean.app") ||
-    normalized.endsWith(".vercel.app")
-  );
-}
-
-async function requestHost(): Promise<string | null> {
+async function requestHosts(): Promise<Array<string | null>> {
   const h = await headers();
-  return (
+  return [
     h.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+      null,
     h.get("host")?.split(",")[0]?.trim() ||
-    null
-  );
+      null,
+  ];
 }
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
-  const host = await requestHost();
+  const hosts = await requestHosts();
   const shouldBlockIndexing =
     isNoIndexEnvironment(APP_URL) ||
-    hostLooksLikeStaging(host);
+    shouldBlockForRequestHosts(hosts);
 
   if (shouldBlockIndexing) {
     return {
