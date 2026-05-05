@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { blogPostUrl } from "@/lib/blog/urls";
-import { SITE_URL, isNoIndexEnvironment } from "@/lib/seo";
+import { SITE_URL, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
 
 /**
  * `/llms.txt` — emerging-standard discovery file for AI crawlers.
@@ -23,16 +23,17 @@ export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 const APP_URL = SITE_URL;
-const STAGING_HOST_PATTERN = /(?:staging|preview|ondigitalocean\.app|vercel\.app)/i;
 const BLOCK_INDEXING = isNoIndexEnvironment(APP_URL);
 
-async function requestHostLooksStaging() {
+async function requestHostShouldBlockIndexing() {
   const h = await headers();
-  const host =
+  const forwardedHost =
     h.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    null;
+  const host =
     h.get("host")?.split(",")[0]?.trim() ||
-    "";
-  return STAGING_HOST_PATTERN.test(host);
+    null;
+  return shouldBlockForRequestHosts([forwardedHost, host]);
 }
 
 const STATIC_DOCS = [
@@ -50,7 +51,7 @@ const STATIC_DOCS = [
 ];
 
 export async function GET() {
-  if (BLOCK_INDEXING || (await requestHostLooksStaging())) {
+  if (BLOCK_INDEXING || (await requestHostShouldBlockIndexing())) {
     // Staging/preview: emit a deliberately empty file so accidental
     // crawls of these hosts don't pull synthetic content into model
     // training datasets.

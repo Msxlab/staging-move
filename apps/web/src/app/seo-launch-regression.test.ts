@@ -14,14 +14,36 @@ function mockRequestHost(host: string) {
   }));
 }
 
+function mockRequestHosts(headers: Record<string, string>) {
+  vi.doMock("next/headers", () => ({
+    headers: vi.fn(async () => new Headers(headers)),
+  }));
+}
+
 function mockBlogPosts(posts: unknown[] = []) {
+  const findMany = vi.fn(async () => posts);
   vi.doMock("@/lib/db", () => ({
     prisma: {
       blogPost: {
-        findMany: vi.fn(async () => posts),
+        findMany,
       },
     },
   }));
+  return { findMany };
+}
+
+function mockBlogPostsThrowing(error: Error) {
+  const findMany = vi.fn(async () => {
+    throw error;
+  });
+  vi.doMock("@/lib/db", () => ({
+    prisma: {
+      blogPost: {
+        findMany,
+      },
+    },
+  }));
+  return { findMany };
 }
 
 afterEach(() => {
@@ -67,6 +89,21 @@ describe("production SEO launch surfaces", () => {
     });
   });
 
+  it("allows production crawlers when a production forwarded host reaches a staging-named origin", async () => {
+    productionEnv();
+    mockRequestHosts({
+      "x-forwarded-host": "locateflow.com",
+      host: "locateflow-staging-owew7.ondigitalocean.app",
+    });
+    const { default: robots } = await import("./robots");
+
+    const result = await robots();
+    const serialized = JSON.stringify(result);
+
+    expect(serialized).toContain('"allow":"/"');
+    expect(serialized).not.toBe(JSON.stringify({ rules: [{ userAgent: "*", disallow: "/" }] }));
+  });
+
   it("generates a non-empty production sitemap with only canonical public URLs", async () => {
     productionEnv();
     mockBlogPosts([]);
@@ -84,6 +121,107 @@ describe("production SEO launch surfaces", () => {
     expect(urls).not.toContain("https://locateflow.com/api/health");
     expect(urls).not.toContain("https://locateflow.com/dashboard");
     expect(urls).not.toContain("https://admin.locateflow.com");
+  });
+
+  it("includes published, non-noIndex blog posts with lastmod from updatedAt", async () => {
+    productionEnv();
+    const updatedAt = new Date("2026-04-15T10:30:00.000Z");
+    mockBlogPosts([
+      { slug: "weekend-address-update", updatedAt, locale: "en" },
+      { slug: "weekend-address-update", updatedAt, locale: "es" },
+      { slug: "winter-move-savings", updatedAt: new Date("2026-03-01T00:00:00.000Z"), locale: "en" },
+    ]);
+    const { default: sitemap } = await import("./sitemap");
+
+    const entries = await sitemap();
+    const byUrl = new Map(entries.map((entry) => [entry.url, entry]));
+
+    expect(byUrl.has("https://locateflow.com/blog/weekend-address-update")).toBe(true);
+    expect(byUrl.has("https://locateflow.com/blog/weekend-address-update?locale=es")).toBe(true);
+    expect(byUrl.has("https://locateflow.com/blog/winter-move-savings")).toBe(true);
+
+    const enEntry = byUrl.get("https://locateflow.com/blog/weekend-address-update");
+    expect(enEntry?.lastModified).toEqual(updatedAt);
+    expect(enEntry?.changeFrequency).toBe("weekly");
+
+    const languages = (enEntry?.alternates?.languages ?? {}) as Record<string, string>;
+    expect(languages["en-US"]).toBe("https://locateflow.com/blog/weekend-address-update");
+    expect(languages["es-US"]).toBe("https://locateflow.com/blog/weekend-address-update?locale=es");
+  });
+
+  it("queries the DB with filters that exclude drafts, scheduled, deleted, future-dated, and noIndex posts", async () => {
+    productionEnv();
+    const { findMany } = mockBlogPosts([]);
+    const { default: sitemap } = await import("./sitemap");
+
+    await sitemap();
+
+    expect(findMany).toHaveBeenCalledTimes(1);
+    const calls = findMany.mock.calls as unknown as Array<
+      [
+        {
+          where: Record<string, unknown>;
+          take: number;
+          orderBy: unknown;
+        },
+      ]
+    >;
+    const args = calls[0][0];
+    expect(args.where.status).toBe("PUBLISHED");
+    expect(args.where.deletedAt).toBeNull();
+    expect(args.where.noIndex).toBe(false);
+
+    const publishedAt = args.where.publishedAt as { lte: Date };
+    expect(publishedAt.lte).toBeInstanceOf(Date);
+    expect(publishedAt.lte.getTime()).toBeLessThanOrEqual(Date.now() + 1000);
+
+    expect(args.take).toBeLessThanOrEqual(50000);
+    expect(args.orderBy).toEqual({ publishedAt: "desc" });
+  });
+
+  it("never lists /blog/preview/* paths in the sitemap", async () => {
+    productionEnv();
+    mockBlogPosts([
+      { slug: "real-post", updatedAt: new Date("2026-04-15T10:30:00.000Z"), locale: "en" },
+    ]);
+    const { default: sitemap } = await import("./sitemap");
+
+    const urls = (await sitemap()).map((entry) => entry.url);
+
+    expect(urls.every((url) => !url.includes("/blog/preview"))).toBe(true);
+  });
+
+  it("returns empty sitemap on staging-like canonical environment so QA hosts cannot leak", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_ENV", "staging");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://locateflow-staging-xyz.ondigitalocean.app");
+    vi.stubEnv("SITE_URL", "https://locateflow-staging-xyz.ondigitalocean.app");
+    mockBlogPosts([
+      { slug: "should-not-appear", updatedAt: new Date(), locale: "en" },
+    ]);
+    const { default: sitemap } = await import("./sitemap");
+
+    await expect(sitemap()).resolves.toEqual([]);
+  });
+
+  it("falls back to static entries and logs when the DB query fails", async () => {
+    productionEnv();
+    mockBlogPostsThrowing(new Error("ECONNREFUSED"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { default: sitemap } = await import("./sitemap");
+
+    const entries = await sitemap();
+    const urls = entries.map((entry) => entry.url);
+
+    expect(urls).toContain("https://locateflow.com");
+    expect(urls).toContain("https://locateflow.com/pricing");
+    expect(urls.some((url) => url.startsWith("https://locateflow.com/blog/"))).toBe(false);
+    expect(warn).toHaveBeenCalledWith(
+      "sitemap_blog_query_failed",
+      expect.objectContaining({ error: "ECONNREFUSED" }),
+    );
+
+    warn.mockRestore();
   });
 
   it("serves a useful production llms.txt rather than the noindex placeholder", async () => {

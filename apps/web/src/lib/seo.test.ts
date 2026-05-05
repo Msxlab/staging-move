@@ -24,6 +24,26 @@ describe("SEO helpers", () => {
     expect(seo.isNoIndexEnvironment("https://locateflow.com")).toBe(false);
   });
 
+  it("treats explicit production env plus the canonical production host as indexable", async () => {
+    vi.resetModules();
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://locateflow.com");
+    const seo = await import("./seo");
+
+    expect(seo.getCanonicalSiteUrl()).toBe("https://locateflow.com");
+    expect(seo.isNoIndexEnvironment("https://locateflow.com")).toBe(false);
+  });
+
+  it("does not let a staging origin host override a real production host", async () => {
+    vi.resetModules();
+    const seo = await import("./seo");
+
+    expect(seo.shouldBlockForRequestHosts(["locateflow-staging-owew7.ondigitalocean.app"])).toBe(true);
+    expect(seo.shouldBlockForRequestHosts(["locateflow-staging-owew7.ondigitalocean.app", "locateflow.com"])).toBe(false);
+    expect(seo.shouldBlockForRequestHosts(["www.locateflow.com"])).toBe(false);
+  });
+
   it("treats local development hosts as noindex", async () => {
     vi.resetModules();
     const seo = await import("./seo");

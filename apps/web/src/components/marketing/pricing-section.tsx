@@ -1,9 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  Download,
+  FileText,
+  Home,
+  Languages,
+  Map,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Truck,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
+
+type IndividualFeature = { icon: LucideIcon; label: string; desc: string };
+
+const INDIVIDUAL_FEATURES: IndividualFeature[] = [
+  { icon: Home, label: "Up to 10 homes", desc: "Primary, rental, family, second home — each with its own services." },
+  { icon: Building2, label: "Service provider records", desc: "Account #, login, contract, contacts, auto-renewal." },
+  { icon: Bell, label: "Bills & renewal reminders", desc: "Email + in-app alerts before due and renew dates." },
+  { icon: Wallet, label: "Per-home monthly budgets", desc: "Planned vs actual, savings rate, category breakdown." },
+  { icon: Truck, label: "Smart moving planner", desc: "From → to address, move date, auto-suggested move tasks." },
+  { icon: FileText, label: "Document storage", desc: "Leases, bills, receipts, proof-of-address — attached per service." },
+  { icon: Map, label: "US state-by-state guidance", desc: "DMV, voter, utility, tax & insurance notes for moves." },
+  { icon: Smartphone, label: "Web + iOS + Android", desc: "One subscription, all devices, synced." },
+  { icon: Languages, label: "English & Español", desc: "Full UI translations." },
+  { icon: Download, label: "Export anytime (CSV & PDF)", desc: "Your data, downloadable whenever you want." },
+];
+
+function FeatureGrid() {
+  return (
+    <ul className="mt-2 grid gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
+      {INDIVIDUAL_FEATURES.map(({ icon: Icon, label, desc }) => (
+        <li key={label} className="flex items-start gap-2.5">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+          <span className="leading-snug">
+            <span className="block font-medium text-foreground">{label}</span>
+            <span className="block text-xs text-muted-foreground">{desc}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function parseAmount(label: string | null | undefined): number | null {
   if (!label) return null;
@@ -121,10 +168,10 @@ export function PricingSection({
       </div>
 
       <div className={hasTwoOffers
-        ? "mx-auto grid max-w-6xl gap-6 lg:grid-cols-3"
+        ? "mx-auto grid max-w-5xl gap-6 md:grid-cols-2"
         : "mx-auto grid max-w-4xl gap-6 md:grid-cols-[1.1fr_0.9fr]"}
       >
-        <div className="rounded-2xl border-2 border-primary bg-card p-7 shadow-lg">
+        <div className="flex flex-col rounded-2xl border-2 border-primary bg-card p-7 shadow-lg">
           <div className="mb-5">
             <p className="text-sm font-medium text-primary">{planIntro}</p>
             <h3 className="mt-2 text-2xl font-semibold">{plan.displayName}</h3>
@@ -141,76 +188,123 @@ export function PricingSection({
             {annualOffer?.trialLabel ? (
               <p className="mt-1 text-xs text-muted-foreground">Today: $0</p>
             ) : null}
-            {annualSavings ? (
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
-                Save ${annualSavings.savedUsd.toFixed(annualSavings.savedUsd % 1 === 0 ? 0 : 2)}/year vs monthly
-                <span className="text-emerald-500/70">({annualSavings.percent}% off)</span>
-              </div>
-            ) : null}
-            {annualOffer?.trialLabel ? (
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-                <Sparkles className="h-3 w-3" /> First 3 months free
-              </div>
-            ) : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {annualSavings ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
+                  Save ${annualSavings.savedUsd.toFixed(annualSavings.savedUsd % 1 === 0 ? 0 : 2)}/year vs monthly
+                  <span className="text-emerald-500/70">({annualSavings.percent}% off)</span>
+                </span>
+              ) : null}
+              {annualOffer?.trialLabel ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                  <Sparkles className="h-3 w-3" /> First 3 months free
+                </span>
+              ) : null}
+            </div>
           </div>
 
-          <ul className="space-y-2.5 text-sm">
-            {plan.features.map((feature) => (
-              <li key={feature} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="rounded-xl border bg-background/40 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Everything included
+            </p>
+            <FeatureGrid />
+          </div>
 
-          <Link href={ctaHref} className="mt-7 block">
-            <Button className="w-full">
-              {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn, primaryCtaOffer)}
-            </Button>
-          </Link>
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            Trial length, price, renewal date, and payment method requirements are shown before you subscribe.
-          </p>
+          <div className="mt-auto pt-7">
+            <Link href={ctaHref} className="block">
+              <Button className="w-full">
+                {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn, primaryCtaOffer)}
+              </Button>
+            </Link>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              Trial length, price, renewal date, and payment method requirements are shown before you subscribe.
+            </p>
+          </div>
         </div>
 
         {annualOffer && monthlyOffer ? (
-          <div className="rounded-2xl border bg-card p-7">
+          <div className="flex flex-col rounded-2xl border bg-card p-7">
             <div className="mb-5">
               <p className="text-sm font-medium text-primary">Monthly billing</p>
               <h3 className="mt-2 text-2xl font-semibold">Individual Monthly</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Prefer a simple monthly plan without the annual trial.
+                Same Individual plan, billed monthly. Cancel anytime, no annual commitment.
               </p>
             </div>
             <div className="mb-6">
-              <span className="text-4xl font-bold tracking-tight">{splitPriceLabel(monthlyOffer.displayPriceLabel).amount}</span>
+              <span className="text-5xl font-bold tracking-tight">{splitPriceLabel(monthlyOffer.displayPriceLabel).amount}</span>
               <span className="text-muted-foreground">{splitPriceLabel(monthlyOffer.displayPriceLabel).suffix}</span>
+              {(() => {
+                const monthly = parseAmount(monthlyOffer.displayPriceLabel);
+                const annual = parseAmount(yearlyPrice);
+                if (!monthly || !annual) return null;
+                const yearOfMonthly = monthly * 12;
+                if (yearOfMonthly <= annual) return null;
+                return (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    ≈ ${yearOfMonthly.toFixed(yearOfMonthly % 1 === 0 ? 0 : 2)}/year billed monthly
+                  </p>
+                );
+              })()}
             </div>
-            <Link href={ctaHref} className="block">
-              <Button variant="outline" className="w-full">
-                {ctaIntent === "manage" ? "Manage subscription" : monthlyOffer.ctaText}
-              </Button>
-            </Link>
+            <div className="rounded-xl border bg-background/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                What you get
+              </p>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Every feature in the annual plan — homes, services, reminders, budgets, moving planner, document storage, exports, and apps. Just paid month-to-month.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <span className="leading-snug">
+                    <span className="block font-medium text-foreground">Cancel anytime</span>
+                    <span className="block text-xs text-muted-foreground">No annual commitment, no early-cancel fee.</span>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <span className="leading-snug">
+                    <span className="block font-medium text-foreground">No trial period</span>
+                    <span className="block text-xs text-muted-foreground">Pay for the first month today, renews monthly until cancelled.</span>
+                  </span>
+                </li>
+              </ul>
+            </div>
+            <div className="mt-auto pt-7">
+              <Link href={ctaHref} className="block">
+                <Button variant="outline" className="w-full">
+                  {ctaIntent === "manage" ? "Manage subscription" : monthlyOffer.ctaText}
+                </Button>
+              </Link>
+              <p className="mt-3 text-center text-[11px] text-muted-foreground">
+                No trial on monthly. Renews each month until you cancel from Settings.
+              </p>
+            </div>
           </div>
         ) : null}
+      </div>
 
-        <div className="rounded-2xl border bg-muted/30 p-7">
-          <div className="mb-4 flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Clear subscription terms</h3>
-          </div>
-          <div className="space-y-4 text-sm leading-6 text-muted-foreground">
-            <p>Free Access and Free Trial are separate. Free Access does not require a payment method and does not auto-charge.</p>
-            <p>The Individual Annual trial requires a payment method. Checkout shows today&apos;s due amount, trial length, first charge date, and annual renewal terms.</p>
-            <p>The Individual Monthly option starts today and renews monthly when a monthly campaign is active.</p>
-            <p>You can cancel trial or renewal online from Settings. Refund eligibility is handled under the Refund Policy and store rules when applicable.</p>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-3 text-sm">
-            <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
-            <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
-            <Link href="/refund" className="underline hover:text-foreground">Refund Policy</Link>
-            <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
-          </div>
+      <div className={`mx-auto mt-6 rounded-2xl border bg-muted/30 p-7 ${hasTwoOffers ? "max-w-5xl" : "max-w-4xl"}`}>
+        <div className="mb-4 flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Clear subscription terms</h3>
+        </div>
+        <div className="grid gap-4 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
+          <p>Free Access and Free Trial are separate. Free Access does not require a payment method and does not auto-charge.</p>
+          <p>The Individual Annual trial requires a payment method. Checkout shows today&apos;s due amount, trial length, first charge date, and annual renewal terms.</p>
+          <p>The Individual Monthly option starts today and renews monthly when a monthly campaign is active.</p>
+          <p>You can cancel trial or renewal online from Settings. Refund eligibility is handled under the Refund Policy and store rules when applicable.</p>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
+          <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
+          <Link href="/refund" className="underline hover:text-foreground">Refund Policy</Link>
+          <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
         </div>
       </div>
     </section>

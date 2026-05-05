@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
 import {
@@ -6,6 +7,11 @@ import {
   requireAppleEnvironmentForBilling,
   validateStripeSecretKeyForEnv,
 } from "@/lib/billing-config";
+import {
+  getCanonicalSiteUrl,
+  isNoIndexEnvironment,
+  shouldBlockForRequestHosts,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +30,45 @@ function isProductionLikeRuntime() {
     appEnv === "preview" ||
     Boolean(process.env.DIGITALOCEAN_APP_ID)
   );
+}
+
+async function getSeoDiagnostics() {
+  const h = await headers();
+  const forwardedHost = h.get("x-forwarded-host")?.split(",")[0]?.trim() || null;
+  const host = h.get("host")?.split(",")[0]?.trim() || null;
+  const canonicalSiteUrl = getCanonicalSiteUrl();
+  const environmentBlocksIndexing = isNoIndexEnvironment(canonicalSiteUrl);
+  const hostBlocksIndexing = shouldBlockForRequestHosts([forwardedHost, host]);
+  const shouldIndexPublicPages = !environmentBlocksIndexing && !hostBlocksIndexing;
+
+  return {
+    appEnv: process.env.APP_ENV || null,
+    nodeEnv: process.env.NODE_ENV || null,
+    nextPublicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL || null,
+    siteUrl: process.env.SITE_URL || null,
+    nextPublicAppUrl: process.env.NEXT_PUBLIC_APP_URL || null,
+    nextPublicAdminUrl: process.env.NEXT_PUBLIC_ADMIN_URL || null,
+    forwardedHost,
+    host,
+    canonicalSiteUrl,
+    environmentBlocksIndexing,
+    hostBlocksIndexing,
+    shouldIndexPublicPages,
+    seoMode: shouldIndexPublicPages ? "indexable" : "blocked",
+    blockedReason: shouldIndexPublicPages
+      ? null
+      : [
+          environmentBlocksIndexing ? "environment-or-canonical" : null,
+          hostBlocksIndexing ? "request-host" : null,
+        ].filter(Boolean).join(", "),
+    digitalOceanAppIdPresent: Boolean(process.env.DIGITALOCEAN_APP_ID),
+    commitSha:
+      process.env.SOURCE_COMMIT ||
+      process.env.GIT_COMMIT_SHA ||
+      process.env.COMMIT_SHA ||
+      process.env.DIGITALOCEAN_GIT_COMMIT_SHA ||
+      null,
+  };
 }
 
 async function timed<T>(
@@ -218,6 +263,7 @@ export async function GET() {
     heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
     heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
   };
+  const seo = await getSeoDiagnostics();
 
   return NextResponse.json(
     {
@@ -226,6 +272,7 @@ export async function GET() {
       version: process.env.npm_package_version || "unknown",
       uptimeSec: Math.floor(process.uptime()),
       memory: memInfo,
+      seo,
       checks,
     },
     { status: healthy ? 200 : 503 },
