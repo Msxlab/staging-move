@@ -22,11 +22,11 @@ describe("PricingSection", () => {
           accessType: "FREE_TRIAL",
           publicHeadline: "Start with 90 days free",
           publicSubheadline: "Individual Annual starts after your trial.",
-          displayPriceLabel: "$79/year",
+          displayPriceLabel: "$39.99/year",
           trialDays: 90,
           billingInterval: "YEAR",
           ctaText: "Start 3 months free",
-          priceCopy: "$79/year after trial",
+          priceCopy: "$39.99/year after trial",
           trialLabel: "3 months",
         }}
       />,
@@ -34,7 +34,7 @@ describe("PricingSection", () => {
 
     expect(html).toContain("Start with 90 days free");
     expect(html).toContain("Individual Annual starts after your trial.");
-    expect(html).toContain("$79");
+    expect(html).toContain("$39.99");
     expect(html).toContain("/year after trial");
     expect(html).toContain("Start 3 months free");
   });
@@ -55,6 +55,19 @@ describe("PricingSection", () => {
     expect(html).not.toContain("3 months free, then annual billing");
   });
 
+  it("can render the section headline as an h1 on the standalone pricing page", () => {
+    const html = renderToStaticMarkup(
+      <PricingSection
+        ctaHref="/sign-up"
+        ctaLabelLoggedIn={false}
+        headingLevel="h1"
+      />,
+    );
+
+    expect(html).toContain("<h1");
+    expect(html).toContain("Individual");
+  });
+
   it("renders annual and monthly campaign offers together", () => {
     const html = renderToStaticMarkup(
       <PricingSection
@@ -66,22 +79,22 @@ describe("PricingSection", () => {
             accessType: "FREE_TRIAL",
             publicHeadline: "Start with 90 days free",
             publicSubheadline: "Individual Annual starts after your trial.",
-            displayPriceLabel: "$79/year",
+            displayPriceLabel: "$39.99/year",
             trialDays: 90,
             billingInterval: "YEAR",
             ctaText: "Start 3 months free",
-            priceCopy: "$79/year after trial",
+            priceCopy: "$39.99/year after trial",
             trialLabel: "3 months",
           },
           monthlyPaid: {
             accessType: "PAID",
             publicHeadline: "Subscribe monthly",
             publicSubheadline: "Simple monthly billing.",
-            displayPriceLabel: "$9/month",
+            displayPriceLabel: "$3.99/month",
             trialDays: null,
             billingInterval: "MONTH",
             ctaText: "Subscribe monthly",
-            priceCopy: "$9/month",
+            priceCopy: "$3.99/month",
             trialLabel: null,
           },
         }}
@@ -90,7 +103,7 @@ describe("PricingSection", () => {
 
     expect(html).toContain("Start with 90 days free");
     expect(html).toContain("Individual Monthly");
-    expect(html).toContain("$9");
+    expect(html).toContain("$3.99");
     expect(html).toContain("/month");
     expect(html).toContain("Subscribe monthly");
   });

@@ -5,6 +5,28 @@ import { Check, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 
+function parseAmount(label: string | null | undefined): number | null {
+  if (!label) return null;
+  const match = label.match(/([0-9]+(?:\.[0-9]{1,2})?)/);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function computeAnnualSavings(
+  annualLabel: string | null | undefined,
+  monthlyLabel: string | null | undefined,
+): { savedUsd: number; percent: number } | null {
+  const annual = parseAmount(annualLabel);
+  const monthly = parseAmount(monthlyLabel);
+  if (!annual || !monthly) return null;
+  const yearOfMonthly = monthly * 12;
+  if (yearOfMonthly <= annual) return null;
+  const savedUsd = yearOfMonthly - annual;
+  const percent = Math.round((savedUsd / yearOfMonthly) * 100);
+  return { savedUsd, percent };
+}
+
 type PublicCampaignForPricing = {
   accessType?: string | null;
   publicHeadline: string;
@@ -28,6 +50,7 @@ interface PricingSectionProps {
   ctaIntent?: "anonymous" | "manage" | "upgrade";
   campaign?: PublicCampaignForPricing | null;
   offers?: PublicOffersForPricing | null;
+  headingLevel?: "h1" | "h2";
 }
 
 function resolveCtaLabel(
@@ -54,12 +77,13 @@ export function PricingSection({
   ctaIntent,
   campaign,
   offers,
+  headingLevel = "h2",
 }: PricingSectionProps) {
   const plan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
   const annualOffer = offers?.annualTrial ?? campaign ?? null;
   const monthlyOffer = offers?.monthlyPaid ?? null;
   const primaryOffer = annualOffer || monthlyOffer;
-  const yearlyPrice = primaryOffer?.displayPriceLabel || plan.yearlyPriceLabel || "$79/year";
+  const yearlyPrice = primaryOffer?.displayPriceLabel || plan.yearlyPriceLabel || `$${plan.yearlyPriceUsd ?? 39.99}/year`;
   const price = splitPriceLabel(yearlyPrice);
   const headline = annualOffer?.publicHeadline || monthlyOffer?.publicHeadline || plan.displayName;
   const subheadline =
@@ -73,6 +97,15 @@ export function PricingSection({
       : "Individual billing";
   const primaryCtaOffer = annualOffer || monthlyOffer;
   const hasTwoOffers = Boolean(annualOffer && monthlyOffer);
+  // Show savings only when both real prices are visible. If we are falling
+  // back to the canonical plan label and no monthly campaign is live, the
+  // homepage cannot truthfully claim annual saves vs monthly because only
+  // one price is on screen — so suppress the badge in that case.
+  const monthlyLabelForSavings = monthlyOffer?.displayPriceLabel || (annualOffer ? `$${plan.monthlyPriceUsd}/month` : null);
+  const annualSavings = annualOffer && monthlyLabelForSavings
+    ? computeAnnualSavings(yearlyPrice, monthlyLabelForSavings)
+    : null;
+  const Heading = headingLevel;
 
   return (
     <section id="pricing" className="container py-20">
@@ -81,7 +114,7 @@ export function PricingSection({
           <Sparkles className="h-3.5 w-3.5 text-primary" />
           Individual
         </div>
-        <h2 className="text-3xl font-bold mb-4">{headline}</h2>
+        <Heading className="text-3xl font-bold mb-4">{headline}</Heading>
         <p className="text-muted-foreground text-lg">
           {subheadline}
         </p>
@@ -107,6 +140,17 @@ export function PricingSection({
             </span>
             {annualOffer?.trialLabel ? (
               <p className="mt-1 text-xs text-muted-foreground">Today: $0</p>
+            ) : null}
+            {annualSavings ? (
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
+                Save ${annualSavings.savedUsd.toFixed(annualSavings.savedUsd % 1 === 0 ? 0 : 2)}/year vs monthly
+                <span className="text-emerald-500/70">({annualSavings.percent}% off)</span>
+              </div>
+            ) : null}
+            {annualOffer?.trialLabel ? (
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                <Sparkles className="h-3 w-3" /> First 3 months free
+              </div>
             ) : null}
           </div>
 

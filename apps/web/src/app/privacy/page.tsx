@@ -1,16 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Database, Lock, Shield, UserCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { createPublicPageMetadata } from "@/lib/seo";
 import { LEGAL_CONTACTS, LEGAL_INFO, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Privacy Policy",
   description: "How LocateFlow handles account, address, service, moving, billing, analytics, mobile, support, and security data.",
-  alternates: {
-    canonical: "/privacy",
-  },
-};
+  path: "/privacy",
+});
 
 const highlights = [
   {

@@ -49,7 +49,7 @@ export async function PUT(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, entry });
+    return NextResponse.json({ success: true });
   } catch (e: any) {
     if (e.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });

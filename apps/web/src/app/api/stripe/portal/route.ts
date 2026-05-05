@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { getConfiguredAppUrl } from "@/lib/app-url";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureMessage } from "@/lib/sentry";
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
-    const appUrl = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = await getConfiguredAppUrl();
 
     const session = await stripe.billingPortal.sessions.create({
       customer: subscription.stripeCustomerId,
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    if (error?.name === "BILLING_CONFIG_ERROR") {
+    if (error?.name === "BILLING_CONFIG_ERROR" || error?.name === "APP_URL_CONFIG_ERROR") {
       const reason = error?.message || "Stripe not configured";
       console.error("[PORTAL] Stripe config rejected:", reason);
       captureMessage(`[PORTAL] Stripe config rejected: ${reason}`, "error");

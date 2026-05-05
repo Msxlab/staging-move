@@ -18,6 +18,46 @@ export type RuntimeConfigCategory = (typeof RUNTIME_CONFIG_CATEGORY_VALUES)[numb
 
 export type RuntimeConfigMaskStrategy = "secret" | "id" | "url" | "email" | "plain";
 
+export const STRIPE_RUNTIME_CONFIG_OVERRIDE_FLAG = "STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED";
+
+export const ENV_FIRST_RUNTIME_CONFIG_KEYS = [
+  "APP_URL",
+  "NEXT_PUBLIC_APP_URL",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+  "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+  "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+  "STRIPE_ANNUAL_TRIAL_DAYS",
+] as const;
+
+export function isEnvFirstRuntimeConfigKey(key: string): boolean {
+  return (ENV_FIRST_RUNTIME_CONFIG_KEYS as readonly string[]).includes(key);
+}
+
+export function isRuntimeConfigDbOverrideEnabled(
+  env: Record<string, string | undefined> = {},
+): boolean {
+  return env[STRIPE_RUNTIME_CONFIG_OVERRIDE_FLAG]?.trim().toLowerCase() === "true";
+}
+
+export function shouldPreferEnvRuntimeConfigValue(
+  key: string,
+  env: Record<string, string | undefined> = {},
+): boolean {
+  return isEnvFirstRuntimeConfigKey(key) && !isRuntimeConfigDbOverrideEnabled(env);
+}
+
+export function getRuntimeConfigEnvValue(
+  key: string,
+  env: Record<string, string | undefined> = {},
+): string | null {
+  if (key === "GOOGLE_MAPS_API_KEY") {
+    return env.GOOGLE_MAPS_API_KEY || env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
+  }
+  return env[key] || null;
+}
+
 export interface RuntimeConfigDefinition {
   key: string;
   label: string;
@@ -51,9 +91,19 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
-    key: "STRIPE_PRICE_INDIVIDUAL",
-    label: "Stripe Price ID — Individual (monthly)",
-    description: "Stripe recurring price identifier for the Individual monthly web plan.",
+    key: "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    label: "Stripe Publishable Key",
+    description: "Browser-safe Stripe publishable key. Public by design; never use this for server-side Stripe operations.",
+    scope: "WEB",
+    category: "BILLING",
+    isSecret: false,
+    requiredInProduction: true,
+    maskStrategy: "id",
+  },
+  {
+    key: "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+    label: "Stripe Price ID - Individual (monthly)",
+    description: "Primary Stripe recurring price identifier for the Individual monthly web plan.",
     scope: "WEB",
     category: "BILLING",
     isSecret: false,
@@ -62,8 +112,28 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   },
   {
     key: "STRIPE_PRICE_INDIVIDUAL_YEARLY",
-    label: "Stripe Price ID — Individual (yearly)",
-    description: "Stripe recurring price identifier for the Individual yearly web plan.",
+    label: "Stripe Price ID - Individual (yearly)",
+    description: "Primary Stripe recurring price identifier for the Individual yearly web plan.",
+    scope: "WEB",
+    category: "BILLING",
+    isSecret: false,
+    requiredInProduction: true,
+    maskStrategy: "id",
+  },
+  {
+    key: "STRIPE_ANNUAL_TRIAL_DAYS",
+    label: "Stripe Annual Trial Days",
+    description: "Trial length applied by web Checkout for the Individual annual Stripe plan. Defaults to 90 when unset.",
+    scope: "WEB",
+    category: "BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+  },
+  {
+    key: "STRIPE_PRICE_INDIVIDUAL",
+    label: "Stripe Price ID - Individual (legacy monthly)",
+    description: "Legacy monthly Stripe Price ID. Used only as a fallback when STRIPE_PRICE_INDIVIDUAL_MONTHLY is missing.",
     scope: "WEB",
     category: "BILLING",
     isSecret: false,
@@ -373,6 +443,16 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
+    key: "APP_URL",
+    label: "Canonical App URL",
+    description: "Server-side canonical public URL used for billing redirects and backend-generated links.",
+    scope: "GLOBAL",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: true,
+    maskStrategy: "url",
+  },
+  {
     key: "NEXT_PUBLIC_APP_URL",
     label: "Public App URL",
     description: "Canonical public URL used for redirects, emails, and links.",
@@ -498,8 +578,18 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   },
   {
     key: "MOBILE_IOS_PRODUCT_INDIVIDUAL",
-    label: "iOS Product ID — Individual",
+    label: "iOS Product ID — Individual (monthly)",
     description: "App Store product identifier for the Individual monthly mobile subscription.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY",
+    label: "iOS Product ID — Individual (annual)",
+    description: "App Store product identifier for the Individual annual mobile subscription. The 3-month free trial is configured as an introductory offer in App Store Connect, not in this app.",
     scope: "MOBILE",
     category: "MOBILE_BILLING",
     isSecret: false,
@@ -548,8 +638,18 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   },
   {
     key: "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
-    label: "Android Product ID — Individual",
+    label: "Android Product ID — Individual (monthly)",
     description: "Google Play product/subscription identifier for the Individual monthly mobile plan.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
+    key: "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY",
+    label: "Android Product ID — Individual (annual)",
+    description: "Google Play product/subscription identifier for the Individual annual mobile plan. The 3-month free trial is a Play Console base-plan offer, not a flag set by this app.",
     scope: "MOBILE",
     category: "MOBILE_BILLING",
     isSecret: false,

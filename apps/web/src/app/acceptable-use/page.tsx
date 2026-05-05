@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import { Ban, ShieldAlert, UsersRound, Wrench } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { policyLastUpdatedLabel } from "@/lib/legal-info";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Acceptable Use Policy",
   description: "What you can and can't do on LocateFlow.",
-  alternates: { canonical: "/acceptable-use" },
-};
+  path: "/acceptable-use",
+});
 
 const highlights = [
   {

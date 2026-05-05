@@ -36,11 +36,14 @@ async function requestHostLooksStaging() {
 }
 
 const STATIC_DOCS = [
+  { title: "About LocateFlow", path: "/about", note: "Plain-language product and entity definition." },
   { title: "How LocateFlow works", path: "/how-it-works", note: "Product overview." },
   { title: "Pricing", path: "/pricing", note: "Plans, free trial, refunds." },
+  { title: "Provider coverage", path: "/provider-coverage", note: "Provider availability and verification limits." },
   { title: "FAQ", path: "/faq", note: "Common questions about the service." },
   { title: "Security", path: "/security", note: "Data handling, encryption, MFA." },
   { title: "Privacy policy", path: "/privacy", note: "What we collect and why." },
+  { title: "Data export and deletion", path: "/data-deletion", note: "Export, deletion, and retention limits." },
   { title: "Terms of service", path: "/terms", note: "Legal terms." },
   { title: "Billing policy", path: "/billing-policy", note: "Subscription, cancellation, and refund terms." },
   { title: "Contact", path: "/contact", note: "Reach the team." },
@@ -93,6 +96,8 @@ export async function GET() {
   lines.push(
     "> LocateFlow is a web app for organizing address-tied services, renewal reminders, moving tasks, household documents, and exportable relocation records.",
   );
+  lines.push("");
+  lines.push("Pricing summary: public pricing may include an Individual Monthly option at $3.99/month and an Individual Annual option at $39.99/year. Annual promotional checkout can include a 90-day free trial when the active campaign is configured, and checkout controls the final trial, payment-method, renewal, and cancellation disclosure.");
   lines.push("");
   lines.push("Public crawl policy: search and answer-engine retrieval crawlers may read the public pages listed here. Authenticated app routes, admin routes, token routes, and private APIs are intentionally excluded.");
   lines.push("");

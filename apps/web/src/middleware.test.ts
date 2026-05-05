@@ -90,7 +90,26 @@ describe("web middleware auth boundaries", () => {
     expect(postResponse.headers.get("x-middleware-next")).toBe("1");
   });
 
+  it("lets SEO explanation pages and generated Open Graph image render without a session", async () => {
+    const publicPaths = [
+      "/about",
+      "/provider-coverage",
+      "/data-deletion",
+      "/opengraph-image",
+    ];
+
+    for (const path of publicPaths) {
+      const response = await middleware(request(`https://locateflow.com${path}`));
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-next")).toBe("1");
+      expect(response.headers.get("location")).toBeNull();
+      expect(response.headers.get("x-robots-tag")).toBeNull();
+    }
+  });
+
   it("lets public blog API routes reach route-level handling without a session", async () => {
+    const campaignResponse = await middleware(request("https://locateflow.com/api/acquisition/public-trial-campaign"));
     const listResponse = await middleware(request("https://locateflow.com/api/blog/posts"));
     const postResponse = await middleware(request("https://locateflow.com/api/blog/posts/moving-checklist"));
     const imageResponse = await middleware(request("https://locateflow.com/api/blog/image?key=blog/test.jpg"));
@@ -110,6 +129,9 @@ describe("web middleware auth boundaries", () => {
       }),
     );
 
+    expect(campaignResponse.status).toBe(200);
+    expect(campaignResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(campaignResponse.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
     expect(listResponse.status).toBe(200);
     expect(listResponse.headers.get("x-middleware-next")).toBe("1");
     expect(postResponse.status).toBe(200);

@@ -34,7 +34,7 @@ ENV ADMIN_JWT_SECRET=build_time_admin_secret_32_chars_minimum
 ENV USER_JWT_SECRET=build_time_user_secret_32_chars_minimum
 ENV FIELD_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
 ENV CRON_SECRET=build_time_cron_secret_32_chars_minimum
-ENV NEXT_PUBLIC_APP_URL=https://app.locateflow.com
+ENV NEXT_PUBLIC_APP_URL=https://locateflow.com
 
 WORKDIR /workspace
 
@@ -55,6 +55,8 @@ RUN pnpm --filter @locateflow/db exec prisma generate \
 
 FROM node:25-bookworm-slim AS runner
 ENV NODE_ENV=production
+ENV APP_ENV=production
+ENV NEXT_PUBLIC_APP_URL=https://locateflow.com
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3001
 ENV HOSTNAME=0.0.0.0

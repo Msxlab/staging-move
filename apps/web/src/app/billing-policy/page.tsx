@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CalendarClock, CreditCard, ReceiptText, Store } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_CONTACTS, STORE_PURCHASE_DISTINCTION, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Billing Policy",
   description: "LocateFlow subscription billing, trials, renewals, cancellation, failed payments, taxes, and store-purchase terms.",
-  alternates: { canonical: "/billing-policy" },
-};
+  path: "/billing-policy",
+});
 
 const highlights = [
   {

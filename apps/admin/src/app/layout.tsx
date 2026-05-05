@@ -36,6 +36,14 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "LocateFlow Admin",
   description: "LocateFlow Administration Panel",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

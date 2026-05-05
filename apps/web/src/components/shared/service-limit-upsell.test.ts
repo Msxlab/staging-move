@@ -9,14 +9,14 @@ describe("buildServiceLimitCopy", () => {
       campaign: {
         code: "SPRING90",
         publicHeadline: "Start with 90 days free",
-        displayPriceLabel: "$79/year",
+        displayPriceLabel: "$39.99/year",
         trialDays: 90,
       },
     });
     expect(copy.title).toBe("You've reached your service limit");
     expect(copy.body).toContain("Free Access includes up to 10 active services");
     expect(copy.body).toContain("Start with 90 days free");
-    expect(copy.body).toContain("$79/year after trial");
+    expect(copy.body).toContain("$39.99/year after trial");
     expect(copy.primary).toBe("Start with 90 days free");
     expect(copy.secondary).toBe("Maybe later");
   });
@@ -65,7 +65,7 @@ describe("buildServiceLimitCopy", () => {
       campaign: {
         code: "SPRING90",
         publicHeadline: "Start with 90 days free",
-        displayPriceLabel: "$79/year",
+        displayPriceLabel: "$39.99/year",
         trialDays: 90,
       },
     });
@@ -87,7 +87,7 @@ describe("buildServiceLimitCopy", () => {
       monthlyOffer: {
         code: "MONTHLY",
         publicHeadline: "Subscribe monthly",
-        displayPriceLabel: "$9/month",
+        displayPriceLabel: "$3.99/month",
         trialDays: null,
         accessType: "PAID",
         billingInterval: "MONTH",
@@ -96,7 +96,7 @@ describe("buildServiceLimitCopy", () => {
 
     expect(copy.body).toContain("Free Access includes up to 10 active services");
     expect(copy.body).toContain("Subscribe monthly to keep adding services");
-    expect(copy.body).toContain("$9/month");
+    expect(copy.body).toContain("$3.99/month");
     expect(copy.body).not.toContain("after trial");
     expect(copy.primary).toBe("Subscribe monthly");
   });

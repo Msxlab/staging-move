@@ -23,6 +23,28 @@ preview, or Vercel preview URLs. The code falls back to `https://locateflow.com`
 for unsafe production canonical values, but deployment config should still be
 fixed before indexing.
 
+Before submitting to Google or Bing, confirm the live production domain is not
+running with staging flags:
+
+```bash
+curl -I https://locateflow.com/ | grep -i x-robots-tag
+curl https://locateflow.com/robots.txt
+curl https://locateflow.com/sitemap.xml
+```
+
+Expected production result: no `X-Robots-Tag: noindex` header on public pages,
+`robots.txt` allows public routes, and `sitemap.xml` contains the public URLs.
+If the live domain returns `Disallow: /`, an empty sitemap, or a noindex header,
+fix `APP_ENV=production`, `NEXT_PUBLIC_SITE_URL=https://locateflow.com`, and
+`SITE_URL=https://locateflow.com` before requesting indexing.
+
+DigitalOcean App Platform requires a rebuild, not only a restart, after these
+values change. `NEXT_PUBLIC_*` values are available to Next.js at build time,
+and the standalone output can preserve old canonical/noindex behavior if the
+image or build artifact is not regenerated. Use **DigitalOcean -> App ->
+Deployments -> Force rebuild and deploy** for the web component that serves
+`locateflow.com`.
+
 ## Google Search Console
 
 1. Create a Domain property for the canonical domain, or a URL-prefix property for the exact production origin.
@@ -49,6 +71,7 @@ fixed before indexing.
 - `GPTBot`, `Google-Extended`, `CCBot`, and `Bytespider` are disallowed by explicit robots rules.
 - Authenticated app pages, the current signed-in Help Center (`/help`), admin routes, token routes, previews, and APIs are not listed in `llms.txt`.
 - `llms.txt` is a curated discovery file, not a security boundary.
+- `/about`, `/provider-coverage`, and `/data-deletion` are public explanation pages intended to improve entity clarity and answer-engine citation quality without inventing local/provider claims.
 
 ## Public Help Center Follow-Up
 
