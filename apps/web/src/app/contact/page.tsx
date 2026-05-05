@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { createPublicPageMetadata } from "@/lib/seo";
 import {
   CONTACT_CONFIGURATION_NOTE,
   LEGAL_CONTACTS,
@@ -21,13 +21,11 @@ import {
   policyLastUpdatedLabel,
 } from "@/lib/legal-info";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Contact",
   description: "Legal, privacy, billing, security, and support contact paths for LocateFlow.",
-  alternates: {
-    canonical: "/contact",
-  },
-};
+  path: "/contact",
+});
 
 const contactPaths = [
   {

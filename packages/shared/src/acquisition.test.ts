@@ -19,7 +19,7 @@ describe("acquisition campaign helpers", () => {
     expect(copy).toContain("Today: $0.");
     expect(copy).toContain("Trial: 3 months.");
     expect(copy).toContain("Your annual plan starts on 2026-07-27.");
-    expect(copy).toContain("First charge: $79/year on 2026-07-27.");
+    expect(copy).toContain("First charge: $39.99/year on 2026-07-27.");
     expect(copy).toContain("You can cancel before 2026-07-27 in Settings.");
     expect(copy.toLowerCase()).not.toContain("refund");
   });
@@ -30,13 +30,13 @@ describe("acquisition campaign helpers", () => {
       accessType: "PAID",
       billingInterval: "MONTH",
       trialDays: null,
-      displayPriceLabel: "$9/month",
+      displayPriceLabel: "$3.99/month",
       requiresPaymentMethod: true,
     };
     const copy = buildCheckoutDisclosureText({ campaign, now });
 
     expect(isCampaignRedeemable(campaign, now)).toEqual({ redeemable: true });
-    expect(copy).toContain("Today: $9/month.");
+    expect(copy).toContain("Today: $3.99/month.");
     expect(copy).toContain("Your Individual subscription starts on 2026-04-28.");
     expect(copy).toContain("Renews monthly.");
     expect(copy).not.toContain("Trial:");
@@ -66,7 +66,7 @@ describe("acquisition campaign helpers", () => {
       name: "Spring Individual",
       code: "SPRING90",
       stripePriceId: "price_annual",
-      displayPriceLabel: "$79/year",
+      displayPriceLabel: "$39.99/year",
     });
     const snapshot = buildCampaignSnapshot({
       campaign,
@@ -76,7 +76,7 @@ describe("acquisition campaign helpers", () => {
     });
 
     campaign.name = "Edited later";
-    campaign.displayPriceLabel = "$99/year";
+    campaign.displayPriceLabel = "$49.99/year";
 
     expect(snapshot).toMatchObject({
       campaignId: "camp_1",
@@ -87,7 +87,7 @@ describe("acquisition campaign helpers", () => {
       interval: "YEAR",
       trialDaysAtSignup: 90,
       stripePriceIdAtSignup: "price_annual",
-      displayPriceAtSignup: "$79/year",
+      displayPriceAtSignup: "$39.99/year",
       autoRenewAtSignup: true,
       checkoutDisclosureTextHash: "hash_1",
     });
@@ -102,7 +102,7 @@ describe("acquisition campaign helpers", () => {
         name: "Monthly Individual",
         code: "MONTHLY",
         stripePriceId: "price_monthly",
-        displayPriceLabel: "$9/month",
+        displayPriceLabel: "$3.99/month",
       }),
       accessType: "PAID",
       billingInterval: "MONTH",
@@ -125,8 +125,8 @@ describe("acquisition campaign helpers", () => {
       interval: "MONTH",
       trialDaysAtSignup: null,
       stripePriceIdAtSignup: "price_monthly",
-      displayPriceAtSignup: "$9/month",
-      firstChargeAmount: "$9/month",
+      displayPriceAtSignup: "$3.99/month",
+      firstChargeAmount: "$3.99/month",
       checkoutDisclosureTextHash: "hash_monthly",
     });
     expect(snapshot.trialStartsAt).toBeNull();

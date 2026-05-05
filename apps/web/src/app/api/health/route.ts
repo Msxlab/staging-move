@@ -42,9 +42,13 @@ export async function GET() {
   const runtimeValues = await getRequiredRuntimeConfigValues([
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
+    "APP_URL",
+    "NEXT_PUBLIC_APP_URL",
     "STRIPE_SECRET_KEY",
-    "STRIPE_PRICE_INDIVIDUAL",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
     "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+    "STRIPE_ANNUAL_TRIAL_DAYS",
     "STRIPE_WEBHOOK_SECRET",
     "APPLE_APP_STORE_ENVIRONMENT",
     "MOBILE_IOS_PRODUCT_INDIVIDUAL",
@@ -97,9 +101,11 @@ export async function GET() {
   const stripeKeyValidation = validateStripeSecretKeyForEnv(runtimeValues.STRIPE_SECRET_KEY);
   const billingProductionLike = isBillingProductionLike();
   const missingBillingConfig = [
-    !runtimeValues.STRIPE_PRICE_INDIVIDUAL ? "STRIPE_PRICE_INDIVIDUAL" : null,
+    !runtimeValues.STRIPE_PRICE_INDIVIDUAL_MONTHLY ? "STRIPE_PRICE_INDIVIDUAL_MONTHLY" : null,
     !runtimeValues.STRIPE_PRICE_INDIVIDUAL_YEARLY ? "STRIPE_PRICE_INDIVIDUAL_YEARLY" : null,
     !runtimeValues.STRIPE_WEBHOOK_SECRET ? "STRIPE_WEBHOOK_SECRET" : null,
+    !runtimeValues.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" : null,
+    !(runtimeValues.APP_URL || runtimeValues.NEXT_PUBLIC_APP_URL) ? "APP_URL or NEXT_PUBLIC_APP_URL" : null,
   ].filter(Boolean);
   const stripeStatus =
     stripeKeyValidation.ok && missingBillingConfig.length === 0

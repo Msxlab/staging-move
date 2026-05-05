@@ -35,7 +35,7 @@ function campaign(overrides: Record<string, unknown> = {}) {
     trialDays: 90,
     freeAccessDays: null,
     stripePriceId: "price_secret",
-    displayPriceLabel: "$79/year",
+    displayPriceLabel: "$39.99/year",
     requiresPaymentMethod: true,
     autoRenew: true,
     newUsersOnly: true,
@@ -92,7 +92,7 @@ describe("acquisition campaign DB helpers", () => {
         accessType: "PAID",
         billingInterval: "MONTH",
         trialDays: null,
-        displayPriceLabel: "$9/month",
+        displayPriceLabel: "$3.99/month",
         publicHeadline: "Subscribe monthly",
       }),
     ]);
@@ -163,11 +163,11 @@ describe("acquisition campaign DB helpers", () => {
       publicHeadline: "Start with 90 days free",
       publicSubheadline: "Individual Annual starts after your trial.",
       checkoutDisclosureCopy: "Today: $0.",
-      displayPriceLabel: "$79/year",
+      displayPriceLabel: "$39.99/year",
       trialDays: 90,
       billingInterval: "YEAR",
       ctaText: "Start 3 months free",
-      priceCopy: "$79/year after trial",
+      priceCopy: "$39.99/year after trial",
     });
     expect(JSON.stringify(viewModel)).not.toContain("price_secret");
     expect(JSON.stringify(viewModel)).not.toContain("admin only");
@@ -184,7 +184,7 @@ describe("acquisition campaign DB helpers", () => {
           accessType: "PAID",
           billingInterval: "MONTH",
           trialDays: null,
-          displayPriceLabel: "$9/month",
+          displayPriceLabel: "$3.99/month",
           publicHeadline: "Subscribe monthly",
           publicSubheadline: "Simple monthly billing.",
         }),
@@ -197,10 +197,10 @@ describe("acquisition campaign DB helpers", () => {
       campaignCode: "MONTHLY",
       accessType: "PAID",
       billingInterval: "MONTH",
-      displayPriceLabel: "$9/month",
+      displayPriceLabel: "$3.99/month",
       trialDays: null,
       ctaText: "Subscribe monthly",
-      priceCopy: "$9/month",
+      priceCopy: "$3.99/month",
     });
   });
 
@@ -212,6 +212,6 @@ describe("acquisition campaign DB helpers", () => {
 
     expect(viewModel?.trialLabel).toBeNull();
     expect(viewModel?.ctaText).toBe("Continue with annual");
-    expect(viewModel?.priceCopy).toBe("$79/year");
+    expect(viewModel?.priceCopy).toBe("$39.99/year");
   });
 });

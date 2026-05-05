@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma, rawPrisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
-import { mapStripePriceIdToPlan } from "@/lib/billing";
+import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { captureMessage } from "@/lib/sentry";
 import { logger } from "@/lib/logger";
@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
       stripeCurrentPeriodEnd: Date | null;
       status: string;
       plan: string;
+      billingInterval: string | null;
       canceledAt: Date | null;
     }> = await rawPrisma.subscription.findMany({
       where: { stripeSubscriptionId: { not: null } },
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
         stripeCurrentPeriodEnd: true,
         status: true,
         plan: true,
+        billingInterval: true,
         canceledAt: true,
       },
     });
@@ -149,9 +151,11 @@ export async function POST(request: NextRequest) {
       }
 
       const livePriceId = live.items?.data?.[0]?.price?.id ?? null;
-      const livePlan = livePriceId
-        ? (await mapStripePriceIdToPlan(livePriceId).catch(() => null)) || sub.plan
-        : sub.plan;
+      const mappedPrice = livePriceId
+        ? await mapStripePriceIdToPlanAndInterval(livePriceId).catch(() => null)
+        : null;
+      const livePlan = mappedPrice?.plan || sub.plan;
+      const liveBillingInterval = mappedPrice?.billingInterval || sub.billingInterval;
       const livePeriodEnd = (live as any).current_period_end
         ? new Date((live as any).current_period_end * 1000)
         : null;
@@ -166,6 +170,9 @@ export async function POST(request: NextRequest) {
       }
       if (sub.plan !== livePlan) {
         diffs.push({ field: "plan", before: sub.plan, after: livePlan });
+      }
+      if (sub.billingInterval !== liveBillingInterval) {
+        diffs.push({ field: "billingInterval", before: sub.billingInterval, after: liveBillingInterval });
       }
       if (sub.stripePriceId !== livePriceId) {
         diffs.push({
@@ -223,6 +230,7 @@ export async function POST(request: NextRequest) {
           data: {
             status: liveStatus,
             plan: livePlan,
+            billingInterval: liveBillingInterval,
             stripePriceId: livePriceId,
             stripeCurrentPeriodEnd: livePeriodEnd,
             canceledAt: liveCanceledAt,

@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { CreditCard, FileText, RotateCcw, Store } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_CONTACTS, STORE_PURCHASE_DISTINCTION, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Refund Policy",
   description: "LocateFlow refund eligibility, refund request windows, and store-purchase refund handling.",
-  alternates: { canonical: "/refund" },
-};
+  path: "/refund",
+});
 
 const highlights = [
   {

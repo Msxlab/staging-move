@@ -14,7 +14,7 @@ import { Rss, ArrowRight } from "lucide-react";
 import { getLocale } from "next-intl/server";
 import { listPublicPosts } from "@/lib/blog/queries";
 import { blogPostPath } from "@/lib/blog/urls";
-import { SITE_URL } from "@/lib/seo";
+import { absoluteUrl, DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +54,14 @@ export async function generateMetadata({
       description:
         "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
       siteName: "LocateFlow",
+      images: [{ url: absoluteUrl(DEFAULT_OG_IMAGE), width: 1200, height: 630, alt: "LocateFlow" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: page > 1 ? `LocateFlow Blog - Page ${page}` : "LocateFlow Blog",
+      description:
+        "Field-tested guides on moving smarter, tracking provider records in one place, and checking address-sensitive services before they become expensive.",
+      images: [absoluteUrl(DEFAULT_OG_IMAGE)],
     },
   };
 }

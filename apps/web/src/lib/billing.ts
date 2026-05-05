@@ -17,33 +17,74 @@ export function createTrialEndsAt() {
 }
 
 export type BillingCycle = "monthly" | "yearly";
+export type StripeBillingInterval = "MONTH" | "YEAR";
+
+export const DEFAULT_STRIPE_ANNUAL_TRIAL_DAYS = 90;
+
+export function billingCycleToInterval(cycle: BillingCycle): StripeBillingInterval {
+  return cycle === "yearly" ? "YEAR" : "MONTH";
+}
+
+export function billingIntervalToCycle(interval: StripeBillingInterval): BillingCycle {
+  return interval === "YEAR" ? "yearly" : "monthly";
+}
 
 /**
- * Resolve the Stripe Price ID for a plan + billing cycle. Runtime config
- * is the single source of truth so operators can rotate prices without a
- * code deploy. Yearly checkout must fail cleanly if the yearly price is not
- * configured; silently charging monthly for a yearly request is unsafe.
+ * Resolve the Stripe Price ID for a plan + billing interval.
+ *
+ * DigitalOcean/deployment env is the production source of truth for these
+ * keys unless STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED=true is set. The legacy
+ * STRIPE_PRICE_INDIVIDUAL key is monthly-only and never beats the new
+ * monthly/yearly keys.
  */
-export async function getStripePriceIdForPlan(
+export async function getStripePriceIdForPlanAndInterval(
   _plan: Extract<BillingPlan, "INDIVIDUAL">,
+  billingInterval: StripeBillingInterval,
+): Promise<string | null> {
+  const [monthly, yearly, legacyMonthly] = await Promise.all([
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_MONTHLY"),
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY"),
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL"),
+  ]);
+
+  if (billingInterval === "MONTH") return monthly || legacyMonthly || null;
+  return yearly || null;
+}
+
+export async function getStripePriceIdForPlan(
+  plan: Extract<BillingPlan, "INDIVIDUAL">,
   cycle: BillingCycle = "monthly",
 ) {
-  if (cycle === "yearly") {
-    const yearly = await getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY");
-    if (yearly) return yearly;
-    return null;
-  }
-  return getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL");
+  return getStripePriceIdForPlanAndInterval(plan, billingCycleToInterval(cycle));
+}
+
+export async function mapStripePriceIdToPlanAndInterval(
+  priceId: string | null | undefined,
+): Promise<{ plan: Extract<BillingPlan, "INDIVIDUAL">; billingInterval: StripeBillingInterval } | null> {
+  if (!priceId) return null;
+  const [monthly, yearly, legacyMonthly] = await Promise.all([
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_MONTHLY"),
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY"),
+    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL"),
+  ]);
+  if (monthly && priceId === monthly) return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
+  if (yearly && priceId === yearly) return { plan: "INDIVIDUAL", billingInterval: "YEAR" };
+  if (legacyMonthly && priceId === legacyMonthly) return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
+  return null;
 }
 
 export async function mapStripePriceIdToPlan(priceId: string | null | undefined): Promise<BillingPlan | null> {
-  if (!priceId) return null;
-  const [monthly, yearly] = await Promise.all([
-    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL"),
-    getRuntimeConfigValue("STRIPE_PRICE_INDIVIDUAL_YEARLY"),
-  ]);
-  if (priceId === monthly || priceId === yearly) return "INDIVIDUAL";
-  return null;
+  return (await mapStripePriceIdToPlanAndInterval(priceId))?.plan || null;
+}
+
+export async function getStripeAnnualTrialDays(): Promise<number> {
+  const raw = await getRuntimeConfigValue("STRIPE_ANNUAL_TRIAL_DAYS");
+  if (!raw) return DEFAULT_STRIPE_ANNUAL_TRIAL_DAYS;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 365) {
+    return DEFAULT_STRIPE_ANNUAL_TRIAL_DAYS;
+  }
+  return parsed;
 }
 
 export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntitlementSnapshot {

@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Ban, Eye, MailMinus, UserCog } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { CcpaOptOutControls } from "@/components/shared/ccpa-opt-out-controls";
 import { LEGAL_CONTACTS, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "California Privacy Notice (CCPA / CPRA)",
   description: "California privacy rights, personal information categories, request methods, and Do Not Sell or Share controls.",
-  alternates: { canonical: "/ccpa-privacy-notice" },
-};
+  path: "/ccpa-privacy-notice",
+});
 
 const highlights = [
   {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
-import { mapStripePriceIdToPlan } from "@/lib/billing";
+import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
 import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
@@ -74,6 +74,34 @@ function stripeObjectId(value: unknown): string | null {
 function metadataUserId(metadata: Stripe.Metadata | null | undefined) {
   const userId = metadata?.userId;
   return typeof userId === "string" && userId.trim() ? userId.trim() : null;
+}
+
+function metadataBillingInterval(metadata: Stripe.Metadata | null | undefined): "MONTH" | "YEAR" | null {
+  if (metadata?.billingInterval === "MONTH" || metadata?.billingInterval === "YEAR") {
+    return metadata.billingInterval;
+  }
+  if (metadata?.cycle === "monthly") return "MONTH";
+  if (metadata?.cycle === "yearly") return "YEAR";
+  return null;
+}
+
+function stripePriceBillingInterval(price: Stripe.Price | null | undefined): "MONTH" | "YEAR" | null {
+  const interval = price?.recurring?.interval;
+  if (interval === "month") return "MONTH";
+  if (interval === "year") return "YEAR";
+  return null;
+}
+
+function invoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  return stripeObjectId((invoice as any).subscription);
+}
+
+function invoiceCustomerId(invoice: Stripe.Invoice): string | null {
+  return stripeObjectId((invoice as any).customer);
+}
+
+function invoicePrice(invoice: Stripe.Invoice): Stripe.Price | null {
+  return (invoice.lines?.data?.[0]?.price as Stripe.Price | null | undefined) || null;
 }
 
 function retryableWebhookError(
@@ -421,11 +449,10 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // Resolve plan: prefer metadata, fallback to line_items priceId
-        let plan = (session.metadata?.plan as string) || undefined;
         const stripeSubscription = await retrieveStripeSubscription(stripe, stripeSubId, event.type);
         const priceId = stripeSubscription.items?.data?.[0]?.price?.id;
-        plan = plan || (await mapStripePriceIdToPlan(priceId)) || undefined;
+        const mappedPrice = await mapStripePriceIdToPlanAndInterval(priceId);
+        const plan = (session.metadata?.plan as string) || mappedPrice?.plan || "INDIVIDUAL";
         await syncLocalSubscriptionFromStripe({
           eventType: event.type,
           userId,
@@ -433,8 +460,8 @@ export async function POST(request: NextRequest) {
           stripeCustomerId,
           stripeSubscriptionId: stripeSubId,
           stripeSubscription,
-          plan: plan || "INDIVIDUAL",
-          billingInterval: session.metadata?.cycle === "monthly" ? "MONTH" : "YEAR",
+          plan,
+          billingInterval: mappedPrice?.billingInterval || metadataBillingInterval(session.metadata),
         });
 
         if (
@@ -493,7 +520,8 @@ export async function POST(request: NextRequest) {
       }
 
       case "customer.subscription.created":
-      case "customer.subscription.updated": {
+      case "customer.subscription.updated":
+      case "customer.subscription.trial_will_end": {
         const subscription = event.data.object as Stripe.Subscription;
         const stripeCustomerId = stripeObjectId(subscription.customer);
         const stripeSubId = subscription.id || null;
@@ -501,8 +529,8 @@ export async function POST(request: NextRequest) {
         const stripePriceId = subscription.items?.data?.[0]?.price?.id;
         const metadataUserIdExists = Boolean(userId);
 
-        // Map stripePriceId to plan name
-        const plan = await mapStripePriceIdToPlan(stripePriceId) ||
+        const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
+        const plan = mappedPrice?.plan ||
           (typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null) ||
           "INDIVIDUAL";
 
@@ -514,7 +542,7 @@ export async function POST(request: NextRequest) {
           stripeSubscriptionId: stripeSubId,
           stripeSubscription: subscription,
           plan,
-          billingInterval: subscription.metadata?.cycle === "monthly" ? "MONTH" : "YEAR",
+          billingInterval: mappedPrice?.billingInterval || metadataBillingInterval(subscription.metadata),
         });
         break;
       }
@@ -523,7 +551,12 @@ export async function POST(request: NextRequest) {
         const subscription = event.data.object as Stripe.Subscription;
         const stripeCustomerId = String(subscription.customer);
         const stripePriceId = subscription.items?.data?.[0]?.price?.id;
-        const plan = await mapStripePriceIdToPlan(stripePriceId);
+        const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
+        const plan = mappedPrice?.plan ||
+          (typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null) ||
+          "INDIVIDUAL";
+        const periodEnd = stripeDate(subscription.current_period_end);
+        const trialEnd = stripeDate(subscription.trial_end);
 
         // Scope by stripeSubscriptionId so a customer with multiple
         // subscriptions (rare, but possible after admin reassignment)
@@ -537,6 +570,18 @@ export async function POST(request: NextRequest) {
             status: "CANCELED",
             provider: "STRIPE",
             platform: "web",
+            plan,
+            accessType: subscription.status === "trialing" ? "FREE_TRIAL" : "PAID",
+            billingInterval: mappedPrice?.billingInterval ||
+              stripePriceBillingInterval(subscription.items?.data?.[0]?.price as Stripe.Price | null | undefined) ||
+              metadataBillingInterval(subscription.metadata),
+            stripeCustomerId,
+            stripeSubscriptionId: subscription.id,
+            stripePriceId,
+            billingProductId: stripePriceId,
+            currentPeriodEndsAt: periodEnd,
+            stripeCurrentPeriodEnd: periodEnd,
+            trialEndsAt: trialEnd,
             autoRenew: false,
             cancelAtPeriodEnd: false,
             canceledAt: new Date(),
@@ -562,6 +607,7 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      case "invoice.paid":
       case "invoice.payment_succeeded": {
         // Handles recurring payment success — ensures plan stays ACTIVE.
         //
@@ -571,14 +617,46 @@ export async function POST(request: NextRequest) {
         // one sub's renewal. For non-subscription invoices (rare; e.g.
         // ad-hoc charges) we fall back to the customer scope.
         const invoice = event.data.object as Stripe.Invoice;
-        const stripeCustomerId = String(invoice.customer);
-        const stripeSubscriptionId = invoice.subscription
-          ? String(invoice.subscription)
-          : null;
-        const stripePriceId = invoice.lines?.data?.[0]?.price?.id;
-        const plan = await mapStripePriceIdToPlan(stripePriceId);
+        const stripeCustomerId = invoiceCustomerId(invoice);
+        const stripeSubscriptionId = invoiceSubscriptionId(invoice);
+        const stripePrice = invoicePrice(invoice);
+        const stripePriceId = stripePrice?.id || null;
+        const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
 
         if ((invoice.amount_paid || 0) === 0 && invoice.billing_reason === "subscription_create") {
+          break;
+        }
+
+        if (stripeSubscriptionId) {
+          const stripeSubscription = await retrieveStripeSubscription(stripe, stripeSubscriptionId, event.type);
+          const subscriptionCustomerId = stripeObjectId(stripeSubscription.customer) || stripeCustomerId;
+          const subscriptionPrice = stripeSubscription.items?.data?.[0]?.price as Stripe.Price | null | undefined;
+          const subscriptionPriceId = subscriptionPrice?.id || stripePriceId;
+          const subscriptionMappedPrice = await mapStripePriceIdToPlanAndInterval(subscriptionPriceId);
+
+          await syncLocalSubscriptionFromStripe({
+            eventType: event.type,
+            userId: metadataUserId(stripeSubscription.metadata),
+            metadataUserIdExists: Boolean(metadataUserId(stripeSubscription.metadata)),
+            stripeCustomerId: subscriptionCustomerId,
+            stripeSubscriptionId,
+            stripeSubscription,
+            plan:
+              subscriptionMappedPrice?.plan ||
+              (typeof stripeSubscription.metadata?.plan === "string" ? stripeSubscription.metadata.plan : null) ||
+              mappedPrice?.plan ||
+              "INDIVIDUAL",
+            billingInterval:
+              subscriptionMappedPrice?.billingInterval ||
+              mappedPrice?.billingInterval ||
+              stripePriceBillingInterval(subscriptionPrice) ||
+              stripePriceBillingInterval(stripePrice) ||
+              metadataBillingInterval(stripeSubscription.metadata),
+          });
+          break;
+        }
+
+        if (!stripeCustomerId) {
           break;
         }
 
@@ -587,14 +665,63 @@ export async function POST(request: NextRequest) {
           provider: "STRIPE",
           platform: "web",
           accessType: "PAID",
+          billingInterval: mappedPrice?.billingInterval || stripePriceBillingInterval(stripePrice),
+          stripeCustomerId,
           autoRenew: true,
           cancelAtPeriodEnd: false,
           gracePeriodEndsAt: null,
+          trialEndsAt: null,
           lastSyncedAt: new Date(),
           version: { increment: 1 },
         };
-        if (plan) updateData.plan = plan;
-        if (stripePriceId) updateData.billingProductId = stripePriceId;
+        if (mappedPrice?.plan) updateData.plan = mappedPrice.plan;
+        if (stripePriceId) {
+          updateData.stripePriceId = stripePriceId;
+          updateData.billingProductId = stripePriceId;
+        }
+
+        await prisma.subscription.updateMany({
+          where: { stripeCustomerId },
+          data: updateData,
+        });
+        break;
+      }
+
+      case "invoice.payment_action_required":
+      case "invoice.payment_failed": {
+        // Same multi-sub scoping rule as invoice.payment_succeeded:
+        // scope to the invoice's subscription when known so unrelated
+        // subs on the same customer don't get flipped to PAST_DUE.
+        const invoice = event.data.object as Stripe.Invoice;
+        const stripeCustomerId = invoiceCustomerId(invoice);
+        const stripeSubscriptionId = invoiceSubscriptionId(invoice);
+        const stripePrice = invoicePrice(invoice);
+        const stripePriceId = stripePrice?.id || null;
+        const mappedPrice = await mapStripePriceIdToPlanAndInterval(stripePriceId);
+        const gracePeriodEndsAt = new Date();
+        gracePeriodEndsAt.setUTCDate(gracePeriodEndsAt.getUTCDate() + 7);
+
+        if (!stripeCustomerId) {
+          break;
+        }
+
+        const updateData: any = {
+          status: "PAST_DUE",
+          provider: "STRIPE",
+          platform: "web",
+          stripeCustomerId,
+          gracePeriodEndsAt,
+          lastSyncedAt: new Date(),
+          version: { increment: 1 },
+        };
+        if (mappedPrice?.plan) updateData.plan = mappedPrice.plan;
+        if (mappedPrice?.billingInterval || stripePriceBillingInterval(stripePrice)) {
+          updateData.billingInterval = mappedPrice?.billingInterval || stripePriceBillingInterval(stripePrice);
+        }
+        if (stripePriceId) {
+          updateData.stripePriceId = stripePriceId;
+          updateData.billingProductId = stripePriceId;
+        }
         if (stripeSubscriptionId) {
           updateData.stripeSubscriptionId = stripeSubscriptionId;
         }
@@ -604,34 +731,6 @@ export async function POST(request: NextRequest) {
             ? { stripeCustomerId, stripeSubscriptionId }
             : { stripeCustomerId },
           data: updateData,
-        });
-        break;
-      }
-
-      case "invoice.payment_failed": {
-        // Same multi-sub scoping rule as invoice.payment_succeeded:
-        // scope to the invoice's subscription when known so unrelated
-        // subs on the same customer don't get flipped to PAST_DUE.
-        const invoice = event.data.object as Stripe.Invoice;
-        const stripeCustomerId = String(invoice.customer);
-        const stripeSubscriptionId = invoice.subscription
-          ? String(invoice.subscription)
-          : null;
-        const gracePeriodEndsAt = new Date();
-        gracePeriodEndsAt.setUTCDate(gracePeriodEndsAt.getUTCDate() + 7);
-
-        await prisma.subscription.updateMany({
-          where: stripeSubscriptionId
-            ? { stripeCustomerId, stripeSubscriptionId }
-            : { stripeCustomerId },
-          data: {
-            status: "PAST_DUE",
-            provider: "STRIPE",
-            platform: "web",
-            gracePeriodEndsAt,
-            lastSyncedAt: new Date(),
-            version: { increment: 1 },
-          },
         });
 
         const recipient = await lookupUserByStripeCustomer(stripeCustomerId);

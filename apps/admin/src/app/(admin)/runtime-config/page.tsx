@@ -15,6 +15,8 @@ interface RuntimeConfigCatalogItem {
   configured: boolean;
   source: "DB" | "ENV" | "MISSING";
   maskedValue: string | null;
+  warning: string | null;
+  dbOverrideIgnored: boolean;
   updatedAt: string | null;
   lastValidatedAt: string | null;
   lastValidationStatus: string | null;
@@ -160,6 +162,11 @@ export default function RuntimeConfigPage() {
                             {item.isSecret && <StatusBadge label="Secret" tone="neutral" />}
                           </div>
                           <p className="text-sm text-muted-foreground">{item.description}</p>
+                          {item.warning ? (
+                            <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
+                              {item.warning}
+                            </p>
+                          ) : null}
                           <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground md:grid-cols-2">
                             <div><span className="font-medium text-foreground">Key:</span> <span className="font-mono">{item.key}</span></div>
                             <div><span className="font-medium text-foreground">Scope:</span> {item.scope}</div>

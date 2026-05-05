@@ -22,10 +22,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: number;
   }> = [
     { path: "", changeFrequency: "weekly", priority: 1.0 },
+    { path: "/about", changeFrequency: "monthly", priority: 0.7 },
     { path: "/how-it-works", changeFrequency: "monthly", priority: 0.8 },
     { path: "/pricing", changeFrequency: "weekly", priority: 0.9 },
     { path: "/blog", changeFrequency: "daily", priority: 0.9 },
     { path: "/faq", changeFrequency: "monthly", priority: 0.7 },
+    { path: "/provider-coverage", changeFrequency: "monthly", priority: 0.6 },
     { path: "/contact", changeFrequency: "monthly", priority: 0.5 },
     { path: "/privacy", changeFrequency: "yearly", priority: 0.3 },
     { path: "/terms", changeFrequency: "yearly", priority: 0.3 },
@@ -33,6 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/disclaimer", changeFrequency: "yearly", priority: 0.3 },
     { path: "/refund", changeFrequency: "yearly", priority: 0.3 },
     { path: "/billing-policy", changeFrequency: "yearly", priority: 0.3 },
+    { path: "/data-deletion", changeFrequency: "yearly", priority: 0.3 },
     { path: "/acceptable-use", changeFrequency: "yearly", priority: 0.3 },
     { path: "/dpa", changeFrequency: "yearly", priority: 0.3 },
     { path: "/security", changeFrequency: "yearly", priority: 0.3 },

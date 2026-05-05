@@ -24,7 +24,16 @@ NEXT_PUBLIC_APP_URL=https://locateflow.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
 EXPO_PUBLIC_API_URL=https://locateflow.com/api
 GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore
+APP_ENV=production
+NEXT_PUBLIC_SITE_URL=https://locateflow.com
+SITE_URL=https://locateflow.com
 ```
+
+Although the active DigitalOcean component names still include `staging`, the
+real `locateflow.com` domains must use production SEO env values. Leaving
+`APP_ENV=staging` or a staging/preview canonical URL on the active web
+component intentionally blocks indexing with `X-Robots-Tag: noindex`, a global
+`robots.txt` disallow, an empty sitemap, and `# Not indexed` in `llms.txt`.
 
 ## Legacy Vercel Projects
 
@@ -78,7 +87,7 @@ Place secrets in:
 | `NEXT_PUBLIC_APP_URL` | Required | Required for links/impersonation return URLs | No | Required | No | Public/client-safe | OAuth/email/portal links may point to wrong host. |
 | `NEXT_PUBLIC_ADMIN_URL` | Recommended for staging URL inventory | Recommended for admin staging URL inventory | No | Optional | No | Public/client-safe | Wrong or missing value can confuse operator links and future admin deep links. |
 | `NODE_ENV` | Vercel sets | Vercel sets | EAS sets build env | Vercel sets | No | Server-only | Do not override unless needed. |
-| `APP_ENV` | Not used by current code | Not used by current code | Not used | Optional future | No | Server-only | No current impact. |
+| `APP_ENV` | Required: `production` on active real domains | Required: `production` on active admin domain | Not used | Required | No | Server-only | Controls billing/live-mode assumptions and SEO indexing; staging/preview blocks public indexing. |
 | `WEB_INTERNAL_URL` | No | Optional for admin-to-web internal calls | No | Recommended | No | Server-only | Admin impersonation may fall back to `NEXT_PUBLIC_APP_URL`. |
 | `INTERNAL_WEBHOOK_SECRET` | Required | Required | No | Required | Yes | Server-only | Internal webhooks disabled/fail closed. |
 | `CRON_SECRET` | Required for web cron | Required for admin backup cron | No | Required | Yes | Server-only | Scheduled jobs cannot run safely. |
@@ -91,9 +100,10 @@ Place secrets in:
 | `APPLE_OAUTH_PRIVATE_KEY` | Optional staging | No | No | Optional | Yes | Server-only | Apple sign-in stays disabled. |
 | `STRIPE_SECRET_KEY` | Required to test checkout/portal | Optional context checks | No | Required for web billing | Yes | Server-only | Billing checkout/portal/webhooks cannot be fully tested. |
 | `STRIPE_WEBHOOK_SECRET` | Required for Stripe webhook test | No | No | Required | Yes | Server-only | Webhook events rejected. |
-| `STRIPE_PRICE_INDIVIDUAL` | Required for checkout test | Optional display/context | No | Required | No | Server-only/public ID | Checkout cannot create Individual subscription. |
-| `STRIPE_PRICE_INDIVIDUAL_YEARLY` | Optional if yearly enabled | Optional | No | Required if yearly sold | No | Server-only/public ID | Yearly checkout unavailable. |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Not used by current Checkout flow | No | No | Optional if future client Stripe UI is added | No | Public | No current impact. |
+| `STRIPE_PRICE_INDIVIDUAL_MONTHLY` | Required for checkout test | Optional display/context | No | Required | No | Server-only/public ID | Monthly checkout cannot create Individual subscription. |
+| `STRIPE_PRICE_INDIVIDUAL_YEARLY` | Required for annual checkout test | Optional | No | Required | No | Server-only/public ID | Yearly checkout unavailable. |
+| `STRIPE_ANNUAL_TRIAL_DAYS` | Optional, defaults to 90 | Optional | No | Recommended | No | Plain | Annual checkout falls back to 90 days. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Required for Stripe readiness | No | No | Required | No | Public | Client Stripe integrations unavailable. |
 | `APPLE_APP_STORE_ISSUER_ID` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | No | Server-only ID | IAP verification unavailable/stale. |
 | `APPLE_APP_STORE_KEY_ID` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | No | Server-only ID | IAP verification unavailable/stale. |
 | `APPLE_APP_STORE_PRIVATE_KEY` | Required only for IAP validation tests | Admin readiness context | No | Required for live iOS IAP validation | Yes | Server-only | IAP verification unavailable/stale. |

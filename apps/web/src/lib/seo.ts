@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
+
 export const SITE_NAME = "LocateFlow";
 export const SITE_TITLE = "LocateFlow - Track every provider tied to your addresses";
 export const SITE_DESCRIPTION =
   "Keep a living list of every utility, bank, insurance, and subscription tied to your homes. Never lose track of who has your address again.";
-export const DEFAULT_OG_IMAGE = "/og-image.svg";
+export const DEFAULT_OG_IMAGE = "/opengraph-image";
 
 const DEFAULT_PUBLIC_SITE_URL = "https://locateflow.com";
 const DEFAULT_LOCAL_SITE_URL = "http://localhost:3000";
@@ -97,4 +99,51 @@ export function absoluteUrl(path = "/", base = SITE_URL) {
   } catch {
     return new URL(path, base).toString();
   }
+}
+
+export function publicMetadataTitle(title: string) {
+  return title === SITE_TITLE || title.includes(SITE_NAME)
+    ? title
+    : `${title} | ${SITE_NAME}`;
+}
+
+export function createPublicPageMetadata(input: {
+  title: string;
+  description: string;
+  path: string;
+  imagePath?: string;
+  type?: "website" | "article";
+}): Metadata {
+  const canonicalUrl = absoluteUrl(input.path);
+  const imageUrl = absoluteUrl(input.imagePath || DEFAULT_OG_IMAGE);
+  const socialTitle = publicMetadataTitle(input.title);
+
+  return {
+    title: input.title,
+    description: input.description,
+    alternates: {
+      canonical: input.path,
+    },
+    openGraph: {
+      type: input.type || "website",
+      url: canonicalUrl,
+      siteName: SITE_NAME,
+      title: socialTitle,
+      description: input.description,
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: SITE_NAME,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: socialTitle,
+      description: input.description,
+      images: [imageUrl],
+    },
+  };
 }

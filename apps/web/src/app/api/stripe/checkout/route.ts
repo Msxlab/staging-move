@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { getStripePriceIdForPlan } from "@/lib/billing";
+import {
+  billingIntervalToCycle,
+  getStripeAnnualTrialDays,
+  getStripePriceIdForPlanAndInterval,
+  type StripeBillingInterval,
+} from "@/lib/billing";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import { getConfiguredAppUrl } from "@/lib/app-url";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import {
   buildStripeIdempotencyKey,
@@ -21,13 +27,19 @@ import {
 } from "@/lib/acquisition-campaigns";
 import {
   buildCheckoutDisclosureText,
-  INDIVIDUAL_ANNUAL_TRIAL_DAYS,
   REFUND_POLICY_VERSION,
   SUBSCRIPTION_POLICY_VERSION,
   TERMS_VERSION,
 } from "@/lib/shared-billing";
 import { captureMessage } from "@/lib/sentry";
 import Stripe from "stripe";
+
+function normalizeBillingIntervalInput(input: unknown, legacyCycle: unknown): StripeBillingInterval {
+  if (input === "YEAR" || input === "yearly") return "YEAR";
+  if (input === "MONTH" || input === "monthly") return "MONTH";
+  if (legacyCycle === "yearly") return "YEAR";
+  return "MONTH";
+}
 
 // POST /api/stripe/checkout — Create a Stripe Checkout session for plan upgrade
 export async function POST(request: NextRequest) {
@@ -47,6 +59,7 @@ export async function POST(request: NextRequest) {
 
     const {
       plan,
+      billingInterval: rawBillingInterval,
       cycle: rawCycle,
       campaignCode,
       acceptedSubscriptionTerms,
@@ -56,14 +69,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid plan. Must be INDIVIDUAL." }, { status: 400 });
     }
 
-    let cycle: "monthly" | "yearly" =
-      rawCycle === "yearly" ? "yearly" : "monthly";
+    let billingInterval = normalizeBillingIntervalInput(rawBillingInterval, rawCycle);
+    let cycle = billingIntervalToCycle(billingInterval);
 
     const requestedCampaignCode =
       typeof campaignCode === "string" ? campaignCode.trim() : "";
     const campaign = requestedCampaignCode
       ? await findAcquisitionCampaign(requestedCampaignCode, { allowDefaultFallback: false })
-      : cycle === "yearly"
+      : billingInterval === "YEAR"
         ? await findActivePublicIndividualAnnualTrialCampaign()
         : await findActivePublicIndividualMonthlyPaidOffer();
     if (!campaign) {
@@ -80,11 +93,14 @@ export async function POST(request: NextRequest) {
     }
     if (
       requestedCampaignCode &&
+      rawBillingInterval !== "YEAR" &&
+      rawBillingInterval !== "MONTH" &&
       rawCycle !== "yearly" &&
       rawCycle !== "monthly" &&
       (campaign.billingInterval === "YEAR" || campaign.billingInterval === "MONTH")
     ) {
-      cycle = campaign.billingInterval === "YEAR" ? "yearly" : "monthly";
+      billingInterval = campaign.billingInterval as StripeBillingInterval;
+      cycle = billingIntervalToCycle(billingInterval);
     }
     try {
       assertCampaignAvailable(campaign);
@@ -97,8 +113,8 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    const expectedAccessType = cycle === "yearly" ? "FREE_TRIAL" : "PAID";
-    const expectedBillingInterval = cycle === "yearly" ? "YEAR" : "MONTH";
+    const expectedAccessType = billingInterval === "YEAR" ? "FREE_TRIAL" : "PAID";
+    const expectedBillingInterval = billingInterval;
     if (campaign.accessType !== expectedAccessType) {
       return NextResponse.json(
         { code: "CAMPAIGN_WRONG_TYPE", error: "This offer is no longer available." },
@@ -226,31 +242,36 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const priceId = campaign.stripePriceId || await getStripePriceIdForPlan(plan, cycle);
+    const priceId = await getStripePriceIdForPlanAndInterval(plan, billingInterval);
 
     if (!priceId) {
       return NextResponse.json(
         { error: `Stripe price not configured for ${plan} ${cycle}` },
-        { status: cycle === "yearly" ? 400 : 503 },
+        { status: billingInterval === "YEAR" ? 400 : 503 },
       );
     }
 
-    const appUrl = await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = await getConfiguredAppUrl();
     const now = new Date();
-    const isTrialOffer = campaign.accessType === "FREE_TRIAL";
-    const trialDays = isTrialOffer ? campaign.trialDays || INDIVIDUAL_ANNUAL_TRIAL_DAYS : null;
+    const isTrialOffer = billingInterval === "YEAR";
+    const trialDays = isTrialOffer ? await getStripeAnnualTrialDays() : null;
+    const checkoutCampaign = {
+      ...campaign,
+      trialDays: isTrialOffer ? trialDays : campaign.trialDays,
+      stripePriceId: priceId,
+    };
     const firstChargeAt = new Date(now);
     if (trialDays) firstChargeAt.setUTCDate(firstChargeAt.getUTCDate() + trialDays);
     const displayPrice = campaign.displayPriceLabel;
     const disclosureText = buildCheckoutDisclosureText({
-      campaign,
+      campaign: checkoutCampaign,
       now,
       firstChargeAt,
       firstChargeAmount: displayPrice,
     });
     const requestHashes = getRequestHashSnapshot(request);
     const snapshot = buildSignupSnapshot({
-      campaign: { ...campaign, stripePriceId: priceId },
+      campaign: checkoutCampaign,
       now,
       firstChargeAmount: displayPrice,
       disclosureText,
@@ -321,6 +342,7 @@ export async function POST(request: NextRequest) {
           userId,
           plan,
           cycle,
+          billingInterval,
           provider: "STRIPE",
           platform: "web",
           campaignCode: campaign.code,
@@ -336,6 +358,7 @@ export async function POST(request: NextRequest) {
         userId,
         plan,
         cycle,
+        billingInterval,
         provider: "STRIPE",
         platform: "web",
         campaignCode: campaign.code,
@@ -346,7 +369,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    if (error?.name === "BILLING_CONFIG_ERROR") {
+    if (error?.name === "BILLING_CONFIG_ERROR" || error?.name === "APP_URL_CONFIG_ERROR") {
       // Production-mode guard: a non-`sk_live_` key (or missing key) at
       // checkout time means real charges will never settle. Page ops via
       // Sentry so the misconfiguration is caught before it reaches users.
