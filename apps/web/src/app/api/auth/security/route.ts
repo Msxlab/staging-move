@@ -3,16 +3,19 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import {
   getUserSession,
-  hashPassword,
-  validatePasswordPolicy,
+  generateOpaqueToken,
 } from "@/lib/user-auth";
-import { sendSecurityNoticeEmail } from "@/lib/email-service";
+import { sendPasswordResetEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
 
 const setPasswordSchema = z.object({
   action: z.literal("set_password"),
   newPassword: z.string().max(200),
+});
+
+const requestSetPasswordSchema = z.object({
+  action: z.literal("request_set_password"),
 });
 
 const revokeSessionSchema = z.object({
@@ -26,6 +29,7 @@ const revokeOtherSessionsSchema = z.object({
 
 const actionSchema = z.discriminatedUnion("action", [
   setPasswordSchema,
+  requestSetPasswordSchema,
   revokeSessionSchema,
   revokeOtherSessionsSchema,
 ]);
@@ -183,7 +187,14 @@ export async function POST(request: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, firstName: true, preferredLocale: true, passwordHash: true },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      preferredLocale: true,
+      passwordHash: true,
+      emailVerifiedAt: true,
+    },
   });
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -193,6 +204,13 @@ export async function POST(request: NextRequest) {
   const userAgent = request.headers.get("user-agent") || null;
 
   if (parsed.data.action === "set_password") {
+    return NextResponse.json(
+      { error: "Use the emailed password setup link to set a password." },
+      { status: 400 },
+    );
+  }
+
+  if (parsed.data.action === "request_set_password") {
     if (user.passwordHash) {
       return NextResponse.json(
         { error: "This account already has a password. Use change password instead." },
@@ -200,44 +218,67 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const policyError = validatePasswordPolicy(parsed.data.newPassword);
-    if (policyError) {
-      return NextResponse.json({ error: policyError }, { status: 400 });
+    if (!user.emailVerifiedAt) {
+      return NextResponse.json(
+        { error: "Verify your email before setting a password." },
+        { status: 400 },
+      );
     }
 
-    const setAt = new Date();
-    await prisma.user.update({
-      where: { id: session.userId },
-      data: { passwordHash: await hashPassword(parsed.data.newPassword) },
+    const recentToken = await prisma.passwordResetToken.findFirst({
+      where: {
+        userId: session.userId,
+        usedAt: null,
+        createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) },
+      },
+      select: { id: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (recentToken) {
+      const state = await loadSecurityState(session.userId, session.sessionId);
+      return NextResponse.json({
+        success: true,
+        message: "A password setup link was already sent recently. Check your email.",
+        ...state,
+      });
+    }
+
+    const { token, hash } = generateOpaqueToken();
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: session.userId,
+        tokenHash: hash,
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+      },
     });
 
     await prisma.auditLog.create({
       data: {
         userId: session.userId,
-        action: "SET_PASSWORD",
+        action: "SET_PWD_REQ",
         entityType: "User",
         entityId: session.userId,
-        changes: JSON.stringify({ source: "account_security" }),
+        changes: JSON.stringify({ source: "account_security_email" }),
         ipAddress,
         userAgent,
       },
     });
 
-    const isEs = (user.preferredLocale || "").toLowerCase().startsWith("es");
-    void sendSecurityNoticeEmail({
+    await sendPasswordResetEmail({
       userEmail: user.email,
       userName: user.firstName || "there",
-      kind: "password-changed",
-      detail: isEs
-        ? "Se agregó una contraseña a tu cuenta para que puedas iniciar sesión con correo y contraseña además de cualquier método de inicio de sesión social."
-        : "A password was added to your account so you can sign in with email and password in addition to any social sign-in methods.",
-      occurredAt: setAt,
+      resetToken: token,
+      mode: "set-password",
       locale: user.preferredLocale,
-      dedupeKey: `pwd-set:${session.userId}:${setAt.getTime()}`,
+      dedupeKey: `pwreset:${session.userId}:${hash}`,
     }).catch((err) => console.error("[AUTH] set-password email failed:", err));
 
     const state = await loadSecurityState(session.userId, session.sessionId);
-    return NextResponse.json({ success: true, ...state });
+    return NextResponse.json({
+      success: true,
+      message: "Password setup email sent. Check your inbox.",
+      ...state,
+    });
   }
 
   if (parsed.data.action === "revoke_session") {

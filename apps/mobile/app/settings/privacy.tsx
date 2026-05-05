@@ -23,7 +23,6 @@ import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { hapticWarning } from "@/lib/haptics";
 import { api } from "@/lib/api";
@@ -64,8 +63,7 @@ export default function PrivacySettingsScreen() {
   const [consentBusy, setConsentBusy] = useState(false);
   const [loadingConsents, setLoadingConsents] = useState(true);
   const [consentError, setConsentError] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSetupBusy, setPasswordSetupBusy] = useState(false);
 
   async function loadSecurity() {
     setLoadingSecurity(true);
@@ -112,26 +110,20 @@ export default function PrivacySettingsScreen() {
     setConsentError(null);
   };
 
-  const setPassword = async () => {
-    if (!newPassword || newPassword !== confirmPassword) {
-      Alert.alert("Password", "Enter matching passwords first.");
-      return;
-    }
-    setSecurityBusy(true);
+  const requestSetPasswordEmail = async () => {
+    setPasswordSetupBusy(true);
     const res = await api.post<AccountSecurityState & { success: boolean }>(
       "/api/auth/security",
-      { action: "set_password", newPassword },
+      { action: "request_set_password" },
     );
-    setSecurityBusy(false);
+    setPasswordSetupBusy(false);
     if (res.error) {
       Alert.alert("Password", res.error);
       return;
     }
     if (res.data) {
       setSecurity(res.data);
-      setNewPassword("");
-      setConfirmPassword("");
-      Alert.alert("Password", "Password sign-in is now enabled.");
+      Alert.alert("Password", "We sent a secure password setup link to your email.");
     }
   };
 
@@ -265,29 +257,12 @@ export default function PrivacySettingsScreen() {
                 <View style={styles.passwordBox}>
                   <Text style={styles.subheading}>Set password</Text>
                   <Text style={styles.mutedText}>
-                    Required before mobile MFA management. OAuth sign-in remains linked.
+                    We will email a secure setup link. OAuth sign-in remains linked.
                   </Text>
-                  <Input
-                    label="New password"
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    isPassword
-                    autoCapitalize="none"
-                    placeholder="Min 12 characters"
-                  />
-                  <Input
-                    label="Confirm password"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    isPassword
-                    autoCapitalize="none"
-                    placeholder="Repeat password"
-                  />
                   <Button
-                    title="Set password"
-                    onPress={setPassword}
-                    loading={securityBusy}
-                    disabled={!newPassword || !confirmPassword}
+                    title="Email setup link"
+                    onPress={requestSetPasswordEmail}
+                    loading={passwordSetupBusy}
                     fullWidth
                   />
                 </View>

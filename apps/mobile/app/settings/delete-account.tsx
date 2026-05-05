@@ -29,6 +29,7 @@ export default function DeleteAccountScreen() {
   const [confirmText, setConfirmText] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [hasPasswordLogin, setHasPasswordLogin] = useState<boolean | null>(null);
+  const [passwordSetupBusy, setPasswordSetupBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // The confirmation phrase has to match ONE of the localized strings so
   // Spanish users can type ELIMINAR and English users can type DELETE.
@@ -40,9 +41,22 @@ export default function DeleteAccountScreen() {
       .catch(() => setHasPasswordLogin(null));
   }, []);
 
+  const requestSetPasswordEmail = async () => {
+    setPasswordSetupBusy(true);
+    const res = await api.post<any>("/api/auth/security", { action: "request_set_password" });
+    setPasswordSetupBusy(false);
+    if (res.error) {
+      hapticError();
+      Alert.alert("Password", res.error);
+      return;
+    }
+    hapticSuccess();
+    Alert.alert("Password", "We sent a secure password setup link to your email.");
+  };
+
   const handleDelete = async () => {
     if (hasPasswordLogin === false) {
-      Alert.alert("Password required", "Set a password in Privacy & Security before deleting this account.");
+      Alert.alert("Password required", "Use the emailed setup link to set a password before deleting this account.");
       return;
     }
     if (!confirmPhrases.includes(confirmText) || !confirmPassword) {
@@ -101,13 +115,18 @@ export default function DeleteAccountScreen() {
           <View style={styles.passwordRequiredCard}>
             <Text style={styles.warningTitle}>Password required</Text>
             <Text style={styles.warningText}>
-              OAuth-only accounts must set a password before account deletion.
+              This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
             </Text>
             <TouchableOpacity
               style={styles.secondaryBtn}
-              onPress={() => router.replace("/settings/privacy")}
+              onPress={requestSetPasswordEmail}
+              disabled={passwordSetupBusy}
             >
-              <Text style={styles.secondaryBtnText}>Open Privacy & Security</Text>
+              {passwordSetupBusy ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <Text style={styles.secondaryBtnText}>Email setup link</Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
