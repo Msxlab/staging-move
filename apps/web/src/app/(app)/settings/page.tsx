@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User, Bell, CreditCard, Download, Shield, DollarSign, Loader2 } from "lucide-react";
+import { User, Bell, CreditCard, Download, Shield, DollarSign, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AppearanceCard } from "@/components/settings/appearance-card";
@@ -48,6 +48,8 @@ export default function SettingsPage() {
   const [confirmText, setConfirmText] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showBudget, setShowBudget] = useState<boolean | null>(null);
+  const [hasPasswordLogin, setHasPasswordLogin] = useState<boolean | null>(null);
+  const [passwordSetupBusy, setPasswordSetupBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,7 +66,48 @@ export default function SettingsPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/security", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (!cancelled) setHasPasswordLogin(data.account?.hasPasswordLogin === true);
+      })
+      .catch(() => {
+        if (!cancelled) setHasPasswordLogin(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const requestSetPasswordEmail = async () => {
+    setPasswordSetupBusy(true);
+    try {
+      const res = await fetch("/api/auth/security", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "request_set_password" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || "Failed to send password setup email");
+        return;
+      }
+      toast.success(data.message || "Password setup email sent. Check your inbox.");
+      setHasPasswordLogin(data.account?.hasPasswordLogin === true);
+    } catch {
+      toast.error("Failed to send password setup email");
+    } finally {
+      setPasswordSetupBusy(false);
+    }
+  };
+
   const handleDeleteAccount = async () => {
+    if (hasPasswordLogin === false) {
+      toast.error("Set a password from the emailed link before deleting this account.");
+      return;
+    }
     if (confirmText !== "DELETE" || !confirmPassword) return;
     setDeleteStep("deleting");
     try {
@@ -150,7 +193,30 @@ export default function SettingsPage() {
               </button>
             )}
           </div>
-          {deleteStep !== "idle" && (
+          {deleteStep !== "idle" && hasPasswordLogin === false && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+              <p className="text-sm text-muted-foreground">
+                This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={requestSetPasswordEmail}
+                  disabled={passwordSetupBusy}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
+                >
+                  {passwordSetupBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                  Email Setup Link
+                </button>
+                <button
+                  onClick={() => { setDeleteStep("idle"); setConfirmText(""); setConfirmPassword(""); }}
+                  className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {deleteStep !== "idle" && hasPasswordLogin !== false && (
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 space-y-3">
               <p className="text-sm text-muted-foreground">
                 This action is <span className="font-semibold text-red-400">irreversible</span>. All your addresses, services, documents, moving plans, and account data will be permanently deleted.

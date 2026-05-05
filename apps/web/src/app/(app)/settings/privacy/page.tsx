@@ -51,7 +51,7 @@ export default function PrivacyPage() {
   const [securityState, setSecurityState] = useState<AccountSecurityState | null>(null);
   const [securityLoading, setSecurityLoading] = useState(true);
   const [securityBusy, setSecurityBusy] = useState(false);
-  const [setPasswordForm, setSetPasswordForm] = useState({ next: "", confirm: "" });
+  const [passwordSetupBusy, setPasswordSetupBusy] = useState(false);
 
   async function loadSecurityState() {
     setSecurityLoading(true);
@@ -119,29 +119,26 @@ export default function PrivacyPage() {
     setSavingPw(false);
   };
 
-  const handleSetPassword = async () => {
-    if (!setPasswordForm.next) { toast.error("Enter a password"); return; }
-    if (setPasswordForm.next !== setPasswordForm.confirm) { toast.error("Passwords do not match"); return; }
-    setSecurityBusy(true);
+  const handleRequestSetPasswordEmail = async () => {
+    setPasswordSetupBusy(true);
     try {
       const res = await fetch("/api/auth/security", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "set_password", newPassword: setPasswordForm.next }),
+        body: JSON.stringify({ action: "request_set_password" }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || "Failed to set password");
+        toast.error(data.error || "Failed to send password setup email");
       } else {
-        toast.success("Password sign-in enabled for this account.");
-        setSetPasswordForm({ next: "", confirm: "" });
+        toast.success(data.message || "Password setup email sent. Check your inbox.");
         setSecurityState(data);
         await refresh();
       }
     } catch {
       toast.error("Network error");
     } finally {
-      setSecurityBusy(false);
+      setPasswordSetupBusy(false);
     }
   };
 
@@ -267,6 +264,10 @@ export default function PrivacyPage() {
   };
 
   const handleDeleteAccount = async () => {
+    if (!hasPasswordLogin) {
+      toast.error("Set a password from the emailed link before deleting this account.");
+      return;
+    }
     if (deleteText !== "DELETE" || !deletePassword) return;
     setDeleting(true);
     try {
@@ -445,37 +446,19 @@ export default function PrivacyPage() {
         {!hasPasswordLogin ? (
           <div className="px-5 pb-5 space-y-3">
             <p className="text-xs text-muted-foreground">
-              Set a password to enable password sign-in, password changes, and MFA management. Your linked OAuth method remains available.
+              We'll email a secure password setup link to your verified address. Your linked OAuth method remains available.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">New Password</label>
-                <input
-                  type="password" className={inputCls} placeholder="Min 12 characters"
-                  value={setPasswordForm.next}
-                  onChange={(e) => setSetPasswordForm((p) => ({ ...p, next: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Confirm Password</label>
-                <input
-                  type="password" className={inputCls} placeholder="Repeat password"
-                  value={setPasswordForm.confirm}
-                  onChange={(e) => setSetPasswordForm((p) => ({ ...p, confirm: e.target.value }))}
-                />
-              </div>
-            </div>
             <p className="text-[11px] text-foreground/40">
-              Must include upper, lower, digit, and special character.
+              After you set it, this account can sign in with email/password and with its linked Google or Apple method.
             </p>
             <div className="flex justify-end">
               <button
-                onClick={handleSetPassword}
-                disabled={securityBusy || !setPasswordForm.next || !setPasswordForm.confirm}
+                onClick={handleRequestSetPasswordEmail}
+                disabled={passwordSetupBusy}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50"
               >
-                {securityBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
-                Set Password
+                {passwordSetupBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                Email Setup Link
               </button>
             </div>
           </div>
@@ -697,6 +680,28 @@ export default function PrivacyPage() {
               >
                 Delete Account
               </button>
+            </div>
+          ) : !hasPasswordLogin ? (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRequestSetPasswordEmail}
+                  disabled={passwordSetupBusy}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50"
+                >
+                  {passwordSetupBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                  Email Setup Link
+                </button>
+                <button
+                  onClick={() => { setDeleteConfirm(false); setDeleteText(""); }}
+                  className="px-4 py-2 rounded-xl text-xs text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
