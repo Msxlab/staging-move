@@ -168,10 +168,10 @@ export function PricingSection({
       </div>
 
       <div className={hasTwoOffers
-        ? "mx-auto grid max-w-6xl gap-6 lg:grid-cols-3"
+        ? "mx-auto grid max-w-5xl gap-6 md:grid-cols-2"
         : "mx-auto grid max-w-4xl gap-6 md:grid-cols-[1.1fr_0.9fr]"}
       >
-        <div className="rounded-2xl border-2 border-primary bg-card p-7 shadow-lg">
+        <div className="flex flex-col rounded-2xl border-2 border-primary bg-card p-7 shadow-lg">
           <div className="mb-5">
             <p className="text-sm font-medium text-primary">{planIntro}</p>
             <h3 className="mt-2 text-2xl font-semibold">{plan.displayName}</h3>
@@ -188,17 +188,19 @@ export function PricingSection({
             {annualOffer?.trialLabel ? (
               <p className="mt-1 text-xs text-muted-foreground">Today: $0</p>
             ) : null}
-            {annualSavings ? (
-              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
-                Save ${annualSavings.savedUsd.toFixed(annualSavings.savedUsd % 1 === 0 ? 0 : 2)}/year vs monthly
-                <span className="text-emerald-500/70">({annualSavings.percent}% off)</span>
-              </div>
-            ) : null}
-            {annualOffer?.trialLabel ? (
-              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-                <Sparkles className="h-3 w-3" /> First 3 months free
-              </div>
-            ) : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {annualSavings ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
+                  Save ${annualSavings.savedUsd.toFixed(annualSavings.savedUsd % 1 === 0 ? 0 : 2)}/year vs monthly
+                  <span className="text-emerald-500/70">({annualSavings.percent}% off)</span>
+                </span>
+              ) : null}
+              {annualOffer?.trialLabel ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                  <Sparkles className="h-3 w-3" /> First 3 months free
+                </span>
+              ) : null}
+            </div>
           </div>
 
           <div className="rounded-xl border bg-background/40 p-4">
@@ -208,18 +210,20 @@ export function PricingSection({
             <FeatureGrid />
           </div>
 
-          <Link href={ctaHref} className="mt-7 block">
-            <Button className="w-full">
-              {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn, primaryCtaOffer)}
-            </Button>
-          </Link>
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            Trial length, price, renewal date, and payment method requirements are shown before you subscribe.
-          </p>
+          <div className="mt-auto pt-7">
+            <Link href={ctaHref} className="block">
+              <Button className="w-full">
+                {resolveCtaLabel(ctaIntent, ctaLabelLoggedIn, primaryCtaOffer)}
+              </Button>
+            </Link>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              Trial length, price, renewal date, and payment method requirements are shown before you subscribe.
+            </p>
+          </div>
         </div>
 
         {annualOffer && monthlyOffer ? (
-          <div className="rounded-2xl border bg-card p-7">
+          <div className="flex flex-col rounded-2xl border bg-card p-7">
             <div className="mb-5">
               <p className="text-sm font-medium text-primary">Monthly billing</p>
               <h3 className="mt-2 text-2xl font-semibold">Individual Monthly</h3>
@@ -228,7 +232,7 @@ export function PricingSection({
               </p>
             </div>
             <div className="mb-6">
-              <span className="text-4xl font-bold tracking-tight">{splitPriceLabel(monthlyOffer.displayPriceLabel).amount}</span>
+              <span className="text-5xl font-bold tracking-tight">{splitPriceLabel(monthlyOffer.displayPriceLabel).amount}</span>
               <span className="text-muted-foreground">{splitPriceLabel(monthlyOffer.displayPriceLabel).suffix}</span>
               {(() => {
                 const monthly = parseAmount(monthlyOffer.displayPriceLabel);
@@ -245,38 +249,62 @@ export function PricingSection({
             </div>
             <div className="rounded-xl border bg-background/40 p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Everything included
+                What you get
               </p>
-              <FeatureGrid />
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Every feature in the annual plan — homes, services, reminders, budgets, moving planner, document storage, exports, and apps. Just paid month-to-month.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm">
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <span className="leading-snug">
+                    <span className="block font-medium text-foreground">Cancel anytime</span>
+                    <span className="block text-xs text-muted-foreground">No annual commitment, no early-cancel fee.</span>
+                  </span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                  </span>
+                  <span className="leading-snug">
+                    <span className="block font-medium text-foreground">No trial period</span>
+                    <span className="block text-xs text-muted-foreground">Pay for the first month today, renews monthly until cancelled.</span>
+                  </span>
+                </li>
+              </ul>
             </div>
-            <Link href={ctaHref} className="mt-7 block">
-              <Button variant="outline" className="w-full">
-                {ctaIntent === "manage" ? "Manage subscription" : monthlyOffer.ctaText}
-              </Button>
-            </Link>
-            <p className="mt-3 text-center text-[11px] text-muted-foreground">
-              No trial on monthly. Renews each month until you cancel from Settings.
-            </p>
+            <div className="mt-auto pt-7">
+              <Link href={ctaHref} className="block">
+                <Button variant="outline" className="w-full">
+                  {ctaIntent === "manage" ? "Manage subscription" : monthlyOffer.ctaText}
+                </Button>
+              </Link>
+              <p className="mt-3 text-center text-[11px] text-muted-foreground">
+                No trial on monthly. Renews each month until you cancel from Settings.
+              </p>
+            </div>
           </div>
         ) : null}
+      </div>
 
-        <div className="rounded-2xl border bg-muted/30 p-7">
-          <div className="mb-4 flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            <h3 className="text-lg font-semibold">Clear subscription terms</h3>
-          </div>
-          <div className="space-y-4 text-sm leading-6 text-muted-foreground">
-            <p>Free Access and Free Trial are separate. Free Access does not require a payment method and does not auto-charge.</p>
-            <p>The Individual Annual trial requires a payment method. Checkout shows today&apos;s due amount, trial length, first charge date, and annual renewal terms.</p>
-            <p>The Individual Monthly option starts today and renews monthly when a monthly campaign is active.</p>
-            <p>You can cancel trial or renewal online from Settings. Refund eligibility is handled under the Refund Policy and store rules when applicable.</p>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-3 text-sm">
-            <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
-            <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
-            <Link href="/refund" className="underline hover:text-foreground">Refund Policy</Link>
-            <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
-          </div>
+      <div className={`mx-auto mt-6 rounded-2xl border bg-muted/30 p-7 ${hasTwoOffers ? "max-w-5xl" : "max-w-4xl"}`}>
+        <div className="mb-4 flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-semibold">Clear subscription terms</h3>
+        </div>
+        <div className="grid gap-4 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
+          <p>Free Access and Free Trial are separate. Free Access does not require a payment method and does not auto-charge.</p>
+          <p>The Individual Annual trial requires a payment method. Checkout shows today&apos;s due amount, trial length, first charge date, and annual renewal terms.</p>
+          <p>The Individual Monthly option starts today and renews monthly when a monthly campaign is active.</p>
+          <p>You can cancel trial or renewal online from Settings. Refund eligibility is handled under the Refund Policy and store rules when applicable.</p>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          <Link href="/terms" className="underline hover:text-foreground">Terms</Link>
+          <Link href="/billing-policy" className="underline hover:text-foreground">Billing Policy</Link>
+          <Link href="/refund" className="underline hover:text-foreground">Refund Policy</Link>
+          <Link href="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>
         </div>
       </div>
     </section>
