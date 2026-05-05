@@ -112,13 +112,24 @@ export function NotificationCenter() {
       item.id === notification.id ? { ...item, read: true } : item
     )));
     setUnreadCount((current) => Math.max(0, current - 1));
-    await fetch(`/api/notifications/feed/${notification.id}`, { method: "PATCH" }).catch(() => {});
+    // The CSRF middleware rejects mutations without a JSON content-type
+    // (returns 403 INVALID_CONTENT_TYPE), so even an empty-body PATCH must
+    // declare it. Body is `{}` to match the declared type.
+    await fetch(`/api/notifications/feed/${notification.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
+      body: "{}",
+    }).catch(() => {});
   };
 
   const markAllRead = async () => {
     setNotifications((current) => current.map((item) => ({ ...item, read: true })));
     setUnreadCount(0);
-    await fetch("/api/notifications/feed?action=read-all", { method: "PATCH" }).catch(() => {});
+    await fetch("/api/notifications/feed?action=read-all", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
+      body: "{}",
+    }).catch(() => {});
   };
 
   return (

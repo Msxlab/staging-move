@@ -90,7 +90,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           tabIndex={-1}
           className="flex-1 p-4 md:p-6 pb-20 md:pb-6 focus:outline-none"
         >
-          {children}
+          <div className="mx-auto w-full max-w-screen-2xl">
+            {children}
+          </div>
         </main>
         <MobileNav />
       </div>

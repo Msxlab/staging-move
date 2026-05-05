@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Menu, Settings, LogOut } from "lucide-react";
+import { User, Menu, Settings, LogOut, LayoutDashboard } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { NotificationCenter } from "@/components/layout/notification-center";
@@ -98,6 +98,15 @@ export function Header({ onMenuClick }: HeaderProps) {
                   <p className="text-sm font-medium text-foreground">{userName || tCommon("unknown")}</p>
                   <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                 </div>
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+                  onClick={() => setUserMenuOpen(false)}
+                  role="menuitem"
+                >
+                  <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+                  {tNav("dashboard")}
+                </Link>
                 <Link
                   href="/settings"
                   className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"

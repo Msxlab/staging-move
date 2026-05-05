@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { LogoMark } from "@/components/marketing/logo";
+import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle";
 
 export async function MarketingFooter() {
   const tCommon = await getTranslations("common");
@@ -11,6 +12,9 @@ export async function MarketingFooter() {
   return (
     <footer className="border-t py-12">
       <div className="container">
+        <div className="mb-6 flex justify-end">
+          <LandingThemeToggle />
+        </div>
         <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
