@@ -134,7 +134,8 @@ export default async function RootLayout({
   // because the production CSP uses 'strict-dynamic' — the source list
   // is ignored for non-nonced scripts. JSON-LD scripts read the same
   // request nonce in their component and stamp it on each ld+json tag.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   return (
     <html
@@ -153,9 +154,9 @@ export default async function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="mask-icon" href="/logo-mark.svg" color="#D4846A" />
+        {!BLOCK_INDEXING ? <SiteSchemas /> : null}
       </head>
       <body className={geistSans.className}>
-        {!BLOCK_INDEXING ? <SiteSchemas /> : null}
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
             <ThemeProvider nonce={nonce}>
