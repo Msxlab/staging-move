@@ -1,9 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import { Check, ShieldCheck, Sparkles } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  Download,
+  FileText,
+  Home,
+  Languages,
+  Map,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Truck,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
+
+type IndividualFeature = { icon: LucideIcon; label: string; desc: string };
+
+const INDIVIDUAL_FEATURES: IndividualFeature[] = [
+  { icon: Home, label: "Up to 10 homes", desc: "Primary, rental, family, second home — each with its own services." },
+  { icon: Building2, label: "Service provider records", desc: "Account #, login, contract, contacts, auto-renewal." },
+  { icon: Bell, label: "Bills & renewal reminders", desc: "Email + in-app alerts before due and renew dates." },
+  { icon: Wallet, label: "Per-home monthly budgets", desc: "Planned vs actual, savings rate, category breakdown." },
+  { icon: Truck, label: "Smart moving planner", desc: "From → to address, move date, auto-suggested move tasks." },
+  { icon: FileText, label: "Document storage", desc: "Leases, bills, receipts, proof-of-address — attached per service." },
+  { icon: Map, label: "US state-by-state guidance", desc: "DMV, voter, utility, tax & insurance notes for moves." },
+  { icon: Smartphone, label: "Web + iOS + Android", desc: "One subscription, all devices, synced." },
+  { icon: Languages, label: "English & Español", desc: "Full UI translations." },
+  { icon: Download, label: "Export anytime (CSV & PDF)", desc: "Your data, downloadable whenever you want." },
+];
+
+function FeatureGrid() {
+  return (
+    <ul className="mt-2 grid gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
+      {INDIVIDUAL_FEATURES.map(({ icon: Icon, label, desc }) => (
+        <li key={label} className="flex items-start gap-2.5">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
+          <span className="leading-snug">
+            <span className="block font-medium text-foreground">{label}</span>
+            <span className="block text-xs text-muted-foreground">{desc}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function parseAmount(label: string | null | undefined): number | null {
   if (!label) return null;
@@ -154,14 +201,12 @@ export function PricingSection({
             ) : null}
           </div>
 
-          <ul className="space-y-2.5 text-sm">
-            {plan.features.map((feature) => (
-              <li key={feature} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="rounded-xl border bg-background/40 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Everything included
+            </p>
+            <FeatureGrid />
+          </div>
 
           <Link href={ctaHref} className="mt-7 block">
             <Button className="w-full">
@@ -179,18 +224,39 @@ export function PricingSection({
               <p className="text-sm font-medium text-primary">Monthly billing</p>
               <h3 className="mt-2 text-2xl font-semibold">Individual Monthly</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Prefer a simple monthly plan without the annual trial.
+                Same Individual plan, billed monthly. Cancel anytime, no annual commitment.
               </p>
             </div>
             <div className="mb-6">
               <span className="text-4xl font-bold tracking-tight">{splitPriceLabel(monthlyOffer.displayPriceLabel).amount}</span>
               <span className="text-muted-foreground">{splitPriceLabel(monthlyOffer.displayPriceLabel).suffix}</span>
+              {(() => {
+                const monthly = parseAmount(monthlyOffer.displayPriceLabel);
+                const annual = parseAmount(yearlyPrice);
+                if (!monthly || !annual) return null;
+                const yearOfMonthly = monthly * 12;
+                if (yearOfMonthly <= annual) return null;
+                return (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    ≈ ${yearOfMonthly.toFixed(yearOfMonthly % 1 === 0 ? 0 : 2)}/year billed monthly
+                  </p>
+                );
+              })()}
             </div>
-            <Link href={ctaHref} className="block">
+            <div className="rounded-xl border bg-background/40 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Everything included
+              </p>
+              <FeatureGrid />
+            </div>
+            <Link href={ctaHref} className="mt-7 block">
               <Button variant="outline" className="w-full">
                 {ctaIntent === "manage" ? "Manage subscription" : monthlyOffer.ctaText}
               </Button>
             </Link>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              No trial on monthly. Renews each month until you cancel from Settings.
+            </p>
           </div>
         ) : null}
 
