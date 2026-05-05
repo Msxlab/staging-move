@@ -21,6 +21,7 @@ describe("public legal and policy content", () => {
       "/disclaimer",
       "/billing-policy",
       "/refund",
+      "/data-deletion",
       "/acceptable-use",
       "/dpa",
       "/security",
@@ -30,6 +31,8 @@ describe("public legal and policy content", () => {
       "/blog",
       "/blog/feed.xml",
       "/pricing",
+      "/about",
+      "/provider-coverage",
     ].forEach((href) => {
       expect(footer).toContain(`href="${href}"`);
     });
@@ -40,10 +43,10 @@ describe("public legal and policy content", () => {
     const refund = read("src/app/refund/page.tsx");
 
     expect(billing).toContain('title: "Billing Policy"');
-    expect(billing).toContain('canonical: "/billing-policy"');
+    expect(billing).toContain('path: "/billing-policy"');
     expect(billing).toContain("Auto-renewal and cancellation");
     expect(refund).toContain('title: "Refund Policy"');
-    expect(refund).toContain('canonical: "/refund"');
+    expect(refund).toContain('path: "/refund"');
     expect(refund).toContain("Refunds are not guaranteed");
     expect(billing).not.toContain("export { metadata, default }");
   });
@@ -131,6 +134,9 @@ describe("public legal and policy content", () => {
 
     expect(sitemap).toContain('path: "/billing-policy"');
     expect(sitemap).toContain('path: "/refund"');
+    expect(sitemap).toContain('path: "/about"');
+    expect(sitemap).toContain('path: "/provider-coverage"');
+    expect(sitemap).toContain('path: "/data-deletion"');
     expect(sitemap).not.toContain('path: "/help"');
     expect(robots).toContain('"/help"');
     expect(middleware).toContain('pathname.startsWith("/help")');

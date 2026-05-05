@@ -1,16 +1,14 @@
-import type { Metadata } from "next";
 import { Database, FileWarning, Lock, ShieldAlert } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_DISCLAIMER_DOCUMENT } from "@/lib/legal";
 import { policyLastUpdatedLabel } from "@/lib/legal-info";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: LEGAL_DISCLAIMER_DOCUMENT.title,
   description: LEGAL_DISCLAIMER_DOCUMENT.summary,
-  alternates: {
-    canonical: "/disclaimer",
-  },
-};
+  path: "/disclaimer",
+});
 
 const highlights = [
   { icon: Database, title: "Collected data scope", description: LEGAL_DISCLAIMER_DOCUMENT.highlights[0] },

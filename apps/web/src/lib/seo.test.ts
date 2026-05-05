@@ -49,4 +49,38 @@ describe("SEO helpers", () => {
       "https://locateflow.com/pricing",
     );
   });
+
+  it("builds route-specific public metadata with canonical social URLs", async () => {
+    vi.resetModules();
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://locateflow.com");
+    const seo = await import("./seo");
+
+    const metadata = seo.createPublicPageMetadata({
+      title: "FAQ",
+      description: "Answers about LocateFlow.",
+      path: "/faq",
+    });
+
+    expect(metadata.alternates).toMatchObject({ canonical: "/faq" });
+    expect(metadata.openGraph).toMatchObject({
+      url: "https://locateflow.com/faq",
+      title: "FAQ | LocateFlow",
+      description: "Answers about LocateFlow.",
+    });
+    expect(metadata.twitter).toMatchObject({
+      card: "summary_large_image",
+      title: "FAQ | LocateFlow",
+    });
+    expect(metadata.openGraph).toMatchObject({
+      images: [
+        expect.objectContaining({
+          url: "https://locateflow.com/opengraph-image",
+          width: 1200,
+          height: 630,
+        }),
+      ],
+    });
+  });
 });

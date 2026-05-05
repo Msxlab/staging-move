@@ -111,7 +111,7 @@ export class ApiClient {
 
     if (!response.ok) {
       try {
-        const body = await response.json();
+        const body: any = await response.json();
         const code = typeof body?.code === "string" ? body.code : undefined;
         return {
           error: buildApiErrorMessage(response.status, body),

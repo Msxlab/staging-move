@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
-  mapStripePriceIdToPlan: vi.fn(),
+  mapStripePriceIdToPlanAndInterval: vi.fn(),
   captureException: vi.fn(),
   captureMessage: vi.fn(),
   constructEvent: vi.fn(),
@@ -25,7 +25,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
 vi.mock("@/lib/runtime-config", () => ({ getRuntimeConfigValue: mocks.getRuntimeConfigValue }));
-vi.mock("@/lib/billing", () => ({ mapStripePriceIdToPlan: mocks.mapStripePriceIdToPlan }));
+vi.mock("@/lib/billing", () => ({
+  mapStripePriceIdToPlanAndInterval: mocks.mapStripePriceIdToPlanAndInterval,
+}));
 vi.mock("@/lib/sentry", () => ({
   captureException: mocks.captureException,
   captureMessage: mocks.captureMessage,
@@ -67,11 +69,11 @@ function subscriptionUpdatedEvent(overrides: Record<string, unknown> = {}) {
         id: "sub_1",
         customer: "cus_1",
         status: "active",
-        metadata: { userId: "user_1", plan: "INDIVIDUAL", cycle: "yearly" },
+        metadata: { userId: "user_1", plan: "INDIVIDUAL", cycle: "yearly", billingInterval: "YEAR" },
         cancel_at_period_end: false,
         current_period_end: Math.floor(Date.now() / 1000) + 3600,
         trial_end: null,
-        items: { data: [{ price: { id: "price_1" } }] },
+        items: { data: [{ price: { id: "price_yearly", recurring: { interval: "year" } } }] },
       },
     },
     ...overrides,
@@ -83,11 +85,11 @@ function trialingStripeSubscription(overrides: Record<string, unknown> = {}) {
     id: "sub_trial_1",
     customer: "cus_1",
     status: "trialing",
-    metadata: { userId: "user_1", plan: "INDIVIDUAL", cycle: "yearly" },
+    metadata: { userId: "user_1", plan: "INDIVIDUAL", cycle: "yearly", billingInterval: "YEAR" },
     cancel_at_period_end: false,
     current_period_end: Math.floor(Date.now() / 1000) + 90 * 86_400,
     trial_end: Math.floor(Date.now() / 1000) + 90 * 86_400,
-    items: { data: [{ price: { id: "price_1" } }] },
+    items: { data: [{ price: { id: "price_yearly", recurring: { interval: "year" } } }] },
     ...overrides,
   };
 }
@@ -111,7 +113,40 @@ function checkoutCompletedEvent(overrides: Record<string, unknown> = {}) {
           userId: "user_1",
           plan: "INDIVIDUAL",
           cycle: "yearly",
+          billingInterval: "YEAR",
           accessType: "FREE_TRIAL",
+        },
+      },
+    },
+    ...overrides,
+  };
+}
+
+function invoiceEvent(type = "invoice.paid", overrides: Record<string, unknown> = {}) {
+  return {
+    id: `evt_${type.replace(/\./g, "_")}`,
+    type,
+    created: Math.floor(Date.now() / 1000),
+    livemode: false,
+    data: {
+      object: {
+        id: "in_1",
+        customer: "cus_1",
+        subscription: "sub_active_1",
+        amount_paid: 3999,
+        amount_due: 3999,
+        currency: "usd",
+        billing_reason: "subscription_cycle",
+        next_payment_attempt: null,
+        lines: {
+          data: [
+            {
+              price: {
+                id: "price_yearly",
+                recurring: { interval: "year" },
+              },
+            },
+          ],
         },
       },
     },
@@ -151,7 +186,10 @@ describe("Stripe webhook idempotency and livemode", () => {
       };
     });
     mocks.constructEvent.mockReturnValue(subscriptionUpdatedEvent());
-    mocks.mapStripePriceIdToPlan.mockResolvedValue("INDIVIDUAL");
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+    });
     processedMock.findUnique.mockResolvedValue(null);
     processedMock.create.mockResolvedValue({});
     subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
@@ -189,6 +227,7 @@ describe("Stripe webhook idempotency and livemode", () => {
           status: "TRIALING",
           provider: "STRIPE",
           accessType: "FREE_TRIAL",
+          billingInterval: "YEAR",
           plan: "INDIVIDUAL",
           stripeCustomerId: "cus_1",
           stripeSubscriptionId: "sub_trial_1",
@@ -216,6 +255,7 @@ describe("Stripe webhook idempotency and livemode", () => {
         data: expect.objectContaining({
           status: "TRIALING",
           accessType: "FREE_TRIAL",
+          billingInterval: "YEAR",
           stripeSubscriptionId: "sub_trial_1",
         }),
       }),
@@ -229,7 +269,7 @@ describe("Stripe webhook idempotency and livemode", () => {
     }));
     await expect(POST(request())).resolves.toHaveProperty("status", 200);
     expect(subscriptionMock.updateMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: "TRIALING" }) }),
+      expect.objectContaining({ data: expect.objectContaining({ status: "TRIALING", billingInterval: "YEAR" }) }),
     );
 
     vi.clearAllMocks();
@@ -237,14 +277,23 @@ describe("Stripe webhook idempotency and livemode", () => {
     processedMock.create.mockResolvedValue({});
     subscriptionMock.findFirst.mockResolvedValue(localSubscription({ status: "TRIALING" }));
     subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
-    mocks.mapStripePriceIdToPlan.mockResolvedValue("INDIVIDUAL");
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+    });
     mocks.constructEvent.mockReturnValueOnce(subscriptionUpdatedEvent({
       id: "evt_active_1",
       data: { object: { ...trialingStripeSubscription(), id: "sub_active_1", status: "active", trial_end: null } },
     }));
     await expect(POST(request())).resolves.toHaveProperty("status", 200);
     expect(subscriptionMock.updateMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: "ACTIVE", accessType: "PAID" }) }),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "ACTIVE",
+          accessType: "PAID",
+          billingInterval: "YEAR",
+        }),
+      }),
     );
 
     vi.clearAllMocks();
@@ -252,7 +301,10 @@ describe("Stripe webhook idempotency and livemode", () => {
     processedMock.create.mockResolvedValue({});
     subscriptionMock.findFirst.mockResolvedValue(localSubscription({ status: "ACTIVE" }));
     subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
-    mocks.mapStripePriceIdToPlan.mockResolvedValue("INDIVIDUAL");
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValue({
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+    });
     mocks.constructEvent.mockReturnValueOnce(subscriptionUpdatedEvent({
       id: "evt_cancel_period_1",
       data: {
@@ -267,9 +319,82 @@ describe("Stripe webhook idempotency and livemode", () => {
     }));
     await expect(POST(request())).resolves.toHaveProperty("status", 200);
     expect(subscriptionMock.updateMany).toHaveBeenLastCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: "CANCEL_AT_PERIOD_END" }) }),
+      expect.objectContaining({ data: expect.objectContaining({ status: "CANCEL_AT_PERIOD_END", billingInterval: "YEAR" }) }),
     );
   });
+
+  it("maps a monthly Stripe price to billingInterval MONTH", async () => {
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValueOnce({
+      plan: "INDIVIDUAL",
+      billingInterval: "MONTH",
+    });
+    mocks.constructEvent.mockReturnValue(subscriptionUpdatedEvent({
+      id: "evt_monthly_1",
+      data: {
+        object: {
+          ...trialingStripeSubscription({
+            status: "active",
+            trial_end: null,
+            metadata: { userId: "user_1", plan: "INDIVIDUAL", billingInterval: "MONTH" },
+          }),
+          items: { data: [{ price: { id: "price_monthly", recurring: { interval: "month" } } }] },
+        },
+      },
+    }));
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(subscriptionMock.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "ACTIVE",
+          accessType: "PAID",
+          stripePriceId: "price_monthly",
+          billingProductId: "price_monthly",
+          billingInterval: "MONTH",
+        }),
+      }),
+    );
+  });
+
+  it.each(["invoice.paid", "invoice.payment_succeeded"])(
+    "handles %s as a recurring successful payment sync",
+    async (eventType) => {
+      mocks.constructEvent.mockReturnValue(invoiceEvent(eventType));
+      mocks.subscriptionsRetrieve.mockResolvedValue({
+        ...trialingStripeSubscription({
+          id: "sub_active_1",
+          status: "active",
+          trial_end: null,
+        }),
+        items: { data: [{ price: { id: "price_yearly", recurring: { interval: "year" } } }] },
+      });
+      subscriptionMock.findFirst.mockResolvedValue(localSubscription({
+        status: "ACTIVE",
+        stripeSubscriptionId: "sub_active_1",
+      }));
+
+      const response = await POST(request());
+
+      expect(response.status).toBe(200);
+      expect(mocks.subscriptionsRetrieve).toHaveBeenCalledWith("sub_active_1");
+      expect(subscriptionMock.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: "user_1" },
+          data: expect.objectContaining({
+            status: "ACTIVE",
+            accessType: "PAID",
+            billingInterval: "YEAR",
+            stripeCustomerId: "cus_1",
+            stripeSubscriptionId: "sub_active_1",
+            stripePriceId: "price_yearly",
+            billingProductId: "price_yearly",
+          }),
+        }),
+      );
+    },
+  );
 
   it("keeps checkout session events retryable when user metadata is missing", async () => {
     mocks.constructEvent.mockReturnValue(checkoutCompletedEvent({
@@ -312,14 +437,17 @@ describe("Stripe webhook idempotency and livemode", () => {
   });
 
   it("keeps an event retryable when handling fails before mutation", async () => {
-    mocks.mapStripePriceIdToPlan.mockRejectedValueOnce(new Error("price map failed"));
+    mocks.mapStripePriceIdToPlanAndInterval.mockRejectedValueOnce(new Error("price map failed"));
 
     const failed = await POST(request());
     expect(failed.status).toBe(500);
     expect(subscriptionMock.updateMany).not.toHaveBeenCalled();
     expect(processedMock.create).not.toHaveBeenCalled();
 
-    mocks.mapStripePriceIdToPlan.mockResolvedValueOnce("INDIVIDUAL");
+    mocks.mapStripePriceIdToPlanAndInterval.mockResolvedValueOnce({
+      plan: "INDIVIDUAL",
+      billingInterval: "YEAR",
+    });
     const retry = await POST(request());
 
     expect(retry.status).toBe(200);

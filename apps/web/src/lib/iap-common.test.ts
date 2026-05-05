@@ -65,6 +65,7 @@ describe("IAP normalization", () => {
       status: "ACTIVE",
       provider: "APP_STORE",
       productId: "individual.ios",
+      billingInterval: "MONTH",
       originalTransactionId: "1000000000001",
       latestTransactionId: "1000000000002",
       purchaseToken: null,

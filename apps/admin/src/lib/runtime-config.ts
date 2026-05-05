@@ -1,6 +1,14 @@
 import { prisma } from "@/lib/db";
 import { decrypt, encrypt } from "@/lib/shared-encryption";
-import { getRuntimeConfigDefinition, maskRuntimeConfigValue, RUNTIME_CONFIG_DEFINITIONS, type RuntimeConfigDefinition } from "@/lib/shared-runtime-config";
+import {
+  getRuntimeConfigDefinition,
+  getRuntimeConfigEnvValue,
+  maskRuntimeConfigValue,
+  RUNTIME_CONFIG_DEFINITIONS,
+  shouldPreferEnvRuntimeConfigValue,
+  STRIPE_RUNTIME_CONFIG_OVERRIDE_FLAG,
+  type RuntimeConfigDefinition,
+} from "@/lib/shared-runtime-config";
 
 export interface RuntimeConfigCatalogItem {
   key: string;
@@ -13,6 +21,8 @@ export interface RuntimeConfigCatalogItem {
   configured: boolean;
   source: "DB" | "ENV" | "MISSING";
   maskedValue: string | null;
+  warning: string | null;
+  dbOverrideIgnored: boolean;
   updatedAt: string | null;
   lastValidatedAt: string | null;
   lastValidationStatus: string | null;
@@ -39,10 +49,7 @@ function resolveEntryValue(entry: RuntimeConfigEntryRecord | null | undefined) {
 }
 
 function resolveEnvValue(definition: RuntimeConfigDefinition) {
-  if (definition.key === "GOOGLE_MAPS_API_KEY") {
-    return process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
-  }
-  return process.env[definition.key] || null;
+  return getRuntimeConfigEnvValue(definition.key, process.env);
 }
 
 export async function getAdminRuntimeConfigValue(key: string): Promise<string | null> {
@@ -63,9 +70,12 @@ export async function getAdminRuntimeConfigValue(key: string): Promise<string | 
   }).catch(() => null as RuntimeConfigEntryRecord | null);
 
   const storedValue = resolveEntryValue(entry);
+  const envValue = definition ? resolveEnvValue(definition) : process.env[key] || null;
+  if (definition && shouldPreferEnvRuntimeConfigValue(definition.key, process.env) && envValue) {
+    return envValue;
+  }
   if (storedValue) return storedValue;
-  if (definition) return resolveEnvValue(definition);
-  return process.env[key] || null;
+  return envValue;
 }
 
 export async function getAdminRuntimeConfigValues(keys: string[]) {
@@ -79,8 +89,14 @@ function buildCatalogItem(
 ): RuntimeConfigCatalogItem {
   const entryValue = resolveEntryValue(entry);
   const envValue = resolveEnvValue(definition);
-  const configuredValue = entryValue || envValue;
-  const source: RuntimeConfigCatalogItem["source"] = entryValue ? "DB" : envValue ? "ENV" : "MISSING";
+  const preferEnv = shouldPreferEnvRuntimeConfigValue(definition.key, process.env);
+  const dbOverrideIgnored = Boolean(preferEnv && envValue && entryValue);
+  const configuredValue = dbOverrideIgnored ? envValue : entryValue || envValue;
+  const source: RuntimeConfigCatalogItem["source"] = dbOverrideIgnored || (!entryValue && envValue)
+    ? "ENV"
+    : entryValue
+      ? "DB"
+      : "MISSING";
 
   return {
     key: definition.key,
@@ -93,6 +109,10 @@ function buildCatalogItem(
     configured: !!configuredValue,
     source,
     maskedValue: configuredValue ? maskRuntimeConfigValue(configuredValue, definition.maskStrategy) : null,
+    warning: dbOverrideIgnored
+      ? `A DB value exists, but deployment env is authoritative for this billing key. Set ${STRIPE_RUNTIME_CONFIG_OVERRIDE_FLAG}=true only for an intentional admin override.`
+      : null,
+    dbOverrideIgnored,
     updatedAt: entry?.updatedAt?.toISOString() || null,
     lastValidatedAt: entry?.lastValidatedAt?.toISOString() || null,
     lastValidationStatus: entry?.lastValidationStatus || null,

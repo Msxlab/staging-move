@@ -34,6 +34,9 @@ Docker build args, if overriding the defaults:
 ```bash
 NEXT_PUBLIC_APP_URL=https://locateflow.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+NEXT_PUBLIC_SITE_URL=https://locateflow.com
+SITE_URL=https://locateflow.com
+APP_ENV=production
 NEXT_PUBLIC_IMGPROXY_URL=https://img.locateflow.com
 R2_BUCKET=locateflow
 ```
@@ -69,7 +72,55 @@ Required public URL env:
 ```bash
 NEXT_PUBLIC_APP_URL=https://locateflow.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+NEXT_PUBLIC_SITE_URL=https://locateflow.com
+SITE_URL=https://locateflow.com
+APP_ENV=production
 ```
+
+`APP_ENV=production` is indexing-critical. The DigitalOcean component names
+currently contain `staging`, but the active `locateflow.com` and
+`www.locateflow.com` routes must run with production SEO env values. If
+`APP_ENV=staging` or `APP_ENV=preview` is left on the live domain, the web app
+intentionally emits `X-Robots-Tag: noindex, nofollow, noarchive`, an empty
+sitemap, and `robots.txt` with `Disallow: /`.
+
+### Production indexing deploy steps
+
+In DigitalOcean App Platform:
+
+1. Open the LocateFlow app.
+2. Open the `web-staging` component that serves `locateflow.com` and `www.locateflow.com`.
+3. Confirm these web component environment variables are present in the component scope, not only in local `.env` files:
+
+```bash
+APP_ENV=production
+NEXT_PUBLIC_SITE_URL=https://locateflow.com
+SITE_URL=https://locateflow.com
+NEXT_PUBLIC_APP_URL=https://locateflow.com
+```
+
+4. If using the Dockerfile build method, also set the matching build args when overriding defaults:
+
+```bash
+APP_ENV=production
+NEXT_PUBLIC_SITE_URL=https://locateflow.com
+SITE_URL=https://locateflow.com
+NEXT_PUBLIC_APP_URL=https://locateflow.com
+```
+
+5. Open **Deployments** and choose **Force rebuild and deploy**.
+
+A restart alone is not enough after changing these values. `NEXT_PUBLIC_*`
+variables are read during `next build` and may be embedded into generated
+metadata, route handlers, static assets, and the standalone server output.
+The sitemap, robots policy, canonical URLs, Open Graph tags, and `llms.txt`
+must be rebuilt with the production values. Restarting an old build can keep
+the stale staging/noindex behavior even if runtime env now looks correct.
+
+Keep staging or preview values only on separate staging/preview components or
+domains. Do not set `APP_ENV=staging`, `APP_ENV=preview`,
+`NEXT_PUBLIC_SITE_URL` with `ondigitalocean.app`, or a Vercel preview URL on
+the live `locateflow.com` component.
 
 The standalone preparation step copies:
 
@@ -97,6 +148,9 @@ Required public URL env:
 ```bash
 NEXT_PUBLIC_APP_URL=https://locateflow.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+NEXT_PUBLIC_SITE_URL=https://locateflow.com
+SITE_URL=https://locateflow.com
+APP_ENV=production
 ```
 
 The standalone preparation step copies:
@@ -148,6 +202,9 @@ NEXT_PUBLIC_APP_URL=https://locateflow.com
 NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
 EXPO_PUBLIC_API_URL=https://locateflow.com/api
 GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore
+NEXT_PUBLIC_SITE_URL=https://locateflow.com
+SITE_URL=https://locateflow.com
+APP_ENV=production
 ```
 
 - Google Authorized JavaScript origin: `https://locateflow.com`
@@ -186,6 +243,36 @@ After deploy, smoke test:
 - `https://admin.locateflow.com/login`
 - `https://admin.locateflow.com/api/health`
 - one `/_next/static/...` CSS or JS URL from each domain in browser dev tools
+- `https://locateflow.com/robots.txt` allows public routes and references `https://locateflow.com/sitemap.xml`
+- `https://locateflow.com/sitemap.xml` contains the public marketing/legal URLs
+- `curl -I https://locateflow.com/` does not return `X-Robots-Tag: noindex`
+- `https://locateflow.com/llms.txt` starts with `# LocateFlow`, not `# Not indexed`
+
+Exact SEO verification commands:
+
+```bash
+curl -I https://locateflow.com/
+curl https://locateflow.com/robots.txt
+curl https://locateflow.com/sitemap.xml
+curl https://locateflow.com/llms.txt
+
+curl -A "Googlebot" -I https://locateflow.com/
+curl -A "Bingbot" -I https://locateflow.com/
+curl -A "OAI-SearchBot" -I https://locateflow.com/
+curl -A "ChatGPT-User" -I https://locateflow.com/
+curl -A "PerplexityBot" -I https://locateflow.com/
+curl -A "ClaudeBot" -I https://locateflow.com/
+curl -A "GPTBot" https://locateflow.com/robots.txt
+```
+
+Expected results:
+
+- Public pages do not return `X-Robots-Tag: noindex`, `nofollow`, or `noarchive`.
+- `robots.txt` does not contain a global `Disallow: /` for `User-agent: *`.
+- `robots.txt` includes `Sitemap: https://locateflow.com/sitemap.xml`.
+- `sitemap.xml` includes `https://locateflow.com`, `/pricing`, `/faq`, `/blog`, `/privacy`, `/terms`, and trust/legal pages.
+- `llms.txt` contains the public page map and excludes admin, auth, account, app, and API routes.
+- Raw homepage and pricing HTML include title, description, canonical, Open Graph, Twitter card, one visible `h1`, and primary content.
 
 ## First Admin Bootstrap
 

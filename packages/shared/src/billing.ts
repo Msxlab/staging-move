@@ -68,11 +68,11 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
     id: "INDIVIDUAL",
     displayName: "Individual",
     shortDescription: "For one person keeping every service tied to their addresses in sync.",
-    priceLabel: "$9.99",
+    priceLabel: "$3.99",
     periodLabel: "/month",
-    monthlyPriceUsd: 9.99,
-    yearlyPriceLabel: "$79/year",
-    yearlyPriceUsd: 79,
+    monthlyPriceUsd: 3.99,
+    yearlyPriceLabel: "$39.99/year",
+    yearlyPriceUsd: 39.99,
     isPaid: true,
     features: [
       "10 addresses",
@@ -87,7 +87,8 @@ export const BILLING_PLAN_DEFINITIONS: Record<BillingPlan, BillingPlanDefinition
 
 export const BILLING_PRODUCT_CONFIG_KEYS = {
   web: {
-    INDIVIDUAL: "STRIPE_PRICE_INDIVIDUAL",
+    INDIVIDUAL_MONTHLY: "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+    INDIVIDUAL_YEARLY: "STRIPE_PRICE_INDIVIDUAL_YEARLY",
   },
 } as const;
 

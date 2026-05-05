@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/shared-encryption";
-import { getRuntimeConfigDefinition } from "@/lib/shared-runtime-config";
+import {
+  getRuntimeConfigEnvValue,
+  shouldPreferEnvRuntimeConfigValue,
+} from "@/lib/shared-runtime-config";
 
 interface RuntimeConfigEntryRecord {
   key: string;
@@ -33,7 +36,10 @@ function normalizeConfigValue(value: string | null | undefined): string | null {
 }
 
 export async function getRuntimeConfigValue(key: string): Promise<string | null> {
-  const definition = getRuntimeConfigDefinition(key);
+  const envValue = normalizeConfigValue(getRuntimeConfigEnvValue(key, process.env));
+  const preferEnv = shouldPreferEnvRuntimeConfigValue(key, process.env);
+  if (preferEnv && envValue) return envValue;
+
   const entry = await prisma.runtimeConfigEntry.findUnique({
     where: { key },
     select: {
@@ -49,12 +55,7 @@ export async function getRuntimeConfigValue(key: string): Promise<string | null>
   const storedValue = normalizeConfigValue(resolveStoredValue(entry));
   if (storedValue) return storedValue;
 
-  const envValue = normalizeConfigValue(process.env[key]);
   if (envValue) return envValue;
-
-  if (definition?.key === "GOOGLE_MAPS_API_KEY") {
-    return normalizeConfigValue(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
-  }
 
   return null;
 }
