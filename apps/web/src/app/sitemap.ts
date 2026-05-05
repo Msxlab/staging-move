@@ -3,7 +3,14 @@ import { prisma } from "@/lib/db";
 import { blogHreflangUrls, blogPostUrl } from "@/lib/blog/urls";
 import { SITE_URL, isNoIndexEnvironment, staticLastModified } from "@/lib/seo";
 
-export const revalidate = 600; // 10 min — publish webhook also forces revalidate
+// Generate at request time so the blog query always runs against the live
+// DB. Previously this was ISR (`revalidate: 600`), which meant the route
+// was prerendered at `next build` — and when the build container could not
+// reach the DB the silent catch returned an empty blog list, then ISR
+// cached that empty result indefinitely until something forced a
+// revalidate. llms.txt and robots.ts already use force-dynamic for the
+// same reason; sitemap should match.
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (isNoIndexEnvironment(SITE_URL)) {
@@ -81,9 +88,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         languages: blogHreflangUrls(SITE_URL, p.slug, localesBySlug.get(p.slug)),
       },
     }));
-  } catch {
-    // DB unavailable at build time (e.g. CI without mysql). Fall back
-    // to static entries; the next ISR refresh will pick up posts.
+  } catch (err) {
+    // DB unreachable from sitemap context. Log so the failure is visible in
+    // platform logs instead of silently shipping an empty blog list.
+    console.warn("sitemap_blog_query_failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     blogEntries = [];
   }
 
