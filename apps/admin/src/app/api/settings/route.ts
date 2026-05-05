@@ -184,7 +184,9 @@ export async function GET(request: NextRequest) {
       buildIntegrationStatus(runtimeConfigMap, "stripe", "Stripe Billing", [
         "STRIPE_SECRET_KEY",
         "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_PRICE_INDIVIDUAL",
+        "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+        "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+        "STRIPE_PRICE_INDIVIDUAL_YEARLY",
       ]),
       buildIntegrationStatus(runtimeConfigMap, "resend", "Transactional Email", [
         "RESEND_API_KEY",

@@ -38,11 +38,23 @@ describe("admin middleware CSP", () => {
     expect(imgSrc).toContain("https://cdn.example.com");
     expect(imgSrc).not.toContain("/provider-logo");
   });
+
+  it("marks admin responses and metadata as noindex", () => {
+    const middlewareSource = readFileSync(join(process.cwd(), "src", "middleware.ts"), "utf8");
+    const layoutSource = readFileSync(join(process.cwd(), "src", "app", "layout.tsx"), "utf8");
+    const robotsSource = readFileSync(join(process.cwd(), "src", "app", "robots.ts"), "utf8");
+
+    expect(middlewareSource).toContain('response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive")');
+    expect(layoutSource).toContain("robots:");
+    expect(layoutSource).toContain("index: false");
+    expect(robotsSource).toContain('disallow: "/"');
+  });
 });
 
 describe("admin service worker", () => {
   it("serves the service worker path without requiring an admin session", () => {
     expect(isPublicStaticPath("/sw.js")).toBe(true);
+    expect(isPublicStaticPath("/robots.txt")).toBe(true);
     expect(isPublicStaticPath("/login")).toBe(false);
     expect(isPublicStaticPath("/api/providers")).toBe(false);
   });

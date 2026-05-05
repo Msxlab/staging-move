@@ -81,7 +81,7 @@ const annualTrialPreset: typeof emptyForm = {
   accessType: "FREE_TRIAL",
   billingInterval: "YEAR",
   trialDays: "90",
-  displayPriceLabel: "$79/year",
+  displayPriceLabel: "$39.99/year",
   publicHeadline: "Start with 3 months free",
   publicSubheadline: "Individual Annual starts after your trial.",
   checkoutDisclosureCopy: "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
@@ -94,10 +94,10 @@ const monthlyPaidPreset: typeof emptyForm = {
   accessType: "PAID",
   billingInterval: "MONTH",
   trialDays: "",
-  displayPriceLabel: "$9.99/month",
+  displayPriceLabel: "$3.99/month",
   publicHeadline: "Subscribe monthly",
   publicSubheadline: "Simple monthly billing. Cancel anytime.",
-  checkoutDisclosureCopy: "Today: $9.99. Your Individual Monthly subscription starts today and renews monthly until you cancel.",
+  checkoutDisclosureCopy: "Today: $3.99. Your Individual Monthly subscription starts today and renews monthly until you cancel.",
   newUsersOnly: false,
 };
 
@@ -401,7 +401,7 @@ export default function AcquisitionCampaignsPage() {
         ...current,
         accessType,
         billingInterval: "YEAR",
-        displayPriceLabel: current.accessType === "FREE_TRIAL" ? current.displayPriceLabel : "$79/year",
+        displayPriceLabel: current.accessType === "FREE_TRIAL" ? current.displayPriceLabel : "$39.99/year",
         publicHeadline: current.accessType === "FREE_TRIAL" ? current.publicHeadline : "Start with 3 months free",
         publicSubheadline: current.accessType === "FREE_TRIAL" ? current.publicSubheadline : "Individual Annual starts after your trial.",
         checkoutDisclosureCopy: current.accessType === "FREE_TRIAL" ? current.checkoutDisclosureCopy : "Today: $0. Trial: 3 months. Your annual plan starts after the trial. You can cancel before then in Settings.",
@@ -597,7 +597,7 @@ export default function AcquisitionCampaignsPage() {
           title="Annual Trial slot"
           description="Drives the primary card on / and /pricing, and the upgrade banner for Free Access users."
           campaign={slots.annualTrial}
-          emptyHint="No annual trial published. The homepage will fall back to the static $79/year copy until you activate one."
+          emptyHint="No annual trial published. The homepage will fall back to static annual copy until you activate one."
           onCreate={() => startCreate(annualTrialPreset)}
           onEdit={(campaign) => startEditing(campaign)}
           createLabel="Create Annual Trial"
@@ -734,7 +734,7 @@ export default function AcquisitionCampaignsPage() {
               className={inputCls}
               value={form.displayPriceLabel}
               onChange={(event) => update("displayPriceLabel", event.target.value)}
-              placeholder={form.accessType === "PAID" && form.billingInterval === "MONTH" ? "$9/month" : "$79/year"}
+              placeholder={form.accessType === "PAID" && form.billingInterval === "MONTH" ? "$3.99/month" : "$39.99/year"}
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
               Leave blank to auto-fill from Stripe. Otherwise must match the Stripe price.

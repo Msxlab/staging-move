@@ -12,6 +12,9 @@ const PUBLIC_PATHS = [
   "/disclaimer",
   "/cookie-policy",
   "/contact",
+  "/about",
+  "/provider-coverage",
+  "/data-deletion",
   "/pricing",
   "/how-it-works",
   "/blog",
@@ -27,6 +30,7 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/verify-email",
+  "/opengraph-image",
 ];
 const PUBLIC_API_PREFIXES = [
   "/api/internal/",
@@ -57,6 +61,7 @@ const PUBLIC_API_EXACT = [
   "/api/blog/view",
 ];
 const PUBLIC_API_GET = [
+  "/api/acquisition/public-trial-campaign",
   "/api/providers",
   "/api/blog/image",
   "/api/blog/indexnow-key",

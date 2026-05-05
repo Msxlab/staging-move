@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
 import { Database, FileSignature, Globe2, ShieldCheck } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { LEGAL_CONTACTS, LEGAL_INFO, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Data Processing Addendum",
   description: "LocateFlow's Data Processing Addendum summary for customers processing personal data for others.",
-  alternates: { canonical: "/dpa" },
-};
+  path: "/dpa",
+});
 
 const highlights = [
   {

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   MapPin,
@@ -12,15 +11,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "How It Works",
   description:
     "See how LocateFlow helps organize providers, addresses, reminders, documents, and moving tasks without replacing provider confirmation.",
-  alternates: {
-    canonical: "/how-it-works",
-  },
-};
+  path: "/how-it-works",
+});
 
 const steps = [
   {

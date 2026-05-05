@@ -5,7 +5,8 @@ const mocks = vi.hoisted(() => ({
   requireDbUserId: vi.fn(),
   getRuntimeConfigValue: vi.fn(),
   rateLimit: vi.fn(),
-  getStripePriceIdForPlan: vi.fn(),
+  getStripePriceIdForPlanAndInterval: vi.fn(),
+  getStripeAnnualTrialDays: vi.fn(),
   ensureSubscriptionDefaults: vi.fn(),
   findAcquisitionCampaign: vi.fn(),
   findActivePublicIndividualAnnualTrialCampaign: vi.fn(),
@@ -40,7 +41,9 @@ vi.mock("@/lib/rate-limit", () => ({
 }));
 vi.mock("@/lib/billing", () => ({
   ensureSubscriptionDefaults: mocks.ensureSubscriptionDefaults,
-  getStripePriceIdForPlan: mocks.getStripePriceIdForPlan,
+  getStripePriceIdForPlanAndInterval: mocks.getStripePriceIdForPlanAndInterval,
+  getStripeAnnualTrialDays: mocks.getStripeAnnualTrialDays,
+  billingIntervalToCycle: (interval: string) => interval === "YEAR" ? "yearly" : "monthly",
 }));
 vi.mock("@/lib/acquisition-campaigns", () => ({
   findAcquisitionCampaign: mocks.findAcquisitionCampaign,
@@ -101,7 +104,10 @@ describe("stripe checkout route", () => {
       status: "PENDING_CHECKOUT",
     });
     subscriptionMock.update.mockResolvedValue({});
-    mocks.getStripePriceIdForPlan.mockResolvedValue("price_monthly");
+    mocks.getStripePriceIdForPlanAndInterval.mockImplementation(async (_plan: string, interval: string) =>
+      interval === "YEAR" ? "price_yearly" : "price_monthly",
+    );
+    mocks.getStripeAnnualTrialDays.mockResolvedValue(90);
     const activeCampaign = {
       id: "camp_1",
       name: "Individual Annual Trial",
@@ -111,7 +117,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$79/year",
+      displayPriceLabel: "$39.99/year",
       requiresPaymentMethod: true,
       autoRenew: true,
       newUsersOnly: true,
@@ -125,7 +131,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "MONTH",
       trialDays: null,
-      displayPriceLabel: "$9/month",
+      displayPriceLabel: "$3.99/month",
       stripePriceId: "price_monthly",
       requiresPaymentMethod: true,
       autoRenew: true,
@@ -152,17 +158,17 @@ describe("stripe checkout route", () => {
   it("rejects Stripe test keys in production billing environments", async () => {
     process.env.APP_ENV = "production";
 
-    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }));
+    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }));
 
     expect(response.status).toBe(503);
     expect(mocks.stripeConstructor).not.toHaveBeenCalled();
   });
 
   it("returns a clean config error instead of downgrading yearly checkout", async () => {
-    mocks.getStripePriceIdForPlan.mockResolvedValue(null);
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue(null);
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
     );
     const body = await response.json();
 
@@ -172,7 +178,7 @@ describe("stripe checkout route", () => {
   });
 
   it("creates Stripe customers with a deterministic idempotency key", async () => {
-    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }));
+    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }));
 
     expect(response.status).toBe(200);
     expect(mocks.customersCreate).toHaveBeenCalledWith(
@@ -182,13 +188,14 @@ describe("stripe checkout route", () => {
   });
 
   it("creates an annual trial Checkout session with payment method collection and snapshot metadata", async () => {
-    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.getStripePriceIdForPlanAndInterval).toHaveBeenCalledWith("INDIVIDUAL", "YEAR");
     expect(mocks.sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: "subscription",
@@ -199,9 +206,21 @@ describe("stripe checkout route", () => {
         subscription_data: expect.objectContaining({
           trial_period_days: 90,
           metadata: expect.objectContaining({
+            userId: "user_1",
+            plan: "INDIVIDUAL",
             campaignCode: "INDIVIDUAL90",
             accessType: "FREE_TRIAL",
+            billingInterval: "YEAR",
+            provider: "STRIPE",
+            platform: "web",
           }),
+        }),
+        metadata: expect.objectContaining({
+          userId: "user_1",
+          plan: "INDIVIDUAL",
+          billingInterval: "YEAR",
+          provider: "STRIPE",
+          platform: "web",
         }),
       }),
     );
@@ -226,10 +245,10 @@ describe("stripe checkout route", () => {
   });
 
   it("uses the active public campaign when no campaign code is provided", async () => {
-    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
     );
 
     expect(response.status).toBe(200);
@@ -248,7 +267,7 @@ describe("stripe checkout route", () => {
     mocks.findActivePublicIndividualAnnualTrialCampaign.mockResolvedValueOnce(null);
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
     );
     const body = await response.json();
 
@@ -263,10 +282,11 @@ describe("stripe checkout route", () => {
 
   it("creates a monthly paid Checkout session from the active monthly offer", async () => {
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "monthly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "MONTH", acceptedSubscriptionTerms: true }),
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.getStripePriceIdForPlanAndInterval).toHaveBeenCalledWith("INDIVIDUAL", "MONTH");
     expect(mocks.findActivePublicIndividualMonthlyPaidOffer).toHaveBeenCalled();
     expect(mocks.findActivePublicIndividualAnnualTrialCampaign).not.toHaveBeenCalled();
     expect(mocks.sessionsCreate).toHaveBeenCalledWith(
@@ -277,7 +297,13 @@ describe("stripe checkout route", () => {
             campaignCode: "MONTHLY",
             accessType: "PAID",
             cycle: "monthly",
+            billingInterval: "MONTH",
           }),
+        }),
+        metadata: expect.objectContaining({
+          billingInterval: "MONTH",
+          provider: "STRIPE",
+          platform: "web",
         }),
         success_url: expect.stringContaining("trial=false"),
       }),
@@ -297,7 +323,7 @@ describe("stripe checkout route", () => {
     mocks.findActivePublicIndividualMonthlyPaidOffer.mockResolvedValueOnce(null);
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "monthly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "MONTH", acceptedSubscriptionTerms: true }),
     );
     const body = await response.json();
 
@@ -307,7 +333,7 @@ describe("stripe checkout route", () => {
   });
 
   it("uses an explicit campaign code only when that campaign exists", async () => {
-    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
     mocks.findAcquisitionCampaign.mockResolvedValueOnce({
       id: "camp_spring",
       name: "Spring Trial",
@@ -317,7 +343,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$79/year",
+      displayPriceLabel: "$39.99/year",
       requiresPaymentMethod: true,
       autoRenew: true,
       newUsersOnly: true,
@@ -326,7 +352,7 @@ describe("stripe checkout route", () => {
     const response = await POST(
       checkoutRequest({
         plan: "INDIVIDUAL",
-        cycle: "yearly",
+        billingInterval: "YEAR",
         campaignCode: "spring90",
         acceptedSubscriptionTerms: true,
       }),
@@ -356,7 +382,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$79/year",
+      displayPriceLabel: "$39.99/year",
       stripePriceId: "price_yearly",
       requiresPaymentMethod: true,
       autoRenew: true,
@@ -381,6 +407,7 @@ describe("stripe checkout route", () => {
           metadata: expect.objectContaining({
             campaignCode: "SPRING90",
             cycle: "yearly",
+            billingInterval: "YEAR",
           }),
         }),
       }),
@@ -397,7 +424,7 @@ describe("stripe checkout route", () => {
       plan: "INDIVIDUAL",
       billingInterval: "YEAR",
       trialDays: 90,
-      displayPriceLabel: "$79/year",
+      displayPriceLabel: "$39.99/year",
       requiresPaymentMethod: true,
       autoRenew: true,
       newUsersOnly: true,
@@ -409,7 +436,7 @@ describe("stripe checkout route", () => {
     const response = await POST(
       checkoutRequest({
         plan: "INDIVIDUAL",
-        cycle: "yearly",
+        billingInterval: "YEAR",
         campaignCode: "OLD90",
         acceptedSubscriptionTerms: true,
       }),
@@ -434,10 +461,10 @@ describe("stripe checkout route", () => {
       status: "ACTIVE",
       platform: "web",
     });
-    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
     );
 
     expect(response.status).toBe(200);
@@ -464,10 +491,10 @@ describe("stripe checkout route", () => {
       status: "ACTIVE",
       platform: "web",
     });
-    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
     );
     const body = await response.json();
 
@@ -486,10 +513,10 @@ describe("stripe checkout route", () => {
       status: "TRIALING",
       platform: "web",
     });
-    mocks.getStripePriceIdForPlan.mockResolvedValue("price_yearly");
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
 
     const response = await POST(
-      checkoutRequest({ plan: "INDIVIDUAL", cycle: "yearly", acceptedSubscriptionTerms: true }),
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
     );
     const body = await response.json();
 

@@ -74,9 +74,61 @@ type SubscriptionRecord = {
 };
 
 type IapProductsResponse = {
-  ios: { available: boolean; plans: { INDIVIDUAL: string | null } };
-  android: { available: boolean; plans: { INDIVIDUAL: string | null } };
+  ios: {
+    available: boolean;
+    plans: {
+      INDIVIDUAL: string | null;
+      // Newer fields (additive — older mobile builds keep working).
+      INDIVIDUAL_MONTHLY?: string | null;
+      INDIVIDUAL_YEARLY?: string | null;
+    };
+  };
+  android: {
+    available: boolean;
+    plans: {
+      INDIVIDUAL: string | null;
+      INDIVIDUAL_MONTHLY?: string | null;
+      INDIVIDUAL_YEARLY?: string | null;
+    };
+  };
 };
+
+type Cycle = "monthly" | "yearly";
+
+function resolveSkuFromResponse(
+  iapProducts: IapProductsResponse | null,
+  cycle: Cycle,
+): string | null {
+  if (!iapProducts) return null;
+  const platform = Platform.OS === "ios" ? iapProducts.ios : iapProducts.android;
+  if (!platform) return null;
+  if (cycle === "yearly") {
+    return platform.plans.INDIVIDUAL_YEARLY ?? null;
+  }
+  return platform.plans.INDIVIDUAL_MONTHLY ?? platform.plans.INDIVIDUAL ?? null;
+}
+
+function parseAmount(label: string | null | undefined): number | null {
+  if (!label) return null;
+  const match = label.match(/([0-9]+(?:[.,][0-9]{1,2})?)/);
+  if (!match) return null;
+  const value = Number.parseFloat(match[1].replace(",", "."));
+  return Number.isFinite(value) ? value : null;
+}
+
+function computeAnnualSavingsText(
+  yearlyLabel: string | null | undefined,
+  monthlyLabel: string | null | undefined,
+): string | null {
+  const yearly = parseAmount(yearlyLabel);
+  const monthly = parseAmount(monthlyLabel);
+  if (!yearly || !monthly) return null;
+  const yearOfMonthly = monthly * 12;
+  if (yearOfMonthly <= yearly) return null;
+  const saved = yearOfMonthly - yearly;
+  const percent = Math.round((saved / yearOfMonthly) * 100);
+  return `Save $${saved.toFixed(saved % 1 === 0 ? 0 : 2)}/year vs monthly · ${percent}% off`;
+}
 
 type PublicCampaignSummary = {
   campaignCode: string;
@@ -114,7 +166,8 @@ function LegacySubscriptionScreen() {
   const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
   const [iapProducts, setIapProducts] = useState<IapProductsResponse | null>(null);
-  const [localizedPrice, setLocalizedPrice] = useState<string | null>(null);
+  const [localizedMonthlyPrice, setLocalizedMonthlyPrice] = useState<string | null>(null);
+  const [localizedYearlyPrice, setLocalizedYearlyPrice] = useState<string | null>(null);
   const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
 
@@ -138,35 +191,39 @@ function LegacySubscriptionScreen() {
     }
   }, []);
 
-  const storeSku = useMemo(() => {
-    if (!iapProducts) return null;
-    return Platform.OS === "ios"
-      ? iapProducts.ios.plans.INDIVIDUAL
-      : iapProducts.android.plans.INDIVIDUAL;
-  }, [iapProducts]);
-
+  const monthlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "monthly"), [iapProducts]);
+  const yearlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "yearly"), [iapProducts]);
+  // `iapAvailable` mirrors the legacy contract: monthly must be configured
+  // for the store integration to be considered usable. If only the yearly
+  // SKU is configured we still treat IAP as unavailable, because the legacy
+  // single-SKU code path above expects monthly.
   const iapAvailable = Boolean(
-    storeSku &&
+    monthlySku &&
       (Platform.OS === "ios" ? iapProducts?.ios.available : iapProducts?.android.available)
   );
 
-  // Pull the localized price from StoreKit/Play once the SKU is known.
+  // Pull localized prices for both SKUs in a single fetchProducts call so
+  // StoreKit/Play return one batch instead of two round-trips.
   useEffect(() => {
-    if (!iapAvailable || !storeSku) {
-      setLocalizedPrice(null);
+    const skus = [monthlySku, yearlySku].filter((sku): sku is string => Boolean(sku));
+    if (!iapAvailable || skus.length === 0) {
+      setLocalizedMonthlyPrice(null);
+      setLocalizedYearlyPrice(null);
       return;
     }
     let cancelled = false;
     (async () => {
-      const products = await fetchSubscriptionProducts([storeSku]);
+      const products = await fetchSubscriptionProducts(skus);
       if (cancelled) return;
-      const match = products.find((p) => p.id === storeSku) || products[0];
-      if (match) setLocalizedPrice(match.displayPrice || null);
+      const monthly = products.find((p) => p.id === monthlySku);
+      const yearly = products.find((p) => p.id === yearlySku);
+      setLocalizedMonthlyPrice(monthly?.displayPrice || null);
+      setLocalizedYearlyPrice(yearly?.displayPrice || null);
     })();
     return () => {
       cancelled = true;
     };
-  }, [iapAvailable, storeSku]);
+  }, [iapAvailable, monthlySku, yearlySku]);
 
   useEffect(() => () => {
     // Release StoreKit connection on unmount.
@@ -218,8 +275,14 @@ function LegacySubscriptionScreen() {
     return message || t("toast.networkError");
   }, [t]);
 
-  const handleUpgrade = useCallback(async (planKey: "INDIVIDUAL") => {
-    setProcessingPlan(planKey);
+  const handleUpgrade = useCallback(async (planKey: "INDIVIDUAL", requestedCycle?: Cycle) => {
+    // Resolve the effective cycle. When the caller doesn't specify, fall
+    // back to whatever campaign is live (annual trial wins over monthly
+    // paid). This keeps the legacy single-CTA call site working unchanged.
+    const fallbackCycle: Cycle = annualOffer ? "yearly" : monthlyOffer ? "monthly" : "yearly";
+    const cycle: Cycle = requestedCycle || fallbackCycle;
+    const processingKey = `${planKey}_${cycle}`;
+    setProcessingPlan(processingKey);
 
     // Disclosure gate runs before BOTH paths (IAP and Stripe). Apple's
     // in-app paywall and Google Play's billing UI cover their own
@@ -227,12 +290,14 @@ function LegacySubscriptionScreen() {
     // terms (length, first-charge date, cancel-by date) the admin
     // configured. Showing the campaign disclosure on every checkout
     // path keeps mobile parity with web.
-    const targetCampaign = annualOffer || monthlyOffer || null;
-    const cycle: "yearly" | "monthly" = targetCampaign?.billingInterval === "MONTH" ? "monthly" : "yearly";
+    const targetCampaign = cycle === "yearly" ? annualOffer : monthlyOffer;
+    const localizedPrice = cycle === "yearly" ? localizedYearlyPrice : localizedMonthlyPrice;
     const disclosureBody =
       targetCampaign?.checkoutDisclosureCopy ||
       (cycle === "monthly"
-        ? t("settings.subscription_disclosureMonthly", { price: targetCampaign?.displayPriceLabel || "the displayed price" })
+        ? t("settings.subscription_disclosureMonthly", {
+            price: localizedPrice || targetCampaign?.displayPriceLabel || "the displayed price",
+          })
         : t("settings.subscription_disclosureAnnual"));
     const headline = targetCampaign?.publicHeadline ||
       (cycle === "monthly"
@@ -257,8 +322,11 @@ function LegacySubscriptionScreen() {
     }
 
     // Native IAP path — preferred on iOS/Android (required by store policy).
-    if (iapAvailable && storeSku) {
-      const result = await purchaseSubscription({ productId: storeSku });
+    // Pick the SKU matching the user-chosen cycle. Fall back to monthly when
+    // the yearly SKU is not configured so a single-SKU build keeps working.
+    const targetSku = cycle === "yearly" ? (yearlySku || monthlySku) : monthlySku;
+    if (iapAvailable && targetSku) {
+      const result = await purchaseSubscription({ productId: targetSku });
       setProcessingPlan(null);
 
       if (result.status === "cancelled") return;
@@ -274,7 +342,7 @@ function LegacySubscriptionScreen() {
 
     const res = await api.post<any>("/api/stripe/checkout", {
       plan: planKey,
-      cycle,
+      billingInterval: cycle === "yearly" ? "YEAR" : "MONTH",
       acceptedSubscriptionTerms: true,
       ...(targetCampaign?.campaignCode ? { campaignCode: targetCampaign.campaignCode } : {}),
     });
@@ -288,7 +356,19 @@ function LegacySubscriptionScreen() {
 
     hapticSuccess();
     await openExternalUrl(res.data.url);
-  }, [openExternalUrl, iapAvailable, storeSku, fetchSubscription, t, annualOffer, monthlyOffer, getLocalizedIapError]);
+  }, [
+    openExternalUrl,
+    iapAvailable,
+    monthlySku,
+    yearlySku,
+    fetchSubscription,
+    t,
+    annualOffer,
+    monthlyOffer,
+    localizedMonthlyPrice,
+    localizedYearlyPrice,
+    getLocalizedIapError,
+  ]);
 
   const handleManageBilling = useCallback(async () => {
     setProcessingPlan("MANAGE");
@@ -296,7 +376,9 @@ function LegacySubscriptionScreen() {
     // Store-managed subscriptions: send the user to the native management page.
     if (isStoreManaged) {
       setProcessingPlan(null);
-      await openNativeSubscriptionSettings(subscription?.billingProductId || storeSku || undefined);
+      await openNativeSubscriptionSettings(
+        subscription?.billingProductId || monthlySku || yearlySku || undefined,
+      );
       return;
     }
 
@@ -311,7 +393,7 @@ function LegacySubscriptionScreen() {
 
     hapticSuccess();
     await openExternalUrl(res.data.url);
-  }, [openExternalUrl, isStoreManaged, subscription?.billingProductId, storeSku]);
+  }, [openExternalUrl, isStoreManaged, subscription?.billingProductId, monthlySku, yearlySku, t]);
 
   const handleRestore = useCallback(async () => {
     if (!iapAvailable) return;
@@ -406,6 +488,31 @@ function LegacySubscriptionScreen() {
               ? annualOffer?.trialLabel ||
                 (annualOffer?.trialDays ? `${annualOffer.trialDays} days` : plan.period)
               : plan.period;
+          // The INDIVIDUAL card supports two CTAs (monthly + annual) once both
+          // store SKUs are configured. Until then we fall back to the legacy
+          // single-CTA layout that ships in earlier mobile builds.
+          const showSplitCtas =
+            plan.key === "INDIVIDUAL" &&
+            plan.key !== currentPlanKey &&
+            Boolean(yearlySku) &&
+            Boolean(monthlySku);
+          const monthlyDisplayPrice =
+            localizedMonthlyPrice ||
+            monthlyOffer?.displayPriceLabel ||
+            plan.price + plan.period;
+          const yearlyDisplayPrice =
+            localizedYearlyPrice ||
+            annualOffer?.displayPriceLabel ||
+            plan.yearlyPrice ||
+            "";
+          const savingsText = showSplitCtas
+            ? computeAnnualSavingsText(yearlyDisplayPrice, monthlyDisplayPrice)
+            : null;
+          const trialBadge = annualOffer?.trialLabel
+            ? `First ${annualOffer.trialLabel} free`
+            : annualOffer?.trialDays
+              ? `First ${annualOffer.trialDays} days free`
+              : null;
           return (
           <Card
             key={plan.key}
@@ -419,7 +526,7 @@ function LegacySubscriptionScreen() {
                   {plan.key === currentPlanKey && <UiBadge label={t("pricing.cta_current")} variant="success" />}
                 </View>
                 <Text style={styles.planPrice}>
-                  {plan.key === "INDIVIDUAL" && localizedPrice ? localizedPrice : plan.price}
+                  {plan.key === "INDIVIDUAL" && localizedMonthlyPrice ? localizedMonthlyPrice : plan.price}
                   <Text style={styles.planPeriod}> {dynamicPeriod}</Text>
                 </Text>
               </View>
@@ -461,18 +568,86 @@ function LegacySubscriptionScreen() {
               <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yTrial")} accessibilityState={{ disabled: true }}>
                 <Text style={styles.currentBtnText}>{t("pricing.cta_trial")}</Text>
               </TouchableOpacity>
+            ) : showSplitCtas ? (
+              <View style={styles.splitCtaWrap}>
+                <TouchableOpacity
+                  style={styles.upgradeBtn}
+                  activeOpacity={0.7}
+                  onPress={() => handleUpgrade("INDIVIDUAL", "yearly")}
+                  disabled={processingPlan === "INDIVIDUAL_yearly"}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("settings.subscription_a11yUpgradeAnnual", {
+                    defaultValue: "Start annual plan with 3-month free trial",
+                  })}
+                  accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_yearly" }}
+                >
+                  {processingPlan === "INDIVIDUAL_yearly" ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Zap size={16} color="#fff" />
+                      <Text style={styles.upgradeBtnText}>
+                        {trialBadge
+                          ? t("settings.subscription_subscribeAnnualTrial")
+                          : `Start annual · ${yearlyDisplayPrice}`}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                <View style={styles.annualMetaRow}>
+                  <Text style={styles.annualMetaText}>
+                    {yearlyDisplayPrice}
+                    {trialBadge ? ` · ${trialBadge}` : ""}
+                  </Text>
+                  {savingsText ? (
+                    <Text style={styles.savingsText}>{savingsText}</Text>
+                  ) : null}
+                </View>
+                <TouchableOpacity
+                  style={styles.secondaryBtn}
+                  activeOpacity={0.7}
+                  onPress={() => handleUpgrade("INDIVIDUAL", "monthly")}
+                  disabled={processingPlan === "INDIVIDUAL_monthly"}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("settings.subscription_a11yUpgradeMonthly", {
+                    defaultValue: "Start monthly plan",
+                  })}
+                  accessibilityState={{ disabled: processingPlan === "INDIVIDUAL_monthly" }}
+                >
+                  {processingPlan === "INDIVIDUAL_monthly" ? (
+                    <ActivityIndicator color={theme.colors.primary} />
+                  ) : (
+                    <Text style={styles.secondaryBtnText}>
+                      {t("settings.subscription_subscribeMonthly")} · {monthlyDisplayPrice}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+                <Text style={styles.legalCopy}>
+                  {t("settings.subscription_storeLegal", {
+                    defaultValue:
+                      "Subscription renews automatically through your App Store or Google Play account until canceled. Trial availability is managed by the app store.",
+                  })}
+                </Text>
+              </View>
             ) : (
               <TouchableOpacity
                 style={styles.upgradeBtn}
                 activeOpacity={0.7}
                 onPress={() => handleUpgrade("INDIVIDUAL")}
-                disabled={processingPlan === plan.key}
+                disabled={
+                  processingPlan === "INDIVIDUAL_yearly" ||
+                  processingPlan === "INDIVIDUAL_monthly"
+                }
                 accessibilityRole="button"
                 accessibilityLabel={t("settings.subscription_a11yUpgrade", { plan: plan.name })}
                 accessibilityHint={t("settings.subscription_a11yUpgradeHint")}
-                accessibilityState={{ disabled: processingPlan === plan.key }}
+                accessibilityState={{
+                  disabled:
+                    processingPlan === "INDIVIDUAL_yearly" ||
+                    processingPlan === "INDIVIDUAL_monthly",
+                }}
               >
-                {processingPlan === plan.key ? (
+                {processingPlan === "INDIVIDUAL_yearly" || processingPlan === "INDIVIDUAL_monthly" ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
@@ -587,6 +762,27 @@ const styles = StyleSheet.create({
   },
   currentBtnText: { fontSize: 15, fontWeight: "700", color: theme.colors.textMuted },
   upgradeBtnText: { fontSize: 15, fontWeight: "700", color: "#fff" },
+  splitCtaWrap: { marginTop: 16, gap: 10 },
+  annualMetaRow: { gap: 2 },
+  annualMetaText: { fontSize: 12, color: theme.colors.textTertiary, textAlign: "center" },
+  savingsText: { fontSize: 12, fontWeight: "600", color: theme.colors.emerald.text, textAlign: "center" },
+  secondaryBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.card,
+    paddingVertical: 14,
+  },
+  secondaryBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.primary },
+  legalCopy: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    lineHeight: 15,
+    textAlign: "center",
+    marginTop: 4,
+  },
   restoreBtn: {
     alignItems: "center",
     justifyContent: "center",

@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -8,21 +7,15 @@ import { MarketingHeader } from "@/components/marketing/marketing-header";
 import { getUserSession } from "@/lib/user-auth";
 import { resolveMarketingCtaTarget } from "@/lib/marketing-cta";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
-import { absoluteUrl, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
+import { absoluteUrl, createPublicPageMetadata, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { JsonLd, breadcrumbSchema, softwareApplicationSchema } from "@/components/seo/json-ld";
 
-export const metadata: Metadata = {
-  title: `Pricing · ${SITE_NAME}`,
+export const metadata = createPublicPageMetadata({
+  title: "Pricing",
   description:
-    "Simple pricing for LocateFlow's current moving workflow, current offers, and Individual plan.",
-  alternates: { canonical: "/pricing" },
-  openGraph: {
-    title: `Pricing · ${SITE_NAME}`,
-    description:
-      "Current offers and Individual plan for LocateFlow's current moving workflow.",
-    url: absoluteUrl("/pricing"),
-  },
-};
+    "LocateFlow pricing for the Individual plan, including monthly and annual pricing, trial disclosures, cancellation terms, and refund policy links.",
+  path: "/pricing",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +46,8 @@ export default async function PricingPage() {
         id="ld-pricing-software"
         data={softwareApplicationSchema(schemaContext, {
           description: SITE_DESCRIPTION,
+          price: "39.99",
+          priceCurrency: "USD",
         })}
       />
       <JsonLd
@@ -68,6 +63,7 @@ export default async function PricingPage() {
         ctaLabelLoggedIn={!!userId}
         ctaIntent={ctaTarget.intent}
         offers={publicCampaign}
+        headingLevel="h1"
       />
 
       <section className="container pb-4">

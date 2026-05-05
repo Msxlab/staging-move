@@ -23,6 +23,7 @@ import type { BillingPlan, SubscriptionStatus } from "@/lib/shared-billing";
 import { isBillingProductionLike } from "@/lib/billing-config";
 
 export type IapPlatform = "ios" | "android";
+export type IapBillingInterval = "MONTH" | "YEAR";
 
 export interface NormalizedIapState {
   platform: IapPlatform;
@@ -30,6 +31,7 @@ export interface NormalizedIapState {
   status: SubscriptionStatus;
   provider: "APP_STORE" | "PLAY_STORE";
   productId: string;
+  billingInterval: IapBillingInterval | null;
   originalTransactionId: string;
   latestTransactionId: string | null;
   purchaseToken: string | null;
@@ -39,21 +41,49 @@ export interface NormalizedIapState {
   raw: unknown;
 }
 
+export interface MobilePlanResolution {
+  plan: BillingPlan;
+  billingInterval: IapBillingInterval | null;
+}
+
+/**
+ * Resolve a store productId to our internal plan + billing interval.
+ *
+ * The runtime-config keys are the trust anchor — the frontend never sees them
+ * and an attacker can't smuggle an arbitrary SKU into the verify endpoint
+ * because anything that doesn't match a configured key returns null and the
+ * verify route 404s.
+ */
 export async function mapProductIdToPlan(
   platform: IapPlatform,
   productId: string,
-): Promise<BillingPlan | null> {
-  const key = platform === "ios" ? "MOBILE_IOS_PRODUCT_INDIVIDUAL" : "MOBILE_ANDROID_PRODUCT_INDIVIDUAL";
-  const individualId = await getRuntimeConfigValue(key);
-  if (individualId && productId === individualId) return "INDIVIDUAL";
+): Promise<MobilePlanResolution | null> {
+  const monthlyKey = platform === "ios"
+    ? "MOBILE_IOS_PRODUCT_INDIVIDUAL"
+    : "MOBILE_ANDROID_PRODUCT_INDIVIDUAL";
+  const yearlyKey = platform === "ios"
+    ? "MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY"
+    : "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY";
+
+  const [monthlyId, yearlyId] = await Promise.all([
+    getRuntimeConfigValue(monthlyKey),
+    getRuntimeConfigValue(yearlyKey),
+  ]);
+
+  if (monthlyId && productId === monthlyId) {
+    return { plan: "INDIVIDUAL", billingInterval: "MONTH" };
+  }
+  if (yearlyId && productId === yearlyId) {
+    return { plan: "INDIVIDUAL", billingInterval: "YEAR" };
+  }
   return null;
 }
 
 export async function normalizeAppleResult(
   result: AppleSubscriptionStatusResult,
 ): Promise<NormalizedIapState | null> {
-  const plan = await mapProductIdToPlan("ios", result.transaction.productId);
-  if (!plan) return null;
+  const resolved = await mapProductIdToPlan("ios", result.transaction.productId);
+  if (!resolved) return null;
 
   const expiresAt = result.transaction.expiresDate
     ? new Date(result.transaction.expiresDate)
@@ -74,10 +104,11 @@ export async function normalizeAppleResult(
 
   return {
     platform: "ios",
-    plan,
+    plan: resolved.plan,
     status,
     provider: "APP_STORE",
     productId: result.transaction.productId,
+    billingInterval: resolved.billingInterval,
     originalTransactionId: result.transaction.originalTransactionId,
     latestTransactionId: result.transaction.transactionId,
     purchaseToken: null,
@@ -98,18 +129,19 @@ export async function normalizeGoogleResult(
   const lineItem = result.response.lineItems?.[0];
   if (!lineItem?.productId) return null;
 
-  const plan = await mapProductIdToPlan("android", lineItem.productId);
-  if (!plan) return null;
+  const resolved = await mapProductIdToPlan("android", lineItem.productId);
+  if (!resolved) return null;
 
   const expiresAt = lineItem.expiryTime ? new Date(lineItem.expiryTime) : null;
   const status = mapGoogleSubscriptionState(result.response.subscriptionState) as SubscriptionStatus;
 
   return {
     platform: "android",
-    plan,
+    plan: resolved.plan,
     status,
     provider: "PLAY_STORE",
     productId: lineItem.productId,
+    billingInterval: resolved.billingInterval,
     originalTransactionId: result.response.latestOrderId || result.purchaseToken,
     latestTransactionId: result.response.latestOrderId || null,
     purchaseToken: result.purchaseToken,
@@ -145,16 +177,26 @@ export async function applyIapStateToUser(opts: {
   }
 
   const now = new Date();
+  // accessType is "PAID" once a real store transaction has cleared. Trial
+  // status comes from the store's own status field — Apple sets status=4
+  // (TRIALING via mapAppleStatus) during an introductory offer; Google sets
+  // subscriptionState=SUBSCRIPTION_STATE_IN_GRACE_PERIOD or _ON_HOLD for
+  // billing retry. The unified entitlement resolver reads `status` directly,
+  // so writing a static accessType=PAID here is correct: a TRIALING status
+  // overrides the access banner via deriveUserSubscriptionState.
   const data = {
     plan: state.plan,
     status: state.status,
     provider: state.provider,
     platform: state.platform,
+    accessType: state.status === "TRIALING" ? "FREE_TRIAL" : "PAID",
+    billingInterval: state.billingInterval,
     billingProductId: state.productId,
     originalTransactionId: state.originalTransactionId,
     latestTransactionId: state.latestTransactionId,
     purchaseToken: state.purchaseToken,
     currentPeriodEndsAt: state.expiresAt,
+    trialEndsAt: state.status === "TRIALING" ? state.expiresAt : null,
     gracePeriodEndsAt: state.gracePeriodEndsAt,
     appStoreEnvironment: state.environment,
     lastValidatedAt: now,

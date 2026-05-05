@@ -22,9 +22,11 @@ export async function MarketingFooter() {
           <div>
             <h4 className="mb-3 text-sm font-semibold">Product</h4>
             <div className="space-y-2 text-sm text-muted-foreground">
+              <Link href="/about" className="block transition hover:text-foreground">About</Link>
               <Link href="/#features" className="block transition hover:text-foreground">{tLanding("section_features_title")}</Link>
               <Link href="/pricing" className="block transition hover:text-foreground">{tPricing("title")}</Link>
               <Link href="/how-it-works" className="block transition hover:text-foreground">{tLanding("section_how_title")}</Link>
+              <Link href="/provider-coverage" className="block transition hover:text-foreground">Provider coverage</Link>
               <Link href="/blog" className="block transition hover:text-foreground">Blog</Link>
               <Link href="/faq" className="block transition hover:text-foreground">FAQ</Link>
             </div>
@@ -38,6 +40,7 @@ export async function MarketingFooter() {
               <Link href="/disclaimer" className="block transition hover:text-foreground">{tLegal("disclaimer_title")}</Link>
               <Link href="/billing-policy" className="block transition hover:text-foreground">Billing policy</Link>
               <Link href="/refund" className="block transition hover:text-foreground">Refund policy</Link>
+              <Link href="/data-deletion" className="block transition hover:text-foreground">Data export and deletion</Link>
               <Link href="/acceptable-use" className="block transition hover:text-foreground">Acceptable use</Link>
               <Link href="/dpa" className="block transition hover:text-foreground">DPA</Link>
               <Link href="/security" className="block transition hover:text-foreground">Security</Link>

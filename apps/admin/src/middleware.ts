@@ -16,7 +16,7 @@ if (!adminJwtSecret || adminJwtSecret.length < 32) {
 const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
 const PUBLIC_PATHS = ["/login", "/api/auth/login"];
-const PUBLIC_STATIC_PATHS = ["/sw.js"];
+const PUBLIC_STATIC_PATHS = ["/sw.js", "/robots.txt"];
 
 export function isPublicStaticPath(pathname: string): boolean {
   return PUBLIC_STATIC_PATHS.includes(pathname);
@@ -187,6 +187,7 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
   return response;
 }
 

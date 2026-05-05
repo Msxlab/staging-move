@@ -1,21 +1,18 @@
-import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ChevronDown, ArrowRight, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { JsonLd, breadcrumbSchema, faqPageSchema } from "@/components/seo/json-ld";
-import { absoluteUrl, SITE_URL } from "@/lib/seo";
+import { absoluteUrl, createPublicPageMetadata, SITE_URL } from "@/lib/seo";
 import { LEGAL_CONTACTS, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Frequently Asked Questions",
   description:
     "Billing, trials, refunds, privacy, cookies, provider recommendations, mobile subscriptions, and security answers for LocateFlow.",
-  alternates: {
-    canonical: "/faq",
-  },
-};
+  path: "/faq",
+});
 
 type Faq = { q: string; a: ReactNode; plain: string };
 

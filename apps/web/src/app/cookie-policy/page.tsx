@@ -1,17 +1,15 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Cookie, LockKeyhole, MonitorSmartphone, SlidersHorizontal } from "lucide-react";
 import { PublicPageShell, PublicSection } from "@/components/marketing/public-page-shell";
 import { CookiePreferenceControls } from "@/components/shared/cookie-preference-controls";
 import { LEGAL_CONTACTS, mailto, policyLastUpdatedLabel } from "@/lib/legal-info";
+import { createPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = createPublicPageMetadata({
   title: "Cookie Policy",
   description: "How LocateFlow uses cookies, local storage, consent records, analytics, and mobile analytics.",
-  alternates: {
-    canonical: "/cookie-policy",
-  },
-};
+  path: "/cookie-policy",
+});
 
 const highlights = [
   {

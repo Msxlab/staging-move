@@ -2,7 +2,7 @@
 # LocateFlow web app image for DigitalOcean App Platform.
 # Uses Next.js standalone output from apps/web.
 
-FROM node:22-bookworm-slim AS pnpm-base
+FROM node:25-bookworm-slim AS pnpm-base
 
 ENV PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH \
@@ -55,11 +55,17 @@ ENV NODE_ENV=production
 
 ARG NEXT_PUBLIC_APP_URL=https://locateflow.com
 ARG NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com
+ARG NEXT_PUBLIC_SITE_URL=https://locateflow.com
+ARG SITE_URL=https://locateflow.com
+ARG APP_ENV=production
 ARG NEXT_PUBLIC_IMGPROXY_URL=
 ARG R2_BUCKET=
 
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_ADMIN_URL=$NEXT_PUBLIC_ADMIN_URL \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    SITE_URL=$SITE_URL \
+    APP_ENV=$APP_ENV \
     NEXT_PUBLIC_IMGPROXY_URL=$NEXT_PUBLIC_IMGPROXY_URL \
     R2_BUCKET=$R2_BUCKET
 
@@ -76,9 +82,14 @@ RUN pnpm --filter @locateflow/db generate \
  && test -d apps/web/.next/static \
  && test -d apps/web/public
 
-FROM node:22-bookworm-slim AS runner
+FROM node:25-bookworm-slim AS runner
 
 ENV NODE_ENV=production \
+    APP_ENV=production \
+    NEXT_PUBLIC_APP_URL=https://locateflow.com \
+    NEXT_PUBLIC_ADMIN_URL=https://admin.locateflow.com \
+    NEXT_PUBLIC_SITE_URL=https://locateflow.com \
+    SITE_URL=https://locateflow.com \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
     PORT=8080

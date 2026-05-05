@@ -244,7 +244,8 @@ export default function SubscriptionManagementPage() {
   const firstChargeLabel = formatDateLabel(firstChargeDate.toISOString());
   const subscriptionPriceLabel = subscription?.firstChargeAmount
     ? `$${subscription.firstChargeAmount}/${subscription?.billingInterval === "MONTH" ? "month" : "year"}`
-    : BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel || "$79/year";
+    : BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceLabel ||
+      `$${BILLING_PLAN_DEFINITIONS.INDIVIDUAL.yearlyPriceUsd ?? 39.99}/year`;
   const offerPriceLabel = publicCampaign?.displayPriceLabel || subscriptionPriceLabel;
   const monthlyDisclosure = monthlyOffer?.checkoutDisclosureCopy ||
     (monthlyOffer
@@ -255,6 +256,17 @@ export default function SubscriptionManagementPage() {
     firstChargeAmount: offerPriceLabel,
   });
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
+  // Store-managed subscriptions (Apple / Google) cannot be cancelled or
+  // modified through Stripe Customer Portal — store policy requires the
+  // user to manage them in iOS Settings → Subscriptions or Play Store →
+  // Subscriptions. Tell the user where to go so they don't search for a
+  // missing button.
+  const storeManageHint =
+    currentProvider === "APP_STORE"
+      ? "Manage or cancel this subscription in iOS Settings → Apple ID → Subscriptions."
+      : currentProvider === "PLAY_STORE"
+        ? "Manage or cancel this subscription in the Google Play Store app → Payments & subscriptions."
+        : null;
   // Trialing, active, and pending-checkout users have either already started
   // the annual plan or are mid-checkout — re-offering the trial CTA in those
   // states confused users into thinking the trial hadn't begun. Also hide
@@ -280,7 +292,7 @@ export default function SubscriptionManagementPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: "INDIVIDUAL",
-          cycle: "yearly",
+          billingInterval: "YEAR",
           ...(publicCampaign?.campaignCode ? { campaignCode: publicCampaign.campaignCode } : {}),
           acceptedSubscriptionTerms: true,
         }),
@@ -308,7 +320,7 @@ export default function SubscriptionManagementPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: "INDIVIDUAL",
-          cycle: "monthly",
+          billingInterval: "MONTH",
           ...(monthlyOffer?.campaignCode ? { campaignCode: monthlyOffer.campaignCode } : {}),
           acceptedSubscriptionTerms: true,
         }),
@@ -485,6 +497,9 @@ export default function SubscriptionManagementPage() {
                   </button>
                 ) : null}
               </div>
+              {storeManageHint ? (
+                <p className="mt-3 text-xs text-muted-foreground">{storeManageHint}</p>
+              ) : null}
             </div>
           </div>
 
