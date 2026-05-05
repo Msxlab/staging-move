@@ -83,12 +83,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         Skip to main content
       </a>
       <Sidebar showBudget={showBudget} />
-      <div className="flex-1 flex flex-col min-h-screen relative z-10">
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen relative z-10">
         <Header />
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 p-4 md:p-6 pb-20 md:pb-6 focus:outline-none"
+          className="flex-1 min-w-0 p-4 md:p-6 pb-20 md:pb-6 focus:outline-none"
         >
           {children}
         </main>

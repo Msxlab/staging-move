@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ElementType } from "react";
 import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone } from "lucide-react";
 import Link from "next/link";
+import { notificationPatchRequestInit } from "@/lib/notification-feed-client";
 
 interface FeedNotification {
   id: string;
@@ -112,13 +113,25 @@ export function NotificationCenter() {
       item.id === notification.id ? { ...item, read: true } : item
     )));
     setUnreadCount((current) => Math.max(0, current - 1));
-    await fetch(`/api/notifications/feed/${notification.id}`, { method: "PATCH" }).catch(() => {});
+    const response = await fetch(
+      `/api/notifications/feed/${notification.id}`,
+      notificationPatchRequestInit(),
+    ).catch(() => null);
+    if (!response?.ok) {
+      void fetchFeed();
+    }
   };
 
   const markAllRead = async () => {
     setNotifications((current) => current.map((item) => ({ ...item, read: true })));
     setUnreadCount(0);
-    await fetch("/api/notifications/feed?action=read-all", { method: "PATCH" }).catch(() => {});
+    const response = await fetch(
+      "/api/notifications/feed?action=read-all",
+      notificationPatchRequestInit(),
+    ).catch(() => null);
+    if (!response?.ok) {
+      void fetchFeed();
+    }
   };
 
   return (

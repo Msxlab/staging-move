@@ -108,7 +108,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                   {tNav("settings")}
                 </Link>
                 <Link
-                  href="/onboarding"
+                  href="/settings/profile"
                   className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
                   onClick={() => setUserMenuOpen(false)}
                   role="menuitem"

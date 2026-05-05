@@ -5,6 +5,7 @@ import { Bell, Loader2, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
+import { notificationPatchRequestInit } from "@/lib/notification-feed-client";
 
 interface FeedNotification {
   id: string;
@@ -41,20 +42,33 @@ export default function NotificationsPage() {
   }, [fetchFeed]);
 
   const markRead = async (id: string) => {
-    await fetch(`/api/notifications/feed/${id}`, { method: "PATCH" });
+    const notification = notifications.find((n) => n.id === id);
+    if (!notification || notification.read) return;
+
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     setUnreadCount((c) => Math.max(0, c - 1));
+    const res = await fetch(`/api/notifications/feed/${id}`, notificationPatchRequestInit()).catch(() => null);
+    if (!res?.ok) {
+      toast.error("Failed to mark notification as read");
+      await fetchFeed();
+    }
   };
 
   const markAllRead = async () => {
     setMarkingAll(true);
     try {
-      const res = await fetch("/api/notifications/feed?action=read-all", { method: "PATCH" });
+      const res = await fetch("/api/notifications/feed?action=read-all", notificationPatchRequestInit());
       if (res.ok) {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
         toast.success(t("markAllRead"));
+      } else {
+        toast.error("Failed to mark notifications as read");
+        await fetchFeed();
       }
+    } catch {
+      toast.error("Failed to mark notifications as read");
+      await fetchFeed();
     } finally {
       setMarkingAll(false);
     }
@@ -97,7 +111,6 @@ export default function NotificationsPage() {
             const inner = (
               <div
                 className={`flex items-start gap-4 px-5 py-4 hover:bg-foreground/[0.03] transition cursor-pointer ${!notif.read ? "bg-orange-500/[0.03]" : ""}`}
-                onClick={() => !notif.read && markRead(notif.id)}
               >
                 <div className={`h-2 w-2 rounded-full mt-2 shrink-0 ${notif.read ? "bg-transparent" : "bg-orange-500"}`} />
                 <div className="flex-1 min-w-0">
@@ -117,7 +130,9 @@ export default function NotificationsPage() {
                 {inner}
               </Link>
             ) : (
-              <div key={notif.id}>{inner}</div>
+              <button key={notif.id} type="button" className="block w-full text-left" onClick={() => !notif.read && markRead(notif.id)}>
+                {inner}
+              </button>
             );
           })}
         </div>

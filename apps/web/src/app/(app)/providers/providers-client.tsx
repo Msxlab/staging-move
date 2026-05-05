@@ -280,21 +280,21 @@ export function ProvidersClient({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-6xl min-w-0 space-y-5 overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Providers</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Browse listed providers. Providers are directory entries and are not your tracked services until you add them.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex min-w-0 flex-wrap gap-2">
           {addresses.length > 0 && (
             <select
               value={selectedAddressId ?? ""}
               onChange={(e) => onAddressChange(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-orange-500/50"
+              className="min-w-0 max-w-full px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-orange-500/50"
               aria-label="Choose address"
             >
               <option value="">All locations</option>
@@ -317,7 +317,7 @@ export function ProvidersClient({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 flex gap-3">
+      <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 flex gap-3">
         <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
         <div>
           <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
@@ -329,7 +329,7 @@ export function ProvidersClient({
 
       {/* Recommended for you */}
       {highlightProviders.length > 0 && (
-        <div className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-cyan-500/5 p-5 space-y-3">
+        <div className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-cyan-500/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-orange-400" />
             <h2 className="text-sm font-semibold text-foreground">Recommended for you</h2>
@@ -340,7 +340,7 @@ export function ProvidersClient({
               <Link
                 key={p.id}
                 href={`/providers/${p.id}`}
-                className="group rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 flex items-start gap-3"
+                className="group min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/10 transition p-3 flex items-start gap-3 overflow-hidden"
               >
                 <ProviderLogoMark provider={p} className="h-10 w-10 rounded-lg" fallbackClassName="text-xl" />
                 <div className="min-w-0 flex-1">
@@ -378,7 +378,7 @@ export function ProvidersClient({
       )}
 
       {/* Search */}
-      <div className="relative">
+      <div className="relative min-w-0">
         <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" />
         <input
           type="text"
@@ -401,7 +401,7 @@ export function ProvidersClient({
 
       {/* Category chips */}
       {categoryCounts.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setCategoryFilter(null)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition ${
@@ -451,18 +451,18 @@ export function ProvidersClient({
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid min-w-0 grid-cols-1 gap-2.5 lg:grid-cols-2">
           {visibleProviders.map((p) => (
             <Link
               key={p.id}
               href={`/providers/${p.id}`}
-              className="group rounded-2xl border border-border bg-foreground/5 hover:bg-foreground/[0.08] transition p-4 flex gap-3"
+              className="group min-w-0 rounded-xl border border-border bg-foreground/5 hover:bg-foreground/[0.08] transition p-3 flex gap-3 overflow-hidden"
             >
               {(() => {
                 const trust = trustFor(p);
                 return (
                   <>
-              <ProviderLogoMark provider={p} className="h-12 w-12 rounded-xl" fallbackClassName="text-2xl" />
+              <ProviderLogoMark provider={p} className="h-10 w-10 rounded-lg" fallbackClassName="text-xl" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>
@@ -485,19 +485,19 @@ export function ProvidersClient({
                     .join(" - ")}
                 </p>
                 {p.description && (
-                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{p.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>
                 )}
-                <p className="text-[11px] text-muted-foreground mt-2">
+                <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
                   {trust.coverageConfidence.label}: {trust.coverageConfidence.message} Manual tracking only.
                 </p>
-                <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground">
                   {p.userCount && p.userCount > 0 ? (
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" /> {formatCount(p.userCount)} users
                     </span>
                   ) : null}
                   {p.website ? (
-                    <span className="flex items-center gap-1 truncate">
+                    <span className="flex min-w-0 max-w-full items-center gap-1 truncate">
                       <ExternalLink className="h-3 w-3" /> {new URL(p.website).hostname.replace(/^www\./, "")}
                     </span>
                   ) : null}
