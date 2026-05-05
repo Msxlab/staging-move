@@ -5,23 +5,43 @@ import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 
-const OPTIONS: Array<{
+type Option = {
   value: "system" | "light" | "dark";
   label: string;
   icon: LucideIcon;
-}> = [
+};
+
+const FULL_OPTIONS: Option[] = [
   { value: "system", label: "Match system", icon: Monitor },
   { value: "light", label: "Light mode", icon: Sun },
   { value: "dark", label: "Dark mode", icon: Moon },
 ];
 
-export function LandingThemeToggle() {
-  const { theme, setTheme } = useTheme();
+const COMPACT_OPTIONS: Option[] = [
+  { value: "light", label: "Light mode", icon: Sun },
+  { value: "dark", label: "Dark mode", icon: Moon },
+];
+
+export function LandingThemeToggle({
+  variant = "full",
+}: {
+  variant?: "full" | "compact";
+} = {}) {
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const active =
-    (mounted ? (theme as "system" | "light" | "dark" | undefined) : "system") ?? "system";
+  const options = variant === "compact" ? COMPACT_OPTIONS : FULL_OPTIONS;
+
+  // For the compact (sun/moon-only) toggle, "system" is not a selectable
+  // state, so highlight whatever the system currently resolves to. That
+  // way the pill still indicates the user's *effective* mode even when
+  // they haven't made an explicit choice yet.
+  const active = variant === "compact"
+    ? ((mounted ? (resolvedTheme as "light" | "dark" | undefined) : "light") ?? "light")
+    : ((mounted ? (theme as "system" | "light" | "dark" | undefined) : "system") ?? "system");
+
+  const layoutId = variant === "compact" ? "landing-theme-pill-compact" : "landing-theme-pill";
 
   return (
     <div
@@ -29,7 +49,7 @@ export function LandingThemeToggle() {
       aria-label="Theme preference"
       className="relative inline-flex items-center rounded-full border border-border/60 bg-foreground/[0.04] p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md"
     >
-      {OPTIONS.map(({ value, label, icon: Icon }) => {
+      {options.map(({ value, label, icon: Icon }) => {
         const selected = active === value;
         return (
           <button
@@ -44,7 +64,7 @@ export function LandingThemeToggle() {
           >
             {selected && mounted && (
               <motion.span
-                layoutId="landing-theme-pill"
+                layoutId={layoutId}
                 aria-hidden="true"
                 className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/10 ring-1 ring-orange-500/40 shadow-[0_0_18px_-4px_rgba(212,132,106,0.5)]"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}

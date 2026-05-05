@@ -6,26 +6,23 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "./theme-provider";
 
 /**
- * Cycle-style theme toggle for the web app: system → light → dark → system.
- *
- * The provider default is `system`, so a visitor who never touches the
- * toggle keeps tracking their OS preference. Once they click they opt
- * out into an explicit light or dark choice, and a third click brings
- * them back to `system` — the same three-state pattern GitHub and
- * modern SaaS use. Pre-hydration we render a size-stable placeholder
- * to avoid icon flicker / layout shift.
+ * Theme toggle. The compact icon variant flips between light and dark
+ * (sun/moon only) to match the headers' tighter chrome. The inline
+ * variant — used inside dropdown menus — keeps the original three-state
+ * cycle (system → light → dark) so users can still opt back into
+ * tracking their OS preference from the menu.
  */
 export function ThemeToggle({
   variant = "inline",
 }: {
   variant?: "inline" | "icon";
 }) {
-  const { preference, setTheme } = useTheme();
+  const { preference, theme: resolved, setTheme } = useTheme();
   const t = useTranslations("theme");
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const nextPreference = (
+  const nextInlinePreference = (
     current: "light" | "dark" | "system" | undefined,
   ): "light" | "dark" | "system" => {
     if (current === "system") return "light";
@@ -51,7 +48,27 @@ export function ThemeToggle({
     );
   }
 
-  const icon =
+  if (variant === "icon") {
+    // Two-state sun/moon flip, anchored to the *resolved* theme so a user
+    // on `system` still sees the current effective mode without showing
+    // the monitor glyph in the header.
+    const isDark = resolved === "dark";
+    const icon = isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />;
+    const aria = isDark ? t("dark_full") : t("light_full");
+    return (
+      <button
+        type="button"
+        onClick={() => setTheme(isDark ? "light" : "dark")}
+        aria-label={aria}
+        title={aria}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+      >
+        {icon}
+      </button>
+    );
+  }
+
+  const inlineIcon =
     preference === "system" ? (
       <Monitor className="h-4 w-4" />
     ) : preference === "light" ? (
@@ -77,17 +94,13 @@ export function ThemeToggle({
   return (
     <button
       type="button"
-      onClick={() => setTheme(nextPreference(preference))}
+      onClick={() => setTheme(nextInlinePreference(preference))}
       aria-label={aria}
       title={aria}
-      className={
-        variant === "icon"
-          ? "inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          : "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-      }
+      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
     >
-      {icon}
-      {variant === "inline" && <span>{label}</span>}
+      {inlineIcon}
+      <span>{label}</span>
     </button>
   );
 }

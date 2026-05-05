@@ -5,6 +5,7 @@ import { getUserSession } from "@/lib/user-auth";
 import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle";
 import { Wordmark } from "@/components/marketing/logo";
 import { LanguageSelector } from "@/components/language-selector";
+import { MarketingUserMenu } from "@/components/marketing/marketing-user-menu";
 
 type MarketingHeaderProps = {
   userId?: string | null;
@@ -15,7 +16,6 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
   const userId = providedUserId === undefined ? session?.userId ?? null : providedUserId;
   const tCommon = await getTranslations("common");
   const tLanding = await getTranslations("landing");
-  const tNav = await getTranslations("nav");
   const tPricing = await getTranslations("pricing");
 
   return (
@@ -41,16 +41,9 @@ export async function MarketingHeader({ userId: providedUserId }: MarketingHeade
         </nav>
         <div className="flex items-center gap-1 md:gap-2">
           <LanguageSelector variant="icon" />
-          <LandingThemeToggle />
+          <LandingThemeToggle variant="compact" />
           {userId ? (
-            <>
-              <Link href="/dashboard" className="hidden sm:block">
-                <Button variant="ghost" size="sm">{tNav("dashboard")}</Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button size="sm">{tNav("dashboard")}</Button>
-              </Link>
-            </>
+            <MarketingUserMenu />
           ) : (
             <>
               <Link href="/sign-in">
