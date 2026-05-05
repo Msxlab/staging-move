@@ -89,7 +89,7 @@
     "@babel/core": "^7.25.0",
     "@types/react": "~19.1.17",
     "eas-cli": "^16.24.1",
-    "tailwindcss": "^3.4.16",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5.3.0"
   }
 }
