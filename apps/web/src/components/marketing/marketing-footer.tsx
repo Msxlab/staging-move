@@ -66,6 +66,10 @@ export async function MarketingFooter() {
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} LocateFlow. {tCommon("privacy")}.
           </p>
+          <div className="flex items-center gap-2">
+            <LanguageSelector variant="icon" />
+            <LandingThemeToggle />
+          </div>
           <p className="text-xs text-muted-foreground">{tLanding("footer_tagline")}</p>
         </div>
       </div>

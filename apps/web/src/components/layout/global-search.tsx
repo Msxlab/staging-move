@@ -1,7 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, MapPin, Zap, Home, Briefcase, Palmtree, FileText, Settings, Truck, DollarSign, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+  Briefcase,
+  DollarSign,
+  FileText,
+  Home,
+  MapPin,
+  Palmtree,
+  Search,
+  Settings,
+  Truck,
+  X,
+  Zap,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface SearchResult {
@@ -25,10 +38,15 @@ const pages: SearchResult[] = [
   { id: "p-add-service", type: "page", title: "Add Service", subtitle: "Register new service", href: "/services/new", icon: Zap },
 ];
 
-const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
+const typeIcons: Record<string, React.ElementType> = {
+  HOME: Home,
+  WORK: Briefcase,
+  VACATION: Palmtree,
+};
 
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [addresses, setAddresses] = useState<SearchResult[]>([]);
@@ -37,7 +55,10 @@ export function GlobalSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  // Keyboard shortcut
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -50,18 +71,28 @@ export function GlobalSearch() {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  // Focus input when opened
-  useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-      setQuery("");
-      setSelectedIndex(0);
-    }
-  }, [open]);
-
-  // Load data on first open
   useEffect(() => {
     if (!open) return;
+
+    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 50);
+    setQuery("");
+    setSelectedIndex(0);
+    return () => window.clearTimeout(focusTimer);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
     Promise.all([
       fetch("/api/addresses").then((r) => r.json()).catch(() => ({ addresses: [] })),
       fetch("/api/services").then((r) => r.json()).catch(() => ({ services: [] })),
@@ -78,14 +109,13 @@ export function GlobalSearch() {
         id: `s-${s.id}`,
         type: "service" as const,
         title: s.providerName,
-        subtitle: `${(s.category || "").replace(/_/g, " ")}${s.address ? ` · ${s.address.city || ""}` : ""}`,
+        subtitle: `${(s.category || "").replace(/_/g, " ")}${s.address ? ` - ${s.address.city || ""}` : ""}`,
         href: `/services/${s.id}`,
         icon: Zap,
       })));
     });
   }, [open]);
 
-  // Filter results
   useEffect(() => {
     const q = query.toLowerCase().trim();
     if (!q) {
@@ -93,16 +123,14 @@ export function GlobalSearch() {
       setSelectedIndex(0);
       return;
     }
+
     const matched: SearchResult[] = [];
-    // Pages
     pages.forEach((p) => {
       if (p.title.toLowerCase().includes(q) || p.subtitle.toLowerCase().includes(q)) matched.push(p);
     });
-    // Addresses
     addresses.forEach((a) => {
       if (a.title.toLowerCase().includes(q) || a.subtitle.toLowerCase().includes(q)) matched.push(a);
     });
-    // Services
     services.forEach((s) => {
       if (s.title.toLowerCase().includes(q) || s.subtitle.toLowerCase().includes(q)) matched.push(s);
     });
@@ -128,35 +156,22 @@ export function GlobalSearch() {
     }
   };
 
-  return (
-    <>
-      {/* Trigger button */}
-      <button
-        className="hidden sm:flex items-center gap-2 w-full max-w-sm rounded-xl border border-border bg-foreground/[0.02] px-3 py-2 text-sm text-foreground/40 hover:bg-foreground/5 transition"
-        onClick={() => setOpen(true)}
-      >
-        <Search className="h-4 w-4" />
-        <span>Search...</span>
-        <kbd className="ml-auto inline-flex h-5 items-center gap-1 rounded-md border border-border bg-foreground/5 px-1.5 font-mono text-[10px] text-foreground/30">
-          <span className="text-xs">⌘</span>K
-        </kbd>
-      </button>
-      <button
-        className="sm:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition"
-        onClick={() => setOpen(true)}
-      >
-        <Search className="h-5 w-5" />
-      </button>
+  const modal = open ? (
+    <div
+      className="fixed inset-0 z-[1000] flex items-start justify-center px-4 pt-[15vh]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Search"
+    >
+      <div
+        className="absolute inset-0 bg-background/70 backdrop-blur-md supports-[backdrop-filter]:bg-background/45"
+        onClick={() => setOpen(false)}
+      />
 
-      {/* Modal */}
-      {open && (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-
-      {/* Modal */}
-      <div className="relative w-full max-w-lg mx-4 rounded-2xl border border-border backdrop-blur-xl shadow-2xl overflow-hidden" style={{ background: "color-mix(in srgb, var(--surface-secondary) 95%, transparent)" }}>
-        {/* Search input */}
+      <div
+        className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-border shadow-2xl"
+        style={{ background: "color-mix(in srgb, var(--surface-secondary) 97%, transparent)" }}
+      >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Search className="h-4 w-4 text-foreground/40 shrink-0" />
           <input
@@ -168,12 +183,16 @@ export function GlobalSearch() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-          <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded-md border border-border bg-foreground/5 px-1.5 font-mono text-[10px] text-foreground/30">
-            ESC
-          </kbd>
+          <button
+            type="button"
+            className="rounded-lg p-1 text-foreground/35 transition hover:bg-foreground/5 hover:text-foreground"
+            onClick={() => setOpen(false)}
+            aria-label="Close search"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        {/* Results */}
         <div className="max-h-[50vh] overflow-y-auto py-2">
           {results.length === 0 ? (
             <div className="text-center py-8">
@@ -219,15 +238,36 @@ export function GlobalSearch() {
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex items-center gap-4 px-4 py-2 border-t border-border text-[10px] text-foreground/30">
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">↑↓</kbd> Navigate</span>
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">↵</kbd> Open</span>
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Up/Down</kbd> Navigate</span>
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Enter</kbd> Open</span>
           <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Esc</kbd> Close</span>
         </div>
       </div>
     </div>
-      )}
+  ) : null;
+
+  return (
+    <>
+      <button
+        className="hidden sm:flex items-center gap-2 w-full max-w-sm rounded-xl border border-border bg-foreground/[0.02] px-3 py-2 text-sm text-foreground/40 hover:bg-foreground/5 transition"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-4 w-4" />
+        <span>Search...</span>
+        <kbd className="ml-auto inline-flex h-5 items-center gap-1 rounded-md border border-border bg-foreground/5 px-1.5 font-mono text-[10px] text-foreground/30">
+          Ctrl K
+        </kbd>
+      </button>
+      <button
+        className="sm:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition"
+        onClick={() => setOpen(true)}
+        aria-label="Open search"
+      >
+        <Search className="h-5 w-5" />
+      </button>
+
+      {mounted && modal ? createPortal(modal, document.body) : null}
     </>
   );
 }

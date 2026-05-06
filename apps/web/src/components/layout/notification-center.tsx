@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ElementType } from "react";
 import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone } from "lucide-react";
 import Link from "next/link";
+import { notificationPatchRequestInit } from "@/lib/notification-feed-client";
 
 interface FeedNotification {
   id: string;
