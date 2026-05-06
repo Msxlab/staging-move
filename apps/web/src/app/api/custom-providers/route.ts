@@ -12,6 +12,8 @@ import {
   findListedProviderNameConflict,
 } from "@/lib/custom-provider-duplicate-guard";
 
+const CUSTOM_PROVIDER_CREATE_RATE_LIMIT = { limit: 90, windowSeconds: 300 } as const;
+
 function cleanText(value: string | undefined): string | null {
   const trimmed = (value || "").trim();
   if (!trimmed) return null;
@@ -87,8 +89,8 @@ export async function POST(request: NextRequest) {
     const userId = await requireAppMutationUser();
     const rlKey = getRateLimitKey(request, "custom-provider:create");
     const [ipRl, userRl] = await Promise.all([
-      rateLimit(rlKey, { limit: 20, windowSeconds: 60 }),
-      rateLimit(`custom-provider:create:user:${userId}`, { limit: 20, windowSeconds: 60 }),
+      rateLimit(rlKey, CUSTOM_PROVIDER_CREATE_RATE_LIMIT),
+      rateLimit(`custom-provider:create:user:${userId}`, CUSTOM_PROVIDER_CREATE_RATE_LIMIT),
     ]);
     if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

@@ -193,14 +193,7 @@ function LegacySubscriptionScreen() {
 
   const monthlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "monthly"), [iapProducts]);
   const yearlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "yearly"), [iapProducts]);
-  // `iapAvailable` mirrors the legacy contract: monthly must be configured
-  // for the store integration to be considered usable. If only the yearly
-  // SKU is configured we still treat IAP as unavailable, because the legacy
-  // single-SKU code path above expects monthly.
-  const iapAvailable = Boolean(
-    monthlySku &&
-      (Platform.OS === "ios" ? iapProducts?.ios.available : iapProducts?.android.available)
-  );
+  const iapAvailable = Boolean(monthlySku || yearlySku);
 
   // Pull localized prices for both SKUs in a single fetchProducts call so
   // StoreKit/Play return one batch instead of two round-trips.
@@ -337,6 +330,13 @@ function LegacySubscriptionScreen() {
       }
       hapticSuccess();
       await fetchSubscription();
+      return;
+    }
+
+    if (Platform.OS === "ios" || Platform.OS === "android") {
+      setProcessingPlan(null);
+      hapticError();
+      Alert.alert(t("settings.subscription_billingUnavailable"), t("settings.subscription_storeUnavailable"));
       return;
     }
 
@@ -479,15 +479,7 @@ function LegacySubscriptionScreen() {
         </View>
 
         {PLANS.map((plan) => {
-          // Drive the FREE_TRIAL period label from the live annual campaign so
-          // it stays in sync with the actual trial length (currently 90 days,
-          // not the legacy 14). Falls back to the static label if no
-          // campaign has loaded yet.
-          const dynamicPeriod =
-            plan.key === "FREE_TRIAL"
-              ? annualOffer?.trialLabel ||
-                (annualOffer?.trialDays ? `${annualOffer.trialDays} days` : plan.period)
-              : plan.period;
+          const dynamicPeriod = plan.period;
           // The INDIVIDUAL card supports two CTAs (monthly + annual) once both
           // store SKUs are configured. Until then we fall back to the legacy
           // single-CTA layout that ships in earlier mobile builds.

@@ -207,6 +207,20 @@ describe("acquisition campaign helpers", () => {
     }, now)).toBe("PENDING_CHECKOUT");
   });
 
+  it("keeps explicit store grace periods distinct from past-due states", () => {
+    expect(deriveUserSubscriptionState({
+      status: "GRACE_PERIOD",
+      accessType: "PAID",
+      gracePeriodEndsAt: "2026-05-01T12:00:00.000Z",
+    }, now)).toBe("GRACE_PERIOD");
+
+    expect(deriveUserSubscriptionState({
+      status: "GRACE_PERIOD",
+      accessType: "PAID",
+      gracePeriodEndsAt: "2026-04-01T12:00:00.000Z",
+    }, now)).toBe("PAST_DUE");
+  });
+
   it("uses the minimal notification schedule and avoids refund-heavy reminders", () => {
     const freeTrial = getMinimalNotificationSchedule("FREE_TRIAL");
     const freeAccess = getMinimalNotificationSchedule("FREE_ACCESS");

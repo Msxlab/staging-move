@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { LanguageSelector } from "@/components/language-selector";
 import { LogoMark } from "@/components/marketing/logo";
 import { LandingThemeToggle } from "@/components/marketing/landing-theme-toggle";
 

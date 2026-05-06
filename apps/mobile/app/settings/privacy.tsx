@@ -24,9 +24,10 @@ import { theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { hapticWarning } from "@/lib/haptics";
+import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
 import { api } from "@/lib/api";
 import { setAnalyticsEnabled } from "@/lib/analytics";
+import { useAppLockStore } from "@/lib/app-lock-store";
 
 interface AccountSecurityState {
   account: {
@@ -64,6 +65,15 @@ export default function PrivacySettingsScreen() {
   const [loadingConsents, setLoadingConsents] = useState(true);
   const [consentError, setConsentError] = useState<string | null>(null);
   const [passwordSetupBusy, setPasswordSetupBusy] = useState(false);
+  const appLockEnabled = useAppLockStore((s) => s.enabled);
+  const appLockHydrated = useAppLockStore((s) => s.hydrated);
+  const appLockAvailable = useAppLockStore((s) => s.available);
+  const appLockMethodLabel = useAppLockStore((s) => s.methodLabel);
+  const appLockChecking = useAppLockStore((s) => s.checking);
+  const appLockAuthenticating = useAppLockStore((s) => s.authenticating);
+  const hydrateAppLock = useAppLockStore((s) => s.hydrate);
+  const enableAppLock = useAppLockStore((s) => s.enable);
+  const disableAppLock = useAppLockStore((s) => s.disable);
 
   async function loadSecurity() {
     setLoadingSecurity(true);
@@ -94,6 +104,10 @@ export default function PrivacySettingsScreen() {
     });
   }, []);
 
+  useEffect(() => {
+    void hydrateAppLock();
+  }, [hydrateAppLock]);
+
   const updateAnalyticsConsent = async (granted: boolean) => {
     setConsentBusy(true);
     const res = await api.post<any>("/api/consent", {
@@ -108,6 +122,33 @@ export default function PrivacySettingsScreen() {
     setAnalyticsConsent(granted);
     setAnalyticsEnabled(granted);
     setConsentError(null);
+  };
+
+  const updateAppLock = async (enabled: boolean) => {
+    if (!enabled) {
+      await disableAppLock();
+      hapticSuccess();
+      return;
+    }
+
+    const result = await enableAppLock({
+      promptMessage: t("settings.appLock_prompt", { method: appLockMethodLabel }),
+      cancelLabel: t("common.cancel"),
+      fallbackLabel: t("settings.appLock_usePasscode"),
+    });
+
+    if (result.success) {
+      hapticSuccess();
+      return;
+    }
+
+    hapticError();
+    Alert.alert(
+      t("settings.appLock_enableFailedTitle"),
+      result.reason === "not_enrolled" || result.reason === "no_hardware"
+        ? t("settings.appLock_unavailable")
+        : t("settings.appLock_enableFailedBody"),
+    );
   };
 
   const requestSetPasswordEmail = async () => {
@@ -207,6 +248,32 @@ export default function PrivacySettingsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Card variant="default" style={{ marginBottom: 12 }}>
+          <View style={styles.consentRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.infoTitle}>{t("settings.appLock_title")}</Text>
+              <Text style={styles.infoDesc}>{t("settings.appLock_description")}</Text>
+            </View>
+            <Switch
+              value={appLockEnabled}
+              onValueChange={updateAppLock}
+              disabled={
+                !appLockHydrated ||
+                appLockChecking ||
+                appLockAuthenticating ||
+                (!appLockAvailable && !appLockEnabled)
+              }
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor="#fff"
+            />
+          </View>
+          <Text style={[styles.mutedText, { marginTop: 10 }]}>
+            {appLockAvailable
+              ? t("settings.appLock_available", { method: appLockMethodLabel })
+              : t("settings.appLock_unavailable")}
+          </Text>
+        </Card>
+
         <Card variant="default" style={{ marginBottom: 12 }}>
           <View style={styles.sectionHeader}>
             <View>

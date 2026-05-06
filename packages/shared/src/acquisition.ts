@@ -321,6 +321,9 @@ export function deriveUserSubscriptionState(
   if (subscription.accessType === "FREE_ACCESS") {
     return freeAccessEndsAt && freeAccessEndsAt > now ? "FREE_ACCESS" : "FREE_ACCESS_EXPIRED";
   }
+  if (status === "GRACE_PERIOD") {
+    return gracePeriodEndsAt && gracePeriodEndsAt <= now ? "PAST_DUE" : "GRACE_PERIOD";
+  }
   if (status === "PAST_DUE") {
     return gracePeriodEndsAt && gracePeriodEndsAt > now ? "GRACE_PERIOD" : "PAST_DUE";
   }

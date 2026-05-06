@@ -82,6 +82,9 @@ export interface AppleTransactionPayload {
   revocationDate?: number;
   revocationReason?: number;
   offerType?: number;
+  offerDiscountType?: "FREE_TRIAL" | "PAY_AS_YOU_GO" | "PAY_UP_FRONT" | "ONE_TIME" | string;
+  offerIdentifier?: string;
+  offerPeriod?: string;
   appAccountToken?: string;
 }
 
@@ -375,7 +378,7 @@ export async function verifyAndLookupSignedTransaction(
   return getAppleSubscriptionStatus(payload.originalTransactionId);
 }
 
-export function mapAppleStatus(rawStatus: number): "ACTIVE" | "EXPIRED" | "PAST_DUE" | "CANCELED" | "UNKNOWN" {
+export function mapAppleStatus(rawStatus: number): "ACTIVE" | "EXPIRED" | "PAST_DUE" | "GRACE_PERIOD" | "CANCELED" | "UNKNOWN" {
   // Per Apple: 1=active, 2=expired, 3=in-billing-retry, 4=grace-period, 5=revoked.
   switch (rawStatus) {
     case 1:
@@ -385,7 +388,7 @@ export function mapAppleStatus(rawStatus: number): "ACTIVE" | "EXPIRED" | "PAST_
     case 3:
       return "PAST_DUE";
     case 4:
-      return "PAST_DUE";
+      return "GRACE_PERIOD";
     case 5:
       return "CANCELED";
     default:

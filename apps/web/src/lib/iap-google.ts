@@ -179,11 +179,12 @@ export async function acknowledgeGoogleSubscription(opts: {
  */
 export function mapGoogleSubscriptionState(
   state: string | undefined | null,
-): "ACTIVE" | "TRIALING" | "PAST_DUE" | "CANCELED" | "EXPIRED" | "PENDING_VALIDATION" | "UNKNOWN" {
+): "ACTIVE" | "TRIALING" | "GRACE_PERIOD" | "PAST_DUE" | "CANCELED" | "EXPIRED" | "PENDING_VALIDATION" | "UNKNOWN" {
   switch (state) {
     case "SUBSCRIPTION_STATE_ACTIVE":
       return "ACTIVE";
     case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
+      return "GRACE_PERIOD";
     case "SUBSCRIPTION_STATE_ON_HOLD":
       return "PAST_DUE";
     case "SUBSCRIPTION_STATE_PAUSED":

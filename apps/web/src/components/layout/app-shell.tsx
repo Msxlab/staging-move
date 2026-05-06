@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -10,6 +13,19 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, showBudget = true }: AppShellProps) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
   return (
     <div className="flex min-h-screen relative" style={{ background: "var(--surface)" }}>
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 dark-only-blobs">
@@ -24,8 +40,25 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
         Skip to main content
       </a>
       <Sidebar showBudget={showBudget} />
+      {mobileMenuOpen ? (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
+            aria-label="Close navigation menu"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <Sidebar
+            showBudget={showBudget}
+            variant="mobile"
+            open
+            onClose={() => setMobileMenuOpen(false)}
+            onNavigate={() => setMobileMenuOpen(false)}
+          />
+        </>
+      ) : null}
       <div className="flex-1 min-w-0 flex flex-col min-h-screen relative z-10">
-        <Header />
+        <Header onMenuClick={() => setMobileMenuOpen(true)} />
         <main
           id="main-content"
           tabIndex={-1}

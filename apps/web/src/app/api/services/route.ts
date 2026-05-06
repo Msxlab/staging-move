@@ -18,6 +18,7 @@ import {
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
+const SERVICE_CREATE_RATE_LIMIT = { limit: 120, windowSeconds: 300 } as const;
 
 function serviceError(code: string, error: string, status: number, extra: Record<string, unknown> = {}) {
   return NextResponse.json({ code, error, ...extra }, { status });
@@ -95,11 +96,11 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireVerifiedUser();
 
-    // Rate limit: 30 writes per minute
+    // Allow legitimate bulk provider selection without removing abuse protection.
     const rlKey = getRateLimitKey(request, "svc:create");
     const [ipRl, userRl] = await Promise.all([
-      rateLimit(rlKey, { limit: 30, windowSeconds: 60 }),
-      rateLimit(`svc:create:user:${userId}`, { limit: 30, windowSeconds: 60 }),
+      rateLimit(rlKey, SERVICE_CREATE_RATE_LIMIT),
+      rateLimit(`svc:create:user:${userId}`, SERVICE_CREATE_RATE_LIMIT),
     ]);
     if (!ipRl.success || !userRl.success) {
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });

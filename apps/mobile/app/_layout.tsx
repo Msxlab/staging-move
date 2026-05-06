@@ -25,6 +25,7 @@ import {
 import { GeistMono_400Regular, GeistMono_500Medium } from "@expo-google-fonts/geist-mono";
 import "../src/styles/global.css";
 import { AnimatedSplash } from "@/components/AnimatedSplash";
+import { AppLockGate } from "@/components/AppLockGate";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { SessionTracker } from "@/components/SessionTracker";
 import { initI18n } from "@/i18n/config";
@@ -213,8 +214,10 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <SessionTracker />
-      {children}
+      <AppLockGate>
+        <SessionTracker />
+        {children}
+      </AppLockGate>
     </>
   );
 }

@@ -11,7 +11,11 @@ vi.mock("@/lib/db", () => ({
 }));
 
 vi.mock("@/lib/runtime-config", () => ({
-  getRuntimeConfigValue: vi.fn(async () => "individual.android"),
+  getRuntimeConfigValue: vi.fn(async (key: string) => {
+    if (key.includes("IOS")) return "individual.ios";
+    if (key.includes("ANDROID")) return "individual.android";
+    return null;
+  }),
 }));
 
 vi.mock("@/lib/iap-apple", () => ({
@@ -25,8 +29,9 @@ vi.mock("@/lib/iap-google", () => ({
   mapGoogleSubscriptionState: vi.fn(() => "ACTIVE"),
 }));
 
-import { applyIapStateToUser, normalizeGoogleResult, type NormalizedIapState } from "./iap-common";
+import { applyIapStateToUser, normalizeAppleResult, normalizeGoogleResult, type NormalizedIapState } from "./iap-common";
 import { prisma } from "@/lib/db";
+import { mapAppleStatus } from "@/lib/iap-apple";
 
 const originalEnv = { ...process.env };
 
@@ -50,6 +55,39 @@ describe("IAP normalization", () => {
         },
       }),
     ).rejects.toThrow("GOOGLE_TEST_PURCHASE_IN_PRODUCTION");
+  });
+
+  it("maps Apple free-trial offers to TRIALING while preserving the store period end", async () => {
+    vi.mocked(mapAppleStatus).mockReturnValue("ACTIVE");
+    const expiresDate = Date.now() + 14 * 24 * 60 * 60 * 1000;
+
+    const normalized = await normalizeAppleResult({
+      environment: "Sandbox",
+      rawStatus: 1,
+      renewal: null,
+      transaction: {
+        transactionId: "1000000000002",
+        originalTransactionId: "1000000000001",
+        bundleId: "com.locateflow",
+        productId: "individual.ios",
+        purchaseDate: Date.now(),
+        originalPurchaseDate: Date.now(),
+        expiresDate,
+        quantity: 1,
+        type: "Auto-Renewable Subscription",
+        inAppOwnershipType: "PURCHASED",
+        signedDate: Date.now(),
+        environment: "Sandbox",
+        offerDiscountType: "FREE_TRIAL",
+      },
+    });
+
+    expect(normalized).toMatchObject({
+      status: "TRIALING",
+      provider: "APP_STORE",
+      billingInterval: "MONTH",
+      expiresAt: new Date(expiresDate),
+    });
   });
 
   it("maps original transaction unique races to a controlled ownership error", async () => {

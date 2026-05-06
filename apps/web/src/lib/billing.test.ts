@@ -151,6 +151,23 @@ describe("billing helpers", () => {
     });
   });
 
+  it("treats store grace periods as active paid access until the grace window ends", () => {
+    const entitlement = buildUnifiedEntitlementSnapshot({
+      plan: "INDIVIDUAL",
+      status: "GRACE_PERIOD",
+      provider: "PLAY_STORE",
+      platform: "android",
+      accessType: "PAID",
+      gracePeriodEndsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    });
+
+    expect(entitlement).toMatchObject({
+      status: "GRACE_PERIOD",
+      isActive: true,
+      managementKind: "store",
+    });
+  });
+
   it("treats missing subscription rows as inactive Free Access until the canonical row exists", () => {
     const entitlement = buildUnifiedEntitlementSnapshot(null);
 
