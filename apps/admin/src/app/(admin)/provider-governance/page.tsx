@@ -11,6 +11,7 @@ const QUEUE_LABELS: Record<string, string> = {
   missingContact: "Missing Contact Queue",
   broadCoverage: "Broad Coverage Review",
   sourceValidation: "Source Validation Backlog",
+  controlledImportReview: "Controlled Import Review",
   userCreatedProviderReview: "User-Created Provider Review",
 };
 
@@ -51,6 +52,25 @@ export default function ProviderGovernancePage() {
       await load();
     } catch (error: any) {
       toast.error(error?.message || "Failed to update provider");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const updateIssue = async (issueId: string, action: string) => {
+    setBusy(issueId);
+    try {
+      const res = await fetch("/api/provider-governance", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ issueId, action }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "Failed to update issue");
+      toast.success("Governance issue updated");
+      await load();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to update issue");
     } finally {
       setBusy(null);
     }
@@ -123,6 +143,7 @@ export default function ProviderGovernancePage() {
               {(items as any[]).slice(0, 40).map((item, index) => {
                 const provider = item.provider;
                 const customId = provider?.adminReviewStatus ? provider.id : null;
+                const issueId = item.issue?.id || null;
                 return (
                   <div key={`${key}-${provider?.id || index}-${item.warning?.code}`} className="p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -140,6 +161,24 @@ export default function ProviderGovernancePage() {
                       <p className="mt-2 text-xs text-muted-foreground">
                         {provider._count.services} services, {provider._count.moveTasks} move tasks
                       </p>
+                    )}
+                    {issueId && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          disabled={busy === issueId}
+                          onClick={() => updateIssue(issueId, "mark_reviewed")}
+                          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                        >
+                          <CheckCircle2 className="h-3 w-3" /> Mark reviewed
+                        </button>
+                        <button
+                          disabled={busy === issueId}
+                          onClick={() => updateIssue(issueId, "dismiss_issue")}
+                          className="rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
                     )}
                     {customId && (
                       <div className="mt-3 flex flex-wrap gap-2">

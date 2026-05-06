@@ -209,6 +209,7 @@ export default function ProviderDetailScreen() {
 
   const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
   const trust = provider.trust || getProviderTrustSummary(provider);
+  const resourceOnly = Boolean(provider.resourceOnly || provider.tags?.includes("resource-only"));
   const categoryLabel = getLocalizedCategoryLabel(t, provider.category, getCategoryLabel(provider.category));
   const providerDescription = getLocalizedProviderDescription(t, i18n.language, provider);
   const coverageLabel = getLocalizedCoverageLabel(t, i18n.language, trust.coverageConfidence);
@@ -276,7 +277,7 @@ export default function ProviderDetailScreen() {
           ) : null}
 
           <View style={styles.badgesRow}>
-            <UiBadge label={t("providers.listedProvider")} variant="warning" />
+            <UiBadge label={resourceOnly ? "Verification resource" : t("providers.listedProvider")} variant={resourceOnly ? "info" : "warning"} />
             <UiBadge label={coverageLabel} variant="info" />
             {tier === "CRITICAL" ? <UiBadge label={t("providers.critical")} variant="error" /> : null}
             {tier === "IMPORTANT" ? <UiBadge label={t("providers.important")} variant="warning" /> : null}
@@ -287,24 +288,42 @@ export default function ProviderDetailScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.truthTitle}>{t("providers.unverifiedDirectoryData")}</Text>
               <Text style={styles.truthText}>
-                {coverageMessage} {t("providers.confirmOfficial")}
+                {resourceOnly
+                  ? "Use this official resource to verify the actual provider or process for the exact address."
+                  : `${coverageMessage} ${t("providers.confirmOfficial")}`}
               </Text>
               <Text style={styles.truthText}>
-                {t("providers.manualServiceRecord")}
+                {resourceOnly
+                  ? "Do not treat this resource as the household biller until the provider is confirmed."
+                  : t("providers.manualServiceRecord")}
               </Text>
             </View>
           </View>
 
-          <Button
-            title={t("providers.trackManually")}
-            onPress={goAddService}
-            variant="gradient"
-            size="lg"
-            fullWidth
-            icon={<Plus size={18} color="#fff" />}
-            style={{ marginTop: 18 }}
-            accessibilityHint={t("providers.trackManuallyHint")}
-          />
+          {resourceOnly ? (
+            provider.website ? (
+              <Button
+                title="Open official resource"
+                onPress={() => handleOpenLink(provider.website)}
+                variant="outline"
+                size="lg"
+                fullWidth
+                icon={<Globe size={18} color={theme.colors.text} />}
+                style={{ marginTop: 18 }}
+              />
+            ) : null
+          ) : (
+            <Button
+              title={t("providers.trackManually")}
+              onPress={goAddService}
+              variant="gradient"
+              size="lg"
+              fullWidth
+              icon={<Plus size={18} color="#fff" />}
+              style={{ marginTop: 18 }}
+              accessibilityHint={t("providers.trackManuallyHint")}
+            />
+          )}
         </Card>
 
         {provider.userCount && provider.userCount > 0 ? (

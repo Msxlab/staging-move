@@ -68,6 +68,7 @@ describe("provider recommendation safety", () => {
       coverageSourceUrl: overrides.coverageSourceUrl,
       requiresAddressCheck: overrides.requiresAddressCheck,
       requiresPolygonCheck: overrides.requiresPolygonCheck,
+      resourceOnly: overrides.resourceOnly,
     };
   }
 
@@ -119,5 +120,29 @@ describe("provider recommendation safety", () => {
     expect(scored.explanation.coverageConfidence).toBe("STATE_LEVEL");
     expect(scored.explanation.caveat).toContain("not proof");
     expect(scored.explanation.manualConfirmationNote).toContain("manual guidance");
+  });
+
+  it("does not return resource-only listings as setup recommendations", () => {
+    const scored = scoreProviders(
+      [
+        provider({
+          id: "resource-only",
+          name: "Electric Co-op Directory",
+          subCategory: "RESOURCE",
+          tags: ["resource-only", "official-resource"],
+          resourceOnly: true,
+        }),
+        provider({
+          id: "local-electric",
+          name: "Local Electric Utility",
+          coverageModel: "zip_prefix",
+          coverageMatchLevel: "prefix",
+        }),
+      ],
+      baseProfile,
+      "TX",
+    );
+
+    expect(scored.map((p) => p.id)).toEqual(["local-electric"]);
   });
 });

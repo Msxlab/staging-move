@@ -46,6 +46,7 @@ export interface ProviderDetail {
   coverageSourceUrl?: string | null;
   requiresAddressCheck?: boolean;
   requiresPolygonCheck?: boolean;
+  resourceOnly?: boolean | null;
   coverageConfidence?: ProviderCoverageConfidence;
   trust?: ProviderTrustSummary;
 }
@@ -151,6 +152,11 @@ export function ProviderDetailClient({
                   <MapPin className="h-2.5 w-2.5" /> State
                 </span>
               )}
+              {provider.resourceOnly ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded border border-cyan-500/25 bg-cyan-500/10 text-cyan-200">
+                  Verification resource
+                </span>
+              ) : null}
             </div>
             {!provider.logoUrl && (
               <p className="mt-1 text-[11px] text-muted-foreground">
@@ -161,9 +167,13 @@ export function ProviderDetailClient({
         </div>
 
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed provider, manual tracking only</p>
+          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+            {provider.resourceOnly ? "Verification resource, not a biller" : "Listed provider, manual tracking only"}
+          </p>
           <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-100/75">
-            This is unverified directory data, not an official partnership or integration. Confirm details with the official provider before acting.
+            {provider.resourceOnly
+              ? "Use this as an official lookup or guidance resource, then confirm the actual provider for the exact address before acting."
+              : "This is unverified directory data, not an official partnership or integration. Confirm details with the official provider before acting."}
           </p>
         </div>
 
@@ -172,20 +182,22 @@ export function ProviderDetailClient({
         )}
 
         <div className="flex flex-col sm:flex-row gap-2">
-          <Link
-            href={addCta}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:from-orange-600 hover:to-orange-700 transition"
-          >
-            Track manually as my service <ArrowRight className="h-4 w-4" />
-          </Link>
+          {!provider.resourceOnly && (
+            <Link
+              href={addCta}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:from-orange-600 hover:to-orange-700 transition"
+            >
+              Track manually as my service <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
           {provider.website && (
             <a
               href={provider.website}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-foreground/5 text-sm text-foreground/80 hover:bg-foreground/10 transition"
+              className={`${provider.resourceOnly ? "flex-1 " : ""}flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border bg-foreground/5 text-sm text-foreground/80 hover:bg-foreground/10 transition`}
             >
-              <ExternalLink className="h-4 w-4" /> Website
+              <ExternalLink className="h-4 w-4" /> {provider.resourceOnly ? "Open official resource" : "Website"}
             </a>
           )}
           {provider.phone && (
@@ -209,7 +221,9 @@ export function ProviderDetailClient({
             {coverageConfidence?.message || "Availability may vary by address. Confirm with the official provider before acting."}
           </p>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Adding this provider only creates a LocateFlow service record; it does not update your address with the provider.
+            {provider.resourceOnly
+              ? "This resource should be used for verification before you add the actual biller or service provider."
+              : "Adding this provider only creates a LocateFlow service record; it does not update your address with the provider."}
           </p>
           {provider.coverageNote && (
             <p className="text-[11px] text-muted-foreground mt-2">{provider.coverageNote}</p>

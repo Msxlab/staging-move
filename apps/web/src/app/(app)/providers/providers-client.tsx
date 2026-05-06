@@ -65,6 +65,7 @@ export interface ProviderItem {
   coverageSourceUrl?: string | null;
   requiresAddressCheck?: boolean;
   requiresPolygonCheck?: boolean;
+  resourceOnly?: boolean | null;
   coverageConfidence?: ProviderCoverageConfidence;
   trust?: ProviderTrustSummary;
 }
@@ -109,6 +110,10 @@ function formatCount(n: number | undefined): string {
 function trustFor(provider: ProviderItem | ScoredProvider): ProviderTrustSummary {
   if ("trust" in provider && provider.trust) return provider.trust;
   return getProviderTrustSummary(provider);
+}
+
+function isResourceProvider(provider: ProviderItem | ScoredProvider): boolean {
+  return Boolean(provider.resourceOnly || provider.tags?.includes("resource-only"));
 }
 
 type ProviderLogoSource = {
@@ -358,6 +363,11 @@ export function ProvidersClient({
                     <span className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground">
                       {trust.coverageConfidence.label}
                     </span>
+                    {isResourceProvider(p) ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-cyan-500/25 bg-cyan-500/10 text-cyan-200">
+                        Resource
+                      </span>
+                    ) : null}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">
                     {[getMergedDisplayCategoryLabel(p.category), getMergedDisplaySubcategoryLabel(p.category)]
@@ -475,8 +485,12 @@ export function ProvidersClient({
                       <MapPin className="h-2.5 w-2.5" /> State-level
                     </span>
                   )}
-                  <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/20 bg-amber-500/10 text-amber-200">
-                    Listed provider
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                    isResourceProvider(p)
+                      ? "border-cyan-500/25 bg-cyan-500/10 text-cyan-200"
+                      : "border-amber-500/20 bg-amber-500/10 text-amber-200"
+                  }`}>
+                    {isResourceProvider(p) ? "Verification resource" : "Listed provider"}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -488,7 +502,9 @@ export function ProvidersClient({
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{p.description}</p>
                 )}
                 <p className="text-[11px] text-muted-foreground mt-1.5 line-clamp-2">
-                  {trust.coverageConfidence.label}: {trust.coverageConfidence.message} Manual tracking only.
+                  {isResourceProvider(p)
+                    ? "Resource only: use this to verify the right provider or process for the exact address."
+                    : `${trust.coverageConfidence.label}: ${trust.coverageConfidence.message} Manual tracking only.`}
                 </p>
                 <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground">
                   {p.userCount && p.userCount > 0 ? (

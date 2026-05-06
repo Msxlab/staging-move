@@ -17,6 +17,12 @@ function buildDomainCounts(providers: Array<{ website: string | null }>) {
 }
 
 function warningTypeToQueue(code: string) {
+  if (
+    code.includes("controlled") ||
+    code.includes("resource_only") ||
+    code.includes("manual_review") ||
+    code.includes("scope_review")
+  ) return "controlledImportReview";
   if (code.includes("duplicate")) return "duplicateReview";
   if (code.includes("phone") || code.includes("contact")) return "missingContact";
   if (code.includes("coverage") || code.includes("address")) return "broadCoverage";
@@ -89,6 +95,7 @@ export async function GET() {
       missingContact: [],
       broadCoverage: [],
       sourceValidation: [],
+      controlledImportReview: [],
       userCreatedProviderReview: [],
     };
 
@@ -118,6 +125,32 @@ export async function GET() {
           },
         });
       }
+    }
+
+    for (const issue of issues) {
+      if (!String(issue.issueType).startsWith("CONTROLLED_")) continue;
+      const metadata =
+        issue.metadata && typeof issue.metadata === "object" && !Array.isArray(issue.metadata)
+          ? (issue.metadata as Record<string, unknown>)
+          : {};
+      queues.controlledImportReview.push({
+        issue,
+        provider:
+          issue.provider ||
+          issue.customProvider || {
+            id: issue.id,
+            name: issue.title,
+            category: String(metadata.category || "UNKNOWN"),
+            scope: String(metadata.recommendedScope || metadata.state || "REVIEW"),
+            isActive: false,
+          },
+        warning: {
+          code: issue.issueType,
+          label: issue.title,
+          message: issue.description || "Controlled import row needs operator review before activation.",
+          severity: issue.severity,
+        },
+      });
     }
 
     const summary = Object.fromEntries(

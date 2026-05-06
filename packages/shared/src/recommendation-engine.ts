@@ -23,6 +23,7 @@ import {
   mapCoverageMatchToConfidence,
   type CoverageConfidence,
 } from "./provider-move-domain";
+import { isProviderResourceOnly, providerRequiresAddressCheck } from "./provider-integrity";
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ export interface Provider {
   coverageSourceUrl?: string | null;
   requiresAddressCheck?: boolean;
   requiresPolygonCheck?: boolean;
+  resourceOnly?: boolean | null;
 }
 
 export interface RecommendationExplanation {
@@ -148,7 +150,7 @@ function getProviderCoverageConfidence(provider: Provider): CoverageConfidence {
   return mapCoverageMatchToConfidence(provider.coverageMatchLevel, {
     scope: provider.scope,
     coverageModel: provider.coverageModel,
-    requiresAddressCheck: provider.requiresAddressCheck,
+    requiresAddressCheck: providerRequiresAddressCheck(provider),
     requiresPolygonCheck: provider.requiresPolygonCheck,
   });
 }
@@ -537,6 +539,7 @@ export function scoreProviders(
       const reasons: string[] = [];
       const tags = provider.tags || [];
       const addressSensitive = isCoverageAddressSensitive(provider.category);
+      const resourceOnly = isProviderResourceOnly(provider);
       const coverageConfidence = getProviderCoverageConfidence(provider);
       const coveragePresentation = getCoverageConfidencePresentation(coverageConfidence);
 
@@ -599,6 +602,11 @@ export function scoreProviders(
 
       if (addressSensitive && coveragePresentation.requiresCaveat) {
         reasons.push("Availability may vary by address");
+      }
+
+      if (resourceOnly) {
+        score -= addressSensitive ? 35 : 15;
+        reasons.push("Official lookup resource");
       }
 
       // 4b. Ownership-aware steering: renters vs homeowners insurance
@@ -704,6 +712,7 @@ export function scoreProviders(
       };
     })
     .filter((p) => {
+      if (isProviderResourceOnly(p)) return false;
       // Filter out providers user already has
       if (existingServiceNames && existingServiceNames.has(p.name.toLowerCase())) return false;
       return true;

@@ -37,6 +37,7 @@ export type ProviderCardData = {
   coverageSourceUrl?: string | null;
   requiresAddressCheck?: boolean | null;
   requiresPolygonCheck?: boolean | null;
+  resourceOnly?: boolean | null;
   coverageConfidence?: ProviderCoverageConfidence;
   trust?: ProviderTrustSummary;
 };
@@ -71,6 +72,7 @@ export function ProviderCard({
   const description = getLocalizedProviderDescription(t, i18n.language, provider);
   const coverageLabel = getLocalizedCoverageLabel(t, i18n.language, trust.coverageConfidence);
   const coverageMessage = getLocalizedCoverageMessage(t, i18n.language, trust.coverageConfidence);
+  const resourceOnly = Boolean(provider.resourceOnly || provider.tags?.includes("resource-only"));
 
   if (variant === "compact") {
     return (
@@ -90,7 +92,7 @@ export function ProviderCard({
               <CategoryIcon emoji={iconEmoji} size={18} color={theme.colors.primary} />
             </View>
           )}
-          {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
+          {resourceOnly ? <UiBadge label="Resource" variant="info" /> : badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
         </View>
 
         <Text style={compactStyles.name} numberOfLines={1}>
@@ -157,7 +159,7 @@ export function ProviderCard({
       ) : null}
 
       <View style={fullStyles.metaRow}>
-        <UiBadge label={t("providers.listedProvider")} variant="warning" />
+        <UiBadge label={resourceOnly ? "Verification resource" : t("providers.listedProvider")} variant={resourceOnly ? "info" : "warning"} />
         <UiBadge label={coverageLabel} variant="info" />
         {badge ? <UiBadge label={badge.label} variant={badge.variant ?? "primary"} /> : null}
         {provider.userCount && provider.userCount > 0 ? (
@@ -169,7 +171,9 @@ export function ProviderCard({
       </View>
 
       <Text style={fullStyles.caveat} numberOfLines={3}>
-        {coverageMessage} {t("providers.manualTrackingCaveat")}
+        {resourceOnly
+          ? "Use this resource to confirm the right provider or process for the exact address."
+          : `${coverageMessage} ${t("providers.manualTrackingCaveat")}`}
       </Text>
 
       {provider.tags && provider.tags.length > 0 ? (

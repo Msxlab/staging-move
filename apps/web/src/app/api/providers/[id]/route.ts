@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { getProviderTrustSummary } from "@locateflow/shared";
+import { getProviderTrustSummary, isProviderResourceOnly, providerRequiresAddressCheck } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { getProviderMatchLevelFromDb } from "@/lib/provider-matching";
 
@@ -62,6 +62,8 @@ export async function GET(
           { scope: "FEDERAL" },
           { coverages: { some: { state: stateParam } } },
         ];
+      } else {
+        altWhere.scope = "FEDERAL";
       }
       alternatives = (await prisma.serviceProvider.findMany({
         where: altWhere,
@@ -94,13 +96,15 @@ function shape(p: ProviderRow, state: string | null) {
       id: p.id,
       slug: p.slug,
       scope: p.scope,
+      tags,
       coverageModel,
       coverages: p.coverages || [],
     },
     { state },
   );
-  const requiresAddressCheck = coverageModel === "live_address";
+  const requiresAddressCheck = providerRequiresAddressCheck({ ...p, tags, coverageModel });
   const requiresPolygonCheck = coverageModel === "polygon";
+  const resourceOnly = isProviderResourceOnly({ ...p, tags });
   const coverageNote = metadata?.note || null;
   const coverageSourceUrl = metadata?.officialUrl || null;
   const trust = getProviderTrustSummary({
@@ -114,6 +118,7 @@ function shape(p: ProviderRow, state: string | null) {
     coverageSourceUrl,
     requiresAddressCheck,
     requiresPolygonCheck,
+    resourceOnly,
   });
 
   return {
@@ -139,6 +144,7 @@ function shape(p: ProviderRow, state: string | null) {
     coverageSourceUrl,
     requiresAddressCheck,
     requiresPolygonCheck,
+    resourceOnly,
     coverageConfidence: trust.coverageConfidence,
     trust,
   };

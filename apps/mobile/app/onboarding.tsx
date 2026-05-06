@@ -88,6 +88,10 @@ const OWNERSHIP_TYPES = [
   { value: "OTHER", label: "Other" },
 ];
 
+function isResourceOnlyProvider(provider: ScoredProvider): boolean {
+  return Boolean(provider.resourceOnly || provider.tags?.includes("resource-only"));
+}
+
 // Household details that carry no legal-sensitivity weight. Users can toggle
 // these without any opt-in — they help the checklist generator tailor tasks
 // (e.g. "pack pet supplies", "book a U-Haul").
@@ -217,7 +221,7 @@ export default function OnboardingScreen() {
       if (address.state) params.state = address.state;
       if (address.zip) params.zip = address.zip;
       const res = await api.get<any>("/api/providers/recommendations", params);
-      setProviders(res.data?.allProviders || []);
+      setProviders((res.data?.allProviders || []).filter((p: ScoredProvider) => !isResourceOnlyProvider(p)));
     } catch {
       setProviders([]);
     } finally {
@@ -260,6 +264,10 @@ export default function OnboardingScreen() {
   };
 
   const toggleProvider = (provider: ScoredProvider) => {
+    if (isResourceOnlyProvider(provider)) {
+      setError("This is a verification resource, not a provider to add as a biller.");
+      return;
+    }
     setSelectedProviders((prev) => {
       const next = new Map(prev);
       if (next.has(provider.id)) next.delete(provider.id);

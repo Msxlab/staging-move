@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-04-24T17:08:11.731Z",
-  "providerCount": 776,
+  "generatedAt": "2026-05-06T21:56:38.236Z",
+  "providerCount": 790,
   "criticalCategories": [
     "UTILITY_ELECTRIC",
     "UTILITY_GAS",
@@ -1865,16 +1865,16 @@
     {
       "state": "DC",
       "category": "TRANSPORTATION_TRANSIT",
-      "count": 2,
+      "count": 1,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 1,
-      "broadOnly": false,
-      "gapType": "covered",
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "DC",
@@ -12003,6 +12003,20 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
+      "state": "DC",
+      "category": "TRANSPORTATION_TRANSIT",
+      "count": 1,
+      "federalCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "FL",
       "category": "UTILITY_GAS",
       "count": 1,
@@ -17507,6 +17521,20 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
+      "state": "DC",
+      "category": "TRANSPORTATION_TRANSIT",
+      "count": 1,
+      "federalCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 0,
+      "broadOnly": true,
+      "gapType": "broad_only",
+      "suggestedSourceType": "Official toll, transit, or transportation agency pages",
+      "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
+      "priority": "MEDIUM",
+      "adminQueue": "Broad Coverage Review Queue"
+    },
+    {
       "state": "DE",
       "category": "TRANSPORTATION_TRANSIT",
       "count": 1,
@@ -17685,7 +17713,7 @@
     {
       "code": "missing_logo",
       "label": "Missing logo",
-      "count": 776,
+      "count": 790,
       "examples": [
         "USPS (GOVERNMENT_POSTAL)",
         "USPS Movers Guide (GOVERNMENT_POSTAL)",
@@ -17717,7 +17745,7 @@
     {
       "code": "missing_phone",
       "label": "Missing phone",
-      "count": 301,
+      "count": 314,
       "examples": [
         "Vote.gov (GOVERNMENT_VOTER)",
         "Regions Bank (FINANCIAL_BANK)",
@@ -17813,7 +17841,7 @@
     {
       "code": "duplicate_domain",
       "label": "Duplicate domain candidate",
-      "count": 127,
+      "count": 130,
       "examples": [
         "IRS (GOVERNMENT_TAX)",
         "IRS Form 8822 (GOVERNMENT_TAX)",
@@ -18323,6 +18351,32 @@
       ]
     },
     {
+      "domain": "walmart.com",
+      "count": 3,
+      "categories": [
+        "GROCERY_DELIVERY",
+        "HEALTHCARE_PHARMACY",
+        "SHOPPING_RETAIL"
+      ],
+      "providers": [
+        {
+          "name": "Walmart+ Delivery",
+          "slug": "walmart-plus",
+          "category": "GROCERY_DELIVERY"
+        },
+        {
+          "name": "Walmart Pharmacy",
+          "slug": "walmart-pharmacy",
+          "category": "HEALTHCARE_PHARMACY"
+        },
+        {
+          "name": "Walmart",
+          "slug": "walmart",
+          "category": "SHOPPING_RETAIL"
+        }
+      ]
+    },
+    {
       "domain": "xcelenergy.com",
       "count": 3,
       "categories": [
@@ -18621,6 +18675,26 @@
           "name": "IRS Form 8822",
           "slug": "irs-address",
           "category": "GOVERNMENT_TAX"
+        }
+      ]
+    },
+    {
+      "domain": "kroger.com",
+      "count": 2,
+      "categories": [
+        "HEALTHCARE_PHARMACY",
+        "SHOPPING_RETAIL"
+      ],
+      "providers": [
+        {
+          "name": "Kroger Pharmacy",
+          "slug": "kroger-pharmacy",
+          "category": "HEALTHCARE_PHARMACY"
+        },
+        {
+          "name": "Kroger",
+          "slug": "kroger",
+          "category": "SHOPPING_RETAIL"
         }
       ]
     },
@@ -18995,26 +19069,6 @@
           "name": "U.S. Bank Credit Cards",
           "slug": "us-bank-cards",
           "category": "FINANCIAL_CREDIT_CARD"
-        }
-      ]
-    },
-    {
-      "domain": "walmart.com",
-      "count": 2,
-      "categories": [
-        "GROCERY_DELIVERY",
-        "SHOPPING_RETAIL"
-      ],
-      "providers": [
-        {
-          "name": "Walmart+ Delivery",
-          "slug": "walmart-plus",
-          "category": "GROCERY_DELIVERY"
-        },
-        {
-          "name": "Walmart",
-          "slug": "walmart",
-          "category": "SHOPPING_RETAIL"
         }
       ]
     },
@@ -21656,7 +21710,7 @@
     {
       "category": "TRANSPORTATION_TRANSIT",
       "label": "Transit",
-      "count": 66,
+      "count": 65,
       "reason": "High count; review for broad imports or over-splitting"
     },
     {
@@ -21966,6 +22020,32 @@
       ]
     },
     {
+      "domain": "walmart.com",
+      "categories": [
+        "GROCERY_DELIVERY",
+        "HEALTHCARE_PHARMACY",
+        "SHOPPING_RETAIL"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Walmart+ Delivery",
+          "slug": "walmart-plus",
+          "category": "GROCERY_DELIVERY"
+        },
+        {
+          "name": "Walmart Pharmacy",
+          "slug": "walmart-pharmacy",
+          "category": "HEALTHCARE_PHARMACY"
+        },
+        {
+          "name": "Walmart",
+          "slug": "walmart",
+          "category": "SHOPPING_RETAIL"
+        }
+      ]
+    },
+    {
       "domain": "xcelenergy.com",
       "categories": [
         "UTILITY_ELECTRIC",
@@ -22207,6 +22287,26 @@
           "name": "Discover Card",
           "slug": "discover-card",
           "category": "FINANCIAL_CREDIT_CARD"
+        }
+      ]
+    },
+    {
+      "domain": "kroger.com",
+      "categories": [
+        "HEALTHCARE_PHARMACY",
+        "SHOPPING_RETAIL"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Kroger Pharmacy",
+          "slug": "kroger-pharmacy",
+          "category": "HEALTHCARE_PHARMACY"
+        },
+        {
+          "name": "Kroger",
+          "slug": "kroger",
+          "category": "SHOPPING_RETAIL"
         }
       ]
     },
@@ -22467,26 +22567,6 @@
           "name": "U.S. Bank Credit Cards",
           "slug": "us-bank-cards",
           "category": "FINANCIAL_CREDIT_CARD"
-        }
-      ]
-    },
-    {
-      "domain": "walmart.com",
-      "categories": [
-        "GROCERY_DELIVERY",
-        "SHOPPING_RETAIL"
-      ],
-      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
-      "providers": [
-        {
-          "name": "Walmart+ Delivery",
-          "slug": "walmart-plus",
-          "category": "GROCERY_DELIVERY"
-        },
-        {
-          "name": "Walmart",
-          "slug": "walmart",
-          "category": "SHOPPING_RETAIL"
         }
       ]
     },
