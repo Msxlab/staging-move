@@ -1,21 +1,47 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Download, FileText, FileSpreadsheet, Loader2, Home, Briefcase, Palmtree, MapPin, Star } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  Download,
+  FileText,
+  FileSpreadsheet,
+  Loader2,
+  Home,
+  Briefcase,
+  Palmtree,
+  MapPin,
+  Star,
+  FileDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 
 interface AddressInfo {
-  id: string; type: string; nickname?: string; street: string; city: string; state: string; zip: string; isPrimary: boolean; ownership: string; startDate: string;
-  services?: { id: string; providerName: string; category: string; monthlyCost: number; billingDay?: number }[];
+  id: string;
+  type: string;
+  nickname?: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  isPrimary: boolean;
+  ownership: string;
+  startDate: string;
+  services?: {
+    id: string;
+    providerName: string;
+    category: string;
+    monthlyCost: number;
+    billingDay?: number;
+  }[];
 }
 
-const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
-const categoryLabels: Record<string, string> = {
-  GOVERNMENT: "Government", UTILITY: "Utilities", FINANCIAL: "Financial", HOUSING: "Housing",
-  HEALTHCARE: "Healthcare", TRANSPORTATION: "Transport", KIDS: "Kids & Edu", FITNESS: "Fitness",
-  SHOPPING: "Shopping", OTHER: "Other",
+const typeIcons: Record<string, React.ElementType> = {
+  HOME: Home,
+  WORK: Briefcase,
+  VACATION: Palmtree,
 };
 
 const exportOptions = [
@@ -26,232 +52,97 @@ const exportOptions = [
   { title: "Full Data Export", description: "Export supported account data", icon: Download, type: "full", formats: ["JSON"] },
 ];
 
-function generatePDF(address: AddressInfo, userName: string) {
-  const services = address.services || [];
-  const totalMonthlyCost = services.reduce((sum, s) => sum + (s.monthlyCost || 0), 0);
-  const now = new Date();
-  const monthYear = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
-
-  // Group by category prefix
-  const grouped: Record<string, typeof services> = {};
-  for (const s of services) {
-    const prefix = s.category.split("_")[0];
-    if (!grouped[prefix]) grouped[prefix] = [];
-    grouped[prefix].push(s);
+/**
+ * Hit `url`, save the response as a download. Reads the filename from
+ * `Content-Disposition` so the server controls naming, and surfaces a
+ * JSON `error` message when the API rejects the request.
+ */
+async function downloadFromUrl(url: string, fallbackFilename: string): Promise<void> {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) {
+    let message = "Download failed";
+    try {
+      const data = await res.json();
+      if (data?.error) message = data.error;
+    } catch {
+      // non-JSON error body — keep the generic message
+    }
+    throw new Error(message);
   }
-
-  // Build HTML for PDF
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b; background: #fff; }
-    .page { max-width: 800px; margin: 0 auto; padding: 40px; }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
-    .logo { display: flex; align-items: center; gap: 12px; }
-    .logo-icon { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
-    .logo-mark { width: 42px; height: 42px; display: block; }
-    .logo-text { font-family: Georgia, 'Times New Roman', serif; font-size: 22px; font-weight: 500; color: #2a1f18; letter-spacing: -0.02em; }
-    .logo-flow { font-style: italic; color: #b8936c; }
-    .report-date { text-align: right; color: #64748b; font-size: 13px; }
-    .report-title { font-size: 24px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-    .report-subtitle { font-size: 14px; color: #64748b; margin-bottom: 24px; }
-    .address-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
-    .address-name { font-size: 18px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
-    .address-detail { font-size: 13px; color: #64748b; margin-bottom: 2px; }
-    .stats-row { display: flex; gap: 24px; margin-top: 12px; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 20px; font-weight: 700; color: #8b5cf6; }
-    .stat-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
-    .section-title { font-size: 14px; font-weight: 600; color: #475569; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-    th { text-align: left; font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; border-bottom: 1px solid #e2e8f0; }
-    td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; }
-    .td-cost { text-align: right; font-weight: 600; color: #059669; }
-    .td-day { text-align: center; color: #64748b; }
-    .total-row { background: #f0fdf4; }
-    .total-row td { font-weight: 700; font-size: 14px; border-bottom: none; border-top: 2px solid #059669; }
-    .category-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .bar-label { font-size: 12px; color: #475569; width: 100px; }
-    .bar-bg { flex: 1; height: 12px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
-    .bar-fill { height: 100%; border-radius: 6px; }
-    .bar-value { font-size: 12px; font-weight: 600; color: #475569; width: 80px; text-align: right; }
-    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; color: #94a3b8; font-size: 11px; }
-    .cat-utility .bar-fill { background: #f59e0b; }
-    .cat-financial .bar-fill { background: #10b981; }
-    .cat-housing .bar-fill { background: #0ea5e9; }
-    .cat-healthcare .bar-fill { background: #f43f5e; }
-    .cat-government .bar-fill { background: #ef4444; }
-    .cat-transportation .bar-fill { background: #3b82f6; }
-    .cat-kids .bar-fill { background: #a855f7; }
-    .cat-fitness .bar-fill { background: #f97316; }
-    .cat-shopping .bar-fill { background: #ec4899; }
-    .cat-other .bar-fill { background: #6b7280; }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <div class="header">
-      <div class="logo">
-        <div class="logo-icon">
-          <svg class="logo-mark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-            <path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="#B8936C" stroke-width="3.25" fill="none" stroke-linecap="round" />
-            <circle cx="20" cy="65" r="4.5" fill="#E5C9A8" />
-            <circle cx="20" cy="65" r="1.5" fill="#2A1F18" />
-            <circle cx="80" cy="40" r="7.25" fill="#D4846A" />
-            <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
-          </svg>
-        </div>
-        <div class="logo-text">Locate<span class="logo-flow">flow</span></div>
-      </div>
-      <div class="report-date">
-        <div style="font-weight: 600; color: #1e293b;">Monthly Expense Report</div>
-        <div>${monthYear}</div>
-        <div>Generated: ${now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
-      </div>
-    </div>
-
-    <div class="report-title">${address.nickname || address.street}</div>
-    <div class="report-subtitle">${address.street}, ${address.city}, ${address.state} ${address.zip}</div>
-
-    <div class="address-card">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div class="address-detail"><strong>Type:</strong> ${address.type} · <strong>Ownership:</strong> ${address.ownership === "OWNER" ? "Owner" : "Renter"}</div>
-          <div class="address-detail"><strong>Move-in:</strong> ${new Date(address.startDate).toLocaleDateString("en-US", { month: "long", year: "numeric" })}</div>
-          <div class="address-detail"><strong>Prepared for:</strong> ${userName || "Account Holder"}</div>
-        </div>
-        <div class="stats-row">
-          <div class="stat">
-            <div class="stat-value">${services.length}</div>
-            <div class="stat-label">Services</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value">$${totalMonthlyCost.toLocaleString()}</div>
-            <div class="stat-label">Monthly</div>
-          </div>
-          <div class="stat">
-            <div class="stat-value">$${(totalMonthlyCost * 12).toLocaleString()}</div>
-            <div class="stat-label">Annual Est.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    ${Object.keys(grouped).length > 0 ? `
-    <div class="section-title">Category Breakdown</div>
-    ${Object.entries(grouped).sort((a, b) => {
-      const aTotal = a[1].reduce((s, sv) => s + (sv.monthlyCost || 0), 0);
-      const bTotal = b[1].reduce((s, sv) => s + (sv.monthlyCost || 0), 0);
-      return bTotal - aTotal;
-    }).map(([prefix, svcs]) => {
-      const catTotal = svcs.reduce((s, sv) => s + (sv.monthlyCost || 0), 0);
-      const pct = totalMonthlyCost > 0 ? (catTotal / totalMonthlyCost) * 100 : 0;
-      return `
-      <div class="category-bar cat-${prefix.toLowerCase()}">
-        <div class="bar-label">${categoryLabels[prefix] || prefix}</div>
-        <div class="bar-bg"><div class="bar-fill" style="width: ${pct}%"></div></div>
-        <div class="bar-value">$${catTotal.toLocaleString()} (${Math.round(pct)}%)</div>
-      </div>`;
-    }).join("")}
-    ` : ""}
-
-    <div class="section-title">Service Details</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Provider</th>
-          <th>Category</th>
-          <th style="text-align: center">Bill Day</th>
-          <th style="text-align: right">Monthly Cost</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${services.sort((a, b) => (b.monthlyCost || 0) - (a.monthlyCost || 0)).map((s) => `
-        <tr>
-          <td><strong>${s.providerName}</strong></td>
-          <td>${(s.category || "").replace(/_/g, " ")}</td>
-          <td class="td-day">${s.billingDay ? `Day ${s.billingDay}` : "—"}</td>
-          <td class="td-cost">$${(s.monthlyCost || 0).toLocaleString()}</td>
-        </tr>`).join("")}
-        <tr class="total-row">
-          <td colspan="3"><strong>Total Monthly Expenses</strong></td>
-          <td class="td-cost">$${totalMonthlyCost.toLocaleString()}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="footer">
-      <div>LocateFlow — Relocation Management Platform</div>
-      <div>Page 1 of 1 · Confidential</div>
-    </div>
-  </div>
-</body>
-</html>`;
-
-  return html;
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const dispo = res.headers.get("content-disposition") || "";
+  const match = /filename="?([^";]+)"?/i.exec(dispo);
+  const filename = match?.[1] || fallbackFilename;
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(objectUrl);
 }
 
 export default function ExportPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [addresses, setAddresses] = useState<AddressInfo[]>([]);
-  const [userName, setUserName] = useState("");
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
+  const [generatingFullPdf, setGeneratingFullPdf] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/addresses").then((r) => r.json()),
-      fetch("/api/profile").then((r) => r.json()),
-    ]).then(([addrData, profData]) => {
-      setAddresses(addrData.addresses || []);
-      if (profData.user) {
-        setUserName(`${profData.user.firstName || ""} ${profData.user.lastName || ""}`.trim());
-      }
-    }).catch(() => {}).finally(() => setLoadingAddresses(false));
+    fetch("/api/addresses")
+      .then((r) => r.json())
+      .then((data) => setAddresses(data.addresses || []))
+      .catch(() => {})
+      .finally(() => setLoadingAddresses(false));
   }, []);
 
   const handleExport = async (type: string, format: string) => {
     const key = `${type}-${format}`;
     setDownloading(key);
     try {
-      const res = await fetch(`/api/export?type=${type}&format=${format.toLowerCase()}`);
-      if (!res.ok) throw new Error("Export failed");
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `locateflow-${type}-export.${format.toLowerCase()}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      toast.success(`${type} exported as ${format}!`);
-    } catch {
-      toast.error("Export failed. Please try again.");
+      await downloadFromUrl(
+        `/api/export?type=${type}&format=${format.toLowerCase()}`,
+        `locateflow-${type}-export.${format.toLowerCase()}`,
+      );
+      toast.success(`${type} exported as ${format}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Export failed");
     }
     setDownloading(null);
   };
 
+  // Per-address monthly expense PDF — produced server-side by pdfkit.
+  // No more pop-up window or print dialog dependency.
   const handlePdfReport = async (address: AddressInfo) => {
     setGeneratingPdf(address.id);
     try {
-      const html = generatePDF(address, userName);
-      const printWindow = window.open("", "_blank");
-      if (!printWindow) { toast.error("Pop-up blocked. Please allow pop-ups."); return; }
-      printWindow.document.write(html);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
-      toast.success("PDF report opened — use Print to save as PDF");
-    } catch {
-      toast.error("Failed to generate report");
+      await downloadFromUrl(
+        `/api/export/pdf?type=address&addressId=${encodeURIComponent(address.id)}`,
+        `locateflow-${address.nickname || address.street}-report.pdf`,
+      );
+      toast.success("PDF report downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate report");
     }
     setGeneratingPdf(null);
+  };
+
+  // Full-account snapshot PDF — profile, subscription, addresses,
+  // services, moving plans, task summary in a single document.
+  const handleFullAccountPdf = async () => {
+    setGeneratingFullPdf(true);
+    try {
+      await downloadFromUrl(
+        "/api/export/pdf?type=full",
+        "locateflow-account-snapshot.pdf",
+      );
+      toast.success("Full account PDF downloaded");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to generate PDF");
+    }
+    setGeneratingFullPdf(false);
   };
 
   return (
@@ -268,15 +159,15 @@ export default function ExportPage() {
         </div>
       </div>
 
-      {/* PDF Monthly Reports */}
+      {/* Per-address PDF reports */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
           <FileText className="h-4 w-4 text-orange-400" />
           <h3 className="text-sm font-semibold text-foreground">Monthly Expense Reports (PDF)</h3>
         </div>
         <p className="text-xs text-foreground/40 px-5 pb-3">
-          Generate a professional PDF report for any address with company branding, category breakdown, and full service details.
-          Exports use a print-friendly light layout.
+          Pick the address you want a monthly report for. Each PDF is generated on the server with branding,
+          category breakdown, and full service details — no print dialog needed.
         </p>
         <div className="px-5 pb-5 space-y-2">
           {loadingAddresses ? (
@@ -318,6 +209,30 @@ export default function ExportPage() {
         </div>
       </div>
 
+      {/* Full account PDF */}
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
+        <div className="flex items-center gap-2 px-5 pt-5 pb-3">
+          <FileDown className="h-4 w-4 text-amber-400" />
+          <h3 className="text-sm font-semibold text-foreground">Full Account Snapshot (PDF)</h3>
+        </div>
+        <div className="flex items-center gap-3 px-5 pb-5">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-foreground/40">
+              Single PDF with profile, subscription, every address with its services, moving plans, and task summary.
+              Suitable for personal archive or audit hand-off.
+            </p>
+          </div>
+          <button
+            onClick={handleFullAccountPdf}
+            disabled={generatingFullPdf}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-medium hover:bg-amber-600 transition disabled:opacity-50 shrink-0"
+          >
+            {generatingFullPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            Download PDF
+          </button>
+        </div>
+      </div>
+
       {/* Data Exports */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
@@ -341,8 +256,12 @@ export default function ExportPage() {
                     const key = `${opt.type}-${fmt}`;
                     const isLoading = downloading === key;
                     return (
-                      <button key={fmt} disabled={isLoading} onClick={() => handleExport(opt.type, fmt)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition disabled:opacity-50">
+                      <button
+                        key={fmt}
+                        disabled={isLoading}
+                        onClick={() => handleExport(opt.type, fmt)}
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition disabled:opacity-50"
+                      >
                         {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}{fmt}
                       </button>
                     );
