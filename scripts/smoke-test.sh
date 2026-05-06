@@ -33,8 +33,14 @@ json_field() {
 echo "== web ($BASE_URL) =="
 check "health endpoint"     "$BASE_URL/api/health"              "200"
 check "sign-in page"        "$BASE_URL/sign-in"                  "200"
+check "sign-up page"        "$BASE_URL/sign-up"                  "200"
 check "marketing homepage"  "$BASE_URL/"                         "200"
+check "pricing page"        "$BASE_URL/pricing"                  "200"
+check "faq page"            "$BASE_URL/faq"                      "200"
+check "robots.txt"          "$BASE_URL/robots.txt"               "200"
+check "sitemap.xml"         "$BASE_URL/sitemap.xml"              "200"
 check "unauth dashboard"    "$BASE_URL/dashboard"                "307"
+check "unauth me endpoint"  "$BASE_URL/api/auth/me"              "401"
 health_status=$(json_field "$BASE_URL/api/health" "status")
 echo "  health.status = ${health_status:-unknown}"
 
@@ -43,6 +49,21 @@ echo "== admin ($ADMIN_URL) =="
 check "admin health auth gate" "$ADMIN_URL/api/health"           "401"
 check "admin login page"    "$ADMIN_URL/login"                   "200"
 check "unauth admin root"   "$ADMIN_URL/"                        "307"
+
+if [ -n "${CRON_SECRET:-}" ]; then
+  echo ""
+  echo "== synthetic monitor (CRON_SECRET present) =="
+  monitor_status=$(curl -sS -o /dev/null -w "%{http_code}" \
+    -H "Authorization: Bearer ${CRON_SECRET}" \
+    "$BASE_URL/api/cron/synthetic-monitor" || echo "000")
+  if [ "$monitor_status" = "200" ]; then
+    echo "  ok   synthetic-monitor ($monitor_status)"
+    pass=$((pass + 1))
+  else
+    echo "  FAIL synthetic-monitor (expected 200, got $monitor_status)"
+    fail=$((fail + 1))
+  fi
+fi
 
 echo ""
 echo "== result =="
