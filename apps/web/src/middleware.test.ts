@@ -196,12 +196,13 @@ describe("web middleware auth boundaries", () => {
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
   });
 
-  it("keeps the app help center private and noindexed until a public SSR help center exists", async () => {
+  it("lets the public help center render without a session or noindex header", async () => {
     const response = await middleware(request("https://locateflow.com/help"));
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://locateflow.com/sign-in?redirect=%2Fhelp");
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow, noarchive");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(response.headers.get("location")).toBeNull();
+    expect(response.headers.get("x-robots-tag")).toBeNull();
   });
 
   it("adds baseline security headers to middleware responses", async () => {

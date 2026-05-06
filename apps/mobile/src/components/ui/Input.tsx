@@ -70,9 +70,9 @@ export function Input({
             accessibilityHint="Toggles password visibility"
           >
             {secureEntry ? (
-              <EyeOff size={18} color={theme.colors.textMuted} />
+              <Eye size={18} color={theme.colors.textMuted} />
             ) : (
-              <Eye size={18} color={theme.colors.textTertiary} />
+              <EyeOff size={18} color={theme.colors.textTertiary} />
             )}
           </TouchableOpacity>
         )}

@@ -55,6 +55,7 @@ export async function MarketingFooter() {
             <h4 className="mb-3 text-sm font-semibold">{tCommon("help")}</h4>
             <div className="space-y-2 text-sm text-muted-foreground">
               <Link href="/faq" className="block transition hover:text-foreground">FAQ</Link>
+              <Link href="/help" className="block transition hover:text-foreground">Help Center</Link>
               <Link href="/blog" className="block transition hover:text-foreground">Blog</Link>
               <Link href="/blog/feed.xml" className="block transition hover:text-foreground">RSS</Link>
               <Link href="/contact" className="block transition hover:text-foreground">{tCommon("contact")}</Link>

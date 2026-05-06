@@ -33,6 +33,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
   // to remember the disallow set separately.
   const PRIVATE_PATHS = [
     "/dashboard",
+    "/settings",
     "/settings/",
     "/moving",
     "/moving/",
@@ -44,8 +45,6 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     "/budget/",
     "/providers",
     "/providers/",
-    "/help",
-    "/help/",
     "/support",
     "/support/",
     "/notifications",
@@ -60,16 +59,14 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     "/blog/preview/", // signed-token preview links — never index
   ];
 
-  // Search/retrieval crawlers may access public pages so answer engines can
-  // cite canonical URLs. Broad training crawlers are opted out by default.
-  const AI_SEARCH_BOTS_ALLOW = [
+  // AI search and training crawlers may access public pages. Private app,
+  // token, and API routes stay disallowed for every crawler.
+  const AI_BOTS_ALLOW = [
     "OAI-SearchBot",
     "ChatGPT-User",
+    "GPTBot",
     "PerplexityBot",
     "ClaudeBot",
-  ];
-  const AI_TRAINING_BOTS_DISALLOW = [
-    "GPTBot",
     "Google-Extended",
     "CCBot",
     "Bytespider",
@@ -82,14 +79,10 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
         allow: "/",
         disallow: PRIVATE_PATHS,
       },
-      ...AI_SEARCH_BOTS_ALLOW.map((userAgent) => ({
+      ...AI_BOTS_ALLOW.map((userAgent) => ({
         userAgent,
         allow: "/",
         disallow: PRIVATE_PATHS,
-      })),
-      ...AI_TRAINING_BOTS_DISALLOW.map((userAgent) => ({
-        userAgent,
-        disallow: "/",
       })),
     ],
     sitemap: `${APP_URL.replace(/\/+$/, "")}/sitemap.xml`,

@@ -20,6 +20,7 @@ const PUBLIC_PATHS = [
   "/how-it-works",
   "/blog",
   "/faq",
+  "/help",
   "/security",
   "/refund",
   "/billing-policy",
@@ -448,7 +449,6 @@ function pathShouldNoIndex(pathname: string): boolean {
     pathname.startsWith("/notifications") ||
     pathname.startsWith("/expenses") ||
     pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/help") ||
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/sign-up") ||
     pathname.startsWith("/forgot-password") ||

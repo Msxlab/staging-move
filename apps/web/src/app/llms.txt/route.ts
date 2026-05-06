@@ -42,6 +42,7 @@ const STATIC_DOCS = [
   { title: "Pricing", path: "/pricing", note: "Plans, free trial, refunds." },
   { title: "Provider coverage", path: "/provider-coverage", note: "Provider availability and verification limits." },
   { title: "FAQ", path: "/faq", note: "Common questions about the service." },
+  { title: "Help Center", path: "/help", note: "Searchable public help articles and product FAQs." },
   { title: "Security", path: "/security", note: "Data handling, encryption, MFA." },
   { title: "Privacy policy", path: "/privacy", note: "What we collect and why." },
   { title: "Data export and deletion", path: "/data-deletion", note: "Export, deletion, and retention limits." },
@@ -92,7 +93,7 @@ export async function GET() {
   const lines: string[] = [];
   lines.push("# LocateFlow");
   lines.push("");
-  lines.push("Last updated: 2026-05-01");
+  lines.push("Last updated: 2026-05-06");
   lines.push("");
   lines.push(
     "> LocateFlow is a web app for organizing address-tied services, renewal reminders, moving tasks, household documents, and exportable relocation records.",
