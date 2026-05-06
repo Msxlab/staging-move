@@ -42,9 +42,11 @@ export default function NotificationsPage() {
   }, [fetchFeed]);
 
   const markRead = async (id: string) => {
-    const notification = notifications.find((n) => n.id === id);
-    if (!notification || notification.read) return;
-
+    await fetch(`/api/notifications/feed/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
+      body: "{}",
+    });
     setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
     setUnreadCount((c) => Math.max(0, c - 1));
     const res = await fetch(`/api/notifications/feed/${id}`, notificationPatchRequestInit()).catch(() => null);
@@ -57,7 +59,11 @@ export default function NotificationsPage() {
   const markAllRead = async () => {
     setMarkingAll(true);
     try {
-      const res = await fetch("/api/notifications/feed?action=read-all", notificationPatchRequestInit());
+      const res = await fetch("/api/notifications/feed?action=read-all", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
+        body: "{}",
+      });
       if (res.ok) {
         setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setUnreadCount(0);
@@ -140,7 +146,7 @@ export default function NotificationsPage() {
 
       <div className="text-center">
         <Link href="/settings/notifications" className="text-xs text-foreground/35 hover:text-muted-foreground transition">
-          {tNav("notifications")} →
+          {tNav("notificationSettings")} →
         </Link>
       </div>
     </div>

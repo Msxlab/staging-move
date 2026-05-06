@@ -31,7 +31,9 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
           tabIndex={-1}
           className="flex-1 min-w-0 p-4 md:p-6 pb-20 md:pb-6 focus:outline-none"
         >
-          {children}
+          <div className="mx-auto w-full max-w-screen-2xl">
+            {children}
+          </div>
         </main>
         <MobileNav />
       </div>

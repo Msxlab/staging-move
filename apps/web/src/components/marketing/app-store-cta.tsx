@@ -58,7 +58,7 @@ function GooglePlayLogo({ className }: { className?: string }) {
 export function AppStoreCTA({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState<null | "ios" | "android">(null);
   const base =
-    "group inline-flex min-w-[15rem] items-center gap-3 rounded-xl border border-border bg-black text-white text-left shadow-sm transition-all";
+    "group inline-flex min-w-[15rem] items-center gap-3 rounded-xl border border-border bg-foreground text-background text-left shadow-sm transition-all dark:bg-foreground/95";
   const size = compact ? "px-4 py-2" : "px-5 py-3";
 
   const target = open === "ios" ? "MOBILE_IOS" : "MOBILE_ANDROID";
@@ -75,7 +75,7 @@ export function AppStoreCTA({ compact = false }: { compact?: boolean }) {
         >
           <AppleLogo className="h-8 w-8" />
           <div className="leading-tight">
-            <p className="text-[10px] uppercase tracking-wider text-foreground/80">
+            <p className="text-[10px] uppercase tracking-wider opacity-70">
               Coming soon on
             </p>
             <p className="text-lg font-semibold tracking-tight">App Store</p>
@@ -89,7 +89,7 @@ export function AppStoreCTA({ compact = false }: { compact?: boolean }) {
         >
           <GooglePlayLogo className="h-8 w-8" />
           <div className="leading-tight">
-            <p className="text-[10px] uppercase tracking-wider text-foreground/80">
+            <p className="text-[10px] uppercase tracking-wider opacity-70">
               Coming soon on
             </p>
             <p className="text-lg font-semibold tracking-tight">Google Play</p>
