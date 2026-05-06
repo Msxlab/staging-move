@@ -240,6 +240,271 @@ export const EMAIL_TEMPLATES_ALL = [
     ),
   },
   {
+    slug: "subscription-activated",
+    name: "Subscription Activated",
+    subject: "Your LocateFlow subscription is active",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "planName", "amount", "appUrl"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Subscription active",
+      "Your LocateFlow subscription is ready.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Your LocateFlow <strong>{{planName}}</strong> subscription is active.") +
+        rows([
+          ["Plan", "{{planName}}"],
+          ["Amount", "{{amount}}"],
+        ]) +
+        button("{{appUrl}}/settings/subscription", "Review Subscription"),
+    ),
+  },
+  {
+    slug: "subscription-canceled",
+    name: "Subscription Canceled",
+    subject: "Your LocateFlow subscription was canceled",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "planName", "accessEndsOn", "appUrl"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Subscription canceled",
+      "Your LocateFlow subscription cancellation is recorded.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Your LocateFlow <strong>{{planName}}</strong> subscription was canceled.") +
+        rows([
+          ["Plan", "{{planName}}"],
+          ["Access ends", "{{accessEndsOn}}"],
+        ]) +
+        button("{{appUrl}}/settings/subscription", "Review Subscription"),
+    ),
+  },
+  {
+    slug: "subscription-resumed",
+    name: "Subscription Renewal Resumed",
+    subject: "Your LocateFlow subscription will renew",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "planName", "renewsOn", "appUrl"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Subscription renewal resumed",
+      "Auto-renew is back on for your LocateFlow subscription.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Auto-renew is back on for your LocateFlow <strong>{{planName}}</strong> subscription.") +
+        rows([
+          ["Plan", "{{planName}}"],
+          ["Next renewal", "{{renewsOn}}"],
+        ]) +
+        button("{{appUrl}}/settings/subscription", "Review Subscription"),
+    ),
+  },
+  {
+    slug: "payment-failed",
+    name: "Payment Failed",
+    subject: "Action needed: LocateFlow payment issue",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "amount", "nextAttemptOn", "appUrl"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Payment needs attention",
+      "We could not process your LocateFlow payment.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("We could not process your LocateFlow payment. Please update your payment method to keep your account active.") +
+        rows([
+          ["Amount", "{{amount}}"],
+          ["Next attempt", "{{nextAttemptOn}}"],
+        ]) +
+        button("{{appUrl}}/settings/subscription", "Update Payment Method"),
+    ),
+  },
+  {
+    slug: "task-reminder",
+    name: "Task Reminder",
+    subject: "Task reminder: {{taskTitle}}",
+    category: "NOTIFICATION",
+    variables: JSON.stringify(["firstName", "taskTitle", "dueDate", "movingPlan", "appUrl"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Task reminder",
+      "{{taskTitle}} is due soon.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Your moving task <strong>{{taskTitle}}</strong> is due soon.") +
+        rows([
+          ["Task", "{{taskTitle}}"],
+          ["Due date", "{{dueDate}}"],
+          ["Moving plan", "{{movingPlan}}"],
+        ]) +
+        button("{{appUrl}}/moving", "View Moving Plan"),
+    ),
+  },
+  {
+    slug: "bill-overdue",
+    name: "Bill Overdue",
+    subject: "Overdue bill: {{serviceName}}",
+    category: "NOTIFICATION",
+    variables: JSON.stringify(["firstName", "serviceName", "amount", "dueDate", "appUrl"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Bill overdue",
+      "{{serviceName}} appears overdue.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Your <strong>{{serviceName}}</strong> bill appears overdue.") +
+        rows([
+          ["Service", "{{serviceName}}"],
+          ["Amount", "{{amount}}"],
+          ["Due date", "{{dueDate}}"],
+        ]) +
+        button("{{appUrl}}/services", "Review Services"),
+    ),
+  },
+  {
+    slug: "support-ticket-created",
+    name: "Support Ticket Created",
+    subject: "Support ticket received: {{ticketSubject}}",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "ticketSubject", "priority", "category", "ticketLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Support ticket received",
+      "We received your support request.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("We received your support request and will follow up as soon as we can.") +
+        rows([
+          ["Subject", "{{ticketSubject}}"],
+          ["Priority", "{{priority}}"],
+          ["Category", "{{category}}"],
+        ]) +
+        button("{{ticketLink}}", "View Ticket"),
+    ),
+  },
+  {
+    slug: "support-ticket-reply",
+    name: "Support Ticket Reply",
+    subject: "New reply on: {{ticketSubject}}",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "ticketSubject", "ticketLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "New support reply",
+      "Support replied to your ticket.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Our support team replied to your ticket.") +
+        rows([["Subject", "{{ticketSubject}}"]]) +
+        button("{{ticketLink}}", "View Reply"),
+    ),
+  },
+  {
+    slug: "support-ticket-status",
+    name: "Support Ticket Status",
+    subject: "Support ticket {{status}}",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "ticketSubject", "status", "ticketLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Support ticket updated",
+      "Your support ticket status changed.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Your support ticket status has changed.") +
+        rows([
+          ["Subject", "{{ticketSubject}}"],
+          ["Status", "{{status}}"],
+        ]) +
+        button("{{ticketLink}}", "View Ticket"),
+    ),
+  },
+  {
+    slug: "security-password-changed",
+    name: "Security: Password Changed",
+    subject: "Your LocateFlow password was changed",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "manageLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Password changed",
+      "Your LocateFlow password was changed.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Your account password was just changed. If this was you, no action is needed.") +
+        button("{{manageLink}}", "Review Account Security"),
+      true,
+    ),
+  },
+  {
+    slug: "security-mfa-enabled",
+    name: "Security: MFA Enabled",
+    subject: "Two-factor authentication is now on",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "manageLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Two-factor authentication enabled",
+      "Two-factor authentication is now active on your account.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Two-factor authentication is now active on your account.") +
+        button("{{manageLink}}", "Review Account Security"),
+      true,
+    ),
+  },
+  {
+    slug: "security-mfa-disabled",
+    name: "Security: MFA Disabled",
+    subject: "Two-factor authentication was turned off",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "manageLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Two-factor authentication disabled",
+      "Two-factor authentication was turned off on your account.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("Two-factor authentication has been turned off on your account.") +
+        button("{{manageLink}}", "Review Account Security"),
+      true,
+    ),
+  },
+  {
+    slug: "security-oauth-linked",
+    name: "Security: Sign-in Method Linked",
+    subject: "A new sign-in method was linked to your account",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "manageLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Sign-in method linked",
+      "A new sign-in method was linked to your account.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("A new sign-in method was linked to your account.") +
+        button("{{manageLink}}", "Review Account Security"),
+      true,
+    ),
+  },
+  {
+    slug: "security-account-deletion-requested",
+    name: "Security: Account Deletion Requested",
+    subject: "Your LocateFlow account deletion is scheduled",
+    category: "TRANSACTIONAL",
+    variables: JSON.stringify(["firstName", "manageLink"]),
+    isActive: true,
+    isDefault: true,
+    body: wrap(
+      "Account deletion requested",
+      "Your LocateFlow account deletion is scheduled.",
+      p("Hi <strong>{{firstName}}</strong>,") +
+        p("We received a request to delete your account. If you did not request this, contact support immediately.") +
+        button("{{manageLink}}", "Review Account Security"),
+      true,
+    ),
+  },
+  {
     slug: "review-approved",
     name: "Review Approved",
     subject: "Your LocateFlow review was approved",

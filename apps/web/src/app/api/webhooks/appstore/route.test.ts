@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   applyIapStateToUser: vi.fn(),
   findUserByIapIdentifier: vi.fn(),
   refreshAppleSubscriptionFor: vi.fn(),
+  sendIapCancellationNotice: vi.fn(),
   captureException: vi.fn(),
   captureMessage: vi.fn(),
   prisma: {
@@ -30,6 +31,7 @@ vi.mock("@/lib/iap-common", () => ({
   applyIapStateToUser: mocks.applyIapStateToUser,
   findUserByIapIdentifier: mocks.findUserByIapIdentifier,
   refreshAppleSubscriptionFor: mocks.refreshAppleSubscriptionFor,
+  sendIapCancellationNotice: mocks.sendIapCancellationNotice,
 }));
 
 import { POST } from "./route";

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   applyIapStateToUser: vi.fn(),
   findUserByIapIdentifier: vi.fn(),
   refreshGoogleSubscriptionFor: vi.fn(),
+  sendIapCancellationNotice: vi.fn(),
   prisma: {
     processedWebhookEvent: { findUnique: vi.fn(), create: vi.fn() },
     subscription: { updateMany: vi.fn() },
@@ -35,6 +36,7 @@ vi.mock("@/lib/iap-common", () => ({
   applyIapStateToUser: mocks.applyIapStateToUser,
   findUserByIapIdentifier: mocks.findUserByIapIdentifier,
   refreshGoogleSubscriptionFor: mocks.refreshGoogleSubscriptionFor,
+  sendIapCancellationNotice: mocks.sendIapCancellationNotice,
 }));
 
 function request(body: unknown, headers?: Record<string, string>) {

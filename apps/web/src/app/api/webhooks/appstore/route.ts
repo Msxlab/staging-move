@@ -26,6 +26,7 @@ import {
   applyIapStateToUser,
   findUserByIapIdentifier,
   refreshAppleSubscriptionFor,
+  sendIapCancellationNotice,
 } from "@/lib/iap-common";
 
 export const runtime = "nodejs";
@@ -145,6 +146,14 @@ export async function POST(request: NextRequest) {
           canceledAt: new Date(),
           lastSyncedAt: new Date(),
         },
+      });
+      await sendIapCancellationNotice({
+        userId: owner.userId,
+        provider: "APP_STORE",
+        platform: "ios",
+        dedupeKey: `iap:manual-canceled:APP_STORE:${originalTransactionId}`,
+      }).catch((err) => {
+        console.error("[APPSTORE WEBHOOK] cancellation email failed:", err);
       });
     }
 

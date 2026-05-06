@@ -40,7 +40,6 @@ const notifGroups: NotifGroup[] = [
     items: [
       { key: "weeklySummary", label: "Weekly Summary", description: "Weekly digest of activity and upcoming items" },
       { key: "monthlyReport", label: "Monthly Report", description: "Monthly expense summary and trends" },
-      { key: "badgeEarned", label: "Badge Earned", description: "When you earn a new achievement badge" },
     ],
   },
 ];
@@ -56,7 +55,6 @@ export default function NotificationsPage() {
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [emailAddress, setEmailAddress] = useState("");
   const [digestDay, setDigestDay] = useState("Monday");
   const [reminderDays, setReminderDays] = useState("3");
   const [emailEnabled, setEmailEnabled] = useState(true);
@@ -88,7 +86,6 @@ export default function NotificationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...settings,
-          emailAddress,
           digestDay,
           reminderDays,
           emailEnabled,
@@ -159,17 +156,6 @@ export default function NotificationsPage() {
           <h3 className="text-sm font-semibold text-foreground">Email Delivery</h3>
         </div>
         <div className="px-5 pb-5 space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground">Email Address</label>
-            <input
-              className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
-              placeholder="your@email.com"
-              value={emailAddress}
-              onChange={(e) => setEmailAddress(e.target.value)}
-            />
-            <p className="text-[10px] text-foreground/30">Notifications will be sent to this email</p>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Weekly Digest Day</label>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { sendSupportTicketCreatedEmail } from "@/lib/email-service";
 import { z } from "zod";
 
 const createTicketSchema = z.object({
@@ -99,10 +100,28 @@ export async function POST(request: NextRequest) {
       },
       include: {
         messages: true,
+        user: { select: { email: true, firstName: true, preferredLocale: true, deletedAt: true } },
       },
     });
 
-    return NextResponse.json({ ticket }, { status: 201 });
+    if (ticket.user?.email && !ticket.user.deletedAt) {
+      await sendSupportTicketCreatedEmail({
+        userEmail: ticket.user.email,
+        userName: ticket.user.firstName || "there",
+        ticketId: ticket.id,
+        subject: ticket.subject,
+        priority: ticket.priority,
+        category: ticket.category,
+        locale: ticket.user.preferredLocale,
+        dedupeKey: `support:ticket-created:${ticket.id}`,
+        metadata: { userId, supportTicketId: ticket.id },
+      }).catch((err) => {
+        console.error("[SUPPORT] ticket-created email failed:", err);
+      });
+    }
+
+    const { user: _ticketUser, ...ticketPayload } = ticket;
+    return NextResponse.json({ ticket: ticketPayload }, { status: 201 });
   } catch (error: any) {
     if (error?.name === "ZodError") {
       return NextResponse.json({ error: "Validation failed", details: error.errors }, { status: 400 });

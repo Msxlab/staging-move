@@ -73,6 +73,65 @@ function renderBroadcastEmailHtml(args: {
 </body></html>`;
 }
 
+function buildEmailLogMetadata(args: {
+  userId: string;
+  type: string;
+  href?: string | null;
+}) {
+  return JSON.stringify({
+    kind: "admin-broadcast",
+    userId: args.userId,
+    type: args.type,
+    href: args.href || null,
+  });
+}
+
+async function sendLoggedBroadcastEmail(args: {
+  userId: string;
+  to: string;
+  type: string;
+  title: string;
+  href?: string | null;
+  html: string;
+}) {
+  let logId: string | null = null;
+  try {
+    const log = await prisma.emailLog.create({
+      data: {
+        to: args.to,
+        subject: args.title.slice(0, 200),
+        status: "PENDING",
+        metadata: buildEmailLogMetadata(args),
+      },
+      select: { id: true },
+    });
+    logId = log.id;
+  } catch (error) {
+    console.error("[admin-email] failed to create EmailLog for broadcast:", error);
+  }
+
+  const ok = await sendEmail({
+    to: args.to,
+    subject: args.title,
+    html: args.html,
+  });
+
+  if (logId) {
+    await prisma.emailLog.update({
+      where: { id: logId },
+      data: {
+        status: ok ? "SENT" : "FAILED",
+        sentAt: ok ? new Date() : null,
+        error: ok ? null : "Admin broadcast email send failed",
+      },
+    }).catch((error) => {
+      console.error("[admin-email] failed to update EmailLog for broadcast:", error);
+    });
+  }
+
+  return ok;
+}
+
 function toPushBody(body: string): string {
   return body.replace(/\s+/g, " ").trim().slice(0, 180);
 }
@@ -122,9 +181,12 @@ export async function dispatchEmailBatch(args: {
       skipped++;
       continue;
     }
-    const ok = await sendEmail({
+    const ok = await sendLoggedBroadcastEmail({
+      userId: user.id,
       to: user.email,
-      subject: args.title,
+      type: args.type,
+      title: args.title,
+      href: args.href,
       html,
     });
     if (ok) delivered++;

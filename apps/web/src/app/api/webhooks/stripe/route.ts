@@ -9,6 +9,8 @@ import {
   sendPaymentFailedEmail,
   sendSubscriptionActivatedEmail,
   sendSubscriptionCanceledEmail,
+  sendSubscriptionResumedEmail,
+  sendSubscriptionUpdatedEmail,
 } from "@/lib/email-service";
 import Stripe from "stripe";
 
@@ -61,6 +63,13 @@ function formatCurrency(amountMinor: number | null | undefined, currency: string
 function safeUserHint(userId: string | null | undefined) {
   if (!userId) return null;
   return userId.length > 8 ? `${userId.slice(0, 8)}...` : userId;
+}
+
+function formatPlanLabel(plan: string | null | undefined) {
+  return (plan || "subscription")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function stripeObjectId(value: unknown): string | null {
@@ -142,8 +151,11 @@ type LocalSubscriptionForWebhook = {
   status: string | null;
   accessType: string | null;
   provider: string | null;
+  plan: string | null;
+  billingInterval: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  stripePriceId: string | null;
   user?: { id: string; deletedAt: Date | string | null } | null;
 };
 
@@ -166,8 +178,11 @@ async function findLocalSubscriptionForWebhook(input: {
       status: true,
       accessType: true,
       provider: true,
+      plan: true,
+      billingInterval: true,
       stripeCustomerId: true,
       stripeSubscriptionId: true,
+      stripePriceId: true,
       user: { select: { id: true, deletedAt: true } },
     },
   }) as Promise<LocalSubscriptionForWebhook | null>;
@@ -534,7 +549,7 @@ export async function POST(request: NextRequest) {
           (typeof subscription.metadata?.plan === "string" ? subscription.metadata.plan : null) ||
           "INDIVIDUAL";
 
-        await syncLocalSubscriptionFromStripe({
+        const sync = await syncLocalSubscriptionFromStripe({
           eventType: event.type,
           userId,
           metadataUserIdExists,
@@ -544,6 +559,81 @@ export async function POST(request: NextRequest) {
           plan,
           billingInterval: mappedPrice?.billingInterval || metadataBillingInterval(subscription.metadata),
         });
+
+        if (event.type === "customer.subscription.updated") {
+          const recipient = await lookupUserByStripeCustomer(stripeCustomerId);
+          if (recipient) {
+            const oldStatus = sync.local.status || null;
+            const newStatus = sync.newStatus;
+            const currentPeriodEndText = formatDateInLocale(subscription.current_period_end, recipient.locale);
+            const periodKey = subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000).toISOString().slice(0, 10)
+              : "unknown";
+            const wasRenewalCanceled = oldStatus === "CANCEL_AT_PERIOD_END" || oldStatus === "TRIAL_CANCELED";
+            const isRenewalCanceled = newStatus === "CANCEL_AT_PERIOD_END" || newStatus === "TRIAL_CANCELED";
+            const isRenewalActive = newStatus === "ACTIVE" || newStatus === "TRIALING";
+
+            if (!wasRenewalCanceled && isRenewalCanceled) {
+              fireAndLogEmail(
+                sendSubscriptionCanceledEmail({
+                  userEmail: recipient.email,
+                  userName: recipient.firstName,
+                  planLabel: formatPlanLabel(plan),
+                  accessEndsOn: currentPeriodEndText,
+                  locale: recipient.locale,
+                  dedupeKey: `subscription:renewal-canceled:${stripeSubId}:${periodKey}`,
+                  metadata: {
+                    userId: recipient.userId,
+                    subscriptionId: sync.local.id,
+                    provider: "STRIPE",
+                    oldStatus,
+                    newStatus,
+                  },
+                }),
+                `customer.subscription.updated cancel userHint=${safeUserHint(recipient.userId)}`,
+              );
+            } else if (wasRenewalCanceled && isRenewalActive) {
+              fireAndLogEmail(
+                sendSubscriptionResumedEmail({
+                  userEmail: recipient.email,
+                  userName: recipient.firstName,
+                  planLabel: formatPlanLabel(plan),
+                  renewsOn: currentPeriodEndText,
+                  locale: recipient.locale,
+                  dedupeKey: `subscription:renewal-resumed:${stripeSubId}:${periodKey}`,
+                  metadata: {
+                    userId: recipient.userId,
+                    subscriptionId: sync.local.id,
+                    provider: "STRIPE",
+                    oldStatus,
+                    newStatus,
+                  },
+                }),
+                `customer.subscription.updated resume userHint=${safeUserHint(recipient.userId)}`,
+              );
+            } else if (sync.local.stripePriceId && stripePriceId && sync.local.stripePriceId !== stripePriceId) {
+              fireAndLogEmail(
+                sendSubscriptionUpdatedEmail({
+                  userEmail: recipient.email,
+                  userName: recipient.firstName,
+                  planLabel: formatPlanLabel(plan),
+                  billingInterval: mappedPrice?.billingInterval || metadataBillingInterval(subscription.metadata) || null,
+                  effectiveOn: currentPeriodEndText,
+                  locale: recipient.locale,
+                  dedupeKey: `stripe:subscription-updated:${stripeSubId}:${stripePriceId}:${periodKey}`,
+                  metadata: {
+                    userId: recipient.userId,
+                    subscriptionId: sync.local.id,
+                    provider: "STRIPE",
+                    oldStatus,
+                    newStatus,
+                  },
+                }),
+                `customer.subscription.updated plan userHint=${safeUserHint(recipient.userId)}`,
+              );
+            }
+          }
+        }
         break;
       }
 

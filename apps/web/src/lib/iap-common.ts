@@ -19,6 +19,11 @@ import {
   mapGoogleSubscriptionState,
   type GoogleSubscriptionResult,
 } from "@/lib/iap-google";
+import {
+  sendPaymentFailedEmail,
+  sendSubscriptionActivatedEmail,
+  sendSubscriptionCanceledEmail,
+} from "@/lib/email-service";
 import type { BillingPlan, SubscriptionStatus } from "@/lib/shared-billing";
 import { isBillingProductionLike } from "@/lib/billing-config";
 
@@ -44,6 +49,149 @@ export interface NormalizedIapState {
 export interface MobilePlanResolution {
   plan: BillingPlan;
   billingInterval: IapBillingInterval | null;
+}
+
+const IAP_ACTIVE_STATUSES = new Set<SubscriptionStatus>(["ACTIVE", "TRIALING"]);
+const IAP_CANCELED_STATUSES = new Set<SubscriptionStatus>([
+  "CANCEL_AT_PERIOD_END",
+  "TRIAL_CANCELED",
+  "CANCELED",
+  "EXPIRED",
+  "REFUNDED",
+]);
+const IAP_PAYMENT_ATTENTION_STATUSES = new Set<SubscriptionStatus>([
+  "PAST_DUE",
+  "GRACE_PERIOD",
+  "UNPAID",
+]);
+
+function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
+  if (!date) return null;
+  const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
+  return date.toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
+}
+
+function formatPlanLabel(plan: BillingPlan | string | null | undefined) {
+  return (plan || "subscription")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function fireAndLogIapEmail(promise: Promise<unknown>, context: string) {
+  void promise.catch((err) => {
+    console.error(`[IAP] Email dispatch failed (${context}):`, err);
+  });
+}
+
+async function sendIapLifecycleEmail(opts: {
+  userId: string;
+  subscriptionId: string;
+  state: NormalizedIapState;
+  previousStatus: SubscriptionStatus | string | null | undefined;
+}) {
+  const previousStatus = opts.previousStatus as SubscriptionStatus | null | undefined;
+  if (previousStatus === opts.state.status) return;
+
+  const user = await prisma.user.findUnique({
+    where: { id: opts.userId },
+    select: { email: true, firstName: true, preferredLocale: true, deletedAt: true },
+  });
+  if (!user?.email || user.deletedAt) return;
+
+  const dedupeBase = `iap:${opts.state.provider}:${opts.state.originalTransactionId}:${opts.state.latestTransactionId || opts.state.productId}:${opts.state.status}`;
+  const metadata = {
+    userId: opts.userId,
+    subscriptionId: opts.subscriptionId,
+    provider: opts.state.provider,
+    platform: opts.state.platform,
+    oldStatus: previousStatus || null,
+    newStatus: opts.state.status,
+  };
+  const currentIsActive = IAP_ACTIVE_STATUSES.has(opts.state.status);
+  const previousWasActive = previousStatus ? IAP_ACTIVE_STATUSES.has(previousStatus) : false;
+
+  if (currentIsActive && !previousWasActive) {
+    fireAndLogIapEmail(
+      sendSubscriptionActivatedEmail({
+        userEmail: user.email,
+        userName: user.firstName || "there",
+        planLabel: formatPlanLabel(opts.state.plan),
+        locale: user.preferredLocale,
+        dedupeKey: `${dedupeBase}:activated`,
+        metadata,
+      }),
+      `activated userId=${opts.userId}`,
+    );
+    return;
+  }
+
+  if (IAP_CANCELED_STATUSES.has(opts.state.status)) {
+    fireAndLogIapEmail(
+      sendSubscriptionCanceledEmail({
+        userEmail: user.email,
+        userName: user.firstName || "there",
+        planLabel: formatPlanLabel(opts.state.plan),
+        accessEndsOn: formatDateForEmail(opts.state.expiresAt, user.preferredLocale),
+        locale: user.preferredLocale,
+        dedupeKey: `${dedupeBase}:canceled`,
+        metadata,
+      }),
+      `canceled userId=${opts.userId}`,
+    );
+    return;
+  }
+
+  if (IAP_PAYMENT_ATTENTION_STATUSES.has(opts.state.status)) {
+    fireAndLogIapEmail(
+      sendPaymentFailedEmail({
+        userEmail: user.email,
+        userName: user.firstName || "there",
+        nextAttemptOn: formatDateForEmail(opts.state.gracePeriodEndsAt || opts.state.expiresAt, user.preferredLocale),
+        locale: user.preferredLocale,
+        dedupeKey: `${dedupeBase}:payment-attention`,
+        metadata,
+      }),
+      `payment-attention userId=${opts.userId}`,
+    );
+  }
+}
+
+export async function sendIapCancellationNotice(opts: {
+  userId: string;
+  provider: NormalizedIapState["provider"];
+  platform: IapPlatform;
+  dedupeKey: string;
+}) {
+  const subscription = await prisma.subscription.findUnique({
+    where: { userId: opts.userId },
+    select: {
+      id: true,
+      plan: true,
+      currentPeriodEndsAt: true,
+      user: { select: { email: true, firstName: true, preferredLocale: true, deletedAt: true } },
+    },
+  });
+  if (!subscription?.user?.email || subscription.user.deletedAt) return;
+
+  fireAndLogIapEmail(
+    sendSubscriptionCanceledEmail({
+      userEmail: subscription.user.email,
+      userName: subscription.user.firstName || "there",
+      planLabel: formatPlanLabel(subscription.plan),
+      accessEndsOn: formatDateForEmail(subscription.currentPeriodEndsAt, subscription.user.preferredLocale),
+      locale: subscription.user.preferredLocale,
+      dedupeKey: opts.dedupeKey,
+      metadata: {
+        userId: opts.userId,
+        subscriptionId: subscription.id,
+        provider: opts.provider,
+        platform: opts.platform,
+        newStatus: "CANCELED",
+      },
+    }),
+    `manual-canceled userId=${opts.userId}`,
+  );
 }
 
 /**
@@ -94,6 +242,14 @@ export async function normalizeAppleResult(
 
   const now = Date.now();
   let status: SubscriptionStatus = mapAppleStatus(result.rawStatus) as SubscriptionStatus;
+  if (
+    status === "ACTIVE" &&
+    result.transaction.offerDiscountType === "FREE_TRIAL" &&
+    expiresAt &&
+    expiresAt.getTime() > now
+  ) {
+    status = "TRIALING";
+  }
   if (status === "ACTIVE" && expiresAt && expiresAt.getTime() < now) {
     // Clock skew or stale API response — downgrade defensively.
     status = "EXPIRED";
@@ -176,13 +332,15 @@ export async function applyIapStateToUser(opts: {
     throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
   }
 
+  const existingByUser = await prisma.subscription.findUnique({
+    where: { userId },
+    select: { id: true, status: true },
+  });
+
   const now = new Date();
-  // accessType is "PAID" once a real store transaction has cleared. Trial
-  // status comes from the store's own status field — Apple sets status=4
-  // (TRIALING via mapAppleStatus) during an introductory offer; Google sets
-  // subscriptionState=SUBSCRIPTION_STATE_IN_GRACE_PERIOD or _ON_HOLD for
-  // billing retry. The unified entitlement resolver reads `status` directly,
-  // so writing a static accessType=PAID here is correct: a TRIALING status
+  // accessType is "PAID" once a real store transaction has cleared. Trial and
+  // billing-retry status comes from the store-specific normalized status; the
+  // unified entitlement resolver reads `status` directly, so a TRIALING status
   // overrides the access banner via deriveUserSubscriptionState.
   const data = {
     plan: state.plan,
@@ -204,11 +362,20 @@ export async function applyIapStateToUser(opts: {
   } as const;
 
   try {
-    return await prisma.subscription.upsert({
+    const subscription = await prisma.subscription.upsert({
       where: { userId },
       create: { userId, ...data },
       update: data,
     });
+    await sendIapLifecycleEmail({
+      userId,
+      subscriptionId: subscription.id,
+      state,
+      previousStatus: existingByUser?.status,
+    }).catch((err) => {
+      console.error("[IAP] lifecycle email lookup failed:", err);
+    });
+    return subscription;
   } catch (error: any) {
     if (
       error?.code === "P2002" &&

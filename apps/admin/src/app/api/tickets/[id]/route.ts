@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import {
+  sendSupportTicketReplyEmail,
+  sendSupportTicketStatusEmail,
+} from "@/lib/email";
 import { z } from "zod";
 
 const replySchema = z.object({
@@ -169,7 +173,10 @@ export async function POST(
     const session = await requirePermission("tickets", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
 
-    const ticket = await prisma.supportTicket.findUnique({ where: { id } });
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id },
+      include: { user: { select: { email: true, firstName: true, deletedAt: true } } },
+    });
     if (!ticket) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
@@ -211,6 +218,18 @@ export async function POST(
       },
     });
 
+    if (!validated.isInternal && ticket.user?.email && !ticket.user.deletedAt) {
+      await sendSupportTicketReplyEmail({
+        userEmail: ticket.user.email,
+        userName: ticket.user.firstName || "there",
+        ticketId: ticket.id,
+        ticketSubject: ticket.subject,
+        replyPreview: validated.message,
+      }).catch((err) => {
+        console.error("[SUPPORT] ticket-reply email failed:", err);
+      });
+    }
+
     return NextResponse.json({ message }, { status: 201 });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -230,7 +249,10 @@ export async function PATCH(
     const session = await requirePermission("tickets", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
 
-    const ticket = await prisma.supportTicket.findUnique({ where: { id } });
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id },
+      include: { user: { select: { email: true, firstName: true, deletedAt: true } } },
+    });
     if (!ticket) {
       return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
     }
@@ -276,6 +298,18 @@ export async function PATCH(
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });
+
+    if (validated.status && validated.status !== ticket.status && ticket.user?.email && !ticket.user.deletedAt) {
+      await sendSupportTicketStatusEmail({
+        userEmail: ticket.user.email,
+        userName: ticket.user.firstName || "there",
+        ticketId: ticket.id,
+        ticketSubject: ticket.subject,
+        status: validated.status,
+      }).catch((err) => {
+        console.error("[SUPPORT] ticket-status email failed:", err);
+      });
+    }
 
     return NextResponse.json({ ticket: updated });
   } catch (error: any) {

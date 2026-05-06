@@ -8,11 +8,13 @@ import {
   contractReminderText,
   DEFAULT_APP_URL,
   emailVerificationContent,
+  escapeHtml,
   type EmailContent,
   htmlToPlainText,
   normalizeBaseUrl,
   passwordResetContent,
   paymentFailedContent,
+  renderLocateFlowEmail,
   resolveEmailLocale,
   securityNoticeContent,
   type SecurityNoticeKind,
@@ -41,14 +43,75 @@ const SAFE_METADATA_KEYS = new Set([
   "templateUnavailable",
   "userId",
   "serviceId",
+  "taskId",
+  "supportTicketId",
   "subscriptionId",
   "movingPlanId",
   "daysUntilDue",
+  "daysOverdue",
   "daysRemaining",
   "weekStart",
   "weekEnd",
+  "month",
+  "status",
+  "oldStatus",
+  "newStatus",
+  "provider",
+  "platform",
+  "planLabel",
+  "billingInterval",
+  "billingDate",
+  "accessEndsOn",
 ]);
 const SENSITIVE_METADATA_KEY = /password|token|otp|secret|jwt|cookie/i;
+
+function detailTable(rows: Array<[string, string | null | undefined]>) {
+  const visibleRows = rows.filter(([, value]) => value !== null && value !== undefined && value !== "");
+  if (visibleRows.length === 0) return "";
+
+  return `
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#eef3f8" style="width:100%;border-collapse:collapse;background:#eef3f8;border-radius:8px;margin:0 0 4px;">
+      <tr>
+        <td style="padding:14px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-collapse:collapse;">
+            ${visibleRows.map(([label, value]) => `
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #d9e1ea;font-size:14px;line-height:20px;color:#5f6b7a;">${escapeHtml(label)}</td>
+                <td align="right" style="padding:10px 0;border-bottom:1px solid #d9e1ea;font-size:14px;line-height:20px;color:#172033;font-weight:600;">${escapeHtml(String(value))}</td>
+              </tr>`).join("")}
+          </table>
+        </td>
+      </tr>
+    </table>`;
+}
+
+function buildSimpleContent(opts: {
+  subject: string;
+  title: string;
+  preheader: string;
+  userName: string;
+  bodyLines: string[];
+  details?: Array<[string, string | null | undefined]>;
+  cta?: { href: string; label: string };
+  securityNote?: boolean;
+  locale?: string | null;
+}): EmailContent {
+  const locale = resolveEmailLocale(opts.locale);
+  const bodyHtml = [
+    `<p style="margin:0 0 14px;font-size:15px;line-height:24px;color:#172033;">Hi <strong>${escapeHtml(opts.userName || "there")}</strong>,</p>`,
+    ...opts.bodyLines.map((line) => `<p style="margin:0 0 14px;font-size:15px;line-height:24px;color:#172033;">${escapeHtml(line)}</p>`),
+    opts.details ? detailTable(opts.details) : "",
+  ].join("");
+  const html = renderLocateFlowEmail({
+    preheader: opts.preheader,
+    title: opts.title,
+    bodyHtml,
+    cta: opts.cta,
+    securityNote: opts.securityNote,
+    locale,
+  });
+  return { subject: opts.subject, html, text: htmlToPlainText(html) };
+}
 
 function buildEmailMetadata(metadata?: Record<string, unknown>) {
   if (!metadata) return null;
@@ -854,6 +917,399 @@ export async function sendPaymentFailedEmail(opts: {
     templateSlug: "payment-failed",
     dedupeKey: opts.dedupeKey,
     metadata: { kind: "payment-failed", ...(opts.metadata || {}) },
+  });
+  return result.success;
+}
+
+/**
+ * Subscription renewal resumed, sent when a user turns auto-renew back on.
+ */
+export async function sendSubscriptionResumedEmail(opts: {
+  userEmail: string;
+  userName: string;
+  planLabel: string;
+  renewsOn?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const details: Array<[string, string | null | undefined]> = [
+    ["Plan", opts.planLabel],
+    ["Next renewal", opts.renewsOn],
+  ];
+  const content = buildSimpleContent({
+    subject: "Your LocateFlow subscription will renew",
+    title: "Subscription renewal resumed",
+    preheader: "Auto-renew is back on for your LocateFlow subscription.",
+    userName: opts.userName,
+    bodyLines: [
+      "Auto-renew is back on for your subscription. Your LocateFlow access will continue without interruption.",
+      "You can review billing details or make changes from subscription settings.",
+    ],
+    details,
+    cta: { href: `${appUrl}/settings/subscription`, label: "Review Subscription" },
+    locale: opts.locale,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "subscription-resumed",
+    dedupeKey: opts.dedupeKey,
+    metadata: {
+      kind: "subscription-resumed",
+      planLabel: opts.planLabel,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}
+
+/**
+ * Subscription plan or billing cadence updated.
+ */
+export async function sendSubscriptionUpdatedEmail(opts: {
+  userEmail: string;
+  userName: string;
+  planLabel: string;
+  billingInterval?: string | null;
+  effectiveOn?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = buildSimpleContent({
+    subject: "Your LocateFlow plan was updated",
+    title: "Plan updated",
+    preheader: "Your LocateFlow subscription details changed.",
+    userName: opts.userName,
+    bodyLines: [
+      "Your LocateFlow subscription has been updated.",
+      "You can review the current plan, renewal date, and billing details from your account settings.",
+    ],
+    details: [
+      ["Plan", opts.planLabel],
+      ["Billing", opts.billingInterval],
+      ["Effective", opts.effectiveOn],
+    ],
+    cta: { href: `${appUrl}/settings/subscription`, label: "Review Subscription" },
+    locale: opts.locale,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "subscription-upgrade",
+    dedupeKey: opts.dedupeKey,
+    metadata: {
+      kind: "subscription-updated",
+      planLabel: opts.planLabel,
+      billingInterval: opts.billingInterval || null,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}
+
+export async function sendTaskReminderEmail(opts: {
+  userEmail: string;
+  userName: string;
+  taskTitle: string;
+  dueDate: string;
+  daysUntilDue: number;
+  movingPlanLabel?: string | null;
+  movingPlanId?: string | null;
+  taskId?: string | null;
+  userId?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
+    return false;
+  }
+  const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
+  const dueText = opts.daysUntilDue === 0
+    ? "due today"
+    : `due in ${opts.daysUntilDue} day${opts.daysUntilDue === 1 ? "" : "s"}`;
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
+  const baseContent = buildSimpleContent({
+    subject: `Task reminder: ${opts.taskTitle} is ${dueText}`,
+    title: "Task reminder",
+    preheader: `${opts.taskTitle} is ${dueText}.`,
+    userName: opts.userName,
+    bodyLines: [
+      `Your moving task "${opts.taskTitle}" is ${dueText}.`,
+      "A quick review now can help keep your move timeline on track.",
+    ],
+    details: [
+      ["Task", opts.taskTitle],
+      ["Due date", opts.dueDate],
+      ["Moving plan", opts.movingPlanLabel],
+    ],
+    cta: {
+      href: opts.movingPlanId ? `${appUrl}/moving/${opts.movingPlanId}` : `${appUrl}/moving`,
+      label: "View Moving Plan",
+    },
+    locale,
+  });
+  const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
+    templateSlug: "task-reminder",
+    dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
+    metadata: {
+      kind: "task-reminder",
+      userId: opts.userId || null,
+      taskId: opts.taskId || null,
+      movingPlanId: opts.movingPlanId || null,
+      daysUntilDue: opts.daysUntilDue,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}
+
+export async function sendBillOverdueEmail(opts: {
+  userEmail: string;
+  userName: string;
+  serviceName: string;
+  category: string;
+  amount: number;
+  dueDate: string;
+  daysOverdue: number;
+  serviceId?: string | null;
+  userId?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "REMINDER"))) {
+    return false;
+  }
+  const appUrl = await resolveAppUrl();
+  const locale = resolveEmailLocale(opts.locale);
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "reminder");
+  const overdueText = opts.daysOverdue === 1 ? "1 day overdue" : `${opts.daysOverdue} days overdue`;
+  const baseContent = buildSimpleContent({
+    subject: `Overdue bill: ${opts.serviceName}`,
+    title: "Bill overdue",
+    preheader: `${opts.serviceName} appears to be ${overdueText}.`,
+    userName: opts.userName,
+    bodyLines: [
+      `Your ${opts.serviceName} bill appears to be ${overdueText}.`,
+      "If you already handled it, you can ignore this reminder or update the service details in LocateFlow.",
+    ],
+    details: [
+      ["Service", opts.serviceName],
+      ["Category", opts.category],
+      ["Amount", `$${opts.amount.toFixed(2)}`],
+      ["Due date", opts.dueDate],
+    ],
+    cta: {
+      href: opts.serviceId ? `${appUrl}/services/${opts.serviceId}` : `${appUrl}/services`,
+      label: "Review Service",
+    },
+    locale,
+  });
+  const finalContent = unsubscribe ? appendUnsubscribeFooter(baseContent, unsubscribe.url, locale) : baseContent;
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: finalContent.subject,
+    html: finalContent.html,
+    text: finalContent.text,
+    templateSlug: "bill-overdue",
+    dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
+    metadata: {
+      kind: "bill-overdue",
+      userId: opts.userId || null,
+      serviceId: opts.serviceId || null,
+      daysOverdue: opts.daysOverdue,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}
+
+export async function sendMonthlyReportEmail(opts: {
+  userEmail: string;
+  userName: string;
+  month: string;
+  totalSpend: number;
+  servicesCount: number;
+  tasksCompleted: number;
+  userId?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  if (opts.userId && (await isEmailTypeOptedOut(opts.userId, "MARKETING"))) {
+    return false;
+  }
+  const appUrl = await resolveAppUrl();
+  const unsubscribe = buildMarketingUnsubscribe(opts.userId, appUrl, "marketing");
+  return sendTemplatedEmail({
+    to: opts.userEmail,
+    slug: "monthly-report",
+    locale: opts.locale,
+    userId: opts.userId ?? undefined,
+    dedupeKey: opts.dedupeKey,
+    headers: unsubscribe?.headers,
+    unsubscribeUrl: unsubscribe?.url,
+    metadata: {
+      kind: "monthly-report",
+      userId: opts.userId || null,
+      month: opts.month,
+      ...(opts.metadata || {}),
+    },
+    variables: {
+      firstName: opts.userName || "there",
+      month: opts.month,
+      totalSpend: opts.totalSpend.toFixed(2),
+      servicesCount: String(opts.servicesCount),
+      tasksCompleted: String(opts.tasksCompleted),
+      appUrl,
+    },
+  });
+}
+
+export async function sendSupportTicketCreatedEmail(opts: {
+  userEmail: string;
+  userName: string;
+  ticketId: string;
+  subject: string;
+  priority: string;
+  category: string;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = buildSimpleContent({
+    subject: `Support ticket received: ${opts.subject}`.slice(0, 200),
+    title: "Support ticket received",
+    preheader: "We received your support request.",
+    userName: opts.userName,
+    bodyLines: [
+      "We received your support request and will follow up as soon as we can.",
+      "You can view the ticket and add more details from your support center.",
+    ],
+    details: [
+      ["Ticket", `#${opts.ticketId.slice(-6)}`],
+      ["Subject", opts.subject],
+      ["Priority", opts.priority],
+      ["Category", opts.category],
+    ],
+    cta: { href: `${appUrl}/support/${opts.ticketId}`, label: "View Ticket" },
+    locale: opts.locale,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "support-ticket-created",
+    dedupeKey: opts.dedupeKey,
+    metadata: {
+      kind: "support-ticket-created",
+      supportTicketId: opts.ticketId,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}
+
+export async function sendSupportTicketReplyEmail(opts: {
+  userEmail: string;
+  userName: string;
+  ticketId: string;
+  ticketSubject: string;
+  replyPreview?: string | null;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = buildSimpleContent({
+    subject: `New reply on: ${opts.ticketSubject}`.slice(0, 200),
+    title: "New support reply",
+    preheader: "Support replied to your ticket.",
+    userName: opts.userName,
+    bodyLines: [
+      "Our support team replied to your ticket.",
+      opts.replyPreview ? `Reply preview: ${opts.replyPreview.slice(0, 240)}` : "Open the ticket to read the latest reply.",
+    ],
+    details: [
+      ["Ticket", `#${opts.ticketId.slice(-6)}`],
+      ["Subject", opts.ticketSubject],
+    ],
+    cta: { href: `${appUrl}/support/${opts.ticketId}`, label: "View Reply" },
+    locale: opts.locale,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "support-ticket-reply",
+    dedupeKey: opts.dedupeKey,
+    metadata: {
+      kind: "support-ticket-reply",
+      supportTicketId: opts.ticketId,
+      ...(opts.metadata || {}),
+    },
+  });
+  return result.success;
+}
+
+export async function sendSupportTicketStatusEmail(opts: {
+  userEmail: string;
+  userName: string;
+  ticketId: string;
+  ticketSubject: string;
+  status: string;
+  locale?: string | null;
+  dedupeKey?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<boolean> {
+  const appUrl = await resolveAppUrl();
+  const content = buildSimpleContent({
+    subject: `Support ticket ${opts.status.toLowerCase().replace(/_/g, " ")}`,
+    title: "Support ticket updated",
+    preheader: "Your support ticket status changed.",
+    userName: opts.userName,
+    bodyLines: ["Your support ticket status has changed."],
+    details: [
+      ["Ticket", `#${opts.ticketId.slice(-6)}`],
+      ["Subject", opts.ticketSubject],
+      ["Status", opts.status.replace(/_/g, " ")],
+    ],
+    cta: { href: `${appUrl}/support/${opts.ticketId}`, label: "View Ticket" },
+    locale: opts.locale,
+  });
+  const result = await sendLoggedEmail({
+    to: opts.userEmail,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateSlug: "support-ticket-status",
+    dedupeKey: opts.dedupeKey,
+    metadata: {
+      kind: "support-ticket-status",
+      supportTicketId: opts.ticketId,
+      status: opts.status,
+      ...(opts.metadata || {}),
+    },
   });
   return result.success;
 }

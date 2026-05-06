@@ -178,3 +178,97 @@ export async function sendReviewModerationEmail(opts: {
 
   return sendEmail({ to: opts.userEmail, subject, html });
 }
+
+function renderSupportEmail(opts: {
+  title: string;
+  preheader: string;
+  userName: string;
+  bodyLines: string[];
+  details: Array<[string, string]>;
+  ctaHref: string;
+  ctaLabel: string;
+}) {
+  const detailRows = opts.details
+    .map(([label, value]) => `
+      <tr>
+        <td style="padding:9px 0;border-bottom:1px solid #e2e8f0;color:#64748b;font-size:13px;">${esc(label)}</td>
+        <td align="right" style="padding:9px 0;border-bottom:1px solid #e2e8f0;color:#0f172a;font-size:13px;font-weight:600;">${esc(value)}</td>
+      </tr>`)
+    .join("");
+  const body = opts.bodyLines
+    .map((line) => `<p style="color:#334155;font-size:15px;line-height:24px;margin:0 0 14px;">${esc(line)}</p>`)
+    .join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${esc(opts.preheader)}</div>
+  <div style="max-width:560px;margin:32px auto;padding:0 12px;">
+    <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:28px;">
+      <h1 style="margin:0 0 16px;color:#0f172a;font-size:22px;line-height:28px;">${esc(opts.title)}</h1>
+      <p style="color:#334155;font-size:15px;line-height:24px;margin:0 0 14px;">Hi <strong>${esc(opts.userName || "there")}</strong>,</p>
+      ${body}
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;background:#f1f5f9;border-radius:8px;margin:4px 0 20px;">
+        <tr><td style="padding:12px 16px;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;">${detailRows}</table></td></tr>
+      </table>
+      <a href="${esc(opts.ctaHref)}" style="display:inline-block;background:#f97316;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-size:14px;font-weight:700;">${esc(opts.ctaLabel)}</a>
+    </div>
+    <p style="margin:14px 4px 0;color:#94a3b8;font-size:12px;">LocateFlow Support</p>
+  </div>
+</body></html>`;
+}
+
+export async function sendSupportTicketReplyEmail(opts: {
+  userEmail: string;
+  userName: string;
+  ticketId: string;
+  ticketSubject: string;
+  replyPreview?: string | null;
+}): Promise<boolean> {
+  const { appUrl } = await resolveEmailConfig();
+  const subject = `New reply on: ${opts.ticketSubject}`.slice(0, 200);
+  const html = renderSupportEmail({
+    title: "New support reply",
+    preheader: "Support replied to your ticket.",
+    userName: opts.userName,
+    bodyLines: [
+      "Our support team replied to your ticket.",
+      opts.replyPreview ? `Reply preview: ${opts.replyPreview.slice(0, 240)}` : "Open the ticket to read the latest reply.",
+    ],
+    details: [
+      ["Ticket", `#${opts.ticketId.slice(-6)}`],
+      ["Subject", opts.ticketSubject],
+    ],
+    ctaHref: `${appUrl}/support/${opts.ticketId}`,
+    ctaLabel: "View Reply",
+  });
+  return sendEmail({ to: opts.userEmail, subject, html });
+}
+
+export async function sendSupportTicketStatusEmail(opts: {
+  userEmail: string;
+  userName: string;
+  ticketId: string;
+  ticketSubject: string;
+  status: string;
+}): Promise<boolean> {
+  const { appUrl } = await resolveEmailConfig();
+  const statusLabel = opts.status.replace(/_/g, " ");
+  const html = renderSupportEmail({
+    title: "Support ticket updated",
+    preheader: "Your support ticket status changed.",
+    userName: opts.userName,
+    bodyLines: ["Your support ticket status has changed."],
+    details: [
+      ["Ticket", `#${opts.ticketId.slice(-6)}`],
+      ["Subject", opts.ticketSubject],
+      ["Status", statusLabel],
+    ],
+    ctaHref: `${appUrl}/support/${opts.ticketId}`,
+    ctaLabel: "View Ticket",
+  });
+  return sendEmail({
+    to: opts.userEmail,
+    subject: `Support ticket ${statusLabel.toLowerCase()}`.slice(0, 200),
+    html,
+  });
+}

@@ -34,6 +34,7 @@ import {
   applyIapStateToUser,
   findUserByIapIdentifier,
   refreshGoogleSubscriptionFor,
+  sendIapCancellationNotice,
 } from "@/lib/iap-common";
 
 export const runtime = "nodejs";
@@ -175,6 +176,14 @@ export async function POST(request: NextRequest) {
             lastSyncedAt: new Date(),
           },
         });
+        await sendIapCancellationNotice({
+          userId: owner.userId,
+          provider: "PLAY_STORE",
+          platform: "android",
+          dedupeKey: `iap:manual-canceled:PLAY_STORE:${voidNotif.purchaseToken.slice(0, 32)}`,
+        }).catch((err) => {
+          console.error("[PLAYSTORE WEBHOOK] voided email failed:", err);
+        });
       }
       return complete({ received: true, type: "voided" });
     }
@@ -202,6 +211,14 @@ export async function POST(request: NextRequest) {
           canceledAt: new Date(),
           lastSyncedAt: new Date(),
         },
+      });
+      await sendIapCancellationNotice({
+        userId: owner.userId,
+        provider: "PLAY_STORE",
+        platform: "android",
+        dedupeKey: `iap:manual-canceled:PLAY_STORE:${subNotif.purchaseToken.slice(0, 32)}`,
+      }).catch((err) => {
+        console.error("[PLAYSTORE WEBHOOK] revoked email failed:", err);
       });
       return complete({ received: true, revoked: true });
     }

@@ -6,8 +6,32 @@ import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureMessage } from "@/lib/sentry";
+import {
+  sendSubscriptionCanceledEmail,
+  sendSubscriptionResumedEmail,
+} from "@/lib/email-service";
 
 type SubscriptionAction = "cancel_trial" | "cancel_renewal" | "resume_renewal";
+
+function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
+  if (!date) return null;
+  const lang = (locale || "").toLowerCase().startsWith("es") ? "es-US" : "en-US";
+  return date.toLocaleDateString(lang, { year: "numeric", month: "long", day: "numeric" });
+}
+
+function formatPlanLabel(plan: string | null | undefined) {
+  return (plan || "subscription")
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function fireAndLogEmail(promise: Promise<unknown>, context: string) {
+  void promise.catch((err) => {
+    console.error(`[SUBSCRIPTION_ACTION] Email dispatch failed (${context}):`, err);
+    captureMessage(`[SUBSCRIPTION_ACTION] Email dispatch failed (${context})`, "warning");
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +48,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid subscription action." }, { status: 400 });
     }
 
-    const subscription = await prisma.subscription.findUnique({ where: { userId } });
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId },
+      include: {
+        user: { select: { email: true, firstName: true, preferredLocale: true, deletedAt: true } },
+      },
+    });
     if (!subscription?.stripeSubscriptionId) {
       return NextResponse.json(
         { error: "This action is available only for Stripe subscriptions." },
@@ -58,6 +87,25 @@ export async function POST(request: NextRequest) {
           version: { increment: 1 },
         },
       });
+      if (subscription.user?.email && !subscription.user.deletedAt) {
+        fireAndLogEmail(
+          sendSubscriptionResumedEmail({
+            userEmail: subscription.user.email,
+            userName: subscription.user.firstName || "there",
+            planLabel: formatPlanLabel(subscription.plan),
+            renewsOn: formatDateForEmail(periodEnd, subscription.user.preferredLocale),
+            locale: subscription.user.preferredLocale,
+            dedupeKey: `subscription:renewal-resumed:${subscription.stripeSubscriptionId}:${periodEnd?.toISOString().slice(0, 10) || "unknown"}`,
+            metadata: {
+              userId,
+              subscriptionId: subscription.id,
+              provider: "STRIPE",
+              newStatus: nextStatus,
+            },
+          }),
+          `resume_renewal userId=${userId}`,
+        );
+      }
       return NextResponse.json({ status: nextStatus, autoRenew: true, currentPeriodEndsAt: periodEnd });
     }
 
@@ -79,6 +127,26 @@ export async function POST(request: NextRequest) {
         version: { increment: 1 },
       },
     });
+
+    if (subscription.user?.email && !subscription.user.deletedAt) {
+      fireAndLogEmail(
+        sendSubscriptionCanceledEmail({
+          userEmail: subscription.user.email,
+          userName: subscription.user.firstName || "there",
+          planLabel: formatPlanLabel(subscription.plan),
+          accessEndsOn: formatDateForEmail(periodEnd, subscription.user.preferredLocale),
+          locale: subscription.user.preferredLocale,
+          dedupeKey: `subscription:renewal-canceled:${subscription.stripeSubscriptionId}:${periodEnd?.toISOString().slice(0, 10) || "unknown"}`,
+          metadata: {
+            userId,
+            subscriptionId: subscription.id,
+            provider: "STRIPE",
+            newStatus: nextStatus,
+          },
+        }),
+        `${action} userId=${userId}`,
+      );
+    }
 
     return NextResponse.json({
       status: nextStatus,

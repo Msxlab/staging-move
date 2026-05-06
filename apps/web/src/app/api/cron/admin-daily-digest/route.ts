@@ -44,9 +44,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const adminEmail = await getRuntimeConfigValue("ADMIN_ALERT_EMAIL");
+  const adminEmail =
+    (await getRuntimeConfigValue("ADMIN_ALERT_EMAIL")) ||
+    (await getRuntimeConfigValue("ALERT_EMAIL_TO"));
   if (!adminEmail) {
-    return NextResponse.json({ ok: true, skipped: "ADMIN_ALERT_EMAIL not configured" });
+    return NextResponse.json({ ok: true, skipped: "ADMIN_ALERT_EMAIL or ALERT_EMAIL_TO not configured" });
   }
 
   const now = new Date();
