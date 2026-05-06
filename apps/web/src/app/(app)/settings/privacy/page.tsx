@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, Shield, Key, Trash2, ExternalLink, Loader2, Download,
-  Lock, Fingerprint, Eye, EyeOff, QrCode, CheckCircle2, Monitor, Smartphone,
+  ArrowLeft, Shield, Key, Trash2, Loader2, Download,
+  Lock, Fingerprint, QrCode, CheckCircle2, Monitor, Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useCurrentUser } from "@/hooks/use-current-user";
+import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 
 const inputCls =
   "w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
@@ -75,7 +77,6 @@ export default function PrivacyPage() {
   }, []);
 
   // ── Password ──────────────────────────────────────────
-  const [showPassword, setShowPassword] = useState(false);
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [savingPw, setSavingPw] = useState(false);
 
@@ -91,10 +92,7 @@ export default function PrivacyPage() {
   const [disablePw, setDisablePw] = useState("");
 
   // ── Delete ────────────────────────────────────────────
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [deleteText, setDeleteText] = useState("");
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleting, setDeleting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handlePasswordChange = async () => {
     if (!pwForm.current || !pwForm.next) { toast.error("Fill in all fields"); return; }
@@ -261,39 +259,6 @@ export default function PrivacyPage() {
       toast.error("Network error");
     }
     setMfaBusy(false);
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!hasPasswordLogin) {
-      toast.error("Set a password from the emailed link before deleting this account.");
-      return;
-    }
-    if (deleteText !== "DELETE" || !deletePassword) return;
-    setDeleting(true);
-    try {
-      const res = await fetch("/api/account/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword: deletePassword }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        await fetch("/api/auth/logout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
-          body: "{}",
-          cache: "no-store",
-        }).catch(() => {});
-        toast.success(data.message || "Account deletion initiated.");
-        setTimeout(() => { window.location.href = "/"; }, 1500);
-      } else {
-        toast.error(data.error || "Failed to delete account");
-        setDeleting(false);
-      }
-    } catch {
-      toast.error("Network error");
-      setDeleting(false);
-    }
   };
 
   if (loading) {
@@ -466,32 +431,26 @@ export default function PrivacyPage() {
           <div className="px-5 pb-5 space-y-3">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Current Password</label>
-              <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
+              <PasswordInput
                 className={inputCls}
                 placeholder="Enter current password"
                 value={pwForm.current}
                 onChange={(e) => setPwForm((p) => ({ ...p, current: e.target.value }))}
               />
-              <button onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 hover:text-muted-foreground" aria-label="Toggle password visibility">
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">New Password</label>
-              <input
-                type="password" className={inputCls} placeholder="Min 12 characters"
+              <PasswordInput
+                className={inputCls} placeholder="Min 12 characters"
                 value={pwForm.next}
                 onChange={(e) => setPwForm((p) => ({ ...p, next: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Confirm New Password</label>
-              <input
-                type="password" className={inputCls} placeholder="Repeat new password"
+              <PasswordInput
+                className={inputCls} placeholder="Repeat new password"
                 value={pwForm.confirm}
                 onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
               />
@@ -537,8 +496,9 @@ export default function PrivacyPage() {
           <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
             <label className="text-xs font-medium text-muted-foreground">Confirm your password to disable</label>
             <div className="flex gap-2">
-              <input
-                type="password" className={inputCls} placeholder="Current password"
+              <PasswordInput
+                wrapperClassName="flex-1"
+                className={inputCls} placeholder="Current password"
                 value={disablePw} onChange={(e) => setDisablePw(e.target.value)}
               />
               <button
@@ -565,8 +525,9 @@ export default function PrivacyPage() {
           <div className="px-5 pb-5 space-y-3 border-t border-border pt-4">
             <label className="text-xs font-medium text-muted-foreground">Re-enter your password to start</label>
             <div className="flex gap-2">
-              <input
-                type="password" className={inputCls} placeholder="Current password"
+              <PasswordInput
+                wrapperClassName="flex-1"
+                className={inputCls} placeholder="Current password"
                 value={mfaPassword} onChange={(e) => setMfaPassword(e.target.value)}
               />
               <button
@@ -661,88 +622,37 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      {/* Danger Zone */}
+      {/* Danger Zone — actual flow lives in <DeleteAccountDialog /> below. */}
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Trash2 className="h-4 w-4 text-red-400" />
           <h2 className="text-sm font-semibold text-red-400">Danger Zone</h2>
         </div>
         <div className="px-5 pb-5">
-          {!deleteConfirm ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground/80">Delete Account</p>
-                <p className="text-xs text-foreground/40">Permanently delete all data. Cannot be undone.</p>
-              </div>
-              <button
-                onClick={() => setDeleteConfirm(true)}
-                className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition"
-              >
-                Delete Account
-              </button>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground/80">Delete Account</p>
+              <p className="text-xs text-foreground/40">Permanently delete all data. Cannot be undone.</p>
             </div>
-          ) : !hasPasswordLogin ? (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">
-                This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleRequestSetPasswordEmail}
-                  disabled={passwordSetupBusy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50"
-                >
-                  {passwordSetupBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
-                  Email Setup Link
-                </button>
-                <button
-                  onClick={() => { setDeleteConfirm(false); setDeleteText(""); }}
-                  className="px-4 py-2 rounded-xl text-xs text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">
-                This will permanently delete your account, all addresses, services, and moving plans.
-                Type <strong className="text-red-400">DELETE</strong> to confirm.
-              </p>
-              <input
-                className={`${inputCls} border-red-500/20`}
-                placeholder='Type "DELETE" to confirm'
-                value={deleteText}
-                onChange={(e) => setDeleteText(e.target.value)}
-              />
-              <input
-                className={`${inputCls} border-red-500/20`}
-                type="password"
-                autoComplete="current-password"
-                placeholder="Confirm your password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-              />
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deleteText !== "DELETE" || !deletePassword || deleting}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50"
-                >
-                  {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                  {deleting ? "Deleting..." : "Permanently Delete"}
-                </button>
-                <button
-                  onClick={() => { setDeleteConfirm(false); setDeleteText(""); }}
-                  className="px-4 py-2 rounded-xl text-xs text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
+            <button
+              onClick={() => setDeleteOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition"
+            >
+              Delete Account
+            </button>
+          </div>
         </div>
       </div>
+
+      <DeleteAccountDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        userEmail={user?.email}
+        hasPasswordLogin={hasPasswordLogin}
+        mfaEnabled={twoFaEnabled}
+        onRequestSetPasswordEmail={handleRequestSetPasswordEmail}
+        setPasswordBusy={passwordSetupBusy}
+      />
     </div>
   );
 }

@@ -28,6 +28,7 @@ describe("public legal and policy content", () => {
       "/ccpa-privacy-notice",
       "/contact",
       "/faq",
+      "/help",
       "/blog",
       "/blog/feed.xml",
       "/pricing",
@@ -117,7 +118,7 @@ describe("public legal and policy content", () => {
   it("help content and API filters block stale legal/security claims", () => {
     const seed = readRepo("packages/db/prisma/seed-data/help-center.ts");
     const fallback = read("src/lib/help-fallback.ts");
-    const api = read("src/app/api/help/route.ts");
+    const api = read("src/lib/help-content.ts");
 
     expect(seed).not.toContain("Regular security audits");
     expect(seed).not.toContain("All personal data is deleted immediately");
@@ -127,7 +128,7 @@ describe("public legal and policy content", () => {
     expect(api).toContain("all personal data is deleted immediately");
   });
 
-  it("sitemap keeps help private and includes billing/refund policy routes", () => {
+  it("sitemap includes public help and billing/refund policy routes", () => {
     const sitemap = read("src/app/sitemap.ts");
     const robots = read("src/app/robots.ts");
     const middleware = read("src/middleware.ts");
@@ -137,9 +138,10 @@ describe("public legal and policy content", () => {
     expect(sitemap).toContain('path: "/about"');
     expect(sitemap).toContain('path: "/provider-coverage"');
     expect(sitemap).toContain('path: "/data-deletion"');
-    expect(sitemap).not.toContain('path: "/help"');
-    expect(robots).toContain('"/help"');
-    expect(middleware).toContain('pathname.startsWith("/help")');
+    expect(sitemap).toContain('path: "/help"');
+    expect(robots).not.toContain('"/help"');
+    expect(middleware).toContain('"/help"');
+    expect(middleware).not.toContain('pathname.startsWith("/help")');
   });
 
   it("analytics does not send raw search query metadata", () => {

@@ -55,7 +55,7 @@ afterEach(() => {
 });
 
 describe("production SEO launch surfaces", () => {
-  it("allows public production crawling while blocking private routes and training crawlers", async () => {
+  it("allows public production crawling for search and AI bots while blocking private routes", async () => {
     productionEnv();
     mockRequestHost("locateflow.com");
     const { default: robots } = await import("./robots");
@@ -73,6 +73,7 @@ describe("production SEO launch surfaces", () => {
     expect(serialized).toContain('"Google-Extended"');
     expect(serialized).toContain('"/api/"');
     expect(serialized).toContain('"/dashboard"');
+    expect(serialized).not.toContain('"disallow":"/"');
     expect(result).toMatchObject({
       sitemap: "https://locateflow.com/sitemap.xml",
       host: "https://locateflow.com",
@@ -115,6 +116,7 @@ describe("production SEO launch surfaces", () => {
     expect(urls).toContain("https://locateflow.com");
     expect(urls).toContain("https://locateflow.com/pricing");
     expect(urls).toContain("https://locateflow.com/about");
+    expect(urls).toContain("https://locateflow.com/help");
     expect(urls).toContain("https://locateflow.com/provider-coverage");
     expect(urls).toContain("https://locateflow.com/data-deletion");
     expect(urls).toContain("https://locateflow.com/privacy");
@@ -239,6 +241,7 @@ describe("production SEO launch surfaces", () => {
     expect(text).toContain("90-day free trial");
     expect(text).toContain("https://locateflow.com/about");
     expect(text).toContain("https://locateflow.com/pricing");
+    expect(text).toContain("https://locateflow.com/help");
     expect(text).toContain("https://locateflow.com/provider-coverage");
     expect(text).toContain("https://locateflow.com/data-deletion");
     expect(text).not.toContain("# Not indexed");

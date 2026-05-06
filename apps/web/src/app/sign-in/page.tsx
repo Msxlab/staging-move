@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
+import { PasswordInput } from "@/components/ui/password-input";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
 
 interface OAuthProviderStatus {
@@ -215,8 +216,8 @@ function SignInForm() {
                   <label htmlFor="password" className="text-xs font-medium text-muted-foreground">{tAuth("password")}</label>
                   <Link href="/forgot-password" className="text-xs text-primary hover:underline">{tAuth("forgotPassword")}</Link>
                 </div>
-                <input
-                  id="password" type="password" required autoComplete="current-password"
+                <PasswordInput
+                  id="password" required autoComplete="current-password"
                   className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   value={password} onChange={(e) => setPassword(e.target.value)}
                 />

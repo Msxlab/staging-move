@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export default function ResetPasswordPage() {
   const params = useParams<{ token: string }>();
@@ -80,8 +81,8 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="password" className="text-xs font-medium text-muted-foreground block mb-1">{tAuth("password")}</label>
-            <input
-              id="password" type="password" required autoComplete="new-password" minLength={12}
+            <PasswordInput
+              id="password" required autoComplete="new-password" minLength={12}
               className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
               value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder={tAuth("passwordPlaceholder")}
@@ -89,8 +90,8 @@ export default function ResetPasswordPage() {
           </div>
           <div>
             <label htmlFor="confirm" className="text-xs font-medium text-muted-foreground block mb-1">{tAuth("confirmPassword")}</label>
-            <input
-              id="confirm" type="password" required autoComplete="new-password" minLength={12}
+            <PasswordInput
+              id="confirm" required autoComplete="new-password" minLength={12}
               className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
               value={confirm} onChange={(e) => setConfirm(e.target.value)}
             />

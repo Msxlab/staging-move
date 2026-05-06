@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { AppearanceCard } from "@/components/settings/appearance-card";
 import { UIPreferencesCard } from "@/components/settings/ui-preferences-card";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const budgetFeature = {
   title: "Budget",
@@ -81,6 +82,12 @@ export default function SettingsPage() {
     };
   }, []);
 
+  const resetDeleteFlow = () => {
+    setDeleteStep("idle");
+    setConfirmText("");
+    setConfirmPassword("");
+  };
+
   const requestSetPasswordEmail = async () => {
     setPasswordSetupBusy(true);
     try {
@@ -118,8 +125,6 @@ export default function SettingsPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        // Local session cookie is invalidated server-side when the account is
-        // fully processed; log out on this device immediately.
         await fetch("/api/auth/logout", {
           method: "POST",
           headers: { "Content-Type": "application/json", "X-Requested-With": "locateflow" },
@@ -145,7 +150,6 @@ export default function SettingsPage() {
         <p className="text-muted-foreground mt-1">Manage your account and preferences</p>
       </div>
 
-      {/* App Features — only when at least one feature toggle is on. */}
       {showBudget === true && (
         <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
           <div className="px-5 pt-5 pb-2">
@@ -157,13 +161,10 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* UI preferences (visibility toggles) */}
       <UIPreferencesCard />
 
-      {/* Appearance */}
       <AppearanceCard />
 
-      {/* Account Settings */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="px-5 pt-5 pb-2">
           <h2 className="text-xs font-semibold text-foreground/40 uppercase tracking-wider">Account</h2>
@@ -173,13 +174,12 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Danger Zone */}
       <div className="rounded-2xl border border-red-500/20 bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="px-5 pt-5 pb-3">
           <h3 className="text-sm font-semibold text-red-400">Danger Zone</h3>
         </div>
         <div className="px-5 pb-5 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-medium text-foreground/80">Delete Account</p>
               <p className="text-xs text-foreground/40">Permanently delete your account and all data</p>
@@ -187,7 +187,7 @@ export default function SettingsPage() {
             {deleteStep === "idle" && (
               <button
                 onClick={() => setDeleteStep("confirm")}
-                className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium hover:bg-red-500/20 transition"
+                className="self-start rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20 sm:self-auto"
               >
                 Delete Account
               </button>
@@ -198,18 +198,18 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">
                 This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <button
                   onClick={requestSetPasswordEmail}
                   disabled={passwordSetupBusy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
                 >
                   {passwordSetupBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                   Email Setup Link
                 </button>
                 <button
-                  onClick={() => { setDeleteStep("idle"); setConfirmText(""); setConfirmPassword(""); }}
-                  className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+                  onClick={resetDeleteFlow}
+                  className="rounded-xl px-4 py-2 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground"
                 >
                   Cancel
                 </button>
@@ -232,10 +232,9 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/40">Confirm your password</label>
-                <input
-                  className="w-full rounded-xl border border-red-500/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-red-500/30"
-                  type="password"
+                <label className="text-xs font-medium text-muted-foreground">Confirm your password</label>
+                <PasswordInput
+                  className="w-full rounded-xl border border-red-500/20 bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/30"
                   autoComplete="current-password"
                   placeholder="Password"
                   value={confirmPassword}
@@ -243,18 +242,18 @@ export default function SettingsPage() {
                   disabled={deleteStep === "deleting"}
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <button
                   onClick={handleDeleteAccount}
                   disabled={confirmText !== "DELETE" || !confirmPassword || deleteStep === "deleting"}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deleteStep === "deleting" ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : "Permanently Delete My Account"}
                 </button>
                 <button
-                  onClick={() => { setDeleteStep("idle"); setConfirmText(""); setConfirmPassword(""); }}
+                  onClick={resetDeleteFlow}
                   disabled={deleteStep === "deleting"}
-                  className="px-4 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition"
+                  className="rounded-xl px-4 py-2 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground disabled:opacity-50"
                 >
                   Cancel
                 </button>

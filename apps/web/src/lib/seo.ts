@@ -127,7 +127,7 @@ export function getGoogleSiteVerification() {
 }
 
 export function staticLastModified() {
-  return new Date(process.env.SITE_LAST_MODIFIED || "2026-05-01T00:00:00.000Z");
+  return new Date(process.env.SITE_LAST_MODIFIED || "2026-05-06T00:00:00.000Z");
 }
 
 export function absoluteUrl(path = "/", base = SITE_URL) {

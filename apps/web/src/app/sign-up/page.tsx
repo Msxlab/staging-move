@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Wordmark } from "@/components/marketing/logo";
+import { PasswordInput } from "@/components/ui/password-input";
 import { trackEvent } from "@/lib/analytics";
 
 interface OAuthProviderStatus {
@@ -215,8 +216,8 @@ export default function SignUpPage() {
           </div>
           <div>
             <label htmlFor="password" className="text-xs font-medium text-muted-foreground block mb-1">{tAuth("password")}</label>
-            <input
-              id="password" type="password" required autoComplete="new-password" minLength={12}
+            <PasswordInput
+              id="password" required autoComplete="new-password" minLength={12}
               className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder={tAuth("passwordPlaceholder")}
