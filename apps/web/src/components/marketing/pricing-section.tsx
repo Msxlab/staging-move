@@ -23,15 +23,15 @@ import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 type IndividualFeature = { icon: LucideIcon; label: string; desc: string };
 
 const INDIVIDUAL_FEATURES: IndividualFeature[] = [
-  { icon: Home, label: "Up to 10 homes", desc: "Primary, rental, family, second home â€” each with its own services." },
+  { icon: Home, label: "Up to 10 homes", desc: "Primary, rental, family, second home — each with its own services." },
   { icon: Building2, label: "Service provider records", desc: "Account #, login, contract, contacts, auto-renewal." },
   { icon: Bell, label: "Bills & renewal reminders", desc: "Email + in-app alerts before due and renew dates." },
   { icon: Wallet, label: "Per-home monthly budgets", desc: "Planned vs actual, savings rate, category breakdown." },
-  { icon: Truck, label: "Smart moving planner", desc: "From â†’ to address, move date, auto-suggested move tasks." },
-  { icon: FileText, label: "Document storage", desc: "Leases, bills, receipts, proof-of-address â€” attached per service." },
+  { icon: Truck, label: "Smart moving planner", desc: "From → to address, move date, auto-suggested move tasks." },
+  { icon: FileText, label: "Document storage", desc: "Leases, bills, receipts, proof-of-address — attached per service." },
   { icon: Map, label: "US state-by-state guidance", desc: "DMV, voter, utility, tax & insurance notes for moves." },
   { icon: Smartphone, label: "Web + iOS + Android", desc: "One subscription, all devices, synced." },
-  { icon: Languages, label: "English & EspaÃ±ol", desc: "Full UI translations." },
+  { icon: Languages, label: "English & Español", desc: "Full UI translations." },
   { icon: Download, label: "Export anytime (CSV & PDF)", desc: "Your data, downloadable whenever you want." },
 ];
 

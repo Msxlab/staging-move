@@ -67,7 +67,7 @@ export async function MovingMomentMock() {
         <div className="rounded-3xl border bg-card p-7 shadow-xl">
           <div className="flex items-baseline justify-between">
             <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              432 OAK ST â†’ 88 PINE LN Â· JUN 15
+              432 OAK ST → 88 PINE LN · JUN 15
             </p>
           </div>
           <p className="mt-2 text-2xl font-bold tracking-tight">
