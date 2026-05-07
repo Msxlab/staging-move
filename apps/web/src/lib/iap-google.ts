@@ -213,6 +213,7 @@ const GOOGLE_OIDC_JWKS = createRemoteJWKSet(
 export interface VerifiedPubsubPush {
   audience: string;
   issuer: string;
+  subject: string;
   email: string;
   emailVerified: boolean;
 }
@@ -231,6 +232,7 @@ export async function verifyPubsubOidcToken(
   return {
     audience: String(payload.aud || ""),
     issuer: String(payload.iss || ""),
+    subject: String(payload.sub || ""),
     email,
     emailVerified,
   };

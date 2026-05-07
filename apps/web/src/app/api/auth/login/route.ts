@@ -17,6 +17,8 @@ import { stableRateLimitHash } from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { decrypt } from "@/lib/shared-encryption";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 
@@ -124,6 +126,13 @@ export async function POST(request: NextRequest) {
 
   const passwordOk = await verifyPassword(password, user.passwordHash);
   if (!passwordOk) {
+    recordUserSecurityAudit({
+      userId: user.id,
+      action: "LOGIN_FAILED",
+      entityId: user.id,
+      changes: { reason: "INVALID_PASSWORD" },
+      ...extractRequestMeta(request),
+    });
     const nextState = await recordLoginFailure(ip);
     if (nextState.locked) {
       emitLoginLockout("INVALID_PASSWORD", ip, nextState.retryAfterSec);
@@ -167,6 +176,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (!mfaValid) {
+      recordUserSecurityAudit({
+        userId: user.id,
+        action: "MFA_FAILED",
+        entityId: user.id,
+        changes: { method: mfaCode ? "totp" : "backup_code" },
+        ...extractRequestMeta(request),
+      });
       emitSecurityEvent({
         type: "MFA_FAILURE_BURST",
         severity: "warn",
@@ -215,6 +231,13 @@ export async function POST(request: NextRequest) {
     browser: parsedUA.browser,
     os: parsedUA.os,
     deviceType: parsedUA.deviceType,
+  });
+  recordUserSecurityAudit({
+    userId: user.id,
+    action: "LOGIN",
+    entityId: user.id,
+    changes: { status: "success", clientType: isMobileClient ? "mobile" : "web" },
+    ...extractRequestMeta(request),
   });
 
   // Web receives the session via httpOnly cookie (set by createUserSession).

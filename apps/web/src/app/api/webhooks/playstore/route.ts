@@ -30,6 +30,7 @@ import { captureException, captureMessage } from "@/lib/sentry";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { verifyPubsubOidcToken } from "@/lib/iap-google";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
+import { emitSecurityEvent } from "@/lib/security-events";
 import {
   applyIapStateToUser,
   findUserByIapIdentifier,
@@ -75,6 +76,30 @@ interface RtdnPayload {
 // multi-MB body.
 const PLAYSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
 
+function isProductionLikeRuntime() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  return (
+    process.env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview"
+  );
+}
+
+function emitPlaystoreFailure(reason: string, context: Record<string, unknown> = {}) {
+  emitSecurityEvent({
+    type: "WEBHOOK_SIG_FAILURE",
+    severity: "warn",
+    group: "webhook",
+    context: {
+      provider: "playstore",
+      reason,
+      environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+      ...context,
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   let idempotencyId: string | null = null;
   try {
@@ -88,21 +113,53 @@ export async function POST(request: NextRequest) {
       ? authHeader.slice(7).trim()
       : "";
 
-    const expectedAudience = await getRuntimeConfigValue("GOOGLE_PLAY_RTDN_AUDIENCE");
+    const [expectedAudience, expectedServiceAccountEmail, expectedSubject] = await Promise.all([
+      getRuntimeConfigValue("GOOGLE_PLAY_RTDN_AUDIENCE"),
+      getRuntimeConfigValue("EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL"),
+      getRuntimeConfigValue("EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT"),
+    ]);
 
     if (expectedAudience) {
       if (!oidcToken) {
+        emitPlaystoreFailure("missing_oidc_token", {
+          tokenLength: 0,
+          correlationId: request.headers.get("x-cloud-trace-context") || null,
+        });
         return NextResponse.json({ error: "Missing OIDC token" }, { status: 401 });
       }
+      if (isProductionLikeRuntime() && !expectedServiceAccountEmail && !expectedSubject) {
+        emitPlaystoreFailure("missing_expected_identity", { tokenLength: oidcToken.length });
+        captureMessage(
+          "[PLAYSTORE WEBHOOK] expected OIDC identity unset in production-like runtime; rejecting RTDN",
+          "error",
+        );
+        return NextResponse.json(
+          { error: "Google Play RTDN identity is not configured" },
+          { status: 503 },
+        );
+      }
       try {
-        await verifyPubsubOidcToken(oidcToken, expectedAudience);
+        const verified = await verifyPubsubOidcToken(oidcToken, expectedAudience);
+        if (expectedServiceAccountEmail) {
+          const expectedEmail = expectedServiceAccountEmail.toLowerCase();
+          if (!verified.emailVerified || verified.email.toLowerCase() !== expectedEmail) {
+            emitPlaystoreFailure("unexpected_service_account", { tokenLength: oidcToken.length });
+            return NextResponse.json({ error: "Invalid OIDC identity" }, { status: 401 });
+          }
+        }
+        if (expectedSubject && verified.subject !== expectedSubject) {
+          emitPlaystoreFailure("unexpected_subject", { tokenLength: oidcToken.length });
+          return NextResponse.json({ error: "Invalid OIDC identity" }, { status: 401 });
+        }
       } catch (err) {
+        emitPlaystoreFailure("oidc_verify_failed", { tokenLength: oidcToken.length });
         console.warn("[PLAYSTORE WEBHOOK] OIDC verify failed:", (err as Error).message);
         return NextResponse.json({ error: "Invalid OIDC token" }, { status: 401 });
       }
-    } else if (process.env.NODE_ENV === "production") {
+    } else if (isProductionLikeRuntime()) {
+      emitPlaystoreFailure("missing_expected_audience");
       captureMessage(
-        "[PLAYSTORE WEBHOOK] GOOGLE_PLAY_RTDN_AUDIENCE unset in production; rejecting RTDN",
+        "[PLAYSTORE WEBHOOK] GOOGLE_PLAY_RTDN_AUDIENCE unset in production-like runtime; rejecting RTDN",
         "error",
       );
       return NextResponse.json(
@@ -149,11 +206,19 @@ export async function POST(request: NextRequest) {
     // ── 4. Validate package name matches our app (defense in depth). ──
     const expectedPackage = await getRuntimeConfigValue("GOOGLE_PLAY_PACKAGE_NAME");
     if (expectedPackage && rtdn.packageName && rtdn.packageName !== expectedPackage) {
+      emitPlaystoreFailure("package_mismatch", { messageId });
       captureMessage(
-        `[PLAYSTORE WEBHOOK] package mismatch: ${rtdn.packageName} vs expected ${expectedPackage}`,
+        "[PLAYSTORE WEBHOOK] package mismatch",
         "warning",
       );
-      return complete({ received: true, skipped: "package_mismatch" });
+      const markResult = await markWebhookEventProcessed(idempotencyId!, "playstore");
+      if (markResult === "duplicate") {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      return NextResponse.json(
+        { received: true, skipped: "package_mismatch" },
+        { status: 400 },
+      );
     }
 
     if (rtdn.testNotification) {

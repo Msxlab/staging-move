@@ -23,13 +23,38 @@ vi.mock("@/lib/auth", () => ({
   requireDbUserId: vi.fn(),
 }));
 
+vi.mock("@/lib/audit", () => ({
+  createAuditLog: vi.fn(() => Promise.resolve()),
+  extractRequestMeta: vi.fn(() => ({ ipAddress: "203.0.113.10", userAgent: "vitest" })),
+}));
+
 vi.mock("@/lib/shared-encryption", () => ({
   decrypt: vi.fn((value: string) => value === "enc-email" ? "customer@example.com" : `decrypted:${value}`),
 }));
 
+vi.mock("@/lib/rate-limit-policy", () => ({
+  enforceRateLimitPolicy: vi.fn(() => Promise.resolve({
+    success: true,
+    remaining: 2,
+    resetAt: Date.now() + 60_000,
+    retryAfterSeconds: 60,
+    policy: { group: "export_data", userFacingErrorCode: "EXPORT_RATE_LIMITED" },
+    key: "export-key",
+  })),
+}));
+
+vi.mock("@/lib/user-step-up", () => ({
+  verifyUserStepUp: vi.fn(() => Promise.resolve({ ok: true, method: "password" })),
+}));
+
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { GET } from "./route";
+import { createAuditLog } from "@/lib/audit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { verifyUserStepUp } from "@/lib/user-step-up";
+import { POST } from "./route";
+
+const GET = POST;
 
 const mockPrisma = {
   address: { findMany: prisma.address.findMany as Mock },
@@ -48,9 +73,22 @@ const mockPrisma = {
   subscription: { findUnique: (prisma as any).subscription.findUnique as Mock },
 };
 const mockRequireDbUserId = requireDbUserId as any;
+const mockCreateAuditLog = createAuditLog as any;
+const mockEnforceRateLimitPolicy = enforceRateLimitPolicy as any;
+const mockVerifyUserStepUp = verifyUserStepUp as any;
 
 function makeRequest(search: string) {
-  return new Request(`http://localhost/api/export${search}`) as any;
+  const params = new URLSearchParams(search.replace(/^\?/, ""));
+  return new Request("http://localhost/api/export", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      confirmPassword: "correct-password",
+      type: params.get("type") || "full",
+      format: params.get("format") || "json",
+      includeNotes: params.get("includeNotes") === "true",
+    }),
+  }) as any;
 }
 
 describe("export route", () => {
@@ -71,6 +109,15 @@ describe("export route", () => {
     mockPrisma.movingPlan.findMany.mockResolvedValue([]);
     mockPrisma.userSession.findMany.mockResolvedValue([]);
     mockPrisma.subscription.findUnique.mockResolvedValue(null);
+    mockVerifyUserStepUp.mockResolvedValue({ ok: true, method: "password" });
+    mockEnforceRateLimitPolicy.mockResolvedValue({
+      success: true,
+      remaining: 2,
+      resetAt: Date.now() + 60_000,
+      retryAfterSeconds: 60,
+      policy: { group: "export_data", userFacingErrorCode: "EXPORT_RATE_LIMITED" },
+      key: "export-key",
+    });
   });
 
   it("masks sensitive service fields in JSON exports", async () => {
@@ -283,5 +330,57 @@ describe("export route", () => {
     expect(response.status).toBe(200);
     expect(data.addresses).toHaveLength(1);
     expect(mockPrisma.subscription.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("requires server-side step-up before exporting data", async () => {
+    mockVerifyUserStepUp.mockResolvedValue({
+      ok: false,
+      code: "STEP_UP_REQUIRED",
+      message: "Re-authentication is required.",
+    });
+
+    const response = await GET(makeRequest("?type=addresses&format=json"));
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.code).toBe("STEP_UP_REQUIRED");
+    expect(mockPrisma.address.findMany).not.toHaveBeenCalled();
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: "EXPORT_BLOCK",
+      changes: expect.objectContaining({ code: "STEP_UP_REQUIRED" }),
+    }));
+  });
+
+  it("applies a user-scoped export cooldown", async () => {
+    mockEnforceRateLimitPolicy.mockResolvedValue({
+      success: false,
+      remaining: 0,
+      resetAt: Date.now() + 60_000,
+      retryAfterSeconds: 60,
+      policy: { group: "export_data", userFacingErrorCode: "EXPORT_RATE_LIMITED" },
+      key: "export-key",
+    });
+
+    const response = await GET(makeRequest("?type=full&format=json"));
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("60");
+    expect(body.code).toBe("EXPORT_RATE_LIMITED");
+    expect(mockVerifyUserStepUp).not.toHaveBeenCalled();
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: "EXPORT_LIMIT",
+      changes: expect.objectContaining({ retryAfterSeconds: 60 }),
+    }));
+  });
+
+  it("export audit does not include raw step-up or service secrets", async () => {
+    await GET(makeRequest("?type=services&format=json&includeNotes=true"));
+
+    const serializedAuditCalls = JSON.stringify(mockCreateAuditLog.mock.calls);
+    expect(serializedAuditCalls).not.toContain("correct-password");
+    expect(serializedAuditCalls).not.toContain("mfaCode");
+    expect(serializedAuditCalls).not.toContain("backupCode");
+    expect(serializedAuditCalls).not.toContain("accountNumber");
   });
 });

@@ -38,10 +38,20 @@ vi.mock("@/lib/totp", () => ({
   verifyBackupCode: vi.fn(() => Promise.resolve(-1)),
 }));
 
+vi.mock("@/lib/audit", () => ({
+  createAuditLog: vi.fn(() => Promise.resolve()),
+  extractRequestMeta: vi.fn(() => ({ ipAddress: "203.0.113.10", userAgent: "Vitest" })),
+}));
+
 import { prisma } from "@/lib/db";
+import { createUserSession, verifyPassword } from "@/lib/user-auth";
+import { createAuditLog } from "@/lib/audit";
 import { POST } from "./route";
 
 const userMock = prisma.user as unknown as { findFirst: Mock };
+const createAuditLogMock = createAuditLog as unknown as Mock;
+const createUserSessionMock = createUserSession as unknown as Mock;
+const verifyPasswordMock = verifyPassword as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("https://locateflow.com/api/auth/login", {
@@ -55,6 +65,8 @@ describe("login route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userMock.findFirst.mockResolvedValue(null);
+    createUserSessionMock.mockResolvedValue("session-token");
+    verifyPasswordMock.mockResolvedValue(false);
   });
 
   it("only looks up active non-deleted password users and returns a generic failure", async () => {
@@ -66,5 +78,59 @@ describe("login route", () => {
     expect(userMock.findFirst).toHaveBeenCalledWith({
       where: { email: "deleted@example.com", deletedAt: null },
     });
+  });
+
+  it("audits known-user password failures without storing the raw password", async () => {
+    userMock.findFirst.mockResolvedValue({
+      id: "user_1",
+      email: "user@example.com",
+      passwordHash: "hash",
+      mfaEnabled: false,
+      mfaSecret: null,
+    });
+    verifyPasswordMock.mockResolvedValue(false);
+
+    const response = await POST(makeRequest({ email: "user@example.com", password: "Password-2026!" }));
+
+    expect(response.status).toBe(401);
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "LOGIN_FAILED",
+        entityType: "User",
+        entityId: "user_1",
+        changes: { reason: "INVALID_PASSWORD" },
+      }),
+    );
+    expect(JSON.stringify(createAuditLogMock.mock.calls)).not.toContain("Password-2026!");
+  });
+
+  it("audits successful login without storing the raw password", async () => {
+    userMock.findFirst.mockResolvedValue({
+      id: "user_1",
+      email: "user@example.com",
+      firstName: "User",
+      lastName: "Example",
+      imageUrl: null,
+      emailVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
+      passwordHash: "hash",
+      mfaEnabled: false,
+      mfaSecret: null,
+    });
+    verifyPasswordMock.mockResolvedValue(true);
+
+    const response = await POST(makeRequest({ email: "user@example.com", password: "Password-2026!" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(createAuditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "LOGIN",
+        entityType: "User",
+        entityId: "user_1",
+        changes: { status: "success", clientType: "web" },
+      }),
+    );
+    expect(JSON.stringify(createAuditLogMock.mock.calls)).not.toContain("Password-2026!");
   });
 });

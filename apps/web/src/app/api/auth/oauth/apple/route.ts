@@ -47,6 +47,9 @@ export async function GET(request: NextRequest) {
   const mobileCodeChallenge = isMobileOAuthClient(client)
     ? normalizeMobileOAuthCodeChallenge(request.nextUrl.searchParams.get("mobileCodeChallenge"))
     : null;
+  if (isMobileOAuthClient(client) && !mobileCodeChallenge) {
+    return NextResponse.json({ error: "Mobile OAuth PKCE challenge is required." }, { status: 400 });
+  }
   const rawMobileState = request.nextUrl.searchParams.get("mobileState");
   const mobileState = isMobileOAuthClient(client)
     ? normalizeMobileOAuthState(rawMobileState)

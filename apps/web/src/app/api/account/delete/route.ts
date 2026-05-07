@@ -23,6 +23,14 @@ export async function POST(request: NextRequest) {
     const rlKey = getRateLimitKey(request, "account:delete");
     const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60 });
     if (!rl.success) {
+      await createAuditLog({
+        userId,
+        action: "ACCT_DEL_LIMIT",
+        entityType: "User",
+        entityId: userId,
+        changes: { status: "rate_limited" },
+        ...extractRequestMeta(request),
+      });
       return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
     }
 
@@ -39,6 +47,14 @@ export async function POST(request: NextRequest) {
       backupCode: typeof body?.backupCode === "string" ? body.backupCode : null,
     });
     if (!stepUp.ok) {
+      await createAuditLog({
+        userId,
+        action: "ACCT_DEL_BLOCK",
+        entityType: "User",
+        entityId: userId,
+        changes: { status: "failed_step_up", code: stepUp.code },
+        ...extractRequestMeta(request),
+      });
       return NextResponse.json(
         { error: stepUp.message, code: stepUp.code },
         { status: stepUp.code === "STEP_UP_REQUIRED" ? 403 : 401 },

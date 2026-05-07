@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   sendIapCancellationNotice: vi.fn(),
   captureException: vi.fn(),
   captureMessage: vi.fn(),
+  emitSecurityEvent: vi.fn(),
   prisma: {
     processedWebhookEvent: {
       findUnique: vi.fn(),
@@ -32,6 +33,9 @@ vi.mock("@/lib/iap-common", () => ({
   findUserByIapIdentifier: mocks.findUserByIapIdentifier,
   refreshAppleSubscriptionFor: mocks.refreshAppleSubscriptionFor,
   sendIapCancellationNotice: mocks.sendIapCancellationNotice,
+}));
+vi.mock("@/lib/security-events", () => ({
+  emitSecurityEvent: (...args: any[]) => mocks.emitSecurityEvent(...args),
 }));
 
 import { POST } from "./route";
@@ -107,5 +111,24 @@ describe("App Store webhook idempotency", () => {
     expect(retry.status).toBe(200);
     expect(mocks.applyIapStateToUser).toHaveBeenCalledTimes(1);
     expect(processedMock.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("emits a safe security event when outer JWS verification fails", async () => {
+    mocks.verifyAppleJws.mockImplementationOnce(() => {
+      throw new Error("bad jws");
+    });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(400);
+    expect(mocks.emitSecurityEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: "WEBHOOK_SIG_FAILURE",
+      context: expect.objectContaining({
+        provider: "appstore",
+        reason: "outer_jws_verify_failed",
+        tokenLength: "outer-jws".length,
+      }),
+    }));
+    expect(processedMock.create).not.toHaveBeenCalled();
   });
 });

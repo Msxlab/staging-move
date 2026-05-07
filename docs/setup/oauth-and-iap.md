@@ -174,6 +174,7 @@ Google takes 15–30% of each subscription.
      full PEM including BEGIN/END lines. Paste exactly — the UI escapes newlines.
    - `GOOGLE_PLAY_RTDN_AUDIENCE`                 = `https://app.yourdomain.com/api/webhooks/playstore`
      (same as the Pub/Sub subscription's audience; production webhooks reject when this is missing)
+   - `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` = Pub/Sub push auth service account email
    - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL`         = `locateflow_individual_monthly`
 
 ---

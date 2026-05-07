@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireDbUserId, verifyPassword } from "@/lib/user-auth";
-import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 
@@ -15,15 +17,6 @@ const schema = z.object({
  * POST /api/auth/mfa/disable — turn off MFA (requires password confirmation).
  */
 export async function POST(request: NextRequest) {
-  const rl = await rateLimit(getRateLimitKey(request, "auth:mfa:disable"), {
-    limit: 5,
-    windowSeconds: 60,
-    failClosed: true,
-  });
-  if (!rl.success) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
-  }
-
   let userId: string;
   try {
     userId = await requireDbUserId();
@@ -31,13 +24,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRl = await rateLimit(`auth:mfa:disable:user:${userId}`, {
-    limit: 3,
-    windowSeconds: 60,
-    failClosed: true,
+  const rl = await enforceRateLimitPolicy(request, "mfa_verify", {
+    userId,
+    routeId: "mfa_disable",
   });
-  if (!userRl.success) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { code: rl.policy.userFacingErrorCode, error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
   }
 
   let body: unknown;
@@ -65,6 +60,14 @@ export async function POST(request: NextRequest) {
   await prisma.user.update({
     where: { id: userId },
     data: { mfaEnabled: false, mfaSecret: null, mfaBackupCodes: null },
+  });
+
+  recordUserSecurityAudit({
+    userId,
+    action: "MFA_DISABLED",
+    entityId: userId,
+    changes: { status: "success" },
+    ...extractRequestMeta(request),
   });
 
   void sendSecurityNoticeEmail({

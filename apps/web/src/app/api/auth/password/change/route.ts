@@ -12,6 +12,8 @@ import {
 } from "@/lib/user-auth";
 import { resolveClientIP } from "@/lib/rate-limit";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 
@@ -62,6 +64,14 @@ export async function PATCH(request: NextRequest) {
   const ip = resolveClientIP(request);
   const fp = await generateFingerprint(ip, ua);
   await createUserSession({ userId, email: user.email, fingerprint: fp, ipAddress: ip, userAgent: ua });
+
+  recordUserSecurityAudit({
+    userId,
+    action: "PASSWORD_CHANGE",
+    entityId: userId,
+    changes: { status: "success" },
+    ...extractRequestMeta(request),
+  });
 
   void sendSecurityNoticeEmail({
     userEmail: user.email,

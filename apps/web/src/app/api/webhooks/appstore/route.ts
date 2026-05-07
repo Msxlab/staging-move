@@ -28,6 +28,7 @@ import {
   refreshAppleSubscriptionFor,
   sendIapCancellationNotice,
 } from "@/lib/iap-common";
+import { emitSecurityEvent } from "@/lib/security-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,6 +57,17 @@ export async function POST(request: NextRequest) {
     try {
       outer = verifyAppleJws<AppleNotificationPayload>(signedPayload);
     } catch (err) {
+      emitSecurityEvent({
+        type: "WEBHOOK_SIG_FAILURE",
+        severity: "warn",
+        group: "webhook",
+        context: {
+          provider: "appstore",
+          reason: "outer_jws_verify_failed",
+          environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+          tokenLength: signedPayload.length,
+        },
+      });
       console.warn("[APPSTORE WEBHOOK] outer JWS verify failed:", (err as Error).message);
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
@@ -86,12 +98,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(body);
     };
 
-    const innerTransaction = outer.data?.signedTransactionInfo
-      ? verifyAppleJws<AppleTransactionPayload>(outer.data.signedTransactionInfo)
-      : null;
-    const innerRenewal = outer.data?.signedRenewalInfo
-      ? verifyAppleJws<AppleRenewalPayload>(outer.data.signedRenewalInfo)
-      : null;
+    let innerTransaction: AppleTransactionPayload | null = null;
+    let innerRenewal: AppleRenewalPayload | null = null;
+    try {
+      innerTransaction = outer.data?.signedTransactionInfo
+        ? verifyAppleJws<AppleTransactionPayload>(outer.data.signedTransactionInfo)
+        : null;
+      innerRenewal = outer.data?.signedRenewalInfo
+        ? verifyAppleJws<AppleRenewalPayload>(outer.data.signedRenewalInfo)
+        : null;
+    } catch {
+      emitSecurityEvent({
+        type: "WEBHOOK_SIG_FAILURE",
+        severity: "warn",
+        group: "webhook",
+        context: {
+          provider: "appstore",
+          reason: "inner_jws_verify_failed",
+          environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+          tokenLength: Math.max(
+            outer.data?.signedTransactionInfo?.length ?? 0,
+            outer.data?.signedRenewalInfo?.length ?? 0,
+          ),
+          correlationId: outer.notificationUUID,
+        },
+      });
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
 
     const originalTransactionId =
       innerTransaction?.originalTransactionId || innerRenewal?.originalTransactionId || null;

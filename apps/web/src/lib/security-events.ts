@@ -18,6 +18,7 @@
  *   - docs/audits/security/rate_limit_auth_limit_final_report.md — what's wired
  */
 
+import { redactAuditPayload } from "@locateflow/shared";
 import type { RateLimitRouteGroup } from "./rate-limit-policy";
 
 export type SecurityEventType =
@@ -71,58 +72,6 @@ const SEVERITY_TO_LEVEL: Record<SecurityEventSeverity, "log" | "warn" | "error">
  * `"[REDACTED]"` so the existence of the field is still observable
  * (helpful for catching a buggy caller) without leaking the value.
  */
-const REDACTED_KEYS = new Set(
-  [
-    "password",
-    "newpassword",
-    "confirmpassword",
-    "passwordhash",
-    "mfacode",
-    "backupcode",
-    "totp",
-    "secret",
-    "token",
-    "rawtoken",
-    "tokenhash",
-    "sessiontoken",
-    "session_token",
-    "authorization",
-    "authheader",
-    "authheadervalue",
-    "cookie",
-    "setcookie",
-    "set_cookie",
-    "stripesecretkey",
-    "stripewebhooksecret",
-    "cronsecret",
-    "internalwebhooksecret",
-    "impersonationhandoffsecret",
-    "databaseurl",
-    "database_url",
-    "db_url",
-    "dburl",
-    "redisurl",
-    "redis_url",
-    "upstashredisresturl",
-    "upstashredisresttoken",
-  ].map((k) => k.toLowerCase()),
-);
-
-const PARTIAL_REDACTED_KEYS = ["pwd", "secret", "token", "key", "password"];
-
-function shouldRedactKey(key: string): boolean {
-  const lc = key.toLowerCase();
-  // Compare both with and without separators so e.g. `database_url`,
-  // `databaseUrl`, `DATABASE-URL`, and `DatabaseURL` all hit the same
-  // entry. The REDACTED_KEYS set is stored in already-stripped form;
-  // PARTIAL_REDACTED_KEYS scans the lowercase string.
-  const stripped = lc.replace(/[^a-z0-9]/g, "");
-  if (REDACTED_KEYS.has(lc) || REDACTED_KEYS.has(stripped)) return true;
-  return PARTIAL_REDACTED_KEYS.some(
-    (needle) => lc.includes(needle) || stripped.includes(needle),
-  );
-}
-
 /**
  * Recursively redact a context object. Returns a new object — never
  * mutates the input. Functions, dates, and primitives pass through;
@@ -133,34 +82,8 @@ export function redactContext(
   input: unknown,
   depth = 0,
 ): unknown {
-  if (depth > 6) return "[TRUNCATED]";
-  if (input == null) return input;
-  const t = typeof input;
-  if (t === "string" || t === "number" || t === "boolean" || t === "bigint") {
-    return input;
-  }
-  if (input instanceof Date) return input.toISOString();
-  if (Array.isArray(input)) {
-    return input.slice(0, 100).map((item) => redactContext(item, depth + 1));
-  }
-  if (t === "object") {
-    const out: Record<string, unknown> = {};
-    let count = 0;
-    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-      if (count >= 50) {
-        out["__truncated__"] = true;
-        break;
-      }
-      count++;
-      if (shouldRedactKey(key)) {
-        out[key] = "[REDACTED]";
-        continue;
-      }
-      out[key] = redactContext(value, depth + 1);
-    }
-    return out;
-  }
-  return undefined;
+  void depth;
+  return redactAuditPayload(input);
 }
 
 /**

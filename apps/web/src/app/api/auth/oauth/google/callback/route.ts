@@ -179,6 +179,11 @@ export async function GET(request: NextRequest) {
       const mobileCodeChallenge = normalizeMobileOAuthCodeChallenge(
         request.cookies.get(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE)?.value,
       );
+      if (!mobileCodeChallenge) {
+        return clearGoogleOAuthCookies(
+          NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=mobile-oauth-pkce-required")),
+        );
+      }
       const mobileState = normalizeMobileOAuthState(
         request.cookies.get(MOBILE_OAUTH_STATE_COOKIE)?.value,
       );
