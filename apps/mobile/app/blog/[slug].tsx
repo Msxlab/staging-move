@@ -15,7 +15,7 @@ import * as WebBrowser from "expo-web-browser";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ExternalLink } from "lucide-react-native";
 import { api } from "@/lib/api";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface BlogPostDetail {
   slug: string;
@@ -60,6 +60,12 @@ function htmlToReadableText(html: string): string {
 }
 
 export default function BlogDetailScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const params = useLocalSearchParams();
   const slug = firstParam(params.slug);
   const locale = firstParam(params.locale) === "es" ? "es" : "en";
@@ -172,7 +178,7 @@ export default function BlogDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   center: {
     flex: 1,

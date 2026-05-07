@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
 import { MapPin } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Input } from "@/components/ui/Input";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import {
   createAddressAutocompleteSessionToken,
   lookupAddressAutocomplete,
@@ -37,6 +37,12 @@ export function AddressAutocompleteField({
   onSelect,
   onManualChange,
 }: AddressAutocompleteFieldProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const sessionTokenRef = useRef(createAddressAutocompleteSessionToken());
   const skipNextQueryRef = useRef<string | null>(null);
@@ -129,7 +135,7 @@ export function AddressAutocompleteField({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   hint: {
     fontSize: 12,
     color: theme.colors.textMuted,

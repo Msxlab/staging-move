@@ -25,7 +25,7 @@ import {
   Info,
   Clock,
 } from "lucide-react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
@@ -84,6 +84,12 @@ const CRITICAL_GOVERNMENT = new Set([
 ]);
 
 export default function ProviderDetailScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
   const { t, i18n } = useTranslation();
@@ -456,7 +462,7 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: "row",

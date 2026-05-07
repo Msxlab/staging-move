@@ -1,8 +1,8 @@
-﻿import React from "react";
+﻿import React, { useMemo } from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { LayoutGrid } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/recommendation-engine";
 
@@ -24,6 +24,9 @@ interface CategoryChipRowProps {
  * `null` selection means "All". Chips display category icon + label + optional count.
  */
 export function CategoryChipRow({ categories, selected, onSelect, showAll = true }: CategoryChipRowProps) {
+  // theme: hook-injected styles
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
 
   return (
@@ -82,7 +85,7 @@ export function CategoryChipRow({ categories, selected, onSelect, showAll = true
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   row: {
     paddingHorizontal: 20,
     paddingVertical: 8,

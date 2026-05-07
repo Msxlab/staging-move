@@ -1,12 +1,18 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface LoadingScreenProps {
   message?: string;
 }
 
 export function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel={message} accessibilityLiveRegion="polite">
       <ActivityIndicator size="large" color={theme.colors.primary} accessible={false} />
@@ -16,6 +22,12 @@ export function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
 }
 
 export function LoadingOverlay() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.overlay} accessibilityViewIsModal accessibilityRole="progressbar" accessibilityLabel="Loading" accessibilityLiveRegion="polite">
       <View style={styles.overlayBox}>
@@ -25,7 +37,7 @@ export function LoadingOverlay() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",

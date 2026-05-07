@@ -17,7 +17,7 @@ import { useAppLockStore } from "@/lib/app-lock-store";
 import { useAuthStore } from "@/lib/auth-store";
 import { clearSensitiveLocalState } from "@/lib/local-cleanup";
 import { unregisterPushNotifications } from "@/lib/push";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 const BACKGROUND_LOCK_GRACE_MS = 15_000;
 
@@ -31,6 +31,12 @@ function isPublicSegment(segment: string) {
 }
 
 export function AppLockGate({ children }: { children: React.ReactNode }) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const segments = useSegments();
   const queryClient = useQueryClient();
@@ -151,7 +157,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   overlay: {
     position: "absolute",
     top: 0,

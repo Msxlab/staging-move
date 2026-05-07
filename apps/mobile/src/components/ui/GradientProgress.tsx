@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { View, StyleSheet, Animated, Easing } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface GradientProgressProps {
   progress: number; // 0-100
@@ -20,6 +20,12 @@ export function GradientProgress({
   trackColor,
   style,
 }: GradientProgressProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const animWidth = useRef(new Animated.Value(0)).current;
   const clamped = Math.min(100, Math.max(0, progress));
 
@@ -74,7 +80,7 @@ export function GradientProgress({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   track: {
     overflow: "hidden",
   },

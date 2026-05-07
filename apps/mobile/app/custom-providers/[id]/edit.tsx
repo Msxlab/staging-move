@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { CATEGORY_META } from "@/lib/recommendation-engine";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
@@ -53,6 +53,12 @@ const CATEGORIES = Object.entries(CATEGORY_META)
   .sort((a, b) => a.order - b.order);
 
 export default function EditCustomProviderScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useTranslation();
@@ -219,6 +225,11 @@ function Field(props: {
   autoCapitalize?: "none" | "sentences" | "words" | "characters";
   maxLength?: number;
 }) {
+  // Field is rendered as a leaf inside EditCustomProviderScreen, so it
+  // resolves the active theme and styles via the same provider rather
+  // than reaching for the static dark `theme` import.
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <>
       <Text style={styles.label}>{props.label}</Text>
@@ -237,7 +248,7 @@ function Field(props: {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },

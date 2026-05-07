@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Sparkles, AlertTriangle, Clock } from "lucide-react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { ProviderCard, type ProviderCardData } from "./ProviderCard";
 
 export type RecommendedRowItem = ProviderCardData & {
@@ -27,6 +27,9 @@ export function RecommendedRow({
   onPressProvider,
   emptyText,
 }: RecommendedRowProps) {
+  // theme: hook-injected styles
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   if (providers.length === 0 && !emptyText) return null;
 
   return (
@@ -80,7 +83,7 @@ function tierBadge(tier: string | undefined):
   return undefined;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   wrap: {
     marginBottom: 16,
   },

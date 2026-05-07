@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   TouchableOpacity,
   Text,
@@ -9,7 +9,7 @@ import {
   type TextStyle,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { hapticLight } from "@/lib/haptics";
 
 interface ButtonProps {
@@ -45,6 +45,12 @@ export function Button({
   style,
   textStyle,
 }: ButtonProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const trailingIcon = rightIcon || iconRight;
   const handlePress = () => {
     if (!loading && !disabled) {
@@ -128,7 +134,7 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   base: {
     flexDirection: "row",
     alignItems: "center",

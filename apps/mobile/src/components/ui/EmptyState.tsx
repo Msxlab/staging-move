@@ -1,6 +1,6 @@
-﻿import React from "react";
+﻿import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "./Button";
 
 interface EmptyStateProps {
@@ -12,6 +12,12 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, description, actionLabel, onAction }: EmptyStateProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.container} accessibilityRole="summary" accessibilityLabel={title} accessibilityHint={description}>
       <View style={styles.iconWrapper} accessible={false}>{icon}</View>
@@ -31,7 +37,7 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",

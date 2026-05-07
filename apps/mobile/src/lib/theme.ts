@@ -353,6 +353,31 @@ export function useAppTheme(): Theme {
 }
 
 /**
+ * Hook + factory pattern used throughout the mobile codebase to make
+ * `StyleSheet.create` actually react to theme changes.
+ *
+ * `StyleSheet.create` runs once at module-import time, so a value like
+ * `backgroundColor: theme.colors.background` is captured against the
+ * static dark palette at first load and never refreshes. Wrapping the
+ * factory in this hook re-runs `StyleSheet.create` whenever the
+ * resolved theme changes, so the rendered styles flip with the user's
+ * Appearance preference.
+ *
+ *   const makeStyles = (t: Theme) => StyleSheet.create({
+ *     container: { backgroundColor: t.colors.background },
+ *   });
+ *
+ *   function Screen() {
+ *     const styles = useThemedStyles(makeStyles);
+ *     return <View style={styles.container} />;
+ *   }
+ */
+export function useThemedStyles<T>(factory: (t: Theme) => T): T {
+  const t = useAppTheme();
+  return React.useMemo(() => factory(t), [factory, t]);
+}
+
+/**
  * Synchronous getter for non-component code (e.g. navigation theme
  * factories that run before the first render). Reads the OS color
  * scheme directly — does not see the user's stored preference.

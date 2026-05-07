@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { captureException } from "@/lib/sentry";
 
 interface ErrorBoundaryProps {
@@ -38,24 +38,38 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (!error) return this.props.children;
     if (this.props.fallback) return this.props.fallback(this.reset, error);
 
-    return (
-      <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.scroll}>
-          <Text style={styles.emoji}>⚠️</Text>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.message} numberOfLines={6}>
-            {error.message || "An unexpected error occurred. Please try again."}
-          </Text>
-          <TouchableOpacity style={styles.button} onPress={this.reset} activeOpacity={0.7}>
-            <Text style={styles.buttonText}>Try again</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </View>
-    );
+    // Render the fallback through a functional component so hooks
+    // (useAppTheme + useMemo) can run — class components can't use hooks
+    // directly, so we delegate the visible chrome to `<ErrorFallback />`.
+    return <ErrorFallback error={error} reset={this.reset} />;
   }
 }
 
-const styles = StyleSheet.create({
+interface ErrorFallbackProps {
+  error: Error;
+  reset: () => void;
+}
+
+function ErrorFallback({ error, reset }: ErrorFallbackProps) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.emoji}>⚠️</Text>
+        <Text style={styles.title}>Something went wrong</Text>
+        <Text style={styles.message} numberOfLines={6}>
+          {error.message || "An unexpected error occurred. Please try again."}
+        </Text>
+        <TouchableOpacity style={styles.button} onPress={reset} activeOpacity={0.7}>
+          <Text style={styles.buttonText}>Try again</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+}
+
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   scroll: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 },
   emoji: { fontSize: 56, marginBottom: 12 },

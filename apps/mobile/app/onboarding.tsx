@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useEffect } from "react";
+﻿import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -37,7 +37,7 @@ import {
 import type { ScoredProvider } from "@/lib/recommendation-engine";
 import { getLocalizedProviderDescription, getLocalizedProviderReason } from "@/lib/provider-localization";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { AddressAutocompleteField } from "@/components/address/address-autocomplete-field";
 import { Button } from "@/components/ui/Button";
@@ -127,6 +127,12 @@ const IMMIGRATION_STATUSES = [
 ];
 
 export default function OnboardingScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -1118,7 +1124,7 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   progressRow: { flexDirection: "row", justifyContent: "center", gap: 8, paddingTop: 16, paddingHorizontal: 20 },
   progressDot: { flex: 1, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.08)" },

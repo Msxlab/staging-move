@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Tabs } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,9 +10,15 @@ import {
   Menu,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 function TabBarBackground() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={StyleSheet.absoluteFill}>
       <View style={styles.tabBarFill} />
@@ -26,6 +32,12 @@ function TabBarBackground() {
 }
 
 export default function TabsLayout() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   return (
     <Tabs
@@ -90,7 +102,7 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   tabBar: {
     backgroundColor: theme.colors.card,
     borderTopWidth: 0,

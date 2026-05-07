@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { MailWarning } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
@@ -19,6 +19,9 @@ import { useAuthStore } from "@/lib/auth-store";
  *   - we have no `user` yet (auth still hydrating).
  */
 export function EmailVerificationBanner({ context }: { context?: string }) {
+  // theme: hook-injected styles
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const [sending, setSending] = useState(false);
@@ -63,7 +66,7 @@ export function EmailVerificationBanner({ context }: { context?: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   card: {
     flexDirection: "row",
     gap: 12,
