@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-04-24T17:08:05.691Z",
+  "generatedAt": "2026-05-07T02:55:52.459Z",
   "additions": [
     {
       "providerName": "MAX Transit",
@@ -2106,6 +2106,2390 @@
         "error": null
       },
       "status": "newly_added"
+    },
+    {
+      "providerName": "Anton Anderson Memorial Tunnel / Whittier Tunnel",
+      "states": [
+        "AK"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://dot.alaska.gov/creg/whittiertunnel/index.shtml",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 1 toll facility addition; corridor-scoped and not a statewide Alaska toll recommendation.",
+      "seedRecord": {
+        "name": "Anton Anderson Memorial Tunnel / Whittier Tunnel",
+        "slug": "whittier-tunnel-ak",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Whittier tunnel toll and vehicle access account/payment surface",
+        "website": "https://dot.alaska.gov/creg/whittiertunnel/index.shtml",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "996"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "toll",
+          "driving",
+          "whittier",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Anton Anderson Memorial Tunnel / Whittier Tunnel",
+        "slug": "whittier-tunnel-ak"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://dot.alaska.gov/creg/whittiertunnel/index.shtml",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Alabama Department of Revenue Motor Vehicle Division",
+      "states": [
+        "AL"
+      ],
+      "category": "GOVERNMENT_DMV",
+      "officialUrl": "https://www.revenue.alabama.gov/division/motor-vehicle/",
+      "coverageModel": "state",
+      "note": "Official Alabama motor vehicle registration and tax surface; complements the existing driver-license DMV row.",
+      "seedRecord": {
+        "name": "Alabama Department of Revenue Motor Vehicle Division",
+        "slug": "alabama-dor-motor-vehicle",
+        "category": "GOVERNMENT_DMV",
+        "description": "Official Alabama motor vehicle registration and address/account action surface",
+        "website": "https://www.revenue.alabama.gov/division/motor-vehicle/",
+        "states": [
+          "AL"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "dmv",
+          "vehicle-registration",
+          "government",
+          "alabama"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Alabama Department of Revenue Motor Vehicle Division",
+        "slug": "alabama-dor-motor-vehicle"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.revenue.alabama.gov/division/motor-vehicle/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Alabama Freedom Pass",
+      "states": [
+        "AL"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://freedompass.americanroads.com",
+      "coverageModel": "state",
+      "note": "Real toll pass account provider; state-scoped because the batch did not include reliable facility ZIPs.",
+      "seedRecord": {
+        "name": "Alabama Freedom Pass",
+        "slug": "alabama-freedom-pass",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Alabama toll pass account for transponder, vehicle, payment, and mailing details",
+        "website": "https://freedompass.americanroads.com",
+        "states": [
+          "AL"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "toll",
+          "transponder",
+          "driving",
+          "alabama"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Alabama Freedom Pass",
+        "slug": "alabama-freedom-pass"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://freedompass.americanroads.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "91 Express Lanes",
+      "states": [
+        "CA"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.91expresslanes.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real toll account provider; modeled only around the corridor ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "91 Express Lanes",
+        "slug": "91-express-lanes",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "91 Express Lanes toll account for transponder, vehicle, payment, and mailing details",
+        "website": "https://www.91expresslanes.com",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "925",
+          "928"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "toll",
+          "express-lanes",
+          "transponder",
+          "southern-california"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "91 Express Lanes",
+        "slug": "91-express-lanes"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.91expresslanes.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Metro ExpressLanes",
+      "states": [
+        "CA"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.metroexpresslanes.net",
+      "coverageModel": "zip_prefix",
+      "note": "Real toll account provider; modeled only around Los Angeles corridor ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "Metro ExpressLanes",
+        "slug": "metro-expresslanes",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Metro ExpressLanes toll account for transponder, vehicle, payment, and mailing details",
+        "website": "https://www.metroexpresslanes.net",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "900",
+          "905",
+          "907"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "toll",
+          "express-lanes",
+          "transponder",
+          "los-angeles"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Metro ExpressLanes",
+        "slug": "metro-expresslanes"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.metroexpresslanes.net",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "The Toll Roads",
+      "states": [
+        "CA"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.thetollroads.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real toll account provider; modeled only around Orange County corridor ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "The Toll Roads",
+        "slug": "the-toll-roads-orange-county",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Orange County toll road account for transponder, vehicle, payment, and mailing details",
+        "website": "https://www.thetollroads.com",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "926",
+          "927"
+        ],
+        "popularityScore": 74,
+        "tags": [
+          "toll",
+          "transponder",
+          "orange-county"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "The Toll Roads",
+        "slug": "the-toll-roads-orange-county"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.thetollroads.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "E-470 Public Highway Authority",
+      "states": [
+        "CO"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.e-470.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real toll account provider; modeled only around Denver-area corridor ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "E-470 Public Highway Authority",
+        "slug": "e-470",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "E-470 toll account for license plates, vehicles, payments, and mailing details",
+        "website": "https://www.e-470.com",
+        "states": [
+          "CO"
+        ],
+        "zipCodes": [
+          "800",
+          "801",
+          "802"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "toll",
+          "license-plate",
+          "denver"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "E-470 Public Highway Authority",
+        "slug": "e-470"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.e-470.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Northwest Parkway",
+      "states": [
+        "CO"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.nwpky.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real toll road account surface; modeled only around corridor ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "Northwest Parkway",
+        "slug": "northwest-parkway",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Northwest Parkway toll account and payment surface for vehicle and mailing details",
+        "website": "https://www.nwpky.com",
+        "states": [
+          "CO"
+        ],
+        "zipCodes": [
+          "800",
+          "803"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "toll",
+          "license-plate",
+          "broomfield"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Northwest Parkway",
+        "slug": "northwest-parkway"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.nwpky.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Access Health CT",
+      "states": [
+        "CT"
+      ],
+      "category": "GOVERNMENT_HEALTH",
+      "officialUrl": "https://www.accesshealthct.com",
+      "coverageModel": "zip_prefix",
+      "note": "Official Connecticut health marketplace account surface, modeled with Connecticut ZIP prefixes.",
+      "seedRecord": {
+        "name": "Access Health CT",
+        "slug": "access-health-ct",
+        "category": "GOVERNMENT_HEALTH",
+        "description": "Official Connecticut health marketplace account and address update portal",
+        "website": "https://www.accesshealthct.com",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "060",
+          "061",
+          "062",
+          "063",
+          "064",
+          "065",
+          "066",
+          "067",
+          "068",
+          "069"
+        ],
+        "popularityScore": 82,
+        "tags": [
+          "health",
+          "marketplace",
+          "government",
+          "connecticut"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Access Health CT",
+        "slug": "access-health-ct"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.accesshealthct.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "HUSKY Health",
+      "states": [
+        "CT"
+      ],
+      "category": "GOVERNMENT_HEALTH",
+      "officialUrl": "https://portal.ct.gov/HUSKY",
+      "coverageModel": "zip_prefix",
+      "note": "Official Connecticut Medicaid/HUSKY health account surface, modeled with Connecticut ZIP prefixes.",
+      "seedRecord": {
+        "name": "HUSKY Health",
+        "slug": "husky-health-ct",
+        "category": "GOVERNMENT_HEALTH",
+        "description": "Official Connecticut Medicaid and HUSKY Health account/address surface",
+        "website": "https://portal.ct.gov/HUSKY",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "060",
+          "061",
+          "062",
+          "063",
+          "064",
+          "065",
+          "066",
+          "067",
+          "068",
+          "069"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "medicaid",
+          "health",
+          "government",
+          "connecticut"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "HUSKY Health",
+        "slug": "husky-health-ct"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://portal.ct.gov/HUSKY",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Connecticut Department of Revenue Services",
+      "states": [
+        "CT"
+      ],
+      "category": "GOVERNMENT_TAX",
+      "officialUrl": "https://portal.ct.gov/DRS",
+      "coverageModel": "zip_prefix",
+      "note": "Official Connecticut tax account/address surface, modeled with Connecticut ZIP prefixes.",
+      "seedRecord": {
+        "name": "Connecticut Department of Revenue Services",
+        "slug": "ct-drs",
+        "category": "GOVERNMENT_TAX",
+        "description": "Official Connecticut tax account and address update surface",
+        "website": "https://portal.ct.gov/DRS",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "060",
+          "061",
+          "062",
+          "063",
+          "064",
+          "065",
+          "066",
+          "067",
+          "068",
+          "069"
+        ],
+        "popularityScore": 74,
+        "tags": [
+          "tax",
+          "government",
+          "connecticut"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Connecticut Department of Revenue Services",
+        "slug": "ct-drs"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://portal.ct.gov/DRS",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "DC Health Link",
+      "states": [
+        "DC"
+      ],
+      "category": "GOVERNMENT_HEALTH",
+      "officialUrl": "https://www.dchealthlink.com",
+      "coverageModel": "zip_prefix",
+      "note": "Official DC health marketplace account surface, modeled with District ZIP prefixes.",
+      "seedRecord": {
+        "name": "DC Health Link",
+        "slug": "dc-health-link",
+        "category": "GOVERNMENT_HEALTH",
+        "description": "Official DC health marketplace account and address update portal",
+        "website": "https://www.dchealthlink.com",
+        "states": [
+          "DC"
+        ],
+        "zipCodes": [
+          "200",
+          "202",
+          "203",
+          "204",
+          "205"
+        ],
+        "popularityScore": 80,
+        "tags": [
+          "health",
+          "marketplace",
+          "government",
+          "dc"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "DC Health Link",
+        "slug": "dc-health-link"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.dchealthlink.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "District Direct",
+      "states": [
+        "DC"
+      ],
+      "category": "GOVERNMENT_HEALTH",
+      "officialUrl": "https://districtdirect.dc.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Official DC benefits account portal, modeled with District ZIP prefixes.",
+      "seedRecord": {
+        "name": "District Direct",
+        "slug": "dc-district-direct",
+        "category": "GOVERNMENT_HEALTH",
+        "description": "Official DC benefits and health account portal for profile and address updates",
+        "website": "https://districtdirect.dc.gov",
+        "states": [
+          "DC"
+        ],
+        "zipCodes": [
+          "200",
+          "202",
+          "203",
+          "204",
+          "205"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "benefits",
+          "health",
+          "medicaid",
+          "government",
+          "dc"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "District Direct",
+        "slug": "dc-district-direct"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://districtdirect.dc.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "MyTax.DC.gov",
+      "states": [
+        "DC"
+      ],
+      "category": "GOVERNMENT_TAX",
+      "officialUrl": "https://mytax.dc.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Official DC tax account portal, modeled with District ZIP prefixes.",
+      "seedRecord": {
+        "name": "MyTax.DC.gov",
+        "slug": "mytax-dc",
+        "category": "GOVERNMENT_TAX",
+        "description": "Official DC tax account and mailing address update portal",
+        "website": "https://mytax.dc.gov",
+        "states": [
+          "DC"
+        ],
+        "zipCodes": [
+          "200",
+          "202",
+          "203",
+          "204",
+          "205"
+        ],
+        "popularityScore": 76,
+        "tags": [
+          "tax",
+          "government",
+          "dc"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "MyTax.DC.gov",
+        "slug": "mytax-dc"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://mytax.dc.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Delaware Medicaid / ASSIST",
+      "states": [
+        "DE"
+      ],
+      "category": "GOVERNMENT_HEALTH",
+      "officialUrl": "https://assist.dhss.delaware.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Official Delaware benefits and Medicaid account surface, modeled with Delaware ZIP prefixes.",
+      "seedRecord": {
+        "name": "Delaware Medicaid / ASSIST",
+        "slug": "delaware-medicaid-assist",
+        "category": "GOVERNMENT_HEALTH",
+        "description": "Official Delaware Medicaid and benefits account/address portal",
+        "website": "https://assist.dhss.delaware.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "197",
+          "198",
+          "199"
+        ],
+        "popularityScore": 76,
+        "tags": [
+          "medicaid",
+          "benefits",
+          "health",
+          "government",
+          "delaware"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Delaware Medicaid / ASSIST",
+        "slug": "delaware-medicaid-assist"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://assist.dhss.delaware.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Delaware Taxpayer Portal",
+      "states": [
+        "DE"
+      ],
+      "category": "GOVERNMENT_TAX",
+      "officialUrl": "https://tax.delaware.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Official Delaware taxpayer account surface, modeled with Delaware ZIP prefixes.",
+      "seedRecord": {
+        "name": "Delaware Taxpayer Portal",
+        "slug": "delaware-taxpayer-portal",
+        "category": "GOVERNMENT_TAX",
+        "description": "Official Delaware taxpayer account and address update portal",
+        "website": "https://tax.delaware.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "197",
+          "198",
+          "199"
+        ],
+        "popularityScore": 74,
+        "tags": [
+          "tax",
+          "government",
+          "delaware"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Delaware Taxpayer Portal",
+        "slug": "delaware-taxpayer-portal"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://tax.delaware.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Delaware E-ZPass",
+      "states": [
+        "DE"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.ezpassde.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real Delaware toll account provider; US 301 toll-by-plate row is folded into this account surface.",
+      "seedRecord": {
+        "name": "Delaware E-ZPass",
+        "slug": "delaware-ezpass",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Delaware E-ZPass toll account for transponder, vehicle, payment, and mailing details",
+        "website": "https://www.ezpassde.com",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "197",
+          "198",
+          "199"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "toll",
+          "ezpass",
+          "transponder",
+          "delaware"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Delaware E-ZPass",
+        "slug": "delaware-ezpass"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.ezpassde.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Florida KidCare",
+      "states": [
+        "FL"
+      ],
+      "category": "GOVERNMENT_HEALTH",
+      "officialUrl": "https://www.floridakidcare.org",
+      "coverageModel": "zip_prefix",
+      "note": "Official Florida child health insurance account surface, modeled with Florida ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "Florida KidCare",
+        "slug": "florida-kidcare",
+        "category": "GOVERNMENT_HEALTH",
+        "description": "Official Florida child health insurance account and address update surface",
+        "website": "https://www.floridakidcare.org",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "320",
+          "321",
+          "322",
+          "323",
+          "324",
+          "325",
+          "326",
+          "327",
+          "328",
+          "329",
+          "330",
+          "331",
+          "332",
+          "333",
+          "334",
+          "335",
+          "336",
+          "337",
+          "338",
+          "339",
+          "341",
+          "342",
+          "344",
+          "346",
+          "347",
+          "349"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "health",
+          "children",
+          "government",
+          "florida"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Florida KidCare",
+        "slug": "florida-kidcare"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.floridakidcare.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Florida Medicaid / MyACCESS",
+      "states": [
+        "FL"
+      ],
+      "category": "GOVERNMENT_HEALTH",
+      "officialUrl": "https://myaccess.myflfamilies.com",
+      "coverageModel": "zip_prefix",
+      "note": "Official Florida benefits/Medicaid account surface, modeled with Florida ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "Florida Medicaid / MyACCESS",
+        "slug": "florida-myaccess-medicaid",
+        "category": "GOVERNMENT_HEALTH",
+        "description": "Official Florida benefits and Medicaid account/address portal",
+        "website": "https://myaccess.myflfamilies.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "320",
+          "321",
+          "322",
+          "323",
+          "324",
+          "325",
+          "326",
+          "327",
+          "328",
+          "329",
+          "330",
+          "331",
+          "332",
+          "333",
+          "334",
+          "335",
+          "336",
+          "337",
+          "338",
+          "339",
+          "341",
+          "342",
+          "344",
+          "346",
+          "347",
+          "349"
+        ],
+        "popularityScore": 82,
+        "tags": [
+          "medicaid",
+          "benefits",
+          "health",
+          "government",
+          "florida"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Florida Medicaid / MyACCESS",
+        "slug": "florida-myaccess-medicaid"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://myaccess.myflfamilies.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Florida DOR e-Services",
+      "states": [
+        "FL"
+      ],
+      "category": "GOVERNMENT_TAX",
+      "officialUrl": "https://floridarevenue.com",
+      "coverageModel": "zip_prefix",
+      "note": "Official Florida tax e-services account surface, modeled with Florida ZIP prefixes from Batch 1.",
+      "seedRecord": {
+        "name": "Florida DOR e-Services",
+        "slug": "florida-dor-eservices",
+        "category": "GOVERNMENT_TAX",
+        "description": "Official Florida Department of Revenue tax e-services account portal",
+        "website": "https://floridarevenue.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "320",
+          "321",
+          "322",
+          "323",
+          "324",
+          "325",
+          "326",
+          "327",
+          "328",
+          "329",
+          "330",
+          "331",
+          "332",
+          "333",
+          "334",
+          "335",
+          "336",
+          "337",
+          "338",
+          "339",
+          "341",
+          "342",
+          "344",
+          "346",
+          "347",
+          "349"
+        ],
+        "popularityScore": 76,
+        "tags": [
+          "tax",
+          "government",
+          "florida"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Florida DOR e-Services",
+        "slug": "florida-dor-eservices"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://floridarevenue.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "E-PASS / Central Florida Expressway Authority",
+      "states": [
+        "FL"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.cfxway.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real Central Florida toll account provider; modeled around Batch 1 corridor ZIP prefixes.",
+      "seedRecord": {
+        "name": "E-PASS / Central Florida Expressway Authority",
+        "slug": "epass-cfx",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Central Florida E-PASS toll account for transponder, vehicle, payment, and mailing details",
+        "website": "https://www.cfxway.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "327",
+          "328",
+          "347"
+        ],
+        "popularityScore": 76,
+        "tags": [
+          "toll",
+          "epass",
+          "transponder",
+          "central-florida"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "E-PASS / Central Florida Expressway Authority",
+        "slug": "epass-cfx"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.cfxway.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Greater Miami Expressway Agency",
+      "states": [
+        "FL"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.gmx-way.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real Miami-area toll account/payment provider; modeled around Batch 1 corridor ZIP prefixes.",
+      "seedRecord": {
+        "name": "Greater Miami Expressway Agency",
+        "slug": "greater-miami-expressway-agency",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Miami-area toll account and payment surface for vehicle and mailing details",
+        "website": "https://www.gmx-way.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "330",
+          "331",
+          "332"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "toll",
+          "miami",
+          "expressway"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Greater Miami Expressway Agency",
+        "slug": "greater-miami-expressway-agency"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.gmx-way.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "I-4 Express",
+      "states": [
+        "FL"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://i4express.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real I-4 Express toll account/payment provider; modeled around Batch 1 corridor ZIP prefixes.",
+      "seedRecord": {
+        "name": "I-4 Express",
+        "slug": "i4-express",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "I-4 Express toll account and payment surface for vehicle and mailing details",
+        "website": "https://i4express.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "327",
+          "328"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "toll",
+          "express-lanes",
+          "orlando"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "I-4 Express",
+        "slug": "i4-express"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://i4express.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Tampa Hillsborough Expressway Authority",
+      "states": [
+        "FL"
+      ],
+      "category": "TRANSPORTATION_TOLL",
+      "officialUrl": "https://www.tampa-xway.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real Tampa-area toll account/payment provider; modeled around Batch 1 corridor ZIP prefixes.",
+      "seedRecord": {
+        "name": "Tampa Hillsborough Expressway Authority",
+        "slug": "tampa-hillsborough-expressway-authority",
+        "category": "TRANSPORTATION_TOLL",
+        "description": "Tampa-area expressway toll account and payment surface for vehicle and mailing details",
+        "website": "https://www.tampa-xway.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "335",
+          "336"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "toll",
+          "tampa",
+          "expressway"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Tampa Hillsborough Expressway Authority",
+        "slug": "tampa-hillsborough-expressway-authority"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.tampa-xway.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Alaska Electric Light and Power",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.aelp.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric utility; modeled with Juneau-area ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Alaska Electric Light and Power",
+        "slug": "alaska-electric-light-power",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Juneau-area electric utility account; confirm service availability by address",
+        "website": "https://www.aelp.com",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "998"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "electric",
+          "utility",
+          "juneau",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Alaska Electric Light and Power",
+        "slug": "alaska-electric-light-power"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.aelp.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Golden Valley Electric Association",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.gvea.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric utility; modeled with cautious AK 997 ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Golden Valley Electric Association",
+        "slug": "golden-valley-electric-association",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Interior Alaska electric utility account; confirm service availability by address",
+        "website": "https://www.gvea.com",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "997"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "electric",
+          "utility",
+          "fairbanks",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Golden Valley Electric Association",
+        "slug": "golden-valley-electric-association"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.gvea.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Homer Electric Association",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.homerelectric.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric utility; modeled with cautious AK 996 ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Homer Electric Association",
+        "slug": "homer-electric-association",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Kenai Peninsula electric utility account; confirm service availability by address",
+        "website": "https://www.homerelectric.com",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "996"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "electric",
+          "utility",
+          "kenai",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Homer Electric Association",
+        "slug": "homer-electric-association"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.homerelectric.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Ketchikan Public Utilities Electric",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.ketchikan.gov/ketchikan-public-utilities",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with Ketchikan-area ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Ketchikan Public Utilities Electric",
+        "slug": "ketchikan-public-utilities-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Ketchikan municipal electric utility account; confirm service availability by address",
+        "website": "https://www.ketchikan.gov/ketchikan-public-utilities",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "999"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "ketchikan",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Ketchikan Public Utilities Electric",
+        "slug": "ketchikan-public-utilities-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.ketchikan.gov/ketchikan-public-utilities",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Matanuska Electric Association",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.mea.coop",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric cooperative; modeled with cautious AK 995/996 ZIP prefixes and address confirmation language.",
+      "seedRecord": {
+        "name": "Matanuska Electric Association",
+        "slug": "matanuska-electric-association",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Matanuska-Susitna electric utility account; confirm service availability by address",
+        "website": "https://www.mea.coop",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "995",
+          "996"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "electric",
+          "cooperative",
+          "matanuska",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Matanuska Electric Association",
+        "slug": "matanuska-electric-association"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.mea.coop",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Interior Gas Utility",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.interiorgas.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real gas utility; modeled with cautious AK 997 ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Interior Gas Utility",
+        "slug": "interior-gas-utility",
+        "category": "UTILITY_GAS",
+        "description": "Interior Alaska natural gas utility account; confirm service availability by address",
+        "website": "https://www.interiorgas.com",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "997"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "gas",
+          "utility",
+          "fairbanks",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Interior Gas Utility",
+        "slug": "interior-gas-utility"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.interiorgas.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Decatur Utilities Electric",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.decaturutilities.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with Decatur-area ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Decatur Utilities Electric",
+        "slug": "decatur-utilities-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Decatur municipal electric utility account; confirm service availability by address",
+        "website": "https://www.decaturutilities.com",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "356"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "decatur",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Decatur Utilities Electric",
+        "slug": "decatur-utilities-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.decaturutilities.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Huntsville Utilities Electric",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.hsvutil.org",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal utility; gas duplicate is folded into this single provider row.",
+      "seedRecord": {
+        "name": "Huntsville Utilities",
+        "slug": "huntsville-utilities-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Huntsville electric, gas, and water utility account; confirm service availability by address",
+        "website": "https://www.hsvutil.org",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "357",
+          "358"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "electric",
+          "gas",
+          "water",
+          "municipal-utility",
+          "huntsville",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Huntsville Utilities",
+        "slug": "huntsville-utilities-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.hsvutil.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Conway Corp Electric",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.conwaycorp.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with Conway-area ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Conway Corp Electric",
+        "slug": "conway-corp-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Conway municipal electric utility account; confirm service availability by address",
+        "website": "https://www.conwaycorp.com",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "720"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "conway",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Conway Corp Electric",
+        "slug": "conway-corp-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.conwaycorp.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "North Little Rock Electric",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://nlrelectric.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with North Little Rock ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "North Little Rock Electric",
+        "slug": "north-little-rock-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "North Little Rock municipal electric utility account; confirm service availability by address",
+        "website": "https://nlrelectric.com",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "721"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "north-little-rock",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "North Little Rock Electric",
+        "slug": "north-little-rock-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://nlrelectric.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Southwestern Electric Power Company (SWEPCO)",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.swepco.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric utility; modeled with cautious Arkansas ZIP prefixes and address confirmation language.",
+      "seedRecord": {
+        "name": "Southwestern Electric Power Company (SWEPCO)",
+        "slug": "swepco-ar",
+        "category": "UTILITY_ELECTRIC",
+        "description": "SWEPCO electric utility account in Arkansas; confirm service availability by address",
+        "website": "https://www.swepco.com",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "718",
+          "727"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "electric",
+          "utility",
+          "swepco",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Southwestern Electric Power Company (SWEPCO)",
+        "slug": "swepco-ar"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.swepco.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Arkansas Oklahoma Gas",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.aogc.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real gas utility; modeled with cautious western Arkansas ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Arkansas Oklahoma Gas",
+        "slug": "arkansas-oklahoma-gas",
+        "category": "UTILITY_GAS",
+        "description": "Arkansas Oklahoma Gas account; confirm service availability by address",
+        "website": "https://www.aogc.com",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "729"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "gas",
+          "utility",
+          "western-arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Arkansas Oklahoma Gas",
+        "slug": "arkansas-oklahoma-gas"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.aogc.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Tucson Electric Power",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.tep.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric utility; modeled with Tucson-area ZIP prefixes and address confirmation language.",
+      "seedRecord": {
+        "name": "Tucson Electric Power",
+        "slug": "tucson-electric-power",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Tucson-area electric utility account; confirm service availability by address",
+        "website": "https://www.tep.com",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "856",
+          "857"
+        ],
+        "popularityScore": 78,
+        "tags": [
+          "electric",
+          "utility",
+          "tucson",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Tucson Electric Power",
+        "slug": "tucson-electric-power"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.tep.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "UniSource Energy Services Electric",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.uesaz.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real utility account provider; gas duplicate is folded into this single provider row.",
+      "seedRecord": {
+        "name": "UniSource Energy Services",
+        "slug": "unisource-electric-az",
+        "category": "UTILITY_ELECTRIC",
+        "description": "UniSource electric and natural gas utility account; confirm service availability by address",
+        "website": "https://www.uesaz.com",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "856",
+          "864"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "electric",
+          "gas",
+          "utility",
+          "arizona",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "UniSource Energy Services",
+        "slug": "unisource-electric-az"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.uesaz.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Sacramento Municipal Utility District",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.smud.org",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric utility; modeled with cautious Sacramento-area ZIP prefixes and address confirmation language.",
+      "seedRecord": {
+        "name": "Sacramento Municipal Utility District",
+        "slug": "smud",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Sacramento-area electric utility account; confirm service availability by address",
+        "website": "https://www.smud.org",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "956",
+          "957",
+          "958"
+        ],
+        "popularityScore": 84,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "sacramento",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Sacramento Municipal Utility District",
+        "slug": "smud"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.smud.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Jewett City Department of Public Utilities",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.jewettcitydpu.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with CT 063 ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Jewett City Department of Public Utilities",
+        "slug": "jewett-city-dpu-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Jewett City municipal electric utility account; confirm service availability by address",
+        "website": "https://www.jewettcitydpu.com",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "063"
+        ],
+        "popularityScore": 54,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "jewett-city",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Jewett City Department of Public Utilities",
+        "slug": "jewett-city-dpu-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.jewettcitydpu.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Norwich Public Utilities",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://norwichpublicutilities.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal utility; modeled with CT 063 ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Norwich Public Utilities",
+        "slug": "norwich-public-utilities-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Norwich municipal utility account; confirm service availability by address",
+        "website": "https://norwichpublicutilities.com",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "063"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "norwich",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Norwich Public Utilities",
+        "slug": "norwich-public-utilities-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://norwichpublicutilities.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Wallingford Electric Division",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.wallingfordct.gov/government/departments/electric-division/",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with CT 064 ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Wallingford Electric Division",
+        "slug": "wallingford-electric-division",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Wallingford municipal electric utility account; confirm service availability by address",
+        "website": "https://www.wallingfordct.gov/government/departments/electric-division/",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "064"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "wallingford",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Wallingford Electric Division",
+        "slug": "wallingford-electric-division"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.wallingfordct.gov/government/departments/electric-division/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Dover Electric Department",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.cityofdover.gov/Public-Utilities/",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with exact Dover ZIPs from Batch 1 and address confirmation language.",
+      "seedRecord": {
+        "name": "City of Dover Electric Department",
+        "slug": "city-of-dover-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Dover municipal electric utility account; confirm service availability by address",
+        "website": "https://www.cityofdover.gov/Public-Utilities/",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "19901",
+          "19904"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "dover",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Dover Electric Department",
+        "slug": "city-of-dover-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.cityofdover.gov/Public-Utilities/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Milford Electric",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.cityofmilford.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with exact Milford ZIP from Batch 1 and address confirmation language.",
+      "seedRecord": {
+        "name": "City of Milford Electric",
+        "slug": "city-of-milford-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Milford municipal electric utility account; confirm service availability by address",
+        "website": "https://www.cityofmilford.com",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "19963"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "milford",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Milford Electric",
+        "slug": "city-of-milford-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.cityofmilford.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Newark Electric",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://newarkde.gov/18/Electrical-Engineering",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with exact Newark ZIPs from Batch 1 and address confirmation language.",
+      "seedRecord": {
+        "name": "City of Newark Electric",
+        "slug": "city-of-newark-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Newark municipal electric utility account; confirm service availability by address",
+        "website": "https://newarkde.gov/18/Electrical-Engineering",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "19711",
+          "19713",
+          "19716",
+          "19717"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "newark",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Newark Electric",
+        "slug": "city-of-newark-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://newarkde.gov/18/Electrical-Engineering",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Delaware Electric Cooperative",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.delaware.coop",
+      "coverageModel": "zip_prefix",
+      "note": "Real electric cooperative; modeled with cautious DE 199 ZIP prefix and address confirmation language.",
+      "seedRecord": {
+        "name": "Delaware Electric Cooperative",
+        "slug": "delaware-electric-cooperative",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Delaware Electric Cooperative account; confirm service availability by address",
+        "website": "https://www.delaware.coop",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "199"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "electric",
+          "cooperative",
+          "delaware",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Delaware Electric Cooperative",
+        "slug": "delaware-electric-cooperative"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.delaware.coop",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Lewes Board of Public Works Electric",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.lewesbpwde.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with exact Lewes ZIP from Batch 1 and address confirmation language.",
+      "seedRecord": {
+        "name": "Lewes Board of Public Works Electric",
+        "slug": "lewes-bpw-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Lewes Board of Public Works electric account; confirm service availability by address",
+        "website": "https://www.lewesbpwde.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "19958"
+        ],
+        "popularityScore": 56,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "lewes",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Lewes Board of Public Works Electric",
+        "slug": "lewes-bpw-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.lewesbpwde.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Municipal Services Commission of the City of New Castle Electric",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://newcastlemsc.delaware.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with exact New Castle ZIP from Batch 1 and address confirmation language.",
+      "seedRecord": {
+        "name": "Municipal Services Commission of the City of New Castle Electric",
+        "slug": "new-castle-msc-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "New Castle municipal electric account; confirm service availability by address",
+        "website": "https://newcastlemsc.delaware.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "19720"
+        ],
+        "popularityScore": 56,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "new-castle",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Municipal Services Commission of the City of New Castle Electric",
+        "slug": "new-castle-msc-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://newcastlemsc.delaware.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Town of Middletown Electric",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://www.middletown.delaware.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with exact Middletown ZIPs from Batch 1 and address confirmation language.",
+      "seedRecord": {
+        "name": "Town of Middletown Electric",
+        "slug": "town-of-middletown-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Middletown municipal electric account; confirm service availability by address",
+        "website": "https://www.middletown.delaware.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "19709",
+          "19734"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "middletown",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Town of Middletown Electric",
+        "slug": "town-of-middletown-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.middletown.delaware.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Town of Smyrna Electric",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_ELECTRIC",
+      "officialUrl": "https://smyrna.delaware.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Real municipal electric utility; modeled with exact Smyrna ZIP from Batch 1 and address confirmation language.",
+      "seedRecord": {
+        "name": "Town of Smyrna Electric",
+        "slug": "town-of-smyrna-electric",
+        "category": "UTILITY_ELECTRIC",
+        "description": "Smyrna municipal electric account; confirm service availability by address",
+        "website": "https://smyrna.delaware.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "19977"
+        ],
+        "popularityScore": 56,
+        "tags": [
+          "electric",
+          "municipal-utility",
+          "smyrna",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Town of Smyrna Electric",
+        "slug": "town-of-smyrna-electric"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://smyrna.delaware.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Florida City Gas",
+      "states": [
+        "FL"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://www.floridacitygas.com",
+      "coverageModel": "zip_prefix",
+      "note": "Real gas utility; modeled with cautious South Florida ZIP prefixes and address confirmation language.",
+      "seedRecord": {
+        "name": "Florida City Gas",
+        "slug": "florida-city-gas",
+        "category": "UTILITY_GAS",
+        "description": "South Florida natural gas utility account; confirm service availability by address",
+        "website": "https://www.floridacitygas.com",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "330",
+          "331",
+          "332",
+          "333",
+          "334",
+          "349"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "gas",
+          "utility",
+          "south-florida",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Florida City Gas",
+        "slug": "florida-city-gas"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.floridacitygas.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
     }
   ],
   "backlog": [
@@ -2138,15 +4522,15 @@
         "CT"
       ],
       "category": "UTILITY_GAS",
-      "officialUrl": "https://portal.ct.gov/pura/gas/gas",
+      "officialUrl": "https://www.cngcorp.com",
       "coverageModel": "zip_prefix",
-      "note": "Connecticut Natural Gas is an official Connecticut PURA-listed utility gap; left catalog-only until we materialize cleaner territory ZIPs.",
+      "note": "Connecticut Natural Gas is a real utility account provider, but remains catalog-only until cleaner service-area ZIPs are confirmed.",
       "rawSeedMatch": null,
       "mergedSeedMatch": null,
       "validation": {
         "status": "ok",
         "httpStatus": 200,
-        "finalUrl": "https://portal.ct.gov/pura/gas/gas",
+        "finalUrl": "https://www.cngcorp.com",
         "title": null,
         "error": null
       },
@@ -2207,6 +4591,46 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://www.expresspass.utah.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "catalog_backlog"
+    },
+    {
+      "providerName": "Southeast Gas",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://southeastgas.com",
+      "coverageModel": "live_address",
+      "note": "Real gas utility from Batch 1, but the candidate had unknown territory; catalog-only until ZIP/service-area confirmation.",
+      "rawSeedMatch": null,
+      "mergedSeedMatch": null,
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://southeastgas.com",
+        "title": null,
+        "error": null
+      },
+      "status": "catalog_backlog"
+    },
+    {
+      "providerName": "Summit Utilities Arkansas",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_GAS",
+      "officialUrl": "https://summitutilities.com",
+      "coverageModel": "live_address",
+      "note": "Real gas utility from Batch 1, but the candidate had unknown territory; catalog-only until ZIP/service-area confirmation.",
+      "rawSeedMatch": null,
+      "mergedSeedMatch": null,
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://summitutilities.com",
         "title": null,
         "error": null
       },

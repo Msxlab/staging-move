@@ -837,7 +837,7 @@ export const STATE_PROVIDERS = [
   // PR-E: COVERAGE GAP FILLS — ELECTRIC (2026-04-17)
   // Fills gaps flagged by scripts/audit-provider-coverage.ts
   // ══════════════════════════════════════════════════════════
-  { name: "Delmarva Power", slug: "delmarva-power-de", category: "UTILITY_ELECTRIC", description: "Electric utility for Delaware and eastern shore Maryland", website: "https://www.delmarva.com", phone: "1-800-375-7117", scope: "STATE", states: ["DE", "MD"], popularityScore: 85, tags: ["electric"] },
+  { name: "Delmarva Power", slug: "delmarva-power-de", category: "UTILITY_ELECTRIC", description: "Electric and natural gas utility account for Delaware and eastern shore Maryland", website: "https://www.delmarva.com", phone: "1-800-375-7117", scope: "STATE", states: ["DE", "MD"], popularityScore: 85, tags: ["electric", "gas"] },
   { name: "Mississippi Power", slug: "mississippi-power", category: "UTILITY_ELECTRIC", description: "Electric utility for southeast Mississippi", website: "https://www.mississippipower.com", phone: "1-800-532-1502", scope: "STATE", states: ["MS"], popularityScore: 86, tags: ["electric"] },
   { name: "Entergy Mississippi", slug: "entergy-ms", category: "UTILITY_ELECTRIC", description: "Electric utility for west-central Mississippi", website: "https://www.entergy-mississippi.com", phone: "1-800-368-3749", scope: "STATE", states: ["MS"], popularityScore: 82, tags: ["electric"] },
   { name: "PNM", slug: "pnm-nm", category: "UTILITY_ELECTRIC", description: "Public Service Company of New Mexico", website: "https://www.pnm.com", phone: "1-888-342-5766", scope: "STATE", states: ["NM"], popularityScore: 88, tags: ["electric"] },

@@ -1,0 +1,422 @@
+/* =========================================================================
+   LocateFlow Admin · AURORA
+   Glass / Frost evolution: aurora background + multi-pane shell + glass cards.
+   Scoped to `.adm-aurora`. Theme follows next-themes' `.dark` class on <html>.
+   Ported from the design handoff at aurora/aurora.css.
+   ========================================================================= */
+
+.adm-aurora {
+  /* Default (dark) palette */
+  --au-ink:       #ECF1F8;
+  --au-ink-2:     #A8B5C9;
+  --au-ink-3:     #6E7C92;
+  --au-ink-4:     #4C586D;
+
+  --au-base:      #0A0F18;
+  --au-base-2:    #0E1521;
+  --au-base-3:    #131C2C;
+  --au-pane:      rgba(255, 255, 255, 0.03);
+  --au-pane-2:    rgba(255, 255, 255, 0.05);
+  --au-pane-3:    rgba(255, 255, 255, 0.08);
+
+  --au-edge:      rgba(255, 255, 255, 0.10);
+  --au-edge-2:    rgba(255, 255, 255, 0.05);
+  --au-rule:      rgba(255, 255, 255, 0.06);
+  --au-rule-2:    rgba(255, 255, 255, 0.10);
+
+  --au-cool:      #7FB6E8;
+  --au-cool-2:    #5C9DDC;
+  --au-cool-soft: rgba(127, 182, 232, 0.14);
+  --au-violet:    #B49BFF;
+  --au-violet-soft: rgba(180, 155, 255, 0.14);
+  --au-mint:      #87DDC0;
+  --au-mint-soft: rgba(135, 221, 192, 0.14);
+  --au-amber:     #F2C46C;
+  --au-amber-soft:rgba(242, 196, 108, 0.14);
+  --au-coral:     #F08C8E;
+  --au-coral-soft:rgba(240, 140, 142, 0.16);
+  --au-rose:      #F0A0B8;
+
+  --au-aurora-1:  rgba(127, 182, 232, 0.18);
+  --au-aurora-2:  rgba(180, 155, 255, 0.12);
+  --au-aurora-3:  rgba(135, 221, 192, 0.10);
+  --au-aurora-4:  rgba(240, 160, 184, 0.08);
+
+  --au-row: 44px;
+  --au-pad: 16px;
+  --au-gap: 16px;
+
+  position: relative;
+  letter-spacing: -0.005em;
+}
+
+/* Light theme — drives off next-themes' absence of `.dark` on <html>. */
+html:not(.dark) .adm-aurora {
+  --au-ink:       #14202F;
+  --au-ink-2:     #4A5C75;
+  --au-ink-3:     #7A8A9F;
+  --au-ink-4:     #ABB6C5;
+  --au-base:      #F2F4F8;
+  --au-base-2:    #EAEEF4;
+  --au-base-3:    #E2E7EE;
+  --au-pane:      rgba(255, 255, 255, 0.55);
+  --au-pane-2:    rgba(255, 255, 255, 0.75);
+  --au-pane-3:    rgba(255, 255, 255, 0.92);
+  --au-edge:      rgba(255, 255, 255, 0.95);
+  --au-edge-2:    rgba(20, 32, 47, 0.06);
+  --au-rule:      rgba(20, 32, 47, 0.08);
+  --au-rule-2:    rgba(20, 32, 47, 0.14);
+
+  --au-cool:      #2D7BC4;
+  --au-cool-2:    #1F5FA0;
+  --au-cool-soft: rgba(45, 123, 196, 0.12);
+  --au-violet:    #6F58C7;
+  --au-violet-soft: rgba(111, 88, 199, 0.10);
+  --au-mint:      #2E9B79;
+  --au-mint-soft: rgba(46, 155, 121, 0.10);
+  --au-amber:     #B98318;
+  --au-amber-soft:rgba(185, 131, 24, 0.10);
+  --au-coral:     #C84E51;
+  --au-coral-soft:rgba(200, 78, 81, 0.10);
+
+  --au-aurora-1:  rgba(45, 123, 196, 0.18);
+  --au-aurora-2:  rgba(111, 88, 199, 0.14);
+  --au-aurora-3:  rgba(46, 155, 121, 0.10);
+  --au-aurora-4:  rgba(200, 78, 81, 0.06);
+}
+
+/* Density variants */
+.adm-aurora[data-density="compact"] { --au-row: 36px; --au-pad: 12px; --au-gap: 12px; }
+.adm-aurora[data-density="roomy"]   { --au-row: 52px; --au-pad: 20px; --au-gap: 20px; }
+
+/* "Lite" mode — calmer aurora, less translucency */
+.adm-aurora[data-mode="lite"] {
+  --au-pane:    rgba(20, 28, 40, 0.55);
+  --au-pane-2:  rgba(20, 28, 40, 0.65);
+  --au-pane-3:  rgba(28, 38, 56, 0.75);
+}
+html:not(.dark) .adm-aurora[data-mode="lite"] {
+  --au-pane:    rgba(255, 255, 255, 0.85);
+  --au-pane-2:  rgba(255, 255, 255, 0.92);
+  --au-pane-3:  #FFFFFF;
+}
+.adm-aurora[data-mode="lite"] .au-aurora { opacity: 0.4; }
+.adm-aurora[data-mode="lite"] .au-grain  { opacity: 0.2; }
+
+/* === Aurora background ============================================ */
+.adm-aurora .au-aurora {
+  position: fixed; inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(60px) saturate(140%);
+}
+.adm-aurora .au-aurora__layer {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+.adm-aurora .au-aurora__layer.l1 {
+  width: 70%; height: 70%; top: -10%; left: -15%;
+  background: radial-gradient(circle, var(--au-aurora-1), transparent 60%);
+  animation: au-drift-1 32s ease-in-out infinite;
+}
+.adm-aurora .au-aurora__layer.l2 {
+  width: 60%; height: 60%; top: 15%; right: -10%;
+  background: radial-gradient(circle, var(--au-aurora-2), transparent 60%);
+  animation: au-drift-2 38s ease-in-out infinite;
+}
+.adm-aurora .au-aurora__layer.l3 {
+  width: 55%; height: 55%; bottom: -15%; left: 25%;
+  background: radial-gradient(circle, var(--au-aurora-3), transparent 60%);
+  animation: au-drift-3 44s ease-in-out infinite;
+}
+.adm-aurora .au-aurora__layer.l4 {
+  width: 40%; height: 40%; top: 40%; right: 20%;
+  background: radial-gradient(circle, var(--au-aurora-4), transparent 65%);
+  animation: au-drift-4 28s ease-in-out infinite;
+}
+
+@keyframes au-drift-1 {
+  0%,100% { transform: translate(0%, 0%) scale(1);    opacity: 0.85; }
+  33%     { transform: translate(8%, 4%) scale(1.08); opacity: 1;    }
+  66%     { transform: translate(-4%, 10%) scale(0.95); opacity: 0.75; }
+}
+@keyframes au-drift-2 {
+  0%,100% { transform: translate(0%, 0%) scale(1);    opacity: 0.7; }
+  50%     { transform: translate(-10%, 6%) scale(1.12); opacity: 1; }
+}
+@keyframes au-drift-3 {
+  0%,100% { transform: translate(0%, 0%) scale(1);    opacity: 0.6; }
+  40%     { transform: translate(6%, -8%) scale(1.06); opacity: 0.9; }
+  80%     { transform: translate(-8%, 4%) scale(0.94); opacity: 0.75; }
+}
+@keyframes au-drift-4 {
+  0%,100% { transform: translate(0%, 0%) scale(1);    opacity: 0.5; }
+  50%     { transform: translate(4%, -6%) scale(1.15); opacity: 0.8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .au-aurora__layer { animation: none !important; }
+}
+
+/* Fine grain noise — adds the "real glass" feel */
+.adm-aurora .au-grain {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  opacity: 0.5; mix-blend-mode: overlay;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,0.02)  1px, transparent 1px);
+  background-size: 3px 3px, 5px 5px;
+  background-position: 0 0, 1px 2px;
+}
+
+/* Anything inside the wrapper sits above the aurora layers */
+.adm-aurora > *:not(.au-aurora):not(.au-grain) { position: relative; z-index: 2; }
+
+/* === Glass card ==================================================== */
+.adm-aurora .au-card {
+  position: relative;
+  background:
+    linear-gradient(180deg, var(--au-pane-2), var(--au-pane) 35%, transparent),
+    var(--au-base-2);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+          backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--au-edge-2);
+  border-top: 1px solid var(--au-edge);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 var(--au-edge),
+    0 1px 0 rgba(0, 0, 0, 0.30),
+    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+  transition: border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+html:not(.dark) .adm-aurora .au-card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 0 rgba(20, 32, 47, 0.04),
+    0 12px 28px -16px rgba(20, 32, 47, 0.18);
+}
+.adm-aurora[data-mode="lite"] .au-card {
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+}
+
+/* Mouse-tracking reflex highlight (controlled by useReflex) */
+.adm-aurora .au-card.au-card--reflex { cursor: default; }
+.adm-aurora .au-card.au-card--reflex::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    400px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.07),
+    transparent 45%
+  );
+  opacity: 0;
+  transition: opacity 240ms ease;
+  pointer-events: none;
+}
+html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
+  background: radial-gradient(
+    400px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(45, 123, 196, 0.10),
+    transparent 45%
+  );
+}
+.adm-aurora .au-card.au-card--reflex:hover::before { opacity: 1; }
+.adm-aurora .au-card.au-card--reflex:hover {
+  border-color: rgba(127, 182, 232, 0.22);
+  transform: translateY(-1px);
+}
+
+/* === Eyebrow / Display heading / Pill =============================== */
+.adm-aurora .au-eyebrow {
+  font: 500 10px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--au-ink-3);
+}
+.adm-aurora .au-eyebrow.cool   { color: var(--au-cool); }
+.adm-aurora .au-eyebrow.violet { color: var(--au-violet); }
+
+.adm-aurora .au-display {
+  font-family: var(--font-display, Fraunces, Georgia, serif);
+  font-weight: 400;
+  font-variation-settings: "opsz" 96, "SOFT" 30;
+  letter-spacing: -0.025em;
+  color: var(--au-ink);
+}
+.adm-aurora .au-display em {
+  font-style: italic;
+  background-image: linear-gradient(180deg, #DDE7F5 0%, #7FB6E8 60%, #5C9DDC 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  font-variation-settings: "opsz" 96, "SOFT" 60;
+}
+html:not(.dark) .adm-aurora .au-display em {
+  background-image: linear-gradient(180deg, #2D7BC4 0%, #1F5FA0 100%);
+}
+
+.adm-aurora .au-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border-radius: 999px;
+  font: 500 10px/1 var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  letter-spacing: 0.10em; text-transform: uppercase;
+}
+.adm-aurora .au-pill.cool    { background: var(--au-cool-soft);    color: var(--au-cool); }
+.adm-aurora .au-pill.violet  { background: var(--au-violet-soft);  color: var(--au-violet); }
+.adm-aurora .au-pill.mint    { background: var(--au-mint-soft);    color: var(--au-mint); }
+.adm-aurora .au-pill.amber   { background: var(--au-amber-soft);   color: var(--au-amber); }
+.adm-aurora .au-pill.coral   { background: var(--au-coral-soft);   color: var(--au-coral); }
+.adm-aurora .au-pill.neutral {
+  background: rgba(255,255,255,0.06);
+  color: var(--au-ink-2);
+  border: 1px solid var(--au-rule);
+}
+html:not(.dark) .adm-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); }
+
+/* === Buttons / Inputs (au-* family — opt-in) ======================== */
+.adm-aurora .au-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 14px; border-radius: 9px;
+  font: 500 13px/1 var(--font-sans, system-ui, sans-serif);
+  border: 1px solid var(--au-rule-2);
+  background: var(--au-pane);
+  color: var(--au-ink);
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
+}
+.adm-aurora .au-btn:hover  { background: var(--au-pane-3); border-color: var(--au-cool); }
+.adm-aurora .au-btn:active { transform: translateY(1px); }
+.adm-aurora .au-btn.primary {
+  background: linear-gradient(180deg, rgba(127,182,232,0.30), rgba(127,182,232,0.18));
+  border-color: rgba(127, 182, 232, 0.40);
+  color: var(--au-ink);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18),
+              0 6px 18px -8px rgba(127,182,232,0.50);
+}
+html:not(.dark) .adm-aurora .au-btn.primary {
+  background: linear-gradient(180deg, #4D8FCE, #2D7BC4);
+  color: white;
+  border-color: rgba(45,123,196,0.40);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.20),
+              0 6px 18px -8px rgba(45,123,196,0.50);
+}
+.adm-aurora .au-btn.icon   { width: 34px; padding: 0; justify-content: center; }
+.adm-aurora .au-btn.sm     { height: 28px; padding: 0 10px; font-size: 12px; }
+.adm-aurora .au-btn.danger { color: var(--au-coral); border-color: rgba(240,140,142,0.30); }
+
+.adm-aurora .au-input {
+  width: 100%; height: 34px;
+  padding: 0 12px;
+  background: var(--au-pane);
+  border: 1px solid var(--au-rule-2);
+  border-radius: 9px;
+  color: var(--au-ink);
+  font: 400 13px/1 var(--font-sans, system-ui, sans-serif);
+  outline: none;
+  transition: border-color 160ms ease, background 160ms ease;
+  box-sizing: border-box;
+}
+.adm-aurora .au-input:focus { border-color: var(--au-cool); background: var(--au-pane-2); }
+.adm-aurora .au-input::placeholder { color: var(--au-ink-3); }
+
+/* === Sparkline draw animation ====================================== */
+.adm-aurora .au-sparkpath {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: au-spark-draw 1.4s ease-out 0.2s forwards;
+}
+@keyframes au-spark-draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .au-sparkpath { animation: none; stroke-dashoffset: 0; }
+}
+
+/* Tabular numbers utility */
+.adm-aurora .au-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* === Sidebar nav-item / topbar ===================================== */
+.adm-aurora .au-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  height: 34px; padding: 0 10px; border-radius: 9px;
+  color: var(--au-ink-2);
+  font: 400 13px/1 var(--font-sans, system-ui, sans-serif);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+.adm-aurora .au-nav-item:hover {
+  background: var(--au-pane);
+  color: var(--au-ink);
+}
+.adm-aurora .au-nav-item.active {
+  background: var(--au-cool-soft);
+  color: var(--au-ink);
+  border-color: rgba(127,182,232,0.22);
+  font-weight: 500;
+}
+.adm-aurora .au-nav-item.active svg { color: var(--au-cool); }
+
+/* === Pulse dot ===================================================== */
+@keyframes au-pulse {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  100% { transform: scale(2.4); opacity: 0;   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-aurora .au-pulse-ping { animation: none; opacity: 0; }
+}
+
+/* =========================================================================
+   Adoption: lift the existing AdminPanel + KPI cards into the aurora
+   visual language without rewriting every call site. Scoped to .adm-aurora
+   so other surfaces (login, mail templates, etc.) stay unaffected.
+   ========================================================================= */
+.adm-aurora .admin-panel {
+  background:
+    linear-gradient(180deg, var(--au-pane-2), var(--au-pane) 35%, transparent),
+    var(--au-base-2);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+          backdrop-filter: blur(24px) saturate(140%);
+  border: 1px solid var(--au-edge-2);
+  border-top: 1px solid var(--au-edge);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 var(--au-edge),
+    0 1px 0 rgba(0, 0, 0, 0.30),
+    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+}
+html:not(.dark) .adm-aurora .admin-panel {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 0 rgba(20, 32, 47, 0.04),
+    0 12px 28px -16px rgba(20, 32, 47, 0.18);
+}
+.adm-aurora .admin-panel:hover {
+  border-color: rgba(127, 182, 232, 0.22);
+  box-shadow:
+    inset 0 1px 0 var(--au-edge),
+    0 1px 0 rgba(0, 0, 0, 0.30),
+    0 24px 48px -24px rgba(0, 0, 0, 0.55);
+}
+.adm-aurora .admin-panel-head {
+  border-bottom: 1px solid var(--au-rule);
+}
+.adm-aurora .admin-panel-flagship {
+  border-color: rgba(127, 182, 232, 0.22);
+}
+.adm-aurora .admin-panel-flagship::before {
+  background: radial-gradient(
+    600px 140px at 50% 0%,
+    rgba(127, 182, 232, 0.10),
+    transparent 60%
+  );
+}
+
+/* The shared sidebar (which lives outside `.adm-aurora`) keeps its
+   champagne-and-rose chrome. That's intentional — the Aurora wrapper
+   only colors the main content area. */

@@ -1,6 +1,8 @@
+import { AuroraBackground } from "@/components/aurora";
 import { Sidebar } from "@/components/sidebar";
 import { requireAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import "../aurora.css";
 
 export default async function AdminLayout({
   children,
@@ -14,7 +16,12 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="adm-aurora flex min-h-screen">
+      {/* Animated northern-lights background, pinned to viewport behind
+          everything. Honors prefers-reduced-motion and goes calm when
+          data-mode="lite" is set on the wrapper. */}
+      <AuroraBackground />
+
       {/* Skip-link — admin sidebar has 5 nav groups × ~4 links. Without
           this, keyboard users tab through every link on every page
           load. Visible only on focus (Tailwind `sr-only` +
