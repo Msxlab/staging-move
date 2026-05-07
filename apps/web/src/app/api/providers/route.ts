@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { compareCoverageConfidence, getProviderTrustSummary, isProviderResourceOnly, providerRequiresAddressCheck } from "@locateflow/shared";
+import { compareCoverageConfidence, getProviderTrustSummary } from "@locateflow/shared";
 import { getProviderCoverageConfidenceFromDb, getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
@@ -16,8 +16,6 @@ const fetchProvidersForState = unstable_cache(
         { scope: "FEDERAL" },
         { coverages: { some: { state: effectiveState } } },
       ];
-    } else {
-      where.scope = "FEDERAL";
     }
     return prisma.serviceProvider.findMany({
       where,
@@ -79,8 +77,6 @@ export async function GET(request: NextRequest) {
             { coverages: { some: { state: effectiveState } } },
           ],
         });
-      } else {
-        where.scope = "FEDERAL";
       }
       providers = await prisma.serviceProvider.findMany({
         where,
@@ -163,9 +159,8 @@ export async function GET(request: NextRequest) {
       });
       const coverageNote = ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null;
       const coverageSourceUrl = ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null;
-      const requiresAddressCheck = providerRequiresAddressCheck({ ...p, tags, coverageModel });
+      const requiresAddressCheck = coverageModel === "live_address";
       const requiresPolygonCheck = coverageModel === "polygon";
-      const resourceOnly = isProviderResourceOnly({ ...p, tags });
       const trust = getProviderTrustSummary({
         ...p,
         states,
@@ -177,7 +172,6 @@ export async function GET(request: NextRequest) {
         coverageSourceUrl,
         requiresAddressCheck,
         requiresPolygonCheck,
-        resourceOnly,
       });
 
       return {
@@ -202,7 +196,6 @@ export async function GET(request: NextRequest) {
         coverageSourceUrl,
         requiresAddressCheck,
         requiresPolygonCheck,
-        resourceOnly,
         coverageConfidence: trust.coverageConfidence,
         trust,
       };

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { CANCELED_MOVING_PLAN_STATUSES, isProviderResourceOnly, providerRequiresAddressCheck } from "@locateflow/shared";
+import { CANCELED_MOVING_PLAN_STATUSES } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         isActive: true,
         ...(effectiveState
           ? { OR: [{ scope: "FEDERAL" }, { coverages: { some: { state: effectiveState } } }] }
-          : { scope: "FEDERAL" }),
+          : {}),
       },
       include: {
         coverages: effectiveState ? { where: { state: effectiveState } } : false,
@@ -111,43 +111,35 @@ export async function GET(request: NextRequest) {
       ownership: primaryAddr?.ownership || undefined,
     };
 
-    const parsedProviders: Provider[] = tiered.providers.map((p) => {
-      const tags = safeJsonArray(p.tags);
-      const coverageModel = p.coverageModel || "state";
-      const resourceOnly = isProviderResourceOnly({ ...p, tags });
-      const requiresAddressCheck = providerRequiresAddressCheck({ ...p, tags, coverageModel });
-
-      return {
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        category: p.category,
-        subCategory: p.subCategory,
-        description: p.description,
-        website: p.website,
-        phone: p.phone,
-        logoUrl: p.logoUrl,
-        scope: p.scope,
-        states: safeJsonArray(p.states),
-        zipCodes: Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes),
-        tags,
-        popularityScore: p.popularityScore || 0,
-        displayOrder: p.displayOrder || 0,
-        userCount: p.userCount || 0,
-        coverageModel,
-        coverageMatchLevel: getProviderMatchLevelFromDb(p, {
-          state: fallbackState,
-          zip: fallbackZip,
-          latitude: fallbackLatitude,
-          longitude: fallbackLongitude,
-        }),
-        coverageNote: ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null,
-        coverageSourceUrl: ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null,
-        requiresAddressCheck,
-        requiresPolygonCheck: coverageModel === "polygon",
-        resourceOnly,
-      };
-    });
+    const parsedProviders: Provider[] = tiered.providers.map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      category: p.category,
+      subCategory: p.subCategory,
+      description: p.description,
+      website: p.website,
+      phone: p.phone,
+      logoUrl: p.logoUrl,
+      scope: p.scope,
+      states: safeJsonArray(p.states),
+      zipCodes: Array.isArray((p as { zipCodes?: unknown }).zipCodes) ? ((p as { zipCodes: string[] }).zipCodes) : safeJsonArray(p.zipCodes),
+      tags: safeJsonArray(p.tags),
+      popularityScore: p.popularityScore || 0,
+      displayOrder: p.displayOrder || 0,
+      userCount: p.userCount || 0,
+      coverageModel: p.coverageModel || "state",
+      coverageMatchLevel: getProviderMatchLevelFromDb(p, {
+        state: fallbackState,
+        zip: fallbackZip,
+        latitude: fallbackLatitude,
+        longitude: fallbackLongitude,
+      }),
+      coverageNote: ("coverageNote" in p ? (p as { coverageNote?: string | null }).coverageNote : null) || null,
+      coverageSourceUrl: ("coverageSourceUrl" in p ? (p as { coverageSourceUrl?: string | null }).coverageSourceUrl : null) || null,
+      requiresAddressCheck: p.coverageModel === "live_address",
+      requiresPolygonCheck: p.coverageModel === "polygon",
+    }));
 
     const existingNames = new Set(services.map((s) => (s.providerName || "").toLowerCase()));
     const completedCategories = [...new Set(services.map((s) => s.category).filter(Boolean))];

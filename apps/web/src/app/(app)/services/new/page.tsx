@@ -39,10 +39,6 @@ const CUSTOM_PROVIDER_CATEGORY_OPTIONS = [
   ...PROVIDER_CATEGORY_OPTIONS,
 ].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
 
-function isResourceOnlyProvider(provider: ScoredProvider): boolean {
-  return Boolean(provider.resourceOnly || provider.tags?.includes("resource-only"));
-}
-
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface AddressOption {
@@ -128,7 +124,7 @@ export default function NewServicePage() {
     params.set("addressId", addr.id);
     fetch(`/api/providers/recommendations?${params.toString()}`)
       .then((r) => r.json())
-      .then((d) => setAllProviders((d.allProviders || []).filter((p: ScoredProvider) => !isResourceOnlyProvider(p))))
+      .then((d) => setAllProviders(d.allProviders || []))
       .catch(() => setAllProviders([]))
       .finally(() => setLoadingProviders(false));
   }, [selectedAddress, addresses]);
@@ -144,7 +140,6 @@ export default function NewServicePage() {
     if (!prefillProviderId || allProviders.length === 0) return;
     const match = allProviders.find((p) => p.id === prefillProviderId);
     if (match && !selectedProviders.has(match.id)) {
-      if (isResourceOnlyProvider(match)) return;
       setSelectedProviders((prev) => {
         const next = new Map(prev);
         next.set(match.id, match);
@@ -186,10 +181,6 @@ export default function NewServicePage() {
 
   // Toggle provider in multi-select
   const toggleProvider = useCallback((provider: ScoredProvider) => {
-    if (isResourceOnlyProvider(provider)) {
-      setError("This is a verification resource, not a provider to add as a biller.");
-      return;
-    }
     setSelectedProviders((prev) => {
       const next = new Map(prev);
       if (next.has(provider.id)) {

@@ -1,5 +1,4 @@
 import { unstable_cache } from "next/cache";
-import { resolveEffectiveState } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { ProvidersClient, type ProviderItem, type AddressOption } from "./providers-client";
@@ -12,18 +11,13 @@ import { ProvidersClient, type ProviderItem, type AddressOption } from "./provid
 export const dynamic = "force-dynamic";
 
 const getActiveProviders = unstable_cache(
-  async (effectiveState: string | null) =>
+  async () =>
     prisma.serviceProvider.findMany({
-      where: {
-        isActive: true,
-        ...(effectiveState
-          ? { OR: [{ scope: "FEDERAL" }, { coverages: { some: { state: effectiveState } } }] }
-          : { scope: "FEDERAL" }),
-      },
+      where: { isActive: true },
       orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
       take: 200,
     }),
-  ["active-providers-by-user-state"],
+  ["active-providers-top-200"],
   { tags: ["providers"], revalidate: 300 },
 );
 
@@ -58,10 +52,13 @@ function parseJsonArray(value: string): string[] {
 export default async function ProvidersPage() {
   const userId = await requireDbUserId();
 
-  const addresses = await prisma.address.findMany({
-    where: { userId, deletedAt: null },
-    orderBy: [{ isPrimary: "desc" }, { createdAt: "desc" }],
-  });
+  const [addresses, providerRows] = await Promise.all([
+    prisma.address.findMany({
+      where: { userId, deletedAt: null },
+      orderBy: [{ isPrimary: "desc" }, { createdAt: "desc" }],
+    }),
+    getActiveProviders() as unknown as Promise<ProviderRow[]>,
+  ]);
 
   const addressOptions: AddressOption[] = addresses.map((a) => ({
     id: a.id,
@@ -71,10 +68,6 @@ export default async function ProvidersPage() {
     zip: a.zip,
     isPrimary: a.isPrimary,
   }));
-
-  const primaryAddress = addressOptions.find((a) => a.isPrimary) || addressOptions[0] || null;
-  const effectiveState = resolveEffectiveState(primaryAddress?.state ?? null, primaryAddress?.zip ?? null) ?? null;
-  const providerRows = (await getActiveProviders(effectiveState)) as unknown as ProviderRow[];
 
   const initialProviders: ProviderItem[] = providerRows.map((p) => ({
     id: p.id,
@@ -94,6 +87,8 @@ export default async function ProvidersPage() {
     displayOrder: p.displayOrder || 0,
     userCount: p.userCount || 0,
   }));
+
+  const primaryAddress = addressOptions.find((a) => a.isPrimary) || addressOptions[0] || null;
 
   return (
     <ProvidersClient

@@ -1,19 +1,19 @@
 # Provider Readiness Gap Report
 
-Generated: 2026-05-06T21:56:38.236Z
+Generated: 2026-04-24T17:08:11.731Z
 
 ## Summary
 
-- Providers reviewed: 790
+- Providers reviewed: 776
 - State/category matrix cells: 765
 - Missing critical state/category cells: 58
-- Broad-only state/category cells: 190
-- Duplicate-domain buckets: 52
-- Missing logo: 790
-- Missing phone: 314
+- Broad-only state/category cells: 189
+- Duplicate-domain buckets: 51
+- Missing logo: 776
+- Missing phone: 301
 - Broad state coverage: 155
 - Generic description: 133
-- Duplicate domain candidate: 130
+- Duplicate domain candidate: 127
 - Broad national listing: 62
 - Marketing language: 21
 
@@ -104,7 +104,6 @@ Generated: 2026-05-06T21:56:38.236Z
 - DE TRANSPORTATION_TRANSIT: 1 providers, all broad or address-check-required
 - DC UTILITY_TRASH: 2 providers, all broad or address-check-required
 - DC UTILITY_INTERNET: 9 providers, all broad or address-check-required
-- DC TRANSPORTATION_TRANSIT: 1 providers, all broad or address-check-required
 - FL UTILITY_GAS: 1 providers, all broad or address-check-required
 - FL UTILITY_TRASH: 2 providers, all broad or address-check-required
 - FL UTILITY_INTERNET: 12 providers, all broad or address-check-required
@@ -193,7 +192,8 @@ Generated: 2026-05-06T21:56:38.236Z
 - NM UTILITY_INTERNET: 10 providers, all broad or address-check-required
 - NY UTILITY_GAS: 1 providers, all broad or address-check-required
 - NY UTILITY_TRASH: 2 providers, all broad or address-check-required
-- 70 additional broad-only cells omitted from markdown; see JSON.
+- NY UTILITY_INTERNET: 12 providers, all broad or address-check-required
+- 69 additional broad-only cells omitted from markdown; see JSON.
 
 ## Duplicate Domain Buckets
 
@@ -212,7 +212,6 @@ Generated: 2026-05-06T21:56:38.236Z
 - spectrum.com: 3 records across UTILITY_INTERNET, UTILITY_PHONE
 - statefarm.com: 3 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
 - verizon.com: 3 records across UTILITY_INTERNET, UTILITY_PHONE
-- walmart.com: 3 records across GROCERY_DELIVERY, HEALTHCARE_PHARMACY, SHOPPING_RETAIL
 - xcelenergy.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
 - allstate.com: 2 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
 - amazon.com: 2 records across GROCERY_DELIVERY, SHOPPING_SUBSCRIPTION
@@ -228,7 +227,6 @@ Generated: 2026-05-06T21:56:38.236Z
 - discover.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
 - eversource.com: 2 records across UTILITY_ELECTRIC
 - irs.gov: 2 records across GOVERNMENT_TAX
-- kroger.com: 2 records across HEALTHCARE_PHARMACY, SHOPPING_RETAIL
 - lemonade.com: 2 records across FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
 - lge-ku.com: 2 records across UTILITY_ELECTRIC
 - libertymutual.com: 2 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
@@ -237,6 +235,8 @@ Generated: 2026-05-06T21:56:38.236Z
 - nationalgridus.com: 2 records across UTILITY_GAS
 - nj.gov: 2 records across GOVERNMENT_DMV, GOVERNMENT_TAX
 - oklahoma.gov: 2 records across GOVERNMENT_DMV, GOVERNMENT_VOTER
+- piedmontng.com: 2 records across UTILITY_GAS
+- portal.ct.gov: 2 records across GOVERNMENT_DMV, GOVERNMENT_VOTER
 
 ## Broad Coverage Provider Candidates
 
@@ -325,7 +325,7 @@ Generated: 2026-05-06T21:56:38.236Z
 
 - UTILITY_ELECTRIC (Electric): 71 - High count; review for broad imports or over-splitting
 - UTILITY_WATER (Water): 67 - High count; review for broad imports or over-splitting
-- TRANSPORTATION_TRANSIT (Transit): 65 - High count; review for broad imports or over-splitting
+- TRANSPORTATION_TRANSIT (Transit): 66 - High count; review for broad imports or over-splitting
 - UTILITY_GAS (Gas): 56 - High count; review for broad imports or over-splitting
 - GOVERNMENT_VOTER (Voter Registration): 52 - High count; review for broad imports or over-splitting
 - GOVERNMENT_DMV (DMV): 51 - High count; review for broad imports or over-splitting
@@ -348,7 +348,6 @@ Generated: 2026-05-06T21:56:38.236Z
 - spectrum.com: UTILITY_INTERNET, UTILITY_PHONE
 - statefarm.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
 - verizon.com: UTILITY_INTERNET, UTILITY_PHONE
-- walmart.com: GROCERY_DELIVERY, HEALTHCARE_PHARMACY, SHOPPING_RETAIL
 - xcelenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
 - allstate.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
 - amazon.com: GROCERY_DELIVERY, SHOPPING_SUBSCRIPTION
@@ -361,7 +360,6 @@ Generated: 2026-05-06T21:56:38.236Z
 - citi.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
 - cvs.com: HEALTHCARE_DOCTORS, HEALTHCARE_PHARMACY
 - discover.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
-- kroger.com: HEALTHCARE_PHARMACY, SHOPPING_RETAIL
 - lemonade.com: FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
 - libertymutual.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
 - maine.gov: GOVERNMENT_DMV, GOVERNMENT_VOTER
@@ -369,6 +367,8 @@ Generated: 2026-05-06T21:56:38.236Z
 - nj.gov: GOVERNMENT_DMV, GOVERNMENT_TAX
 - oklahoma.gov: GOVERNMENT_DMV, GOVERNMENT_VOTER
 - portal.ct.gov: GOVERNMENT_DMV, GOVERNMENT_VOTER
+- rienergy.com: UTILITY_ELECTRIC, UTILITY_GAS
+- ring.com: HOUSING_HOME_SERVICE, HOUSING_SECURITY
 
 ## Weak Utility States
 
@@ -768,7 +768,7 @@ Generated: 2026-05-06T21:56:38.236Z
 - HIGH | MS UTILITY_WATER | broad_only | Broad Coverage Review Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
-- 128 additional backlog items omitted from markdown; see JSON.
+- 127 additional backlog items omitted from markdown; see JSON.
 
 ## User-Created Provider Promotion Candidates
 

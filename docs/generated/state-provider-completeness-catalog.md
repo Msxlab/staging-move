@@ -1,14 +1,14 @@
 # State Provider Completeness Catalog
 
-Generated: 2026-05-06T21:56:24.649Z
+Generated: 2026-04-24T17:08:05.691Z
 
 ## Summary
 
 - Catalog entries: 52
 - States covered: 51
 - Already present in raw seed: 0
-- Newly added in merged seed: 46
-- Catalog-only backlog entries: 6
+- Newly added in merged seed: 47
+- Catalog-only backlog entries: 5
 - Coverage models: state=12, zip_prefix=36, polygon=3, live_address=1
 - Official URL validation: ok=52, redirect=0, error=0
 
@@ -17,14 +17,14 @@ Generated: 2026-05-06T21:56:24.649Z
 ### AL
 
 - Repo before: Alabama Power, Alagasco, Astound Broadband, AT&T Fiber, Birmingham Water Works, CenturyLink (Lumen), E-ZPass, Frontier Communications, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Alabama Digital Expansion Division / Broadband Map, Alabama Freedom Pass, Alabama Power, Alabama Public Service Commission Gas Division, Alabama Rural Electric Association Co-op Directory, Alagasco, Astound Broadband, AT&T Fiber, Birmingham Water Works, CenturyLink (Lumen), E-ZPass, FCC National Broadband Map, Frontier Communications, MAX Transit, Spectrum, Starlink, T-Mobile Home Internet, TVA Local Power Companies Directory, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Alabama Power, Alagasco, Astound Broadband, AT&T Fiber, Birmingham Water Works, CenturyLink (Lumen), E-ZPass, Frontier Communications, MAX Transit, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - MAX Transit | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://maxtransit.org
   note: Birmingham-area transit provider missing from the seed; modeled with Birmingham metro ZIP prefixes.
 
 ### AK
 
 - Repo before: Anchorage Water & Wastewater Utility, Astound Broadband, AT&T Fiber, Chugach Electric, E-ZPass, ENSTAR Natural Gas, GCI, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Alaska Broadband Office, Alaska Energy Authority Power Cost Equalization Program, Alaska Marine Highway System, Alaska Power Association Member Directory, Anchorage Water & Wastewater Utility, Anton Anderson Memorial Tunnel / Whittier Tunnel, Astound Broadband, AT&T Fiber, Chugach Electric, E-ZPass, ENSTAR Natural Gas, GCI, People Mover, Regulatory Commission of Alaska Find a Utility, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Anchorage Water & Wastewater Utility, Astound Broadband, AT&T Fiber, Chugach Electric, E-ZPass, ENSTAR Natural Gas, GCI, People Mover, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - People Mover | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx
   note: Anchorage People Mover is the largest public transit provider in Alaska and was not in seed.
 - Alaska Communications | UTILITY_INTERNET | catalog_backlog | live_address | https://www.alaskacommunications.com/Residential
@@ -33,35 +33,35 @@ Generated: 2026-05-06T21:56:24.649Z
 ### AZ
 
 - Repo before: APS (Arizona Public Service), Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Frontier Communications, Google Fiber, Mesa Utilities, Phoenix Water Services, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Tucson Water, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: ADOT 5311 Rural Public Transportation Program, APS (Arizona Public Service), Arizona Corporation Commission Electric Utilities Resource, Arizona Corporation Commission Utilities Division, Arizona State Broadband Office, Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Frontier Communications, Google Fiber, Mesa Utilities, No major Arizona toll agency found / ADOT toll scam resource, Phoenix Water Services, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Tucson Water, Valley Metro, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: APS (Arizona Public Service), Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Frontier Communications, Google Fiber, Mesa Utilities, Phoenix Water Services, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Tucson Water, Valley Metro, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Valley Metro | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://www.valleymetro.org/maps-schedules
   note: Phoenix-area Valley Metro was absent from seed and is modeled with core metro ZIP prefixes.
 
 ### AR
 
 - Repo before: Astound Broadband, AT&T Fiber, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Cox Communications, E-ZPass, OG&E, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Arkansas DOT Public Transportation Programs, Arkansas Public Service Commission Electric Utilities, Arkansas Public Service Commission Gas Utilities, Arkansas State Broadband Office, Astound Broadband, AT&T Fiber, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Cox Communications, E-ZPass, Entergy Arkansas, No Arkansas toll roads / Arkansas AG toll scam alert, OG&E, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Cox Communications, E-ZPass, Entergy Arkansas, OG&E, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Entergy Arkansas | UTILITY_ELECTRIC | newly_added | state | https://www.entergy-arkansas.com
   note: Major Arkansas electric utility identified in state rules but missing from seed.
 
 ### CA
 
 - Repo before: AC Transit, Astound Broadband, AT&T Fiber, BART, Caltrain, Cox Communications, E-ZPass, FasTrak, Frontier Communications, LA Metro, LADWP, PG&E, San Diego MTS, SF Muni, SoCal Edison, SoCal Gas, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, VTA, WOW! Internet, Xfinity (Comcast)
-- Repo after: 91 Express Lanes, AC Transit, Astound Broadband, AT&T Fiber, BART, California Broadband For All, California Public Utilities Commission Electric Resources, California Public Utilities Commission Natural Gas Resources, Caltrain, Caltrans Division of Rail and Mass Transportation, Caltrans Toll Bridges and Roads Resource, Cox Communications, CPUC Broadband Map, E-ZPass, FasTrak, Frontier Communications, LA Metro, LADWP, Metro ExpressLanes, PG&E, San Diego Gas & Electric, San Diego MTS, SF Muni, SoCal Edison, SoCal Gas, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, The Toll Roads, Verizon 5G Home Internet, Verizon Fios, VTA, WOW! Internet, Xfinity (Comcast)
+- Repo after: AC Transit, Astound Broadband, AT&T Fiber, BART, Caltrain, Cox Communications, E-ZPass, FasTrak, Frontier Communications, LA Metro, LADWP, PG&E, San Diego Gas & Electric, San Diego MTS, SF Muni, SoCal Edison, SoCal Gas, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, VTA, WOW! Internet, Xfinity (Comcast)
 - San Diego Gas & Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.sdge.com/landservices
   note: SDG&E serves San Diego County and parts of southern Orange County; modeled conservatively with southern California ZIP prefixes.
 
 ### CO
 
 - Repo before: Astound Broadband, AT&T Fiber, Black Hills Energy Colorado, Black Hills Energy SD, CenturyLink (Lumen), Denver Water, E-ZPass, ExpressToll, Google Fiber, RTD, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xcel Energy, Xcel Energy ND, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, Black Hills Energy Colorado, Black Hills Energy SD, Bustang, CDOT Transit and Rail, CenturyLink (Lumen), Colorado Express Lanes / CDOT, Denver Water, E-470 Public Highway Authority, E-ZPass, ExpressToll, Google Fiber, Northwest Parkway, RTD, RTD Denver, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xcel Energy, Xcel Energy ND, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, Black Hills Energy Colorado, Black Hills Energy SD, CenturyLink (Lumen), Denver Water, E-ZPass, ExpressToll, Google Fiber, RTD, RTD Denver, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xcel Energy, Xcel Energy ND, Xfinity (Comcast)
 - RTD Denver | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://www.rtd-denver.com/system-map
   note: Regional Transportation District is the core transit provider for Denver metro.
 
 ### CT
 
 - Repo before: Aquarion Water, Astound Broadband, AT&T Fiber, Cox Communications, E-ZPass, Eversource, Eversource NH, Frontier Communications, Optimum, Southern Connecticut Gas, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Aquarion Water, Astound Broadband, AT&T Fiber, Connecticut DOT Toll / E-ZPass Warning, Connecticut Get Connected / Broadband Resource, Cox Communications, CTDOT Transit and Ridesharing Resource, CTrail, E-ZPass, EnergizeCT Supplier Rate Board, Eversource, Eversource NH, FCC Broadband Map, Frontier Communications, Optimum, PURA Gas Utility Resource, Southern Connecticut Gas, Spectrum, Starlink, T-Mobile Home Internet, United Illuminating, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Aquarion Water, Astound Broadband, AT&T Fiber, Cox Communications, E-ZPass, Eversource, Eversource NH, Frontier Communications, Optimum, Southern Connecticut Gas, Spectrum, Starlink, T-Mobile Home Internet, United Illuminating, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - United Illuminating | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.uinet.com/ourcompany/whoweare/servicearea
   note: United Illuminating covers southern Connecticut and is a material seed gap for CT.
 - Connecticut Natural Gas | UTILITY_GAS | catalog_backlog | zip_prefix | https://portal.ct.gov/pura/gas/gas
@@ -70,21 +70,21 @@ Generated: 2026-05-06T21:56:24.649Z
 ### DE
 
 - Repo before: Artesian Water Company, Astound Broadband, AT&T Fiber, Chesapeake Utilities Delaware, Delmarva Power, E-ZPass, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Artesian Water Company, Astound Broadband, AT&T Fiber, Chesapeake Utilities Delaware, City of Dover Electric Department, City of Dover Water / Customer Services, City of Milford Electric, City of Milford Water, City of Newark Electric, City of Newark Public Works and Water Resources, City of Rehoboth Beach Water Service, City of Seaford Electric, City of Seaford Public Works Water, DART First State, DART Paratransit, Delaware Broadband Office, Delaware Commute Solutions, Delaware E-ZPass, Delaware Municipal Electric Corporation, Delaware PSC Customer Electric Choice, Delaware PSC Natural Gas Regulation, DelDOT Toll Services, Delmarva Power, E-ZPass, Lewes Board of Public Works Electric, Lewes Board of Public Works Water, Municipal Services Commission of the City of New Castle Electric, Municipal Services Commission of the City of New Castle Water, SEPTA Wilmington/Newark Line, Spectrum, Starlink, T-Mobile Home Internet, Town of Middletown Electric, Town of Middletown Water, Town of Smyrna Electric, US 301 Toll By Plate, Verizon 5G Home Internet, Verizon Fios, Wilmington Water Utility, WOW! Internet, Xfinity (Comcast)
+- Repo after: Artesian Water Company, Astound Broadband, AT&T Fiber, Chesapeake Utilities Delaware, DART First State, Delmarva Power, E-ZPass, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - DART First State | TRANSPORTATION_TRANSIT | newly_added | state | https://dartfirststate.com/map/
   note: DART First State operates statewide bus and paratransit service in Delaware.
 
 ### DC
 
 - Repo before: Astound Broadband, AT&T Fiber, DC Water, E-ZPass, Pepco, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, Washington Gas, WMATA (Metro), WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, Capital Bikeshare, DC Office of the People's Counsel Third Party Gas Guidance, DC Office of the People's Counsel Third Party Suppliers, DC Power Connect, DC Power Connect Natural Gas, DC Water, DC Water Lead Service Line Map, DC Water Report a Problem, DC Water Start or Stop Service, DCPSC Electric Customer Choice, DCPSC Natural Gas, DDOT Mass Transit in DC, DOEE Lead Pipe Replacement and Safer Drinking Water, E-ZPass, MetroAccess, No major DC toll agency found, Pepco, Spectrum, Starlink, T-Mobile Home Internet, Tech Together DC State Broadband Office, Verizon 5G Home Internet, Verizon Fios, Washington Gas, WMATA (Metro), WMATA Metrobus, WMATA Metrorail, WOW! Internet, Xfinity (Comcast)
-- DC Streetcar | TRANSPORTATION_TRANSIT | catalog_backlog | zip_prefix | https://dcstreetcar.com
-  note: Controlled import marks DC Streetcar as retired after service ended March 31, 2026; retained catalog-only for governance history.
+- Repo after: Astound Broadband, AT&T Fiber, DC Streetcar, DC Water, E-ZPass, Pepco, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, Washington Gas, WMATA (Metro), WOW! Internet, Xfinity (Comcast)
+- DC Streetcar | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://dcstreetcar.com
+  note: DC Streetcar adds a district-specific transit option beyond WMATA.
 
 ### FL
 
 - Repo before: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-ZPass, FPL (Florida Power & Light), Frontier Communications, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, Broward County Transit, CenturyLink (Lumen), City of Tallahassee Utilities Electric, City of Tallahassee Utilities Natural Gas, City of Tallahassee Utilities Water, Clearwater Gas System, Cox Communications, Duke Energy Florida, E-PASS / Central Florida Expressway Authority, E-ZPass, Florida Department of Health Public Water Systems, Florida Office of Broadband, Florida PSC Electric Utility Service Areas, Florida PSC Natural Gas Utilities, Florida Turnpike Enterprise, Fort Lauderdale Utility Billing Water, Fort Pierce Utilities Authority Electric, FPL (Florida Power & Light), Frontier Communications, Gainesville Regional Utilities Electric, Gainesville Regional Utilities Water, Greater Miami Expressway Agency, HART, Homestead Energy Services, I-4 Express, Jacksonville Transportation Authority, JEA, Kissimmee Utility Authority, Lake Apopka Natural Gas District, Lakeland Electric, LeeTran, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Palm Tran, Pensacola Energy, PSTA, Sarasota County Utilities Water, Sebring Gas System, Spectrum, Starlink, StarMetro, SunPass, T-Mobile Home Internet, Tampa Electric, Tampa Hillsborough Expressway Authority, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, Votran, West Palm Beach Public Utilities Water, WOW! Internet, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-ZPass, FPL (Florida Power & Light), Frontier Communications, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Electric, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Tampa Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/
   note: Tampa Electric is a major missing Florida electric provider with a clear Tampa Bay service area.
 

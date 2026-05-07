@@ -32,8 +32,6 @@ export interface ServiceWithProvider {
     scope: string;
     states: string[];
     category: string;
-    subCategory?: string | null;
-    tags?: string[] | null;
   } | null;
 }
 

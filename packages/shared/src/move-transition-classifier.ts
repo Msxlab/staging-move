@@ -11,7 +11,6 @@ import {
   type UserCustomProviderType,
 } from "./provider-move-domain";
 import { safeJsonArray, resolveEffectiveState } from "./provider-coverage";
-import { isProviderResourceOnly, providerRequiresAddressCheck } from "./provider-integrity";
 
 export interface MoveTransitionAddressInput {
   state?: string | null;
@@ -32,16 +31,13 @@ export interface MoveTransitionProviderInput {
   id?: string | null;
   name: string;
   category: string;
-  subCategory?: string | null;
   scope?: string | null;
   states?: string[] | string | null;
-  tags?: string[] | string | null;
   coverageConfidence?: CoverageConfidence | null;
   coverageMatchLevel?: string | null;
   coverageModel?: string | null;
   requiresAddressCheck?: boolean | null;
   requiresPolygonCheck?: boolean | null;
-  resourceOnly?: boolean | null;
   popularityScore?: number | null;
   trustStatus?: string | null;
   providerType?: UserCustomProviderType | string | null;
@@ -68,7 +64,6 @@ export interface MoveTransitionProviderRecommendation {
   coverageConfidence: CoverageConfidence;
   coverageLabel: string;
   requiresAddressCheck: boolean;
-  resourceOnly: boolean;
 }
 
 export interface MoveServiceTransitionPlan {
@@ -129,7 +124,7 @@ function getCandidateCoverageConfidence(
     mapCoverageMatchToConfidence(candidate.coverageMatchLevel, {
       scope: candidate.scope,
       coverageModel: candidate.coverageModel,
-      requiresAddressCheck: providerRequiresAddressCheck(candidate),
+      requiresAddressCheck: candidate.requiresAddressCheck,
       requiresPolygonCheck: candidate.requiresPolygonCheck,
     })
   );
@@ -257,9 +252,8 @@ function buildProviderRecommendation(
     coverageConfidence,
     coverageLabel: getCoverageConfidencePresentation(coverageConfidence).label,
     requiresAddressCheck:
-      providerRequiresAddressCheck(provider) ||
+      provider.requiresAddressCheck === true ||
       coverageConfidence === "ADDRESS_CHECK_REQUIRED",
-    resourceOnly: isProviderResourceOnly(provider),
   };
 }
 
@@ -336,15 +330,11 @@ export function classifyMoveServiceTransition(
     input.destinationAddress?.zip,
   );
   const sameState = Boolean(originState && destinationState && originState === destinationState);
-  const allCategoryCandidates = sortCandidates(
+  const categoryCandidates = sortCandidates(
     (input.destinationProviderCandidates || []).filter(
       (candidate) => normalizeCategory(candidate.category) === category,
     ),
   );
-  const categoryCandidates = allCategoryCandidates.filter(
-    (candidate) => !isProviderResourceOnly(candidate),
-  );
-  const resourceCandidates = allCategoryCandidates.filter(isProviderResourceOnly);
   const sameProviderCandidate = categoryCandidates.find((candidate) =>
     isSameProvider(service, candidate),
   );
@@ -508,22 +498,6 @@ export function classifyMoveServiceTransition(
       });
     }
 
-    if (resourceCandidates.length > 0 && categoryCandidates.length === 0) {
-      return buildPlan({
-        service,
-        actionType: "FIND_REPLACEMENT",
-        confidence: "LOW",
-        primaryReason: "Only official resource or directory listings are available for this destination utility category.",
-        suggestedNextStep: "Stop the old service and use the official resource to verify the correct destination provider for the exact address.",
-        oldProviderAction: "STOP_SERVICE",
-        secondaryActions: ["VERIFY_AVAILABILITY"],
-        candidates: resourceCandidates,
-        caveats: [
-          "Resource-only listings are verification aids and should not be added as the biller unless the user confirms the actual provider.",
-        ],
-      });
-    }
-
     return buildPlan({
       service,
       actionType: "FIND_REPLACEMENT",
@@ -556,21 +530,6 @@ export function classifyMoveServiceTransition(
         primaryReason: "A destination candidate exists, but internet and phone service are address-sensitive.",
         suggestedNextStep: "Run the provider's official address availability check.",
         candidates: strongCandidates,
-      });
-    }
-
-    if (resourceCandidates.length > 0 && categoryCandidates.length === 0) {
-      return buildPlan({
-        service,
-        actionType: "FIND_REPLACEMENT",
-        confidence: "LOW",
-        primaryReason: "Only official broadband or phone lookup resources are available for this destination.",
-        suggestedNextStep: "Use the official lookup resource and then verify service at the exact address with the selected provider.",
-        secondaryActions: ["VERIFY_AVAILABILITY"],
-        candidates: resourceCandidates,
-        caveats: [
-          "Resource-only listings help with verification and should not be treated as confirmed service providers.",
-        ],
       });
     }
   }

@@ -26,7 +26,6 @@ import {
   normalizeZipRule,
   resolveEffectiveState,
   mapCoverageMatchToConfidence,
-  providerRequiresAddressCheck,
   type CoverageConfidence,
 } from "@locateflow/shared";
 
@@ -208,8 +207,6 @@ export interface ProviderWithCoverages {
   id: string;
   slug?: string | null;
   scope: string;
-  tags?: string[] | string | null;
-  requiresAddressCheck?: boolean | null;
   coverageModel?: "state" | "zip_prefix" | "polygon" | "live_address";
   coverages: Array<{
     state: string | null;
@@ -280,7 +277,7 @@ export function getProviderCoverageConfidenceFromDb<T extends ProviderWithCovera
   return mapCoverageMatchToConfidence(matchLevel, {
     scope: provider.scope,
     coverageModel: provider.coverageModel,
-    requiresAddressCheck: providerRequiresAddressCheck(provider),
+    requiresAddressCheck: provider.coverageModel === "live_address",
     requiresPolygonCheck: provider.coverageModel === "polygon",
   });
 }

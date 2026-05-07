@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
-import { getProviderTrustSummary, isProviderResourceOnly, providerRequiresAddressCheck } from "@locateflow/shared";
+import { getProviderTrustSummary } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { getProviderMatchLevelFromDb } from "@/lib/provider-matching";
@@ -52,15 +52,13 @@ function shape(p: ProviderRow, state: string | null): ProviderDetail {
       id: p.id,
       slug: p.slug,
       scope: p.scope,
-      tags,
       coverageModel,
       coverages: p.coverages || [],
     },
     { state },
   );
-  const requiresAddressCheck = providerRequiresAddressCheck({ ...p, tags, coverageModel });
+  const requiresAddressCheck = coverageModel === "live_address";
   const requiresPolygonCheck = coverageModel === "polygon";
-  const resourceOnly = isProviderResourceOnly({ ...p, tags });
   const coverageNote = metadata?.note || null;
   const coverageSourceUrl = metadata?.officialUrl || null;
   const trust = getProviderTrustSummary({
@@ -74,7 +72,6 @@ function shape(p: ProviderRow, state: string | null): ProviderDetail {
     coverageSourceUrl,
     requiresAddressCheck,
     requiresPolygonCheck,
-    resourceOnly,
   });
 
   return {
@@ -100,7 +97,6 @@ function shape(p: ProviderRow, state: string | null): ProviderDetail {
     coverageSourceUrl,
     requiresAddressCheck,
     requiresPolygonCheck,
-    resourceOnly,
     coverageConfidence: trust.coverageConfidence,
     trust,
   };
@@ -129,11 +125,17 @@ export default async function ProviderDetailPage({
     notFound();
   }
 
-  const [primaryAddress, stateRuleRow] = await Promise.all([
+  const [primaryAddress, alternativesRaw, stateRuleRow] = await Promise.all([
     prisma.address.findFirst({
       where: { userId: userId!, deletedAt: null, isPrimary: true },
       select: { id: true, state: true, zip: true, city: true, nickname: true },
     }),
+    prisma.serviceProvider.findMany({
+      where: { isActive: true, category: provider.category, id: { not: provider.id } },
+      include: { coverages: true },
+      orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
+      take: 4,
+    }) as unknown as Promise<ProviderRow[]>,
     prisma.address
       .findFirst({
         where: { userId: userId!, deletedAt: null, isPrimary: true },
@@ -143,20 +145,6 @@ export default async function ProviderDetailPage({
         a?.state ? prisma.stateRule.findUnique({ where: { stateCode: a.state } }) : null
       ),
   ]);
-
-  const alternativesRaw = (await prisma.serviceProvider.findMany({
-    where: {
-      isActive: true,
-      category: provider.category,
-      id: { not: provider.id },
-      ...(primaryAddress?.state
-        ? { OR: [{ scope: "FEDERAL" }, { coverages: { some: { state: primaryAddress.state } } }] }
-        : { scope: "FEDERAL" }),
-    },
-    include: { coverages: true },
-    orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
-    take: 4,
-  })) as unknown as ProviderRow[];
 
   return (
     <ProviderDetailClient

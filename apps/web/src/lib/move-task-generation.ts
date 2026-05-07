@@ -1,8 +1,6 @@
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import {
   classifyMoveServiceTransition,
-  isProviderResourceOnly,
-  providerRequiresAddressCheck,
   safeJsonArray,
   type MoveServiceTransitionPlan,
   type MoveTransitionProviderInput,
@@ -74,8 +72,6 @@ export async function buildMoveTransitionContext(
           scope: true,
           states: true,
           category: true,
-          subCategory: true,
-          tags: true,
         },
       },
       customProvider: {
@@ -107,18 +103,13 @@ export async function buildMoveTransitionContext(
   const destinationProviderInputs: MoveTransitionProviderInput[] = destinationProviders.map((p: any) => {
     const metadata = getProviderCoverageMetadata(p.slug);
     const zipCodes = safeJsonArray(p.zipCodes);
-    const tags = safeJsonArray(p.tags);
     const coverageModel: ProviderCoverageModel =
       metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
-    const requiresAddressCheck = providerRequiresAddressCheck({ ...p, tags, coverageModel });
-    const resourceOnly = isProviderResourceOnly({ ...p, tags });
     const coverageConfidence = getProviderCoverageConfidenceFromDb(
       {
         id: p.id,
         slug: p.slug,
         scope: p.scope,
-        tags,
-        requiresAddressCheck,
         coverageModel,
         coverages: p.coverages || [],
       },
@@ -134,16 +125,13 @@ export async function buildMoveTransitionContext(
       id: p.id,
       name: p.name,
       category: p.category,
-      subCategory: p.subCategory,
       scope: p.scope,
       states: safeJsonArray(p.states),
-      tags,
       coverageConfidence,
       coverageModel,
       coverageMatchLevel: null,
-      requiresAddressCheck,
+      requiresAddressCheck: coverageModel === "live_address",
       requiresPolygonCheck: coverageModel === "polygon",
-      resourceOnly,
       popularityScore: p.popularityScore || 0,
     };
   });
@@ -171,10 +159,8 @@ export async function buildMoveTransitionContext(
               id: service.provider.id,
               name: service.provider.name,
               category: service.provider.category,
-              subCategory: service.provider.subCategory,
               scope: service.provider.scope,
               states: safeParseJSON(service.provider.states, []),
-              tags: safeParseJSON(service.provider.tags, []),
             }
           : null,
       originAddress: { state: fromState, zip: fromZip },

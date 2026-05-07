@@ -24,7 +24,6 @@ export interface ProviderIntegrityRecord {
   popularityScore?: number | null;
   isActive?: boolean | null;
   displayOrder?: number | null;
-  resourceOnly?: boolean | null;
 }
 
 export interface NormalizedProviderRecord extends ProviderIntegrityRecord {
@@ -58,7 +57,6 @@ export interface ProviderTrustRecord extends ProviderIntegrityRecord {
   coverageSourceUrl?: string | null;
   requiresAddressCheck?: boolean | null;
   requiresPolygonCheck?: boolean | null;
-  resourceOnly?: boolean | null;
   duplicateDomainCount?: number | null;
 }
 
@@ -82,11 +80,7 @@ export interface ProviderQualityWarning {
     | "broad_state_coverage"
     | "broad_national_coverage"
     | "address_check_required"
-    | "polygon_check_required"
-    | "resource_only"
-    | "manual_review"
-    | "controlled_no_active_import"
-    | "scope_review";
+    | "polygon_check_required";
   label: string;
   message: string;
   severity: "info" | "warning" | "critical";
@@ -224,48 +218,6 @@ export function hasMarketingProviderDescription(
   return MARKETING_DESCRIPTION_PATTERN.test(description || "");
 }
 
-export function providerHasTag(
-  record: Pick<ProviderIntegrityRecord, "tags">,
-  tag: string,
-): boolean {
-  return normalizeTags(record.tags).includes(tag.toLowerCase());
-}
-
-export function isProviderResourceOnly(
-  record: Pick<ProviderIntegrityRecord, "subCategory" | "tags" | "resourceOnly">,
-): boolean {
-  const subCategory = (record.subCategory || "").toUpperCase();
-  return Boolean(
-    record.resourceOnly ||
-      subCategory === "RESOURCE" ||
-      subCategory === "RESOURCE_ONLY" ||
-      providerHasTag(record, "resource-only") ||
-      providerHasTag(record, "official-resource"),
-  );
-}
-
-export function isProviderManualReview(
-  record: Pick<ProviderIntegrityRecord, "subCategory" | "tags" | "isActive">,
-): boolean {
-  const subCategory = (record.subCategory || "").toUpperCase();
-  return Boolean(
-    record.isActive === false ||
-      subCategory === "DRAFT_REVIEW" ||
-      providerHasTag(record, "manual-review") ||
-      providerHasTag(record, "draft-review"),
-  );
-}
-
-export function providerRequiresAddressCheck(
-  record: Pick<ProviderTrustRecord, "coverageModel" | "requiresAddressCheck" | "tags">,
-): boolean {
-  return Boolean(
-    record.requiresAddressCheck ||
-      record.coverageModel === "live_address" ||
-      providerHasTag(record, "address-check-required"),
-  );
-}
-
 export function getProviderCoverageConfidence(
   record: ProviderTrustRecord,
 ): ProviderCoverageConfidence {
@@ -275,20 +227,10 @@ export function getProviderCoverageConfidence(
   const confidence = mapCoverageMatchToConfidence(matchLevel, {
     scope: record.scope,
     coverageModel: record.coverageModel,
-    requiresAddressCheck: providerRequiresAddressCheck(record),
+    requiresAddressCheck: record.requiresAddressCheck,
     requiresPolygonCheck: record.requiresPolygonCheck,
   });
   const presentation = getCoverageConfidencePresentation(confidence);
-
-  if (confidence === "ADDRESS_CHECK_REQUIRED") {
-    return {
-      confidence,
-      level: "low",
-      label: presentation.label,
-      message: presentation.description,
-      requiresConfirmation: true,
-    };
-  }
 
   if (matchLevel === "exact") {
     return {
@@ -456,7 +398,7 @@ export function getProviderQualityWarnings(
     });
   }
 
-  if (providerRequiresAddressCheck(record)) {
+  if (record.requiresAddressCheck || record.coverageModel === "live_address") {
     warnings.push({
       code: "address_check_required",
       label: "Address check required",
@@ -471,42 +413,6 @@ export function getProviderQualityWarnings(
       label: "Mapped coverage",
       message: "Coverage is approximate and should be reviewed against provider source maps.",
       severity: states.length > 1 ? "warning" : "info",
-    });
-  }
-
-  if (isProviderResourceOnly(record)) {
-    warnings.push({
-      code: "resource_only",
-      label: "Resource only",
-      message: "This listing is a verification or directory resource, not a direct household biller.",
-      severity: "info",
-    });
-  }
-
-  if (isProviderManualReview(record)) {
-    warnings.push({
-      code: "manual_review",
-      label: "Manual review",
-      message: "This provider is held for admin review and should not be treated as an active client recommendation.",
-      severity: "warning",
-    });
-  }
-
-  if (providerHasTag(record, "no-active-import")) {
-    warnings.push({
-      code: "controlled_no_active_import",
-      label: "No active import",
-      message: "Controlled import guardrails rejected this row for active recommendation use.",
-      severity: "critical",
-    });
-  }
-
-  if (providerHasTag(record, "scope-review")) {
-    warnings.push({
-      code: "scope_review",
-      label: "Scope review",
-      message: "Controlled import guardrails indicate the provider scope needs admin review.",
-      severity: "warning",
     });
   }
 

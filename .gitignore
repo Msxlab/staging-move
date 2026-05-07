@@ -64,6 +64,3 @@ LocateFlow Design System-handoff*.zip
 
 # local assistant/tool state
 .claude/
-
-# raw provider import drops from local review sessions
-States/

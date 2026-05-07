@@ -1,12 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import { normalizeProviderRecord, safeJsonArray, sanitizeProviderSeedRecords } from "@locateflow/shared";
+import { normalizeProviderRecord, sanitizeProviderSeedRecords } from "@locateflow/shared";
 import { rebuildProviderCoverage } from "../src/provider-coverage";
-import {
-  getControlledDraftProviderSeeds,
-  getControlledExistingProviderUpdates,
-  getControlledGovernanceIssueSeeds,
-} from "./seed-data/controlled-provider-import";
 
 const prisma = new PrismaClient();
 
@@ -44,92 +39,6 @@ async function upsertProvider(d: any) {
   return true;
 }
 
-function mergeStringArrays(...values: Array<string[] | string | null | undefined>): string[] {
-  const seen = new Set<string>();
-  const merged: string[] = [];
-  for (const value of values) {
-    for (const item of safeJsonArray(value)) {
-      const clean = item.trim();
-      if (!clean || seen.has(clean)) continue;
-      seen.add(clean);
-      merged.push(clean);
-    }
-  }
-  return merged;
-}
-
-async function applyControlledProviderUpdate(update: ReturnType<typeof getControlledExistingProviderUpdates>[number]) {
-  const existing = await prisma.serviceProvider.findUnique({ where: { slug: update.slug } });
-  if (!existing || existing.deletedAt) return false;
-
-  const states = update.states.length > 0 ? update.states : safeJsonArray(existing.states);
-  const zipCodes = update.zipCodes.length > 0 ? update.zipCodes : safeJsonArray(existing.zipCodes);
-  const tags = mergeStringArrays(existing.tags, update.tags);
-  const description = update.isActive === false || !existing.description?.trim()
-    ? update.description
-    : existing.description;
-
-  await prisma.$transaction(async (tx) => {
-    await tx.serviceProvider.update({
-      where: { id: existing.id },
-      data: {
-        states: JSON.stringify(states),
-        zipCodes: JSON.stringify(zipCodes),
-        tags: JSON.stringify(tags),
-        description,
-        subCategory: update.isActive === false ? update.subCategory : existing.subCategory || update.subCategory,
-        ...(typeof update.isActive === "boolean" ? { isActive: update.isActive } : {}),
-      },
-    });
-    await rebuildProviderCoverage(tx, {
-      providerId: existing.id,
-      scope: existing.scope,
-      states,
-      zipCodes,
-    });
-  });
-
-  return true;
-}
-
-async function upsertControlledGovernanceIssue(issue: ReturnType<typeof getControlledGovernanceIssueSeeds>[number]) {
-  const provider = issue.providerSlug
-    ? await prisma.serviceProvider.findUnique({ where: { slug: issue.providerSlug } })
-    : null;
-  const existing = await prisma.providerGovernanceIssue.findFirst({
-    where: {
-      issueType: issue.issueType,
-      title: issue.title,
-    },
-  });
-  const data = {
-    providerId: provider?.id || null,
-    issueType: issue.issueType,
-    status: issue.status,
-    severity: issue.severity,
-    title: issue.title,
-    description: issue.description,
-    metadata: issue.metadata,
-  };
-
-  if (existing) {
-    await prisma.providerGovernanceIssue.update({
-      where: { id: existing.id },
-      data: {
-        providerId: data.providerId,
-        severity: data.severity,
-        title: data.title,
-        description: data.description,
-        metadata: data.metadata,
-      },
-    });
-    return false;
-  }
-
-  await prisma.providerGovernanceIssue.create({ data });
-  return true;
-}
-
 import { FEDERAL_NEW, STATE_DMVS, STATE_PROVIDERS } from "./seed-data/provider-seed";
 import { STATE_RULES_ALL } from "./seed-data/state-rules";
 import { EMAIL_TEMPLATES_ALL } from "./seed-data/email-templates";
@@ -164,30 +73,6 @@ async function main() {
     if (await upsertProvider(prov)) created++;
   }
   console.log(`   created ${created} (${stateProviders.length} total)\n`);
-
-  console.log("P1d: Controlled draft providers...");
-  const controlledDraftProviders = sanitizeProviderSeedRecords(getControlledDraftProviderSeeds()).providers;
-  created = 0;
-  for (const prov of controlledDraftProviders) {
-    if (await upsertProvider(prov)) created++;
-  }
-  console.log(`   created ${created} (${controlledDraftProviders.length} inactive draft total)\n`);
-
-  console.log("P1e: Controlled provider scope/metadata updates...");
-  created = 0;
-  const controlledUpdates = getControlledExistingProviderUpdates();
-  for (const update of controlledUpdates) {
-    if (await applyControlledProviderUpdate(update)) created++;
-  }
-  console.log(`   updated ${created} (${controlledUpdates.length} controlled updates total)\n`);
-
-  console.log("P1f: Controlled provider governance issues...");
-  created = 0;
-  const controlledIssues = getControlledGovernanceIssueSeeds();
-  for (const issue of controlledIssues) {
-    if (await upsertControlledGovernanceIssue(issue)) created++;
-  }
-  console.log(`   created ${created} (${controlledIssues.length} governed rows total)\n`);
 
   console.log("P2: State Rules...");
   created = 0;
