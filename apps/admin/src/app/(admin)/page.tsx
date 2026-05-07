@@ -20,6 +20,7 @@ import { HealthCard } from "./health-card";
 import { maskEmail } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
 import { AdminPanel } from "@/components/admin-panel";
+import { AuroraStatCard } from "@/components/aurora";
 import { TierMedallion } from "@/components/premium/tier-medallion";
 
 async function getStats() {
@@ -132,13 +133,30 @@ export default async function DashboardPage() {
       maximumFractionDigits: 0,
     }).format(n);
 
+  // Cards drive the Aurora glass KPI tiles below. Numeric `value` enables
+  // the count-up animation; `formatted` is reserved for currency/percent
+  // strings where formatting differs per locale.
   const kpiCards = [
-    { label: "Total Users", value: stats.totalUsers.toLocaleString(), icon: Users, color: "text-tone-slate-fg", bg: "bg-tone-slate-bg", href: "/users" },
-    { label: "Active Subscriptions", value: stats.activeSubscriptions.toLocaleString(), icon: CreditCard, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg", href: "/subscriptions" },
-    { label: "MRR", value: fmtUsd(stats.mrrUsd), icon: DollarSign, color: "text-tone-honey-fg", bg: "bg-tone-honey-bg", href: "/subscriptions", sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid` },
-    { label: "Churn (30d)", value: `${stats.churnPct.toFixed(1)}%`, icon: TrendingDown, color: stats.churnPct > 5 ? "text-destructive" : "text-tone-honey-fg", bg: stats.churnPct > 5 ? "bg-destructive/10" : "bg-tone-honey-bg", href: "/subscriptions", sub: stats.churnPct > 5 ? "Above 5% target" : "Within target" },
-    { label: "Active Moves", value: stats.activeMovingPlans.toLocaleString(), icon: Truck, color: "text-tone-rose-fg", bg: "bg-tone-rose-bg", href: "/moving" },
-    { label: "Providers", value: stats.totalProviders.toLocaleString(), icon: Building2, color: "text-tone-umber-fg", bg: "bg-tone-umber-bg", href: "/providers" },
+    { label: "Total Users", value: stats.totalUsers, icon: Users, href: "/users" as const },
+    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: CreditCard, href: "/subscriptions" as const },
+    {
+      label: "MRR",
+      value: stats.mrrUsd,
+      formatted: fmtUsd(stats.mrrUsd),
+      icon: DollarSign,
+      href: "/subscriptions" as const,
+      sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid`,
+    },
+    {
+      label: "Churn (30d)",
+      value: stats.churnPct,
+      formatted: `${stats.churnPct.toFixed(1)}%`,
+      icon: TrendingDown,
+      href: "/subscriptions" as const,
+      sub: stats.churnPct > 5 ? "Above 5% target" : "Within target",
+    },
+    { label: "Active Moves", value: stats.activeMovingPlans, icon: Truck, href: "/moving" as const },
+    { label: "Providers", value: stats.totalProviders, icon: Building2, href: "/providers" as const },
   ];
 
   // Plan distribution rows for the new dashboard panel. We only show the
@@ -199,24 +217,19 @@ export default async function DashboardPage() {
         }
       />
 
-      {/* KPI Cards — same data, foil hairline + Fraunces-set values */}
+      {/* KPI Cards — Aurora glass tiles with count-up + cursor-tracking
+          reflex highlight. Same data, same hrefs. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpiCards.map((card) => (
-          <Link key={card.label} href={card.href}
-            className="kpi-foil rounded-2xl border border-border bg-card p-5 block">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="kpi-label">{card.label}</p>
-                <p className="kpi-value mt-2 text-foreground truncate">{card.value}</p>
-                {card.sub ? (
-                  <p className="mt-1 text-[11px] text-muted-foreground truncate">{card.sub}</p>
-                ) : null}
-              </div>
-              <div className={`rounded-lg p-2.5 ${card.bg}`}>
-                <card.icon className={`h-5 w-5 ${card.color}`} />
-              </div>
-            </div>
-          </Link>
+          <AuroraStatCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            formatted={card.formatted}
+            sub={card.sub}
+            icon={card.icon}
+            href={card.href}
+          />
         ))}
       </div>
 
