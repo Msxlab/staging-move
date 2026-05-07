@@ -35,10 +35,34 @@ describe("buildOnboardingProfilePayload", () => {
       isImmigrant: true,
       immigrationStatus: "H1B",
       isBusinessOwner: true,
+      // Profile.isMilitary lives on the Prisma model and on the validator —
+      // forward it from onboarding so users who flagged military status do
+      // not silently lose that flag through the payload builder.
+      isMilitary: true,
     }));
     expect(payload).not.toHaveProperty("businessType");
-    expect(payload).not.toHaveProperty("isMilitary");
     expect(payload).not.toHaveProperty("sensitiveOptIn");
+    expect(profileSchema.safeParse(payload).success).toBe(true);
+  });
+
+  it("defaults isMilitary to false when the onboarding state does not flag it", () => {
+    const payload = buildOnboardingProfilePayload({
+      firstName: "Taylor",
+      lastName: "Mover",
+      ageRange: "",
+      familyStatus: "SINGLE",
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      petTypes: [],
+      carCount: 0,
+      hasSenior: false,
+      hasDisability: false,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+    });
+    expect(payload).toMatchObject({ isMilitary: false });
     expect(profileSchema.safeParse(payload).success).toBe(true);
   });
 

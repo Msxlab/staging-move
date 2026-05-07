@@ -57,10 +57,14 @@ async function main() {
   // because the Prisma seed runs in a separate process without the
   // Next.js app's path aliases — keeping them in sync with that module
   // is a known maintenance cost. If the list grows, update both.
+  // Mirror of ADMIN_RESOURCES in apps/admin/src/lib/admin-permissions.ts.
+  // Kept in sync by tests/admin-permissions-seed-parity (see admin app).
+  // If you add a resource here, also add it there.
   const adminResources = [
     "users", "subscriptions", "reviews", "providers",
     "state_rules", "badges", "documents", "moving_plans", "tickets",
     "audit_logs", "admin_users", "settings",
+    "blog", "acquisition_campaigns",
   ];
 
   for (const resource of adminResources) {

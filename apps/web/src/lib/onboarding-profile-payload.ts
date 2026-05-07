@@ -10,6 +10,7 @@ export interface OnboardingProfileState {
   carCount: number;
   hasSenior: boolean;
   hasDisability: boolean;
+  isMilitary?: boolean;
   needsStorage: boolean;
   hasMotorcycle: boolean;
   hasBoatRV: boolean;
@@ -34,6 +35,7 @@ export function buildOnboardingProfilePayload(
     carCount: profile.carCount,
     hasSenior: profile.hasSenior,
     hasDisability: profile.hasDisability,
+    isMilitary: profile.isMilitary ?? false,
     needsStorage: profile.needsStorage,
     hasMotorcycle: profile.hasMotorcycle,
     hasBoatRV: profile.hasBoatRV,

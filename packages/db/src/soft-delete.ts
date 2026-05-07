@@ -15,15 +15,18 @@
 
 import { Prisma } from "@prisma/client";
 
+// Models with a `deletedAt DateTime?` column in schema.prisma. Keep this list
+// in sync with the schema — see soft-delete.test.ts for the regression guard.
 export const SOFT_DELETE_MODELS = new Set<string>([
   "User",
   "Address",
   "Service",
   "MovingPlan",
-  "Task",
   "Budget",
   "ServiceProvider",
-  "ProviderReview",
+  "MoveTask",
+  "UserCustomProvider",
+  "BlogPost",
 ]);
 
 function isSoftDeleteModel(model: string | undefined): boolean {

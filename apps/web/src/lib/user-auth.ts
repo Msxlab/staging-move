@@ -45,6 +45,10 @@ export interface UserSessionClaims {
   fp?: string;
   fpMode?: SessionClientType;
   sessionId?: string;
+  // Set when the session row was created by SUPER_ADMIN impersonation (see
+  // /api/internal/impersonate). Surfaced here so /api/auth/me and the app
+  // shell can render an impersonation banner without a second DB hit.
+  impersonatedByAdminId?: string | null;
   user?: AuthenticatedSessionUser;
 }
 
@@ -453,7 +457,13 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
     const record = await prisma.userLoginSession
       .findFirst({
         where: { tokenHash, isActive: true },
-        select: { id: true, userId: true, expiresAt: true, userAgent: true },
+        select: {
+          id: true,
+          userId: true,
+          expiresAt: true,
+          userAgent: true,
+          impersonatedByAdminId: true,
+        },
       })
       .catch(() => null);
 
@@ -561,6 +571,7 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
           ? (payload.fpMode as SessionClientType)
           : undefined,
       sessionId: record.id,
+      impersonatedByAdminId: record.impersonatedByAdminId ?? null,
       user,
     };
   } catch {

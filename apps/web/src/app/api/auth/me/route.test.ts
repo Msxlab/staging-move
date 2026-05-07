@@ -83,4 +83,54 @@ describe("/api/auth/me", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(body).toEqual({ authenticated: false, user: null });
   });
+
+  it("surfaces impersonation metadata when session was created by an admin", async () => {
+    mocks.getUserSession.mockResolvedValue({
+      userId: "user_1",
+      email: "user@example.com",
+      impersonatedByAdminId: "admin_42",
+    });
+    mocks.userFindFirst.mockResolvedValue({
+      id: "user_1",
+      email: "user@example.com",
+      firstName: "Test",
+      lastName: "User",
+      imageUrl: null,
+      emailVerifiedAt: new Date("2025-01-01"),
+      mfaEnabled: false,
+      createdAt: new Date("2024-12-01"),
+    });
+
+    const response = await GET(request("/api/auth/me"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.impersonation).toEqual({ active: true, adminId: "admin_42" });
+    expect(body.user.impersonatedByAdminId).toBe("admin_42");
+  });
+
+  it("does not surface impersonation state for normal sessions", async () => {
+    mocks.getUserSession.mockResolvedValue({
+      userId: "user_1",
+      email: "user@example.com",
+      impersonatedByAdminId: null,
+    });
+    mocks.userFindFirst.mockResolvedValue({
+      id: "user_1",
+      email: "user@example.com",
+      firstName: null,
+      lastName: null,
+      imageUrl: null,
+      emailVerifiedAt: new Date("2025-01-01"),
+      mfaEnabled: false,
+      createdAt: new Date("2024-12-01"),
+    });
+
+    const response = await GET(request("/api/auth/me"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.impersonation).toEqual({ active: false });
+    expect(body.user.impersonatedByAdminId).toBeNull();
+  });
 });

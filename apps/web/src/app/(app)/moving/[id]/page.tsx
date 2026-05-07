@@ -185,7 +185,7 @@ export default function MovingPlanDetailPage() {
         if (normalizedPlan?.toAddress?.state) {
           fetch(`/api/state-rules?state=${encodeURIComponent(normalizedPlan.toAddress.state)}`)
             .then((r) => r.ok ? r.json() : null)
-            .then((d) => { if (d?.rules?.length) setStateRules(d.rules[0]); })
+            .then((d) => { if (d?.stateRule) setStateRules(d.stateRule); })
             .catch(() => {});
         }
       })
@@ -216,7 +216,12 @@ export default function MovingPlanDetailPage() {
 
   const handleDelete = async () => {
     setDeleting(true);
-    const res = await fetch(`/api/moving/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/moving/${id}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({}),
+    });
     if (res.ok) { toast.success("Plan deleted"); router.push("/moving"); }
     else { toast.error("Failed to delete"); setDeleting(false); }
   };

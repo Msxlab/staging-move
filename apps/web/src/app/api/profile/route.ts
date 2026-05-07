@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
   const storesSensitiveProfileData =
     validated.hasDisability === true ||
     validated.isImmigrant === true ||
+    validated.isMilitary === true ||
     Boolean(validated.immigrationStatus);
   if (storesSensitiveProfileData && !(await hasCurrentDataConsent(userId, "SENSITIVE"))) {
     return NextResponse.json(
@@ -203,6 +204,7 @@ export async function POST(request: NextRequest) {
       needsStorage: validated.needsStorage,
       hasSenior: validated.hasSenior,
       hasDisability: validated.hasDisability,
+      isMilitary: validated.isMilitary,
       moveType: validated.moveType || "PERSONAL",
       isBusinessOwner: validated.moveType === "BUSINESS" ? validated.isBusinessOwner : false,
       isImmigrant: validated.isImmigrant,

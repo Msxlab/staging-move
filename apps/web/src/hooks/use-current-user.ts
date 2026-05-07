@@ -11,6 +11,7 @@ export interface CurrentUser {
   emailVerified: boolean;
   mfaEnabled: boolean;
   createdAt: string;
+  impersonatedByAdminId: string | null;
 }
 
 export interface UseCurrentUserResult {
