@@ -107,6 +107,9 @@ export async function POST(request: NextRequest) {
       if (!normalized) {
         return NextResponse.json({ error: "SUBSCRIPTION_NOT_FOUND" }, { status: 404 });
       }
+      if (normalized.productId !== parsed.data.productId) {
+        return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
+      }
     }
 
     let subscription;
@@ -137,6 +140,9 @@ export async function POST(request: NextRequest) {
     }
     if (error?.message === "APPLE_API_CREDS_MISSING" || error?.message === "GOOGLE_API_CREDS_MISSING") {
       return NextResponse.json({ error: "IAP_NOT_CONFIGURED" }, { status: 503 });
+    }
+    if (typeof error?.message === "string" && error.message.startsWith("GOOGLE_ACK_")) {
+      return NextResponse.json({ error: "IAP_ACKNOWLEDGEMENT_FAILED" }, { status: 503 });
     }
     if (error?.message === "GOOGLE_TEST_PURCHASE_IN_PRODUCTION") {
       return NextResponse.json({ error: "TEST_PURCHASE_NOT_ALLOWED" }, { status: 400 });

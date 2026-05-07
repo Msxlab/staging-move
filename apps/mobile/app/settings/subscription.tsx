@@ -28,6 +28,7 @@ import { hapticError, hapticSuccess } from "@/lib/haptics";
 import {
   closeConnection,
   fetchSubscriptionProducts,
+  IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE,
   IAP_PURCHASE_FAILED_MESSAGE,
   IAP_STORE_UNAVAILABLE_MESSAGE,
   IAP_VERIFICATION_ERROR_MESSAGE,
@@ -35,6 +36,7 @@ import {
   purchaseSubscription,
   restorePurchases,
 } from "@/lib/iap";
+import { selectAndroidSubscriptionOffer } from "@/lib/iap-offers";
 import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
@@ -174,6 +176,8 @@ function LegacySubscriptionScreen() {
   const [iapProducts, setIapProducts] = useState<IapProductsResponse | null>(null);
   const [localizedMonthlyPrice, setLocalizedMonthlyPrice] = useState<string | null>(null);
   const [localizedYearlyPrice, setLocalizedYearlyPrice] = useState<string | null>(null);
+  const [monthlyOfferToken, setMonthlyOfferToken] = useState<string | null>(null);
+  const [yearlyOfferToken, setYearlyOfferToken] = useState<string | null>(null);
   const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
 
@@ -215,6 +219,8 @@ function LegacySubscriptionScreen() {
     if (!canUseNativePurchases || skus.length === 0) {
       setLocalizedMonthlyPrice(null);
       setLocalizedYearlyPrice(null);
+      setMonthlyOfferToken(null);
+      setYearlyOfferToken(null);
       return;
     }
     let cancelled = false;
@@ -223,8 +229,12 @@ function LegacySubscriptionScreen() {
       if (cancelled) return;
       const monthly = products.find((p) => p.id === monthlySku);
       const yearly = products.find((p) => p.id === yearlySku);
+      const monthlyAndroidOffer = monthly ? selectAndroidSubscriptionOffer(monthly, "monthly") : null;
+      const yearlyAndroidOffer = yearly ? selectAndroidSubscriptionOffer(yearly, "yearly") : null;
       setLocalizedMonthlyPrice(monthly?.displayPrice || null);
       setLocalizedYearlyPrice(yearly?.displayPrice || null);
+      setMonthlyOfferToken(monthlyAndroidOffer?.offerToken || null);
+      setYearlyOfferToken(yearlyAndroidOffer?.offerToken || null);
     })();
     return () => {
       cancelled = true;
@@ -270,6 +280,11 @@ function LegacySubscriptionScreen() {
     if (message === IAP_PURCHASE_FAILED_MESSAGE) return t("settings.subscription_purchaseFailed");
     if (message === IAP_VERIFICATION_ERROR_MESSAGE) return t("settings.subscription_verificationError");
     if (message === IAP_STORE_UNAVAILABLE_MESSAGE) return t("settings.subscription_storeUnavailable");
+    if (message === IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE) {
+      return t("settings.subscription_androidOfferMissing", {
+        defaultValue: "Google Play subscription offer is not configured. Please try again later.",
+      });
+    }
     return message || t("toast.networkError");
   }, [t]);
 
@@ -330,8 +345,13 @@ function LegacySubscriptionScreen() {
     // Pick the SKU matching the user-chosen cycle. Fall back to monthly when
     // the yearly SKU is not configured so a single-SKU build keeps working.
     const targetSku = cycle === "yearly" ? (yearlySku || monthlySku) : monthlySku;
+    const targetOfferToken = Platform.OS === "android"
+      ? cycle === "yearly" && yearlySku
+        ? yearlyOfferToken
+        : monthlyOfferToken
+      : undefined;
     if (targetSku) {
-      const result = await purchaseSubscription({ productId: targetSku });
+      const result = await purchaseSubscription({ productId: targetSku, offerToken: targetOfferToken });
       setProcessingPlan(null);
 
       if (result.status === "cancelled") return;
@@ -352,6 +372,8 @@ function LegacySubscriptionScreen() {
     canUseNativePurchases,
     monthlySku,
     yearlySku,
+    monthlyOfferToken,
+    yearlyOfferToken,
     fetchSubscription,
     t,
     annualOffer,
@@ -466,7 +488,7 @@ function LegacySubscriptionScreen() {
           />
         </View>
 
-        {isNativeStorePlatform && (
+        {isNativeStorePlatform && (isStripeManaged || !canUseNativePurchases) && (
           <View style={styles.mobileBillingNotice}>
             <Text style={styles.mobileBillingNoticeText}>
               {isStripeManaged

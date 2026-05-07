@@ -12,7 +12,9 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: vi.fn(async (key: string) => {
+    if (key.includes("IOS") && key.includes("YEARLY")) return "individual.ios.yearly";
     if (key.includes("IOS")) return "individual.ios";
+    if (key.includes("ANDROID") && key.includes("YEARLY")) return "individual.android.yearly";
     if (key.includes("ANDROID")) return "individual.android";
     return null;
   }),
@@ -29,15 +31,23 @@ vi.mock("@/lib/iap-google", () => ({
   mapGoogleSubscriptionState: vi.fn(() => "ACTIVE"),
 }));
 
-import { applyIapStateToUser, normalizeAppleResult, normalizeGoogleResult, type NormalizedIapState } from "./iap-common";
+import {
+  applyIapStateToUser,
+  normalizeAppleResult,
+  normalizeGoogleResult,
+  refreshGoogleSubscriptionFor,
+  type NormalizedIapState,
+} from "./iap-common";
 import { prisma } from "@/lib/db";
 import { mapAppleStatus } from "@/lib/iap-apple";
+import { acknowledgeGoogleSubscription, getGoogleSubscription } from "@/lib/iap-google";
 
 const originalEnv = { ...process.env };
 
 describe("IAP normalization", () => {
   afterEach(() => {
     process.env = { ...originalEnv };
+    vi.clearAllMocks();
   });
 
   it("rejects Google Play test purchases in production billing environments", async () => {
@@ -116,5 +126,75 @@ describe("IAP normalization", () => {
     await expect(applyIapStateToUser({ userId: "user-1", state }))
       .rejects
       .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
+  });
+
+  it("prevents restoring a Google Play purchase token onto another account", async () => {
+    vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue({
+      id: "sub-owned",
+      userId: "user-owner",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "MONTH",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-other", state }))
+      .rejects
+      .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
+  });
+
+  it("acknowledges pending active Google Play subscriptions before returning entitlement state", async () => {
+    vi.mocked(getGoogleSubscription).mockResolvedValue({
+      packageName: "com.locateflow.mobile",
+      purchaseToken: "purchase-token",
+      response: {
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
+        lineItems: [{ productId: "individual.android" }],
+      },
+    });
+    vi.mocked(acknowledgeGoogleSubscription).mockResolvedValue();
+
+    const normalized = await refreshGoogleSubscriptionFor("purchase-token");
+
+    expect(acknowledgeGoogleSubscription).toHaveBeenCalledWith({
+      purchaseToken: "purchase-token",
+      productId: "individual.android",
+    });
+    expect(normalized).toMatchObject({
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      status: "ACTIVE",
+    });
+  });
+
+  it("does not return durable Google Play entitlement state when acknowledgement fails", async () => {
+    vi.mocked(getGoogleSubscription).mockResolvedValue({
+      packageName: "com.locateflow.mobile",
+      purchaseToken: "purchase-token",
+      response: {
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
+        lineItems: [{ productId: "individual.android" }],
+      },
+    });
+    vi.mocked(acknowledgeGoogleSubscription).mockRejectedValue(new Error("GOOGLE_ACK_503:down"));
+
+    await expect(refreshGoogleSubscriptionFor("purchase-token")).rejects.toThrow("GOOGLE_ACK_503");
   });
 });

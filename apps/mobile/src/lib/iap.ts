@@ -16,19 +16,16 @@ import { Platform } from "react-native";
 import { api } from "@/lib/api";
 import { MOBILE_STORE_PURCHASES_ENABLED } from "@/lib/billing-flags";
 import { captureException } from "@/lib/sentry";
+import {
+  buildSubscriptionPurchaseRequest,
+  IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE,
+  normalizeSubscriptionProduct,
+  type SubscriptionProduct,
+} from "@/lib/iap-offers";
 
 type ExpoIapModule = typeof import("expo-iap");
 
 declare const require: (moduleName: string) => unknown;
-
-type SubscriptionProduct = {
-  id: string;
-  title: string;
-  description: string;
-  displayPrice: string;
-  price?: number;
-  currency?: string;
-};
 
 type VerifyResponse = {
   success?: boolean;
@@ -106,14 +103,7 @@ export async function fetchSubscriptionProducts(skus: string[]): Promise<Subscri
 
   try {
     const products = await IAP.fetchProducts({ skus, type: "subs" });
-    return (products || []).map((p: any) => ({
-      id: String(p.id ?? p.productId ?? ""),
-      title: String(p.title ?? p.name ?? ""),
-      description: String(p.description ?? ""),
-      displayPrice: String(p.displayPrice ?? p.localizedPrice ?? p.price ?? ""),
-      price: typeof p.price === "number" ? p.price : undefined,
-      currency: typeof p.currency === "string" ? p.currency : typeof p.currencyCode === "string" ? p.currencyCode : undefined,
-    }));
+    return (products || []).map(normalizeSubscriptionProduct);
   } catch (err) {
     reportIapIssue("[IAP] fetchProducts failed", err);
     return [];
@@ -129,6 +119,7 @@ export type PurchaseResult =
 export const IAP_PURCHASE_FAILED_MESSAGE = "IAP_PURCHASE_FAILED";
 export const IAP_VERIFICATION_ERROR_MESSAGE = "IAP_VERIFICATION_ERROR";
 export const IAP_STORE_UNAVAILABLE_MESSAGE = "IAP_STORE_UNAVAILABLE";
+export { IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE };
 
 /**
  * Kick off a subscription purchase and wait for backend verification.
@@ -141,6 +132,7 @@ export const IAP_STORE_UNAVAILABLE_MESSAGE = "IAP_STORE_UNAVAILABLE";
  */
 export async function purchaseSubscription(opts: {
   productId: string;
+  offerToken?: string | null;
 }): Promise<PurchaseResult> {
   if (!MOBILE_STORE_PURCHASES_ENABLED) {
     return { status: "error", message: IAP_STORE_UNAVAILABLE_MESSAGE };
@@ -236,15 +228,18 @@ export async function purchaseSubscription(opts: {
 
     (async () => {
       try {
-        if (Platform.OS === "ios") {
-          await IAP.requestPurchase({ request: { sku: opts.productId } });
-        } else {
-          await IAP.requestPurchase({
-            request: { skus: [opts.productId] },
-            type: "subs",
-          });
-        }
+        await IAP.requestPurchase(
+          buildSubscriptionPurchaseRequest({
+            platform: Platform.OS === "ios" ? "ios" : "android",
+            productId: opts.productId,
+            offerToken: opts.offerToken,
+          }),
+        );
       } catch (err: any) {
+        if (err?.message === IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE) {
+          finish({ status: "error", message: IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE });
+          return;
+        }
         if (IAP.isUserCancelledError(err)) {
           finish({ status: "cancelled" });
         } else {

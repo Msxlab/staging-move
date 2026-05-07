@@ -331,6 +331,14 @@ export async function applyIapStateToUser(opts: {
   if (existingByTxn && existingByTxn.userId !== userId) {
     throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
   }
+  const existingByPurchaseToken = state.purchaseToken
+    ? await prisma.subscription.findFirst({
+        where: { purchaseToken: state.purchaseToken },
+      })
+    : null;
+  if (existingByPurchaseToken && existingByPurchaseToken.userId !== userId) {
+    throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
+  }
 
   const existingByUser = await prisma.subscription.findUnique({
     where: { userId },
@@ -429,12 +437,9 @@ export async function refreshGoogleSubscriptionFor(purchaseToken: string) {
     normalized.status === "ACTIVE" &&
     result.response.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING"
   ) {
-    // Best-effort ack; do not fail the flow if Google rejects.
     await acknowledgeGoogleSubscription({
       purchaseToken,
       productId: normalized.productId,
-    }).catch((err) => {
-      console.error("[IAP] google ack failed:", err);
     });
   }
 
