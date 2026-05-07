@@ -216,16 +216,35 @@ export async function GET(request: NextRequest) {
         .catch(() => 0) || 0,
     ]);
 
-    // Last backup
+    // Last successful backup. The admin backup schedule is wired through
+    // docker/ofelia.ini in container deployments, so this runtime check is
+    // the source-code proof that the scheduled endpoint has actually been
+    // succeeding after deploy.
     let lastBackup = null;
     try {
       const backup = await prisma.backupRecord.findFirst({
         where: { status: "COMPLETED" },
         orderBy: { createdAt: "desc" },
-        select: { createdAt: true, type: true, fileSize: true },
+        select: { createdAt: true, completedAt: true, type: true, fileSize: true },
       });
       lastBackup = backup;
     } catch {}
+
+    if (lastBackup?.completedAt || lastBackup?.createdAt) {
+      const backupAt = lastBackup.completedAt || lastBackup.createdAt;
+      const ageHours = (Date.now() - backupAt.getTime()) / (60 * 60 * 1000);
+      checks.push({
+        name: "Scheduled Backup",
+        status: ageHours <= 24 ? "healthy" : "degraded",
+        details: `Last successful backup: ${backupAt.toISOString()}`,
+      });
+    } else {
+      checks.push({
+        name: "Scheduled Backup",
+        status: isProductionLikeRuntime() ? "degraded" : "unknown",
+        details: "No successful backup record found",
+      });
+    }
 
     const overall = checks.some((c) => c.status === "down")
       ? "down"

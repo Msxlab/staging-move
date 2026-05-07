@@ -1,5 +1,10 @@
 import { createHash, createHmac } from "crypto";
 import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
+import {
+  redactBackupMetadata,
+  type BackupCompatibilityMetadata,
+  type BackupEnvironmentMetadata,
+} from "@/lib/backup-metadata";
 
 const BACKUP_STORAGE_KEYS = [
   "BACKUP_STORAGE_PROVIDER",
@@ -34,6 +39,7 @@ export interface BackupArchiveRecordMetadata {
   signature: boolean;
   totalRecords: number | null;
   tableCounts: Record<string, number>;
+  tableCount?: number;
   archiveSizeWarning?: string | null;
   // Names of tables whose rowcount hit the per-table ceiling. Omitted
   // for FULL archives; populated when the archive is PARTIAL so the
@@ -41,6 +47,8 @@ export interface BackupArchiveRecordMetadata {
   truncatedTables?: string[];
   failedTables?: string[];
   maxRowsPerTable?: number;
+  environment?: BackupEnvironmentMetadata | null;
+  compatibility?: BackupCompatibilityMetadata | null;
 }
 
 export interface BackupRecordMetadata {
@@ -253,9 +261,72 @@ function normalizeArchiveRecordMetadata(
     totalRecords:
       typeof input.totalRecords === "number" ? input.totalRecords : null,
     tableCounts,
+    tableCount: typeof input.tableCount === "number" ? input.tableCount : undefined,
     archiveSizeWarning:
       typeof input.archiveSizeWarning === "string"
         ? input.archiveSizeWarning
+        : null,
+    truncatedTables: Array.isArray(input.truncatedTables)
+      ? input.truncatedTables.filter((value: unknown): value is string => typeof value === "string")
+      : undefined,
+    failedTables: Array.isArray(input.failedTables)
+      ? input.failedTables.filter((value: unknown): value is string => typeof value === "string")
+      : undefined,
+    maxRowsPerTable:
+      typeof input.maxRowsPerTable === "number" ? input.maxRowsPerTable : undefined,
+    environment:
+      input.environment && typeof input.environment === "object"
+        ? {
+            name:
+              typeof input.environment.name === "string"
+                ? input.environment.name
+                : "unknown",
+            nodeEnv:
+              typeof input.environment.nodeEnv === "string"
+                ? input.environment.nodeEnv
+                : "unknown",
+            appEnv:
+              typeof input.environment.appEnv === "string"
+                ? input.environment.appEnv
+                : null,
+            vercelEnv:
+              typeof input.environment.vercelEnv === "string"
+                ? input.environment.vercelEnv
+                : null,
+            digitalOceanAppIdPresent: Boolean(
+              input.environment.digitalOceanAppIdPresent,
+            ),
+            databaseFingerprint:
+              typeof input.environment.databaseFingerprint === "string"
+                ? input.environment.databaseFingerprint
+                : "unknown",
+          }
+        : null,
+    compatibility:
+      input.compatibility && typeof input.compatibility === "object"
+        ? {
+            appVersion:
+              typeof input.compatibility.appVersion === "string"
+                ? input.compatibility.appVersion
+                : "unknown",
+            buildId:
+              typeof input.compatibility.buildId === "string"
+                ? input.compatibility.buildId
+                : null,
+            gitCommit:
+              typeof input.compatibility.gitCommit === "string"
+                ? input.compatibility.gitCommit
+                : null,
+            schemaHash:
+              typeof input.compatibility.schemaHash === "string"
+                ? input.compatibility.schemaHash
+                : "unknown",
+            schemaHashAlgorithm: "sha256-prisma-dmmf-v1",
+            backupTableCatalogHash:
+              typeof input.compatibility.backupTableCatalogHash === "string"
+                ? input.compatibility.backupTableCatalogHash
+                : "unknown",
+          }
         : null,
   };
 }
@@ -284,10 +355,11 @@ export function parseBackupRecordMetadata(
 export function serializeBackupRecordMetadata(
   metadata: BackupRecordMetadata,
 ): string | null {
+  const safeMetadata = redactBackupMetadata(metadata);
   const payload: BackupRecordMetadata = {};
-  if (metadata.offsite) payload.offsite = metadata.offsite;
-  if (metadata.archive) payload.archive = metadata.archive;
-  if (metadata.error) payload.error = metadata.error;
+  if (safeMetadata.offsite) payload.offsite = safeMetadata.offsite;
+  if (safeMetadata.archive) payload.archive = safeMetadata.archive;
+  if (safeMetadata.error) payload.error = safeMetadata.error;
   return Object.keys(payload).length > 0 ? JSON.stringify(payload) : null;
 }
 

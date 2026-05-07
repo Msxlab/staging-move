@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { downloadBackupArchive, parseBackupRecordMetadata } from "@/lib/backup-storage";
+import { redactBackupSecretText } from "@/lib/backup-metadata";
 
 export async function GET() {
   return NextResponse.json(
@@ -81,9 +82,9 @@ export async function POST(
       return NextResponse.json({ error: "Backup storage is not fully configured for archive downloads." }, { status: 503 });
     }
     if (typeof error?.message === "string" && error.message.startsWith("BACKUP_DOWNLOAD_FAILED:")) {
-      return NextResponse.json({ error: error.message.slice("BACKUP_DOWNLOAD_FAILED:".length) || "Backup archive download failed." }, { status: 502 });
+      return NextResponse.json({ error: redactBackupSecretText(error.message.slice("BACKUP_DOWNLOAD_FAILED:".length)) || "Backup archive download failed." }, { status: 502 });
     }
-    console.error("Failed to download backup archive:", error);
+    console.error(`Failed to download backup archive: ${redactBackupSecretText(error)}`);
     return NextResponse.json({ error: "Failed to download backup archive" }, { status: 500 });
   }
 }

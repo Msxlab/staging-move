@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => {
     backupRecord: {
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       findMany: vi.fn(),
     },
     adminAuditLog: {
@@ -96,6 +97,10 @@ describe("backup creation safety policy", () => {
       createdBy: "admin_1",
       createdAt: new Date("2026-04-24T00:00:00.000Z"),
     });
+    mocks.prisma.backupRecord.findMany.mockResolvedValue([
+      { id: "backup_1", createdAt: new Date("2026-04-24T00:00:00.000Z") },
+    ]);
+    mocks.prisma.backupRecord.updateMany.mockResolvedValue({ count: 0 });
     mocks.prisma.backupRecord.update.mockResolvedValue({});
     mocks.prisma.user.findMany.mockResolvedValue([{ id: "user_1" }]);
     mocks.encryptBackup.mockReturnValue({
@@ -213,5 +218,82 @@ describe("backup creation safety policy", () => {
         data: expect.objectContaining({ status: "FAILED" }),
       }),
     );
+  });
+
+  it("fails closed in production when encryption or HMAC signing is missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("FIELD_ENCRYPTION_KEY", VALID_KEY);
+    mocks.encryptBackup.mockReturnValue(null);
+    mocks.signBackup.mockReturnValue(null);
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        type: "FULL",
+        tables: ["users"],
+        confirmPassword: "correct horse",
+      }),
+    );
+
+    expect(res.status).toBe(503);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "BACKUP_ARCHIVE_UNPROTECTED",
+    });
+    expect(mocks.uploadBackupArchive).not.toHaveBeenCalled();
+  });
+
+  it("marks manual backups partial when a selected table fetch fails", async () => {
+    mocks.prisma.user.findMany.mockRejectedValue(new Error("table unavailable"));
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        type: "FULL",
+        tables: ["users"],
+        confirmPassword: "correct horse",
+      }),
+    );
+
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body).toMatchObject({
+      partial: true,
+      failedTables: ["users"],
+      backup: { type: "PARTIAL", status: "COMPLETED" },
+    });
+    expect(mocks.prisma.backupRecord.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: "PARTIAL",
+          status: "COMPLETED",
+        }),
+      }),
+    );
+  });
+
+  it("writes schema hash metadata without leaking backup secrets", async () => {
+    vi.stubEnv(
+      "DATABASE_URL",
+      "mysql://backup_user:supersecret@db.example.com:3306/locateflow",
+    );
+    vi.stubEnv("FIELD_ENCRYPTION_KEY", VALID_KEY);
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        type: "FULL",
+        tables: ["users"],
+        confirmPassword: "correct horse",
+      }),
+    );
+
+    expect(res.status).toBe(201);
+    const uploadArgs = mocks.uploadBackupArchive.mock.calls.at(-1)?.[0];
+    const archive = JSON.parse(uploadArgs.archiveBody);
+    expect(archive.metadata.compatibility.schemaHash).toEqual(expect.any(String));
+    expect(archive.metadata.compatibility.schemaHash.length).toBe(64);
+    expect(archive.metadata.environment.databaseFingerprint).toEqual(expect.any(String));
+    expect(uploadArgs.archiveBody).not.toContain("supersecret");
+    expect(uploadArgs.archiveBody).not.toContain(VALID_KEY);
   });
 });

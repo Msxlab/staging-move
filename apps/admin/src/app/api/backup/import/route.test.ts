@@ -1,4 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  getCurrentBackupEnvironmentMetadata,
+} from "@/lib/backup-metadata";
+import {
+  getProductionRestoreConfirmationPhrase,
+  getReplaceConfirmationPhrase,
+} from "@/lib/backup-restore-guard";
 
 const mocks = vi.hoisted(() => {
   const prisma = {
@@ -67,6 +74,7 @@ function jsonRequest(body: unknown) {
 describe("backup import signature enforcement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
     mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
     mocks.parseBackupArchive.mockReturnValue(null);
@@ -118,5 +126,127 @@ describe("backup import signature enforcement", () => {
       mode: "DRY_RUN",
       signatureVerified: false,
     });
+  });
+
+  it("rejects signed MERGE restore into the wrong target environment", async () => {
+    vi.stubEnv("APP_ENV", "staging");
+    vi.stubEnv(
+      "DATABASE_URL",
+      "mysql://admin:target-secret@target.example.com:3306/staging",
+    );
+    const rawContent = JSON.stringify({
+      metadata: {
+        environment: {
+          name: "production",
+          nodeEnv: "production",
+          appEnv: "production",
+          vercelEnv: null,
+          digitalOceanAppIdPresent: true,
+          databaseFingerprint: "different-fingerprint",
+        },
+      },
+      data: { users: [{ id: "user_1" }] },
+    });
+
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      mode: "MERGE",
+      confirmPassword: "correct horse",
+      targetEnvironment: "staging",
+      signature: "good",
+      rawContent,
+    }));
+
+    expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "RESTORE_ENVIRONMENT_MISMATCH",
+    });
+    expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("requires a strong REPLACE confirmation phrase", async () => {
+    vi.stubEnv("APP_ENV", "staging");
+    vi.stubEnv("DATABASE_URL", "mysql://admin:secret@target.example.com/staging");
+    const rawContent = JSON.stringify({
+      data: { users: [{ id: "user_1" }] },
+    });
+
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      mode: "REPLACE",
+      confirmPassword: "correct horse",
+      targetEnvironment: "staging",
+      signature: "good",
+      rawContent,
+    }));
+
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "RESTORE_REPLACE_CONFIRMATION_REQUIRED",
+    });
+    expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("blocks production REPLACE without the approved production restore flag", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubEnv("DATABASE_URL", "mysql://admin:secret@target.example.com/prod");
+    const target = getCurrentBackupEnvironmentMetadata();
+    const rawContent = JSON.stringify({
+      data: { users: [{ id: "user_1" }] },
+    });
+
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      mode: "REPLACE",
+      confirmPassword: "correct horse",
+      targetEnvironment: "production",
+      replaceConfirmation: getReplaceConfirmationPhrase(target),
+      signature: "good",
+      rawContent,
+    }));
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "RESTORE_PRODUCTION_REPLACE_BLOCKED",
+      details: { approvedByEnv: false },
+    });
+    expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("allows production REPLACE only when the flag and confirmations are present", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    vi.stubEnv("DATABASE_URL", "mysql://admin:secret@target.example.com/prod");
+    vi.stubEnv("ALLOW_PRODUCTION_REPLACE_RESTORE", "true");
+    const target = getCurrentBackupEnvironmentMetadata();
+    mocks.prisma.$transaction.mockImplementation(async (callback: any) =>
+      callback({
+        user: {
+          deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+          create: vi.fn().mockResolvedValue({}),
+        },
+      }),
+    );
+    const rawContent = JSON.stringify({
+      data: { users: [{ id: "user_1" }] },
+    });
+
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      mode: "REPLACE",
+      confirmPassword: "correct horse",
+      targetEnvironment: "production",
+      replaceConfirmation: getReplaceConfirmationPhrase(target),
+      productionRestoreConfirmation:
+        getProductionRestoreConfirmationPhrase(target),
+      signature: "good",
+      rawContent,
+    }));
+
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toMatchObject({
+      success: true,
+      mode: "REPLACE",
+    });
+    expect(mocks.prisma.$transaction).toHaveBeenCalled();
   });
 });

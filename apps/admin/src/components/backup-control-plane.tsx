@@ -45,6 +45,28 @@ interface BackupArchiveDiagnostics {
   tableCounts: Record<string, number>;
 }
 
+interface BackupRestoreTarget {
+  environment: {
+    name: string;
+    nodeEnv: string;
+    appEnv: string | null;
+    vercelEnv: string | null;
+    digitalOceanAppIdPresent: boolean;
+    databaseFingerprintPrefix: string;
+  };
+  confirmations: {
+    targetEnvironment: string;
+    replaceConfirmation: string;
+    productionRestoreConfirmation: string;
+  };
+}
+
+interface ImportArchiveSource {
+  environmentName: string | null;
+  databaseFingerprintPrefix: string | null;
+  schemaHashPrefix: string | null;
+}
+
 interface BackupRecord {
   id: string;
   type: string;
@@ -243,10 +265,28 @@ function getBackupTypeLabel(type: string) {
   return BACKUP_TYPES.find((item) => item.value === type)?.label || type;
 }
 
+function extractArchiveSource(metadata: any): ImportArchiveSource {
+  return {
+    environmentName:
+      typeof metadata?.environment?.name === "string"
+        ? metadata.environment.name
+        : null,
+    databaseFingerprintPrefix:
+      typeof metadata?.environment?.databaseFingerprint === "string"
+        ? metadata.environment.databaseFingerprint.slice(0, 12)
+        : null,
+    schemaHashPrefix:
+      typeof metadata?.compatibility?.schemaHash === "string"
+        ? metadata.compatibility.schemaHash.slice(0, 12)
+        : null,
+  };
+}
+
 function extractImportPreview(parsed: any): {
   payload: Record<string, unknown>;
   preview: Record<string, number>;
   encrypted: boolean;
+  source: ImportArchiveSource | null;
 } {
   const archive =
     parsed && parsed.version === 1 && parsed.metadata && parsed.payload
@@ -287,6 +327,7 @@ function extractImportPreview(parsed: any): {
       payload: { archive },
       preview,
       encrypted: archive.payload?.type === "encrypted",
+      source: extractArchiveSource(archive.metadata),
     };
   }
 
@@ -302,6 +343,29 @@ function extractImportPreview(parsed: any): {
     payload: { data },
     preview,
     encrypted: false,
+    source: extractArchiveSource(parsed?.metadata),
+  };
+}
+
+export function buildRestoreImportPayload(input: {
+  importPayload: Record<string, unknown>;
+  tables: string[];
+  mode: "MERGE" | "REPLACE";
+  targetEnvironment: string;
+  replaceConfirmation?: string;
+  productionRestoreConfirmation?: string;
+}): Record<string, unknown> {
+  return {
+    ...input.importPayload,
+    tables: input.tables,
+    mode: input.mode,
+    targetEnvironment: input.targetEnvironment,
+    ...(input.mode === "REPLACE" && input.replaceConfirmation
+      ? { replaceConfirmation: input.replaceConfirmation }
+      : {}),
+    ...(input.mode === "REPLACE" && input.productionRestoreConfirmation
+      ? { productionRestoreConfirmation: input.productionRestoreConfirmation }
+      : {}),
   };
 }
 
@@ -372,6 +436,8 @@ export function BackupControlPlane() {
   const [storage, setStorage] = useState<BackupStorageSummary | null>(null);
   const [archivePolicy, setArchivePolicy] =
     useState<BackupArchivePolicy | null>(null);
+  const [restoreTarget, setRestoreTarget] =
+    useState<BackupRestoreTarget | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -399,6 +465,11 @@ export function BackupControlPlane() {
   const [importTables, setImportTables] = useState<string[]>([]);
   const [importMode, setImportMode] = useState<"MERGE" | "REPLACE">("MERGE");
   const [importIsEncrypted, setImportIsEncrypted] = useState(false);
+  const [importArchiveSource, setImportArchiveSource] =
+    useState<ImportArchiveSource | null>(null);
+  const [targetEnvironmentInput, setTargetEnvironmentInput] = useState("");
+  const [replaceConfirmationInput, setReplaceConfirmationInput] = useState("");
+  const [productionRestoreInput, setProductionRestoreInput] = useState("");
   const [verificationResult, setVerificationResult] =
     useState<VerifyResult | null>(null);
   const [verifying, setVerifying] = useState(false);
@@ -458,6 +529,30 @@ export function BackupControlPlane() {
   const offsiteProtectedCount = completedBackups.filter(
     (backup) => backup.offsite?.status === "stored",
   ).length;
+  const restoreTargetEnvironment =
+    restoreTarget?.confirmations.targetEnvironment ||
+    restoreTarget?.environment.name ||
+    "";
+  const replaceConfirmationPhrase =
+    restoreTarget?.confirmations.replaceConfirmation || "";
+  const productionRestorePhrase =
+    restoreTarget?.confirmations.productionRestoreConfirmation || "";
+  const targetEnvironmentConfirmed =
+    Boolean(restoreTargetEnvironment) &&
+    targetEnvironmentInput.trim() === restoreTargetEnvironment;
+  const replaceConfirmed =
+    importMode !== "REPLACE" ||
+    (Boolean(replaceConfirmationPhrase) &&
+      replaceConfirmationInput.trim() === replaceConfirmationPhrase);
+  const productionReplaceConfirmed =
+    importMode !== "REPLACE" ||
+    restoreTarget?.environment.name !== "production" ||
+    (Boolean(productionRestorePhrase) &&
+      productionRestoreInput.trim() === productionRestorePhrase);
+  const restoreConfirmationReady =
+    targetEnvironmentConfirmed &&
+    replaceConfirmed &&
+    productionReplaceConfirmed;
 
   const recoveryPosture = useMemo(() => {
     if (!latestCompletedBackup) {
@@ -687,6 +782,7 @@ export function BackupControlPlane() {
       setTableMap(data.tables || {});
       setStorage(data.storage || null);
       setArchivePolicy(data.archivePolicy || null);
+      setRestoreTarget(data.restoreTarget || null);
       if (showSuccessToast) {
         toast.success("Backup control plane refreshed");
       }
@@ -791,6 +887,10 @@ export function BackupControlPlane() {
       setImportPreview(previewState.preview);
       setImportTables(Object.keys(previewState.preview));
       setImportIsEncrypted(previewState.encrypted);
+      setImportArchiveSource(previewState.source);
+      setTargetEnvironmentInput("");
+      setReplaceConfirmationInput("");
+      setProductionRestoreInput("");
       setVerificationResult(null);
       setDryRunResult(null);
       setImportResult(null);
@@ -801,6 +901,10 @@ export function BackupControlPlane() {
       setImportPreview(null);
       setImportTables([]);
       setImportIsEncrypted(false);
+      setImportArchiveSource(null);
+      setTargetEnvironmentInput("");
+      setReplaceConfirmationInput("");
+      setProductionRestoreInput("");
       setVerificationResult(null);
       setDryRunResult(null);
       setImportResult(null);
@@ -814,6 +918,10 @@ export function BackupControlPlane() {
     setImportPreview(null);
     setImportTables([]);
     setImportIsEncrypted(false);
+    setImportArchiveSource(null);
+    setTargetEnvironmentInput("");
+    setReplaceConfirmationInput("");
+    setProductionRestoreInput("");
     setVerificationResult(null);
     setDryRunResult(null);
     setImportResult(null);
@@ -875,9 +983,19 @@ export function BackupControlPlane() {
     if (!importPayload || importTables.length === 0) return;
     setImporting(true);
     try {
+      if (!restoreConfirmationReady) {
+        throw new Error("Restore target confirmation is required.");
+      }
       const result = await submitWithPassword(
         "/api/backup/import",
-        { ...importPayload, tables: importTables, mode: importMode },
+        buildRestoreImportPayload({
+          importPayload,
+          tables: importTables,
+          mode: importMode,
+          targetEnvironment: targetEnvironmentInput.trim(),
+          replaceConfirmation: replaceConfirmationInput.trim(),
+          productionRestoreConfirmation: productionRestoreInput.trim(),
+        }),
         {
           title:
             importMode === "REPLACE"
@@ -1548,6 +1666,82 @@ export function BackupControlPlane() {
                         <p className="text-sm font-medium text-foreground">
                           Restore workflow
                         </p>
+                        <div className="mt-3 space-y-3 rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3">
+                          <div className="flex items-start gap-2">
+                            <ShieldAlert className="mt-0.5 h-4 w-4 text-tone-honey-fg" />
+                            <div>
+                              <p className="text-xs font-semibold text-foreground">
+                                Target confirmation
+                              </p>
+                              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                Target:{" "}
+                                <span className="font-mono text-foreground">
+                                  {restoreTargetEnvironment || "unknown"}
+                                </span>
+                                {restoreTarget?.environment
+                                  .databaseFingerprintPrefix
+                                  ? ` / ${restoreTarget.environment.databaseFingerprintPrefix}`
+                                  : ""}
+                                {importArchiveSource?.environmentName ? (
+                                  <>
+                                    {" "}
+                                    · archive:{" "}
+                                    <span className="font-mono text-foreground">
+                                      {importArchiveSource.environmentName}
+                                    </span>
+                                    {importArchiveSource.databaseFingerprintPrefix
+                                      ? ` / ${importArchiveSource.databaseFingerprintPrefix}`
+                                      : ""}
+                                  </>
+                                ) : null}
+                              </p>
+                            </div>
+                          </div>
+                          <label className="block text-xs font-medium text-foreground">
+                            Type target environment
+                            <input
+                              value={targetEnvironmentInput}
+                              onChange={(event) =>
+                                setTargetEnvironmentInput(event.target.value)
+                              }
+                              placeholder={restoreTargetEnvironment}
+                              className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-foreground outline-none focus:border-primary"
+                            />
+                          </label>
+                          {importMode === "REPLACE" ? (
+                            <>
+                              <label className="block text-xs font-medium text-foreground">
+                                Type replace confirmation
+                                <input
+                                  value={replaceConfirmationInput}
+                                  onChange={(event) =>
+                                    setReplaceConfirmationInput(
+                                      event.target.value,
+                                    )
+                                  }
+                                  placeholder={replaceConfirmationPhrase}
+                                  className="mt-1 w-full rounded-lg border border-destructive/30 bg-background px-3 py-2 font-mono text-xs text-foreground outline-none focus:border-destructive"
+                                />
+                              </label>
+                              {restoreTarget?.environment.name ===
+                              "production" ? (
+                                <label className="block text-xs font-medium text-destructive">
+                                  Type production restore confirmation
+                                  <input
+                                    value={productionRestoreInput}
+                                    onChange={(event) =>
+                                      setProductionRestoreInput(
+                                        event.target.value,
+                                      )
+                                    }
+                                    placeholder={productionRestorePhrase}
+                                    className="mt-1 w-full rounded-lg border border-destructive/40 bg-background px-3 py-2 font-mono text-xs text-foreground outline-none focus:border-destructive"
+                                  />
+                                </label>
+                              ) : null}
+                            </>
+                          ) : null}
+                        </div>
                         <div className="mt-3 grid gap-2 sm:grid-cols-3">
                           <button
                             onClick={() => void runVerification()}
@@ -1575,7 +1769,11 @@ export function BackupControlPlane() {
                           </button>
                           <button
                             onClick={() => void executeImport()}
-                            disabled={importing || importTables.length === 0}
+                            disabled={
+                              importing ||
+                              importTables.length === 0 ||
+                              !restoreConfirmationReady
+                            }
                             className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                           >
                             {importing ? (

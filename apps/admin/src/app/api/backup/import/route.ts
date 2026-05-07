@@ -9,6 +9,11 @@ import {
   normalizeBackupTables,
 } from "@/lib/backup-tables";
 import { decryptBackup, verifyBackupSignature } from "@/lib/shared-encryption";
+import {
+  RestoreTargetGuardError,
+  assertRestoreTargetAllowed,
+} from "@/lib/backup-restore-guard";
+import { redactBackupSecretText } from "@/lib/backup-metadata";
 
 const IMPORT_MODEL_OPS = {
   users: {
@@ -182,17 +187,41 @@ function normalizeBackupData(input: unknown): Record<string, any[]> {
   );
 }
 
+function normalizeArchiveMetadata(input: unknown) {
+  return input && typeof input === "object" ? (input as any).metadata || null : null;
+}
+
+function parseSignedRawContent(rawContent: string | undefined) {
+  if (!rawContent) return { data: {}, metadata: null };
+  try {
+    const parsed = JSON.parse(rawContent);
+    return {
+      data: normalizeBackupData(parsed?.data ?? parsed),
+      metadata: normalizeArchiveMetadata(parsed),
+    };
+  } catch {
+    return { data: {}, metadata: null };
+  }
+}
+
 function resolveImportPayload(body: any) {
   const archive = parseBackupArchive(body.archive ?? body);
 
   if (!archive) {
+    const signedRaw = parseSignedRawContent(
+      typeof body.rawContent === "string" ? body.rawContent : undefined,
+    );
     return {
-      data: normalizeBackupData(body.data ?? body),
+      data:
+        Object.keys(signedRaw.data).length > 0
+          ? signedRaw.data
+          : normalizeBackupData(body.data ?? body),
       signature:
         typeof body.signature === "string" ? body.signature : undefined,
       rawContent:
         typeof body.rawContent === "string" ? body.rawContent : undefined,
       encryptedArchive: false,
+      metadata: signedRaw.metadata,
     };
   }
 
@@ -213,6 +242,7 @@ function resolveImportPayload(body: any) {
         signature: archive.signature || undefined,
         rawContent: decrypted,
         encryptedArchive: true,
+        metadata: normalizeArchiveMetadata(parsed) || archive.metadata,
       };
     } catch {
       throw new Error("BACKUP_PARSE_FAILED");
@@ -224,6 +254,9 @@ function resolveImportPayload(body: any) {
     signature: archive.signature || undefined,
     rawContent: archive.payload.rawContent,
     encryptedArchive: false,
+    metadata:
+      parseSignedRawContent(archive.payload.rawContent).metadata ||
+      archive.metadata,
   };
 }
 
@@ -265,7 +298,7 @@ export async function POST(request: NextRequest) {
     });
     const body = await request.json();
     const { tables, mode = "MERGE", confirmPassword } = body;
-    const { data, signature, rawContent, encryptedArchive } =
+    const { data, signature, rawContent, encryptedArchive, metadata: archiveMetadata } =
       resolveImportPayload(body);
 
     if (mode !== "DRY_RUN") {
@@ -327,6 +360,12 @@ export async function POST(request: NextRequest) {
       }
       signatureVerified = true;
     }
+
+    const restoreGuard = assertRestoreTargetAllowed({
+      mode: mode as "MERGE" | "REPLACE" | "DRY_RUN",
+      body,
+      archiveMetadata,
+    });
 
     const requestedTables =
       Array.isArray(tables) && tables.length > 0 ? tables : Object.keys(data);
@@ -414,6 +453,7 @@ export async function POST(request: NextRequest) {
             signatureVerified,
             encryptedArchive,
             dependencyWarnings,
+            restoreWarnings: restoreGuard.warnings,
           }),
           ipAddress: request.headers.get("x-forwarded-for") || "unknown",
         },
@@ -427,6 +467,7 @@ export async function POST(request: NextRequest) {
           "No changes were made. This is a preview of what would happen.",
         tables: selectedTables,
         warnings: dependencyWarnings,
+        restoreWarnings: restoreGuard.warnings,
         results,
         summary: { totalImported, totalSkipped, totalErrors: 0 },
       });
@@ -474,7 +515,7 @@ export async function POST(request: NextRequest) {
             changes: JSON.stringify({
               mode,
               tables: selectedTables,
-              error: txError?.message?.slice(0, 500),
+              error: redactBackupSecretText(txError).slice(0, 500),
             }),
             ipAddress: request.headers.get("x-forwarded-for") || "unknown",
           },
@@ -483,7 +524,7 @@ export async function POST(request: NextRequest) {
           {
             error:
               "REPLACE import failed — all changes have been rolled back. No data was lost.",
-            detail: txError?.message?.slice(0, 500),
+            detail: redactBackupSecretText(txError).slice(0, 500),
           },
           { status: 500 },
         );
@@ -550,7 +591,7 @@ export async function POST(request: NextRequest) {
             changes: JSON.stringify({
               mode,
               tables: selectedTables,
-              error: txError?.message?.slice(0, 500),
+              error: redactBackupSecretText(txError).slice(0, 500),
             }),
             ipAddress: request.headers.get("x-forwarded-for") || "unknown",
           },
@@ -559,7 +600,7 @@ export async function POST(request: NextRequest) {
           {
             error:
               "MERGE import failed — all changes have been rolled back. No data was imported.",
-            detail: txError?.message?.slice(0, 500),
+            detail: redactBackupSecretText(txError).slice(0, 500),
           },
           { status: 500 },
         );
@@ -581,6 +622,7 @@ export async function POST(request: NextRequest) {
           signatureVerified,
           encryptedArchive,
           dependencyWarnings,
+          restoreWarnings: restoreGuard.warnings,
         }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
@@ -592,6 +634,7 @@ export async function POST(request: NextRequest) {
       signatureVerified,
       tables: selectedTables,
       warnings: dependencyWarnings,
+      restoreWarnings: restoreGuard.warnings,
       results,
       summary: { totalImported, totalSkipped, totalErrors },
     });
@@ -617,7 +660,17 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
-    console.error("Failed to import backup:", error);
+    if (error instanceof RestoreTargetGuardError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: error.code,
+          details: error.details,
+        },
+        { status: error.status },
+      );
+    }
+    console.error(`Failed to import backup: ${redactBackupSecretText(error)}`);
     return NextResponse.json(
       { error: "Failed to import backup" },
       { status: 500 },

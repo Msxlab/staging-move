@@ -25,6 +25,20 @@ import {
   shouldReturnBrowserDownloadFallback,
 } from "@/lib/backup-policy";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
+import {
+  BackupRunLockError,
+  acquireBackupRunLock,
+  markBackupRunFailed,
+} from "@/lib/backup-lock";
+import {
+  getCurrentBackupEnvironmentMetadata,
+  getBackupRuntimeMetadata,
+  redactBackupSecretText,
+} from "@/lib/backup-metadata";
+import {
+  getProductionRestoreConfirmationPhrase,
+  getReplaceConfirmationPhrase,
+} from "@/lib/backup-restore-guard";
 
 // Per-table count helpers. Record fetching is centralized in
 // `fetchAllRecords` from backup-tables.ts so the manual and cron paths
@@ -103,6 +117,9 @@ export async function GET() {
     );
     const storage = await getBackupStorageSummary();
     const archivePolicy = getBackupArchivePolicy();
+    const restoreEnvironment = getCurrentBackupEnvironmentMetadata();
+    const databaseFingerprintPrefix =
+      restoreEnvironment.databaseFingerprint.slice(0, 12);
 
     // Table stats
     const stats: Record<string, number> = {};
@@ -128,6 +145,24 @@ export async function GET() {
       tables: BACKUP_TABLES,
       storage,
       archivePolicy,
+      restoreTarget: {
+        environment: {
+          name: restoreEnvironment.name,
+          nodeEnv: restoreEnvironment.nodeEnv,
+          appEnv: restoreEnvironment.appEnv,
+          vercelEnv: restoreEnvironment.vercelEnv,
+          digitalOceanAppIdPresent:
+            restoreEnvironment.digitalOceanAppIdPresent,
+          databaseFingerprintPrefix,
+        },
+        confirmations: {
+          targetEnvironment: restoreEnvironment.name,
+          replaceConfirmation:
+            getReplaceConfirmationPhrase(restoreEnvironment),
+          productionRestoreConfirmation:
+            getProductionRestoreConfirmationPhrase(restoreEnvironment),
+        },
+      },
     });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
@@ -136,7 +171,7 @@ export async function GET() {
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("Failed to fetch backups:", error);
+    console.error(`Failed to fetch backups: ${redactBackupSecretText(error)}`);
     return NextResponse.json(
       { error: "Failed to fetch backups" },
       { status: 500 },
@@ -180,8 +215,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create backup record
-    const backup = await prisma.backupRecord.create({
+    // Create the BackupRecord as the shared manual/cron lock. A second
+    // backup run loses this DB-backed race and exits before reading data.
+    const backup = await acquireBackupRunLock({
+      prismaClient: prisma as any,
       data: {
         type,
         status: "IN_PROGRESS",
@@ -199,6 +236,7 @@ export async function POST(request: NextRequest) {
     // truncation past 50k rows was the bug this fixes.
     const backupData: Record<string, any[]> = {};
     const tableCounts: Record<string, number> = {};
+    const failedTables: string[] = [];
     const truncatedTables: string[] = [];
     let totalRecords = 0;
 
@@ -210,14 +248,21 @@ export async function POST(request: NextRequest) {
         totalRecords += result.fetched;
         if (result.truncated) truncatedTables.push(tableName);
       } catch (err) {
-        console.error(`Failed to backup table ${tableName}:`, err);
+        console.error(
+          `Failed to backup table ${tableName}: ${redactBackupSecretText(err)}`,
+        );
         backupData[tableName] = [];
         tableCounts[tableName] = 0;
+        failedTables.push(tableName);
       }
     }
     // If any table was truncated by the per-table ceiling, downgrade
     // the type label so the operator sees PARTIAL instead of FULL.
-    const effectiveType = truncatedTables.length > 0 ? "PARTIAL" : type;
+    const effectiveType =
+      truncatedTables.length > 0 || failedTables.length > 0
+        ? "PARTIAL"
+        : type;
+    const runtimeMetadata = getBackupRuntimeMetadata();
 
     // Create JSON content. The archive metadata reflects the EFFECTIVE
     // type — if any table was truncated by the per-table ceiling, the
@@ -234,8 +279,13 @@ export async function POST(request: NextRequest) {
           requestedType: type,
           format,
           tables: selectedTables,
+          tableCount: selectedTables.length,
           totalRecords,
           truncatedTables,
+          failedTables,
+          maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
+          environment: runtimeMetadata.environment,
+          compatibility: runtimeMetadata.compatibility,
         },
         data: backupData,
       },
@@ -262,9 +312,14 @@ export async function POST(request: NextRequest) {
         type: effectiveType,
         format,
         tables: selectedTables,
+        tableCount: selectedTables.length,
         totalRecords,
         tableCounts,
         truncatedTables,
+        failedTables,
+        maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
+        environment: runtimeMetadata.environment,
+        compatibility: runtimeMetadata.compatibility,
       },
       rawContent: content,
       signature,
@@ -287,9 +342,13 @@ export async function POST(request: NextRequest) {
         signature: Boolean(signature),
         totalRecords,
         tableCounts,
+        tableCount: selectedTables.length,
         archiveSizeWarning: sizeEvaluation.warning,
         truncatedTables: truncatedTables.length > 0 ? truncatedTables : undefined,
+        failedTables: failedTables.length > 0 ? failedTables : undefined,
         maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
+        environment: runtimeMetadata.environment,
+        compatibility: runtimeMetadata.compatibility,
       },
     });
 
@@ -320,6 +379,7 @@ export async function POST(request: NextRequest) {
           type: effectiveType,
           requestedType: type,
           truncatedTables,
+          failedTables,
           tables: selectedTables,
           recordCount: totalRecords,
           fileSize,
@@ -363,23 +423,18 @@ export async function POST(request: NextRequest) {
         offsite,
         archiveSizeWarning: sizeEvaluation.warning,
         truncatedTables,
-        partial: truncatedTables.length > 0,
+        failedTables,
+        partial: truncatedTables.length > 0 || failedTables.length > 0,
       },
       { status: 201 },
     );
   } catch (error: any) {
     if (backupId) {
-      await prisma.backupRecord
-        .update({
-          where: { id: backupId },
-          data: {
-            status: "FAILED",
-            errorMessage: serializeBackupRecordMetadata({
-              error: error?.message || "Failed to create backup.",
-            }),
-          },
-        })
-        .catch(() => null);
+      await markBackupRunFailed({
+        prismaClient: prisma as any,
+        backupId,
+        error,
+      });
     }
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -393,7 +448,17 @@ export async function POST(request: NextRequest) {
         { status: error.status },
       );
     }
-    console.error("Failed to create backup:", error);
+    if (error instanceof BackupRunLockError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: "BACKUP_ALREADY_RUNNING",
+          activeBackupId: error.activeBackupId,
+        },
+        { status: 409 },
+      );
+    }
+    console.error(`Failed to create backup: ${redactBackupSecretText(error)}`);
     return NextResponse.json(
       { error: "Failed to create backup" },
       { status: 500 },
