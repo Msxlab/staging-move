@@ -78,6 +78,53 @@ function batch2AUtilityAccountEntry(input: Batch2AUtilityAccountInput): StatePro
   };
 }
 
+type Batch3AProviderCategory = "UTILITY_WATER" | "UTILITY_TRASH";
+
+type Batch3AProviderAccountInput = {
+  providerName: string;
+  state: string;
+  category: Batch3AProviderCategory;
+  officialUrl: string;
+  slug: string;
+  zipCodes: string[];
+  popularityScore: number;
+  localTags: string[];
+};
+
+const BATCH3A_PROVIDER_DESCRIPTION_BY_CATEGORY: Record<Batch3AProviderCategory, string> = {
+  UTILITY_WATER: "Local water utility customer account and service-address support",
+  UTILITY_TRASH: "Local trash and solid-waste customer account and service-address support",
+};
+
+const BATCH3A_PROVIDER_TAG_BY_CATEGORY: Record<Batch3AProviderCategory, string> = {
+  UTILITY_WATER: "water",
+  UTILITY_TRASH: "trash",
+};
+
+function batch3AProviderAccountEntry(input: Batch3AProviderAccountInput): StateProviderCatalogEntry {
+  const serviceTag = BATCH3A_PROVIDER_TAG_BY_CATEGORY[input.category];
+
+  return {
+    providerName: input.providerName,
+    states: [input.state],
+    category: input.category,
+    officialUrl: input.officialUrl,
+    coverageModel: "zip_prefix",
+    note: "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+    seedRecord: stateSeed({
+      name: input.providerName,
+      slug: input.slug,
+      category: input.category,
+      description: BATCH3A_PROVIDER_DESCRIPTION_BY_CATEGORY[input.category],
+      website: input.officialUrl,
+      states: [input.state],
+      zipCodes: input.zipCodes,
+      popularityScore: input.popularityScore,
+      tags: [serviceTag, "utility", ...input.localTags, "address-check"],
+    }),
+  };
+}
+
 const PROVIDER_ADDITIONS_V1_BATCH1_CATALOG: StateProviderCatalogEntry[] = [
   {
     providerName: "Anton Anderson Memorial Tunnel / Whittier Tunnel",
@@ -1467,6 +1514,59 @@ const PROVIDER_ADDITIONS_V1_BATCH2A_CATALOG: StateProviderCatalogEntry[] = [
   }),
 ];
 
+const PROVIDER_ADDITIONS_V1_BATCH3A_CATALOG: StateProviderCatalogEntry[] = [
+  batch3AProviderAccountEntry({
+    providerName: "Recology San Francisco",
+    state: "CA",
+    category: "UTILITY_TRASH",
+    officialUrl: "https://www.recology.com/recology-san-francisco/",
+    slug: "recology-san-francisco",
+    zipCodes: ["941"],
+    popularityScore: 70,
+    localTags: ["san-francisco", "california", "solid-waste"],
+  }),
+  batch3AProviderAccountEntry({
+    providerName: "Miami-Dade Solid Waste Management",
+    state: "FL",
+    category: "UTILITY_TRASH",
+    officialUrl: "https://www.miamidade.gov/solidwaste",
+    slug: "miami-dade-solid-waste",
+    zipCodes: ["330", "331", "332"],
+    popularityScore: 72,
+    localTags: ["miami-dade", "florida", "solid-waste"],
+  }),
+  batch3AProviderAccountEntry({
+    providerName: "Orange County Utilities Water",
+    state: "FL",
+    category: "UTILITY_WATER",
+    officialUrl: "https://www.orangecountyfl.net",
+    slug: "orange-county-utilities-water",
+    zipCodes: ["327", "328"],
+    popularityScore: 68,
+    localTags: ["orange-county", "florida"],
+  }),
+  batch3AProviderAccountEntry({
+    providerName: "Palm Beach County Water Utilities Department",
+    state: "FL",
+    category: "UTILITY_WATER",
+    officialUrl: "https://discover.pbcgov.org/waterutilities",
+    slug: "palm-beach-county-water",
+    zipCodes: ["334"],
+    popularityScore: 68,
+    localTags: ["palm-beach-county", "florida"],
+  }),
+  batch3AProviderAccountEntry({
+    providerName: "Pinellas County Utilities Water",
+    state: "FL",
+    category: "UTILITY_WATER",
+    officialUrl: "https://pinellas.gov",
+    slug: "pinellas-county-water",
+    zipCodes: ["337", "346"],
+    popularityScore: 68,
+    localTags: ["pinellas-county", "florida"],
+  }),
+];
+
 export const STATE_PROVIDER_COMPLETENESS_CATALOG: StateProviderCatalogEntry[] = [
   {
     providerName: "MAX Transit",
@@ -2399,6 +2499,7 @@ export const STATE_PROVIDER_COMPLETENESS_CATALOG: StateProviderCatalogEntry[] = 
   },
   ...PROVIDER_ADDITIONS_V1_BATCH1_CATALOG,
   ...PROVIDER_ADDITIONS_V1_BATCH2A_CATALOG,
+  ...PROVIDER_ADDITIONS_V1_BATCH3A_CATALOG,
 ];
 
 export const STATE_PROVIDER_EXPANSIONS = STATE_PROVIDER_COMPLETENESS_CATALOG.flatMap((entry) =>

@@ -1,16 +1,16 @@
 # State Provider Completeness Catalog
 
-Generated: 2026-05-07T04:05:37.408Z
+Generated: 2026-05-07T14:39:20.656Z
 
 ## Summary
 
-- Catalog entries: 145
+- Catalog entries: 150
 - States covered: 51
 - Already present in raw seed: 0
-- Newly added in merged seed: 138
+- Newly added in merged seed: 143
 - Catalog-only backlog entries: 7
-- Coverage models: state=14, zip_prefix=125, polygon=3, live_address=3
-- Official URL validation: ok=145, redirect=0, error=0
+- Coverage models: state=14, zip_prefix=130, polygon=3, live_address=3
+- Official URL validation: ok=150, redirect=0, error=0
 
 ## Per-State Diff
 
@@ -148,6 +148,8 @@ Generated: 2026-05-07T04:05:37.408Z
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 - San Jose Water | UTILITY_WATER | newly_added | zip_prefix | https://www.sjwater.com
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Recology San Francisco | UTILITY_TRASH | newly_added | zip_prefix | https://www.recology.com/recology-san-francisco/
+  note: Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### CO
 
@@ -252,7 +254,7 @@ Generated: 2026-05-07T04:05:37.408Z
 ### FL
 
 - Repo before: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-ZPass, FPL (Florida Power & Light), Frontier Communications, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-PASS / Central Florida Expressway Authority, E-ZPass, Florida City Gas, FPL (Florida Power & Light), Frontier Communications, Greater Miami Expressway Agency, Hillsborough County Water Resources, I-4 Express, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Electric, Tampa Hillsborough Expressway Authority, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-PASS / Central Florida Expressway Authority, E-ZPass, Florida City Gas, FPL (Florida Power & Light), Frontier Communications, Greater Miami Expressway Agency, Hillsborough County Water Resources, I-4 Express, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orange County Utilities Water, Orlando Utilities Commission, Palm Beach County Water Utilities Department, Pinellas County Utilities Water, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Electric, Tampa Hillsborough Expressway Authority, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Tampa Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/
   note: Tampa Electric is a major missing Florida electric provider with a clear Tampa Bay service area.
 - Florida KidCare | GOVERNMENT_HEALTH | newly_added | zip_prefix | https://www.floridakidcare.org
@@ -273,6 +275,14 @@ Generated: 2026-05-07T04:05:37.408Z
   note: Real gas utility; modeled with cautious South Florida ZIP prefixes and address confirmation language.
 - Hillsborough County Water Resources | UTILITY_WATER | newly_added | zip_prefix | https://hcfl.gov
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Miami-Dade Solid Waste Management | UTILITY_TRASH | newly_added | zip_prefix | https://www.miamidade.gov/solidwaste
+  note: Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Orange County Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.orangecountyfl.net
+  note: Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Palm Beach County Water Utilities Department | UTILITY_WATER | newly_added | zip_prefix | https://discover.pbcgov.org/waterutilities
+  note: Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Pinellas County Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://pinellas.gov
+  note: Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### GA
 

@@ -1,7 +1,7 @@
 {
   "summary": {
-    "generatedAt": "2026-05-07T04:05:37.408Z",
-    "catalogEntries": 145,
+    "generatedAt": "2026-05-07T14:39:20.656Z",
+    "catalogEntries": 150,
     "statesCovered": [
       "AL",
       "AK",
@@ -57,17 +57,17 @@
     ],
     "coverageModelCounts": {
       "state": 14,
-      "zipPrefix": 125,
+      "zipPrefix": 130,
       "polygon": 3,
       "liveAddress": 3
     },
     "statusCounts": {
       "alreadyPresent": 0,
-      "newlyAdded": 138,
+      "newlyAdded": 143,
       "backlog": 7
     },
     "validationCounts": {
-      "ok": 145,
+      "ok": 150,
       "redirect": 0,
       "error": 0
     }
@@ -6389,6 +6389,237 @@
         "error": null
       },
       "status": "newly_added"
+    },
+    {
+      "providerName": "Recology San Francisco",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_TRASH",
+      "officialUrl": "https://www.recology.com/recology-san-francisco/",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Recology San Francisco",
+        "slug": "recology-san-francisco",
+        "category": "UTILITY_TRASH",
+        "description": "Local trash and solid-waste customer account and service-address support",
+        "website": "https://www.recology.com/recology-san-francisco/",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "941"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "trash",
+          "utility",
+          "san-francisco",
+          "california",
+          "solid-waste",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Recology San Francisco",
+        "slug": "recology-san-francisco"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.recology.com/recology-san-francisco/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Miami-Dade Solid Waste Management",
+      "states": [
+        "FL"
+      ],
+      "category": "UTILITY_TRASH",
+      "officialUrl": "https://www.miamidade.gov/solidwaste",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Miami-Dade Solid Waste Management",
+        "slug": "miami-dade-solid-waste",
+        "category": "UTILITY_TRASH",
+        "description": "Local trash and solid-waste customer account and service-address support",
+        "website": "https://www.miamidade.gov/solidwaste",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "330",
+          "331",
+          "332"
+        ],
+        "popularityScore": 72,
+        "tags": [
+          "trash",
+          "utility",
+          "miami-dade",
+          "florida",
+          "solid-waste",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Miami-Dade Solid Waste Management",
+        "slug": "miami-dade-solid-waste"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.miamidade.gov/solidwaste",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Orange County Utilities Water",
+      "states": [
+        "FL"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.orangecountyfl.net",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Orange County Utilities Water",
+        "slug": "orange-county-utilities-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.orangecountyfl.net",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "327",
+          "328"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "water",
+          "utility",
+          "orange-county",
+          "florida",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Orange County Utilities Water",
+        "slug": "orange-county-utilities-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.orangecountyfl.net",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Palm Beach County Water Utilities Department",
+      "states": [
+        "FL"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://discover.pbcgov.org/waterutilities",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Palm Beach County Water Utilities Department",
+        "slug": "palm-beach-county-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://discover.pbcgov.org/waterutilities",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "334"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "water",
+          "utility",
+          "palm-beach-county",
+          "florida",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Palm Beach County Water Utilities Department",
+        "slug": "palm-beach-county-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://discover.pbcgov.org/waterutilities",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Pinellas County Utilities Water",
+      "states": [
+        "FL"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://pinellas.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Pinellas County Utilities Water",
+        "slug": "pinellas-county-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://pinellas.gov",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "337",
+          "346"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "water",
+          "utility",
+          "pinellas-county",
+          "florida",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Pinellas County Utilities Water",
+        "slug": "pinellas-county-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://pinellas.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
     }
   ],
   "alreadyPresent": [],
@@ -9205,6 +9436,52 @@
             "error": null
           },
           "status": "newly_added"
+        },
+        {
+          "providerName": "Recology San Francisco",
+          "states": [
+            "CA"
+          ],
+          "category": "UTILITY_TRASH",
+          "officialUrl": "https://www.recology.com/recology-san-francisco/",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Recology San Francisco",
+            "slug": "recology-san-francisco",
+            "category": "UTILITY_TRASH",
+            "description": "Local trash and solid-waste customer account and service-address support",
+            "website": "https://www.recology.com/recology-san-francisco/",
+            "states": [
+              "CA"
+            ],
+            "zipCodes": [
+              "941"
+            ],
+            "popularityScore": 70,
+            "tags": [
+              "trash",
+              "utility",
+              "san-francisco",
+              "california",
+              "solid-waste",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Recology San Francisco",
+            "slug": "recology-san-francisco"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.recology.com/recology-san-francisco/",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -11252,7 +11529,10 @@
         "Lynx",
         "Miami-Dade Transit",
         "Miami-Dade Water & Sewer",
+        "Orange County Utilities Water",
         "Orlando Utilities Commission",
+        "Palm Beach County Water Utilities Department",
+        "Pinellas County Utilities Water",
         "Spectrum",
         "Starlink",
         "SunPass",
@@ -11790,6 +12070,191 @@
             "status": "ok",
             "httpStatus": 200,
             "finalUrl": "https://hcfl.gov",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Miami-Dade Solid Waste Management",
+          "states": [
+            "FL"
+          ],
+          "category": "UTILITY_TRASH",
+          "officialUrl": "https://www.miamidade.gov/solidwaste",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Miami-Dade Solid Waste Management",
+            "slug": "miami-dade-solid-waste",
+            "category": "UTILITY_TRASH",
+            "description": "Local trash and solid-waste customer account and service-address support",
+            "website": "https://www.miamidade.gov/solidwaste",
+            "states": [
+              "FL"
+            ],
+            "zipCodes": [
+              "330",
+              "331",
+              "332"
+            ],
+            "popularityScore": 72,
+            "tags": [
+              "trash",
+              "utility",
+              "miami-dade",
+              "florida",
+              "solid-waste",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Miami-Dade Solid Waste Management",
+            "slug": "miami-dade-solid-waste"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.miamidade.gov/solidwaste",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Orange County Utilities Water",
+          "states": [
+            "FL"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.orangecountyfl.net",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Orange County Utilities Water",
+            "slug": "orange-county-utilities-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.orangecountyfl.net",
+            "states": [
+              "FL"
+            ],
+            "zipCodes": [
+              "327",
+              "328"
+            ],
+            "popularityScore": 68,
+            "tags": [
+              "water",
+              "utility",
+              "orange-county",
+              "florida",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Orange County Utilities Water",
+            "slug": "orange-county-utilities-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.orangecountyfl.net",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Palm Beach County Water Utilities Department",
+          "states": [
+            "FL"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://discover.pbcgov.org/waterutilities",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Palm Beach County Water Utilities Department",
+            "slug": "palm-beach-county-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://discover.pbcgov.org/waterutilities",
+            "states": [
+              "FL"
+            ],
+            "zipCodes": [
+              "334"
+            ],
+            "popularityScore": 68,
+            "tags": [
+              "water",
+              "utility",
+              "palm-beach-county",
+              "florida",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Palm Beach County Water Utilities Department",
+            "slug": "palm-beach-county-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://discover.pbcgov.org/waterutilities",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Pinellas County Utilities Water",
+          "states": [
+            "FL"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://pinellas.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 3A customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Pinellas County Utilities Water",
+            "slug": "pinellas-county-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://pinellas.gov",
+            "states": [
+              "FL"
+            ],
+            "zipCodes": [
+              "337",
+              "346"
+            ],
+            "popularityScore": 68,
+            "tags": [
+              "water",
+              "utility",
+              "pinellas-county",
+              "florida",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Pinellas County Utilities Water",
+            "slug": "pinellas-county-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://pinellas.gov",
             "title": null,
             "error": null
           },

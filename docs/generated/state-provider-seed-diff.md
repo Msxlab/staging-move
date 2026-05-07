@@ -1,8 +1,8 @@
 # State Provider Seed Diff
 
-Generated: 2026-05-07T04:05:37.408Z
+Generated: 2026-05-07T14:39:20.656Z
 
-- newly added: 138
+- newly added: 143
 - already present: 0
 - backlog: 7
 
@@ -146,6 +146,11 @@ Generated: 2026-05-07T04:05:37.408Z
 - Sussex County Environmental Services | UTILITY_SEWER | zip_prefix | https://sussexcountyde.gov/sewer-water
 - Wilmington Water Utility | UTILITY_WATER | zip_prefix | https://www.wilmingtondewater.gov
 - Hillsborough County Water Resources | UTILITY_WATER | zip_prefix | https://hcfl.gov
+- Recology San Francisco | UTILITY_TRASH | zip_prefix | https://www.recology.com/recology-san-francisco/
+- Miami-Dade Solid Waste Management | UTILITY_TRASH | zip_prefix | https://www.miamidade.gov/solidwaste
+- Orange County Utilities Water | UTILITY_WATER | zip_prefix | https://www.orangecountyfl.net
+- Palm Beach County Water Utilities Department | UTILITY_WATER | zip_prefix | https://discover.pbcgov.org/waterutilities
+- Pinellas County Utilities Water | UTILITY_WATER | zip_prefix | https://pinellas.gov
 
 ## Backlog
 
