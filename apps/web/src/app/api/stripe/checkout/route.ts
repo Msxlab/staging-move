@@ -32,6 +32,10 @@ import {
   TERMS_VERSION,
 } from "@/lib/shared-billing";
 import { captureMessage } from "@/lib/sentry";
+import {
+  isMobileAppClient,
+  mobileExternalBillingNotAllowedResponse,
+} from "@/lib/mobile-external-billing-guard";
 import Stripe from "stripe";
 
 function normalizeBillingIntervalInput(input: unknown, legacyCycle: unknown): StripeBillingInterval {
@@ -44,6 +48,10 @@ function normalizeBillingIntervalInput(input: unknown, legacyCycle: unknown): St
 // POST /api/stripe/checkout — Create a Stripe Checkout session for plan upgrade
 export async function POST(request: NextRequest) {
   try {
+    if (isMobileAppClient(request)) {
+      return mobileExternalBillingNotAllowedResponse();
+    }
+
     const stripeSecretKey = requireStripeSecretKeyForMutation(
       await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
     );

@@ -14,6 +14,7 @@
 
 import { Platform } from "react-native";
 import { api } from "@/lib/api";
+import { MOBILE_STORE_PURCHASES_ENABLED } from "@/lib/billing-flags";
 import { captureException } from "@/lib/sentry";
 
 type ExpoIapModule = typeof import("expo-iap");
@@ -96,6 +97,7 @@ export async function closeConnection() {
 }
 
 export async function fetchSubscriptionProducts(skus: string[]): Promise<SubscriptionProduct[]> {
+  if (!MOBILE_STORE_PURCHASES_ENABLED) return [];
   if (skus.length === 0) return [];
   const ok = await ensureConnection();
   if (!ok) return [];
@@ -140,6 +142,10 @@ export const IAP_STORE_UNAVAILABLE_MESSAGE = "IAP_STORE_UNAVAILABLE";
 export async function purchaseSubscription(opts: {
   productId: string;
 }): Promise<PurchaseResult> {
+  if (!MOBILE_STORE_PURCHASES_ENABLED) {
+    return { status: "error", message: IAP_STORE_UNAVAILABLE_MESSAGE };
+  }
+
   const ok = await ensureConnection();
   if (!ok) return { status: "error", message: IAP_STORE_UNAVAILABLE_MESSAGE };
   const IAP = getIapModule();
@@ -258,6 +264,8 @@ export async function purchaseSubscription(opts: {
  * to recover a subscription after reinstall.
  */
 export async function restorePurchases(): Promise<PurchaseResult[]> {
+  if (!MOBILE_STORE_PURCHASES_ENABLED) return [];
+
   const ok = await ensureConnection();
   if (!ok) return [];
   const IAP = getIapModule();
@@ -319,6 +327,8 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
 }
 
 export async function openNativeSubscriptionSettings(productId?: string) {
+  if (!MOBILE_STORE_PURCHASES_ENABLED) return;
+
   const IAP = getIapModule();
   if (!IAP) return;
 

@@ -9,7 +9,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_URL": "http://localhost:3000/api",
-        "EXPO_PUBLIC_APP_URL": "http://localhost:3000"
+        "EXPO_PUBLIC_APP_URL": "http://localhost:3000",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
       }
     },
     "development-simulator": {
@@ -25,7 +26,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
       }
     },
     "staging-preview": {
@@ -35,14 +37,16 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com"
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
       }
     }
   },

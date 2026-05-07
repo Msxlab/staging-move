@@ -70,10 +70,10 @@ const subscriptionMock = prisma.subscription as unknown as {
 };
 const userMock = prisma.user as unknown as { findUnique: Mock };
 
-function checkoutRequest(body: unknown) {
+function checkoutRequest(body: unknown, headers?: Record<string, string>) {
   return new NextRequest("https://locateflow.com/api/stripe/checkout", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(headers || {}) },
     body: JSON.stringify(body),
   });
 }
@@ -161,6 +161,47 @@ describe("stripe checkout route", () => {
     const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }));
 
     expect(response.status).toBe(503);
+    expect(mocks.stripeConstructor).not.toHaveBeenCalled();
+  });
+
+  it("allows web checkout requests without the mobile app client header", async () => {
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.url).toBe("https://checkout.stripe.test/session");
+    expect(mocks.sessionsCreate).toHaveBeenCalled();
+  });
+
+  it("rejects iOS mobile app checkout requests", async () => {
+    const response = await POST(
+      checkoutRequest(
+        { plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true },
+        { "x-client-type": "mobile", "x-client-platform": "ios" },
+      ),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({ code: "MOBILE_EXTERNAL_BILLING_NOT_ALLOWED" });
+    expect(mocks.requireDbUserId).not.toHaveBeenCalled();
+    expect(mocks.stripeConstructor).not.toHaveBeenCalled();
+  });
+
+  it("rejects Android mobile app checkout requests", async () => {
+    const response = await POST(
+      checkoutRequest(
+        { plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true },
+        { "x-client-type": "mobile", "x-client-platform": "android" },
+      ),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({ code: "MOBILE_EXTERNAL_BILLING_NOT_ALLOWED" });
+    expect(mocks.requireDbUserId).not.toHaveBeenCalled();
     expect(mocks.stripeConstructor).not.toHaveBeenCalled();
   });
 
