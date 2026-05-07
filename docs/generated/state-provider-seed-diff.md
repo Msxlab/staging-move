@@ -1,8 +1,8 @@
 # State Provider Seed Diff
 
-Generated: 2026-05-07T02:55:52.459Z
+Generated: 2026-05-07T04:05:37.408Z
 
-- newly added: 98
+- newly added: 138
 - already present: 0
 - backlog: 7
 
@@ -106,6 +106,46 @@ Generated: 2026-05-07T02:55:52.459Z
 - Town of Middletown Electric | UTILITY_ELECTRIC | zip_prefix | https://www.middletown.delaware.gov
 - Town of Smyrna Electric | UTILITY_ELECTRIC | zip_prefix | https://smyrna.delaware.gov
 - Florida City Gas | UTILITY_GAS | zip_prefix | https://www.floridacitygas.com
+- City and Borough of Juneau Water Utility | UTILITY_WATER | zip_prefix | https://juneau.org
+- College & Golden Heart Utilities Water | UTILITY_WATER | zip_prefix | https://www.mywater.us/alaska/about-us-menu
+- City of Huntsville Water Pollution Control | UTILITY_SEWER | zip_prefix | https://www.huntsvilleal.gov
+- Jefferson County Environmental Services Department | UTILITY_SEWER | zip_prefix | https://www.jeffcoes.org
+- City of Tuscaloosa Water | UTILITY_WATER | zip_prefix | https://www.tuscaloosa.com
+- Madison County Water Department | UTILITY_WATER | zip_prefix | https://www.madisoncountyal.gov/departments/water-department
+- Mobile Area Water and Sewer System Water | UTILITY_WATER | zip_prefix | https://www.mawss.com
+- Little Rock Water Reclamation Authority | UTILITY_SEWER | zip_prefix | https://lrwra.com
+- Springdale Water Utilities Wastewater | UTILITY_SEWER | zip_prefix | https://springdalewater.com
+- Bentonville Water Utilities | UTILITY_WATER | zip_prefix | https://www.bentonvillear.com
+- Fayetteville Water and Sewer | UTILITY_WATER | zip_prefix | https://www.fayetteville-ar.gov
+- Fort Smith Utilities Water | UTILITY_WATER | zip_prefix | https://www.fortsmithar.gov
+- Jonesboro City Water and Light Water | UTILITY_WATER | zip_prefix | https://www.jonesborocwl.org
+- Rogers Water Utilities | UTILITY_WATER | zip_prefix | https://www.rwu.org
+- Pima County Regional Wastewater Reclamation Department | UTILITY_SEWER | zip_prefix | https://www.pima.gov/wastewater
+- City of Chandler Water | UTILITY_WATER | zip_prefix | https://www.chandleraz.gov/residents/water
+- City of Tempe Water Services | UTILITY_WATER | zip_prefix | https://www.tempe.gov
+- Glendale Water Services | UTILITY_WATER | zip_prefix | https://www.glendaleaz.com/live/city_services/water_services
+- Scottsdale Water | UTILITY_WATER | zip_prefix | https://www.scottsdaleaz.gov/water
+- Town of Gilbert Water | UTILITY_WATER | zip_prefix | https://www.gilbertaz.gov/departments/public-works/water
+- City of Fresno Utilities Water | UTILITY_WATER | zip_prefix | https://www.fresno.gov/publicutilities/
+- City of Sacramento Department of Utilities Water | UTILITY_WATER | zip_prefix | https://www.cityofsacramento.gov/utilities
+- City of San Diego Public Utilities Water | UTILITY_WATER | zip_prefix | https://www.sandiego.gov/public-utilities
+- East Bay Municipal Utility District Water | UTILITY_WATER | zip_prefix | https://www.ebmud.com
+- Long Beach Utilities Water | UTILITY_WATER | zip_prefix | https://www.longbeach.gov/utilityservices/
+- San Jose Water | UTILITY_WATER | zip_prefix | https://www.sjwater.com
+- Aurora Water | UTILITY_WATER | zip_prefix | https://www.auroragov.org/residents/water
+- City of Boulder Water Utilities | UTILITY_WATER | zip_prefix | https://bouldercolorado.gov/services/water-utilities
+- Colorado Springs Utilities Water | UTILITY_WATER | zip_prefix | https://www.csu.org
+- Fort Collins Utilities Water | UTILITY_WATER | zip_prefix | https://www.fcgov.com/utilities
+- Bridgeport Water Pollution Control Authority | UTILITY_SEWER | zip_prefix | https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca
+- Greater New Haven Water Pollution Control Authority | UTILITY_SEWER | zip_prefix | https://gnhwpca.com
+- Stamford Water Pollution Control Authority | UTILITY_SEWER | zip_prefix | https://www.stamfordct.gov/government/operations/water-pollution-control-authority
+- Metropolitan District Commission | UTILITY_WATER | zip_prefix | https://themdc.org
+- South Central Connecticut Regional Water Authority | UTILITY_WATER | zip_prefix | https://www.rwater.com
+- Kent County Wastewater Division | UTILITY_SEWER | zip_prefix | https://www.kentcountyde.gov/My-Government/Departments/Public-Works
+- New Castle County Sewer | UTILITY_SEWER | zip_prefix | https://www.newcastlede.gov
+- Sussex County Environmental Services | UTILITY_SEWER | zip_prefix | https://sussexcountyde.gov/sewer-water
+- Wilmington Water Utility | UTILITY_WATER | zip_prefix | https://www.wilmingtondewater.gov
+- Hillsborough County Water Resources | UTILITY_WATER | zip_prefix | https://hcfl.gov
 
 ## Backlog
 
