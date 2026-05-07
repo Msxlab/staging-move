@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { AlertTriangle } from "lucide-react-native";
 import { View, Text, StyleSheet } from "react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "./Button";
 
 interface ErrorStateProps {
@@ -17,6 +17,12 @@ export function ErrorState({
   actionLabel = "Try Again",
   onRetry,
 }: ErrorStateProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.container} accessibilityRole="alert" accessibilityLabel={title}>
       <View style={styles.iconWrapper} accessible={false}>
@@ -38,7 +44,7 @@ export function ErrorState({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     alignItems: "center",
     justifyContent: "center",

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import {
   MapPin,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
@@ -35,6 +35,12 @@ const statusVariant: Record<string, "primary" | "success" | "warning" | "error" 
 };
 
 export default function MovingScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [plans, setPlans] = useState<any[]>([]);
@@ -163,7 +169,7 @@ export default function MovingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
   title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },

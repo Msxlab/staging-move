@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet, type ViewStyle } from "react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface BadgeProps {
   label: string;
@@ -9,45 +9,53 @@ interface BadgeProps {
   style?: ViewStyle;
 }
 
-// Variant borders read from the canonical tone tokens. The legacy keys
-// (orange/emerald/amber/sky) alias onto rose/sage/honey/slate in Edition
-// VI, so existing call sites flip palette without code changes.
-const variantStyles = {
-  primary: { bg: theme.colors.primaryFaded, border: theme.colors.orange.border, text: theme.colors.orange.text },
-  success: { bg: theme.colors.successFaded, border: theme.colors.emerald.border, text: theme.colors.emerald.text },
-  warning: { bg: theme.colors.warningFaded, border: theme.colors.amber.border, text: theme.colors.amber.text },
-  error: { bg: theme.colors.errorFaded, border: theme.colors.rose.border, text: theme.colors.rose.text },
-  info: { bg: theme.colors.infoFaded, border: theme.colors.sky.border, text: theme.colors.sky.text },
-  neutral: { bg: "rgba(236, 241, 248, 0.05)", border: theme.colors.border, text: theme.colors.textTertiary },
-};
+// Variant tone lookups read from the canonical tone tokens. The legacy
+// keys (orange/emerald/amber/sky) alias onto rose/sage/honey/slate in
+// Edition VII Aurora, so existing call sites flip palette without code
+// changes. Built per-render against the resolved theme so light/dark
+// switches actually re-paint the badge.
+function makeVariantStyles(t: Theme) {
+  return {
+    primary: { bg: t.colors.primaryFaded, border: t.colors.orange.border, text: t.colors.orange.text },
+    success: { bg: t.colors.successFaded, border: t.colors.emerald.border, text: t.colors.emerald.text },
+    warning: { bg: t.colors.warningFaded, border: t.colors.amber.border, text: t.colors.amber.text },
+    error: { bg: t.colors.errorFaded, border: t.colors.rose.border, text: t.colors.rose.text },
+    info: { bg: t.colors.infoFaded, border: t.colors.sky.border, text: t.colors.sky.text },
+    neutral: { bg: "rgba(236, 241, 248, 0.05)", border: t.colors.border, text: t.colors.textTertiary },
+  } as const;
+}
+
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    base: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: t.radius.full,
+      borderWidth: 1,
+      alignSelf: "flex-start",
+    },
+    md: {
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+    },
+    text: {
+      fontSize: 11,
+      fontWeight: "600",
+      letterSpacing: 0.3,
+    },
+    textMd: {
+      fontSize: 13,
+    },
+  });
 
 export function Badge({ label, variant = "neutral", size = "sm", style }: BadgeProps) {
-  const v = variantStyles[variant];
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const variants = useMemo(() => makeVariantStyles(theme), [theme]);
+  const v = variants[variant];
   return (
     <View style={[styles.base, size === "md" && styles.md, { backgroundColor: v.bg, borderColor: v.border }, style]}>
       <Text style={[styles.text, size === "md" && styles.textMd, { color: v.text }]}>{label}</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: theme.radius.full,
-    borderWidth: 1,
-    alignSelf: "flex-start",
-  },
-  md: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  text: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.3,
-  },
-  textMd: {
-    fontSize: 13,
-  },
-});

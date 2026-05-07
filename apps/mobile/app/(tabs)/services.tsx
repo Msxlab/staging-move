@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+﻿import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -26,7 +26,7 @@ import {
   Wallet,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import {
   getCategoryIcon,
@@ -90,6 +90,12 @@ function getServiceCategoryIcon(category: string): string {
 }
 
 export default function ServicesScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ addressId?: string | string[] }>();
@@ -517,7 +523,7 @@ export default function ServicesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingVertical: 16 },
   title: { fontSize: 28, fontWeight: "800", color: theme.colors.text, letterSpacing: -0.5 },

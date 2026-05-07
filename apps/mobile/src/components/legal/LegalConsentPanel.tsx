@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Check, ChevronDown, ChevronUp, FileText, ShieldAlert } from "lucide-react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import {
   LEGAL_CONSENT_DOCUMENTS,
   getDefaultLegalConsents,
@@ -31,6 +31,12 @@ export function LegalConsentPanel({
   compact = false,
   disabled = false,
 }: LegalConsentPanelProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [expanded, setExpanded] = useState<LegalConsentDocumentKey | null>("terms");
 
   const updateConsent = (key: LegalConsentDocumentKey, checked: boolean) => {
@@ -109,7 +115,7 @@ export function LegalConsentPanel({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   wrapper: { marginTop: 20, gap: 10 },
   title: { fontSize: 17, fontWeight: "700", color: theme.colors.text },
   description: { fontSize: 13, lineHeight: 20, color: theme.colors.textTertiary },

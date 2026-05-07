@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Check } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
@@ -26,6 +26,12 @@ const MOVE_TYPES = ["PERSONAL", "BUSINESS", "VACATION"] as const;
 const IMMIGRATION_STATUSES = ["", "CITIZEN", "GREEN_CARD", "H1B", "L1", "F1", "OTHER_VISA"] as const;
 
 export default function ProfileSettingsScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const [pageLoading, setPageLoading] = useState(true);
@@ -425,7 +431,7 @@ export default function ProfileSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",

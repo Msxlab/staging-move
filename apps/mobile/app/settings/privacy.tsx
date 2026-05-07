@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ import {
   Smartphone,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -55,6 +55,12 @@ interface AccountSecurityState {
 }
 
 export default function PrivacySettingsScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const [security, setSecurity] = useState<AccountSecurityState | null>(null);
@@ -446,7 +452,7 @@ export default function PrivacySettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",

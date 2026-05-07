@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   StyleSheet,
@@ -7,7 +7,7 @@ import {
   type AccessibilityState,
   type ViewStyle,
 } from "react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface CardProps {
   children: React.ReactNode;
@@ -32,6 +32,8 @@ export function Card({
   accessibilityHint,
   accessibilityState,
 }: CardProps) {
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const cardStyle = [styles.base, styles[variant], style];
 
   if (onPress) {
@@ -65,7 +67,7 @@ export function Card({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   base: {
     borderRadius: theme.radius.xl,
     padding: theme.spacing.lg,

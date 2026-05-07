@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,19 +13,23 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Plus, ChevronRight, MessageCircle, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
-const STATUS_COLOR: Record<string, string> = {
-  OPEN: theme.colors.primary,
-  IN_PROGRESS: "#F2C46C",
-  WAITING_USER: "#7FB6E8",
-  CLOSED: theme.colors.textMuted,
-};
+// Built per-render against the active theme so the dot color flips
+// when the user changes Appearance.
+function makeStatusColor(theme: Theme): Record<string, string> {
+  return {
+    OPEN: theme.colors.primary,
+    IN_PROGRESS: "#F2C46C",
+    WAITING_USER: "#7FB6E8",
+    CLOSED: theme.colors.textMuted,
+  };
+}
 
 interface Ticket {
   id: string;
@@ -40,6 +44,13 @@ interface Ticket {
 const CATEGORIES = ["GENERAL", "BUG", "BILLING", "ACCOUNT", "FEATURE_REQUEST"];
 
 export default function TicketsScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const STATUS_COLOR = useMemo(() => makeStatusColor(theme), [theme]);
   const router = useRouter();
   const { t, i18n } = useTranslation();
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -219,7 +230,7 @@ export default function TicketsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },

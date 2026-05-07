@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Building2, ChevronRight, Plus, Search } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -32,6 +32,12 @@ interface CustomProvider {
 }
 
 export default function CustomProvidersScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const [providers, setProviders] = useState<CustomProvider[]>([]);
@@ -164,7 +170,7 @@ export default function CustomProvidersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: {
     flexDirection: "row",

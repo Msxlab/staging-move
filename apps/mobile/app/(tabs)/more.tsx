@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   View,
   Text,
@@ -27,7 +27,7 @@ import {
 import { useTranslation } from "react-i18next";
 import Constants from "expo-constants";
 import { useAuthStore } from "@/lib/auth-store";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { hapticLight, hapticWarning } from "@/lib/haptics";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
@@ -44,6 +44,12 @@ interface MenuItem {
 }
 
 export default function MoreScreen() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -178,7 +184,7 @@ export default function MoreScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { paddingHorizontal: 20, paddingVertical: 16 },
   title: {

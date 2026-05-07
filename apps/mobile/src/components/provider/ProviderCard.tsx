@@ -1,8 +1,8 @@
-﻿import React from "react";
+﻿import React, { useMemo } from "react";
 import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
 import { ChevronRight, MapPin, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
 import { CategoryIcon } from "@/components/ui/CategoryIcon";
@@ -63,6 +63,10 @@ export function ProviderCard({
   style,
   badge,
 }: ProviderCardProps) {
+  // theme: hook-injected styles
+  const theme = useAppTheme();
+  const compactStyles = useMemo(() => makeCompactStyles(theme), [theme]);
+  const fullStyles = useMemo(() => makeFullStyles(theme), [theme]);
   const { t, i18n } = useTranslation();
   const iconEmoji = getCategoryIcon(provider.category);
   const hasLogo = Boolean(provider.logoUrl && String(provider.logoUrl).trim());
@@ -191,7 +195,7 @@ function formatUsers(n: number): string {
   return String(n);
 }
 
-const compactStyles = StyleSheet.create({
+const makeCompactStyles = (theme: Theme) => StyleSheet.create({
   card: {
     width: 220,
     padding: theme.spacing.md,
@@ -254,7 +258,7 @@ const compactStyles = StyleSheet.create({
   },
 });
 
-const fullStyles = StyleSheet.create({
+const makeFullStyles = (theme: Theme) => StyleSheet.create({
   top: {
     flexDirection: "row",
     alignItems: "center",

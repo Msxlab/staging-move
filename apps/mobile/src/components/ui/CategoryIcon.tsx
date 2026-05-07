@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, StyleSheet } from "react-native";
 import { ClipboardList } from "lucide-react-native";
 import { getIconForEmoji } from "@/lib/icon-map";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface CategoryIconProps {
   emoji: string;
@@ -15,10 +15,17 @@ interface CategoryIconProps {
 export function CategoryIcon({
   emoji,
   size = 16,
-  color = theme.colors.textSecondary,
+  color,
   bgColor,
   showBg = false,
 }: CategoryIconProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const tint = color ?? theme.colors.textSecondary;
   const Icon = getIconForEmoji(emoji) || ClipboardList;
 
   if (showBg) {
@@ -35,15 +42,15 @@ export function CategoryIcon({
           },
         ]}
       >
-        <Icon size={size} color={color} />
+        <Icon size={size} color={tint} />
       </View>
     );
   }
 
-  return <Icon size={size} color={color} />;
+  return <Icon size={size} color={tint} />;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   iconBox: {
     alignItems: "center",
     justifyContent: "center",

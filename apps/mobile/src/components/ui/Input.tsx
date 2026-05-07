@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   TextInput,
@@ -8,7 +8,7 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from "react-native";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { Eye, EyeOff } from "lucide-react-native";
 
 interface InputProps extends TextInputProps {
@@ -34,6 +34,12 @@ export function Input({
   style,
   ...props
 }: InputProps) {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [focused, setFocused] = useState(false);
   const [secureEntry, setSecureEntry] = useState(isPassword);
   const leadingIcon = leftIcon || icon;
@@ -84,7 +90,7 @@ export function Input({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "600",

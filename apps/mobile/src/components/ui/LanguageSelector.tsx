@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Check, Languages } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { theme } from "@/lib/theme";
+import { useAppTheme, type Theme } from "@/lib/theme";
 import { LOCALES, changeLocale, type Locale } from "@/i18n/config";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -26,6 +26,12 @@ const LOCALE_NAMES: Record<Locale, string> = {
 };
 
 export function LanguageSelector() {
+
+  // theme: hook-injected styles
+
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const { i18n } = useTranslation();
   const currentLocale = (i18n.language as Locale) || "en";
   const token = useAuthStore((s) => s.token);
@@ -71,7 +77,7 @@ export function LanguageSelector() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (theme: Theme) => StyleSheet.create({
   container: {
     backgroundColor: theme.colors.card,
     borderRadius: theme.radius.lg,
