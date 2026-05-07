@@ -1138,7 +1138,7 @@ const styles = StyleSheet.create({
   fieldLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.textSecondary, alignSelf: "flex-start", marginTop: 20, marginBottom: 8 },
   errorBox: {
     marginHorizontal: 24, marginTop: 8, padding: 12, borderRadius: theme.radius.lg,
-    backgroundColor: "rgba(239,68,68,0.1)", borderWidth: 1, borderColor: "rgba(239,68,68,0.3)",
+    backgroundColor: "rgba(240, 140, 142, 0.10)", borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.30)",
   },
   errorText: { fontSize: 13, color: "#F08C8E", textAlign: "center" },
   row: { flexDirection: "row", gap: 12, width: "100%" },

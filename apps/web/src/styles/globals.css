@@ -5,132 +5,134 @@
 @tailwind utilities;
 
 /* =========================================================================
-   LocateFlow — Edition VI · Champagne & Rose
-   Source of truth: packages/shared/src/design-tokens.ts +
-   docs/design-system/colors_and_type.css.
+   LocateFlow — Edition VII · Aurora
+   Source of truth: packages/shared/src/design-tokens.ts. Mirrors the
+   numeric values exported by that module so web/admin (which don't import
+   tokens at runtime) and mobile (which does) render the same palette.
    The legacy `--brand-orange` and `--orange-*` names are intentionally
    preserved — every Tailwind utility (`bg-orange-500`, `text-amber-400`,
-   `border-orange-300`, …) resolves to the new rose / foil values, so the
-   palette flips without touching component code.
+   `border-orange-300`, …) resolves to the Aurora cool/violet/mint values,
+   so the palette flips without touching component code.
    ========================================================================= */
 :root,
 .dark {
-  /* ─────────────── Brand core (Champagne & Rose) ─────────────── */
-  --rose:          #D4846A;
-  --rose-light:    #EDB99D;
-  --rose-deep:     #A85A42;
-  --rose-dark:     #6A2E1C;
+  /* ─────────────── Brand core — Aurora cool primary, violet accent ─────── */
+  --rose:          #7FB6E8;
+  --rose-light:    #A5C9F0;
+  --rose-deep:     #5C9DDC;
+  --rose-dark:     #3D7AB8;
 
-  --foil-a:        #F4E4D0;
-  --foil-b:        #E5C9A8;
-  --foil-c:        #B8936C;
-  --foil:          #E5C9A8;
-  --foil-ink:      #8E6D4A;
+  --foil-a:        #DDE7F5;
+  --foil-b:        #B49BFF;
+  --foil-c:        #5C9DDC;
+  --foil:          #B49BFF;
+  --foil-ink:      #1F5FA0;
 
-  --nude:          #E5C9A8;
-  --nude-deep:     #B8936C;
+  --nude:          #B49BFF;
+  --nude-deep:     #8B73E0;
 
-  --sage:          #5EAD9A;
-  --sage-soft:     #8FC9B7;
+  --sage:          #87DDC0;
+  --sage-soft:     #B0E8D2;
 
-  /* Legacy brand aliases — flipped to rose / foil */
-  --brand-orange:        #D4846A;
-  --brand-orange-light:  #EDB99D;
-  --brand-orange-dark:   #A85A42;
-  --brand-amber:         #E5C9A8;
+  /* Legacy brand aliases — flipped to Aurora cool / violet */
+  --brand-orange:        #7FB6E8;
+  --brand-orange-light:  #A5C9F0;
+  --brand-orange-dark:   #5C9DDC;
+  --brand-amber:         #B49BFF;
 
-  /* "orange" scale — now the rose scale (kept for `bg-orange-500` etc.) */
-  --orange-50:  #FBF1ED;
-  --orange-100: #F6E0D6;
-  --orange-200: #EDC0AC;
-  --orange-300: #E5A287;
-  --orange-400: #DC8B6F;
-  --orange-500: #D4846A;
-  --orange-600: #BC6C53;
-  --orange-700: #A85A42;
-  --orange-800: #8A4630;
-  --orange-900: #6A2E1C;
+  /* "orange" scale — now the Aurora cool scale (kept for `bg-orange-500` etc.) */
+  --orange-50:  #EFF5FB;
+  --orange-100: #DDE7F5;
+  --orange-200: #BDD2EE;
+  --orange-300: #9CBDDD;
+  --orange-400: #7FB6E8;
+  --orange-500: #7FB6E8;
+  --orange-600: #6BA5D9;
+  --orange-700: #5C9DDC;
+  --orange-800: #3D7AB8;
+  --orange-900: #1F5FA0;
 
-  /* ─────────────── Surfaces (umber-near-black, slightly warm) ─────────── */
-  --bg:            #0E0A07;
-  --bg-deep:       #070504;
-  --surface:       #13100B;
-  --surface-2:     #181410;
-  --surface-3:     #1F1A14;
-  --elevated:      #261F17;
+  /* ─────────────── Surfaces — Aurora deep navy ─────────────────────────── */
+  --bg:            #0A0F18;
+  --bg-deep:       #060A12;
+  --surface:       #0E1521;
+  --surface-2:     #131C2C;
+  --surface-3:     #1A2438;
+  --elevated:      #212C45;
 
-  /* ─────────────── Foreground ─────────────── */
-  --fg:            #F5F1EA;
-  --fg-1:          rgba(245, 241, 234, 1);
-  --fg-2:          rgba(245, 241, 234, 0.62);
-  --fg-3:          rgba(245, 241, 234, 0.38);
-  --fg-4:          rgba(245, 241, 234, 0.22);
-  --fg-muted:      rgba(245, 241, 234, 0.20);
+  /* ─────────────── Foreground — Aurora cool ink ramp ───────────────────── */
+  --fg:            #ECF1F8;
+  --fg-1:          rgba(236, 241, 248, 1);
+  --fg-2:          rgba(236, 241, 248, 0.66);
+  --fg-3:          rgba(236, 241, 248, 0.43);
+  --fg-4:          rgba(236, 241, 248, 0.30);
+  --fg-muted:      rgba(236, 241, 248, 0.22);
 
-  /* ─────────────── Borders ─────────────── */
-  --line:          rgba(245, 241, 234, 0.08);
-  --line-2:        rgba(245, 241, 234, 0.14);
-  --line-foil:     rgba(229, 201, 168, 0.22);
-  --line-rose:     rgba(212, 132, 106, 0.30);
-  --border-strong: rgba(245, 241, 234, 0.14);
-  --border-focus:  rgba(212, 132, 106, 0.55);
+  /* ─────────────── Borders ─────────────────────────────────────────────── */
+  --line:          rgba(255, 255, 255, 0.06);
+  --line-2:        rgba(255, 255, 255, 0.10);
+  --line-foil:     rgba(180, 155, 255, 0.22);
+  --line-rose:     rgba(127, 182, 232, 0.30);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-focus:  rgba(127, 182, 232, 0.55);
 
-  /* ─────────────── Glass ─────────────── */
-  --glass-bg:      rgba(245, 241, 234, 0.04);
-  --glass-border:  rgba(245, 241, 234, 0.08);
-  --glass-hover:   rgba(245, 241, 234, 0.07);
+  /* ─────────────── Glass ───────────────────────────────────────────────── */
+  --glass-bg:      rgba(255, 255, 255, 0.03);
+  --glass-border:  rgba(255, 255, 255, 0.05);
+  --glass-hover:   rgba(255, 255, 255, 0.08);
 
-  /* ─────────────── Semantic ─────────────── */
-  --success:       #5EAD9A;
-  --success-soft:  rgba(94, 173, 154, 0.12);
-  --warning:       #E3B04B;
-  --warning-soft:  rgba(227, 176, 75, 0.14);
-  --danger:        #C85A3E;
-  --danger-soft:   rgba(200, 90, 62, 0.14);
-  --info:          #8AA9C0;
-  --info-soft:     rgba(138, 169, 192, 0.12);
+  /* ─────────────── Semantic — Aurora mint / amber / coral / cool ───────── */
+  --success:       #87DDC0;
+  --success-soft:  rgba(135, 221, 192, 0.14);
+  --warning:       #F2C46C;
+  --warning-soft:  rgba(242, 196, 108, 0.14);
+  --danger:        #F08C8E;
+  --danger-soft:   rgba(240, 140, 142, 0.16);
+  --info:          #7FB6E8;
+  --info-soft:     rgba(127, 182, 232, 0.14);
 
-  /* ─────────────── Tonal pairs — six tones ─────────────── */
-  --tone-rose-bg:    rgba(212, 132, 106, 0.10);
-  --tone-rose-br:    rgba(212, 132, 106, 0.22);
-  --tone-rose-fg:    #EDB99D;
+  /* ─────────────── Tonal pairs — six Aurora tones ──────────────────────── */
+  --tone-rose-bg:    rgba(127, 182, 232, 0.10);
+  --tone-rose-br:    rgba(127, 182, 232, 0.22);
+  --tone-rose-fg:    #7FB6E8;
 
-  --tone-foil-bg:    rgba(229, 201, 168, 0.09);
-  --tone-foil-br:    rgba(229, 201, 168, 0.22);
-  --tone-foil-fg:    #F4E4D0;
+  --tone-foil-bg:    rgba(180, 155, 255, 0.10);
+  --tone-foil-br:    rgba(180, 155, 255, 0.22);
+  --tone-foil-fg:    #B49BFF;
 
-  --tone-sage-bg:    rgba(94, 173, 154, 0.09);
-  --tone-sage-br:    rgba(94, 173, 154, 0.22);
-  --tone-sage-fg:    #8FC9B7;
+  --tone-sage-bg:    rgba(135, 221, 192, 0.10);
+  --tone-sage-br:    rgba(135, 221, 192, 0.22);
+  --tone-sage-fg:    #87DDC0;
 
-  --tone-honey-bg:   rgba(227, 176, 75, 0.09);
-  --tone-honey-br:   rgba(227, 176, 75, 0.22);
-  --tone-honey-fg:   #EFC878;
+  --tone-honey-bg:   rgba(242, 196, 108, 0.10);
+  --tone-honey-br:   rgba(242, 196, 108, 0.22);
+  --tone-honey-fg:   #F2C46C;
 
-  --tone-umber-bg:   rgba(184, 147, 108, 0.09);
-  --tone-umber-br:   rgba(184, 147, 108, 0.22);
-  --tone-umber-fg:   #D4B68F;
+  --tone-umber-bg:   rgba(180, 155, 255, 0.10);
+  --tone-umber-br:   rgba(180, 155, 255, 0.22);
+  --tone-umber-fg:   #B49BFF;
 
-  --tone-slate-bg:   rgba(138, 169, 192, 0.09);
-  --tone-slate-br:   rgba(138, 169, 192, 0.22);
-  --tone-slate-fg:   #B5CDDD;
+  --tone-slate-bg:   rgba(168, 181, 201, 0.10);
+  --tone-slate-br:   rgba(168, 181, 201, 0.22);
+  --tone-slate-fg:   #A8B5C9;
 
-  /* Legacy tone aliases — orange→rose, emerald→sage, amber→honey, sky/cyan→slate */
-  --tone-orange-bg:  rgba(212, 132, 106, 0.10);
-  --tone-orange-br:  rgba(212, 132, 106, 0.22);
-  --tone-orange-fg:  #EDB99D;
-  --tone-emerald-bg: rgba(94, 173, 154, 0.09);
-  --tone-emerald-br: rgba(94, 173, 154, 0.22);
-  --tone-emerald-fg: #8FC9B7;
-  --tone-amber-bg:   rgba(227, 176, 75, 0.09);
-  --tone-amber-br:   rgba(227, 176, 75, 0.22);
-  --tone-amber-fg:   #EFC878;
-  --tone-sky-bg:     rgba(138, 169, 192, 0.09);
-  --tone-sky-br:     rgba(138, 169, 192, 0.22);
-  --tone-sky-fg:     #B5CDDD;
-  --tone-cyan-bg:    rgba(138, 169, 192, 0.09);
-  --tone-cyan-br:    rgba(138, 169, 192, 0.22);
-  --tone-cyan-fg:    #B5CDDD;
+  /* Legacy tone aliases — orange→rose(cool), emerald→sage(mint),
+     amber→honey(amber), sky/cyan→slate(ink-2). */
+  --tone-orange-bg:  rgba(127, 182, 232, 0.10);
+  --tone-orange-br:  rgba(127, 182, 232, 0.22);
+  --tone-orange-fg:  #7FB6E8;
+  --tone-emerald-bg: rgba(135, 221, 192, 0.10);
+  --tone-emerald-br: rgba(135, 221, 192, 0.22);
+  --tone-emerald-fg: #87DDC0;
+  --tone-amber-bg:   rgba(242, 196, 108, 0.10);
+  --tone-amber-br:   rgba(242, 196, 108, 0.22);
+  --tone-amber-fg:   #F2C46C;
+  --tone-sky-bg:     rgba(127, 182, 232, 0.10);
+  --tone-sky-br:     rgba(127, 182, 232, 0.22);
+  --tone-sky-fg:     #7FB6E8;
+  --tone-cyan-bg:    rgba(127, 182, 232, 0.10);
+  --tone-cyan-br:    rgba(127, 182, 232, 0.22);
+  --tone-cyan-fg:    #7FB6E8;
 
   /* ─────────────── Radii ─────────────── */
   --radius-sm:   6px;
@@ -158,9 +160,9 @@
   --shadow-md:   0 6px 18px rgba(0, 0, 0, 0.40);
   --shadow-lg:   0 20px 50px rgba(0, 0, 0, 0.55);
   --shadow-xl:   0 40px 80px rgba(0, 0, 0, 0.60);
-  --shadow-rose: 0 0 20px rgba(212, 132, 106, 0.28);
-  --shadow-foil: 0 0 30px rgba(229, 201, 168, 0.16);
-  --shadow-glow: 0 0 20px rgba(212, 132, 106, 0.28);
+  --shadow-rose: 0 0 20px rgba(127, 182, 232, 0.28);
+  --shadow-foil: 0 0 30px rgba(180, 155, 255, 0.16);
+  --shadow-glow: 0 0 20px rgba(127, 182, 232, 0.28);
 
   /* ─────────────── Typography ─────────────── */
   --font-display: "Fraunces", "Didot", Georgia, serif;
@@ -205,155 +207,200 @@
   --fv-display-sm:   "opsz"  36, "SOFT" 20;
 }
 
-/* ─────────────── Light mode (ivory paper) ─────────────── */
+/* ─────────────── Light mode — Aurora soft sky paper ─────────────── */
 .light {
-  --bg:            #FBF7EC;
-  --bg-deep:       #F7EEE3;
+  --bg:            #F2F4F8;
+  --bg-deep:       #EAEEF4;
   --surface:       #FFFFFF;
-  --surface-2:     #F7EEE3;
-  --surface-3:     #F0E4D2;
+  --surface-2:     #EAEEF4;
+  --surface-3:     #E2E7EE;
   --elevated:      #FFFFFF;
 
-  --fg:            #2A1F18;
-  --fg-1:          #2A1F18;
-  --fg-2:          rgba(42, 31, 24, 0.72);
-  --fg-3:          rgba(42, 31, 24, 0.50);
-  --fg-4:          rgba(42, 31, 24, 0.30);
-  --fg-muted:      rgba(42, 31, 24, 0.30);
+  --fg:            #14202F;
+  --fg-1:          #14202F;
+  --fg-2:          rgba(20, 32, 47, 0.72);
+  --fg-3:          rgba(20, 32, 47, 0.50);
+  --fg-4:          rgba(20, 32, 47, 0.30);
+  --fg-muted:      rgba(20, 32, 47, 0.30);
 
-  --line:          rgba(42, 31, 24, 0.08);
-  --line-2:        rgba(42, 31, 24, 0.14);
-  --line-foil:     rgba(184, 147, 108, 0.30);
-  --border-strong: rgba(42, 31, 24, 0.14);
-  --border-focus:  rgba(184, 90, 66, 0.55);
+  --line:          rgba(20, 32, 47, 0.06);
+  --line-2:        rgba(20, 32, 47, 0.14);
+  --line-foil:     rgba(111, 88, 199, 0.30);
+  --line-rose:     rgba(45, 123, 196, 0.30);
+  --border-strong: rgba(20, 32, 47, 0.14);
+  --border-focus:  rgba(45, 123, 196, 0.55);
 
-  --glass-bg:      rgba(255, 255, 255, 0.70);
-  --glass-border:  rgba(42, 31, 24, 0.08);
-  --glass-hover:   rgba(42, 31, 24, 0.04);
+  --glass-bg:      rgba(255, 255, 255, 0.55);
+  --glass-border:  rgba(20, 32, 47, 0.06);
+  --glass-hover:   rgba(255, 255, 255, 0.92);
 
-  /* Accents shift slightly on paper */
-  --rose:          #B85A42;
-  --rose-light:    #D4846A;
-  --rose-deep:     #8B3E28;
-  --foil-ink:      #8E6D4A;
+  /* Accents — darker Aurora cool / violet on paper for AA contrast */
+  --rose:          #2D7BC4;
+  --rose-light:    #4D8FCE;
+  --rose-deep:     #1F5FA0;
+  --foil:          #6F58C7;
+  --foil-ink:      #1F5FA0;
+  --sage:          #2E9B79;
 
-  --tone-rose-fg:    #8B3E28;
-  --tone-foil-fg:    #8E6D4A;
-  --tone-sage-fg:    #2F6F5F;
-  --tone-honey-fg:   #8B6A1F;
-  --tone-umber-fg:   #6A4F30;
-  --tone-slate-fg:   #456180;
-  --tone-orange-fg:  #8B3E28;
-  --tone-emerald-fg: #2F6F5F;
-  --tone-amber-fg:   #8B6A1F;
-  --tone-sky-fg:     #456180;
-  --tone-cyan-fg:    #456180;
+  --tone-rose-fg:    #2D7BC4;
+  --tone-foil-fg:    #6F58C7;
+  --tone-sage-fg:    #2E9B79;
+  --tone-honey-fg:   #B98318;
+  --tone-umber-fg:   #6F58C7;
+  --tone-slate-fg:   #4A5C75;
+  --tone-orange-fg:  #2D7BC4;
+  --tone-emerald-fg: #2E9B79;
+  --tone-amber-fg:   #B98318;
+  --tone-sky-fg:     #2D7BC4;
+  --tone-cyan-fg:    #2D7BC4;
 
-  --orange-50:  #FBF1ED;
-  --orange-100: #F6E0D6;
-  --orange-200: #EDC0AC;
-  --orange-300: #E5A287;
-  --orange-400: #C76E50;
-  --orange-500: #B85A42;
-  --orange-600: #9F4733;
-  --orange-700: #8B3E28;
-  --orange-800: #6A2E1C;
-  --orange-900: #4A1F12;
+  /* Tonal alphas — Aurora light ramp (darker text-on-paper, lighter bg). */
+  --tone-rose-bg:    rgba(45, 123, 196, 0.10);
+  --tone-rose-br:    rgba(45, 123, 196, 0.22);
+  --tone-foil-bg:    rgba(111, 88, 199, 0.10);
+  --tone-foil-br:    rgba(111, 88, 199, 0.22);
+  --tone-sage-bg:    rgba(46, 155, 121, 0.10);
+  --tone-sage-br:    rgba(46, 155, 121, 0.22);
+  --tone-honey-bg:   rgba(185, 131, 24, 0.10);
+  --tone-honey-br:   rgba(185, 131, 24, 0.22);
+  --tone-umber-bg:   rgba(111, 88, 199, 0.10);
+  --tone-umber-br:   rgba(111, 88, 199, 0.22);
+  --tone-slate-bg:   rgba(74, 92, 117, 0.10);
+  --tone-slate-br:   rgba(74, 92, 117, 0.22);
+  --tone-orange-bg:  rgba(45, 123, 196, 0.10);
+  --tone-orange-br:  rgba(45, 123, 196, 0.22);
+  --tone-emerald-bg: rgba(46, 155, 121, 0.10);
+  --tone-emerald-br: rgba(46, 155, 121, 0.22);
+  --tone-amber-bg:   rgba(185, 131, 24, 0.10);
+  --tone-amber-br:   rgba(185, 131, 24, 0.22);
+  --tone-sky-bg:     rgba(45, 123, 196, 0.10);
+  --tone-sky-br:     rgba(45, 123, 196, 0.22);
+  --tone-cyan-bg:    rgba(45, 123, 196, 0.10);
+  --tone-cyan-br:    rgba(45, 123, 196, 0.22);
 
-  --brand-orange:       #B85A42;
-  --brand-orange-light: #D4846A;
-  --brand-orange-dark:  #8B3E28;
+  --orange-50:  #EFF5FB;
+  --orange-100: #DDE7F5;
+  --orange-200: #BDD2EE;
+  --orange-300: #9CBDDD;
+  --orange-400: #4D8FCE;
+  --orange-500: #2D7BC4;
+  --orange-600: #2670B6;
+  --orange-700: #1F5FA0;
+  --orange-800: #184A7F;
+  --orange-900: #0F345C;
+
+  --brand-orange:       #2D7BC4;
+  --brand-orange-light: #4D8FCE;
+  --brand-orange-dark:  #1F5FA0;
+
+  /* Semantic — Aurora light ramp. Darker ink-on-paper hues for AA contrast. */
+  --success:       #2E9B79;
+  --success-soft:  rgba(46, 155, 121, 0.10);
+  --warning:       #B98318;
+  --warning-soft:  rgba(185, 131, 24, 0.10);
+  --danger:        #C84E51;
+  --danger-soft:   rgba(200, 78, 81, 0.10);
+  --info:          #2D7BC4;
+  --info-soft:     rgba(45, 123, 196, 0.10);
+
+  /* Glow shadows — flip from cool-on-dark to cool-on-paper. */
+  --shadow-rose: 0 0 20px rgba(45, 123, 196, 0.20);
+  --shadow-foil: 0 0 30px rgba(111, 88, 199, 0.14);
+  --shadow-glow: 0 0 20px rgba(45, 123, 196, 0.20);
 }
 
 /* =========================================================================
    shadcn HSL tokens — drive every `bg-primary`, `text-foreground`,
-   `border-border` utility. HSL of #D4846A ≈ 17 56% 62%. Backgrounds
-   match the umber canvas above (HSL of #0E0A07 ≈ 24 27% 4%).
+   `border-border` utility. HSL of #7FB6E8 ≈ 207 67% 70% (Aurora cool).
+   Backgrounds match the navy canvas above (HSL of #0A0F18 ≈ 218 43% 6%).
+   Mirrors the values in apps/web/src/styles/aurora.css `.lf-aurora` so
+   the palette is consistent whether or not a subtree opts into the
+   aurora wrapper.
    ========================================================================= */
 @layer base {
   :root,
   .dark {
-    --background: 24 27% 4%;
-    --foreground: 36 27% 94%;
+    --background: 218 43% 6%;
+    --foreground: 214 36% 95%;
 
-    --card: 27 24% 6%;
-    --card-foreground: 36 27% 94%;
+    --card: 217 41% 9%;
+    --card-foreground: 214 36% 95%;
 
-    --popover: 30 25% 12%;
-    --popover-foreground: 36 27% 94%;
+    --popover: 217 41% 9%;
+    --popover-foreground: 214 36% 95%;
 
-    --primary: 17 56% 62%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 207 67% 70%;
+    --primary-foreground: 218 43% 6%;
 
-    --secondary: 35 53% 78%;
-    --secondary-foreground: 30 30% 12%;
+    --secondary: 215 22% 72%;
+    --secondary-foreground: 218 43% 6%;
 
-    --muted: 30 20% 14%;
-    --muted-foreground: 35 17% 60%;
+    --muted: 217 38% 12%;
+    --muted-foreground: 215 18% 65%;
 
-    --accent: 35 53% 78%;
-    --accent-foreground: 30 30% 12%;
+    --accent: 217 38% 14%;
+    --accent-foreground: 214 36% 95%;
 
-    --destructive: 11 56% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 359 75% 75%;
+    --destructive-foreground: 218 43% 6%;
 
-    --warning: 41 73% 59%;
-    --success: 167 30% 52%;
-    --info: 207 26% 65%;
+    --warning: 39 84% 69%;
+    --success: 156 56% 70%;
+    --info: 207 67% 70%;
 
-    --border: 36 27% 12%;
-    --input: 36 27% 14%;
-    --ring: 17 56% 62%;
+    --border: 217 32% 18%;
+    --input: 217 32% 18%;
+    --ring: 207 67% 70%;
 
     --radius: 0.625rem; /* 10px */
 
-    --surface: #13100B;
-    --surface-secondary: #181410;
-    --text-primary: rgba(245, 241, 234, 1);
-    --text-secondary: rgba(245, 241, 234, 0.62);
-    --text-tertiary: rgba(245, 241, 234, 0.38);
+    /* Legacy short surface tokens — Aurora navy */
+    --surface-secondary: #131C2C;
+    --text-primary: rgba(236, 241, 248, 1);
+    --text-secondary: rgba(236, 241, 248, 0.66);
+    --text-tertiary: rgba(236, 241, 248, 0.43);
   }
 
   .light {
-    --background: 35 60% 95%;
-    --foreground: 27 30% 13%;
+    --background: 220 23% 96%;
+    --foreground: 213 39% 13%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 27 30% 13%;
+    --card: 218 21% 92%;
+    --card-foreground: 213 39% 13%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 27 30% 13%;
+    --popover: 218 21% 96%;
+    --popover-foreground: 213 39% 13%;
 
-    --primary: 13 47% 49%;
+    --primary: 209 63% 47%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 35 53% 75%;
-    --secondary-foreground: 30 30% 12%;
+    --secondary: 214 22% 38%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 35 30% 90%;
-    --muted-foreground: 30 15% 35%;
+    --muted: 218 21% 88%;
+    --muted-foreground: 213 14% 35%;
 
-    --accent: 35 53% 78%;
-    --accent-foreground: 30 30% 12%;
+    --accent: 218 21% 90%;
+    --accent-foreground: 213 39% 13%;
 
-    --destructive: 11 56% 51%;
+    --destructive: 359 51% 49%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 41 73% 50%;
-    --success: 167 30% 42%;
-    --info: 207 26% 50%;
+    --warning: 36 77% 41%;
+    --success: 159 54% 39%;
+    --info: 209 63% 47%;
 
-    --border: 30 30% 88%;
-    --input: 30 30% 88%;
-    --ring: 13 47% 49%;
+    --border: 213 18% 82%;
+    --input: 213 18% 82%;
+    --ring: 209 63% 47%;
 
     --radius: 0.625rem;
 
-    --surface: #FBF7EC;
+    /* Legacy short surface tokens — Aurora soft sky paper */
     --surface-secondary: #FFFFFF;
-    --text-primary: rgba(42, 31, 24, 1);
-    --text-secondary: rgba(42, 31, 24, 0.72);
-    --text-tertiary: rgba(42, 31, 24, 0.50);
+    --text-primary: rgba(20, 32, 47, 1);
+    --text-secondary: rgba(20, 32, 47, 0.72);
+    --text-tertiary: rgba(20, 32, 47, 0.50);
   }
 }
 
@@ -511,60 +558,61 @@
 
 /* =========================================================================
    LIGHT MODE — comprehensive overrides for utilities authored in dark-first
-   Tailwind. Inverts white/* alphas to slate-on-paper alphas.
+   Tailwind. Inverts white/* alphas to Aurora-ink-on-paper alphas
+   (rgba(20, 32, 47, …) — the Aurora ink ramp).
    ========================================================================= */
-.light .text-white { color: rgba(42, 31, 24, 1); }
-.light .text-white\/90 { color: rgba(42, 31, 24, 0.9); }
-.light .text-white\/85 { color: rgba(42, 31, 24, 0.85); }
-.light .text-white\/80 { color: rgba(42, 31, 24, 0.8); }
-.light .text-white\/70 { color: rgba(42, 31, 24, 0.7); }
-.light .text-white\/60 { color: rgba(42, 31, 24, 0.68); }
-.light .text-white\/55 { color: rgba(42, 31, 24, 0.64); }
-.light .text-white\/50 { color: rgba(42, 31, 24, 0.62); }
-.light .text-white\/45 { color: rgba(42, 31, 24, 0.58); }
-.light .text-white\/40 { color: rgba(42, 31, 24, 0.56); }
-.light .text-white\/35 { color: rgba(42, 31, 24, 0.52); }
-.light .text-white\/30 { color: rgba(42, 31, 24, 0.48); }
-.light .text-white\/25 { color: rgba(42, 31, 24, 0.44); }
-.light .text-white\/20 { color: rgba(42, 31, 24, 0.4); }
-.light .text-white\/15 { color: rgba(42, 31, 24, 0.36); }
-.light .text-white\/10 { color: rgba(42, 31, 24, 0.32); }
+.light .text-white { color: rgba(20, 32, 47, 1); }
+.light .text-white\/90 { color: rgba(20, 32, 47, 0.9); }
+.light .text-white\/85 { color: rgba(20, 32, 47, 0.85); }
+.light .text-white\/80 { color: rgba(20, 32, 47, 0.8); }
+.light .text-white\/70 { color: rgba(20, 32, 47, 0.7); }
+.light .text-white\/60 { color: rgba(20, 32, 47, 0.68); }
+.light .text-white\/55 { color: rgba(20, 32, 47, 0.64); }
+.light .text-white\/50 { color: rgba(20, 32, 47, 0.62); }
+.light .text-white\/45 { color: rgba(20, 32, 47, 0.58); }
+.light .text-white\/40 { color: rgba(20, 32, 47, 0.56); }
+.light .text-white\/35 { color: rgba(20, 32, 47, 0.52); }
+.light .text-white\/30 { color: rgba(20, 32, 47, 0.48); }
+.light .text-white\/25 { color: rgba(20, 32, 47, 0.44); }
+.light .text-white\/20 { color: rgba(20, 32, 47, 0.4); }
+.light .text-white\/15 { color: rgba(20, 32, 47, 0.36); }
+.light .text-white\/10 { color: rgba(20, 32, 47, 0.32); }
 
-.light .hover\:text-white:hover { color: rgba(42, 31, 24, 1); }
-.light .hover\:text-white\/80:hover { color: rgba(42, 31, 24, 0.8); }
-.light .hover\:text-white\/70:hover { color: rgba(42, 31, 24, 0.7); }
-.light .hover\:text-white\/60:hover { color: rgba(42, 31, 24, 0.68); }
-.light .hover\:text-white\/40:hover { color: rgba(42, 31, 24, 0.56); }
-.light .group:hover .group-hover\:text-white { color: rgba(42, 31, 24, 1); }
+.light .hover\:text-white:hover { color: rgba(20, 32, 47, 1); }
+.light .hover\:text-white\/80:hover { color: rgba(20, 32, 47, 0.8); }
+.light .hover\:text-white\/70:hover { color: rgba(20, 32, 47, 0.7); }
+.light .hover\:text-white\/60:hover { color: rgba(20, 32, 47, 0.68); }
+.light .hover\:text-white\/40:hover { color: rgba(20, 32, 47, 0.56); }
+.light .group:hover .group-hover\:text-white { color: rgba(20, 32, 47, 1); }
 
-.light .placeholder\:text-white\/30::placeholder { color: rgba(42, 31, 24, 0.48); }
-.light .placeholder\:text-white\/25::placeholder { color: rgba(42, 31, 24, 0.44); }
+.light .placeholder\:text-white\/30::placeholder { color: rgba(20, 32, 47, 0.48); }
+.light .placeholder\:text-white\/25::placeholder { color: rgba(20, 32, 47, 0.44); }
 
-.light .bg-white\/5 { background-color: rgba(42, 31, 24, 0.045); }
-.light .bg-white\/10 { background-color: rgba(42, 31, 24, 0.07); }
-.light .bg-white\/\[0\.02\] { background-color: rgba(42, 31, 24, 0.03); }
-.light .bg-white\/\[0\.03\] { background-color: rgba(42, 31, 24, 0.04); }
-.light .bg-white\/\[0\.05\] { background-color: rgba(42, 31, 24, 0.055); }
-.light .bg-white\/\[0\.07\] { background-color: rgba(42, 31, 24, 0.07); }
+.light .bg-white\/5 { background-color: rgba(20, 32, 47, 0.045); }
+.light .bg-white\/10 { background-color: rgba(20, 32, 47, 0.07); }
+.light .bg-white\/\[0\.02\] { background-color: rgba(20, 32, 47, 0.03); }
+.light .bg-white\/\[0\.03\] { background-color: rgba(20, 32, 47, 0.04); }
+.light .bg-white\/\[0\.05\] { background-color: rgba(20, 32, 47, 0.055); }
+.light .bg-white\/\[0\.07\] { background-color: rgba(20, 32, 47, 0.07); }
 
-.light .hover\:bg-white\/5:hover { background-color: rgba(42, 31, 24, 0.06); }
-.light .hover\:bg-white\/10:hover { background-color: rgba(42, 31, 24, 0.085); }
-.light .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(42, 31, 24, 0.045); }
-.light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(42, 31, 24, 0.06); }
-.light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(42, 31, 24, 0.08); }
+.light .hover\:bg-white\/5:hover { background-color: rgba(20, 32, 47, 0.06); }
+.light .hover\:bg-white\/10:hover { background-color: rgba(20, 32, 47, 0.085); }
+.light .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(20, 32, 47, 0.045); }
+.light .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(20, 32, 47, 0.06); }
+.light .hover\:bg-white\/\[0\.07\]:hover { background-color: rgba(20, 32, 47, 0.08); }
 
 .light .group:hover .group-hover\:bg-orange-500 { background-color: var(--rose); }
 
-.light .border-white\/5 { border-color: rgba(42, 31, 24, 0.09); }
-.light .border-white\/10 { border-color: rgba(42, 31, 24, 0.14); }
-.light .border-white\/20 { border-color: rgba(42, 31, 24, 0.2); }
-.light .border-white\/\[0\.03\] { border-color: rgba(42, 31, 24, 0.08); }
-.light .border-white\/\[0\.05\] { border-color: rgba(42, 31, 24, 0.1); }
-.light .border-white\/\[0\.06\] { border-color: rgba(42, 31, 24, 0.11); }
+.light .border-white\/5 { border-color: rgba(20, 32, 47, 0.09); }
+.light .border-white\/10 { border-color: rgba(20, 32, 47, 0.14); }
+.light .border-white\/20 { border-color: rgba(20, 32, 47, 0.2); }
+.light .border-white\/\[0\.03\] { border-color: rgba(20, 32, 47, 0.08); }
+.light .border-white\/\[0\.05\] { border-color: rgba(20, 32, 47, 0.1); }
+.light .border-white\/\[0\.06\] { border-color: rgba(20, 32, 47, 0.11); }
 
-.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(42, 31, 24, 0.1); }
+.light .divide-white\/5 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(20, 32, 47, 0.1); }
 
-.light .focus\:ring-orange-500\/50:focus { --tw-ring-color: rgba(184, 90, 66, 0.30); }
+.light .focus\:ring-orange-500\/50:focus { --tw-ring-color: rgba(45, 123, 196, 0.30); }
 
 .light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.65); }
 .light .bg-black\/50 { background-color: rgba(0, 0, 0, 0.3); }
@@ -588,11 +636,11 @@
 .light input,
 .light select,
 .light textarea {
-  color: rgba(42, 31, 24, 0.9);
+  color: rgba(20, 32, 47, 0.9);
 }
 .light input::placeholder,
 .light textarea::placeholder {
-  color: rgba(42, 31, 24, 0.35);
+  color: rgba(20, 32, 47, 0.35);
 }
 
 /* Sidebar stays dark in light mode for contrast (per design doc rule). */
@@ -721,7 +769,7 @@
 .premium-sticker svg { display: block; overflow: visible; }
 .premium-sticker:hover { transform: translateY(-1px) scale(1.04); }
 .premium-sticker.tier-pro:hover {
-  filter: drop-shadow(0 0 8px rgba(229, 201, 168, 0.4));
+  filter: drop-shadow(0 0 8px rgba(180, 155, 255, 0.4));
 }
 
 .ps-shimmer-overlay {
@@ -744,9 +792,9 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 246, 229, 0) 30%,
-    rgba(255, 246, 229, 0.45) 50%,
-    rgba(255, 246, 229, 0) 70%,
+    rgba(221, 231, 245, 0) 30%,
+    rgba(221, 231, 245, 0.45) 50%,
+    rgba(221, 231, 245, 0) 70%,
     transparent 100%
   );
   transform: rotate(20deg);
@@ -783,7 +831,7 @@
 .reveal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(7, 5, 4, 0.78);
+  background: rgba(6, 10, 18, 0.78);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   z-index: 100;
@@ -801,15 +849,15 @@
   position: relative;
   width: min(540px, 92vw);
   padding: 56px 40px 40px;
-  background: linear-gradient(180deg, #1B1611 0%, #15110D 100%);
-  border: 1px solid rgba(229, 201, 168, 0.22);
+  background: linear-gradient(180deg, #131C2C 0%, #0E1521 100%);
+  border: 1px solid rgba(180, 155, 255, 0.22);
   border-radius: 24px;
   text-align: center;
   box-shadow:
     0 40px 100px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(229, 201, 168, 0.1) inset;
+    0 0 0 1px rgba(180, 155, 255, 0.1) inset;
   overflow: hidden;
-  color: #F5F1EA;
+  color: #ECF1F8;
 }
 .reveal-modal::before {
   content: "";
@@ -817,7 +865,7 @@
   inset: 0;
   background: radial-gradient(
     600px 300px at 50% 0%,
-    rgba(229, 201, 168, 0.16),
+    rgba(127, 182, 232, 0.16),
     transparent 60%
   );
   pointer-events: none;
@@ -831,7 +879,7 @@
   height: 32px;
   border: 0;
   background: transparent;
-  color: rgba(245, 241, 234, 0.5);
+  color: rgba(236, 241, 248, 0.5);
   border-radius: 8px;
   cursor: pointer;
   display: inline-flex;
@@ -841,7 +889,7 @@
   z-index: 2;
 }
 .reveal-close:hover {
-  background: rgba(245, 241, 234, 0.06);
+  background: rgba(236, 241, 248, 0.06);
   color: #fff;
 }
 
@@ -864,11 +912,11 @@
   pointer-events: none;
 }
 .reveal-sticker-stage::before {
-  background: radial-gradient(circle, rgba(229, 201, 168, 0.30), transparent 60%);
+  background: radial-gradient(circle, rgba(127, 182, 232, 0.30), transparent 60%);
   animation: reveal-glow 2.4s ease-out infinite;
 }
 .reveal-sticker-stage::after {
-  border: 1px solid rgba(229, 201, 168, 0.4);
+  border: 1px solid rgba(127, 182, 232, 0.4);
   animation: reveal-ring 2.4s ease-out infinite;
 }
 @keyframes reveal-glow {
@@ -902,14 +950,14 @@
   position: absolute;
   width: 6px;
   height: 6px;
-  background: #E5C9A8;
+  background: #B49BFF;
   border-radius: 1px;
   animation: confetti-fall 2s ease-out forwards;
   opacity: 0;
 }
-.reveal-confetti span:nth-child(odd) { background: #D4846A; }
+.reveal-confetti span:nth-child(odd) { background: #7FB6E8; }
 .reveal-confetti span:nth-child(3n) {
-  background: #F4E4D0;
+  background: #DDE7F5;
   width: 4px;
   height: 4px;
 }
@@ -923,7 +971,7 @@
   font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);
   font-size: 11px;
   letter-spacing: 0.2em;
-  color: #E5C9A8;
+  color: #B49BFF;
   text-transform: uppercase;
   margin-bottom: 12px;
   position: relative;
@@ -937,7 +985,7 @@
   letter-spacing: -0.025em;
   line-height: 1.05;
   margin: 0 0 12px;
-  color: #F5F1EA;
+  color: #ECF1F8;
   font-variation-settings: "opsz" 96, "SOFT" 40;
   position: relative;
   z-index: 1;
@@ -946,14 +994,14 @@
 .reveal-title em {
   font-style: italic;
   font-weight: 400;
-  background: linear-gradient(135deg, #F4E4D0 0%, #E5C9A8 50%, #B8936C 100%);
+  background: linear-gradient(135deg, #DDE7F5 0%, #7FB6E8 50%, #5C9DDC 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .reveal-sub {
   font-size: 15px;
-  color: rgba(245, 241, 234, 0.66);
+  color: rgba(236, 241, 248, 0.66);
   max-width: 380px;
   margin: 0 auto 28px;
   line-height: 1.5;

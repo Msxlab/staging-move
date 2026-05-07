@@ -34,7 +34,8 @@ export default function TabsLayout() {
         tabBarStyle: styles.tabBar,
         tabBarBackground: () => <TabBarBackground />,
         tabBarActiveTintColor: theme.colors.primary,
-        // Inactive cream-on-warm to match Edition VI text alphas.
+        // Aurora cool-ink at the tertiary alpha — matches the inactive
+        // tint used by tab labels in `theme.colors.textTertiary`.
         tabBarInactiveTintColor: theme.colors.textTertiary,
         tabBarLabelStyle: styles.tabLabel,
         tabBarItemStyle: styles.tabItem,
@@ -104,7 +105,11 @@ const styles = StyleSheet.create({
   },
   tabBarFill: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#0E1521",
+    // `theme.colors.surface` is the Aurora au-base-2 surface; keeping the
+    // literal value here lets the existing-instance read at module-load
+    // time stay in sync if a user toggles the appearance setting before
+    // the navigator re-mounts.
+    backgroundColor: theme.colors.surface,
   },
   topGlow: {
     position: "absolute",
@@ -119,7 +124,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(245, 241, 234, 0.14)",
+    backgroundColor: "rgba(236, 241, 248, 0.14)",
   },
   tabLabel: {
     fontSize: 11,

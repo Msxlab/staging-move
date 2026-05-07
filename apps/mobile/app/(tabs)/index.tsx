@@ -324,9 +324,9 @@ export default function DashboardScreen() {
               </View>
 
               {checklist.overdueItems.length > 0 && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: "rgba(239,68,68,0.08)", borderWidth: 1, borderColor: "rgba(239,68,68,0.2)" }}>
-                  <AlertTriangle size={14} color="#F08C8E" />
-                  <Text style={{ fontSize: 11, color: "#E08A6E", flex: 1 }} numberOfLines={2}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.30)" }}>
+                  <AlertTriangle size={14} color={theme.colors.error} />
+                  <Text style={{ fontSize: 11, color: theme.colors.error, flex: 1 }} numberOfLines={2}>
                     Overdue: {checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}
                     {checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""}
                   </Text>

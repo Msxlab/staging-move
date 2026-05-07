@@ -1,25 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 100" fill="none" aria-hidden="true">
   <defs>
     <linearGradient id="lf-foil" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#B8936C"></stop>
-      <stop offset="45%" stop-color="#E5C9A8"></stop>
-      <stop offset="100%" stop-color="#F4E4D0"></stop>
+      <stop offset="0%" stop-color="#5C9DDC"></stop>
+      <stop offset="45%" stop-color="#7FB6E8"></stop>
+      <stop offset="100%" stop-color="#DDE7F5"></stop>
     </linearGradient>
     <linearGradient id="lf-rose" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#EDB99D"></stop>
-      <stop offset="100%" stop-color="#A85A42"></stop>
+      <stop offset="0%" stop-color="#A5C9F0"></stop>
+      <stop offset="100%" stop-color="#5C9DDC"></stop>
     </linearGradient>
     <linearGradient id="lf-word-foil" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#F4E4D0"></stop>
-      <stop offset="100%" stop-color="#B8936C"></stop>
+      <stop offset="0%" stop-color="#DDE7F5"></stop>
+      <stop offset="100%" stop-color="#5C9DDC"></stop>
     </linearGradient>
   </defs>
   <g>
     <path d="M20 65 Q 30 32, 50 48 T 80 40" stroke="url(#lf-foil)" stroke-width="3.25" fill="none" stroke-linecap="round"></path>
     <circle cx="20" cy="65" r="4.5" fill="url(#lf-foil)"></circle>
-    <circle cx="20" cy="65" r="1.5" fill="#0E0A07"></circle>
+    <circle cx="20" cy="65" r="1.5" fill="#0A0F18"></circle>
     <circle cx="80" cy="40" r="7.25" fill="url(#lf-rose)"></circle>
-    <circle cx="80" cy="40" r="2.5" fill="#F5F1EA"></circle>
+    <circle cx="80" cy="40" r="2.5" fill="#ECF1F8"></circle>
   </g>
-  <text x="112" y="66" font-family="Fraunces, Georgia, serif" font-size="44" font-weight="400" letter-spacing="-0.025em" fill="#F5F1EA" font-variation-settings="&#39;opsz&#39; 96, &#39;SOFT&#39; 40">Locate<tspan font-style="italic" font-weight="400" fill="url(#lf-word-foil)">flow</tspan></text>
+  <text x="112" y="66" font-family="Fraunces, Georgia, serif" font-size="44" font-weight="400" letter-spacing="-0.025em" fill="#ECF1F8" font-variation-settings="&#39;opsz&#39; 96, &#39;SOFT&#39; 40">Locate<tspan font-style="italic" font-weight="400" fill="url(#lf-word-foil)">flow</tspan></text>
 </svg>

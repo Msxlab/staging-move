@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   deleteBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     marginTop: 12, paddingVertical: 14, borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(239,68,68,0.2)",
+    backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)",
   },
   deleteText: { fontSize: 14, fontWeight: "600", color: theme.colors.error },
 });

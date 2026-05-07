@@ -3,10 +3,11 @@ import { Alert, Linking } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { theme } from "@/lib/theme";
+import { ThemeProvider, useThemePreference } from "@/lib/theme";
 import { createQueryClient } from "@/lib/query-client";
 import * as SplashScreen from "expo-splash-screen";
 import {
@@ -223,13 +224,31 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 }
 
 function RootNavigator() {
+  // Drive StatusBar + content surface from the resolved (preference-aware)
+  // theme so toggling Appearance in Settings flips the chrome immediately.
+  // The `key` on the Stack forces the navigator subtree to remount when
+  // the resolved scheme changes — that's what lets screens with static
+  // StyleSheet styles refresh in place rather than waiting for the next
+  // app launch.
+  const { resolvedScheme, colors } = useThemePreference();
+
+  // Keep the OS root view (visible behind navigators during transitions
+  // and when the keyboard collapses) in sync with the active palette.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colors.background).catch(() => null);
+  }, [colors.background]);
+
   return (
     <>
-      <StatusBar style="light" backgroundColor={theme.colors.background} />
+      <StatusBar
+        style={resolvedScheme === "light" ? "dark" : "light"}
+        backgroundColor={colors.background}
+      />
       <Stack
+        key={resolvedScheme}
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: theme.colors.background },
+          contentStyle: { backgroundColor: colors.background },
           animation: "slide_from_right",
         }}
       >
@@ -246,7 +265,7 @@ export default function RootLayout() {
   const [i18nHydrated, setI18nHydrated] = useState(false);
   const [queryClient] = useState(() => createQueryClient());
 
-  // Edition VI · Champagne & Rose. Fraunces is the display face (Locate*flow*
+  // Edition VII · Aurora. Fraunces is the display face (Locate*flow*
   // wordmark, hero copy); Geist is the UI face. Both are loaded on first
   // boot and the splash is held until they resolve so the auth screen never
   // flashes a system fallback for the brand wordmark.
@@ -278,11 +297,13 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthGuard>
-          <RootNavigator />
-        </AuthGuard>
-      </QueryClientProvider>
+      <ThemeProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthGuard>
+            <RootNavigator />
+          </AuthGuard>
+        </QueryClientProvider>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }

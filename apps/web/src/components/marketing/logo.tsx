@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 /**
- * Brand mark — Champagne & Rose palette, matches /public/logo-mark.svg from
+ * Brand mark — Edition VII Aurora palette, matches /public/logo-mark.svg from
  * the design system. Pass `animated` to get ripple/float/sweep motion;
  * static version is used in dense UI (table headers, compact menus).
  */
@@ -26,13 +26,13 @@ export function LogoMark({
     >
       <defs>
         <linearGradient id={`${gid}-foil`} x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0%" stopColor="#B8936C" />
-          <stop offset="45%" stopColor="#E5C9A8" />
-          <stop offset="100%" stopColor="#F4E4D0" />
+          <stop offset="0%" stopColor="#5C9DDC" />
+          <stop offset="45%" stopColor="#7FB6E8" />
+          <stop offset="100%" stopColor="#DDE7F5" />
         </linearGradient>
         <linearGradient id={`${gid}-rose`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#EDB99D" />
-          <stop offset="100%" stopColor="#A85A42" />
+          <stop offset="0%" stopColor="#A5C9F0" />
+          <stop offset="100%" stopColor="#5C9DDC" />
         </linearGradient>
       </defs>
 
@@ -70,7 +70,7 @@ export function LogoMark({
       />
 
       <circle cx="20" cy="65" r="4.5" fill={`url(#${gid}-foil)`} />
-      <circle cx="20" cy="65" r="1.5" fill="#0E0A07" />
+      <circle cx="20" cy="65" r="1.5" fill="#0A0F18" />
 
       <g className={animated ? "lf-pin-float" : ""}>
         <circle cx="80" cy="40" r="7.25" fill={`url(#${gid}-rose)`} />
@@ -78,7 +78,7 @@ export function LogoMark({
           cx="80"
           cy="40"
           r="2.5"
-          fill="#F5F1EA"
+          fill="#ECF1F8"
           className={animated ? "lf-pin-dot" : ""}
         />
       </g>
@@ -116,7 +116,7 @@ export function Wordmark({
           className="italic bg-clip-text text-transparent"
           style={{
             backgroundImage:
-              "linear-gradient(180deg, #F4E4D0 0%, #E5C9A8 50%, #B8936C 100%)",
+              "linear-gradient(180deg, #DDE7F5 0%, #7FB6E8 50%, #5C9DDC 100%)",
           }}
         >
           flow

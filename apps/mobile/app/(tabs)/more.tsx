@@ -260,7 +260,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.xl,
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.2)",
+    // Aurora coral (#F08C8E) at 20% — matches `theme.colors.error`.
+    borderColor: "rgba(240, 140, 142, 0.20)",
     marginTop: 8,
   },
   signOutText: {

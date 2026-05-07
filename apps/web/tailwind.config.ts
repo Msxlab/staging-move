@@ -48,21 +48,23 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Semantic colors — Aurora ramp. Resolves through the CSS vars
+        // declared in globals.css so light/dark switch automatically.
         success: {
-          DEFAULT: "#10b981",
-          light: "#d1fae5",
+          DEFAULT: "var(--success)",
+          light: "var(--success-soft)",
         },
         warning: {
-          DEFAULT: "#f59e0b",
-          light: "#fef3c7",
+          DEFAULT: "var(--warning)",
+          light: "var(--warning-soft)",
         },
         danger: {
-          DEFAULT: "#ef4444",
-          light: "#fee2e2",
+          DEFAULT: "var(--danger)",
+          light: "var(--danger-soft)",
         },
         info: {
-          DEFAULT: "#3b82f6",
-          light: "#dbeafe",
+          DEFAULT: "var(--info)",
+          light: "var(--info-soft)",
         },
         // Brand namespace — Edition VI · Champagne & Rose.
         // Legacy `brand-orange` / `brand-amber` aliases remain so existing

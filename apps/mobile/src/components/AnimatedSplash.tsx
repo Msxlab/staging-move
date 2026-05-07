@@ -13,9 +13,9 @@ import Svg, {
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-// Edition VI · Champagne & Rose. Geometry mirrors apps/web/public/logo-mark.svg
-// (foil curve from start dot to rose pin) so the boot screen reads as the same
-// brand as the web sign-in.
+// Edition VII · Aurora. Geometry mirrors apps/web/public/logo-mark.svg
+// (foil curve from start dot to cool pin) so the boot screen reads as the same
+// brand as the web sign-in. Palette: cool/violet flow on Aurora navy.
 export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => void; ready?: boolean }) {
   const markScale = useRef(new Animated.Value(0)).current;
   const markY = useRef(new Animated.Value(-40)).current;
@@ -156,7 +156,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
 
   return (
     <Animated.View style={[styles.container, { opacity: overallOpacity }]}>
-      {/* Foil radial glow */}
+      {/* Foil radial glow — Aurora cool → violet */}
       <Animated.View
         style={[
           styles.glow,
@@ -164,7 +164,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
         ]}
       >
         <LinearGradient
-          colors={["rgba(212,132,106,0.40)", "rgba(229,201,168,0.10)", "transparent"]}
+          colors={["rgba(127,182,232,0.40)", "rgba(180,155,255,0.10)", "transparent"]}
           style={styles.glowGradient}
           start={{ x: 0.5, y: 0.5 }}
           end={{ x: 1, y: 1 }}
@@ -192,17 +192,17 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
                 <Stop offset="100%" stopColor="#0A0F18" />
               </SvgLinearGradient>
               <RadialGradient id="splash-icon-glow" cx="72%" cy="24%" r="62%">
-                <Stop offset="0%" stopColor="#F4E4D0" stopOpacity="0.22" />
-                <Stop offset="100%" stopColor="#F4E4D0" stopOpacity="0" />
+                <Stop offset="0%" stopColor="#DDE7F5" stopOpacity="0.22" />
+                <Stop offset="100%" stopColor="#DDE7F5" stopOpacity="0" />
               </RadialGradient>
               <SvgLinearGradient id="splash-foil" x1="0" y1="1" x2="1" y2="0">
-                <Stop offset="0%" stopColor="#B8936C" />
-                <Stop offset="45%" stopColor="#E5C9A8" />
-                <Stop offset="100%" stopColor="#F4E4D0" />
+                <Stop offset="0%" stopColor="#5C9DDC" />
+                <Stop offset="45%" stopColor="#7FB6E8" />
+                <Stop offset="100%" stopColor="#DDE7F5" />
               </SvgLinearGradient>
               <SvgLinearGradient id="splash-rose" x1="0" y1="0" x2="1" y2="1">
-                <Stop offset="0%" stopColor="#EDB99D" />
-                <Stop offset="100%" stopColor="#A85A42" />
+                <Stop offset="0%" stopColor="#A5C9F0" />
+                <Stop offset="100%" stopColor="#5C9DDC" />
               </SvgLinearGradient>
             </Defs>
 
@@ -246,7 +246,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
               cx="80"
               cy="40"
               r="3"
-              fill="#F5F1EA"
+              fill="#ECF1F8"
               {...({ style: { transform: [{ scale: pinScale }] } } as any)}
             />
           </Svg>
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   loadingTrack: {
     height: 3,
     borderRadius: 2,
-    backgroundColor: "rgba(245, 241, 234, 0.06)",
+    backgroundColor: "rgba(236, 241, 248, 0.06)",
     overflow: "hidden",
   },
   loadingFill: {
