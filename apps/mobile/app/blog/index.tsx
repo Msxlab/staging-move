@@ -52,7 +52,7 @@ export default function BlogListScreen() {
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const locale = i18n.language?.startsWith("es") ? "es" : "en";
   const cacheKey = `${BLOG_LIST_CACHE_KEY}.${locale}`;
   const [items, setItems] = useState<BlogListItem[]>([]);
@@ -80,22 +80,22 @@ export default function BlogListScreen() {
       const nextItems = payload?.items ?? [];
       setItems(nextItems);
       await AsyncStorage.setItem(cacheKey, JSON.stringify(nextItems)).catch(() => {});
-    } catch (e) {
+    } catch {
       const cached = await AsyncStorage.getItem(cacheKey).catch(() => null);
       if (cached) {
         try {
           setItems(JSON.parse(cached) as BlogListItem[]);
         } catch {
-          setError(e instanceof Error ? e.message : "Couldn't load posts");
+          setError(t("blog.loadPostsFailed"));
         }
       } else {
-        setError(e instanceof Error ? e.message : "Couldn't load posts");
+        setError(t("blog.loadPostsFailed"));
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [cacheKey, locale]);
+  }, [cacheKey, locale, t]);
 
   useEffect(() => {
     void load();
@@ -123,7 +123,7 @@ export default function BlogListScreen() {
       <SafeAreaView style={styles.center} edges={["bottom"]}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity onPress={load} style={styles.retryButton}>
-          <Text style={styles.retryText}>Try again</Text>
+          <Text style={styles.retryText}>{t("common.retry")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -132,7 +132,7 @@ export default function BlogListScreen() {
   if (items.length === 0) {
     return (
       <SafeAreaView style={styles.center} edges={["bottom"]}>
-        <Text style={styles.emptyText}>No posts yet — check back soon.</Text>
+        <Text style={styles.emptyText}>{t("blog.empty")}</Text>
       </SafeAreaView>
     );
   }
@@ -170,12 +170,12 @@ export default function BlogListScreen() {
                 {item.excerpt}
               </Text>
               <Text style={styles.meta}>
-                {new Date(item.publishedAt).toLocaleDateString(undefined, {
+                {new Date(item.publishedAt).toLocaleDateString(i18n.language || undefined, {
                   year: "numeric",
                   month: "short",
                   day: "numeric",
                 })}{" "}
-                · {item.readingMinutes} min read
+                · {t("blog.minRead", { minutes: item.readingMinutes })}
               </Text>
             </View>
           </TouchableOpacity>

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   Briefcase,
@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface SearchResult {
   id: string;
@@ -26,18 +27,6 @@ interface SearchResult {
   icon: React.ElementType;
 }
 
-const pages: SearchResult[] = [
-  { id: "p-dashboard", type: "page", title: "Dashboard", subtitle: "Overview & stats", href: "/dashboard", icon: Home },
-  { id: "p-addresses", type: "page", title: "Addresses", subtitle: "Manage addresses", href: "/addresses", icon: MapPin },
-  { id: "p-services", type: "page", title: "Services", subtitle: "Manage services", href: "/services", icon: Zap },
-  { id: "p-moving", type: "page", title: "Moving Plans", subtitle: "Plan your move", href: "/moving", icon: Truck },
-  { id: "p-settings", type: "page", title: "Settings", subtitle: "Account & preferences", href: "/settings", icon: Settings },
-  { id: "p-budget", type: "page", title: "Budget", subtitle: "Track expenses", href: "/budget", icon: DollarSign },
-  { id: "p-export", type: "page", title: "Export & Reports", subtitle: "Download PDF/CSV reports", href: "/settings/export", icon: FileText },
-  { id: "p-add-address", type: "page", title: "Add Address", subtitle: "Register new address", href: "/addresses/new", icon: MapPin },
-  { id: "p-add-service", type: "page", title: "Add Service", subtitle: "Register new service", href: "/services/new", icon: Zap },
-];
-
 const typeIcons: Record<string, React.ElementType> = {
   HOME: Home,
   WORK: Briefcase,
@@ -45,6 +34,12 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 export function GlobalSearch() {
+  const tSearch = useTranslations("search");
+  const tNav = useTranslations("nav");
+  const tAddresses = useTranslations("addresses");
+  const tServices = useTranslations("services");
+  const tMoving = useTranslations("moving");
+  const tBudget = useTranslations("budget");
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
@@ -54,6 +49,17 @@ export function GlobalSearch() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const pages = useMemo<SearchResult[]>(() => [
+    { id: "p-dashboard", type: "page", title: tNav("dashboard"), subtitle: tSearch("dashboardSubtitle"), href: "/dashboard", icon: Home },
+    { id: "p-addresses", type: "page", title: tNav("addresses"), subtitle: tSearch("addressesSubtitle"), href: "/addresses", icon: MapPin },
+    { id: "p-services", type: "page", title: tNav("services"), subtitle: tSearch("servicesSubtitle"), href: "/services", icon: Zap },
+    { id: "p-moving", type: "page", title: tMoving("title"), subtitle: tSearch("movingSubtitle"), href: "/moving", icon: Truck },
+    { id: "p-settings", type: "page", title: tNav("settings"), subtitle: tSearch("settingsSubtitle"), href: "/settings", icon: Settings },
+    { id: "p-budget", type: "page", title: tBudget("title"), subtitle: tSearch("budgetSubtitle"), href: "/budget", icon: DollarSign },
+    { id: "p-export", type: "page", title: tSearch("exportTitle"), subtitle: tSearch("exportSubtitle"), href: "/settings/export", icon: FileText },
+    { id: "p-add-address", type: "page", title: tAddresses("newTitle"), subtitle: tSearch("addAddressSubtitle"), href: "/addresses/new", icon: MapPin },
+    { id: "p-add-service", type: "page", title: tServices("newTitle"), subtitle: tSearch("addServiceSubtitle"), href: "/services/new", icon: Zap },
+  ], [tAddresses, tBudget, tMoving, tNav, tSearch, tServices]);
 
   useEffect(() => {
     setMounted(true);
@@ -136,7 +142,7 @@ export function GlobalSearch() {
     });
     setResults(matched.slice(0, 12));
     setSelectedIndex(0);
-  }, [query, addresses, services]);
+  }, [query, addresses, services, pages]);
 
   const navigate = useCallback((href: string) => {
     setOpen(false);
@@ -161,7 +167,7 @@ export function GlobalSearch() {
       className="fixed inset-0 z-[1000] flex items-start justify-center px-4 pt-[15vh]"
       role="dialog"
       aria-modal="true"
-      aria-label="Search"
+      aria-label={tSearch("label")}
     >
       <div
         className="absolute inset-0 bg-background/70 backdrop-blur-md supports-[backdrop-filter]:bg-background/45"
@@ -177,7 +183,7 @@ export function GlobalSearch() {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search addresses, services, pages..."
+            placeholder={tSearch("placeholder")}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground/40 focus:outline-none"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -187,7 +193,7 @@ export function GlobalSearch() {
             type="button"
             className="rounded-lg p-1 text-foreground/35 transition hover:bg-foreground/5 hover:text-foreground"
             onClick={() => setOpen(false)}
-            aria-label="Close search"
+            aria-label={tSearch("closeSearch")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -197,7 +203,7 @@ export function GlobalSearch() {
           {results.length === 0 ? (
             <div className="text-center py-8">
               <Search className="h-8 w-8 text-foreground/20 mx-auto mb-2" />
-              <p className="text-xs text-foreground/40">No results for &quot;{query}&quot;</p>
+              <p className="text-xs text-foreground/40">{tSearch("noResults", { query })}</p>
             </div>
           ) : (
             results.map((result, i) => {
@@ -230,7 +236,7 @@ export function GlobalSearch() {
                     result.type === "service" ? "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br" :
                     "bg-foreground/5 text-foreground/40 border-border"
                   }`}>
-                    {result.type === "address" ? "Address" : result.type === "service" ? "Service" : "Page"}
+                    {result.type === "address" ? tSearch("addressType") : result.type === "service" ? tSearch("serviceType") : tSearch("pageType")}
                   </span>
                 </button>
               );
@@ -239,9 +245,9 @@ export function GlobalSearch() {
         </div>
 
         <div className="flex items-center gap-4 px-4 py-2 border-t border-border text-[10px] text-foreground/30">
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Up/Down</kbd> Navigate</span>
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Enter</kbd> Open</span>
-          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Esc</kbd> Close</span>
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Up/Down</kbd> {tSearch("navigateHint")}</span>
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Enter</kbd> {tSearch("openHint")}</span>
+          <span className="flex items-center gap-1"><kbd className="px-1 py-0.5 rounded border border-border bg-foreground/5">Esc</kbd> {tSearch("closeHint")}</span>
         </div>
       </div>
     </div>
@@ -254,7 +260,7 @@ export function GlobalSearch() {
         onClick={() => setOpen(true)}
       >
         <Search className="h-4 w-4" />
-        <span>Search...</span>
+        <span>{tSearch("buttonPlaceholder")}</span>
         <kbd className="ml-auto inline-flex h-5 items-center gap-1 rounded-md border border-border bg-foreground/5 px-1.5 font-mono text-[10px] text-foreground/30">
           Ctrl K
         </kbd>
@@ -262,7 +268,7 @@ export function GlobalSearch() {
       <button
         className="sm:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition"
         onClick={() => setOpen(true)}
-        aria-label="Open search"
+        aria-label={tSearch("openSearch")}
       >
         <Search className="h-5 w-5" />
       </button>

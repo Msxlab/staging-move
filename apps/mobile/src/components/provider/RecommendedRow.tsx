@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { Sparkles, AlertTriangle, Clock } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { ProviderCard, type ProviderCardData } from "./ProviderCard";
 
@@ -21,15 +22,16 @@ interface RecommendedRowProps {
  * Each card shows a tier badge (CRITICAL/IMPORTANT) in the top-right.
  */
 export function RecommendedRow({
-  title = "Recommended for you",
+  title,
   description,
   providers,
   onPressProvider,
   emptyText,
 }: RecommendedRowProps) {
-  // theme: hook-injected styles
+  const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const resolvedTitle = title ?? t("providers.recommendedForYou");
   if (providers.length === 0 && !emptyText) return null;
 
   return (
@@ -37,7 +39,7 @@ export function RecommendedRow({
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <Sparkles size={16} color={theme.colors.primary} />
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title}>{resolvedTitle}</Text>
         </View>
         {description ? <Text style={styles.description}>{description}</Text> : null}
       </View>
@@ -56,7 +58,7 @@ export function RecommendedRow({
           snapToAlignment="start"
         >
           {providers.map((p) => {
-            const badge = tierBadge(p.tier);
+            const badge = tierBadge(p.tier, t);
             return (
               <ProviderCard
                 key={p.id}
@@ -73,13 +75,13 @@ export function RecommendedRow({
   );
 }
 
-function tierBadge(tier: string | undefined):
+function tierBadge(tier: string | undefined, t: (key: string) => string):
   | { label: string; variant: "primary" | "error" | "warning" | "info" | "success" | "neutral" }
   | undefined {
   if (!tier) return undefined;
-  if (tier === "CRITICAL") return { label: "Critical", variant: "error" };
-  if (tier === "IMPORTANT") return { label: "Important", variant: "warning" };
-  if (tier === "RECOMMENDED") return { label: "Recommended", variant: "info" };
+  if (tier === "CRITICAL") return { label: t("providers.critical"), variant: "error" };
+  if (tier === "IMPORTANT") return { label: t("providers.important"), variant: "warning" };
+  if (tier === "RECOMMENDED") return { label: t("providers.recommended"), variant: "info" };
   return undefined;
 }
 

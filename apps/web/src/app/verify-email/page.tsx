@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MailCheck } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Wordmark } from "@/components/marketing/logo";
 import { prisma } from "@/lib/db";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
@@ -19,6 +20,8 @@ export default async function VerifyEmailPendingPage({
   const params = searchParams ? await searchParams : {};
   const redirectPath = normalizeAppRedirectPath(readParam(params.redirect), "/dashboard");
   const session = await getUserSession();
+  const tAuth = await getTranslations("auth");
+  const tCommon = await getTranslations("common");
 
   let email: string | null = null;
   if (session) {
@@ -43,14 +46,14 @@ export default async function VerifyEmailPendingPage({
         </div>
         <MailCheck className="mx-auto h-11 w-11 text-sage" />
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Verify your email</h1>
+          <h1 className="text-2xl font-bold text-foreground">{tAuth("verifyEmailTitle")}</h1>
           {email ? (
             <p className="text-sm text-muted-foreground">
-              We sent a verification link to <span className="font-medium text-foreground">{email}</span>. Verify your email before opening the app.
+              {tAuth("verifyEmailSentPrefix")} <span className="font-medium text-foreground">{email}</span>. {tAuth("verifyEmailSentSuffix")}
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Sign in with the account you just created, then verify your email before opening the app.
+              {tAuth("verifyEmailSignInFirst")}
             </p>
           )}
         </div>
@@ -62,10 +65,10 @@ export default async function VerifyEmailPendingPage({
             href={`/sign-in?redirect=${encodeURIComponent(redirectPath)}`}
             className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
           >
-            Sign in
+            {tCommon("signIn")}
           </Link>
           <Link href="/" className="text-xs text-muted-foreground hover:text-foreground">
-            Back to home
+            {tCommon("goHome")}
           </Link>
         </div>
       </div>

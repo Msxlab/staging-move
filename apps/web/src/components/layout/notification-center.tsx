@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ElementType } from "react";
 import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone } from "lucide-react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { notificationPatchRequestInit } from "@/lib/notification-feed-client";
 
 interface FeedNotification {
@@ -43,26 +44,33 @@ function notificationPresentation(notification: FeedNotification): {
   return { icon: Bell, iconColor: "text-muted-foreground", bg: "bg-foreground/5" };
 }
 
-function formatNotificationTime(createdAt: string) {
+function formatNotificationTime(
+  createdAt: string,
+  locale: string,
+  t: (key: "now" | "minuteShort" | "hourShort" | "dayShort", values?: { count: number }) => string,
+) {
   const created = new Date(createdAt);
   if (Number.isNaN(created.getTime())) return "";
 
   const diffMs = Date.now() - created.getTime();
-  if (diffMs < 60_000) return "Now";
+  if (diffMs < 60_000) return t("now");
 
   const minutes = Math.floor(diffMs / 60_000);
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return t("minuteShort", { count: minutes });
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
+  if (hours < 24) return t("hourShort", { count: hours });
 
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
+  if (days < 7) return t("dayShort", { count: days });
 
-  return created.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return created.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 export function NotificationCenter() {
+  const t = useTranslations("notifications");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<FeedNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -72,7 +80,7 @@ export function NotificationCenter() {
   const fetchFeed = useCallback(async () => {
     try {
       const response = await fetch("/api/notifications/feed?limit=10", { cache: "no-store" });
-      if (!response.ok) throw new Error("Failed to load notifications");
+      if (!response.ok) throw new Error("NOTIFICATION_FEED_FAILED");
       const data = await response.json();
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
@@ -138,7 +146,7 @@ export function NotificationCenter() {
       <button
         className="relative p-2 rounded-xl text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition"
         onClick={toggleOpen}
-        aria-label="Notifications"
+        aria-label={t("title")}
       >
         <Bell className="h-[18px] w-[18px]" />
         {unreadCount > 0 && (
@@ -153,16 +161,16 @@ export function NotificationCenter() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t("title")}</h3>
               {unreadCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium">
-                  {unreadCount} new
+                  {t("newCount", { count: unreadCount })}
                 </span>
               )}
             </div>
             {unreadCount > 0 && (
               <button onClick={() => void markAllRead()} className="text-[10px] text-foreground/40 hover:text-foreground transition">
-                Mark all read
+                {t("markAllReadShort")}
               </button>
             )}
           </div>
@@ -170,12 +178,12 @@ export function NotificationCenter() {
           {/* List */}
           <div className="overflow-y-auto flex-1">
             {loading ? (
-              <p className="text-sm text-foreground/40 text-center py-8">Loading...</p>
+              <p className="text-sm text-foreground/40 text-center py-8">{t("loading")}</p>
             ) : notifications.length === 0 ? (
               <div className="text-center py-8">
                 <CheckCircle2 className="h-8 w-8 text-foreground/20 mx-auto mb-2" />
-                <p className="text-xs text-foreground/40">All caught up!</p>
-                <p className="text-[10px] text-foreground/25">No notifications right now</p>
+                <p className="text-xs text-foreground/40">{t("allCaughtUp")}</p>
+                <p className="text-[10px] text-foreground/25">{t("emptyNow")}</p>
               </div>
             ) : (
               notifications.map((notif) => {
@@ -195,7 +203,7 @@ export function NotificationCenter() {
                       </div>
                       {notif.body && <p className="text-[10px] text-foreground/40 mt-0.5 line-clamp-2">{notif.body}</p>}
                     </div>
-                    <span className="text-[10px] text-foreground/30 shrink-0">{formatNotificationTime(notif.createdAt)}</span>
+                    <span className="text-[10px] text-foreground/30 shrink-0">{formatNotificationTime(notif.createdAt, locale, t)}</span>
                   </div>
                 );
 
@@ -216,12 +224,12 @@ export function NotificationCenter() {
           <div className="border-t border-border px-4 py-2.5 flex items-center justify-between gap-2">
             <Link href="/notifications" onClick={() => setOpen(false)}>
               <button className="text-[11px] text-muted-foreground hover:text-foreground transition">
-                View all
+                {t("viewAll")}
               </button>
             </Link>
             <Link href="/settings/notifications" onClick={() => setOpen(false)}>
               <button className="text-[11px] text-foreground/40 hover:text-foreground transition">
-                Settings
+                {tCommon("settings")}
               </button>
             </Link>
           </div>

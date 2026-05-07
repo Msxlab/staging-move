@@ -53,16 +53,16 @@ export default function DeleteAccountScreen() {
     setPasswordSetupBusy(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Password", res.error);
+      Alert.alert(t("settings.passwordSetupTitle"), t("settings.privacyLoadFailed"));
       return;
     }
     hapticSuccess();
-    Alert.alert("Password", "We sent a secure password setup link to your email.");
+    Alert.alert(t("settings.passwordSetupTitle"), t("settings.passwordSetupSent"));
   };
 
   const handleDelete = async () => {
     if (hasPasswordLogin === false) {
-      Alert.alert("Password required", "Use the emailed setup link to set a password before deleting this account.");
+      Alert.alert(t("settings.passwordRequiredTitle"), t("settings.passwordRequiredDeleteAlert"));
       return;
     }
     if (!confirmPhrases.includes(confirmText) || !confirmPassword) {
@@ -77,7 +77,7 @@ export default function DeleteAccountScreen() {
 
     if (res.error) {
       hapticError();
-      Alert.alert(t("common.retry"), res.error || t("toast.networkError"));
+      Alert.alert(t("common.retry"), t("toast.networkError"));
       return;
     }
 
@@ -95,8 +95,8 @@ export default function DeleteAccountScreen() {
           onPress={() => router.back()}
           style={styles.backBtn}
           accessibilityRole="button"
-          accessibilityLabel="Go back"
-          accessibilityHint="Returns to privacy settings"
+          accessibilityLabel={t("settings.backA11y")}
+          accessibilityHint={t("settings.backToPrivacyHint")}
         >
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
@@ -119,9 +119,9 @@ export default function DeleteAccountScreen() {
 
         {hasPasswordLogin === false && (
           <View style={styles.passwordRequiredCard}>
-            <Text style={styles.warningTitle}>Password required</Text>
+            <Text style={styles.warningTitle}>{t("settings.passwordRequiredTitle")}</Text>
             <Text style={styles.warningText}>
-              This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
+              {t("settings.passwordRequiredDeleteBody")}
             </Text>
             <TouchableOpacity
               style={styles.secondaryBtn}
@@ -131,7 +131,7 @@ export default function DeleteAccountScreen() {
               {passwordSetupBusy ? (
                 <ActivityIndicator color={theme.colors.primary} />
               ) : (
-                <Text style={styles.secondaryBtnText}>Email setup link</Text>
+                <Text style={styles.secondaryBtnText}>{t("settings.emailSetupLink")}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -148,8 +148,8 @@ export default function DeleteAccountScreen() {
           onChangeText={setConfirmText}
           autoCapitalize="characters"
           autoCorrect={false}
-          accessibilityLabel="Delete account confirmation text"
-          accessibilityHint='Type DELETE exactly to enable permanent account deletion'
+          accessibilityLabel={t("settings.deleteConfirmA11y")}
+          accessibilityHint={t("settings.deleteConfirmHint")}
         />
 
         <Input
@@ -160,8 +160,8 @@ export default function DeleteAccountScreen() {
           isPassword
           autoCapitalize="none"
           autoCorrect={false}
-          accessibilityLabel="Current password"
-          accessibilityHint="Confirms your identity before account deletion"
+          accessibilityLabel={t("settings.currentPasswordA11y")}
+          accessibilityHint={t("settings.currentPasswordHint")}
         />
 
         <TouchableOpacity
@@ -170,8 +170,8 @@ export default function DeleteAccountScreen() {
           disabled={!confirmPhrases.includes(confirmText) || !confirmPassword || deleting || hasPasswordLogin === false}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel="Permanently delete account"
-          accessibilityHint="Deletes your account and all associated data"
+          accessibilityLabel={t("settings.deletePermanentlyA11y")}
+          accessibilityHint={t("settings.deletePermanentlyHint")}
           accessibilityState={{ disabled: !confirmPhrases.includes(confirmText) || !confirmPassword || deleting || hasPasswordLogin === false }}
         >
           {deleting ? (

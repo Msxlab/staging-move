@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { AlertTriangle } from "lucide-react-native";
 import { View, Text, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "./Button";
 
@@ -12,32 +13,32 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({
-  title = "Something went wrong",
-  message = "Please check your connection and try again.",
-  actionLabel = "Try Again",
+  title,
+  message,
+  actionLabel,
   onRetry,
 }: ErrorStateProps) {
-
-  // theme: hook-injected styles
-
+  const { t } = useTranslation();
   const theme = useAppTheme();
-
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const resolvedTitle = title ?? t("common.errorTitle");
+  const resolvedMessage = message ?? t("common.connectionError");
+  const resolvedActionLabel = actionLabel ?? t("common.retry");
   return (
-    <View style={styles.container} accessibilityRole="alert" accessibilityLabel={title}>
+    <View style={styles.container} accessibilityRole="alert" accessibilityLabel={resolvedTitle}>
       <View style={styles.iconWrapper} accessible={false}>
         <AlertTriangle size={30} color={theme.colors.error} />
       </View>
-      <Text style={styles.title} accessibilityRole="header">{title}</Text>
-      <Text style={styles.message}>{message || "Please try again."}</Text>
+      <Text style={styles.title} accessibilityRole="header">{resolvedTitle}</Text>
+      <Text style={styles.message}>{resolvedMessage || t("common.tryAgainShort")}</Text>
       {onRetry ? (
         <Button
-          title={actionLabel}
+          title={resolvedActionLabel}
           onPress={onRetry}
           variant="outline"
           size="md"
           style={styles.button}
-          accessibilityHint="Retries loading this screen"
+          accessibilityHint={t("common.retryHint")}
         />
       ) : null}
     </View>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 export interface PasswordInputProps
@@ -11,6 +12,7 @@ export interface PasswordInputProps
 
 export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputProps>(
   ({ className, disabled, wrapperClassName, ...props }, ref) => {
+    const t = useTranslations("common");
     const [visible, setVisible] = React.useState(false);
     const inputType = visible ? "text" : "password";
 
@@ -28,7 +30,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           onClick={() => setVisible((current) => !current)}
           disabled={disabled}
           className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label={visible ? "Hide password" : "Show password"}
+          aria-label={visible ? t("hidePassword") : t("showPassword")}
           aria-pressed={visible}
         >
           {visible ? (

@@ -66,14 +66,14 @@ export default function ExportScreen() {
       const res = await api.get<any>(`/api/export`, { type, format: format.toLowerCase() });
       if (res.error) {
         hapticError();
-        Alert.alert(t("common.retry"), res.error);
+        Alert.alert(t("common.retry"), t("toast.networkError"));
       } else {
         hapticSuccess();
         const dataStr = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
         const baseDir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
 
         if (!baseDir) {
-          throw new Error("Export storage is unavailable on this device.");
+          throw new Error(t("settings.exportStorageUnavailable"));
         }
 
         const fileName = buildExportFileName(type, format);
@@ -89,14 +89,14 @@ export default function ExportScreen() {
 
         await Share.share({
           url: shareUri,
-          message: `LocateFlow ${type} export`,
-          title: `LocateFlow ${type} export (${format})`,
+          message: t("settings.exportShareMessage", { type }),
+          title: t("settings.exportShareTitle", { type, format }),
         });
         await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {});
       }
-    } catch (e: any) {
+    } catch (error) {
       hapticError();
-      Alert.alert(t("common.retry"), e.message || t("toast.networkError"));
+      Alert.alert(t("common.retry"), error instanceof Error ? error.message : t("settings.exportFailed"));
     } finally {
       setExporting(null);
     }
@@ -165,7 +165,7 @@ export default function ExportScreen() {
 
         <View style={styles.gdprNote}>
           <Text style={styles.gdprText}>
-            Your exports use the live privacy endpoint and include your core LocateFlow records with sensitive fields masked for safety.
+            {t("settings.exportPrivacyNote")}
           </Text>
         </View>
       </ScrollView>

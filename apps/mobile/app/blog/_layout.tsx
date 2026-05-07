@@ -1,4 +1,5 @@
 import { Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 /**
  * Blog stack — sits outside the tabs so we don't crowd the tab bar.
@@ -6,6 +7,8 @@ import { Stack } from "expo-router";
  * https://locateflow.com/blog) once universal-link plumbing is in.
  */
 export default function BlogLayout() {
+  const { t } = useTranslation();
+
   return (
     <Stack
       screenOptions={{
@@ -14,8 +17,8 @@ export default function BlogLayout() {
         headerTintColor: "#fff",
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Blog" }} />
-      <Stack.Screen name="[slug]" options={{ title: "Blog" }} />
+      <Stack.Screen name="index" options={{ title: t("blog.title") }} />
+      <Stack.Screen name="[slug]" options={{ title: t("blog.title") }} />
     </Stack>
   );
 }

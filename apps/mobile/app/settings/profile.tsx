@@ -38,10 +38,10 @@ export default function ProfileSettingsScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   // Family-status labels re-compute when the user flips language mid-session.
   const FAMILY_STATUSES: Array<{ value: (typeof FAMILY_STATUS_VALUES)[number]; label: string }> = [
-    { value: "SINGLE", label: t("common.unknown", { defaultValue: "Single" }) },
-    { value: "COUPLE", label: t("common.yes") },
-    { value: "FAMILY", label: t("onboarding.goal_organize").split(" ")[0] },
-    { value: "OTHER", label: t("common.more") },
+    { value: "SINGLE", label: t("settings.familyStatus_SINGLE") },
+    { value: "COUPLE", label: t("settings.familyStatus_COUPLE") },
+    { value: "FAMILY", label: t("settings.familyStatus_FAMILY") },
+    { value: "OTHER", label: t("settings.familyStatus_OTHER") },
   ];
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -69,7 +69,7 @@ export default function ProfileSettingsScreen() {
     (async () => {
       const res = await api.get<any>("/api/profile");
       if (res.error) {
-        setLoadError(res.error);
+        setLoadError(t("settings.profile_unavailable"));
         setPageLoading(false);
         return;
       }
@@ -99,14 +99,14 @@ export default function ProfileSettingsScreen() {
       }
       setPageLoading(false);
     })();
-  }, []);
+  }, [t]);
 
   const update = (field: string, value: any) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSave = async () => {
     if (!form.firstName.trim() || !form.lastName.trim()) {
-      Alert.alert("Required", "First and last name are required.");
+      Alert.alert(t("validation.required"), t("settings.profile_requiredNames"));
       return;
     }
     setSaving(true);
@@ -117,7 +117,7 @@ export default function ProfileSettingsScreen() {
       if (consentRes.error) {
         setSaving(false);
         hapticError();
-        Alert.alert("Consent required", consentRes.error);
+        Alert.alert(t("settings.profile_consentRequiredTitle"), t("settings.privacyLoadFailed"));
         return;
       }
     }
@@ -125,7 +125,7 @@ export default function ProfileSettingsScreen() {
     setSaving(false);
     if (res.error) {
       hapticError();
-      Alert.alert("Error", res.error);
+      Alert.alert(t("common.errorTitle"), t("settings.profile_saveFailed"));
     } else {
       hapticSuccess();
       router.back();
@@ -141,18 +141,18 @@ export default function ProfileSettingsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Edit Profile</Text>
+          <Text style={styles.title}>{t("settings.profile_editTitle")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
-          title="Profile unavailable"
+          title={t("settings.profile_unavailable")}
           message={loadError}
           onRetry={() => {
             setLoadError(null);
             setPageLoading(true);
             api.get<any>("/api/profile").then((res) => {
               if (res.error) {
-                setLoadError(res.error);
+                setLoadError(t("settings.profile_unavailable"));
               } else if (res.data) {
                 const u = res.data.user || {};
                 const p = res.data.profile || {};
@@ -190,7 +190,7 @@ export default function ProfileSettingsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Edit Profile</Text>
+        <Text style={styles.title}>{t("settings.profile_editTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -246,7 +246,7 @@ export default function ProfileSettingsScreen() {
         </View>
 
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Has Children</Text>
+          <Text style={styles.switchLabel}>{t("settings.hasChildren")}</Text>
           <Switch
             value={form.hasChildren}
             onValueChange={(v) => update("hasChildren", v)}
@@ -257,7 +257,7 @@ export default function ProfileSettingsScreen() {
 
         {form.hasChildren && (
           <>
-            <Text style={styles.label}>Number of Children</Text>
+            <Text style={styles.label}>{t("onboarding.childrenCount")}</Text>
             <TextInput
               style={styles.input}
               placeholder="0"
@@ -270,7 +270,7 @@ export default function ProfileSettingsScreen() {
         )}
 
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Has Pets</Text>
+          <Text style={styles.switchLabel}>{t("settings.hasPets")}</Text>
           <Switch
             value={form.hasPets}
             onValueChange={(v) => update("hasPets", v)}
@@ -281,10 +281,10 @@ export default function ProfileSettingsScreen() {
 
         {form.hasPets ? (
           <>
-            <Text style={styles.label}>Pet Types</Text>
+            <Text style={styles.label}>{t("settings.petTypes")}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Dog, cat, bird"
+              placeholder={t("settings.petTypesPlaceholder")}
               placeholderTextColor={theme.colors.textMuted}
               value={form.petTypes.join(", ")}
               onChangeText={(value) => update("petTypes", value.split(",").map((item) => item.trim()).filter(Boolean).slice(0, 20))}
@@ -293,7 +293,7 @@ export default function ProfileSettingsScreen() {
           </>
         ) : null}
 
-        <Text style={styles.label}>Number of Cars</Text>
+        <Text style={styles.label}>{t("onboarding.carCount")}</Text>
         <TextInput
           style={styles.input}
           placeholder="0"
@@ -303,7 +303,7 @@ export default function ProfileSettingsScreen() {
           keyboardType="number-pad"
         />
 
-        <Text style={styles.sectionLabel}>Move Type</Text>
+        <Text style={styles.sectionLabel}>{t("onboarding.moveType")}</Text>
         <View style={styles.chipRow}>
           {MOVE_TYPES.map((moveType) => (
             <TouchableOpacity
@@ -312,14 +312,14 @@ export default function ProfileSettingsScreen() {
               onPress={() => update("moveType", moveType)}
             >
               <Text style={[styles.chipText, form.moveType === moveType && styles.chipTextActive]}>
-                {moveType.replace("_", " ")}
+                {t(`settings.moveType_${moveType}`)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Business owner</Text>
+          <Text style={styles.switchLabel}>{t("onboarding.businessOwner")}</Text>
           <Switch
             value={form.isBusinessOwner}
             onValueChange={(v) => update("isBusinessOwner", v)}
@@ -328,9 +328,9 @@ export default function ProfileSettingsScreen() {
           />
         </View>
 
-        <Text style={styles.sectionLabel}>Moving Needs</Text>
+        <Text style={styles.sectionLabel}>{t("settings.movingNeeds")}</Text>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Motorcycle</Text>
+          <Text style={styles.switchLabel}>{t("settings.motorcycle")}</Text>
           <Switch
             value={form.hasMotorcycle}
             onValueChange={(v) => update("hasMotorcycle", v)}
@@ -339,7 +339,7 @@ export default function ProfileSettingsScreen() {
           />
         </View>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Boat or RV</Text>
+          <Text style={styles.switchLabel}>{t("settings.boatRv")}</Text>
           <Switch
             value={form.hasBoatRV}
             onValueChange={(v) => update("hasBoatRV", v)}
@@ -348,7 +348,7 @@ export default function ProfileSettingsScreen() {
           />
         </View>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Storage needed</Text>
+          <Text style={styles.switchLabel}>{t("settings.storageNeeded")}</Text>
           <Switch
             value={form.needsStorage}
             onValueChange={(v) => update("needsStorage", v)}
@@ -357,7 +357,7 @@ export default function ProfileSettingsScreen() {
           />
         </View>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Senior in household</Text>
+          <Text style={styles.switchLabel}>{t("settings.seniorHousehold")}</Text>
           <Switch
             value={form.hasSenior}
             onValueChange={(v) => update("hasSenior", v)}
@@ -366,12 +366,12 @@ export default function ProfileSettingsScreen() {
           />
         </View>
 
-        <Text style={styles.sectionLabel}>Sensitive Profile</Text>
+        <Text style={styles.sectionLabel}>{t("settings.sensitiveProfile")}</Text>
         <Text style={styles.helpText}>
-          These fields are used only to tailor checklists and can be changed later.
+          {t("settings.sensitiveProfileHelp")}
         </Text>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Disability accommodation</Text>
+          <Text style={styles.switchLabel}>{t("settings.disabilityAccommodation")}</Text>
           <Switch
             value={form.hasDisability}
             onValueChange={(v) => update("hasDisability", v)}
@@ -380,7 +380,7 @@ export default function ProfileSettingsScreen() {
           />
         </View>
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Immigration-related tasks</Text>
+          <Text style={styles.switchLabel}>{t("settings.immigrationTasks")}</Text>
           <Switch
             value={form.isImmigrant}
             onValueChange={(v) => {
@@ -394,7 +394,7 @@ export default function ProfileSettingsScreen() {
 
         {form.isImmigrant ? (
           <>
-            <Text style={styles.label}>Immigration Status</Text>
+            <Text style={styles.label}>{t("onboarding.immigrationStatus")}</Text>
             <View style={styles.chipRow}>
               {IMMIGRATION_STATUSES.map((status) => (
                 <TouchableOpacity
@@ -403,7 +403,7 @@ export default function ProfileSettingsScreen() {
                   onPress={() => update("immigrationStatus", status)}
                 >
                   <Text style={[styles.chipText, form.immigrationStatus === status && styles.chipTextActive]}>
-                    {status ? status.replace("_", " ") : "Prefer not to say"}
+                    {status ? status.replace("_", " ") : t("settings.preferNotToSay")}
                   </Text>
                 </TouchableOpacity>
               ))}

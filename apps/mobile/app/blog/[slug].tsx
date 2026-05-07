@@ -12,6 +12,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ExternalLink } from "lucide-react-native";
 import { api } from "@/lib/api";
@@ -60,11 +61,8 @@ function htmlToReadableText(html: string): string {
 }
 
 export default function BlogDetailScreen() {
-
-  // theme: hook-injected styles
-
+  const { t, i18n } = useTranslation();
   const theme = useAppTheme();
-
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const params = useLocalSearchParams();
   const slug = firstParam(params.slug);
@@ -86,22 +84,22 @@ export default function BlogDetailScreen() {
       setPost(res.data);
       await AsyncStorage.setItem(cacheKey, JSON.stringify(res.data)).catch(() => {});
       void api.post("/api/blog/view", { slug, locale }).catch(() => {});
-    } catch (e) {
+    } catch {
       const cached = await AsyncStorage.getItem(cacheKey).catch(() => null);
       if (cached) {
         try {
           setPost(JSON.parse(cached) as BlogPostDetail);
         } catch {
-          setError(e instanceof Error ? e.message : "Couldn't load post");
+          setError(t("blog.loadPostFailed"));
         }
       } else {
-        setError(e instanceof Error ? e.message : "Couldn't load post");
+        setError(t("blog.loadPostFailed"));
       }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [cacheKey, locale, slug]);
+  }, [cacheKey, locale, slug, t]);
 
   useEffect(() => {
     if (slug) void load();
@@ -128,9 +126,9 @@ export default function BlogDetailScreen() {
   if (error || !post) {
     return (
       <SafeAreaView style={styles.center} edges={["bottom"]}>
-        <Text style={styles.errorText}>{error || "Post not found"}</Text>
+        <Text style={styles.errorText}>{error || t("blog.postNotFound")}</Text>
         <TouchableOpacity onPress={load} style={styles.retryButton}>
-          <Text style={styles.retryText}>Try again</Text>
+          <Text style={styles.retryText}>{t("common.retry")}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -161,17 +159,17 @@ export default function BlogDetailScreen() {
         <Text style={styles.excerpt}>{post.excerpt}</Text>
         <Text style={styles.meta}>
           {post.author?.name || "LocateFlow"} /{" "}
-          {new Date(post.publishedAt).toLocaleDateString(undefined, {
+          {new Date(post.publishedAt).toLocaleDateString(i18n.language || undefined, {
             year: "numeric",
             month: "short",
             day: "numeric",
           })}{" "}
-          / {post.readingMinutes} min read
+          / {t("blog.minRead", { minutes: post.readingMinutes })}
         </Text>
         <Text style={styles.body}>{body}</Text>
         <TouchableOpacity onPress={openWeb} style={styles.webButton}>
           <ExternalLink size={16} color="#fff" />
-          <Text style={styles.webButtonText}>Open web version</Text>
+          <Text style={styles.webButtonText}>{t("blog.openWeb")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

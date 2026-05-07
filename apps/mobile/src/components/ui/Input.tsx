@@ -8,6 +8,7 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Eye, EyeOff } from "lucide-react-native";
 
@@ -34,11 +35,8 @@ export function Input({
   style,
   ...props
 }: InputProps) {
-
-  // theme: hook-injected styles
-
+  const { t } = useTranslation();
   const theme = useAppTheme();
-
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const [focused, setFocused] = useState(false);
   const [secureEntry, setSecureEntry] = useState(isPassword);
@@ -72,8 +70,8 @@ export function Input({
             onPress={() => setSecureEntry(!secureEntry)}
             style={styles.iconRight}
             accessibilityRole="button"
-            accessibilityLabel={secureEntry ? "Show password" : "Hide password"}
-            accessibilityHint="Toggles password visibility"
+            accessibilityLabel={secureEntry ? t("common.showPassword") : t("common.hidePassword")}
+            accessibilityHint={t("common.togglePasswordVisibility")}
           >
             {secureEntry ? (
               <Eye size={18} color={theme.colors.textMuted} />

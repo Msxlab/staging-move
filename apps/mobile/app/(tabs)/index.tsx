@@ -58,7 +58,7 @@ export default function DashboardScreen() {
       api.get<any>("/api/moving"),
     ]);
     if (res.error || addrRes.error || movingRes.error) {
-      setError(res.error || addrRes.error || movingRes.error || "Could not load dashboard.");
+      setError(t("dashboard.loadFailed"));
       return false;
     }
     if (res.data) {
@@ -146,7 +146,7 @@ export default function DashboardScreen() {
       }
     }
     return true;
-  }, []);
+  }, [t]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -240,7 +240,7 @@ export default function DashboardScreen() {
         }
       >
         {error ? (
-          <ErrorState title="Dashboard unavailable" message={error} onRetry={load} />
+          <ErrorState title={t("dashboard.loadFailed")} message={error} onRetry={load} />
         ) : null}
 
         {/* Stats Grid */}
@@ -333,8 +333,12 @@ export default function DashboardScreen() {
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.30)" }}>
                   <AlertTriangle size={14} color={theme.colors.error} />
                   <Text style={{ fontSize: 11, color: theme.colors.error, flex: 1 }} numberOfLines={2}>
-                    Overdue: {checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}
-                    {checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""}
+                    {t("moving.overdueSummary", {
+                      count: checklist.overdueItems.length,
+                      title: `${checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}${
+                        checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""
+                      }`,
+                    })}
                   </Text>
                 </View>
               )}

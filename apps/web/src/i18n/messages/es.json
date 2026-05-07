@@ -62,7 +62,11 @@
     "active": "Activo",
     "inactive": "Inactivo",
     "enabled": "Activado",
-    "disabled": "Desactivado"
+    "disabled": "Desactivado",
+    "showPassword": "Mostrar contraseña",
+    "hidePassword": "Ocultar contraseña",
+    "skipToMain": "Saltar al contenido principal",
+    "closeNavigationMenu": "Cerrar menú de navegación"
   },
   "toast": {
     "saved": "Guardado",
@@ -125,7 +129,13 @@
     "forbidden": "Acceso denegado",
     "forbiddenDescription": "No tienes permiso para ver esta página.",
     "tryAgain": "Reintentar",
-    "goToDashboard": "Ir al panel"
+    "goToDashboard": "Ir al panel",
+    "unexpectedShort": "Ocurrió un error inesperado. Inténtalo de nuevo.",
+    "unexpectedPersist": "Ocurrió un error inesperado. Inténtalo de nuevo o contacta a soporte si el problema continúa.",
+    "errorId": "ID de error: {id}",
+    "offlineTitle": "Sin conexión",
+    "offlineDescription": "Parece que perdiste la conexión a internet. Algunas funciones pueden no estar disponibles hasta que te reconectes.",
+    "cachedPages": "Las páginas visitadas anteriormente podrían seguir disponibles desde la caché."
   },
   "empty": {
     "addresses": "Aún no hay direcciones",
@@ -184,6 +194,30 @@
   "language": {
     "label": "Idioma",
     "select": "Seleccionar idioma"
+  },
+  "search": {
+    "label": "Buscar",
+    "placeholder": "Buscar direcciones, servicios, páginas...",
+    "buttonPlaceholder": "Buscar...",
+    "openSearch": "Abrir búsqueda",
+    "closeSearch": "Cerrar búsqueda",
+    "noResults": "Sin resultados para \"{query}\"",
+    "addressType": "Dirección",
+    "serviceType": "Servicio",
+    "pageType": "Página",
+    "navigateHint": "Navegar",
+    "openHint": "Abrir",
+    "closeHint": "Cerrar",
+    "dashboardSubtitle": "Resumen y estadísticas",
+    "addressesSubtitle": "Gestionar direcciones",
+    "servicesSubtitle": "Gestionar servicios",
+    "movingSubtitle": "Planear tu mudanza",
+    "settingsSubtitle": "Cuenta y preferencias",
+    "budgetSubtitle": "Rastrear gastos",
+    "exportTitle": "Exportar e informes",
+    "exportSubtitle": "Descargar informes PDF/CSV",
+    "addAddressSubtitle": "Registrar nueva dirección",
+    "addServiceSubtitle": "Registrar nuevo servicio"
   },
   "landing": {
     "heroPrefix": "Si te mudaras mañana, ¿recordarías",
@@ -485,7 +519,16 @@
     "legalAcceptanceRequired": "Revisarás y aceptarás los Términos de uso y el Aviso legal durante la incorporación.",
     "legalAcknowledgementsTitle": "Revisión legal de incorporación",
     "legalAcknowledgementsDescription": "Revisarás estos documentos antes de usar LocateFlow.",
-    "oauthReadinessNote": "El registro con correo y contraseña ya está listo. El inicio social se activará cuando se agreguen las credenciales OAuth de administración."
+    "oauthReadinessNote": "El registro con correo y contraseña ya está listo. El inicio social se activará cuando se agreguen las credenciales OAuth de administración.",
+    "oauthReadinessSignInNote": "El inicio con contraseña ya está disponible. El inicio social se activará cuando se agreguen las credenciales OAuth de administración.",
+    "signUpLegalReviewNotice": "Revisarás y aceptarás los Términos y el Aviso legal de LocateFlow antes de usar la app.",
+    "verifyEmailTitle": "Verifica tu correo",
+    "verifyEmailSentPrefix": "Enviamos un enlace de verificación a",
+    "verifyEmailSentSuffix": "Verifica tu correo antes de abrir la app.",
+    "verifyEmailSignInFirst": "Inicia sesión con la cuenta que acabas de crear y luego verifica tu correo antes de abrir la app.",
+    "verificationAlreadyVerified": "Esta cuenta ya está verificada.",
+    "verificationSent": "Correo de verificación enviado. Revisa tu bandeja de entrada.",
+    "verificationResendFailed": "No se pudo reenviar el correo de verificación."
   },
   "dashboard": {
     "welcome": "Bienvenido de vuelta",
@@ -846,9 +889,19 @@
   "notifications": {
     "title": "Notificaciones",
     "markAllRead": "Marcar todas como leídas",
+    "markAllReadShort": "Marcar todo leído",
     "markRead": "Marcar como leída",
     "markUnread": "Marcar como no leída",
     "delete": "Eliminar",
+    "newCount": "{count} nuevas",
+    "loading": "Cargando...",
+    "allCaughtUp": "¡Todo al día!",
+    "emptyNow": "No hay notificaciones ahora",
+    "viewAll": "Ver todas",
+    "now": "Ahora",
+    "minuteShort": "{count} min",
+    "hourShort": "{count} h",
+    "dayShort": "{count} d",
     "type_billReminder": "Recordatorio de factura",
     "type_contractEnding": "Fin de contrato",
     "type_moveReminder": "Recordatorio de mudanza",

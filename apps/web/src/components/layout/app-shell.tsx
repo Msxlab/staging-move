@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Header } from "@/components/layout/header";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -13,6 +14,7 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, showBudget = true }: AppShellProps) {
+  const tCommon = useTranslations("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-md focus:bg-brand-orange focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        Skip to main content
+        {tCommon("skipToMain")}
       </a>
       <Sidebar showBudget={showBudget} />
       {mobileMenuOpen ? (
@@ -45,7 +47,7 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
           <button
             type="button"
             className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm backdrop-blur-sm md:hidden"
-            aria-label="Close navigation menu"
+            aria-label={tCommon("closeNavigationMenu")}
             onClick={() => setMobileMenuOpen(false)}
           />
           <Sidebar

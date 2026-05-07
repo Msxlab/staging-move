@@ -1,35 +1,31 @@
 import React, { useMemo } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 
 interface LoadingScreenProps {
   message?: string;
 }
 
-export function LoadingScreen({ message = "Loading..." }: LoadingScreenProps) {
-
-  // theme: hook-injected styles
-
+export function LoadingScreen({ message }: LoadingScreenProps) {
+  const { t } = useTranslation();
   const theme = useAppTheme();
-
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const resolvedMessage = message ?? t("common.loading");
   return (
-    <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel={message} accessibilityLiveRegion="polite">
+    <View style={styles.container} accessibilityRole="progressbar" accessibilityLabel={resolvedMessage} accessibilityLiveRegion="polite">
       <ActivityIndicator size="large" color={theme.colors.primary} accessible={false} />
-      <Text style={styles.text}>{message}</Text>
+      <Text style={styles.text}>{resolvedMessage}</Text>
     </View>
   );
 }
 
 export function LoadingOverlay() {
-
-  // theme: hook-injected styles
-
+  const { t } = useTranslation();
   const theme = useAppTheme();
-
   const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
-    <View style={styles.overlay} accessibilityViewIsModal accessibilityRole="progressbar" accessibilityLabel="Loading" accessibilityLiveRegion="polite">
+    <View style={styles.overlay} accessibilityViewIsModal accessibilityRole="progressbar" accessibilityLabel={t("common.loadingLabel")} accessibilityLiveRegion="polite">
       <View style={styles.overlayBox}>
         <ActivityIndicator size="large" color={theme.colors.primary} accessible={false} />
       </View>

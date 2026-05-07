@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { captureException } from "@/lib/sentry";
+import i18n from "@/i18n/config";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -14,9 +15,8 @@ interface ErrorBoundaryState {
 
 /**
  * App-wide error boundary. React render errors that escape every screen would
- * otherwise show an unrecoverable white/black screen on native — `setGlobalHandler`
- * in sentry.ts catches uncaught JS errors but does NOT catch React render errors,
- * so this is the only safety net for the user-facing UI when a screen throws.
+ * otherwise show an unrecoverable white/black screen on native. Global JS error
+ * handlers do not catch React render errors, so this is the visible fallback.
  */
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null };
@@ -38,9 +38,6 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     if (!error) return this.props.children;
     if (this.props.fallback) return this.props.fallback(this.reset, error);
 
-    // Render the fallback through a functional component so hooks
-    // (useAppTheme + useMemo) can run — class components can't use hooks
-    // directly, so we delegate the visible chrome to `<ErrorFallback />`.
     return <ErrorFallback error={error} reset={this.reset} />;
   }
 }
@@ -50,19 +47,20 @@ interface ErrorFallbackProps {
   reset: () => void;
 }
 
-function ErrorFallback({ error, reset }: ErrorFallbackProps) {
+function ErrorFallback({ reset }: ErrorFallbackProps) {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.emoji}>⚠️</Text>
-        <Text style={styles.title}>Something went wrong</Text>
+        <Text style={styles.emoji}>!</Text>
+        <Text style={styles.title}>{i18n.t("common.errorTitle")}</Text>
         <Text style={styles.message} numberOfLines={6}>
-          {error.message || "An unexpected error occurred. Please try again."}
+          {i18n.t("common.genericError")}
         </Text>
         <TouchableOpacity style={styles.button} onPress={reset} activeOpacity={0.7}>
-          <Text style={styles.buttonText}>Try again</Text>
+          <Text style={styles.buttonText}>{i18n.t("common.retry")}</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -72,7 +70,7 @@ function ErrorFallback({ error, reset }: ErrorFallbackProps) {
 const makeStyles = (theme: Theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   scroll: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  emoji: { fontSize: 56, marginBottom: 12 },
+  emoji: { fontSize: 56, marginBottom: 12, color: theme.colors.error },
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text, marginBottom: 8, textAlign: "center" },
   message: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", lineHeight: 20, marginBottom: 24, maxWidth: 320 },
   button: {

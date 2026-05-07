@@ -62,7 +62,11 @@
     "active": "Active",
     "inactive": "Inactive",
     "enabled": "Enabled",
-    "disabled": "Disabled"
+    "disabled": "Disabled",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "skipToMain": "Skip to main content",
+    "closeNavigationMenu": "Close navigation menu"
   },
   "toast": {
     "saved": "Saved",
@@ -125,7 +129,13 @@
     "forbidden": "Access denied",
     "forbiddenDescription": "You don't have permission to view this page.",
     "tryAgain": "Try again",
-    "goToDashboard": "Go to dashboard"
+    "goToDashboard": "Go to dashboard",
+    "unexpectedShort": "An unexpected error occurred. Please try again.",
+    "unexpectedPersist": "An unexpected error occurred. Please try again or contact support if the problem persists.",
+    "errorId": "Error ID: {id}",
+    "offlineTitle": "You're Offline",
+    "offlineDescription": "It looks like you've lost your internet connection. Some features may be unavailable until you reconnect.",
+    "cachedPages": "Previously visited pages may still be available from cache."
   },
   "empty": {
     "addresses": "No addresses yet",
@@ -184,6 +194,30 @@
   "language": {
     "label": "Language",
     "select": "Select language"
+  },
+  "search": {
+    "label": "Search",
+    "placeholder": "Search addresses, services, pages...",
+    "buttonPlaceholder": "Search...",
+    "openSearch": "Open search",
+    "closeSearch": "Close search",
+    "noResults": "No results for \"{query}\"",
+    "addressType": "Address",
+    "serviceType": "Service",
+    "pageType": "Page",
+    "navigateHint": "Navigate",
+    "openHint": "Open",
+    "closeHint": "Close",
+    "dashboardSubtitle": "Overview & stats",
+    "addressesSubtitle": "Manage addresses",
+    "servicesSubtitle": "Manage services",
+    "movingSubtitle": "Plan your move",
+    "settingsSubtitle": "Account & preferences",
+    "budgetSubtitle": "Track expenses",
+    "exportTitle": "Export & Reports",
+    "exportSubtitle": "Download PDF/CSV reports",
+    "addAddressSubtitle": "Register new address",
+    "addServiceSubtitle": "Register new service"
   },
   "landing": {
     "heroPrefix": "If you moved tomorrow, do you remember",
@@ -485,7 +519,16 @@
     "legalAcceptanceRequired": "You will review and accept the Terms of Use and Legal Disclaimer during onboarding.",
     "legalAcknowledgementsTitle": "Onboarding legal review",
     "legalAcknowledgementsDescription": "You will review these before using LocateFlow.",
-    "oauthReadinessNote": "Email and password sign-up is ready now. Social sign-in will be enabled after admin OAuth credentials are added."
+    "oauthReadinessNote": "Email and password sign-up is ready now. Social sign-in will be enabled after admin OAuth credentials are added.",
+    "oauthReadinessSignInNote": "Password sign-in is available now. Social sign-in will be enabled after admin OAuth credentials are added.",
+    "signUpLegalReviewNotice": "You will review and accept LocateFlow Terms and Legal Disclaimer before using the app.",
+    "verifyEmailTitle": "Verify your email",
+    "verifyEmailSentPrefix": "We sent a verification link to",
+    "verifyEmailSentSuffix": "Verify your email before opening the app.",
+    "verifyEmailSignInFirst": "Sign in with the account you just created, then verify your email before opening the app.",
+    "verificationAlreadyVerified": "This account is already verified.",
+    "verificationSent": "Verification email sent. Check your inbox.",
+    "verificationResendFailed": "Could not resend verification email."
   },
   "dashboard": {
     "welcome": "Welcome back",
@@ -846,9 +889,19 @@
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all as read",
+    "markAllReadShort": "Mark all read",
     "markRead": "Mark as read",
     "markUnread": "Mark as unread",
     "delete": "Delete",
+    "newCount": "{count} new",
+    "loading": "Loading...",
+    "allCaughtUp": "All caught up!",
+    "emptyNow": "No notifications right now",
+    "viewAll": "View all",
+    "now": "Now",
+    "minuteShort": "{count}m",
+    "hourShort": "{count}h",
+    "dayShort": "{count}d",
     "type_billReminder": "Bill reminder",
     "type_contractEnding": "Contract ending",
     "type_moveReminder": "Move reminder",

@@ -166,7 +166,7 @@ export default function SignUpPage() {
             aria-disabled={appleUnavailable}
             disabled={appleUnavailable}
             onClick={startAppleOAuth}
-            className="flex w-full items-center justify-center gap-3 rounded-xl border border-transparent bg-muted px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 dark:bg-white dark:text-muted-foreground dark:hover:bg-muted"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border border-transparent bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground disabled:opacity-100 dark:bg-white dark:text-muted-foreground dark:hover:bg-muted"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M17.05 12.53c-.02-2.56 2.09-3.79 2.18-3.85-1.19-1.74-3.04-1.97-3.7-2-1.58-.16-3.08.93-3.88.93-.81 0-2.05-.9-3.37-.88-1.73.03-3.33 1.01-4.22 2.56-1.8 3.12-.46 7.73 1.29 10.27.85 1.24 1.87 2.64 3.2 2.59 1.29-.05 1.78-.83 3.34-.83 1.56 0 2 .83 3.37.8 1.39-.02 2.28-1.27 3.13-2.52.98-1.45 1.39-2.85 1.42-2.92-.03-.02-2.72-1.04-2.74-4.15zM14.6 5.13c.71-.87 1.2-2.07 1.07-3.27-1.04.04-2.29.69-3.03 1.55-.66.76-1.24 1.99-1.09 3.15 1.16.09 2.35-.59 3.05-1.43z"/>
@@ -228,11 +228,7 @@ export default function SignUpPage() {
           </div>
 
           <p className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">
-            You will review and accept LocateFlow{" "}
-            <Link href="/terms" className="underline hover:text-primary">Terms</Link>
-            {" "}and{" "}
-            <Link href="/disclaimer" className="underline hover:text-primary">Legal Disclaimer</Link>
-            {" "}before using the app.
+            {tAuth("signUpLegalReviewNotice")}
           </p>
 
           <button

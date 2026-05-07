@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Linking } from "react-native";
+import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -83,6 +84,7 @@ const i18nReady = initI18n().catch(() => undefined);
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const segments = useSegments();
+  const { t } = useTranslation();
   const { token, user, loading, hydrate, refreshUser, setSession } = useAuthStore();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
   const handledOAuthCodes = useRef<Set<string>>(new Set());
@@ -102,9 +104,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       let exchanged: { token?: string; user?: any } | null = null;
       try {
         exchanged = await exchangeMobileOAuthCallbackUrl(url);
-      } catch (err: any) {
+      } catch {
         handledOAuthCodes.current.delete(code);
-        Alert.alert("Sign-in failed", err?.message || "Could not complete mobile sign-in.");
+        Alert.alert(t("auth.mobileSignInFailedTitle"), t("auth.mobileSignInFailedBody"));
         return;
       }
       if (!exchanged?.token || !exchanged.user) return;
@@ -130,7 +132,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       void handleOAuthUrl(url);
     });
     return () => subscription.remove();
-  }, [router, setSession]);
+  }, [router, setSession, t]);
 
   // 2) When a token appears, fetch /api/auth/me to hydrate the user.
   useEffect(() => {

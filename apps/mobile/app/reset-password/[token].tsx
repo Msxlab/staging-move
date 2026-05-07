@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Lock } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -17,6 +18,7 @@ export default function ResetPasswordScreen() {
 
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ token?: string | string[] }>();
   const token = Array.isArray(params.token) ? params.token[0] : params.token;
   const [newPassword, setNewPassword] = useState("");
@@ -27,11 +29,11 @@ export default function ResetPasswordScreen() {
   const submit = async () => {
     setError("");
     if (!token) {
-      setError("This reset link is missing a token.");
+      setError(t("auth.resetPasswordMissingToken"));
       return;
     }
     if (!newPassword || newPassword !== confirmPassword) {
-      setError("Enter matching passwords first.");
+      setError(t("auth.resetPasswordMismatch"));
       return;
     }
 
@@ -43,15 +45,14 @@ export default function ResetPasswordScreen() {
     setSaving(false);
 
     if (res.error || !res.data?.success) {
-      const message = res.error || "Could not reset your password.";
-      setError(message);
+      setError(t("auth.resetPasswordFailed"));
       hapticError();
       return;
     }
 
     hapticSuccess();
-    Alert.alert("Password reset", "Your password has been changed. Please sign in again.", [
-      { text: "Sign in", onPress: () => router.replace("/(auth)/sign-in") },
+    Alert.alert(t("auth.resetPasswordSuccessTitle"), t("auth.resetPasswordSuccessBody"), [
+      { text: t("auth.resetPasswordSignIn"), onPress: () => router.replace("/(auth)/sign-in") },
     ]);
   };
 
@@ -61,7 +62,7 @@ export default function ResetPasswordScreen() {
         <TouchableOpacity onPress={() => router.replace("/(auth)/sign-in")} style={styles.backBtn}>
           <ArrowLeft size={22} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>Reset password</Text>
+        <Text style={styles.title}>{t("auth.resetPasswordTitle")}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -70,28 +71,28 @@ export default function ResetPasswordScreen() {
           <View style={styles.iconWrap}>
             <Lock size={28} color={theme.colors.primary} />
           </View>
-          <Text style={styles.heading}>Choose a new password</Text>
-          <Text style={styles.copy}>Use a strong password you have not used before.</Text>
+          <Text style={styles.heading}>{t("auth.resetPasswordHeading")}</Text>
+          <Text style={styles.copy}>{t("auth.resetPasswordCopy")}</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Input
-            label="New password"
+            label={t("auth.newPassword")}
             value={newPassword}
             onChangeText={setNewPassword}
             isPassword
             autoCapitalize="none"
-            placeholder="Min 12 characters"
+            placeholder={t("auth.newPasswordPlaceholder")}
           />
           <Input
-            label="Confirm password"
+            label={t("auth.confirmPassword")}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             isPassword
             autoCapitalize="none"
-            placeholder="Repeat password"
+            placeholder={t("auth.confirmPasswordPlaceholder")}
           />
           <Button
-            title={saving ? "Saving..." : "Reset password"}
+            title={saving ? t("auth.saving") : t("auth.resetPasswordTitle")}
             onPress={submit}
             loading={saving}
             disabled={saving || !newPassword || !confirmPassword}

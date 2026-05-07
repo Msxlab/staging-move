@@ -94,7 +94,7 @@ export default function MoreScreen() {
         { icon: DollarSign, label: t("budget.title"), route: "/budget" },
         { icon: Search, label: t("providers.title"), route: "/providers" },
         { icon: Building2, label: t("customProviders.title"), route: "/custom-providers" },
-        { icon: FileText, label: "Blog", route: "/blog" },
+        { icon: FileText, label: t("blog.title"), route: "/blog" },
         { icon: Bell, label: t("settings.notifications"), route: "/notifications" },
         { icon: Ticket, label: t("settings.support"), route: "/help/tickets" },
         { icon: HelpCircle, label: t("settings.help"), route: "/help" },

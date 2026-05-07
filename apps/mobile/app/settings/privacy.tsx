@@ -105,10 +105,10 @@ export default function PrivacySettingsScreen() {
   useEffect(() => {
     loadSecurity();
     loadConsents().catch(() => {
-      setConsentError("Privacy preferences could not be loaded.");
+      setConsentError(t("settings.privacyLoadFailed"));
       setLoadingConsents(false);
     });
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void hydrateAppLock();
@@ -121,8 +121,8 @@ export default function PrivacySettingsScreen() {
     });
     setConsentBusy(false);
     if (res.error) {
-      setConsentError(res.error);
-      Alert.alert("Privacy", res.error);
+      setConsentError(t("settings.privacyLoadFailed"));
+      Alert.alert(t("settings.privacy"), t("settings.privacyLoadFailed"));
       return;
     }
     setAnalyticsConsent(granted);
@@ -165,12 +165,12 @@ export default function PrivacySettingsScreen() {
     );
     setPasswordSetupBusy(false);
     if (res.error) {
-      Alert.alert("Password", res.error);
+      Alert.alert(t("settings.passwordSetupTitle"), t("settings.privacyLoadFailed"));
       return;
     }
     if (res.data) {
       setSecurity(res.data);
-      Alert.alert("Password", "We sent a secure password setup link to your email.");
+      Alert.alert(t("settings.passwordSetupTitle"), t("settings.passwordSetupSent"));
     }
   };
 
@@ -182,12 +182,12 @@ export default function PrivacySettingsScreen() {
     );
     setSecurityBusy(false);
     if (res.error) {
-      Alert.alert("Sessions", res.error);
+      Alert.alert(t("settings.sessionsTitle"), t("settings.privacyLoadFailed"));
       return;
     }
     if (res.data) {
       setSecurity(res.data);
-      Alert.alert("Sessions", `${res.data.revoked || 0} other session(s) revoked.`);
+      Alert.alert(t("settings.sessionsTitle"), t("settings.sessionsRevoked", { count: res.data.revoked || 0 }));
     }
   };
 
@@ -283,43 +283,43 @@ export default function PrivacySettingsScreen() {
         <Card variant="default" style={{ marginBottom: 12 }}>
           <View style={styles.sectionHeader}>
             <View>
-              <Text style={styles.infoTitle}>Account security</Text>
+              <Text style={styles.infoTitle}>{t("settings.accountSecurityTitle")}</Text>
               <Text style={styles.infoDesc}>
-                Linked sign-in methods and real login sessions for this account.
+                {t("settings.accountSecurityDescription")}
               </Text>
             </View>
             <Shield size={18} color={theme.colors.primary} />
           </View>
 
           {loadingSecurity ? (
-            <Text style={styles.mutedText}>Loading account security...</Text>
+            <Text style={styles.mutedText}>{t("settings.accountSecurityLoading")}</Text>
           ) : !security ? (
-            <Text style={styles.errorText}>Account security could not be loaded.</Text>
+            <Text style={styles.errorText}>{t("settings.accountSecurityUnavailable")}</Text>
           ) : (
             <View style={{ gap: 14 }}>
               <View style={styles.badgeRow}>
                 <Badge
-                  label={security.account.emailVerified ? "Email verified" : "Email pending"}
+                  label={security.account.emailVerified ? t("settings.emailVerified") : t("settings.emailPending")}
                   variant={security.account.emailVerified ? "success" : "warning"}
                 />
                 <Badge
-                  label={security.account.hasPasswordLogin ? "Password enabled" : "OAuth only"}
+                  label={security.account.hasPasswordLogin ? t("settings.passwordEnabled") : t("settings.oauthOnly")}
                   variant={security.account.hasPasswordLogin ? "success" : "warning"}
                 />
                 <Badge
-                  label={security.account.mfaEnabled ? "MFA enabled" : "MFA off"}
+                  label={security.account.mfaEnabled ? t("settings.mfaEnabled") : t("settings.mfaOff")}
                   variant={security.account.mfaEnabled ? "success" : "neutral"}
                 />
               </View>
 
               <View>
-                <Text style={styles.subheading}>Linked methods</Text>
+                <Text style={styles.subheading}>{t("settings.linkedMethods")}</Text>
                 <View style={styles.methodList}>
                   {security.linkedMethods.map((method) => (
                     <View key={`${method.type}-${method.linkedAt || "none"}`} style={styles.methodRow}>
                       <Text style={styles.methodLabel}>{method.label}</Text>
                       <Text style={method.enabled ? styles.methodEnabled : styles.methodDisabled}>
-                        {method.enabled ? "Enabled" : "Not set"}
+                        {method.enabled ? t("common.enabled") : t("settings.notSet")}
                       </Text>
                     </View>
                   ))}
@@ -328,12 +328,12 @@ export default function PrivacySettingsScreen() {
 
               {!security.account.hasPasswordLogin && (
                 <View style={styles.passwordBox}>
-                  <Text style={styles.subheading}>Set password</Text>
+                  <Text style={styles.subheading}>{t("settings.setPassword")}</Text>
                   <Text style={styles.mutedText}>
-                    We will email a secure setup link. OAuth sign-in remains linked.
+                    {t("settings.setPasswordDescription")}
                   </Text>
                   <Button
-                    title="Email setup link"
+                    title={t("settings.emailSetupLink")}
                     onPress={requestSetPasswordEmail}
                     loading={passwordSetupBusy}
                     fullWidth
@@ -343,9 +343,9 @@ export default function PrivacySettingsScreen() {
 
               <View>
                 <View style={styles.sessionHeader}>
-                  <Text style={styles.subheading}>Login sessions</Text>
+                  <Text style={styles.subheading}>{t("settings.loginSessions")}</Text>
                   <Button
-                    title="Revoke others"
+                    title={t("settings.revokeOthers")}
                     onPress={revokeOtherSessions}
                     variant="outline"
                     size="sm"
@@ -359,16 +359,16 @@ export default function PrivacySettingsScreen() {
                       <Smartphone size={16} color={theme.colors.textMuted} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.methodLabel}>
-                          {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}
+                          {session.browser || t("settings.unknownBrowser")}{session.os ? ` / ${session.os}` : ""}
                         </Text>
                         <Text style={styles.mutedText}>
-                          {session.current ? "Current · " : ""}{session.isActive ? "Active" : "Revoked"} · {new Date(session.lastActivity).toLocaleDateString()}
+                          {session.current ? `${t("settings.current")} · ` : ""}{session.isActive ? t("settings.sessionActive") : t("settings.sessionRevoked")} · {new Date(session.lastActivity).toLocaleDateString()}
                         </Text>
                       </View>
                     </View>
                   ))}
                   {security.sessions.length === 0 && (
-                    <Text style={styles.mutedText}>No login sessions recorded yet.</Text>
+                    <Text style={styles.mutedText}>{t("settings.noLoginSessions")}</Text>
                   )}
                 </View>
               </View>
@@ -379,9 +379,9 @@ export default function PrivacySettingsScreen() {
         <Card variant="default" style={{ marginBottom: 12 }}>
           <View style={styles.consentRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.infoTitle}>Analytics</Text>
+              <Text style={styles.infoTitle}>{t("settings.analytics")}</Text>
               <Text style={styles.infoDesc}>
-                Allow mobile usage analytics for product quality and reliability reporting.
+                {t("settings.analyticsDescription")}
               </Text>
             </View>
             <Switch
@@ -393,12 +393,12 @@ export default function PrivacySettingsScreen() {
             />
           </View>
           {loadingConsents ? (
-            <Text style={styles.mutedText}>Loading privacy preferences...</Text>
+            <Text style={styles.mutedText}>{t("settings.privacyPreferencesLoading")}</Text>
           ) : consentError ? (
             <View style={styles.inlineErrorRow}>
               <Text style={styles.errorText}>{consentError}</Text>
               <Button
-                title="Try again"
+                title={t("common.retry")}
                 onPress={() => {
                   setLoadingConsents(true);
                   setConsentError(null);

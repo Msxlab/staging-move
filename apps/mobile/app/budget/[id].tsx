@@ -47,7 +47,7 @@ export default function BudgetDetailScreen() {
   const fetchBudget = useCallback(async () => {
     const res = await api.get<any>("/api/budget", { id });
     if (res.error) {
-      setError(res.error);
+      setError(t("budget.unavailable"));
       return false;
     }
     if (res.data?.budget) {
@@ -58,7 +58,7 @@ export default function BudgetDetailScreen() {
       setError(null);
     }
     return true;
-  }, [id]);
+  }, [id, t]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,12 +89,12 @@ export default function BudgetDetailScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <ArrowLeft size={22} color={theme.colors.text} />
           </TouchableOpacity>
-          <Text style={styles.title}>Budget</Text>
+          <Text style={styles.title}>{t("budget.title")}</Text>
           <View style={{ width: 44 }} />
         </View>
         <ErrorState
-          title={error ? "Budget unavailable" : "Budget not found"}
-          message={error || "This budget may have been removed."}
+          title={error ? t("budget.unavailable") : t("budget.notFound")}
+          message={error || t("budget.removed")}
           onRetry={load}
         />
       </SafeAreaView>
@@ -119,7 +119,7 @@ export default function BudgetDetailScreen() {
   }
 
   const monthName = budget.month
-    ? new Date(budget.month).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    ? new Date(budget.month).toLocaleDateString(i18n.language || "en", { month: "long", year: "numeric" })
     : `${budget.month} ${budget.year}`;
 
   return (
@@ -140,7 +140,7 @@ export default function BudgetDetailScreen() {
         {/* Status badge */}
         <View style={[styles.statusBadge, { backgroundColor: overBudget ? theme.colors.rose.bg : theme.colors.emerald.bg, borderColor: overBudget ? theme.colors.rose.border : theme.colors.emerald.border }]}>
           <Text style={{ fontSize: 12, fontWeight: "700", color: overBudget ? theme.colors.rose.text : theme.colors.emerald.text }}>
-            {overBudget ? "Over Budget" : "On Track"}
+            {overBudget ? t("budget.overBudget") : t("budget.onTrack")}
           </Text>
         </View>
 
@@ -150,26 +150,26 @@ export default function BudgetDetailScreen() {
             <TrendingUp size={18} color={theme.colors.emerald.text} />
             <Text style={[styles.summaryValue, { color: theme.colors.emerald.text }]}>{fmt(income)}</Text>
             <Text style={styles.summaryLabel}>{t("budget.actualIncome")}</Text>
-            {budget.plannedIncome ? <Text style={styles.summaryPlanned}>Planned: {fmt(budget.plannedIncome)}</Text> : null}
+            {budget.plannedIncome ? <Text style={styles.summaryPlanned}>{t("budget.plannedAmount", { amount: fmt(budget.plannedIncome) })}</Text> : null}
           </Card>
           <Card variant="default" style={styles.summaryCard}>
             <TrendingDown size={18} color={theme.colors.rose.text} />
             <Text style={[styles.summaryValue, { color: theme.colors.rose.text }]}>{fmt(expenses)}</Text>
             <Text style={styles.summaryLabel}>{t("budget.actualExpenses")}</Text>
-            {budget.plannedExpenses ? <Text style={styles.summaryPlanned}>Planned: {fmt(budget.plannedExpenses)}</Text> : null}
+            {budget.plannedExpenses ? <Text style={styles.summaryPlanned}>{t("budget.plannedAmount", { amount: fmt(budget.plannedExpenses) })}</Text> : null}
           </Card>
           <Card variant="default" style={styles.summaryCard}>
             <DollarSign size={18} color={savings >= 0 ? theme.colors.emerald.text : theme.colors.rose.text} />
             <Text style={[styles.summaryValue, { color: savings >= 0 ? theme.colors.emerald.text : theme.colors.rose.text }]}>{fmt(savings)}</Text>
-            <Text style={styles.summaryLabel}>Savings</Text>
-            {income > 0 ? <Text style={styles.summaryPlanned}>{((savings / income) * 100).toFixed(1)}% rate</Text> : null}
+            <Text style={styles.summaryLabel}>{t("budget.savings")}</Text>
+            {income > 0 ? <Text style={styles.summaryPlanned}>{t("budget.savingsRate", { rate: ((savings / income) * 100).toFixed(1) })}</Text> : null}
           </Card>
         </View>
 
         {/* Category Breakdown */}
         {categoryBreakdown.length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Spending by Category</Text>
+            <Text style={styles.sectionTitle}>{t("budget.spendingByCategory")}</Text>
             <Card variant="default">
               {categoryBreakdown.map(([cat, amount], i) => {
                 const pct = expenses > 0 ? ((amount as number) / expenses) * 100 : 0;
@@ -187,7 +187,7 @@ export default function BudgetDetailScreen() {
                 );
               })}
               <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalLabel}>{t("budget.total")}</Text>
                 <Text style={styles.totalValue}>{fmt(expenses)}</Text>
               </View>
             </Card>
@@ -196,7 +196,7 @@ export default function BudgetDetailScreen() {
 
         {budget.notes && (
           <>
-            <Text style={styles.sectionTitle}>Notes</Text>
+            <Text style={styles.sectionTitle}>{t("budget.notes")}</Text>
             <Card variant="default">
               <Text style={styles.notes}>{budget.notes}</Text>
             </Card>

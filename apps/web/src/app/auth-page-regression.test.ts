@@ -14,7 +14,7 @@ describe("auth page regressions", () => {
     expect(signUp).not.toContain("legalAcknowledgementsTitle");
     expect(signUp).not.toContain("Required acknowledgements");
     expect(signUp).not.toContain("Accept these before creating your LocateFlow account.");
-    expect(signUp).toContain("You will review and accept LocateFlow");
+    expect(signUp).toContain("signUpLegalReviewNotice");
     expect(signUp).toContain('href="/terms"');
     expect(signUp).toContain('href="/disclaimer"');
   });
@@ -37,7 +37,7 @@ describe("auth page regressions", () => {
     const page = read("src/app/verify-email/page.tsx");
     const resend = read("src/app/verify-email/resend-verification-button.tsx");
 
-    expect(page).toContain("Verify your email");
+    expect(page).toContain("verifyEmailTitle");
     expect(page).toContain("normalizeAppRedirectPath");
     expect(page).toContain("ResendVerificationButton");
     expect(resend).toContain("/api/auth/resend-verification");
@@ -104,7 +104,7 @@ describe("auth page regressions", () => {
     const page = read("src/app/verify-email/page.tsx");
     const resend = read("src/app/verify-email/resend-verification-button.tsx");
 
-    expect(page).toContain("Verify your email");
+    expect(page).toContain("verifyEmailTitle");
     expect(page).toContain("normalizeAppRedirectPath");
     expect(page).toContain("ResendVerificationButton");
     expect(resend).toContain("/api/auth/resend-verification");
