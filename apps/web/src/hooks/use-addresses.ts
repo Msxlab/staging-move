@@ -50,7 +50,12 @@ export function useAddresses() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/addresses/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({}),
+      });
       if (!res.ok) throw new Error("Failed to delete");
       return id;
     },

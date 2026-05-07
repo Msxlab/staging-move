@@ -111,9 +111,71 @@ describe("profile route", () => {
       isBusinessOwner: false,
       isImmigrant: false,
       immigrationStatus: null,
+      isMilitary: false,
     }));
     expect(upsertArg.create).not.toHaveProperty("businessType");
     expect(upsertArg.create).not.toHaveProperty("sensitiveOptIn");
+  });
+
+  it("persists isMilitary to the Profile when sensitive consent is on file", async () => {
+    mockDataConsent.findFirst.mockResolvedValue({
+      id: "consent_1",
+      category: "SENSITIVE",
+      granted: true,
+    });
+    const payload = buildOnboardingProfilePayload({
+      firstName: "Taylor",
+      lastName: "Mover",
+      ageRange: "",
+      familyStatus: "SINGLE",
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      petTypes: [],
+      carCount: 0,
+      hasSenior: false,
+      hasDisability: false,
+      isMilitary: true,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+    });
+
+    const response = await POST(makeRequest(payload));
+
+    expect(response.status).toBe(200);
+    const upsertArg = mockProfile.upsert.mock.calls[0][0];
+    expect(upsertArg.create).toMatchObject({ isMilitary: true });
+    expect(upsertArg.update).toMatchObject({ isMilitary: true });
+  });
+
+  it("requires sensitive consent before saving isMilitary=true", async () => {
+    mockDataConsent.findFirst.mockResolvedValue(null);
+    const response = await POST(makeRequest({
+      firstName: "Taylor",
+      lastName: "Mover",
+      familyStatus: "SINGLE",
+      hasChildren: false,
+      childrenCount: 0,
+      hasPets: false,
+      petTypes: [],
+      carCount: 0,
+      hasSenior: false,
+      hasDisability: false,
+      isMilitary: true,
+      needsStorage: false,
+      hasMotorcycle: false,
+      hasBoatRV: false,
+      moveType: "PERSONAL",
+      isBusinessOwner: false,
+      isImmigrant: false,
+      immigrationStatus: "",
+    }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("SENSITIVE_CONSENT_REQUIRED");
+    expect(mockProfile.upsert).not.toHaveBeenCalled();
   });
 
   it("rejects profile save until the onboarding legal gate is accepted", async () => {

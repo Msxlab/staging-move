@@ -92,7 +92,7 @@ export default function MovingDetailScreen() {
       }
       if (normalizedPlan?.toAddress?.state) {
         const srRes = await api.get<any>("/api/state-rules", { state: normalizedPlan.toAddress.state });
-        if (srRes.data?.rules?.length) setStateRules(srRes.data.rules[0]);
+        if (srRes.data?.stateRule) setStateRules(srRes.data.stateRule);
       }
       setError(null);
     }

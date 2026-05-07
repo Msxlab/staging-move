@@ -45,7 +45,12 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
       isActive: true,
       impersonatedByAdminId: { not: null },
     },
-    select: { id: true, userId: true, expiresAt: true },
+    select: {
+      id: true,
+      userId: true,
+      expiresAt: true,
+      impersonatedByAdminId: true,
+    },
   });
 
   if (!session) {
@@ -57,6 +62,30 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
     return NextResponse.redirect(
       new URL("/sign-in?err=impersonation-expired", request.url),
     );
+  }
+
+  // Audit breadcrumb — one row per successful handoff. The admin app already
+  // logs the "impersonate started" event at ticket-creation time; this row
+  // confirms the cookie was actually exchanged into a browser session.
+  if (session.impersonatedByAdminId) {
+    const ipAddress = (request.headers.get("x-forwarded-for") || "")
+      .split(",")[0]
+      .trim();
+    await prisma.adminAuditLog
+      .create({
+        data: {
+          adminUserId: session.impersonatedByAdminId,
+          action: "IMPERSONATE_HANDOFF",
+          entityType: "User",
+          entityId: session.userId,
+          changes: JSON.stringify({
+            sessionId: session.id,
+            expiresAt: session.expiresAt.toISOString(),
+          }),
+          ipAddress: ipAddress || null,
+        },
+      })
+      .catch(() => null);
   }
 
   const response = NextResponse.redirect(new URL("/dashboard", request.url));

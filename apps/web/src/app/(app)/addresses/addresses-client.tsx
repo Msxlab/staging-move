@@ -49,7 +49,12 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
     }
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/addresses/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/addresses/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({}),
+      });
       if (res.ok) {
         setAddresses((prev) => prev.filter((a) => a.id !== id));
         toast.success(tToast("deleted"));

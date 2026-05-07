@@ -77,7 +77,11 @@ export async function GET(request?: NextRequest) {
         emailVerified: Boolean(user.emailVerifiedAt),
         mfaEnabled: user.mfaEnabled,
         createdAt: user.createdAt,
+        impersonatedByAdminId: session.impersonatedByAdminId ?? null,
       },
+      impersonation: session.impersonatedByAdminId
+        ? { active: true, adminId: session.impersonatedByAdminId }
+        : { active: false },
     },
     { headers: { "Cache-Control": "no-store" } },
   );
