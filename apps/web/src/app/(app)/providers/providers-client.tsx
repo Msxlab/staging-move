@@ -93,7 +93,7 @@ interface RecommendationsResponse {
 }
 
 const TIER_BADGE: Record<UrgencyTier, { label: string; className: string }> = {
-  CRITICAL: { label: "Critical", className: "bg-destructive text-destructive border-destructive/30" },
+  CRITICAL: { label: "Critical", className: "bg-destructive text-destructive-foreground border-destructive" },
   IMPORTANT: { label: "Important", className: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br" },
   RECOMMENDED: { label: "Recommended", className: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br" },
   OPTIONAL: { label: "Optional", className: "bg-foreground/10 text-muted-foreground border-border" },
