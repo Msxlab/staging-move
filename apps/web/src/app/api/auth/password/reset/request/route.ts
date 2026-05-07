@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateOpaqueToken } from "@/lib/user-auth";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendPasswordResetEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
@@ -21,13 +21,6 @@ function genericResponse() {
 }
 
 export async function POST(request: NextRequest) {
-  const rlKey = getRateLimitKey(request, "auth:pwreset");
-  const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60, failClosed: true });
-  if (!rl.success) {
-    console.info("[AUTH] password reset skipped", { reason: "rate_limited" });
-    return genericResponse();
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -36,6 +29,15 @@ export async function POST(request: NextRequest) {
   }
 
   const parsed = schema.safeParse(body);
+  const rl = await enforceRateLimitPolicy(request, "password_reset", {
+    email: parsed.success ? parsed.data.email : null,
+    routeId: "password_reset_request",
+  });
+  if (!rl.success) {
+    console.info("[AUTH] password reset skipped", { reason: "rate_limited" });
+    return genericResponse();
+  }
+
   if (!parsed.success) {
     // Return the same success response for malformed input to avoid enumeration.
     return genericResponse();

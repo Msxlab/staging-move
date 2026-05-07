@@ -4,6 +4,7 @@ import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
 import { isBillingProductionLike, requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureException, captureMessage } from "@/lib/sentry";
+import { emitSecurityEvent } from "@/lib/security-events";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
 import {
   sendPaymentFailedEmail,
@@ -405,6 +406,18 @@ export async function POST(request: NextRequest) {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
       console.error("Stripe webhook signature verification failed:", err);
+      emitSecurityEvent({
+        type: "WEBHOOK_SIG_FAILURE",
+        severity: "warn",
+        group: "webhook",
+        context: {
+          provider: "stripe",
+          // Length-only — never log raw signatures or bodies.
+          signatureLength: signature.length,
+          bodyLength: Buffer.byteLength(body, "utf8"),
+          reason: err instanceof Error ? err.message.slice(0, 200) : "constructEvent threw",
+        },
+      });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 

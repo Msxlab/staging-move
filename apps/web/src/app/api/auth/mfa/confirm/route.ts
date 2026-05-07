@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/user-auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
-import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 
 export const runtime = "nodejs";
@@ -26,20 +26,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const [ipRl, userRl] = await Promise.all([
-    rateLimit(getRateLimitKey(request, "auth:mfa:confirm:ip"), {
-      limit: 50,
-      windowSeconds: 60 * 60,
-      failClosed: true,
-    }),
-    rateLimit(`auth:mfa:confirm:user:${userId}`, {
-      limit: 5,
-      windowSeconds: 60,
-      failClosed: true,
-    }),
-  ]);
-  if (!ipRl.success || !userRl.success) {
-    return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
+  const rl = await enforceRateLimitPolicy(request, "mfa_verify", {
+    userId,
+    routeId: "mfa_confirm",
+  });
+  if (!rl.success) {
+    return NextResponse.json(
+      { code: rl.policy.userFacingErrorCode, error: "Too many attempts. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
   }
 
   let body: unknown;

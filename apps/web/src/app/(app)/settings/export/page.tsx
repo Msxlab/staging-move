@@ -57,8 +57,8 @@ const exportOptions = [
  * `Content-Disposition` so the server controls naming, and surfaces a
  * JSON `error` message when the API rejects the request.
  */
-async function downloadFromUrl(url: string, fallbackFilename: string): Promise<void> {
-  const res = await fetch(url, { cache: "no-store" });
+async function downloadFromUrl(url: string, fallbackFilename: string, init?: RequestInit): Promise<void> {
+  const res = await fetch(url, { cache: "no-store", ...init });
   if (!res.ok) {
     let message = "Download failed";
     try {
@@ -89,6 +89,7 @@ export default function ExportPage() {
   const [loadingAddresses, setLoadingAddresses] = useState(true);
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
   const [generatingFullPdf, setGeneratingFullPdf] = useState(false);
+  const [exportPassword, setExportPassword] = useState("");
 
   useEffect(() => {
     fetch("/api/addresses")
@@ -103,8 +104,17 @@ export default function ExportPage() {
     setDownloading(key);
     try {
       await downloadFromUrl(
-        `/api/export?type=${type}&format=${format.toLowerCase()}`,
+        "/api/export",
         `locateflow-${type}-export.${format.toLowerCase()}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type,
+            format: format.toLowerCase(),
+            confirmPassword: exportPassword,
+          }),
+        },
       );
       toast.success(`${type} exported as ${format}`);
     } catch (err) {
@@ -239,6 +249,20 @@ export default function ExportPage() {
           <Download className="h-4 w-4 text-tone-cyan-fg" />
           <h3 className="text-sm font-semibold text-foreground">Data Exports</h3>
         </div>
+        <div className="px-5 pb-3">
+          <label htmlFor="export-password" className="mb-1 block text-xs font-medium text-muted-foreground">
+            Confirm password
+          </label>
+          <input
+            id="export-password"
+            type="password"
+            autoComplete="current-password"
+            value={exportPassword}
+            onChange={(event) => setExportPassword(event.target.value)}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            placeholder="Password"
+          />
+        </div>
         <div className="px-5 pb-5 space-y-2">
           {exportOptions.map((opt) => {
             const OptIcon = opt.icon;
@@ -258,7 +282,7 @@ export default function ExportPage() {
                     return (
                       <button
                         key={fmt}
-                        disabled={isLoading}
+                        disabled={isLoading || !exportPassword}
                         onClick={() => handleExport(opt.type, fmt)}
                         className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition disabled:opacity-50"
                       >

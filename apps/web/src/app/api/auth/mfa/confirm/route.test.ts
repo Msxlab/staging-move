@@ -58,24 +58,18 @@ describe("mfa confirm route", () => {
     userMock.update.mockResolvedValue({});
   });
 
-  it("applies both IP and per-user rate limits before validating the TOTP", async () => {
+  it("applies the MFA verification policy before validating the TOTP", async () => {
     const response = await POST(makeRequest());
 
     expect(response.status).toBe(200);
     expect(rateLimitMock).toHaveBeenCalledWith(
-      "auth:mfa:confirm:ip:203.0.113.10",
-      { limit: 50, windowSeconds: 60 * 60, failClosed: true },
-    );
-    expect(rateLimitMock).toHaveBeenCalledWith(
-      "auth:mfa:confirm:user:user_1",
-      { limit: 5, windowSeconds: 60, failClosed: true },
+      expect.stringContaining("rl:mfa_verify:user:"),
+      { limit: 5, windowSeconds: 5 * 60, failClosed: true },
     );
   });
 
-  it("returns 429 when either MFA limit is exceeded", async () => {
-    rateLimitMock
-      .mockResolvedValueOnce({ success: true, resetAt: Date.now() + 60_000 })
-      .mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
+  it("returns 429 when the MFA limit is exceeded", async () => {
+    rateLimitMock.mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
 
     const response = await POST(makeRequest());
 

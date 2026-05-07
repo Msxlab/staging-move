@@ -39,11 +39,14 @@ describe("mfa setup rate limits", () => {
 
   it("returns 429 when the per-user setup limit is exceeded", async () => {
     (rateLimit as unknown as Mock)
-      .mockResolvedValueOnce({ success: true, resetAt: Date.now() + 60_000 })
       .mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
 
     const response = await POST(request());
 
     expect(response.status).toBe(429);
+    expect(rateLimit).toHaveBeenCalledWith(
+      expect.stringContaining("rl:mfa_verify:user:"),
+      expect.objectContaining({ limit: 5, windowSeconds: 5 * 60, failClosed: true }),
+    );
   });
 });

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { emitSecurityEvent } from "@/lib/security-events";
 import { createAccountDeletionRequest, getActiveAccountDeletionRequest, processAccountDeletionRequest } from "@/lib/account-deletion";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { verifyUserStepUp } from "@/lib/user-step-up";
@@ -12,11 +13,33 @@ export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId({ distinguishDeleted: true });
 
-    // Rate limit: 3 per minute (destructive action)
-    const rlKey = getRateLimitKey(request, "account:delete");
-    const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60 });
+    const meta = extractRequestMeta(request);
+    // Always emit the attempt — independent of whether the limit fires
+    // or step-up succeeds. This is the audit trail an investigator
+    // needs if a stranger walks up to a left-open laptop.
+    emitSecurityEvent({
+      type: "ACCOUNT_DELETE_ATTEMPT",
+      severity: "warn",
+      group: "account_delete",
+      context: { userId },
+    });
+    const rl = await enforceRateLimitPolicy(request, "account_delete", {
+      userId,
+      routeId: "account_delete",
+    });
     if (!rl.success) {
-      return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
+      await createAuditLog({
+        userId,
+        action: "DELETE_LIMIT",
+        entityType: "User",
+        entityId: userId,
+        changes: { code: rl.policy.userFacingErrorCode },
+        ...meta,
+      });
+      return NextResponse.json(
+        { code: rl.policy.userFacingErrorCode, error: "Too many requests. Please wait." },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+      );
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -25,6 +48,32 @@ export async function POST(request: NextRequest) {
     }
 
     const body: any = await request.json().catch(() => ({}));
+    const hasMfaAttempt =
+      typeof body?.mfaCode === "string" || typeof body?.backupCode === "string";
+    if (hasMfaAttempt) {
+      const mfaRl = await enforceRateLimitPolicy(request, "mfa_verify", {
+        userId,
+        routeId: typeof body?.backupCode === "string" ? "delete_backup_code" : "delete_totp",
+      });
+      if (!mfaRl.success) {
+        await createAuditLog({
+          userId,
+          action: "MFA_LIMIT",
+          entityType: "User",
+          entityId: userId,
+          changes: { operation: "account_delete", code: mfaRl.policy.userFacingErrorCode },
+          ...meta,
+        });
+        return NextResponse.json(
+          {
+            code: mfaRl.policy.userFacingErrorCode,
+            error: "Too many verification attempts. Please wait and try again.",
+          },
+          { status: 429, headers: { "Retry-After": String(mfaRl.retryAfterSeconds) } },
+        );
+      }
+    }
+
     const stepUp = await verifyUserStepUp({
       userId,
       confirmPassword: typeof body?.confirmPassword === "string" ? body.confirmPassword : null,
@@ -32,6 +81,14 @@ export async function POST(request: NextRequest) {
       backupCode: typeof body?.backupCode === "string" ? body.backupCode : null,
     });
     if (!stepUp.ok) {
+      await createAuditLog({
+        userId,
+        action: "STEP_UP_FAIL",
+        entityType: "User",
+        entityId: userId,
+        changes: { operation: "account_delete", code: stepUp.code },
+        ...meta,
+      });
       return NextResponse.json(
         { error: stepUp.message, code: stepUp.code },
         { status: stepUp.code === "STEP_UP_REQUIRED" ? 403 : 401 },
@@ -42,7 +99,6 @@ export async function POST(request: NextRequest) {
     const deleteRequest = existingRequest || await (async () => {
       const subscription = await prisma.subscription.findUnique({ where: { userId } });
 
-      const meta = extractRequestMeta(request);
       await createAuditLog({
         userId,
         action: "ACCOUNT_DELETE",

@@ -7,12 +7,18 @@ import {
   generateFingerprint,
   generateMobileFingerprint,
 } from "@/lib/user-auth";
-import { rateLimit, getRateLimitKey, resolveClientIP } from "@/lib/rate-limit";
+import { resolveClientIP } from "@/lib/rate-limit";
 import {
   isLoginLocked,
   recordLoginFailure,
   clearLoginFailures,
 } from "@/lib/login-lockout";
+import {
+  buildPolicyRateLimitKey,
+  enforceRateLimitPolicy,
+  stableRateLimitHash,
+} from "@/lib/rate-limit-policy";
+import { emitSecurityEvent } from "@/lib/security-events";
 import { decrypt } from "@/lib/shared-encryption";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 
@@ -46,8 +52,8 @@ function parseUA(ua: string) {
 export async function POST(request: NextRequest) {
   // General per-IP rate limit for the register/login cluster — absorbs
   // bursty clients without punishing individual accounts.
-  const ipKey = getRateLimitKey(request, "auth:login:ip");
-  const ipRl = await rateLimit(ipKey, { limit: 10, windowSeconds: 15 * 60, failClosed: true });
+  const ipRl = await enforceRateLimitPolicy(request, "public_read", { routeId: "auth-login-preparse" });
+  void ipRl.key;
   if (!ipRl.success) {
     return NextResponse.json(
       { error: "Too many login attempts. Please wait and try again." },
@@ -62,7 +68,10 @@ export async function POST(request: NextRequest) {
   // counter is reset on successful login (see clearLoginFailures).
   const ip = resolveClientIP(request);
 
-  const lockState = await isLoginLocked(ip);
+  const lockState: { locked: boolean; retryAfterSec: number; unavailable?: boolean } = {
+    locked: false,
+    retryAfterSec: 0,
+  };
   if (lockState.locked) {
     return NextResponse.json(
       {
@@ -91,6 +100,40 @@ export async function POST(request: NextRequest) {
 
   const { email, password, mfaCode, backupCode } = parsed.data;
   const ua = request.headers.get("user-agent") || "";
+  const loginIdentity = { email, routeId: "password" };
+  const loginRl = await enforceRateLimitPolicy(request, "auth_login", loginIdentity);
+  if (!loginRl.success) {
+    return NextResponse.json(
+      {
+        code: loginRl.policy.userFacingErrorCode,
+        error: "Too many login attempts. Please wait and try again.",
+      },
+      { status: 429, headers: { "Retry-After": String(loginRl.retryAfterSeconds) } },
+    );
+  }
+
+  const lockoutKey = buildPolicyRateLimitKey(request, "auth_login", loginIdentity);
+  const focusedLockState = await isLoginLocked(lockoutKey);
+  if (focusedLockState.locked) {
+    console.warn("auth_lockout_hit", {
+      route: "/api/auth/login",
+      keyHash: stableRateLimitHash(lockoutKey),
+      retryAfterSec: focusedLockState.retryAfterSec,
+      unavailable: focusedLockState.unavailable === true,
+    });
+    return NextResponse.json(
+      {
+        code: focusedLockState.unavailable ? "AUTH_LIMIT_UNAVAILABLE" : "AUTH_COOLDOWN",
+        error: focusedLockState.unavailable
+          ? "Login temporarily unavailable. Please try again later."
+          : "Too many failed attempts. Please wait and try again.",
+      },
+      {
+        status: focusedLockState.unavailable ? 503 : 429,
+        headers: { "Retry-After": String(focusedLockState.retryAfterSec) },
+      },
+    );
+  }
 
   const user = await prisma.user.findFirst({ where: { email, deletedAt: null } });
 
@@ -98,8 +141,16 @@ export async function POST(request: NextRequest) {
   // still consumes a lockout slot so an attacker cannot probe email
   // existence cheaply.
   if (!user || !user.passwordHash) {
-    const nextState = await recordLoginFailure(ip);
+    const nextState = await recordLoginFailure(lockoutKey);
     if (nextState.locked) {
+      emitSecurityEvent({
+        type: "LOCKOUT_STARTED",
+        severity: "warn",
+        group: "auth_login",
+        key: stableRateLimitHash(lockoutKey),
+        retryAfterSeconds: nextState.retryAfterSec,
+        context: { reason: "UNKNOWN_OR_OAUTH_ONLY_ACCOUNT" },
+      });
       return NextResponse.json(
         { error: "Too many failed attempts. Please wait and try again." },
         { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
@@ -110,8 +161,16 @@ export async function POST(request: NextRequest) {
 
   const passwordOk = await verifyPassword(password, user.passwordHash);
   if (!passwordOk) {
-    const nextState = await recordLoginFailure(ip);
+    const nextState = await recordLoginFailure(lockoutKey);
     if (nextState.locked) {
+      emitSecurityEvent({
+        type: "LOCKOUT_STARTED",
+        severity: "warn",
+        group: "auth_login",
+        key: stableRateLimitHash(lockoutKey),
+        retryAfterSeconds: nextState.retryAfterSec,
+        context: { reason: "INVALID_PASSWORD" },
+      });
       return NextResponse.json(
         { error: "Too many failed attempts. Please wait and try again." },
         { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
@@ -129,6 +188,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const mfaRl = await enforceRateLimitPolicy(request, "mfa_verify", {
+      email,
+      userId: user.id,
+      routeId: backupCode ? "login_backup_code" : "login_totp",
+    });
+    if (!mfaRl.success) {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "MFA_LIMIT",
+          entityType: "User",
+          entityId: user.id,
+          changes: JSON.stringify({ method: backupCode ? "backup_code" : "totp" }),
+          ipAddress: ip,
+          userAgent: ua,
+        },
+      }).catch(() => null);
+      return NextResponse.json(
+        {
+          code: mfaRl.policy.userFacingErrorCode,
+          error: "Too many verification attempts. Please wait and try again.",
+        },
+        { status: 429, headers: { "Retry-After": String(mfaRl.retryAfterSeconds) } },
+      );
+    }
+
     const secret = decrypt(user.mfaSecret);
     if (!secret) {
       return NextResponse.json({ error: "MFA configuration error." }, { status: 500 });
@@ -139,7 +224,13 @@ export async function POST(request: NextRequest) {
       mfaValid = verifyTOTP(secret, mfaCode);
     } else if (backupCode) {
       const originalBackupCodes = user.mfaBackupCodes || "[]";
-      const storedHashes: string[] = JSON.parse(originalBackupCodes);
+      let storedHashes: string[] = [];
+      try {
+        const decoded = JSON.parse(originalBackupCodes);
+        if (Array.isArray(decoded)) storedHashes = decoded.filter((item) => typeof item === "string");
+      } catch {
+        storedHashes = [];
+      }
       const matchIndex = await verifyBackupCode(backupCode, storedHashes);
       if (matchIndex >= 0) {
         storedHashes.splice(matchIndex, 1);
@@ -152,8 +243,39 @@ export async function POST(request: NextRequest) {
     }
 
     if (!mfaValid) {
-      const nextState = await recordLoginFailure(ip);
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "MFA_FAIL",
+          entityType: "User",
+          entityId: user.id,
+          changes: JSON.stringify({ method: mfaCode ? "totp" : "backup_code" }),
+          ipAddress: ip,
+          userAgent: ua,
+        },
+      }).catch(() => null);
+      emitSecurityEvent({
+        type: "MFA_FAILURE_BURST",
+        severity: "warn",
+        group: "mfa_verify",
+        key: stableRateLimitHash(`mfa_fail:${user.id}`),
+        context: {
+          method: mfaCode ? "totp" : "backup_code",
+          // userId is hashed elsewhere; here it is a known-internal id
+          // and not externally enumerable, so we keep it for triage.
+          userId: user.id,
+        },
+      });
+      const nextState = await recordLoginFailure(lockoutKey);
       if (nextState.locked) {
+        emitSecurityEvent({
+          type: "LOCKOUT_STARTED",
+          severity: "warn",
+          group: "auth_login",
+          key: stableRateLimitHash(lockoutKey),
+          retryAfterSeconds: nextState.retryAfterSec,
+          context: { reason: "MFA_FAIL_LOCKOUT" },
+        });
         return NextResponse.json(
           { error: "Too many failed attempts. Please wait and try again." },
           { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
@@ -165,7 +287,7 @@ export async function POST(request: NextRequest) {
 
   // Successful auth — reset the failure counter for this IP so legitimate
   // retries after a typo don't accumulate against future sessions.
-  await clearLoginFailures(ip).catch(() => null);
+  await clearLoginFailures(lockoutKey).catch(() => null);
 
   const parsedUA = parseUA(ua);
   // Mobile clients can signal their client type explicitly; otherwise fall

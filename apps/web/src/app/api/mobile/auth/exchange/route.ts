@@ -5,7 +5,8 @@ import {
   generateMobileFingerprint,
 } from "@/lib/user-auth";
 import { consumeMobileOAuthExchangeCode } from "@/lib/mobile-oauth";
-import { getRateLimitKey, rateLimit, resolveClientIP } from "@/lib/rate-limit";
+import { resolveClientIP } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy, stableRateLimitHash } from "@/lib/rate-limit-policy";
 
 export const runtime = "nodejs";
 
@@ -24,15 +25,6 @@ const exchangeSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const rl = await rateLimit(getRateLimitKey(request, "mobile:oauth:exchange"), {
-    limit: 20,
-    windowSeconds: 60,
-    failClosed: true,
-  });
-  if (!rl.success) {
-    return NextResponse.json({ error: "Too many attempts. Please try again shortly." }, { status: 429 });
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -43,6 +35,28 @@ export async function POST(request: NextRequest) {
   const parsed = exchangeSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Validation failed", details: parsed.error.errors }, { status: 400 });
+  }
+
+  const [clientRl, codeRl] = await Promise.all([
+    enforceRateLimitPolicy(request, "mobile_oauth_exchange", {
+      routeId: "mobile_oauth_exchange",
+      clientType: "mobile",
+    }),
+    enforceRateLimitPolicy(request, "mobile_oauth_exchange", {
+      routeId: "mobile_oauth_code",
+      clientType: "mobile",
+      extra: stableRateLimitHash(parsed.data.code),
+    }),
+  ]);
+  if (!clientRl.success || !codeRl.success) {
+    const blocked = !clientRl.success ? clientRl : codeRl;
+    return NextResponse.json(
+      {
+        code: blocked.policy.userFacingErrorCode,
+        error: "Too many attempts. Please try again shortly.",
+      },
+      { status: 429, headers: { "Retry-After": String(blocked.retryAfterSeconds) } },
+    );
   }
 
   const exchanged = await consumeMobileOAuthExchangeCode(parsed.data.code, {

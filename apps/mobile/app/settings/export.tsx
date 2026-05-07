@@ -30,6 +30,7 @@ import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
+import { Input } from "@/components/ui/Input";
 import * as FileSystem from "expo-file-system/legacy";
 
 function buildExportFileName(type: string, format: string) {
@@ -46,6 +47,7 @@ export default function ExportScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [exporting, setExporting] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Export option labels resolve at render — users switching language
   // mid-session see the new titles without a reload.
@@ -63,7 +65,11 @@ export default function ExportScreen() {
   const handleExport = async (type: string, format: string) => {
     setExporting(`${type}-${format}`);
     try {
-      const res = await api.get<any>(`/api/export`, { type, format: format.toLowerCase() });
+      const res = await api.post<any>(`/api/export`, {
+        type,
+        format: format.toLowerCase(),
+        confirmPassword,
+      });
       if (res.error) {
         hapticError();
         Alert.alert(t("common.retry"), t("toast.networkError"));
@@ -123,6 +129,17 @@ export default function ExportScreen() {
           </Text>
         </View>
 
+        <Input
+          placeholder={t("auth.password")}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          isPassword
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel={t("settings.currentPasswordA11y")}
+          accessibilityHint={t("settings.currentPasswordHint")}
+        />
+
         {EXPORT_OPTIONS.map((opt) => {
           const Icon = opt.icon;
           return (
@@ -144,7 +161,7 @@ export default function ExportScreen() {
                       key={fmt}
                       style={styles.formatBtn}
                       onPress={() => handleExport(opt.type, fmt)}
-                      disabled={!!exporting}
+                      disabled={!!exporting || !confirmPassword}
                       activeOpacity={0.7}
                     >
                       {isLoading ? (
