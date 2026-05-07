@@ -1,8 +1,8 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Ring } from "./ring";
 import { useCountUp } from "./use-count-up";
 import { useReflex } from "./use-reflex";
@@ -24,8 +24,10 @@ interface AuroraStatCardProps {
   deltaDir?: "up" | "down";
   /** When set, renders a small percentage ring in the corner. */
   ring?: number;
-  /** Optional icon shown on the right. */
-  icon?: LucideIcon;
+  /** Pre-rendered icon element shown on the right. Must be a node — passing
+   *  a component _type_ (function reference) would fail to serialize across
+   *  the Server→Client RSC boundary in production. */
+  icon?: ReactNode;
   /** Optional href turns the card into a link. */
   href?: string;
 }
@@ -64,7 +66,7 @@ export function AuroraStatCard({
   delta,
   deltaDir,
   ring,
-  icon: Icon,
+  icon,
   href,
 }: AuroraStatCardProps) {
   const ref = useReflex<HTMLDivElement>();
@@ -83,12 +85,16 @@ export function AuroraStatCard({
         <span className="au-eyebrow">{label}</span>
         {ring != null ? (
           <Ring pct={ring} />
-        ) : Icon ? (
-          <Icon
-            className="h-5 w-5"
-            style={{ color: "var(--au-cool)" }}
+        ) : icon ? (
+          <span
             aria-hidden
-          />
+            style={{
+              display: "inline-flex",
+              color: "var(--au-cool)",
+            }}
+          >
+            {icon}
+          </span>
         ) : null}
       </div>
       <div

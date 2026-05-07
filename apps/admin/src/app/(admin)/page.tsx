@@ -135,15 +135,17 @@ export default async function DashboardPage() {
 
   // Cards drive the Aurora glass KPI tiles below. Numeric `value` enables
   // the count-up animation; `formatted` is reserved for currency/percent
-  // strings where formatting differs per locale.
+  // strings where formatting differs per locale. Icons are rendered here
+  // (server) and passed as ReactNode so the function reference never
+  // crosses the RSC boundary.
   const kpiCards = [
-    { label: "Total Users", value: stats.totalUsers, icon: Users, href: "/users" as const },
-    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: CreditCard, href: "/subscriptions" as const },
+    { label: "Total Users", value: stats.totalUsers, icon: <Users className="h-5 w-5" />, href: "/users" as const },
+    { label: "Active Subscriptions", value: stats.activeSubscriptions, icon: <CreditCard className="h-5 w-5" />, href: "/subscriptions" as const },
     {
       label: "MRR",
       value: stats.mrrUsd,
       formatted: fmtUsd(stats.mrrUsd),
-      icon: DollarSign,
+      icon: <DollarSign className="h-5 w-5" />,
       href: "/subscriptions" as const,
       sub: `ARPU ${fmtUsd(stats.arpuUsd)} · ${stats.paidSubCount} paid`,
     },
@@ -151,12 +153,12 @@ export default async function DashboardPage() {
       label: "Churn (30d)",
       value: stats.churnPct,
       formatted: `${stats.churnPct.toFixed(1)}%`,
-      icon: TrendingDown,
+      icon: <TrendingDown className="h-5 w-5" />,
       href: "/subscriptions" as const,
       sub: stats.churnPct > 5 ? "Above 5% target" : "Within target",
     },
-    { label: "Active Moves", value: stats.activeMovingPlans, icon: Truck, href: "/moving" as const },
-    { label: "Providers", value: stats.totalProviders, icon: Building2, href: "/providers" as const },
+    { label: "Active Moves", value: stats.activeMovingPlans, icon: <Truck className="h-5 w-5" />, href: "/moving" as const },
+    { label: "Providers", value: stats.totalProviders, icon: <Building2 className="h-5 w-5" />, href: "/providers" as const },
   ];
 
   // Plan distribution rows for the new dashboard panel. We only show the
