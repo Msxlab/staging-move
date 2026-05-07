@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
         isActive: true,
         ...(effectiveState
           ? { OR: [{ scope: "FEDERAL" }, { coverages: { some: { state: effectiveState } } }] }
-          : {}),
+          : { scope: "FEDERAL" }),
+        category: { not: "TRANSPORTATION_TRANSIT" },
       },
       include: {
         coverages: effectiveState ? { where: { state: effectiveState } } : false,

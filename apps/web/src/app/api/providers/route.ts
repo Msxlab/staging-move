@@ -8,6 +8,10 @@ import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 
 const fetchProvidersForState = unstable_cache(
   async (effectiveState: string, category: string | null, scope: string | null) => {
+    if (!effectiveState && scope === "STATE") {
+      return [];
+    }
+
     const where: Record<string, unknown> = { isActive: true };
     if (category) where.category = category;
     if (scope === "FEDERAL" || scope === "STATE") where.scope = scope;
@@ -16,6 +20,8 @@ const fetchProvidersForState = unstable_cache(
         { scope: "FEDERAL" },
         { coverages: { some: { state: effectiveState } } },
       ];
+    } else if (!scope) {
+      where.scope = "FEDERAL";
     }
     return prisma.serviceProvider.findMany({
       where,
@@ -58,33 +64,39 @@ export async function GET(request: NextRequest) {
 
     let providers: Awaited<ReturnType<typeof fetchProvidersForState>>;
     if (q) {
-      // Search across name + description + tags (tags are a JSON string column).
-      const searchConditions: Record<string, unknown>[] = [
-        { name: { contains: q } },
-        { description: { contains: q } },
-        { tags: { contains: q } },
-      ];
-      const where: Record<string, unknown> = {
-        isActive: true,
-        AND: [{ OR: searchConditions }],
-      };
-      if (category) where.category = category;
-      if (scope === "FEDERAL" || scope === "STATE") where.scope = scope;
-      if (effectiveState) {
-        (where.AND as Record<string, unknown>[]).push({
-          OR: [
-            { scope: "FEDERAL" },
-            { coverages: { some: { state: effectiveState } } },
-          ],
+      if (!effectiveState && scope === "STATE") {
+        providers = [];
+      } else {
+        // Search across name + description + tags (tags are a JSON string column).
+        const searchConditions: Record<string, unknown>[] = [
+          { name: { contains: q } },
+          { description: { contains: q } },
+          { tags: { contains: q } },
+        ];
+        const where: Record<string, unknown> = {
+          isActive: true,
+          AND: [{ OR: searchConditions }],
+        };
+        if (category) where.category = category;
+        if (scope === "FEDERAL" || scope === "STATE") where.scope = scope;
+        if (effectiveState) {
+          (where.AND as Record<string, unknown>[]).push({
+            OR: [
+              { scope: "FEDERAL" },
+              { coverages: { some: { state: effectiveState } } },
+            ],
+          });
+        } else if (!scope) {
+          where.scope = "FEDERAL";
+        }
+        providers = await prisma.serviceProvider.findMany({
+          where,
+          include: {
+            coverages: effectiveState ? { where: { state: effectiveState } } : false,
+          },
+          orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
         });
       }
-      providers = await prisma.serviceProvider.findMany({
-        where,
-        include: {
-          coverages: effectiveState ? { where: { state: effectiveState } } : false,
-        },
-        orderBy: [{ popularityScore: "desc" }, { name: "asc" }],
-      });
     } else {
       providers = await fetchProvidersForState(effectiveState || "", category, scope);
     }

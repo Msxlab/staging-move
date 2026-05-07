@@ -191,6 +191,10 @@ function isLocalOrMembership(category: string): boolean {
   );
 }
 
+function isTransitResource(category: string): boolean {
+  return category === "TRANSPORTATION_TRANSIT";
+}
+
 function isHealthcareOrProfessional(category: string): boolean {
   return (
     category.startsWith("HEALTHCARE_") ||
@@ -425,6 +429,17 @@ export function classifyMoveServiceTransition(
         ? "Confirm whether the service still applies after the move."
         : "Cancel or close the old service and look for a replacement if needed.",
       oldProviderAction: sameState ? undefined : "CANCEL_OR_CLOSE",
+    });
+  }
+
+  if (isTransitResource(category)) {
+    return buildPlan({
+      service,
+      actionType: "NO_ACTION",
+      confidence: "LOW",
+      primaryReason: "Transit route and fare resources are local references rather than moving-related service accounts.",
+      suggestedNextStep: "Review transit options manually if they are relevant after the move.",
+      caveats: ["Transit resources do not create provider start/stop or account-update tasks."],
     });
   }
 
