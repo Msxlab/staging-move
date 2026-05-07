@@ -51,12 +51,10 @@ import {
 } from "@locateflow/shared";
 
 const catColors: Record<string, string> = {
-  GOVERNMENT: "#C85A3E", UTILITY: "#f59e0b", FINANCIAL: "#10b981",
-  HOUSING: "#0ea5e9", HEALTHCARE: "#f43f5e", TRANSPORTATION: "#3b82f6",
-  // FITNESS used to be `#f97316` (legacy orange) which after the Edition VI
-  // palette flip would collide with primary rose — re-tint to honey so the
-  // FITNESS chip stays visually distinct from primary CTAs.
-  KIDS: "#a855f7", FITNESS: "#E3B04B", SHOPPING: "#ec4899", OTHER: "#6b7280",
+  // Aurora-flavored categorical palette — distinct hues, all readable on dark navy.
+  GOVERNMENT: "#F08C8E", UTILITY: "#F2C46C", FINANCIAL: "#87DDC0",
+  HOUSING: "#7FB6E8", HEALTHCARE: "#F0A0B8", TRANSPORTATION: "#5C9DDC",
+  KIDS: "#B49BFF", FITNESS: "#F2C46C", SHOPPING: "#F0A0B8", OTHER: "#6E7C92",
 };
 
 const serviceCategoryValues = new Set<string>(SERVICE_CATEGORIES.map((c) => c.value));
@@ -361,7 +359,7 @@ export default function ServicesScreen() {
 
               {checklist.overdueItems.length > 0 && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, padding: 8, borderRadius: 8, backgroundColor: "rgba(239,68,68,0.08)" }}>
-                  <AlertTriangle size={12} color="#C85A3E" />
+                  <AlertTriangle size={12} color="#F08C8E" />
                   <Text style={{ fontSize: 11, color: "#E08A6E", flex: 1 }} numberOfLines={1}>
                     {t("moving.overdueSummary", { count: checklist.overdueItems.length, title: checklist.overdueItems[0]?.title })}
                   </Text>
@@ -374,7 +372,7 @@ export default function ServicesScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 12, color: theme.colors.textSecondary }} numberOfLines={1}>{item.title}</Text>
                     {item.stateNote ? (
-                      <Text style={{ fontSize: 10, color: "#E5C9A8" }} numberOfLines={2}>{item.stateNote}</Text>
+                      <Text style={{ fontSize: 10, color: "#B49BFF" }} numberOfLines={2}>{item.stateNote}</Text>
                     ) : null}
                   </View>
                   {item.estimatedMinutes ? (
@@ -452,8 +450,8 @@ export default function ServicesScreen() {
                       <Text style={styles.cost}>${service.monthlyCost.toLocaleString()}<Text style={styles.costPer}>/mo</Text></Text>
                     ) : (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(245,158,11,0.1)", borderWidth: 1, borderColor: "rgba(245,158,11,0.25)" }}>
-                        <DollarSign size={10} color="#E5C9A8" />
-                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#E5C9A8" }}>{t("services.addCost")}</Text>
+                        <DollarSign size={10} color="#B49BFF" />
+                        <Text style={{ fontSize: 10, fontWeight: "600", color: "#B49BFF" }}>{t("services.addCost")}</Text>
                       </View>
                     )}
                   </TouchableOpacity>

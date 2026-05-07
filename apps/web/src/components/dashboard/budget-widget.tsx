@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -11,16 +11,16 @@ const CATEGORY_PREFIX_TO_KEY: Record<string, string> = {
 };
 
 const categoryColors: Record<string, string> = {
-  FINANCIAL: "bg-emerald-500",
-  UTILITY: "bg-amber-500",
-  GOVERNMENT: "bg-red-500",
-  HOUSING: "bg-sky-500",
-  HEALTHCARE: "bg-rose-500",
-  TRANSPORTATION: "bg-blue-500",
-  KIDS: "bg-purple-500",
-  FITNESS: "bg-orange-500",
-  SHOPPING: "bg-pink-500",
-  OTHER: "bg-gray-500",
+  FINANCIAL: "bg-tone-emerald-fg",
+  UTILITY: "bg-tone-honey-fg",
+  GOVERNMENT: "bg-destructive",
+  HOUSING: "bg-tone-sky-bg",
+  HEALTHCARE: "bg-destructive",
+  TRANSPORTATION: "bg-tone-sky-fg",
+  KIDS: "bg-tone-foil-fg",
+  FITNESS: "bg-tone-orange-fg",
+  SHOPPING: "bg-destructive",
+  OTHER: "bg-tone-slate-fg",
 };
 
 interface CategoryItem {
@@ -68,7 +68,7 @@ export function BudgetWidget() {
             .map(([key, amount]) => ({
               key,
               amount,
-              color: categoryColors[key] || "bg-gray-500",
+              color: categoryColors[key] || "bg-tone-slate-fg",
             }))
         );
       })

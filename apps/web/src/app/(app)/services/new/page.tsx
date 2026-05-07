@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -39,7 +39,7 @@ const CUSTOM_PROVIDER_CATEGORY_OPTIONS = [
   ...PROVIDER_CATEGORY_OPTIONS,
 ].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 interface AddressOption {
   id: string; nickname?: string; street: string; city: string; state: string; zip: string;
@@ -47,7 +47,7 @@ interface AddressOption {
   services?: { id: string }[];
 }
 
-// ─── Component ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function NewServicePage() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export default function NewServicePage() {
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
 
-  // Provider state — fetch ALL at once like wizard
+  // Provider state â€” fetch ALL at once like wizard
   const [allProviders, setAllProviders] = useState<ScoredProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [providerSearch, setProviderSearch] = useState("");
@@ -100,7 +100,7 @@ export default function NewServicePage() {
       .catch(() => {});
   }, []);
 
-  // Fetch addresses — auto-select primary or first
+  // Fetch addresses â€” auto-select primary or first
   useEffect(() => {
     fetch("/api/addresses")
       .then((r) => r.json())
@@ -150,7 +150,7 @@ export default function NewServicePage() {
 
   const addr = addresses.find((a) => a.id === selectedAddress);
 
-  // ── Filtering & grouping ──
+  // â”€â”€ Filtering & grouping â”€â”€
   const recommended = getRecommendedProviders(allProviders, 12);
 
   const filteredProviders = allProviders.filter((p: ScoredProvider) => {
@@ -371,7 +371,7 @@ export default function NewServicePage() {
     return data?.error || fallback;
   };
 
-  // ─── Render ─────────────────────────────────────────────────────────────
+  // â”€â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-32">
@@ -401,26 +401,26 @@ export default function NewServicePage() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center justify-between">
+        <div className="p-3 rounded-xl bg-destructive/10 border border-destructive text-destructive text-sm flex items-center justify-between">
           {error}
           <button onClick={() => setError(null)}><X className="h-4 w-4" /></button>
         </div>
       )}
 
-      {/* ── Address Selection ── */}
+      {/* â”€â”€ Address Selection â”€â”€ */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-orange-400" />
+            <MapPin className="h-4 w-4 text-tone-orange-fg" />
             <h2 className="font-semibold text-sm text-foreground">Select Address</h2>
           </div>
-          <Link href="/addresses/new" className="text-xs text-orange-400 hover:underline">+ Add New</Link>
+          <Link href="/addresses/new" className="text-xs text-tone-orange-fg hover:underline">+ Add New</Link>
         </div>
         {addresses.length === 0 ? (
           <div className="rounded-2xl border border-border bg-foreground/5 p-6 text-center">
             <MapPin className="h-8 w-8 text-foreground/25 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">No addresses yet.</p>
-            <Link href="/addresses/new" className="text-sm text-orange-400 hover:underline mt-1 inline-block">Add your first address</Link>
+            <Link href="/addresses/new" className="text-sm text-tone-orange-fg hover:underline mt-1 inline-block">Add your first address</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -432,12 +432,12 @@ export default function NewServicePage() {
                 <button key={a.id} type="button" onClick={() => setSelectedAddress(a.id)}
                   className={`text-left p-4 rounded-xl border transition-all group ${
                     isActive
-                      ? "border-orange-500/40 bg-orange-500/10 shadow-lg shadow-orange-500/10 ring-1 ring-orange-500/30"
-                      : "border-foreground/[0.06] bg-foreground/[0.02] hover:border-orange-500/30 hover:bg-foreground/[0.05]"
+                      ? "border-tone-orange-br bg-tone-orange-bg shadow-lg shadow-orange-500/10 ring-1 ring-primary/30"
+                      : "border-foreground/[0.06] bg-foreground/[0.02] hover:border-tone-orange-br hover:bg-foreground/[0.05]"
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-xl shrink-0 ${isActive ? "bg-orange-500" : "bg-foreground/5 border border-border"}`}>
+                    <div className={`p-2 rounded-xl shrink-0 ${isActive ? "bg-tone-orange-fg" : "bg-foreground/5 border border-border"}`}>
                       <TypeIcon className={`h-4 w-4 ${isActive ? "text-foreground" : "text-foreground/40"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -445,7 +445,7 @@ export default function NewServicePage() {
                         <p className={`font-semibold text-sm truncate ${isActive ? "text-foreground" : "text-foreground/80 group-hover:text-foreground"}`}>
                           {a.nickname || `${a.city}, ${a.state}`}
                         </p>
-                        {a.isPrimary && <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />}
+                        {a.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400 shrink-0" />}
                       </div>
                       <p className="text-xs text-foreground/40 truncate mt-0.5">{a.street}</p>
                       <div className="flex items-center gap-2 mt-1.5">
@@ -457,7 +457,7 @@ export default function NewServicePage() {
                         )}
                       </div>
                     </div>
-                    {isActive && <CheckCircle2 className="h-4 w-4 text-orange-400 shrink-0 mt-0.5" />}
+                    {isActive && <CheckCircle2 className="h-4 w-4 text-tone-orange-fg shrink-0 mt-0.5" />}
                   </div>
                 </button>
               );
@@ -466,7 +466,7 @@ export default function NewServicePage() {
         )}
       </div>
 
-      {/* ── Provider section (only when address selected) ── */}
+      {/* â”€â”€ Provider section (only when address selected) â”€â”€ */}
       {selectedAddress && (
         <div className="space-y-4">
           {/* Header with selected count */}
@@ -474,29 +474,29 @@ export default function NewServicePage() {
             <div>
               <h2 className="text-lg font-semibold text-foreground">Choose Listed Providers</h2>
               <p className="text-sm text-muted-foreground">
-                Showing unverified directory entries for <span className="text-orange-400 font-medium">{addr?.state || "all states"}</span>
+                Showing unverified directory entries for <span className="text-tone-orange-fg font-medium">{addr?.state || "all states"}</span>
               </p>
             </div>
             {selectedCount > 0 && (
-              <span className="px-3 py-1 rounded-full bg-orange-500/20 text-orange-300 text-xs font-medium">
+              <span className="px-3 py-1 rounded-full bg-tone-orange-bg text-tone-orange-fg text-xs font-medium">
                 {selectedCount} selected
               </span>
             )}
           </div>
 
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-            <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-100/75">
+          <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3">
+            <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed providers, manual tracking only</p>
+            <p className="mt-1 text-[11px] leading-relaxed text-tone-honey-fg/80 dark:text-tone-honey-fg/75">
               Listed providers are directory entries, not proof of activation at your address. Adding one creates a LocateFlow service record; it does not update your address with the provider.
             </p>
           </div>
 
           {/* Selected chips */}
           {selectedCount > 0 && (
-            <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-orange-500/5 border border-orange-500/20">
+            <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
               {Array.from(selectedProviders.values()).map((p) => (
                 <button key={p.id} onClick={() => toggleProvider(p)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition">
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition">
                   {p.name} <X className="h-3 w-3" />
                 </button>
               ))}
@@ -507,14 +507,14 @@ export default function NewServicePage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
-              className="w-full rounded-xl border border-border bg-foreground/5 pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              className="w-full rounded-xl border border-border bg-foreground/5 pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
               placeholder="Search listed providers..."
               value={providerSearch}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProviderSearch(e.target.value)}
             />
           </div>
 
-          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-4">
+          <div className="rounded-xl border border-tone-cyan-br bg-tone-cyan-bg p-4">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">Add a local/custom provider</p>
@@ -525,7 +525,7 @@ export default function NewServicePage() {
               <button
                 type="button"
                 onClick={() => setShowCustomProvider((value) => !value)}
-                className="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-200 text-xs hover:bg-cyan-500/30"
+                className="px-3 py-1.5 rounded-xl bg-tone-cyan-bg text-tone-cyan-fg text-xs hover:bg-tone-cyan-bg"
               >
                 {showCustomProvider ? "Hide" : "Add local/custom"}
               </button>
@@ -573,7 +573,7 @@ export default function NewServicePage() {
                 <div className="sm:col-span-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <p className="text-[11px] text-muted-foreground">This creates a private user-added provider and a LocateFlow service record. It does not update any external account.</p>
                   <button type="button" disabled={saving} onClick={handleAddCustomProvider}
-                    className="px-3 py-2 rounded-xl bg-cyan-500 text-white text-xs font-medium hover:bg-cyan-600 disabled:opacity-50">
+                    className="px-3 py-2 rounded-xl bg-tone-cyan-fg text-white text-xs font-medium hover:bg-tone-cyan-fg/80 disabled:opacity-50">
                     {saving ? "Adding..." : "Add custom provider"}
                   </button>
                 </div>
@@ -596,7 +596,7 @@ export default function NewServicePage() {
                 <button
                   onClick={() => setActiveCategory(null)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                    !activeCategory ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
+                    !activeCategory ? "bg-tone-orange-fg text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                   }`}
                 >All ({allProviders.length})</button>
                 {allCategories.map((cat) => {
@@ -605,7 +605,7 @@ export default function NewServicePage() {
                     <button key={cat}
                       onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                        activeCategory === cat ? "bg-violet-500 text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
+                        activeCategory === cat ? "bg-tone-foil-bg text-white" : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                       }`}
                     >{getMergedDisplayCategoryIcon(cat)} {getMergedDisplayCategoryLabel(cat)} ({count})</button>
                   );
@@ -618,7 +618,7 @@ export default function NewServicePage() {
           {!loadingProviders && !providerSearch && !activeCategory && recommended.length > 0 && (
             <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="h-4 w-4 text-amber-400" />
+                <Sparkles className="h-4 w-4 text-tone-honey-fg" />
                 <h3 className="text-sm font-semibold text-foreground">Recommended Listed Providers</h3>
                 <span className="text-[10px] text-foreground/45 ml-auto">Manual tracking</span>
               </div>
@@ -629,11 +629,11 @@ export default function NewServicePage() {
                     <button key={`rec-${provider.id}`} type="button" onClick={() => toggleProvider(provider)}
                       className={`group relative text-left p-3 rounded-xl border transition-all ${
                         isSelected
-                          ? "border-violet-500/50 bg-violet-500/10"
+                          ? "border-tone-foil-br bg-tone-foil-bg"
                           : "border-border bg-foreground/[0.02] hover:bg-foreground/5 hover:border-border"
                       }`}
                     >
-                      {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
+                      {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-tone-orange-fg" />}
                       <div className="flex items-center gap-3">
                         {provider.logoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -644,7 +644,7 @@ export default function NewServicePage() {
                           />
                         ) : (
                           <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold ${
-                            isSelected ? "bg-violet-500 text-white" : "bg-foreground/5 text-muted-foreground"
+                            isSelected ? "bg-tone-foil-bg text-white" : "bg-foreground/5 text-muted-foreground"
                           }`}>{provider.name.charAt(0)}</div>
                         )}
                         <div className="min-w-0 flex-1">
@@ -661,10 +661,10 @@ export default function NewServicePage() {
             </div>
           )}
 
-          {/* Provider categories — accordion (same as wizard) */}
+          {/* Provider categories â€” accordion (same as wizard) */}
           {loadingProviders ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
+              <Loader2 className="h-5 w-5 animate-spin text-tone-orange-fg" />
               <span className="ml-2 text-muted-foreground text-sm">Loading providers...</span>
             </div>
           ) : sortedCategories.length === 0 ? (
@@ -675,7 +675,7 @@ export default function NewServicePage() {
               <button
                 type="button"
                 onClick={() => setShowCustomProvider(true)}
-                className="mt-4 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600"
+                className="mt-4 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg"
               >
                 Add local/custom provider
               </button>
@@ -696,7 +696,7 @@ export default function NewServicePage() {
                       <span className="text-sm font-medium text-foreground/80 flex-1">{getMergedDisplayCategoryLabel(cat)}</span>
                       <span className="text-[10px] text-foreground/45">{items.length}</span>
                       {selectedInCat > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-[10px] font-medium">{selectedInCat}</span>
+                        <span className="px-1.5 py-0.5 rounded-full bg-tone-foil-bg text-tone-foil-fg text-[10px] font-medium">{selectedInCat}</span>
                       )}
                       {isOpen ? <ChevronUp className="h-3.5 w-3.5 text-foreground/40" /> : <ChevronDown className="h-3.5 w-3.5 text-foreground/40" />}
                     </button>
@@ -708,11 +708,11 @@ export default function NewServicePage() {
                             <button key={provider.id} type="button" onClick={() => toggleProvider(provider)}
                               className={`group relative text-left p-3 rounded-xl border transition-all ${
                                 isSelected
-                                  ? "border-orange-500/50 bg-orange-500/10"
+                                  ? "border-tone-orange-br bg-tone-orange-bg"
                                   : "border-border bg-foreground/[0.02] hover:bg-foreground/5"
                               }`}
                             >
-                              {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-orange-400" />}
+                              {isSelected && <CheckCircle2 className="absolute top-2.5 right-2.5 h-4 w-4 text-tone-orange-fg" />}
                               <div className="flex items-center gap-3">
                                 {provider.logoUrl ? (
                                   // eslint-disable-next-line @next/next/no-img-element
@@ -723,7 +723,7 @@ export default function NewServicePage() {
                                   />
                                 ) : (
                                   <div className={`shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold ${
-                                    isSelected ? "bg-orange-500 text-white" : "bg-foreground/5 text-muted-foreground"
+                                    isSelected ? "bg-tone-orange-fg text-white" : "bg-foreground/5 text-muted-foreground"
                                   }`}>{provider.name.charAt(0)}</div>
                                 )}
                                 <div className="min-w-0 flex-1">
@@ -736,7 +736,7 @@ export default function NewServicePage() {
                                   )}
                                   <div className="flex items-center gap-1.5 mt-1">
                                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                                      provider.scope === "FEDERAL" ? "bg-blue-500/20 text-blue-300" : "bg-emerald-500/20 text-emerald-300"
+                                      provider.scope === "FEDERAL" ? "bg-tone-sky-bg text-tone-sky-fg" : "bg-tone-emerald-bg text-tone-emerald-fg"
                                     }`}>
                                       {provider.scope === "FEDERAL" ? "Federal" : provider.states.join(", ")}
                                     </span>
@@ -762,7 +762,7 @@ export default function NewServicePage() {
         </div>
       )}
 
-      {/* ── Floating bottom bar ── */}
+      {/* â”€â”€ Floating bottom bar â”€â”€ */}
       {selectedCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-popover/95 text-popover-foreground shadow-2xl backdrop-blur-xl">
           <div className="mx-auto max-w-4xl space-y-3 p-3 sm:p-4">
@@ -778,7 +778,7 @@ export default function NewServicePage() {
               <button
                 onClick={handleSaveAll}
                 disabled={saving || !selectedAddress}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-50"
               >
                 {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : <><CheckCircle2 className="h-4 w-4" />Add as service{selectedCount > 1 ? "s" : ""}</>}
               </button>
@@ -790,21 +790,21 @@ export default function NewServicePage() {
                   {showBudget && (
                     <button type="button" onClick={(e) => { e.stopPropagation(); toggleBilling(id); }}
                       className="rounded p-1 hover:bg-foreground/5" title="Add billing details">
-                      <DollarSign className={`h-3.5 w-3.5 ${billingExpanded.has(id) ? "text-orange-400" : "text-foreground/45"}`} />
+                      <DollarSign className={`h-3.5 w-3.5 ${billingExpanded.has(id) ? "text-tone-orange-fg" : "text-foreground/45"}`} />
                     </button>
                   )}
                   <button type="button"
                     onClick={(e) => { e.stopPropagation(); setSelectedProviders((prev) => { const n = new Map(prev); n.delete(id); return n; }); }}
-                    className="rounded p-1 hover:bg-red-500/10">
-                    <Minus className="h-3.5 w-3.5 text-foreground/45 hover:text-red-400" />
+                    className="rounded p-1 hover:bg-destructive/10">
+                    <Minus className="h-3.5 w-3.5 text-foreground/45 hover:text-destructive" />
                   </button>
                   {showBudget && billingExpanded.has(id) && (
                     <div className="flex min-w-full items-center gap-1.5 border-t border-border pt-1 sm:ml-1 sm:min-w-0 sm:border-l sm:border-t-0 sm:pl-2 sm:pt-0">
-                      <input className="h-7 w-20 text-xs rounded-lg border border-border bg-foreground/5 px-2 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                      <input className="h-7 w-20 text-xs rounded-lg border border-border bg-foreground/5 px-2 text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/50"
                         type="number" step="0.01" placeholder="$/mo" value={billingData[id]?.monthlyCost || ""}
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateBilling(id, "monthlyCost", e.target.value)} />
-                      <select className="h-7 w-24 rounded-lg border border-border bg-foreground/5 px-1 text-xs text-foreground/80 focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                      <select className="h-7 w-24 rounded-lg border border-border bg-foreground/5 px-1 text-xs text-foreground/80 focus:outline-none focus:ring-1 focus:ring-primary/50"
                         value={billingData[id]?.billingCycle || "MONTHLY"}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateBilling(id, "billingCycle", e.target.value)}
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { User, Menu, Settings, LogOut, LayoutDashboard } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -58,12 +58,12 @@ export function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-1">
           <NotificationCenter />
 
-          {/* Three-state theme toggle: system → light → dark → system.
+          {/* Three-state theme toggle: system â†’ light â†’ dark â†’ system.
               Default `preference="system"` means a new visitor inherits
               their OS setting without interaction. */}
           <ThemeToggle variant="icon" />
 
-          {/* Language selector — mirrors choice into NEXT_LOCALE cookie +
+          {/* Language selector â€” mirrors choice into NEXT_LOCALE cookie +
               User.preferredLocale (via /api/user/locale). Page reloads
               after change so server components re-render in new locale. */}
           <LanguageSelector variant="icon" />
@@ -76,7 +76,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               aria-haspopup="true"
               aria-label={tNav("userMenu")}
             >
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500/30 to-cyan-500/30 border border-border flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary0/30 to-accent0/30 border border-border flex items-center justify-center">
                 {userName ? (
                   <span className="text-xs font-bold text-foreground/80">
                     {userName.split(" ").filter(Boolean).map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
@@ -127,7 +127,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </Link>
                 <div className="border-t border-border my-1" />
                 <button
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-foreground/5 transition-colors w-full text-left"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-destructive/80 hover:text-destructive hover:bg-foreground/5 transition-colors w-full text-left"
                   role="menuitem"
                   onClick={() => {
                     setUserMenuOpen(false);

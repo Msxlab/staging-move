@@ -1,7 +1,7 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 
 /**
- * Testimonial — the social proof + emotional landing.
+ * Testimonial â€” the social proof + emotional landing.
  * One large pull-quote describing the *feeling* after using the app.
  * Sits right before the pricing/CTA so the reader's last impression
  * before deciding is what someone like them said about the relief.
@@ -13,7 +13,7 @@ export async function TestimonialQuote() {
     <section className="relative overflow-hidden border-t py-24 md:py-32">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-amber-500/[0.06] blur-3xl"
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-tone-honey-fg/[0.06] blur-3xl"
       />
       <div className="container relative">
         <div className="mx-auto max-w-3xl text-center">

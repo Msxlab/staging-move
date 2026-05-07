@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -93,9 +93,9 @@ interface RecommendationsResponse {
 }
 
 const TIER_BADGE: Record<UrgencyTier, { label: string; className: string }> = {
-  CRITICAL: { label: "Critical", className: "bg-red-500/20 text-red-300 border-red-500/30" },
-  IMPORTANT: { label: "Important", className: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
-  RECOMMENDED: { label: "Recommended", className: "bg-sky-500/20 text-sky-300 border-sky-500/30" },
+  CRITICAL: { label: "Critical", className: "bg-destructive text-destructive border-destructive/30" },
+  IMPORTANT: { label: "Important", className: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br" },
+  RECOMMENDED: { label: "Recommended", className: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br" },
   OPTIONAL: { label: "Optional", className: "bg-foreground/10 text-muted-foreground border-border" },
 };
 
@@ -294,7 +294,7 @@ export function ProvidersClient({
             <select
               value={selectedAddressId ?? ""}
               onChange={(e) => onAddressChange(e.target.value)}
-              className="min-w-0 max-w-full px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-orange-500/50"
+              className="min-w-0 max-w-full px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-tone-orange-br"
               aria-label="Choose address"
             >
               <option value="">All locations</option>
@@ -311,17 +311,17 @@ export function ProvidersClient({
             maxLength={2}
             value={selectedState ?? ""}
             onChange={(e) => onStateChange(e.target.value.toUpperCase())}
-            className="w-24 px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-orange-500/50"
+            className="w-24 px-3 py-2 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground/80 focus:outline-none focus:border-tone-orange-br"
             aria-label="State code filter"
           />
         </div>
       </div>
 
-      <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3 flex gap-3">
-        <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 flex gap-3">
+        <AlertTriangle className="h-4 w-4 text-tone-honey-fg dark:text-tone-honey-fg shrink-0 mt-0.5" />
         <div>
-          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed providers, manual tracking only</p>
-          <p className="text-[11px] text-amber-900/80 dark:text-amber-100/75 mt-1 leading-relaxed">
+          <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed providers, manual tracking only</p>
+          <p className="text-[11px] text-tone-honey-fg/80 dark:text-tone-honey-fg/75 mt-1 leading-relaxed">
             Provider details are unverified directory data. Availability may vary by address; confirm with the official provider before acting. Adding this provider creates a LocateFlow service record; it does not update your address with the provider.
           </p>
         </div>
@@ -329,9 +329,9 @@ export function ProvidersClient({
 
       {/* Recommended for you */}
       {highlightProviders.length > 0 && (
-        <div className="rounded-xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-cyan-500/5 p-4 space-y-3">
+        <div className="rounded-xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-accent0/5 p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-orange-400" />
+            <Sparkles className="h-4 w-4 text-tone-orange-fg" />
             <h2 className="text-sm font-semibold text-foreground">Recommended for you</h2>
             {recsLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </div>
@@ -385,7 +385,7 @@ export function ProvidersClient({
           placeholder="Search listed providers, tags, or descriptions..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-orange-500/50"
+          className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-foreground/[0.02] text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-tone-orange-br"
         />
         {search && (
           <button
@@ -406,11 +406,11 @@ export function ProvidersClient({
             onClick={() => setCategoryFilter(null)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition ${
               categoryFilter === null
-                ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
+                ? "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"
                 : "border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            All · {providers.length}
+            All Â· {providers.length}
           </button>
           {categoryCounts.map(([cat, count]) => (
             <button
@@ -418,13 +418,13 @@ export function ProvidersClient({
               onClick={() => setCategoryFilter(cat)}
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition flex items-center gap-1.5 ${
                 categoryFilter === cat
-                  ? "border-orange-500/40 bg-orange-500/15 text-orange-300"
+                  ? "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"
                   : "border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               <span>{getMergedDisplayCategoryIcon(cat)}</span>
               <span>{getMergedDisplayCategoryLabel(cat)}</span>
-              <span className="text-muted-foreground">· {count}</span>
+              <span className="text-muted-foreground">Â· {count}</span>
             </button>
           ))}
         </div>
@@ -433,7 +433,7 @@ export function ProvidersClient({
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading providers…
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading providersâ€¦
         </div>
       ) : visibleProviders.length === 0 ? (
         <EmptyState
@@ -467,7 +467,7 @@ export function ProvidersClient({
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-sm font-semibold text-foreground truncate">{p.name}</h3>
                   {p.scope === "FEDERAL" ? (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 flex items-center gap-1">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-tone-sky-br bg-tone-sky-bg text-tone-sky-fg flex items-center gap-1">
                       <Flag className="h-2.5 w-2.5" /> National listing
                     </span>
                   ) : (
@@ -475,7 +475,7 @@ export function ProvidersClient({
                       <MapPin className="h-2.5 w-2.5" /> State-level
                     </span>
                   )}
-                  <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/20 bg-amber-500/10 text-amber-200">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg">
                     Listed provider
                   </span>
                 </div>
@@ -518,11 +518,11 @@ export function ProvidersClient({
 
       {/* State rule info (bottom, reference) */}
       {recs?.meta?.stateRule?.dmvRules && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex gap-3">
-          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-4 flex gap-3">
+          <AlertTriangle className="h-4 w-4 text-tone-honey-fg shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs font-semibold text-amber-300">Know your state deadlines</p>
-            <p className="text-[11px] text-amber-200/80 mt-1">{recs.meta.stateRule.dmvRules}</p>
+            <p className="text-xs font-semibold text-tone-honey-fg">Know your state deadlines</p>
+            <p className="text-[11px] text-tone-honey-fg/80 mt-1">{recs.meta.stateRule.dmvRules}</p>
           </div>
         </div>
       )}

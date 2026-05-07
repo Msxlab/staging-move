@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react";
+﻿import { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 interface EmptyStateProps {
@@ -11,7 +11,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon: Icon, title, description, actionLabel, actionHref, onAction }: EmptyStateProps) {
-  const btn = "px-5 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition";
+  const btn = "px-5 py-2.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition";
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center glass-card">
       <Icon className="h-16 w-16 text-foreground/40 mb-4" />

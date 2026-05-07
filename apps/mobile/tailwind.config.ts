@@ -6,14 +6,16 @@ import {
   semanticColors,
 } from "@locateflow/shared";
 
-// Edition VI · Champagne & Rose. The mobile NativeWind palette is sourced
-// from packages/shared/src/design-tokens.ts so `bg-primary-500` /
-// `bg-primary` / `bg-surface` resolve to the same hex values that
-// apps/mobile/src/lib/theme.ts and apps/web/tailwind.config.ts produce.
+// Edition VII · Aurora. The mobile NativeWind palette is sourced from
+// packages/shared/src/design-tokens.ts so `bg-primary-500` / `bg-primary`
+// / `bg-surface` resolve to the cool/violet/mint Aurora values shipped
+// system-wide.
 //
-// Legacy names are preserved on purpose: existing `bg-primary-500` call
-// sites keep rendering, the values just flip to rose. New code should
-// prefer the semantic aliases (`bg-rose`, `bg-foil`, `bg-sage`).
+// Legacy names (rose, foil, sage, primary, surface) are preserved on
+// purpose: existing `bg-primary-500` / `bg-rose` / `bg-foil` call sites
+// keep rendering, the values just flip to Aurora. New code should
+// prefer the semantic aliases (`bg-rose`/cool, `bg-foil`/violet,
+// `bg-sage`/mint).
 export default {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -23,11 +25,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary scale — `bg-primary-500` etc. now resolve to rose values.
+        // Primary scale — `bg-primary-500` etc. resolve to Aurora cool values.
         primary: {
-          DEFAULT: brandColors.orange,        // #D4846A
-          light: brandColors.orangeLight,     // #EDB99D
-          dark: brandColors.orangeDark,       // #A85A42
+          DEFAULT: brandColors.orange,        // Aurora cool #7FB6E8
+          light: brandColors.orangeLight,     // cool-light #A5C9F0
+          dark: brandColors.orangeDark,       // cool-2 #5C9DDC
           50: orangeScale[50],
           100: orangeScale[100],
           200: orangeScale[200],
@@ -39,37 +41,38 @@ export default {
           800: orangeScale[800],
           900: orangeScale[900],
         },
-        // Canonical Champagne & Rose names.
+        // Aurora-named aliases (kept under legacy "rose"/"foil"/"sage" keys
+        // so existing call sites flip palette without source changes).
         rose: {
-          DEFAULT: brandColors.rose,          // #D4846A
-          light: brandColors.roseLight,       // #EDB99D
-          deep: brandColors.roseDeep,         // #A85A42
-          dark: brandColors.roseDark,         // #6A2E1C
+          DEFAULT: brandColors.rose,          // Aurora cool #7FB6E8
+          light: brandColors.roseLight,       // cool-light #A5C9F0
+          deep: brandColors.roseDeep,         // cool-2 #5C9DDC
+          dark: brandColors.roseDark,         // cool-deep #3D7AB8
         },
         foil: {
-          DEFAULT: brandColors.foil,          // #E5C9A8
-          highlight: brandColors.foilHighlight, // #F4E4D0
-          shadow: brandColors.foilShadow,     // #B8936C
-          ink: brandColors.foilInk,           // #8E6D4A
+          DEFAULT: brandColors.foil,          // Aurora violet #B49BFF
+          highlight: brandColors.foilHighlight, // cool ink-1 #DDE7F5
+          shadow: brandColors.foilShadow,     // cool-2 #5C9DDC
+          ink: brandColors.foilInk,           // cool deep #1F5FA0
         },
         sage: {
-          DEFAULT: brandColors.sage,          // #5EAD9A
-          soft: brandColors.sageSoft,         // #8FC9B7
+          DEFAULT: brandColors.sage,          // Aurora mint #87DDC0
+          soft: brandColors.sageSoft,         // mint-soft #B0E8D2
         },
         surface: {
-          DEFAULT: surfaceDark.background,    // #0E0A07 (was #0a0a0f)
-          elevated: surfaceDark.surface,      // #13100B
-          card: surfaceDark.card,             // #181410
-          hover: surfaceDark.cardHover,       // #1F1A14
+          DEFAULT: surfaceDark.background,    // au-base #0A0F18
+          elevated: surfaceDark.surface,      // au-base-2 #0E1521
+          card: surfaceDark.card,             // au-base-3 #131C2C
+          hover: surfaceDark.cardHover,       // #1A2438
         },
         // `accent` historically meant "amber/yellow callout" — flipped to
-        // foil champagne so highlight pills match web.
-        accent: brandColors.foil,             // #E5C9A8
+        // Aurora violet so highlight pills match web.
+        accent: brandColors.foil,             // Aurora violet #B49BFF
         // Semantic shorthands.
-        success: semanticColors.success,      // #5EAD9A
-        warning: semanticColors.warning,      // #E3B04B
-        danger: semanticColors.danger,        // #C85A3E
-        info: semanticColors.info,            // #8AA9C0
+        success: semanticColors.success,      // Aurora mint #87DDC0
+        warning: semanticColors.warning,      // Aurora amber #F2C46C
+        danger: semanticColors.danger,        // Aurora coral #F08C8E
+        info: semanticColors.info,            // Aurora cool #7FB6E8
       },
       fontFamily: {
         // Fraunces (display) + Geist (sans/mono) — loaded via expo-font in

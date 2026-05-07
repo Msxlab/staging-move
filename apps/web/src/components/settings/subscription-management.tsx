@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -102,10 +102,10 @@ function stateTitle(state: string, subscription?: SubscriptionRecord | null) {
 
 function statusBadge(state: string) {
   if (["FREE_ACCESS", "TRIALING", "ACTIVE", "GRACE_PERIOD"].includes(state)) {
-    return "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400";
+    return "border border-tone-emerald-br bg-tone-emerald-bg text-tone-emerald-fg";
   }
   if (["FREE_ACCESS_EXPIRED", "PAST_DUE", "PENDING_CHECKOUT"].includes(state)) {
-    return "border border-amber-500/20 bg-amber-500/10 text-amber-300";
+    return "border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg";
   }
   return "border border-border bg-foreground/5 text-muted-foreground";
 }
@@ -182,7 +182,7 @@ export default function SubscriptionManagementPage() {
 
   // Stripe Checkout returns the user here while the `customer.subscription.*`
   // webhook is still in flight. Poll a short window so the page resolves to
-  // TRIALING/ACTIVE before we celebrate — otherwise the reveal modal would
+  // TRIALING/ACTIVE before we celebrate â€” otherwise the reveal modal would
   // flash the success animation while the underlying state is still pending.
   useEffect(() => {
     if (!successFlag) return;
@@ -257,22 +257,22 @@ export default function SubscriptionManagementPage() {
   });
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
   // Store-managed subscriptions (Apple / Google) cannot be cancelled or
-  // modified through Stripe Customer Portal — store policy requires the
-  // user to manage them in iOS Settings → Subscriptions or Play Store →
+  // modified through Stripe Customer Portal â€” store policy requires the
+  // user to manage them in iOS Settings â†’ Subscriptions or Play Store â†’
   // Subscriptions. Tell the user where to go so they don't search for a
   // missing button.
   const storeManageHint =
     currentProvider === "APP_STORE"
-      ? "Manage or cancel this subscription in iOS Settings → Apple ID → Subscriptions."
+      ? "Manage or cancel this subscription in iOS Settings â†’ Apple ID â†’ Subscriptions."
       : currentProvider === "PLAY_STORE"
-        ? "Manage or cancel this subscription in the Google Play Store app → Payments & subscriptions."
+        ? "Manage or cancel this subscription in the Google Play Store app â†’ Payments & subscriptions."
         : null;
   // Trialing, active, and pending-checkout users have either already started
-  // the annual plan or are mid-checkout — re-offering the trial CTA in those
+  // the annual plan or are mid-checkout â€” re-offering the trial CTA in those
   // states confused users into thinking the trial hadn't begun. Also hide
   // it while we're polling for Stripe activation so a Free Access user
   // returning from Checkout doesn't see "Start annual trial" stacked under
-  // the "Activating…" banner.
+  // the "Activatingâ€¦" banner.
   const showAnnualTrialOffer =
     !waitingForActivation &&
     ["FREE_ACCESS", "FREE_ACCESS_EXPIRED", "CANCELED"].includes(currentState) &&
@@ -414,14 +414,14 @@ export default function SubscriptionManagementPage() {
       </div>
 
       {error ? (
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">{error}</div>
+        <div className="rounded-2xl border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
       ) : null}
 
       {waitingForActivation ? (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-amber-200">
-          <p className="text-base font-medium">Activating your annual trial…</p>
-          <p className="mt-1 text-sm text-amber-100/80">
-            Stripe just confirmed your checkout. We are syncing your subscription — this usually takes a few seconds.
+        <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5 text-tone-honey-fg">
+          <p className="text-base font-medium">Activating your annual trialâ€¦</p>
+          <p className="mt-1 text-sm text-tone-honey-fg/80">
+            Stripe just confirmed your checkout. We are syncing your subscription â€” this usually takes a few seconds.
           </p>
         </div>
       ) : null}
@@ -430,11 +430,11 @@ export default function SubscriptionManagementPage() {
         <div className="rounded-2xl border border-border bg-foreground/5 p-10 text-center text-muted-foreground">Loading subscription...</div>
       ) : (
         <>
-          <div className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-5 backdrop-blur-xl">
+          <div className="rounded-2xl border border-tone-orange-br bg-tone-orange-bg p-5 backdrop-blur-xl">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-3">
-                <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 p-2.5">
-                  <Crown className="h-5 w-5 text-orange-400" />
+                <div className="rounded-xl border border-tone-orange-br bg-tone-orange-bg p-2.5">
+                  <Crown className="h-5 w-5 text-tone-orange-fg" />
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -481,7 +481,7 @@ export default function SubscriptionManagementPage() {
                     type="button"
                     onClick={() => void subscriptionAction("resume_renewal")}
                     disabled={Boolean(processing)}
-                    className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-60"
+                    className="rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-60"
                   >
                     {processing === "resume_renewal" ? "Updating..." : "Resume renewal"}
                   </button>
@@ -506,8 +506,8 @@ export default function SubscriptionManagementPage() {
           {showAnnualTrialOffer ? (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5">
-                <Sparkles className="h-5 w-5 text-emerald-300" />
+              <div className="rounded-xl border border-tone-emerald-br bg-tone-emerald-bg p-2.5">
+                <Sparkles className="h-5 w-5 text-tone-emerald-fg" />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-foreground">{offerHeadline}</h2>
@@ -517,8 +517,8 @@ export default function SubscriptionManagementPage() {
 
             <div className={publicCampaign && monthlyOffer ? "grid gap-4 md:grid-cols-2" : "space-y-4"}>
               {publicCampaign ? (
-                <div className="rounded-2xl border border-orange-500/30 bg-orange-500/5 p-6">
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-orange-300">
+                <div className="rounded-2xl border border-tone-orange-br bg-tone-orange-bg p-6">
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-tone-orange-fg">
                     Annual trial
                   </div>
                   <h3 className="text-lg font-bold text-foreground">{publicCampaign.publicHeadline}</h3>
@@ -545,7 +545,7 @@ export default function SubscriptionManagementPage() {
 
                   <div className="mt-4 rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
                     <div className="flex items-start gap-2">
-                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-tone-emerald-fg" />
                       <span>{publicCampaign.checkoutDisclosureCopy || checkoutDisclosure}</span>
                     </div>
                   </div>
@@ -564,7 +564,7 @@ export default function SubscriptionManagementPage() {
                     type="button"
                     onClick={() => void startAnnualTrial()}
                     disabled={processing === "CHECKOUT" || !acceptedAnnualTerms}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-3 text-sm font-semibold text-white transition hover:bg-tone-orange-bg disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Check className="h-4 w-4" />
                     {offerCtaLabel}
@@ -589,7 +589,7 @@ export default function SubscriptionManagementPage() {
 
                   <div className="mt-4 rounded-xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">
                     <div className="flex items-start gap-2">
-                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                      <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-tone-emerald-fg" />
                       <span>{monthlyDisclosure || `Today: ${monthlyOffer.displayPriceLabel}. Renews monthly until you cancel.`}</span>
                     </div>
                   </div>

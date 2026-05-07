@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,8 +44,8 @@ export function Sidebar({
   const isCollapsed = isMobile ? false : collapsed;
 
   // Keys map to `nav.*` in messages/en.json and messages/es.json. Do
-  // NOT hardcode user-visible strings here — every label must be a
-  // translation key so adding a third locale (pt, fr…) is a messages
+  // NOT hardcode user-visible strings here â€” every label must be a
+  // translation key so adding a third locale (pt, frâ€¦) is a messages
   // change, not a sidebar change.
   const navigation = [
     { key: "dashboard", href: "/dashboard", icon: Home },
@@ -112,14 +112,14 @@ export function Sidebar({
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
                 isActive
-                  ? "bg-orange-500/15 text-orange-300"
+                  ? "bg-tone-orange-bg text-tone-orange-fg"
                   : "text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5"
               )}
               title={isCollapsed ? label : undefined}
               aria-current={isActive ? "page" : undefined}
               onClick={onNavigate}
             >
-              <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-orange-400")} />
+              <item.icon className={cn("h-[18px] w-[18px] shrink-0", isActive && "text-tone-orange-fg")} />
               {!isCollapsed && <span>{label}</span>}
             </Link>
           );
@@ -138,7 +138,7 @@ export function Sidebar({
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all",
                 isActive
-                  ? "bg-orange-500/15 text-orange-300"
+                  ? "bg-tone-orange-bg text-tone-orange-fg"
                   : "text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5"
               )}
               title={isCollapsed ? label : undefined}

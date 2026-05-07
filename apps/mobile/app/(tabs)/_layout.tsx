@@ -1,7 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { Platform, StyleSheet, View } from "react-native";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   LayoutDashboard,
@@ -13,24 +12,15 @@ import {
 import { useTranslation } from "react-i18next";
 import { theme } from "@/lib/theme";
 
-function GlassTabBarBackground() {
+function TabBarBackground() {
   return (
     <View style={StyleSheet.absoluteFill}>
-      <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
-      <View
-        style={[
-          StyleSheet.absoluteFill,
-          // Warm umber #0E0A07 at 65% — matches `--bg` on web.
-          { backgroundColor: "rgba(14, 10, 7, 0.65)" },
-        ]}
-      />
-      {/* Top glow line — rose, matches the brand pin glow. */}
+      <View style={styles.tabBarFill} />
       <LinearGradient
-        colors={["rgba(212,132,106,0.18)", "rgba(212,132,106,0.04)", "transparent"]}
+        colors={["rgba(212,132,106,0.28)", "rgba(212,132,106,0.07)", "transparent"]}
         style={styles.topGlow}
       />
-      {/* Glass top border — warm cream alpha. */}
-      <View style={styles.glassBorder} />
+      <View style={styles.tabBarBorder} />
     </View>
   );
 }
@@ -42,7 +32,7 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: styles.tabBar,
-        tabBarBackground: () => <GlassTabBarBackground />,
+        tabBarBackground: () => <TabBarBackground />,
         tabBarActiveTintColor: theme.colors.primary,
         // Inactive cream-on-warm to match Edition VI text alphas.
         tabBarInactiveTintColor: theme.colors.textTertiary,
@@ -101,13 +91,20 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: "absolute",
-    backgroundColor: "transparent",
+    backgroundColor: theme.colors.card,
     borderTopWidth: 0,
-    height: Platform.OS === "ios" ? 88 : 64,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === "ios" ? 28 : 8,
-    elevation: 0,
+    height: Platform.OS === "ios" ? 86 : 68,
+    paddingTop: 7,
+    paddingBottom: Platform.OS === "ios" ? 26 : 9,
+    elevation: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: -8 },
+  },
+  tabBarFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#0E1521",
   },
   topGlow: {
     position: "absolute",
@@ -116,13 +113,13 @@ const styles = StyleSheet.create({
     right: 0,
     height: 4,
   },
-  glassBorder: {
+  tabBarBorder: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(245, 241, 234, 0.08)",
+    backgroundColor: "rgba(245, 241, 234, 0.14)",
   },
   tabLabel: {
     fontSize: 11,

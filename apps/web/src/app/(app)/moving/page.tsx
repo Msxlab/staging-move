@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { Plus, Truck, Calendar, ArrowRight } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { prisma } from "@/lib/db";
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MovingPage() {
   const userId = await requireDbUserId();
-  // Server-side translations — the status badge labels re-compute per
+  // Server-side translations â€” the status badge labels re-compute per
   // request so Spanish users see "Planificando" instead of "Planning".
   const t = await getTranslations("moving");
   const tEmpty = await getTranslations("empty");
@@ -18,9 +18,9 @@ export default async function MovingPage() {
 
   const statusBadge: Record<string, { label: string; cls: string }> = {
     PLANNING: { label: t("status_planning"), cls: "bg-foreground/5 text-muted-foreground border-border" },
-    IN_PROGRESS: { label: t("status_inProgress"), cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
-    COMPLETED: { label: t("status_complete"), cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-    CANCELED: { label: t("status_canceled"), cls: "bg-red-500/10 text-red-400 border-red-500/20" },
+    IN_PROGRESS: { label: t("status_inProgress"), cls: "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br" },
+    COMPLETED: { label: t("status_complete"), cls: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br" },
+    CANCELED: { label: t("status_canceled"), cls: "bg-destructive/10 text-destructive border-destructive" },
   };
 
   const plans = await prisma.movingPlan.findMany({
@@ -40,7 +40,7 @@ export default async function MovingPage() {
           <p className="text-muted-foreground mt-1">{t("subtitle")}</p>
         </div>
         <Link href="/moving/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
             <Plus className="h-4 w-4" /> {t("newPlanTitle")}
           </button>
         </Link>
@@ -83,7 +83,7 @@ export default async function MovingPage() {
                     </span>
                   </div>
                   {normalizedStatus === "IN_PROGRESS" && daysUntil > 0 && (
-                    <p className="text-xs text-orange-400 font-medium">{t("daysUntilMove", { days: daysUntil })}</p>
+                    <p className="text-xs text-tone-orange-fg font-medium">{t("daysUntilMove", { days: daysUntil })}</p>
                   )}
                 </div>
               </Link>

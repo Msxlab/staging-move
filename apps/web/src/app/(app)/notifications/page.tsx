@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { Bell, Loader2, CheckCheck } from "lucide-react";
@@ -116,15 +116,15 @@ export default function NotificationsPage() {
           {notifications.map((notif) => {
             const inner = (
               <div
-                className={`flex items-start gap-4 px-5 py-4 hover:bg-foreground/[0.03] transition cursor-pointer ${!notif.read ? "bg-orange-500/[0.03]" : ""}`}
+                className={`flex items-start gap-4 px-5 py-4 hover:bg-foreground/[0.03] transition cursor-pointer ${!notif.read ? "bg-tone-orange-fg/[0.03]" : ""}`}
               >
-                <div className={`h-2 w-2 rounded-full mt-2 shrink-0 ${notif.read ? "bg-transparent" : "bg-orange-500"}`} />
+                <div className={`h-2 w-2 rounded-full mt-2 shrink-0 ${notif.read ? "bg-transparent" : "bg-tone-orange-fg"}`} />
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium ${notif.read ? "text-muted-foreground" : "text-foreground"}`}>{notif.title}</p>
                   {notif.body && <p className="text-xs text-foreground/40 mt-0.5">{notif.body}</p>}
                   <p className="text-[10px] text-foreground/30 mt-1.5">
                     {new Date(notif.createdAt).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })}
-                    {" · "}
+                    {" Â· "}
                     {new Date(notif.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
 
       <div className="text-center">
         <Link href="/settings/notifications" className="text-xs text-foreground/35 hover:text-muted-foreground transition">
-          {tNav("notificationSettings")} →
+          {tNav("notificationSettings")} â†’
         </Link>
       </div>
     </div>

@@ -1,8 +1,8 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { Check } from "lucide-react";
 
 /**
- * Moving-moment checklist mock — the relief reveal.
+ * Moving-moment checklist mock â€” the relief reveal.
  * After the chip storm + hard stats have made the chaos feel real,
  * this section is the first taste of what calm looks like.
  *
@@ -24,8 +24,8 @@ export async function MovingMomentMock() {
 
   const badge: Record<typeof items[number]["action"], string> = {
     transfer: "border-primary/30 bg-primary/10 text-primary",
-    cancel: "border-rose-400/30 bg-rose-500/10 text-rose-300",
-    update: "border-sky-400/30 bg-sky-500/10 text-sky-300",
+    cancel: "border-destructive bg-destructive/10 text-destructive",
+    update: "border-tone-sky-br bg-tone-sky-bg text-tone-sky-fg",
   };
 
   const labelKey: Record<typeof items[number]["action"], string> = {
@@ -67,7 +67,7 @@ export async function MovingMomentMock() {
         <div className="rounded-3xl border bg-card p-7 shadow-xl">
           <div className="flex items-baseline justify-between">
             <p className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-              432 OAK ST → 88 PINE LN · JUN 15
+              432 OAK ST â†’ 88 PINE LN Â· JUN 15
             </p>
           </div>
           <p className="mt-2 text-2xl font-bold tracking-tight">
@@ -75,7 +75,7 @@ export async function MovingMomentMock() {
           </p>
           <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-primary to-amber-400"
+              className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
               style={{ width: "55%" }}
             />
           </div>
@@ -86,14 +86,14 @@ export async function MovingMomentMock() {
                 key={item.name}
                 className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
                   item.done
-                    ? "border-emerald-500/25 bg-emerald-500/5"
+                    ? "border-tone-emerald-br bg-tone-emerald-bg"
                     : "border-border bg-muted/40"
                 }`}
               >
                 <div
                   className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
                     item.done
-                      ? "border-emerald-500 bg-emerald-500 text-white"
+                      ? "border-tone-emerald-br bg-tone-emerald-fg text-white"
                       : "border-foreground/30"
                   }`}
                 >

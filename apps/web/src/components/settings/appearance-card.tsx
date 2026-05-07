@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,7 +40,7 @@ export function AppearanceCard() {
                 onClick={() => setTheme(value)}
                 className={`flex flex-col items-center gap-2 py-3 px-2 rounded-xl border transition ${
                   selected
-                    ? "border-orange-500/60 bg-orange-500/10 text-foreground"
+                    ? "border-tone-orange-br bg-tone-orange-bg text-foreground"
                     : "border-border bg-foreground/[0.03] text-muted-foreground hover:text-foreground hover:bg-foreground/5"
                 }`}
               >

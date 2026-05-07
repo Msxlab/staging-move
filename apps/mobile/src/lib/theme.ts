@@ -31,23 +31,22 @@ import {
 // ──────────────────────────────────────────────────────────────────────
 
 const darkColors = {
-  primary: brandColors.orange,            // rose #D4846A
-  primaryLight: brandColors.orangeLight,  // rose-light #EDB99D
-  primaryDark: brandColors.orangeDark,    // rose-deep #A85A42
-  // Faded primary — matches `tonesDark.rose.bg` (12% rose) instead of the
-  // legacy 15% orange. Keeps key faded surfaces (active-plan chip, hero
-  // ring) on the new palette.
-  primaryFaded: "rgba(212, 132, 106, 0.12)",
-  accent: brandColors.amber,              // foil champagne #E5C9A8
+  primary: brandColors.orange,            // Aurora cool #7FB6E8
+  primaryLight: brandColors.orangeLight,  // cool-light #A5C9F0
+  primaryDark: brandColors.orangeDark,    // cool-2 #5C9DDC
+  // Faded primary — Aurora cool at 12%. Keeps key faded surfaces
+  // (active-plan chip, hero ring) on the cool palette.
+  primaryFaded: "rgba(127, 182, 232, 0.12)",
+  accent: brandColors.amber,              // Aurora violet #B49BFF
 
-  success: semanticColors.success,        // sage #5EAD9A
-  successFaded: "rgba(94, 173, 154, 0.12)",
-  warning: semanticColors.warning,        // honey #E3B04B
-  warningFaded: "rgba(227, 176, 75, 0.14)",
-  error: semanticColors.danger,           // warm-red #C85A3E
-  errorFaded: "rgba(200, 90, 62, 0.14)",
-  info: semanticColors.info,              // dusted slate #8AA9C0
-  infoFaded: "rgba(138, 169, 192, 0.12)",
+  success: semanticColors.success,        // Aurora mint #87DDC0
+  successFaded: "rgba(135, 221, 192, 0.12)",
+  warning: semanticColors.warning,        // Aurora amber #F2C46C
+  warningFaded: "rgba(242, 196, 108, 0.14)",
+  error: semanticColors.danger,           // Aurora coral #F08C8E
+  errorFaded: "rgba(240, 140, 142, 0.14)",
+  info: semanticColors.info,              // Aurora cool #7FB6E8
+  infoFaded: "rgba(127, 182, 232, 0.12)",
 
   background: surfaceDark.background,
   surface: surfaceDark.surface,
@@ -59,19 +58,15 @@ const darkColors = {
   borderLight: borderDark.strong,
   borderFocus: borderDark.focus,
 
-  // Glass uses warm cream alpha (matches `glassDark` from shared tokens).
-  // The previous `rgba(255,255,255,…)` made sticky chrome read as cool
-  // white-on-near-black — Edition VI surfaces are warm umber, so the
-  // overlay tint must also be warm cream.
+  // Glass — Aurora pane alphas. Matches `glassDark` from shared tokens,
+  // which is now cool white-on-navy for the Aurora system.
   glass: {
-    bg: "rgba(245, 241, 234, 0.04)",
-    border: "rgba(245, 241, 234, 0.08)",
-    highlight: "rgba(245, 241, 234, 0.07)",
+    bg: "rgba(255, 255, 255, 0.03)",
+    border: "rgba(255, 255, 255, 0.05)",
+    highlight: "rgba(255, 255, 255, 0.08)",
   },
 
-  // Foreground — warm cream `#F5F1EA` on warm umber surfaces (Edition VI).
-  // The pure-white override was kept for pixel parity with the legacy
-  // dark theme; it now reads cooler than every other surface.
+  // Foreground — Aurora cool ink `#ECF1F8` on navy surfaces (Edition VII).
   text: textDark.primary,
   textSecondary: textDark.secondary,
   textTertiary: textDark.tertiary,
@@ -91,11 +86,11 @@ const darkColors = {
   },
 } as const;
 
-// Light palette — Edition VI ivory paper, warm-deep-umber text.
+// Light palette — Aurora cool paper (Edition VII), Aurora ink-1 text.
 const lightColors = {
   ...darkColors,
 
-  primaryFaded: "rgba(184, 90, 66, 0.10)",
+  primaryFaded: "rgba(45, 123, 196, 0.10)",
 
   background: surfaceLight.background,
   surface: surfaceLight.surface,
@@ -108,9 +103,9 @@ const lightColors = {
   borderFocus: borderLight.focus,
 
   glass: {
-    bg: "rgba(42, 31, 24, 0.04)",
-    border: "rgba(42, 31, 24, 0.08)",
-    highlight: "rgba(42, 31, 24, 0.04)",
+    bg: "rgba(255, 255, 255, 0.55)",
+    border: "rgba(20, 32, 47, 0.06)",
+    highlight: "rgba(20, 32, 47, 0.04)",
   },
 
   text: textLight.primary,

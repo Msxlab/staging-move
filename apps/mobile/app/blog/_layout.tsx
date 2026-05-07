@@ -10,7 +10,7 @@ export default function BlogLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
-        headerStyle: { backgroundColor: "#0E0A07" },
+        headerStyle: { backgroundColor: "#0A0F18" },
         headerTintColor: "#fff",
       }}
     >

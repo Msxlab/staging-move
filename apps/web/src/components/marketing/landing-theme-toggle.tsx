@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react";
@@ -60,19 +60,19 @@ export function LandingThemeToggle({
             aria-label={label}
             title={label}
             onClick={() => setTheme(value)}
-            className="relative inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
+            className="relative inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           >
             {selected && mounted && (
               <motion.span
                 layoutId={layoutId}
                 aria-hidden="true"
-                className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500/20 to-amber-500/10 ring-1 ring-orange-500/40 shadow-[0_0_18px_-4px_rgba(212,132,106,0.5)]"
+                className="absolute inset-0 rounded-full bg-gradient-to-br from-primary0/20 to-accent0/10 ring-1 ring-primary/40 shadow-[0_0_18px_-4px_rgba(212,132,106,0.5)]"
                 transition={{ type: "spring", stiffness: 380, damping: 32 }}
               />
             )}
             <Icon
               className={`relative z-10 h-3.5 w-3.5 transition-colors ${
-                selected ? "text-orange-500 dark:text-orange-300" : ""
+                selected ? "text-tone-orange-fg dark:text-tone-orange-fg" : ""
               }`}
             />
           </button>

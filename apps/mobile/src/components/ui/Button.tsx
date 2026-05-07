@@ -151,8 +151,8 @@ const styles = StyleSheet.create({
   danger: {
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    // Warm-red border to match `semanticColors.danger` (#C85A3E).
-    borderColor: "rgba(200, 90, 62, 0.30)",
+    // Aurora coral border to match `semanticColors.danger` (#F08C8E).
+    borderColor: "rgba(240, 140, 142, 0.30)",
   },
   outline: {
     backgroundColor: "transparent",

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+﻿import { cn } from "@/lib/utils";
 import { type LucideIcon } from "lucide-react";
 
 interface StatsCardProps {
@@ -34,7 +34,7 @@ export function StatsCard({
             <p
               className={cn(
                 "text-xs font-medium",
-                trend.isPositive ? "text-emerald-400" : "text-red-400"
+                trend.isPositive ? "text-tone-emerald-fg" : "text-destructive"
               )}
             >
               {trend.isPositive ? "+" : "-"}
@@ -42,8 +42,8 @@ export function StatsCard({
             </p>
           )}
         </div>
-        <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
-          <Icon className="h-5 w-5 text-orange-400" />
+        <div className="p-2.5 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
+          <Icon className="h-5 w-5 text-tone-orange-fg" />
         </div>
       </div>
     </div>

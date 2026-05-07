@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import Link from "next/link";
@@ -143,7 +143,7 @@ export function ProviderDetailClient({
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <span className="text-xs text-muted-foreground">{categoryLabel}</span>
               {provider.scope === "FEDERAL" ? (
-                <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 bg-blue-500/10 text-blue-300 flex items-center gap-1">
+                <span className="text-[10px] px-1.5 py-0.5 rounded border border-tone-sky-br bg-tone-sky-bg text-tone-sky-fg flex items-center gap-1">
                   <Flag className="h-2.5 w-2.5" /> Federal
                 </span>
               ) : (
@@ -160,9 +160,9 @@ export function ProviderDetailClient({
           </div>
         </div>
 
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">Listed provider, manual tracking only</p>
-          <p className="mt-1 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-100/75">
+        <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3">
+          <p className="text-xs font-semibold text-tone-honey-fg dark:text-tone-honey-fg">Listed provider, manual tracking only</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-tone-honey-fg/80 dark:text-tone-honey-fg/75">
             This is unverified directory data, not an official partnership or integration. Confirm details with the official provider before acting.
           </p>
         </div>
@@ -174,7 +174,7 @@ export function ProviderDetailClient({
         <div className="flex flex-col sm:flex-row gap-2">
           <Link
             href={addCta}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:from-orange-600 hover:to-orange-700 transition"
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-primary0 to-accent text-white text-sm font-semibold hover:from-primary hover:to-accent transition"
           >
             Track manually as my service <ArrowRight className="h-4 w-4" />
           </Link>
@@ -200,7 +200,7 @@ export function ProviderDetailClient({
       </div>
 
       <div className="rounded-2xl border border-border bg-foreground/[0.03] p-4 flex gap-3">
-        <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0 mt-0.5" />
+        <AlertTriangle className="h-4 w-4 text-tone-honey-fg shrink-0 mt-0.5" />
         <div>
           <p className="text-xs font-semibold text-foreground">
             {coverageConfidence?.label || "Unverified coverage"}
@@ -220,8 +220,8 @@ export function ProviderDetailClient({
       {/* Community signal */}
       {(provider.userCount ?? 0) > 0 && (
         <div className="rounded-2xl border border-border bg-foreground/[0.03] p-4 flex items-center gap-3">
-          <div className="h-10 w-10 shrink-0 rounded-xl bg-cyan-500/15 border border-cyan-500/20 flex items-center justify-center">
-            <Users className="h-5 w-5 text-cyan-300" />
+          <div className="h-10 w-10 shrink-0 rounded-xl bg-tone-cyan-bg border border-tone-cyan-br flex items-center justify-center">
+            <Users className="h-5 w-5 text-tone-cyan-fg" />
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">
@@ -237,13 +237,13 @@ export function ProviderDetailClient({
 
       {/* State rule card */}
       {showStateRule && stateRuleText && (
-        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex gap-3">
-          <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+        <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-4 flex gap-3">
+          <AlertTriangle className="h-4 w-4 text-tone-honey-fg shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs font-semibold text-amber-300">
+            <p className="text-xs font-semibold text-tone-honey-fg">
               {stateRule!.stateName} deadline reminder
             </p>
-            <p className="text-[13px] text-amber-200/90 mt-1 leading-relaxed">{stateRuleText}</p>
+            <p className="text-[13px] text-tone-honey-fg/90 mt-1 leading-relaxed">{stateRuleText}</p>
           </div>
         </div>
       )}
@@ -303,7 +303,7 @@ export function ProviderDetailClient({
           {provider.tags.length > 0 && (
             <div>
               <p className="text-muted-foreground">Tags</p>
-              <p className="text-foreground/80 mt-0.5">{provider.tags.join(" · ")}</p>
+              <p className="text-foreground/80 mt-0.5">{provider.tags.join(" Â· ")}</p>
             </div>
           )}
           {provider.subCategory && (

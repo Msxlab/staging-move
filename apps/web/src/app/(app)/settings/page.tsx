@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { User, Bell, CreditCard, Download, Shield, DollarSign, Loader2, Lock } from "lucide-react";
@@ -29,8 +29,8 @@ function SectionList({ items }: { items: typeof accountSections }) {
       {items.map((section) => (
         <Link key={section.title} href={section.href}>
           <div className="flex items-center gap-4 p-3.5 rounded-xl hover:bg-foreground/[0.05] transition-all cursor-pointer">
-            <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <section.icon className="h-5 w-5 text-orange-400" />
+            <div className="p-2.5 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
+              <section.icon className="h-5 w-5 text-tone-orange-fg" />
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
@@ -174,9 +174,9 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-red-500/20 bg-foreground/5 backdrop-blur-xl overflow-hidden">
+      <div className="rounded-2xl border border-destructive bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="px-5 pt-5 pb-3">
-          <h3 className="text-sm font-semibold text-red-400">Danger Zone</h3>
+          <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
         </div>
         <div className="px-5 pb-5 space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -187,14 +187,14 @@ export default function SettingsPage() {
             {deleteStep === "idle" && (
               <button
                 onClick={() => setDeleteStep("confirm")}
-                className="self-start rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-400 transition hover:bg-red-500/20 sm:self-auto"
+                className="self-start rounded-xl border border-destructive bg-destructive/10 px-3 py-1.5 text-sm font-medium text-destructive transition hover:bg-destructive sm:self-auto"
               >
                 Delete Account
               </button>
             )}
           </div>
           {deleteStep !== "idle" && hasPasswordLogin === false && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 space-y-3">
               <p className="text-sm text-muted-foreground">
                 This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
               </p>
@@ -202,7 +202,7 @@ export default function SettingsPage() {
                 <button
                   onClick={requestSetPasswordEmail}
                   disabled={passwordSetupBusy}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-50"
                 >
                   {passwordSetupBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
                   Email Setup Link
@@ -217,14 +217,14 @@ export default function SettingsPage() {
             </div>
           )}
           {deleteStep !== "idle" && hasPasswordLogin !== false && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 space-y-3">
+            <div className="rounded-xl border border-destructive bg-destructive/5 p-4 space-y-3">
               <p className="text-sm text-muted-foreground">
-                This action is <span className="font-semibold text-red-400">irreversible</span>. All your addresses, services, documents, moving plans, and account data will be permanently deleted.
+                This action is <span className="font-semibold text-destructive">irreversible</span>. All your addresses, services, documents, moving plans, and account data will be permanently deleted.
               </p>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Type DELETE to confirm</label>
                 <input
-                  className="w-full rounded-xl border border-red-500/20 bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                  className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/30"
                   placeholder="DELETE"
                   value={confirmText}
                   onChange={(e) => setConfirmText(e.target.value)}
@@ -234,7 +234,7 @@ export default function SettingsPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Confirm your password</label>
                 <PasswordInput
-                  className="w-full rounded-xl border border-red-500/20 bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/30"
+                  className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/30"
                   autoComplete="current-password"
                   placeholder="Password"
                   value={confirmPassword}
@@ -246,7 +246,7 @@ export default function SettingsPage() {
                 <button
                   onClick={handleDeleteAccount}
                   disabled={confirmText !== "DELETE" || !confirmPassword || deleteStep === "deleting"}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:bg-destructive/80 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deleteStep === "deleting" ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : "Permanently Delete My Account"}
                 </button>

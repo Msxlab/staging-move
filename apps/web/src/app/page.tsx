@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { getUserSession } from "@/lib/user-auth";
@@ -88,7 +88,7 @@ export default async function LandingPage() {
     getPublicSubscriptionOffersViewModel(),
   ]);
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
-  // Server-side translation — getTranslations resolves the locale from
+  // Server-side translation â€” getTranslations resolves the locale from
   // the request config and returns a synchronous `t()`. The landing is
   // a server component so we never ship translations to the client.
   const t = await getTranslations("landing");
@@ -129,7 +129,7 @@ export default async function LandingPage() {
       <JsonLd id="ld-home-software" data={structuredData} />
       <MarketingHeader userId={userId} />
 
-      {/* Hero — text left, phone mock right (md+). The phone is the wound *and*
+      {/* Hero â€” text left, phone mock right (md+). The phone is the wound *and*
           the relief in one frame: real spend, real savings, two real attention items. */}
       <section className="relative overflow-hidden">
         <div
@@ -138,7 +138,7 @@ export default async function LandingPage() {
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-amber-500/10 blur-3xl"
+          className="pointer-events-none absolute -bottom-60 -left-40 h-[500px] w-[500px] rounded-full bg-tone-honey-bg blur-3xl"
         />
         <div className="container relative grid items-center gap-14 py-16 md:grid-cols-[1.15fr_1fr] md:py-24">
           <div className="space-y-7">
@@ -188,7 +188,7 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        {/* Scope strip — what the product actually does, in three quiet lines */}
+        {/* Scope strip â€” what the product actually does, in three quiet lines */}
         <div className="container">
           <div className="mx-auto mb-16 mt-2 max-w-4xl">
             <div className="grid grid-cols-1 gap-4 rounded-2xl border bg-card/40 px-6 py-5 text-center sm:grid-cols-3">
@@ -215,17 +215,17 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Recognition — the chip storm. Visceral expansion of the wound. */}
+      {/* Recognition â€” the chip storm. Visceral expansion of the wound. */}
       <RecognitionChipStorm />
 
-      {/* Hard stats — credibility, sourced. */}
+      {/* Hard stats â€” credibility, sourced. */}
       <HardStats />
 
-      {/* Risk grid — what goes to your old address (existing) */}
+      {/* Risk grid â€” what goes to your old address (existing) */}
       <section className="container py-20 border-t">
         <div className="text-center mb-14 max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/5 px-3 py-1 text-xs text-amber-600 dark:text-amber-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-tone-honey-br bg-tone-honey-bg px-3 py-1 text-xs text-tone-honey-fg dark:text-tone-honey-fg">
+            <span className="h-1.5 w-1.5 rounded-full bg-tone-honey-fg" />
             {t("risk_eyebrow")}
           </div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">{t("risk_title")}</h2>
@@ -241,9 +241,9 @@ export default async function LandingPage() {
           ].map((item) => (
             <div
               key={item.titleKey}
-              className="rounded-xl border bg-card p-5 space-y-3 hover:border-amber-500/40 hover:shadow-md transition-all"
+              className="rounded-xl border bg-card p-5 space-y-3 hover:border-tone-honey-br hover:shadow-md transition-all"
             >
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-tone-honey-bg text-tone-honey-fg dark:text-tone-honey-fg">
                 <item.icon className="h-5 w-5" />
               </div>
               <h3 className="text-sm font-semibold">{t(item.titleKey as any)}</h3>
@@ -253,10 +253,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Moving moment — first taste of relief. Checklist mock + pitch. */}
+      {/* Moving moment â€” first taste of relief. Checklist mock + pitch. */}
       <MovingMomentMock />
 
-      {/* Features Grid — the full product reveal */}
+      {/* Features Grid â€” the full product reveal */}
       <section id="features" className="container py-20 border-t">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">{t("section_features_title")}</h2>
@@ -311,10 +311,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Bilingual showcase — the wedge */}
+      {/* Bilingual showcase â€” the wedge */}
       <BilingualShowcase />
 
-      {/* Testimonial — emotional landing right before pricing */}
+      {/* Testimonial â€” emotional landing right before pricing */}
       <TestimonialQuote />
 
       <PricingSection
@@ -324,7 +324,7 @@ export default async function LandingPage() {
         offers={publicCampaign}
       />
 
-      {/* Latest blog posts — server component, ISR-cached. Renders
+      {/* Latest blog posts â€” server component, ISR-cached. Renders
           nothing if the blog hasn't published anything yet. */}
       <LatestBlogPosts />
 
@@ -375,7 +375,7 @@ export default async function LandingPage() {
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-tone-honey-fg animate-pulse" />
               {t("mobile_eyebrow")}
             </div>
             <h2 className="text-3xl font-bold tracking-tight">{t("mobile_title")}</h2>
@@ -408,7 +408,7 @@ export default async function LandingPage() {
           <Shield className="h-12 w-12 mx-auto opacity-80" />
           <h2 className="text-3xl font-bold">{t("section_trust_title")}</h2>
           <p className="text-lg opacity-80 max-w-xl mx-auto">
-            {t("trust_retention")} · {t("noCreditCard")}
+            {t("trust_retention")} Â· {t("noCreditCard")}
           </p>
           <Link href={primaryHref}>
             <Button size="lg" variant="secondary" className="text-base px-8">
