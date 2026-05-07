@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -272,12 +272,12 @@ const styles = StyleSheet.create({
   saveBtnText: { fontSize: 16, fontWeight: "700", color: "#fff" },
   gateCard: {
     flexDirection: "row", gap: 12, padding: 14, borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: "rgba(212, 132, 106,0.3)",
+    borderWidth: 1, borderColor: "rgba(127, 182, 232,0.3)",
     backgroundColor: theme.colors.primaryFaded, marginBottom: 16,
   },
   gateIcon: {
     width: 36, height: 36, borderRadius: 12,
-    backgroundColor: "rgba(212, 132, 106,0.15)",
+    backgroundColor: "rgba(127, 182, 232,0.15)",
     alignItems: "center", justifyContent: "center",
   },
   gateTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.text },

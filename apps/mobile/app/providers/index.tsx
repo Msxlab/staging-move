@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+﻿import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.warningFaded,
     borderWidth: 1,
-    borderColor: "rgba(245,158,11,0.25)",
+    borderColor: "rgba(242, 196, 108,0.25)",
   },
   truthText: {
     flex: 1,

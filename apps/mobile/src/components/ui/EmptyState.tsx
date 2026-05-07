@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { theme } from "@/lib/theme";
 import { Button } from "./Button";
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106, 0.2)",
+    borderColor: "rgba(127, 182, 232, 0.2)",
   },
   title: {
     fontSize: 20,

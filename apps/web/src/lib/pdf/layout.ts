@@ -14,10 +14,10 @@ import type PDFDocumentType from "pdfkit";
  */
 
 export const PDF_THEME = {
-  /** Brand orange — used for the wordmark accent and primary highlights. */
-  accent: "#D4846A",
+  /** Aurora cool — used for the wordmark accent and primary highlights. */
+  accent: "#2D7BC4",
   /** Soft brand background tint for cards. */
-  accentSoft: "#F8F1ED",
+  accentSoft: "#EAF1F9",
   /** Default text color (matches `slate-800`). */
   text: "#1E293B",
   /** Secondary text (matches `slate-500`). */

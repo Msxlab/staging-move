@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+﻿import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -209,7 +209,7 @@ export default function DashboardScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
             <Text style={styles.title}>{t("tabs.dashboard")}</Text>
             {isPremium && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(245,158,11,0.12)", borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(242, 196, 108,0.12)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.3)" }}>
                 <Text style={{ fontSize: 10, color: "#B49BFF" }}>{"✦"}</Text>
                 <Text style={{ fontSize: 10, fontWeight: "700", color: "#B49BFF", letterSpacing: 0.3 }}>{t("dashboard.premiumBadge")}</Text>
               </View>

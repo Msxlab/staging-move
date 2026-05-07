@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "700", color: theme.colors.text },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   warningCard: { flexDirection: "row", gap: 12, padding: 16, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: "rgba(239,68,68,0.2)", backgroundColor: theme.colors.errorFaded, marginBottom: 24 },
-  passwordRequiredCard: { gap: 10, padding: 16, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: "rgba(245,158,11,0.25)", backgroundColor: theme.colors.warningFaded, marginBottom: 20 },
+  passwordRequiredCard: { gap: 10, padding: 16, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)", backgroundColor: theme.colors.warningFaded, marginBottom: 20 },
   secondaryBtn: { alignItems: "center", justifyContent: "center", borderRadius: theme.radius.lg, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 12, backgroundColor: theme.colors.card },
   secondaryBtnText: { fontSize: 14, fontWeight: "700", color: theme.colors.primary },
   warningIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(239,68,68,0.12)" },

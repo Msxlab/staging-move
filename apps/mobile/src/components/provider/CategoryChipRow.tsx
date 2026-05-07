@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 import { LayoutGrid } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: theme.colors.primaryFaded,
-    borderColor: "rgba(212, 132, 106,0.4)",
+    borderColor: "rgba(127, 182, 232,0.4)",
   },
   chipText: {
     fontSize: 13,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   countPillSelected: {
-    backgroundColor: "rgba(212, 132, 106,0.25)",
+    backgroundColor: "rgba(127, 182, 232,0.25)",
   },
   countText: {
     fontSize: 11,

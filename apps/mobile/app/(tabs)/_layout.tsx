@@ -17,7 +17,7 @@ function TabBarBackground() {
     <View style={StyleSheet.absoluteFill}>
       <View style={styles.tabBarFill} />
       <LinearGradient
-        colors={["rgba(212,132,106,0.28)", "rgba(212,132,106,0.07)", "transparent"]}
+        colors={["rgba(127,182,232,0.28)", "rgba(127,182,232,0.07)", "transparent"]}
         style={styles.topGlow}
       />
       <View style={styles.tabBarBorder} />
