@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { redactBackupSecretText } from "@/lib/backup-metadata";
 
 // Default retention: 30 days for completed backups, 7 days for failed
 const RETENTION_DAYS_COMPLETED = 30;
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    console.error("Backup retention failed:", error);
+    console.error(`Backup retention failed: ${redactBackupSecretText(error)}`);
     return NextResponse.json({ error: "Retention cleanup failed" }, { status: 500 });
   }
 }

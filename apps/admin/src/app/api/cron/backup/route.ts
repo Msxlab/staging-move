@@ -18,6 +18,15 @@ import {
   requireBackupCrypto,
   requireOffsiteStored,
 } from "@/lib/backup-policy";
+import {
+  BackupRunLockError,
+  acquireBackupRunLock,
+  markBackupRunFailed,
+} from "@/lib/backup-lock";
+import {
+  getBackupRuntimeMetadata,
+  redactBackupSecretText,
+} from "@/lib/backup-metadata";
 
 const STALE_BACKUP_ALERT_MS = 24 * 60 * 60 * 1000;
 
@@ -26,7 +35,9 @@ async function dispatchBackupAlert(type: string, details: string) {
 }
 
 // POST /api/cron/backup — automated daily backup via cron
-// Protected by CRON_SECRET. Call from Vercel Cron or external scheduler.
+// Protected by CRON_SECRET. In production compose this is wired by
+// docker/ofelia.ini's "admin-backup" job against the admin container;
+// apps/web/vercel.json does not schedule this admin-only endpoint.
 export async function POST(request: NextRequest) {
   let backupId: string | null = null;
   if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
@@ -50,8 +61,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create backup record
-    const backup = await prisma.backupRecord.create({
+    // Create the BackupRecord as the shared manual/cron lock. A second
+    // backup run loses this DB-backed race and exits before reading data.
+    const backup = await acquireBackupRunLock({
+      prismaClient: prisma as any,
       data: {
         type: "FULL",
         status: "IN_PROGRESS",
@@ -81,7 +94,9 @@ export async function POST(request: NextRequest) {
         totalRecords += result.fetched;
         if (result.truncated) truncatedTables.push(tableName);
       } catch (err) {
-        console.error(`[CRON-BACKUP] Failed to fetch ${tableName}:`, err);
+        console.error(
+          `[CRON-BACKUP] Failed to fetch ${tableName}: ${redactBackupSecretText(err)}`,
+        );
         backupData[tableName] = [];
         tableCounts[tableName] = 0;
         failedTables.push(tableName);
@@ -108,6 +123,7 @@ export async function POST(request: NextRequest) {
     }
     const effectiveType =
       truncatedTables.length > 0 || failedTables.length > 0 ? "PARTIAL" : "FULL";
+    const runtimeMetadata = getBackupRuntimeMetadata();
 
     const createdAt = new Date();
     const createdAtIso = createdAt.toISOString();
@@ -119,9 +135,13 @@ export async function POST(request: NextRequest) {
         requestedType: "FULL",
         format: "JSON",
         tables: selectedTables,
+        tableCount: selectedTables.length,
         totalRecords,
         truncatedTables,
         failedTables,
+        maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
+        environment: runtimeMetadata.environment,
+        compatibility: runtimeMetadata.compatibility,
       },
       data: backupData,
     }, null, 2);
@@ -144,10 +164,14 @@ export async function POST(request: NextRequest) {
         type: effectiveType,
         format: "JSON",
         tables: selectedTables,
+        tableCount: selectedTables.length,
         totalRecords,
         tableCounts,
         truncatedTables,
         failedTables,
+        maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
+        environment: runtimeMetadata.environment,
+        compatibility: runtimeMetadata.compatibility,
       },
       rawContent: jsonContent,
       signature,
@@ -172,10 +196,13 @@ export async function POST(request: NextRequest) {
         signature: Boolean(signature),
         totalRecords,
         tableCounts,
+        tableCount: selectedTables.length,
         archiveSizeWarning: sizeEvaluation.warning,
         truncatedTables: truncatedTables.length > 0 ? truncatedTables : undefined,
         failedTables: failedTables.length > 0 ? failedTables : undefined,
         maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
+        environment: runtimeMetadata.environment,
+        compatibility: runtimeMetadata.compatibility,
       },
     });
 
@@ -217,22 +244,33 @@ export async function POST(request: NextRequest) {
         archivePolicy,
         archiveSizeWarning: sizeEvaluation.warning,
         tables: Object.keys(backupData).length,
+        failedTables,
+        truncatedTables,
       },
       retention: { cleaned: cleaned.count },
     });
   } catch (error) {
     if (backupId) {
-      await prisma.backupRecord.update({
-        where: { id: backupId },
-        data: {
-          status: "FAILED",
-          errorMessage: serializeBackupRecordMetadata({ error: error instanceof Error ? error.message : "Backup failed" }),
-        },
-      }).catch(() => null);
+      await markBackupRunFailed({
+        prismaClient: prisma as any,
+        backupId,
+        error,
+      });
     }
+    if (error instanceof BackupRunLockError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: "BACKUP_ALREADY_RUNNING",
+          activeBackupId: error.activeBackupId,
+        },
+        { status: 409 },
+      );
+    }
+    const safeError = redactBackupSecretText(error);
     await dispatchBackupAlert(
       "BACKUP_FAILED",
-      error instanceof Error ? error.message.slice(0, 500) : "Scheduled backup failed.",
+      safeError.slice(0, 500) || "Scheduled backup failed.",
     );
     if (error instanceof BackupPolicyError) {
       return NextResponse.json(
@@ -240,7 +278,7 @@ export async function POST(request: NextRequest) {
         { status: error.status },
       );
     }
-    console.error("[CRON-BACKUP] Backup failed:", error);
+    console.error(`[CRON-BACKUP] Backup failed: ${safeError}`);
     return NextResponse.json({ error: "Backup failed" }, { status: 500 });
   }
 }

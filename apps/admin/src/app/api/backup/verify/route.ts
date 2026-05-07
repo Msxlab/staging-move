@@ -4,6 +4,7 @@ import { parseBackupArchive } from "@/lib/backup-archive";
 import { BACKUP_TABLES } from "@/lib/backup-tables";
 import { requirePermission } from "@/lib/auth";
 import { decryptBackup, verifyBackupSignature } from "@/lib/shared-encryption";
+import { redactBackupSecretText } from "@/lib/backup-metadata";
 
 const ALLOWED_TABLES = new Set(Object.keys(BACKUP_TABLES));
 
@@ -255,7 +256,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    console.error("Backup verify failed:", error);
+    console.error(`Backup verify failed: ${redactBackupSecretText(error)}`);
     return NextResponse.json({ error: "Backup verification failed" }, { status: 500 });
   }
 }

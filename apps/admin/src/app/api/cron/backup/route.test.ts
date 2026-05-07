@@ -4,8 +4,10 @@ const mocks = vi.hoisted(() => ({
   dispatchAlert: vi.fn(),
   verifyInternalAuth: vi.fn(),
   backupRecordFindFirst: vi.fn(),
+  backupRecordFindMany: vi.fn(),
   backupRecordCreate: vi.fn(),
   backupRecordUpdate: vi.fn(),
+  backupRecordUpdateMany: vi.fn(),
   backupRecordDeleteMany: vi.fn(),
   requireBackupCrypto: vi.fn(),
   encryptBackup: vi.fn(),
@@ -17,8 +19,10 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     backupRecord: {
       findFirst: mocks.backupRecordFindFirst,
+      findMany: mocks.backupRecordFindMany,
       create: mocks.backupRecordCreate,
       update: mocks.backupRecordUpdate,
+      updateMany: mocks.backupRecordUpdateMany,
       deleteMany: mocks.backupRecordDeleteMany,
     },
     user: { findMany: vi.fn().mockResolvedValue([]) },
@@ -106,6 +110,10 @@ describe("cron backup safety policy", () => {
     mocks.backupRecordCreate.mockResolvedValue({
       id: "backup_cron_1",
     });
+    mocks.backupRecordFindMany.mockResolvedValue([
+      { id: "backup_cron_1", createdAt: new Date("2026-04-24T00:00:00.000Z") },
+    ]);
+    mocks.backupRecordUpdateMany.mockResolvedValue({ count: 0 });
     mocks.backupRecordUpdate.mockResolvedValue({});
     mocks.backupRecordDeleteMany.mockResolvedValue({ count: 0 });
     mocks.encryptBackup.mockReturnValue("encrypted");
