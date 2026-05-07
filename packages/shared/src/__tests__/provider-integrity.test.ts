@@ -3,8 +3,6 @@ import {
   getProviderCoverageConfidence,
   getProviderQualityWarnings,
   getProviderTrustSummary,
-  isProviderResourceOnly,
-  providerRequiresAddressCheck,
   sanitizeProviderSeedRecords,
 } from "../provider-integrity";
 
@@ -99,16 +97,6 @@ describe("provider trust helpers", () => {
         coverageModel: "live_address",
       }).label,
     ).toBe("Address check required");
-
-    expect(
-      getProviderCoverageConfidence({
-        name: "City Water",
-        category: "UTILITY_WATER",
-        scope: "STATE",
-        tags: ["address-check-required"],
-        coverageMatchLevel: "prefix",
-      }).label,
-    ).toBe("Address check required");
   });
 
   it("flags common data quality warnings without claiming verification", () => {
@@ -131,23 +119,6 @@ describe("provider trust helpers", () => {
         "duplicate_domain",
         "broad_state_coverage",
       ]),
-    );
-  });
-
-  it("identifies controlled resource-only and address-check records", () => {
-    const record = {
-      name: "State Broadband Map",
-      category: "UTILITY_INTERNET",
-      subCategory: "RESOURCE",
-      tags: ["resource-only", "address-check-required"],
-      coverageModel: "zip_prefix",
-      scope: "STATE",
-    };
-
-    expect(isProviderResourceOnly(record)).toBe(true);
-    expect(providerRequiresAddressCheck(record)).toBe(true);
-    expect(getProviderQualityWarnings(record).map((warning) => warning.code)).toEqual(
-      expect.arrayContaining(["resource_only", "address_check_required"]),
     );
   });
 });

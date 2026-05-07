@@ -40,10 +40,6 @@ const STEPS = [
   { icon: Truck, label: "Moving" },
 ];
 
-function isResourceOnlyProvider(provider: ScoredProvider): boolean {
-  return Boolean(provider.resourceOnly || provider.tags?.includes("resource-only"));
-}
-
 // --- Glass card wrapper ---
 function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
@@ -290,7 +286,7 @@ export default function OnboardingPage() {
       if (address.zip) params.set("zip", address.zip);
       const res = await fetch(`/api/providers/recommendations?${params.toString()}`);
       const data = await res.json();
-      setProviders((data.allProviders || []).filter((p: ScoredProvider) => !isResourceOnlyProvider(p)));
+      setProviders(data.allProviders || []);
     } catch {
       setProviders([]);
     } finally {
@@ -303,10 +299,6 @@ export default function OnboardingPage() {
   }, [step, fetchProviders]);
 
   const toggleProvider = (provider: ScoredProvider) => {
-    if (isResourceOnlyProvider(provider)) {
-      setError("This is a verification resource, not a provider to add as a biller.");
-      return;
-    }
     setSelectedProviders((prev) => {
       const next = new Map(prev);
       if (next.has(provider.id)) {

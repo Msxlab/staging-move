@@ -69,10 +69,6 @@ const MANUAL_CATEGORIES = Object.entries(CATEGORY_META)
   .map(([value, meta]) => ({ value, label: meta.label, icon: meta.icon, order: meta.order }))
   .sort((a, b) => a.order - b.order);
 
-function isResourceOnlyProvider(provider: ScoredProvider): boolean {
-  return Boolean(provider.resourceOnly || provider.tags?.includes("resource-only"));
-}
-
 interface AddressOption {
   id: string;
   nickname?: string;
@@ -161,7 +157,7 @@ export default function NewServiceScreen() {
       const params: Record<string, string> = {};
       params.addressId = addr.id;
       const res = await api.get<any>("/api/providers/recommendations", params);
-      setAllProviders((res.data?.allProviders || []).filter((p: ScoredProvider) => !isResourceOnlyProvider(p)));
+      setAllProviders(res.data?.allProviders || []);
       setLoadingProviders(false);
     })();
   }, [selectedAddress, addresses]);
@@ -171,7 +167,6 @@ export default function NewServiceScreen() {
     if (!prefillProviderId || allProviders.length === 0) return;
     const match = allProviders.find((p) => p.id === prefillProviderId);
     if (match && !selectedProviders.has(match.id)) {
-      if (isResourceOnlyProvider(match)) return;
       setSelectedProviders((prev) => {
         const next = new Map(prev);
         next.set(match.id, match);
@@ -199,10 +194,6 @@ export default function NewServiceScreen() {
   );
 
   const toggleProvider = useCallback((provider: ScoredProvider) => {
-    if (isResourceOnlyProvider(provider)) {
-      Alert.alert(t("providers.providerUnavailable"), "This is a verification resource, not a provider to add as a biller.");
-      return;
-    }
     hapticLight();
     setSelectedProviders((prev) => {
       const next = new Map(prev);
@@ -210,7 +201,7 @@ export default function NewServiceScreen() {
       else next.set(provider.id, provider);
       return next;
     });
-  }, [t]);
+  }, []);
 
   const toggleCat = (cat: string) => {
     setExpandedCats((prev) => {

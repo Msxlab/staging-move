@@ -168,33 +168,6 @@ describe("classifyMoveServiceTransition", () => {
     expect(plan.actionType).toBe("FIND_REPLACEMENT");
   });
 
-  it("does not treat resource-only utility rows as billers to start", () => {
-    const plan = classifyMoveServiceTransition({
-      service: {
-        category: "UTILITY_WATER",
-        providerName: "Old Water",
-      },
-      originAddress: { state: "NJ" },
-      destinationAddress: { state: "AL", zip: "35203" },
-      destinationProviderCandidates: [
-        {
-          id: "al-water-directory",
-          name: "Alabama Water Utility Directory",
-          category: "UTILITY_WATER",
-          subCategory: "RESOURCE",
-          tags: ["resource-only", "address-check-required"],
-          coverageConfidence: "ADDRESS_CHECK_REQUIRED",
-          resourceOnly: true,
-        },
-      ],
-    });
-
-    expect(plan.actionType).toBe("FIND_REPLACEMENT");
-    expect(plan.destinationProviderAction).not.toBe("START_SERVICE");
-    expect(plan.destinationProviderCandidates[0]?.resourceOnly).toBe(true);
-    expect(plan.caveats.join(" ")).toContain("Resource-only listings");
-  });
-
   it("keeps national providers from overriding stronger local utility candidates", () => {
     const plan = classifyMoveServiceTransition({
       service: {

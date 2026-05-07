@@ -1,10 +1,10 @@
 # State Provider Seed Diff
 
-Generated: 2026-05-06T21:56:24.649Z
+Generated: 2026-04-24T17:08:05.691Z
 
-- newly added: 46
+- newly added: 47
 - already present: 0
-- backlog: 6
+- backlog: 5
 
 ## Newly Added
 
@@ -16,6 +16,7 @@ Generated: 2026-05-06T21:56:24.649Z
 - RTD Denver | TRANSPORTATION_TRANSIT | zip_prefix | https://www.rtd-denver.com/system-map
 - United Illuminating | UTILITY_ELECTRIC | zip_prefix | https://www.uinet.com/ourcompany/whoweare/servicearea
 - DART First State | TRANSPORTATION_TRANSIT | state | https://dartfirststate.com/map/
+- DC Streetcar | TRANSPORTATION_TRANSIT | zip_prefix | https://dcstreetcar.com
 - Tampa Electric | UTILITY_ELECTRIC | zip_prefix | https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/
 - Atlanta Gas Light | UTILITY_GAS | state | https://www.atlantagaslight.com
 - Skyline | TRANSPORTATION_TRANSIT | zip_prefix | https://www.honolulu.gov/skyline
@@ -59,7 +60,6 @@ Generated: 2026-05-06T21:56:24.649Z
 
 - Alaska Communications | UTILITY_INTERNET | live_address | https://www.alaskacommunications.com/Residential
 - Connecticut Natural Gas | UTILITY_GAS | zip_prefix | https://portal.ct.gov/pura/gas/gas
-- DC Streetcar | TRANSPORTATION_TRANSIT | zip_prefix | https://dcstreetcar.com
 - Ohio Turnpike E-ZPass | TRANSPORTATION_TOLL | polygon | https://www.ezpassoh.com
 - Oncor Electric Delivery | UTILITY_ELECTRIC | polygon | https://www.oncor.com
 - Express Pass | TRANSPORTATION_TOLL | polygon | https://www.expresspass.utah.gov

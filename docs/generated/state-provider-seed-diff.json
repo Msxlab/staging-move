@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-06T21:56:24.649Z",
+  "generatedAt": "2026-04-24T17:08:05.691Z",
   "additions": [
     {
       "providerName": "MAX Transit",
@@ -351,6 +351,49 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://dartfirststate.com/map/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "DC Streetcar",
+      "states": [
+        "DC"
+      ],
+      "category": "TRANSPORTATION_TRANSIT",
+      "officialUrl": "https://dcstreetcar.com",
+      "coverageModel": "zip_prefix",
+      "note": "DC Streetcar adds a district-specific transit option beyond WMATA.",
+      "seedRecord": {
+        "name": "DC Streetcar",
+        "slug": "dc-streetcar",
+        "category": "TRANSPORTATION_TRANSIT",
+        "description": "District streetcar transit service on the H Street/Benning corridor",
+        "website": "https://dcstreetcar.com",
+        "states": [
+          "DC"
+        ],
+        "zipCodes": [
+          "200"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "transit",
+          "streetcar",
+          "dc"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "DC Streetcar",
+        "slug": "dc-streetcar"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://dcstreetcar.com",
         "title": null,
         "error": null
       },
@@ -2104,26 +2147,6 @@
         "status": "ok",
         "httpStatus": 200,
         "finalUrl": "https://portal.ct.gov/pura/gas/gas",
-        "title": null,
-        "error": null
-      },
-      "status": "catalog_backlog"
-    },
-    {
-      "providerName": "DC Streetcar",
-      "states": [
-        "DC"
-      ],
-      "category": "TRANSPORTATION_TRANSIT",
-      "officialUrl": "https://dcstreetcar.com",
-      "coverageModel": "zip_prefix",
-      "note": "Controlled import marks DC Streetcar as retired after service ended March 31, 2026; retained catalog-only for governance history.",
-      "rawSeedMatch": null,
-      "mergedSeedMatch": null,
-      "validation": {
-        "status": "ok",
-        "httpStatus": 200,
-        "finalUrl": "https://dcstreetcar.com",
         "title": null,
         "error": null
       },

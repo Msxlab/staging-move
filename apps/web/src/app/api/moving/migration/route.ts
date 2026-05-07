@@ -4,8 +4,6 @@ import { requireDbUserId } from "@/lib/auth";
 import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
 import {
   classifyMoveServiceTransition,
-  isProviderResourceOnly,
-  providerRequiresAddressCheck,
   safeJsonArray,
   type MoveTransitionProviderInput,
 } from "@locateflow/shared";
@@ -70,8 +68,6 @@ export async function GET(request: NextRequest) {
             scope: true,
             states: true,
             category: true,
-            subCategory: true,
-            tags: true,
           },
         },
       },
@@ -94,8 +90,6 @@ export async function GET(request: NextRequest) {
             scope: s.provider.scope,
             states: safeParseJSON(s.provider.states, []),
             category: s.provider.category,
-            subCategory: s.provider.subCategory,
-            tags: safeParseJSON(s.provider.tags, []),
           }
         : null,
     }));
@@ -116,24 +110,19 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  const destinationProviderInputs: MoveTransitionProviderInput[] = destinationProviders.map((p: any) => {
-    const metadata = getProviderCoverageMetadata(p.slug);
-    const zipCodes = safeJsonArray(p.zipCodes);
-    const tags = safeJsonArray(p.tags);
-    const coverageModel: ProviderCoverageModel =
-      metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
-    const requiresAddressCheck = providerRequiresAddressCheck({ ...p, tags, coverageModel });
-    const resourceOnly = isProviderResourceOnly({ ...p, tags });
-    const coverageConfidence = getProviderCoverageConfidenceFromDb(
-      {
-        id: p.id,
-        slug: p.slug,
-        scope: p.scope,
-        tags,
-        requiresAddressCheck,
-        coverageModel,
-        coverages: p.coverages || [],
-      },
+    const destinationProviderInputs: MoveTransitionProviderInput[] = destinationProviders.map((p: any) => {
+      const metadata = getProviderCoverageMetadata(p.slug);
+      const zipCodes = safeJsonArray(p.zipCodes);
+      const coverageModel: ProviderCoverageModel =
+        metadata?.coverageModel || (zipCodes.length > 0 ? "zip_prefix" : "state");
+      const coverageConfidence = getProviderCoverageConfidenceFromDb(
+        {
+          id: p.id,
+          slug: p.slug,
+          scope: p.scope,
+          coverageModel,
+          coverages: p.coverages || [],
+        },
         {
           state: effectiveToState,
           zip: toZip,
@@ -143,22 +132,19 @@ export async function GET(request: NextRequest) {
       );
 
       return {
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      subCategory: p.subCategory,
-      scope: p.scope,
-      states: safeJsonArray(p.states),
-      tags,
-      coverageConfidence,
-      coverageModel,
-      coverageMatchLevel: null,
-      requiresAddressCheck,
-      requiresPolygonCheck: coverageModel === "polygon",
-      resourceOnly,
-      popularityScore: p.popularityScore || 0,
-    };
-  });
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        scope: p.scope,
+        states: safeJsonArray(p.states),
+        coverageConfidence,
+        coverageModel,
+        coverageMatchLevel: null,
+        requiresAddressCheck: coverageModel === "live_address",
+        requiresPolygonCheck: coverageModel === "polygon",
+        popularityScore: p.popularityScore || 0,
+      };
+    });
 
     const providersForMigration: ProviderForMigration[] = destinationProviders
       .map((p: any) => ({
@@ -208,10 +194,8 @@ export async function GET(request: NextRequest) {
               id: service.provider.id,
               name: service.provider.name,
               category: service.provider.category,
-              subCategory: service.provider.subCategory,
               scope: service.provider.scope,
               states: service.provider.states,
-              tags: service.provider.tags,
             }
           : null,
         originAddress: { state: fromState, zip: fromZip },
