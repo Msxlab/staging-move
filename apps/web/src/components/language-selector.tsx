@@ -2,9 +2,38 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Check, ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { locales, localeNames, type Locale } from "@/i18n/config";
+
+// Tiny inline flag glyphs. Kept as SVG (not emoji) because Windows
+// browsers render regional-indicator emoji as letter pairs, defeating
+// the whole point of showing a flag.
+function FlagUS({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
+      <rect width="24" height="16" fill="#fff" />
+      {[0, 2, 4, 6, 8, 10, 12].map((y) => (
+        <rect key={y} y={y} width="24" height="1.23" fill="#B22234" />
+      ))}
+      <rect width="10" height="7" fill="#3C3B6E" />
+    </svg>
+  );
+}
+
+function FlagES({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 16" className={className} aria-hidden="true">
+      <rect width="24" height="16" fill="#AA151B" />
+      <rect y="4" width="24" height="8" fill="#F1BF00" />
+    </svg>
+  );
+}
+
+const localeFlags = {
+  en: FlagUS,
+  es: FlagES,
+} as const satisfies Record<Locale, unknown>;
 
 /**
  * Language selector dropdown.
@@ -77,15 +106,18 @@ export function LanguageSelector({
         disabled={pending}
         className={triggerClass}
       >
-        <Globe
-          className={
-            variant === "icon"
-              ? "h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-tone-orange-fg dark:group-hover:text-tone-orange-fg"
-              : "h-4 w-4"
-          }
-          aria-hidden="true"
-        />
-        <span>{currentLocale}</span>
+        {(() => {
+          const Flag = localeFlags[currentLocale];
+          return (
+            <Flag
+              className={
+                variant === "icon"
+                  ? "h-3 w-[18px] rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+                  : "h-3.5 w-[21px] rounded-sm shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+              }
+            />
+          );
+        })()}
         {variant === "icon" && (
           <ChevronDown
             className={`h-3 w-3 opacity-60 transition-transform duration-200 ${
@@ -109,6 +141,7 @@ export function LanguageSelector({
           >
             {locales.map((loc) => {
               const selected = loc === currentLocale;
+              const Flag = localeFlags[loc];
               return (
                 <li key={loc}>
                   <button
@@ -124,13 +157,13 @@ export function LanguageSelector({
                   >
                     <span className="flex items-center gap-2.5">
                       <span
-                        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
                           selected
-                            ? "bg-tone-orange-bg text-tone-orange-fg ring-1 ring-primary/40 dark:text-tone-orange-fg"
-                            : "bg-foreground/[0.06] text-foreground/60 group-hover:text-foreground"
+                            ? "bg-tone-orange-bg ring-1 ring-primary/40"
+                            : "bg-foreground/[0.06] group-hover:bg-foreground/[0.1]"
                         }`}
                       >
-                        {loc}
+                        <Flag className="h-3.5 w-[21px] rounded-[2px] shadow-[0_0_0_1px_rgba(0,0,0,0.15)]" />
                       </span>
                       <span className="text-sm font-medium">{localeNames[loc]}</span>
                     </span>

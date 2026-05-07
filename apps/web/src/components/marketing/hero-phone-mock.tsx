@@ -34,7 +34,7 @@ export async function HeroPhoneMock() {
             <p className="text-[10px] text-muted-foreground">{t("hero_mock_greeting")}</p>
             <p className="mt-0.5 flex items-center gap-1 text-xs text-foreground/80">
               <MapPin className="h-3 w-3 text-primary" />
-              432 Oak St Â· Austin
+              432 Oak St · Austin
             </p>
           </div>
 

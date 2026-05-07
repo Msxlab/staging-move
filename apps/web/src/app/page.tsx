@@ -408,7 +408,7 @@ export default async function LandingPage() {
           <Shield className="h-12 w-12 mx-auto opacity-80" />
           <h2 className="text-3xl font-bold">{t("section_trust_title")}</h2>
           <p className="text-lg opacity-80 max-w-xl mx-auto">
-            {t("trust_retention")} Â· {t("noCreditCard")}
+            {t("trust_retention")} · {t("noCreditCard")}
           </p>
           <Link href={primaryHref}>
             <Button size="lg" variant="secondary" className="text-base px-8">

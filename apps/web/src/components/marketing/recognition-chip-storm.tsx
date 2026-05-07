@@ -34,13 +34,13 @@ export async function RecognitionChipStorm() {
   // The visual order matters: severity tones (rose) sprinkled across
   // all three rows so the eye finds at least one wound per band.
   const rowOne: Chip[] = [
-    { brand: "PG&E Â· $142.18", statusKey: "chip_status_past_due", tone: "rose", tilt: -2 },
+    { brand: "PG&E · $142.18", statusKey: "chip_status_past_due", tone: "rose", tilt: -2 },
     { brand: "Verizon", statusKey: "chip_status_auto_renewing", tone: "honey", tilt: 1 },
     { brand: "Comcast", statusKey: "chip_status_old_address", tone: "rose", tilt: -1 },
     { brand: "USPS", statusKey: "chip_status_forwarding", tone: "slate", tilt: 2 },
   ];
   const rowTwo: Chip[] = [
-    { brand: "Netflix Â· $19.99", statusKey: "chip_status_charged", tone: "honey", tilt: -1 },
+    { brand: "Netflix · $19.99", statusKey: "chip_status_charged", tone: "honey", tilt: -1 },
     { brand: "AT&T", statusKey: "chip_status_disconnect_failed", tone: "rose", tilt: 2 },
     { brand: "Geico", statusKey: "chip_status_inert", tone: "foil", tilt: -2 },
   ];
@@ -73,7 +73,7 @@ export async function RecognitionChipStorm() {
             className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium shadow-sm backdrop-blur transition hover:translate-y-[-1px] hover:shadow-md sm:text-[15px] ${toneClasses[c.tone]}`}
           >
             <span className="font-semibold">{c.brand}</span>
-            <span className="px-1.5 opacity-60" aria-hidden="true">Â·</span>
+            <span className="px-1.5 opacity-60" aria-hidden="true">·</span>
             <span className="opacity-90">{t(c.statusKey as any)}</span>
           </div>
         ))}
