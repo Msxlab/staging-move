@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -15,28 +15,28 @@ import { toast } from "sonner";
 import { ServiceLogoMark } from "@/components/services/service-logo-mark";
 
 const CATEGORY_META: Record<string, { label: string; icon: string }> = {
-  GOVERNMENT_POSTAL: { label: "Mail & Postal", icon: "📬" }, GOVERNMENT_TAX: { label: "Tax (IRS)", icon: "🧾" },
-  GOVERNMENT_DMV: { label: "DMV", icon: "🪪" }, GOVERNMENT_BENEFITS: { label: "Benefits", icon: "🏛️" },
-  GOVERNMENT_VOTER: { label: "Voter Registration", icon: "🗳️" }, GOVERNMENT_ID: { label: "Passport / ID", icon: "🪪" },
-  GOVERNMENT_HEALTH: { label: "Healthcare.gov", icon: "🏥" }, GOVERNMENT_EDUCATION: { label: "Education / FAFSA", icon: "🎓" },
-  GOVERNMENT_IMMIGRATION: { label: "Immigration", icon: "🌍" }, GOVERNMENT_HOUSING: { label: "Housing (HUD)", icon: "🏘️" },
-  GOVERNMENT_EMERGENCY: { label: "Emergency (FEMA)", icon: "🚨" }, GOVERNMENT_OTHER: { label: "Gov. Other", icon: "🏛️" },
-  UTILITY_ELECTRIC: { label: "Electric", icon: "⚡" }, UTILITY_GAS: { label: "Gas", icon: "🔥" },
-  UTILITY_WATER: { label: "Water", icon: "💧" }, UTILITY_INTERNET: { label: "Internet", icon: "🌐" },
-  UTILITY_PHONE: { label: "Phone", icon: "📱" }, UTILITY_CABLE: { label: "Cable / TV", icon: "📺" },
-  UTILITY_TRASH: { label: "Trash & Waste", icon: "🗑️" }, UTILITY_SEWER: { label: "Sewer", icon: "🚰" },
-  FINANCIAL_BANK: { label: "Banks", icon: "🏦" }, FINANCIAL_CREDIT_CARD: { label: "Credit Cards", icon: "💳" },
-  FINANCIAL_INSURANCE_AUTO: { label: "Auto Insurance", icon: "🚗" }, FINANCIAL_INSURANCE_HOME: { label: "Home Insurance", icon: "🏠" },
-  FINANCIAL_INSURANCE_HEALTH: { label: "Health Insurance", icon: "🏥" }, FINANCIAL_MORTGAGE: { label: "Mortgage", icon: "🔑" },
-  FINANCIAL_LOAN: { label: "Loans", icon: "💰" }, HOUSING_RENT: { label: "Rent / Mortgage", icon: "🏘️" },
-  HOUSING_STORAGE: { label: "Storage", icon: "📦" }, HOUSING_HOA: { label: "HOA", icon: "🏢" },
-  HOUSING_LAWN_CARE: { label: "Lawn Care", icon: "🌿" }, HOUSING_PEST_CONTROL: { label: "Pest Control", icon: "🐛" },
-  HEALTHCARE_DOCTORS: { label: "Doctors", icon: "🩺" },
-  HEALTHCARE_DENTIST: { label: "Dentist", icon: "🦷" }, HEALTHCARE_PHARMACY: { label: "Pharmacy", icon: "💊" },
-  HEALTHCARE_VET: { label: "Veterinary", icon: "🐾" }, TRANSPORTATION_TOLL: { label: "Toll Pass", icon: "🛣️" },
-  TRANSPORTATION_TRANSIT: { label: "Transit", icon: "🚌" }, KIDS_SCHOOL: { label: "Schools", icon: "🏫" },
-  KIDS_DAYCARE: { label: "Daycare", icon: "👶" }, FITNESS_GYM: { label: "Fitness & Gym", icon: "💪" },
-  SHOPPING_SUBSCRIPTION: { label: "Subscriptions", icon: "📦" }, SHOPPING_RETAIL: { label: "Shopping", icon: "🛒" },
+  GOVERNMENT_POSTAL: { label: "Mail & Postal", icon: "ðŸ“¬" }, GOVERNMENT_TAX: { label: "Tax (IRS)", icon: "ðŸ§¾" },
+  GOVERNMENT_DMV: { label: "DMV", icon: "ðŸªª" }, GOVERNMENT_BENEFITS: { label: "Benefits", icon: "ðŸ›ï¸" },
+  GOVERNMENT_VOTER: { label: "Voter Registration", icon: "ðŸ—³ï¸" }, GOVERNMENT_ID: { label: "Passport / ID", icon: "ðŸªª" },
+  GOVERNMENT_HEALTH: { label: "Healthcare.gov", icon: "ðŸ¥" }, GOVERNMENT_EDUCATION: { label: "Education / FAFSA", icon: "ðŸŽ“" },
+  GOVERNMENT_IMMIGRATION: { label: "Immigration", icon: "ðŸŒ" }, GOVERNMENT_HOUSING: { label: "Housing (HUD)", icon: "ðŸ˜ï¸" },
+  GOVERNMENT_EMERGENCY: { label: "Emergency (FEMA)", icon: "ðŸš¨" }, GOVERNMENT_OTHER: { label: "Gov. Other", icon: "ðŸ›ï¸" },
+  UTILITY_ELECTRIC: { label: "Electric", icon: "âš¡" }, UTILITY_GAS: { label: "Gas", icon: "ðŸ”¥" },
+  UTILITY_WATER: { label: "Water", icon: "ðŸ’§" }, UTILITY_INTERNET: { label: "Internet", icon: "ðŸŒ" },
+  UTILITY_PHONE: { label: "Phone", icon: "ðŸ“±" }, UTILITY_CABLE: { label: "Cable / TV", icon: "ðŸ“º" },
+  UTILITY_TRASH: { label: "Trash & Waste", icon: "ðŸ—‘ï¸" }, UTILITY_SEWER: { label: "Sewer", icon: "ðŸš°" },
+  FINANCIAL_BANK: { label: "Banks", icon: "ðŸ¦" }, FINANCIAL_CREDIT_CARD: { label: "Credit Cards", icon: "ðŸ’³" },
+  FINANCIAL_INSURANCE_AUTO: { label: "Auto Insurance", icon: "ðŸš—" }, FINANCIAL_INSURANCE_HOME: { label: "Home Insurance", icon: "ðŸ " },
+  FINANCIAL_INSURANCE_HEALTH: { label: "Health Insurance", icon: "ðŸ¥" }, FINANCIAL_MORTGAGE: { label: "Mortgage", icon: "ðŸ”‘" },
+  FINANCIAL_LOAN: { label: "Loans", icon: "ðŸ’°" }, HOUSING_RENT: { label: "Rent / Mortgage", icon: "ðŸ˜ï¸" },
+  HOUSING_STORAGE: { label: "Storage", icon: "ðŸ“¦" }, HOUSING_HOA: { label: "HOA", icon: "ðŸ¢" },
+  HOUSING_LAWN_CARE: { label: "Lawn Care", icon: "ðŸŒ¿" }, HOUSING_PEST_CONTROL: { label: "Pest Control", icon: "ðŸ›" },
+  HEALTHCARE_DOCTORS: { label: "Doctors", icon: "ðŸ©º" },
+  HEALTHCARE_DENTIST: { label: "Dentist", icon: "ðŸ¦·" }, HEALTHCARE_PHARMACY: { label: "Pharmacy", icon: "ðŸ’Š" },
+  HEALTHCARE_VET: { label: "Veterinary", icon: "ðŸ¾" }, TRANSPORTATION_TOLL: { label: "Toll Pass", icon: "ðŸ›£ï¸" },
+  TRANSPORTATION_TRANSIT: { label: "Transit", icon: "ðŸšŒ" }, KIDS_SCHOOL: { label: "Schools", icon: "ðŸ«" },
+  KIDS_DAYCARE: { label: "Daycare", icon: "ðŸ‘¶" }, FITNESS_GYM: { label: "Fitness & Gym", icon: "ðŸ’ª" },
+  SHOPPING_SUBSCRIPTION: { label: "Subscriptions", icon: "ðŸ“¦" }, SHOPPING_RETAIL: { label: "Shopping", icon: "ðŸ›’" },
 };
 
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
@@ -259,8 +259,8 @@ export default function AddressDetailPage() {
     SHOPPING: t("detail_group_shopping"),
   };
   const groupIcons: Record<string, string> = {
-    GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
-    TRANSPORTATION: "🚗", KIDS: "👶", FITNESS: "💪", SHOPPING: "🛒",
+    GOVERNMENT: "ðŸ›ï¸", UTILITY: "âš¡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
+    TRANSPORTATION: "ðŸš—", KIDS: "ðŸ‘¶", FITNESS: "ðŸ’ª", SHOPPING: "ðŸ›’",
   };
 
   return (
@@ -275,13 +275,13 @@ export default function AddressDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-foreground">{address.nickname || t("detail_defaultName")}</h1>
-            {address.isPrimary && <Star className="h-4 w-4 text-amber-400 fill-amber-400" />}
+            {address.isPrimary && <Star className="h-4 w-4 text-tone-honey-fg fill-amber-400" />}
           </div>
           <p className="text-sm text-muted-foreground">{address.street}, {address.city}, {address.state} {address.zip}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link href={`/moving/new?from=${address.id}`}>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
               <Truck className="h-3.5 w-3.5" />{t("detail_moveFromHere")}
             </button>
           </Link>
@@ -296,8 +296,8 @@ export default function AddressDetailPage() {
       {/* Address Info Card */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5">
         <div className="flex items-start gap-4">
-          <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
-            <TypeIcon className="h-6 w-6 text-orange-400" />
+          <div className="p-3 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
+            <TypeIcon className="h-6 w-6 text-tone-orange-fg" />
           </div>
           <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
@@ -308,7 +308,7 @@ export default function AddressDetailPage() {
               <p className="text-[10px] text-foreground/40 uppercase tracking-wider">{t("detail_label_ownership")}</p>
               <p className="text-sm font-medium text-foreground mt-0.5">
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                  address.ownership === "OWNER" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                  address.ownership === "OWNER" ? "bg-tone-emerald-bg text-tone-emerald-fg border border-tone-emerald-br" : "bg-tone-cyan-bg text-tone-cyan-fg border border-tone-cyan-br"
                 }`}>{address.ownership === "OWNER" ? t("detail_owner") : t("detail_renter")}</span>
               </p>
             </div>
@@ -321,7 +321,7 @@ export default function AddressDetailPage() {
             </div>
             <div>
               <p className="text-[10px] text-foreground/40 uppercase tracking-wider">{t("detail_label_monthlyCost")}</p>
-              <p className="text-sm font-bold text-emerald-400 mt-0.5">
+              <p className="text-sm font-bold text-tone-emerald-fg mt-0.5">
                 <DollarSign className="h-3 w-3 inline" />{totalMonthlyCost.toLocaleString()}{t("detail_perMo")}
               </p>
             </div>
@@ -333,7 +333,7 @@ export default function AddressDetailPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Zap className="h-4 w-4 text-orange-400" />
+            <Zap className="h-4 w-4 text-tone-orange-fg" />
             <h2 className="text-lg font-semibold text-foreground">{t("detail_servicesTitle")}</h2>
             <span className="text-xs text-foreground/40">({address.services.length})</span>
           </div>
@@ -342,12 +342,12 @@ export default function AddressDetailPage() {
               <button
                 onClick={() => { setBulkMode(!bulkMode); setBulkSelected(new Set()); }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-                  bulkMode ? "bg-red-500/10 text-red-400 border border-red-500/20" : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
+                  bulkMode ? "bg-destructive/10 text-destructive border border-destructive" : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
                 }`}
               >{bulkMode ? tCommon("cancel") : t("detail_bulkEdit")}</button>
             )}
             <Link href="/services/new">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition">
                 <Plus className="h-3 w-3" />{t("detail_addService")}
               </button>
             </Link>
@@ -356,12 +356,12 @@ export default function AddressDetailPage() {
 
         {/* Bulk action bar */}
         {bulkMode && bulkSelected.size > 0 && (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/20">
-            <span className="text-sm text-red-400">{t("detail_selectedCount", { count: bulkSelected.size })}</span>
+          <div className="flex items-center justify-between p-3 rounded-xl bg-destructive/5 border border-destructive">
+            <span className="text-sm text-destructive">{t("detail_selectedCount", { count: bulkSelected.size })}</span>
             <button
               onClick={handleBulkDelete}
               disabled={deletingBulk}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive text-white text-xs font-medium hover:bg-destructive/80 transition disabled:opacity-50"
             >
               {deletingBulk ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
               {t("detail_deleteSelected")}
@@ -375,7 +375,7 @@ export default function AddressDetailPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground/40" />
             <input
               placeholder={t("detail_searchPlaceholder")}
-              className="w-full rounded-xl border border-border bg-foreground/5 pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              className="w-full rounded-xl border border-border bg-foreground/5 pl-9 pr-4 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
               value={serviceSearch}
               onChange={(e) => setServiceSearch(e.target.value)}
             />
@@ -387,7 +387,7 @@ export default function AddressDetailPage() {
           <div className="rounded-2xl border border-border bg-foreground/5 p-8 text-center">
             <Zap className="h-8 w-8 text-foreground/20 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">{t("detail_noServices")}</p>
-            <Link href="/services/new" className="text-sm text-orange-400 hover:underline mt-1 inline-block">{t("detail_noServicesCta")}</Link>
+            <Link href="/services/new" className="text-sm text-tone-orange-fg hover:underline mt-1 inline-block">{t("detail_noServicesCta")}</Link>
           </div>
         ) : sortedGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">{t("detail_noMatch")}</p>
@@ -398,7 +398,7 @@ export default function AddressDetailPage() {
               return (
                 <div key={prefix} className="space-y-1.5">
                   <div className="flex items-center gap-2 px-1">
-                    <span className="text-base">{groupIcons[prefix] || "📋"}</span>
+                    <span className="text-base">{groupIcons[prefix] || "ðŸ“‹"}</span>
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h3>
                     <span className="text-[10px] text-foreground/30">{items.length}</span>
                   </div>
@@ -414,14 +414,14 @@ export default function AddressDetailPage() {
                         <div
                           key={service.id}
                           className={`group rounded-xl border p-3.5 transition-all ${
-                            isChecked ? "border-red-500/30 bg-red-500/5" : "border-border bg-foreground/[0.02] hover:bg-foreground/[0.05] hover:border-border"
+                            isChecked ? "border-destructive/30 bg-destructive/5" : "border-border bg-foreground/[0.02] hover:bg-foreground/[0.05] hover:border-border"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             {bulkMode && (
                               <button onClick={() => toggleBulk(service.id)} className="shrink-0">
                                 <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition ${
-                                  isChecked ? "border-red-500 bg-red-500" : "border-foreground/20 bg-foreground/5"
+                                  isChecked ? "border-destructive bg-destructive" : "border-foreground/20 bg-foreground/5"
                                 }`}>
                                   {isChecked && <CheckCircle2 className="h-3 w-3 text-foreground" />}
                                 </div>
@@ -449,13 +449,13 @@ export default function AddressDetailPage() {
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    className="w-20 rounded-lg border border-orange-500/30 bg-foreground/5 px-2 py-1 text-sm text-foreground text-right focus:outline-none focus:ring-1 focus:ring-orange-500/50"
+                                    className="w-20 rounded-lg border border-tone-orange-br bg-foreground/5 px-2 py-1 text-sm text-foreground text-right focus:outline-none focus:ring-1 focus:ring-primary/50"
                                     value={editingCostValue}
                                     onChange={(e) => setEditingCostValue(e.target.value)}
                                     onKeyDown={(e) => { if (e.key === "Enter") saveCost(service.id); if (e.key === "Escape") setEditingCostId(null); }}
                                   />
                                   <button onClick={() => saveCost(service.id)} disabled={isSavingCost}
-                                    className="p-1 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition disabled:opacity-50">
+                                    className="p-1 rounded-md bg-tone-orange-fg text-white hover:bg-tone-orange-bg transition disabled:opacity-50">
                                     {isSavingCost ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
                                   </button>
                                   <button onClick={() => setEditingCostId(null)} className="p-1 rounded-md text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
@@ -469,11 +469,11 @@ export default function AddressDetailPage() {
                                   title={t("detail_editCostTitle")}
                                 >
                                   {(service.monthlyCost || 0) > 0 ? (
-                                    <p className="text-sm font-semibold text-foreground/80 group-hover/cost:text-orange-400 transition">
+                                    <p className="text-sm font-semibold text-foreground/80 group-hover/cost:text-tone-orange-fg transition">
                                       {formatCurrency(service.monthlyCost)}<span className="text-foreground/40">{t("detail_perMo")}</span>
                                     </p>
                                   ) : (
-                                    <p className="text-[11px] text-foreground/30 group-hover/cost:text-orange-400 transition flex items-center gap-0.5">
+                                    <p className="text-[11px] text-foreground/30 group-hover/cost:text-tone-orange-fg transition flex items-center gap-0.5">
                                       <DollarSign className="h-3 w-3" />{t("detail_setCost")}
                                     </p>
                                   )}
@@ -492,20 +492,20 @@ export default function AddressDetailPage() {
                                 </a>
                               )}
                               <Link href={`/services/${service.id}`}>
-                                <button className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-orange-400 hover:bg-orange-500/10 transition">
+                                <button className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/40 hover:text-tone-orange-fg hover:bg-tone-orange-bg transition">
                                   <Edit className="h-2.5 w-2.5" />Edit
                                 </button>
                               </Link>
                               <div className="flex-1" />
                               {!isConfirmDel ? (
                                 <button onClick={() => handleSingleDelete(service.id)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/25 hover:text-red-400 hover:bg-red-500/10 transition">
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-foreground/25 hover:text-destructive hover:bg-destructive/10 transition">
                                   <Trash2 className="h-2.5 w-2.5" />
                                 </button>
                               ) : (
                                 <div className="flex items-center gap-1">
                                   <button onClick={() => handleSingleDelete(service.id)} disabled={isDeletingSvc}
-                                    className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50">
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] bg-destructive text-white hover:bg-destructive/80 transition disabled:opacity-50">
                                     {isDeletingSvc ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Trash2 className="h-2.5 w-2.5" />}
                                     Remove
                                   </button>
@@ -531,24 +531,24 @@ export default function AddressDetailPage() {
         {address.services.length > 0 && (
           <div className="flex items-center justify-between px-2 pt-2 border-t border-border">
             <span className="text-sm font-medium text-muted-foreground">{t("detail_totalMonthly")}</span>
-            <span className="text-lg font-bold text-emerald-400">{formatCurrency(totalMonthlyCost)}{t("detail_perMo")}</span>
+            <span className="text-lg font-bold text-tone-emerald-fg">{formatCurrency(totalMonthlyCost)}{t("detail_perMo")}</span>
           </div>
         )}
       </div>
 
       {/* Danger Zone */}
-      <div className="rounded-2xl border border-red-500/10 bg-red-500/[0.02] p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-red-400">{t("detail_dangerZone")}</h3>
+      <div className="rounded-2xl border border-destructive/10 bg-destructive/[0.02] p-5 space-y-3">
+        <h3 className="text-sm font-semibold text-destructive">{t("detail_dangerZone")}</h3>
         <p className="text-xs text-foreground/40">{t("detail_dangerDescription", { count: address.services.length })}</p>
         {!showDeleteConfirm ? (
           <button onClick={() => setShowDeleteConfirm(true)}
-            className="px-3 py-1.5 rounded-xl border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/10 transition">
+            className="px-3 py-1.5 rounded-xl border border-destructive text-destructive text-xs font-medium hover:bg-destructive/10 transition">
             {t("detail_deleteAddressBtn")}
           </button>
         ) : (
           <div className="flex items-center gap-2">
             <button onClick={handleDelete} disabled={deleting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition disabled:opacity-50">
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive text-white text-xs font-medium hover:bg-destructive/80 transition disabled:opacity-50">
               {deleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
               {t("detail_confirmDelete")}
             </button>

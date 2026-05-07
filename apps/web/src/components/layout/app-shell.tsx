@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
@@ -29,9 +29,9 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
   return (
     <div className="flex min-h-screen relative" style={{ background: "var(--surface)" }}>
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 dark-only-blobs">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-orange-600/10 blur-[150px]" />
-        <div className="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-blue-600/10 blur-[120px]" />
-        <div className="absolute -bottom-40 right-1/3 w-[350px] h-[350px] rounded-full bg-cyan-500/8 blur-[120px]" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-tone-orange-bg blur-[150px]" />
+        <div className="absolute top-1/2 -left-40 w-[400px] h-[400px] rounded-full bg-tone-foil-bg blur-[120px]" />
+        <div className="absolute -bottom-40 right-1/3 w-[350px] h-[350px] rounded-full bg-tone-cyan-bg blur-[120px]" />
       </div>
       <a
         href="#main-content"
@@ -44,7 +44,7 @@ export function AppShell({ children, showBudget = true }: AppShellProps) {
         <>
           <button
             type="button"
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm backdrop-blur-sm md:hidden"
             aria-label="Close navigation menu"
             onClick={() => setMobileMenuOpen(false)}
           />

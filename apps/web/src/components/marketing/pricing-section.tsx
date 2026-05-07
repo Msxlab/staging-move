@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -23,15 +23,15 @@ import { BILLING_PLAN_DEFINITIONS } from "@locateflow/shared";
 type IndividualFeature = { icon: LucideIcon; label: string; desc: string };
 
 const INDIVIDUAL_FEATURES: IndividualFeature[] = [
-  { icon: Home, label: "Up to 10 homes", desc: "Primary, rental, family, second home — each with its own services." },
+  { icon: Home, label: "Up to 10 homes", desc: "Primary, rental, family, second home â€” each with its own services." },
   { icon: Building2, label: "Service provider records", desc: "Account #, login, contract, contacts, auto-renewal." },
   { icon: Bell, label: "Bills & renewal reminders", desc: "Email + in-app alerts before due and renew dates." },
   { icon: Wallet, label: "Per-home monthly budgets", desc: "Planned vs actual, savings rate, category breakdown." },
-  { icon: Truck, label: "Smart moving planner", desc: "From → to address, move date, auto-suggested move tasks." },
-  { icon: FileText, label: "Document storage", desc: "Leases, bills, receipts, proof-of-address — attached per service." },
+  { icon: Truck, label: "Smart moving planner", desc: "From â†’ to address, move date, auto-suggested move tasks." },
+  { icon: FileText, label: "Document storage", desc: "Leases, bills, receipts, proof-of-address â€” attached per service." },
   { icon: Map, label: "US state-by-state guidance", desc: "DMV, voter, utility, tax & insurance notes for moves." },
   { icon: Smartphone, label: "Web + iOS + Android", desc: "One subscription, all devices, synced." },
-  { icon: Languages, label: "English & Español", desc: "Full UI translations." },
+  { icon: Languages, label: "English & EspaÃ±ol", desc: "Full UI translations." },
   { icon: Download, label: "Export anytime (CSV & PDF)", desc: "Your data, downloadable whenever you want." },
 ];
 
@@ -230,7 +230,7 @@ export function PricingSection({
                 className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
                   effectivePlan === "yearly"
                     ? "bg-primary-foreground/15 text-primary-foreground"
-                    : "bg-emerald-500/15 text-emerald-500"
+                    : "bg-tone-emerald-bg text-tone-emerald-fg"
                 }`}
               >
                 Save {annualSavings.percent}%
@@ -281,9 +281,9 @@ export function PricingSection({
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   {annualSavings ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-500">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-tone-emerald-br bg-tone-emerald-bg px-2.5 py-1 text-[11px] font-medium text-tone-emerald-fg">
                       Save ${annualSavings.savedUsd.toFixed(annualSavings.savedUsd % 1 === 0 ? 0 : 2)}/year vs monthly
-                      <span className="text-emerald-500/70">({annualSavings.percent}% off)</span>
+                      <span className="text-tone-emerald-fg/70">({annualSavings.percent}% off)</span>
                     </span>
                   ) : null}
                   {annualOffer?.trialLabel ? (
@@ -315,7 +315,7 @@ export function PricingSection({
                 <span className="text-muted-foreground">{monthlyPriceParts.suffix}</span>
                 {monthlyApproxYear ? (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    ≈ ${monthlyApproxYear.toFixed(monthlyApproxYear % 1 === 0 ? 0 : 2)}/year billed monthly
+                    â‰ˆ ${monthlyApproxYear.toFixed(monthlyApproxYear % 1 === 0 ? 0 : 2)}/year billed monthly
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">

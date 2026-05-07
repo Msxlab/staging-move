@@ -1,7 +1,7 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 
 /**
- * Recognition / chip-storm — the visceral wound.
+ * Recognition / chip-storm â€” the visceral wound.
  *
  * Three rows of provider chips (4 / 3 / 4) flex-laid so they stay
  * visible at every viewport. Each chip carries a tiny dread-tag
@@ -25,22 +25,22 @@ export async function RecognitionChipStorm() {
     brand: string;
     statusKey: string;
     tone: Tone;
-    /** Static -3°..+3° tilt so the cluster reads as scattered, not gridded. */
+    /** Static -3Â°..+3Â° tilt so the cluster reads as scattered, not gridded. */
     tilt: number;
   }
 
-  // Provider names stay literal — they're brand strings.
+  // Provider names stay literal â€” they're brand strings.
   // Only the trailing "status" half is localized via t().
   // The visual order matters: severity tones (rose) sprinkled across
   // all three rows so the eye finds at least one wound per band.
   const rowOne: Chip[] = [
-    { brand: "PG&E · $142.18", statusKey: "chip_status_past_due", tone: "rose", tilt: -2 },
+    { brand: "PG&E Â· $142.18", statusKey: "chip_status_past_due", tone: "rose", tilt: -2 },
     { brand: "Verizon", statusKey: "chip_status_auto_renewing", tone: "honey", tilt: 1 },
     { brand: "Comcast", statusKey: "chip_status_old_address", tone: "rose", tilt: -1 },
     { brand: "USPS", statusKey: "chip_status_forwarding", tone: "slate", tilt: 2 },
   ];
   const rowTwo: Chip[] = [
-    { brand: "Netflix · $19.99", statusKey: "chip_status_charged", tone: "honey", tilt: -1 },
+    { brand: "Netflix Â· $19.99", statusKey: "chip_status_charged", tone: "honey", tilt: -1 },
     { brand: "AT&T", statusKey: "chip_status_disconnect_failed", tone: "rose", tilt: 2 },
     { brand: "Geico", statusKey: "chip_status_inert", tone: "foil", tilt: -2 },
   ];
@@ -54,7 +54,7 @@ export async function RecognitionChipStorm() {
   // Each tone maps to a tonal pair from the Edition VI palette
   // (defined in globals.css as `--tone-*-bg/br/fg` triples). Solid
   // backgrounds + opaque foreground guarantees readability in both
-  // light and dark modes — the previous `bg-rose-500/12` arbitrary
+  // light and dark modes â€” the previous `bg-destructive/12` arbitrary
   // alpha quietly dropped on some builds and left chips ghostlike.
   const toneClasses: Record<Tone, string> = {
     rose: "bg-tone-rose-bg border-tone-rose-br text-tone-rose-fg",
@@ -73,7 +73,7 @@ export async function RecognitionChipStorm() {
             className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium shadow-sm backdrop-blur transition hover:translate-y-[-1px] hover:shadow-md sm:text-[15px] ${toneClasses[c.tone]}`}
           >
             <span className="font-semibold">{c.brand}</span>
-            <span className="px-1.5 opacity-60" aria-hidden="true">·</span>
+            <span className="px-1.5 opacity-60" aria-hidden="true">Â·</span>
             <span className="opacity-90">{t(c.statusKey as any)}</span>
           </div>
         ))}
@@ -97,9 +97,9 @@ export async function RecognitionChipStorm() {
         </p>
       </div>
 
-      {/* Chip cloud — three rows, flex-wrap, never clips and never collapses */}
+      {/* Chip cloud â€” three rows, flex-wrap, never clips and never collapses */}
       <div className="relative mx-auto mt-14 flex max-w-5xl flex-col gap-6 sm:gap-8">
-        {/* Soft ambient glow behind the cluster — purely decorative */}
+        {/* Soft ambient glow behind the cluster â€” purely decorative */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.08),transparent_65%)]"

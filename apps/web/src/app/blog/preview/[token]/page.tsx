@@ -1,5 +1,5 @@
-/**
- * /blog/preview/<token> — short-lived signed preview of a draft post.
+﻿/**
+ * /blog/preview/<token> â€” short-lived signed preview of a draft post.
  *
  * The admin "Preview" button hits the admin webhook
  * (`/api/blog/posts/[id]/preview-token`), gets back a JWT, and links
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Preview · LocateFlow",
+  title: "Preview Â· LocateFlow",
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 };
 
@@ -29,7 +29,7 @@ export default async function PreviewPage({
 }: {
   params: Promise<{ token: string }>;
 }) {
-  // Touch headers() so this page is always SSR'd — never cached.
+  // Touch headers() so this page is always SSR'd â€” never cached.
   await headers();
 
   const { token } = await params;
@@ -58,35 +58,35 @@ export default async function PreviewPage({
   return (
     <main className="max-w-3xl mx-auto px-4 py-12">
       <div
-        className="mb-6 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100"
+        className="mb-6 rounded-md border border-tone-honey-br bg-tone-honey-bg px-4 py-2 text-sm text-tone-honey-fg"
         role="status"
       >
-        Preview mode · status: <strong>{post.status}</strong>. This page is
+        Preview mode Â· status: <strong>{post.status}</strong>. This page is
         excluded from search and feeds.
       </div>
 
       <header className="mb-8">
         {post.category ? (
-          <span className="text-xs uppercase tracking-wide text-zinc-500">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
             {post.category.name}
           </span>
         ) : null}
         <h1 className="mt-1 text-4xl font-semibold tracking-tight">{post.title}</h1>
-        <p className="mt-3 text-zinc-600 dark:text-zinc-400">{post.excerpt}</p>
-        <p className="mt-4 text-xs text-zinc-500">
-          By {authorName} · {post.readingMinutes} min read
+        <p className="mt-3 text-muted-foreground dark:text-muted-foreground">{post.excerpt}</p>
+        <p className="mt-4 text-xs text-muted-foreground">
+          By {authorName} Â· {post.readingMinutes} min read
         </p>
       </header>
 
       {cover ? (
-        <div className="aspect-[1200/630] relative overflow-hidden rounded-lg mb-10 bg-zinc-100 dark:bg-zinc-800">
+        <div className="aspect-[1200/630] relative overflow-hidden rounded-lg mb-10 bg-muted dark:bg-muted">
           <Image src={cover} alt={post.ogImageAlt ?? post.title} fill priority sizes="100vw" className="object-cover" />
         </div>
       ) : null}
 
       <article
         className="prose prose-zinc dark:prose-invert max-w-none"
-        // Already-sanitized HTML — same write-time pipeline as published posts.
+        // Already-sanitized HTML â€” same write-time pipeline as published posts.
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: post.contentHtml }}
       />

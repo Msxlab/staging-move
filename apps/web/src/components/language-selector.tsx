@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -10,7 +10,7 @@ import { locales, localeNames, type Locale } from "@/i18n/config";
  * Language selector dropdown.
  *
  * Clicking a language:
- *   1. POSTs to `/api/user/locale` — this refreshes the `NEXT_LOCALE`
+ *   1. POSTs to `/api/user/locale` â€” this refreshes the `NEXT_LOCALE`
  *      cookie and, if the caller is logged in, mirrors the choice to
  *      `User.preferredLocale` so it persists across devices.
  *   2. Reloads the page so server components re-render with the new
@@ -55,7 +55,7 @@ export function LanguageSelector({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locale: next }),
       }).catch(() => null);
-      // Hard reload — next-intl's getRequestConfig reads the cookie at
+      // Hard reload â€” next-intl's getRequestConfig reads the cookie at
       // request time, and server-rendered bits are cached.
       window.location.reload();
     });
@@ -63,7 +63,7 @@ export function LanguageSelector({
 
   const triggerClass =
     variant === "icon"
-      ? "group inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-foreground/[0.04] px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60 disabled:opacity-60"
+      ? "group inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-foreground/[0.04] px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-md transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 disabled:opacity-60"
       : "flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-60";
 
   return (
@@ -80,7 +80,7 @@ export function LanguageSelector({
         <Globe
           className={
             variant === "icon"
-              ? "h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-orange-500 dark:group-hover:text-orange-300"
+              ? "h-3.5 w-3.5 text-muted-foreground transition-colors group-hover:text-tone-orange-fg dark:group-hover:text-tone-orange-fg"
               : "h-4 w-4"
           }
           aria-hidden="true"
@@ -118,7 +118,7 @@ export function LanguageSelector({
                     onClick={() => handleChange(loc)}
                     className={`group flex w-full items-center justify-between gap-3 rounded-xl px-2.5 py-2 text-left transition-colors ${
                       selected
-                        ? "bg-gradient-to-r from-orange-500/10 to-amber-500/5 text-foreground"
+                        ? "bg-gradient-to-r from-primary0/10 to-accent0/5 text-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
@@ -126,7 +126,7 @@ export function LanguageSelector({
                       <span
                         className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors ${
                           selected
-                            ? "bg-orange-500/15 text-orange-500 ring-1 ring-orange-500/40 dark:text-orange-300"
+                            ? "bg-tone-orange-bg text-tone-orange-fg ring-1 ring-primary/40 dark:text-tone-orange-fg"
                             : "bg-foreground/[0.06] text-foreground/60 group-hover:text-foreground"
                         }`}
                       >
@@ -136,7 +136,7 @@ export function LanguageSelector({
                     </span>
                     {selected && (
                       <Check
-                        className="h-4 w-4 text-orange-500 dark:text-orange-300"
+                        className="h-4 w-4 text-tone-orange-fg dark:text-tone-orange-fg"
                         aria-hidden="true"
                       />
                     )}

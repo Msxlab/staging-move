@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, Loader2, Lock, Trash2 } from "lucide-react";
@@ -114,8 +114,8 @@ export function DeleteAccountDialog({
         {!hasPasswordLogin ? (
           <>
             <DialogHeader>
-              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
-                <Lock className="h-5 w-5 text-amber-500" />
+              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-tone-honey-bg">
+                <Lock className="h-5 w-5 text-tone-honey-fg" />
               </div>
               <DialogTitle>Set a password first</DialogTitle>
               <DialogDescription>
@@ -135,7 +135,7 @@ export function DeleteAccountDialog({
                 type="button"
                 onClick={() => void onRequestSetPasswordEmail?.()}
                 disabled={!!setPasswordBusy || !onRequestSetPasswordEmail}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-600 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-50"
               >
                 {setPasswordBusy ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -149,8 +149,8 @@ export function DeleteAccountDialog({
         ) : step === "warning" ? (
           <>
             <DialogHeader>
-              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
+              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-destructive/15">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
               </div>
               <DialogTitle>Delete your account?</DialogTitle>
               <DialogDescription>
@@ -158,7 +158,7 @@ export function DeleteAccountDialog({
                 to it. There is no undo.
               </DialogDescription>
             </DialogHeader>
-            <ul className="space-y-1.5 rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-xs text-muted-foreground">
+            <ul className="space-y-1.5 rounded-xl border border-destructive bg-destructive/5 p-4 text-xs text-muted-foreground">
               <li>All addresses, services, providers, and budgets</li>
               <li>Moving plans, tasks, documents, and notifications</li>
               <li>Active subscription is canceled at Stripe</li>
@@ -175,7 +175,7 @@ export function DeleteAccountDialog({
               <button
                 type="button"
                 onClick={() => setStep("confirm")}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 ring-1 ring-red-500/30 transition hover:bg-red-500/20"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive ring-1 ring-primary/30 transition hover:bg-destructive"
               >
                 <Trash2 className="h-4 w-4" />
                 I understand, continue
@@ -185,8 +185,8 @@ export function DeleteAccountDialog({
         ) : (
           <>
             <DialogHeader>
-              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-500/15">
-                <Trash2 className="h-5 w-5 text-red-500" />
+              <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-destructive/15">
+                <Trash2 className="h-5 w-5 text-destructive" />
               </div>
               <DialogTitle>Final confirmation</DialogTitle>
               <DialogDescription>
@@ -194,7 +194,7 @@ export function DeleteAccountDialog({
                 <span className="font-mono text-foreground">
                   {userEmail || "(your email)"}
                 </span>{" "}
-                or <span className="font-mono font-semibold text-red-500">DELETE</span>{" "}
+                or <span className="font-mono font-semibold text-destructive">DELETE</span>{" "}
                 to confirm.
               </DialogDescription>
             </DialogHeader>
@@ -206,7 +206,7 @@ export function DeleteAccountDialog({
                 </label>
                 <input
                   id="delete-typed"
-                  className="w-full rounded-xl border border-red-500/20 bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/40"
                   placeholder={userEmail || "DELETE"}
                   value={typed}
                   onChange={(e) => setTyped(e.target.value)}
@@ -222,7 +222,7 @@ export function DeleteAccountDialog({
                 </label>
                 <PasswordInput
                   id="delete-password"
-                  className="w-full rounded-xl border border-red-500/20 bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/40"
                   autoComplete="current-password"
                   placeholder="Password"
                   value={password}
@@ -238,7 +238,7 @@ export function DeleteAccountDialog({
                   </label>
                   <input
                     id="delete-mfa"
-                    className="w-full rounded-xl border border-red-500/20 bg-foreground/5 px-3 py-2 text-sm tracking-widest text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-red-500/40"
+                    className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm tracking-widest text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/40"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     placeholder="123456"
@@ -265,7 +265,7 @@ export function DeleteAccountDialog({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!canSubmit}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-600 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:bg-destructive/80 disabled:opacity-50"
               >
                 {submitting ? (
                   <>

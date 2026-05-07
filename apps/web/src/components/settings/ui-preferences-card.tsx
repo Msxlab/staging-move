@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { DollarSign, Loader2 } from "lucide-react";
@@ -73,8 +73,8 @@ export function UIPreferencesCard() {
       <div className="px-5 pb-5 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <DollarSign className="h-4 w-4 text-orange-400" />
+            <div className="p-2 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
+              <DollarSign className="h-4 w-4 text-tone-orange-fg" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">{t("showBudget.label")}</p>
@@ -90,7 +90,7 @@ export function UIPreferencesCard() {
               disabled={saving}
               aria-label={t("showBudget.label")}
             />
-            <div className="w-11 h-6 bg-foreground/10 peer-checked:bg-orange-500 rounded-full transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-foreground after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5 peer-disabled:opacity-50 peer-checked:after:bg-white" />
+            <div className="w-11 h-6 bg-foreground/10 peer-checked:bg-tone-orange-fg rounded-full transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-foreground after:rounded-full after:h-5 after:w-5 after:transition-transform peer-checked:after:translate-x-5 peer-disabled:opacity-50 peer-checked:after:bg-white" />
           </label>
         </div>
       </div>

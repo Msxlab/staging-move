@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Send, Loader2, MessageCircle, Lock } from "lucide-react";
@@ -7,9 +7,9 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
-  OPEN: { label: "Open", cls: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
-  IN_PROGRESS: { label: "In Progress", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  WAITING_USER: { label: "Waiting for you", cls: "bg-orange-500/10 text-orange-400 border-orange-500/20" },
+  OPEN: { label: "Open", cls: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br" },
+  IN_PROGRESS: { label: "In Progress", cls: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br" },
+  WAITING_USER: { label: "Waiting for you", cls: "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br" },
   CLOSED: { label: "Closed", cls: "bg-foreground/5 text-muted-foreground border-border" },
 };
 
@@ -104,7 +104,7 @@ export default function SupportTicketPage() {
     return (
       <div className="text-center py-16">
         <p className="text-muted-foreground">Ticket not found.</p>
-        <Link href="/support" className="text-orange-400 text-sm mt-2 inline-block">← Back to Support</Link>
+        <Link href="/support" className="text-tone-orange-fg text-sm mt-2 inline-block">â† Back to Support</Link>
       </div>
     );
   }
@@ -136,7 +136,7 @@ export default function SupportTicketPage() {
           <button
             onClick={handleClose}
             disabled={closing}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border text-muted-foreground text-xs hover:text-red-400 hover:border-red-500/30 transition"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border text-muted-foreground text-xs hover:text-destructive hover:border-destructive/30 transition"
           >
             {closing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
             Close Ticket
@@ -154,17 +154,17 @@ export default function SupportTicketPage() {
               <div key={msg.id} className={`p-4 ${isSystem ? "bg-foreground/[0.01]" : ""}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
-                    isUser ? "bg-orange-500/20 text-orange-400" :
+                    isUser ? "bg-tone-orange-bg text-tone-orange-fg" :
                     isSystem ? "bg-foreground/5 text-foreground/40" :
-                    "bg-cyan-500/20 text-cyan-400"
+                    "bg-tone-cyan-bg text-tone-cyan-fg"
                   }`}>
-                    {isUser ? "U" : isSystem ? "⚙" : "S"}
+                    {isUser ? "U" : isSystem ? "âš™" : "S"}
                   </div>
-                  <span className={`text-xs font-medium ${isUser ? "text-orange-300" : isSystem ? "text-foreground/40" : "text-cyan-300"}`}>
+                  <span className={`text-xs font-medium ${isUser ? "text-tone-orange-fg" : isSystem ? "text-foreground/40" : "text-tone-cyan-fg"}`}>
                     {isUser ? "You" : isSystem ? "System" : "Support"}
                   </span>
                   <span className="text-[10px] text-foreground/30">
-                    {new Date(msg.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} ·{" "}
+                    {new Date(msg.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} Â·{" "}
                     {new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>
@@ -182,12 +182,12 @@ export default function SupportTicketPage() {
       {isClosed ? (
         <div className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.02] p-4 text-center">
           <MessageCircle className="h-5 w-5 text-foreground/20 mx-auto mb-1" />
-          <p className="text-xs text-foreground/40">This ticket is closed. <Link href="/support" className="text-orange-400 hover:underline">Open a new ticket</Link> if you need further help.</p>
+          <p className="text-xs text-foreground/40">This ticket is closed. <Link href="/support" className="text-tone-orange-fg hover:underline">Open a new ticket</Link> if you need further help.</p>
         </div>
       ) : (
         <form onSubmit={handleReply} className="rounded-2xl border border-foreground/[0.06] bg-foreground/[0.02] p-4">
           <textarea
-            className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-orange-500/50 resize-none mb-3"
+            className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-tone-orange-br resize-none mb-3"
             placeholder="Write your reply..."
             rows={3}
             value={reply}
@@ -197,7 +197,7 @@ export default function SupportTicketPage() {
             <button
               type="submit"
               disabled={sending || !reply.trim()}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
             >
               {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Send Reply

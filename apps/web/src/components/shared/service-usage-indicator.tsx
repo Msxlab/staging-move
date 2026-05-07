@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 interface ServiceUsageIndicatorProps {
   current: number;
@@ -16,9 +16,9 @@ export function ServiceUsageIndicator({
   const isWarn = current >= limit - 2 && current < limit;
   const isFull = current >= limit;
   const tone = isFull
-    ? "text-red-300 border-red-500/30 bg-red-500/10"
+    ? "text-destructive border-destructive/30 bg-destructive/10"
     : isWarn
-      ? "text-amber-300 border-amber-500/30 bg-amber-500/10"
+      ? "text-tone-honey-fg border-tone-honey-br bg-tone-honey-bg"
       : "text-muted-foreground border-border bg-foreground/5";
 
   return (
@@ -30,7 +30,7 @@ export function ServiceUsageIndicator({
       <span className="font-medium">Services tracked: {current} / {limit}</span>
       <span aria-hidden="true" className="h-1 w-12 rounded-full bg-foreground/10 overflow-hidden">
         <span
-          className={`block h-full ${isFull ? "bg-red-500" : isWarn ? "bg-amber-500" : "bg-orange-500"}`}
+          className={`block h-full ${isFull ? "bg-destructive" : isWarn ? "bg-tone-honey-fg" : "bg-tone-orange-fg"}`}
           style={{ width: `${ratio * 100}%` }}
         />
       </span>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { MessageCircle, Plus, ChevronRight, Clock, CheckCircle2, AlertCircle, Loader2, X } from "lucide-react";
@@ -6,9 +6,9 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 const statusBadge: Record<string, { label: string; cls: string }> = {
-  OPEN: { label: "Open", cls: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
-  IN_PROGRESS: { label: "In Progress", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  WAITING_USER: { label: "Waiting for you", cls: "bg-orange-500/10 text-orange-400 border-orange-500/20" },
+  OPEN: { label: "Open", cls: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br" },
+  IN_PROGRESS: { label: "In Progress", cls: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br" },
+  WAITING_USER: { label: "Waiting for you", cls: "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br" },
   CLOSED: { label: "Closed", cls: "bg-foreground/5 text-muted-foreground border-border" },
 };
 
@@ -85,7 +85,7 @@ export default function SupportPage() {
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition"
         >
           <Plus className="h-4 w-4" /> New Ticket
         </button>
@@ -104,7 +104,7 @@ export default function SupportPage() {
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Subject</label>
               <input
-                className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-orange-500/50"
+                className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-tone-orange-br"
                 placeholder="Brief description of your issue"
                 value={form.subject}
                 onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
@@ -117,7 +117,7 @@ export default function SupportPage() {
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Category</label>
                 <select
-                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-orange-500/50"
+                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-tone-orange-br"
                   value={form.category}
                   onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
                 >
@@ -127,7 +127,7 @@ export default function SupportPage() {
               <div>
                 <label className="block text-xs text-muted-foreground mb-1">Priority</label>
                 <select
-                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-orange-500/50"
+                  className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:border-tone-orange-br"
                   value={form.priority}
                   onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
                 >
@@ -141,7 +141,7 @@ export default function SupportPage() {
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Message</label>
               <textarea
-                className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-orange-500/50 resize-none"
+                className="w-full rounded-xl border border-border bg-foreground/[0.03] px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-tone-orange-br resize-none"
                 placeholder="Describe your issue in detail..."
                 rows={4}
                 value={form.message}
@@ -155,7 +155,7 @@ export default function SupportPage() {
               <button
                 type="submit"
                 disabled={creating}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
               >
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 Submit Ticket

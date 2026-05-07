@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -12,7 +12,7 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
 
 const inputCls =
-  "w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+  "w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition";
 
 interface AccountSecurityState {
   account: {
@@ -76,11 +76,11 @@ export default function PrivacyPage() {
     loadSecurityState();
   }, []);
 
-  // ── Password ──────────────────────────────────────────
+  // â”€â”€ Password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [savingPw, setSavingPw] = useState(false);
 
-  // ── MFA ───────────────────────────────────────────────
+  // â”€â”€ MFA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [mfaPassword, setMfaPassword] = useState("");
   const [mfaSetup, setMfaSetup] = useState<{
     uri: string;
@@ -91,7 +91,7 @@ export default function PrivacyPage() {
   const [mfaBusy, setMfaBusy] = useState(false);
   const [disablePw, setDisablePw] = useState("");
 
-  // ── Delete ────────────────────────────────────────────
+  // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handlePasswordChange = async () => {
@@ -291,7 +291,7 @@ export default function PrivacyPage() {
       {/* Account Access */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
-          <Shield className="h-4 w-4 text-orange-400" />
+          <Shield className="h-4 w-4 text-tone-orange-fg" />
           <h2 className="text-sm font-semibold text-foreground">Account Access</h2>
         </div>
         <div className="px-5 pb-5 space-y-4">
@@ -300,7 +300,7 @@ export default function PrivacyPage() {
               <Loader2 className="h-4 w-4 animate-spin" /> Loading account security...
             </div>
           ) : !securityState ? (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-sm text-red-200">
+            <div className="rounded-xl border border-destructive bg-destructive/5 p-3 text-sm text-destructive">
               Account security state could not be loaded. Refresh and try again.
             </div>
           ) : (
@@ -331,7 +331,7 @@ export default function PrivacyPage() {
                       key={`${method.type}-${method.linkedAt || "none"}`}
                       className={`rounded-full px-3 py-1 text-xs font-medium ${
                         method.enabled
-                          ? "bg-emerald-500/10 text-emerald-300"
+                          ? "bg-tone-emerald-bg text-tone-emerald-fg"
                           : "bg-foreground/5 text-foreground/35"
                       }`}
                     >
@@ -340,7 +340,7 @@ export default function PrivacyPage() {
                   ))}
                 </div>
                 {!hasPasswordLogin && (
-                  <p className="mt-3 text-xs text-amber-100/70">
+                  <p className="mt-3 text-xs text-tone-honey-fg/70">
                     This account can sign in through linked OAuth, but password and MFA management require setting a password first.
                   </p>
                 )}
@@ -355,7 +355,7 @@ export default function PrivacyPage() {
                   <button
                     onClick={handleRevokeOtherSessions}
                     disabled={securityBusy || otherActiveSessions.length === 0}
-                    className="rounded-xl border border-red-500/20 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/10 disabled:opacity-50"
+                    className="rounded-xl border border-destructive px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
                   >
                     Revoke other sessions
                   </button>
@@ -376,11 +376,11 @@ export default function PrivacyPage() {
                             <p className="truncate text-sm font-medium text-foreground/80">
                               {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}
                             </p>
-                            {session.current && <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] text-orange-300">Current</span>}
+                            {session.current && <span className="rounded-full bg-tone-orange-bg px-2 py-0.5 text-[10px] text-tone-orange-fg">Current</span>}
                             {!session.isActive && <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/35">Revoked</span>}
                           </div>
                           <p className="mt-1 text-xs text-foreground/35">
-                            {session.ipAddress || "No IP"} · Last active {new Date(session.lastActivity).toLocaleString()}
+                            {session.ipAddress || "No IP"} Â· Last active {new Date(session.lastActivity).toLocaleString()}
                           </p>
                         </div>
                         {session.isActive && (
@@ -405,7 +405,7 @@ export default function PrivacyPage() {
       {/* Password */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
-          <Key className="h-4 w-4 text-orange-400" />
+          <Key className="h-4 w-4 text-tone-orange-fg" />
           <h2 className="text-sm font-semibold text-foreground">{hasPasswordLogin ? "Change Password" : "Set Password"}</h2>
         </div>
         {!hasPasswordLogin ? (
@@ -420,7 +420,7 @@ export default function PrivacyPage() {
               <button
                 onClick={handleRequestSetPasswordEmail}
                 disabled={passwordSetupBusy}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
               >
                 {passwordSetupBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
                 Email Setup Link
@@ -463,7 +463,7 @@ export default function PrivacyPage() {
             <button
               onClick={handlePasswordChange}
               disabled={savingPw || !pwForm.current || !pwForm.next}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
             >
               {savingPw ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
               Update Password
@@ -477,14 +477,14 @@ export default function PrivacyPage() {
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <Fingerprint className="h-5 w-5 text-orange-400" />
+            <div className="p-2 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
+              <Fingerprint className="h-5 w-5 text-tone-orange-fg" />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-foreground">Two-Factor Authentication</h3>
               <p className="text-xs text-muted-foreground">
                 {twoFaEnabled
-                  ? "Enabled — your account is secured with TOTP"
+                  ? "Enabled â€” your account is secured with TOTP"
                   : "Add extra security with an authenticator app"}
               </p>
             </div>
@@ -504,7 +504,7 @@ export default function PrivacyPage() {
               <button
                 onClick={handleMfaDisable}
                 disabled={!disablePw || mfaBusy}
-                className="px-4 py-2 rounded-xl border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/10 transition disabled:opacity-50 shrink-0"
+                className="px-4 py-2 rounded-xl border border-destructive text-destructive text-xs font-medium hover:bg-destructive/10 transition disabled:opacity-50 shrink-0"
               >
                 {mfaBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Disable"}
               </button>
@@ -512,10 +512,10 @@ export default function PrivacyPage() {
           </div>
         )}
 
-        {/* Setup — step 1: password gate */}
+        {/* Setup â€” step 1: password gate */}
         {!twoFaEnabled && !mfaSetup && !hasPasswordLogin && (
           <div className="px-5 pb-5 border-t border-border pt-4">
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-100/75">
+            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-xs text-tone-honey-fg/75">
               Set a password before enabling MFA. This prevents OAuth-only accounts from getting locked out during authenticator recovery.
             </div>
           </div>
@@ -533,7 +533,7 @@ export default function PrivacyPage() {
               <button
                 onClick={handleMfaSetup}
                 disabled={!mfaPassword || mfaBusy}
-                className="px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50 shrink-0"
+                className="px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50 shrink-0"
               >
                 {mfaBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Start setup"}
               </button>
@@ -541,11 +541,11 @@ export default function PrivacyPage() {
           </div>
         )}
 
-        {/* Setup — step 2: scan QR + verify TOTP */}
+        {/* Setup â€” step 2: scan QR + verify TOTP */}
         {!twoFaEnabled && mfaSetup && (
           <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
             <div className="text-center space-y-2">
-              <QrCode className="h-6 w-6 mx-auto text-orange-400" />
+              <QrCode className="h-6 w-6 mx-auto text-tone-orange-fg" />
               <p className="text-sm text-muted-foreground">Scan this QR code with your authenticator app</p>
               <div className="inline-block bg-white p-3 rounded-xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -557,16 +557,16 @@ export default function PrivacyPage() {
               </div>
               <div className="space-y-1">
                 <p className="text-[11px] text-foreground/40">Or enter this key manually:</p>
-                <code className="text-xs text-orange-400 bg-orange-500/10 px-3 py-1 rounded-lg select-all">{mfaSetup.secret}</code>
+                <code className="text-xs text-tone-orange-fg bg-tone-orange-bg px-3 py-1 rounded-lg select-all">{mfaSetup.secret}</code>
               </div>
             </div>
 
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
-              <p className="text-xs font-medium text-amber-200">Save your backup codes</p>
-              <p className="text-[11px] text-amber-100/70">Each code can be used once if you lose your authenticator. Store somewhere safe — we won't show them again.</p>
+            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 space-y-2">
+              <p className="text-xs font-medium text-tone-honey-fg">Save your backup codes</p>
+              <p className="text-[11px] text-tone-honey-fg/70">Each code can be used once if you lose your authenticator. Store somewhere safe â€” we won't show them again.</p>
               <div className="grid grid-cols-2 gap-1.5 pt-1">
                 {mfaSetup.backupCodes.map((c) => (
-                  <code key={c} className="text-xs text-amber-100 bg-black/30 px-2 py-1 rounded text-center font-mono">{c}</code>
+                  <code key={c} className="text-xs text-tone-honey-fg bg-foreground/20 backdrop-blur-sm px-2 py-1 rounded text-center font-mono">{c}</code>
                 ))}
               </div>
             </div>
@@ -584,7 +584,7 @@ export default function PrivacyPage() {
                 <button
                   onClick={handleMfaConfirm}
                   disabled={mfaCode.length !== 6 || mfaBusy}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50 shrink-0"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50 shrink-0"
                 >
                   {mfaBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                   Verify
@@ -604,7 +604,7 @@ export default function PrivacyPage() {
       {/* Data Privacy */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
-          <Shield className="h-4 w-4 text-emerald-400" />
+          <Shield className="h-4 w-4 text-tone-emerald-fg" />
           <h2 className="text-sm font-semibold text-foreground">Data Privacy</h2>
         </div>
         <div className="px-5 pb-5 space-y-3">
@@ -622,11 +622,11 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      {/* Danger Zone — actual flow lives in <DeleteAccountDialog /> below. */}
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 backdrop-blur-xl overflow-hidden">
+      {/* Danger Zone â€” actual flow lives in <DeleteAccountDialog /> below. */}
+      <div className="rounded-2xl border border-destructive bg-destructive/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
-          <Trash2 className="h-4 w-4 text-red-400" />
-          <h2 className="text-sm font-semibold text-red-400">Danger Zone</h2>
+          <Trash2 className="h-4 w-4 text-destructive" />
+          <h2 className="text-sm font-semibold text-destructive">Danger Zone</h2>
         </div>
         <div className="px-5 pb-5">
           <div className="flex items-center justify-between">
@@ -636,7 +636,7 @@ export default function PrivacyPage() {
             </div>
             <button
               onClick={() => setDeleteOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium hover:bg-red-500/20 transition"
+              className="px-3 py-1.5 rounded-xl bg-destructive/10 border border-destructive text-destructive text-xs font-medium hover:bg-destructive transition"
             >
               Delete Account
             </button>
@@ -668,9 +668,9 @@ function SecuritySummaryCard({
 }) {
   const toneClass =
     tone === "ok"
-      ? "text-emerald-300"
+      ? "text-tone-emerald-fg"
       : tone === "warn"
-        ? "text-amber-300"
+        ? "text-tone-honey-fg"
         : "text-muted-foreground";
   return (
     <div className="rounded-xl border border-border bg-black/20 p-3">

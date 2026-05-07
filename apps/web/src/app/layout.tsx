@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "@/styles/globals.css";
+import "@/styles/aurora.css";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
@@ -156,7 +157,7 @@ export default async function RootLayout({
         <link rel="mask-icon" href="/logo-mark.svg" color="#D4846A" />
         {!BLOCK_INDEXING ? <SiteSchemas /> : null}
       </head>
-      <body className={geistSans.className}>
+      <body className={`${geistSans.className} lf-aurora`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <QueryProvider>
             <ThemeProvider nonce={nonce}>

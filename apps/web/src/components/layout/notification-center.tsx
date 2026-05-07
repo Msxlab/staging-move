@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState, type ElementType } from "react";
 import { Bell, Receipt, Clock, CheckCircle2, AlertTriangle, Calendar, Info, Megaphone } from "lucide-react";
@@ -23,22 +23,22 @@ function notificationPresentation(notification: FeedNotification): {
 } {
   const key = (notification.icon || notification.type || "").toUpperCase();
   if (key.includes("BILL") || key.includes("RECEIPT")) {
-    return { icon: Receipt, iconColor: "text-amber-400", bg: "bg-amber-500/10" };
+    return { icon: Receipt, iconColor: "text-tone-honey-fg", bg: "bg-tone-honey-bg" };
   }
   if (key.includes("CONTRACT") || key.includes("CLOCK")) {
-    return { icon: Clock, iconColor: "text-amber-400", bg: "bg-amber-500/10" };
+    return { icon: Clock, iconColor: "text-tone-honey-fg", bg: "bg-tone-honey-bg" };
   }
   if (key.includes("MOVE") || key.includes("CALENDAR")) {
-    return { icon: Calendar, iconColor: "text-cyan-400", bg: "bg-cyan-500/10" };
+    return { icon: Calendar, iconColor: "text-tone-cyan-fg", bg: "bg-tone-cyan-bg" };
   }
   if (key.includes("MARKETING")) {
-    return { icon: Megaphone, iconColor: "text-rose-400", bg: "bg-rose-500/10" };
+    return { icon: Megaphone, iconColor: "text-destructive", bg: "bg-destructive/10" };
   }
   if (key.includes("FAILED") || key.includes("OVERDUE") || key.includes("ALERT")) {
-    return { icon: AlertTriangle, iconColor: "text-red-400", bg: "bg-red-500/10" };
+    return { icon: AlertTriangle, iconColor: "text-destructive", bg: "bg-destructive/10" };
   }
   if (key.includes("SYSTEM") || key.includes("INFO")) {
-    return { icon: Info, iconColor: "text-blue-400", bg: "bg-blue-500/10" };
+    return { icon: Info, iconColor: "text-tone-sky-fg", bg: "bg-tone-sky-bg" };
   }
   return { icon: Bell, iconColor: "text-muted-foreground", bg: "bg-foreground/5" };
 }
@@ -142,7 +142,7 @@ export function NotificationCenter() {
       >
         <Bell className="h-[18px] w-[18px]" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-orange-500 text-[9px] font-bold text-white flex items-center justify-center">
+          <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-tone-orange-fg text-[9px] font-bold text-white flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -155,7 +155,7 @@ export function NotificationCenter() {
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-medium">
+                <span className="px-1.5 py-0.5 rounded-full bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium">
                   {unreadCount} new
                 </span>
               )}
@@ -183,7 +183,7 @@ export function NotificationCenter() {
                 const Icon = presentation.icon;
                 const inner = (
                   <div
-                    className={`flex items-start gap-3 px-4 py-3 hover:bg-foreground/[0.03] transition cursor-pointer border-b border-foreground/[0.03] ${!notif.read ? "bg-orange-500/[0.03]" : ""}`}
+                    className={`flex items-start gap-3 px-4 py-3 hover:bg-foreground/[0.03] transition cursor-pointer border-b border-foreground/[0.03] ${!notif.read ? "bg-tone-orange-fg/[0.03]" : ""}`}
                   >
                     <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${presentation.bg}`}>
                       <Icon className={`h-3.5 w-3.5 ${presentation.iconColor}`} />
@@ -191,7 +191,7 @@ export function NotificationCenter() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className={`text-xs font-medium truncate ${notif.read ? "text-muted-foreground" : "text-foreground"}`}>{notif.title}</p>
-                        {!notif.read && <span className="h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0" />}
+                        {!notif.read && <span className="h-1.5 w-1.5 rounded-full bg-tone-orange-fg shrink-0" />}
                       </div>
                       {notif.body && <p className="text-[10px] text-foreground/40 mt-0.5 line-clamp-2">{notif.body}</p>}
                     </div>

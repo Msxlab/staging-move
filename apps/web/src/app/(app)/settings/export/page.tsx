@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -65,7 +65,7 @@ async function downloadFromUrl(url: string, fallbackFilename: string): Promise<v
       const data = await res.json();
       if (data?.error) message = data.error;
     } catch {
-      // non-JSON error body — keep the generic message
+      // non-JSON error body â€” keep the generic message
     }
     throw new Error(message);
   }
@@ -113,7 +113,7 @@ export default function ExportPage() {
     setDownloading(null);
   };
 
-  // Per-address monthly expense PDF — produced server-side by pdfkit.
+  // Per-address monthly expense PDF â€” produced server-side by pdfkit.
   // No more pop-up window or print dialog dependency.
   const handlePdfReport = async (address: AddressInfo) => {
     setGeneratingPdf(address.id);
@@ -129,7 +129,7 @@ export default function ExportPage() {
     setGeneratingPdf(null);
   };
 
-  // Full-account snapshot PDF — profile, subscription, addresses,
+  // Full-account snapshot PDF â€” profile, subscription, addresses,
   // services, moving plans, task summary in a single document.
   const handleFullAccountPdf = async () => {
     setGeneratingFullPdf(true);
@@ -162,17 +162,17 @@ export default function ExportPage() {
       {/* Per-address PDF reports */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <FileText className="h-4 w-4 text-orange-400" />
+          <FileText className="h-4 w-4 text-tone-orange-fg" />
           <h3 className="text-sm font-semibold text-foreground">Monthly Expense Reports (PDF)</h3>
         </div>
         <p className="text-xs text-foreground/40 px-5 pb-3">
           Pick the address you want a monthly report for. Each PDF is generated on the server with branding,
-          category breakdown, and full service details — no print dialog needed.
+          category breakdown, and full service details â€” no print dialog needed.
         </p>
         <div className="px-5 pb-5 space-y-2">
           {loadingAddresses ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 className="h-4 w-4 animate-spin text-orange-400" />
+              <Loader2 className="h-4 w-4 animate-spin text-tone-orange-fg" />
             </div>
           ) : addresses.length === 0 ? (
             <p className="text-xs text-foreground/40 text-center py-4">No addresses to generate reports for</p>
@@ -184,20 +184,20 @@ export default function ExportPage() {
               const isGenerating = generatingPdf === addr.id;
               return (
                 <div key={addr.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02] hover:bg-foreground/[0.05] transition">
-                  <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 shrink-0">
-                    <TypeIcon className="h-4 w-4 text-orange-400" />
+                  <div className="p-2 rounded-lg bg-tone-orange-bg border border-tone-orange-br shrink-0">
+                    <TypeIcon className="h-4 w-4 text-tone-orange-fg" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium text-foreground truncate">{addr.nickname || addr.street}</p>
-                      {addr.isPrimary && <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />}
+                      {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400 shrink-0" />}
                     </div>
-                    <p className="text-[10px] text-foreground/35">{svcCount} services · {formatCurrency(monthlyCost)}/mo</p>
+                    <p className="text-[10px] text-foreground/35">{svcCount} services Â· {formatCurrency(monthlyCost)}/mo</p>
                   </div>
                   <button
                     onClick={() => handlePdfReport(addr)}
                     disabled={isGenerating}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition disabled:opacity-50 shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50 shrink-0"
                   >
                     {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                     PDF Report
@@ -212,7 +212,7 @@ export default function ExportPage() {
       {/* Full account PDF */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <FileDown className="h-4 w-4 text-amber-400" />
+          <FileDown className="h-4 w-4 text-tone-honey-fg" />
           <h3 className="text-sm font-semibold text-foreground">Full Account Snapshot (PDF)</h3>
         </div>
         <div className="flex items-center gap-3 px-5 pb-5">
@@ -225,7 +225,7 @@ export default function ExportPage() {
           <button
             onClick={handleFullAccountPdf}
             disabled={generatingFullPdf}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-white text-xs font-medium hover:bg-amber-600 transition disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-honey-fg text-white text-xs font-medium hover:bg-tone-honey-fg/80 transition disabled:opacity-50 shrink-0"
           >
             {generatingFullPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
             Download PDF
@@ -236,7 +236,7 @@ export default function ExportPage() {
       {/* Data Exports */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <Download className="h-4 w-4 text-cyan-400" />
+          <Download className="h-4 w-4 text-tone-cyan-fg" />
           <h3 className="text-sm font-semibold text-foreground">Data Exports</h3>
         </div>
         <div className="px-5 pb-5 space-y-2">

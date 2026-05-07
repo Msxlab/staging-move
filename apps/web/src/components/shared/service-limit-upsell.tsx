@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -66,7 +66,7 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
     details?.subscription?.eligibleForTrial ?? details?.eligibleForTrial ?? true;
   const campaign = details?.campaign || details?.monthlyOffer || null;
 
-  // Paid users hit the Individual Annual ceiling — there's no higher tier
+  // Paid users hit the Individual Annual ceiling â€” there's no higher tier
   // to upsell into, so the modal switches to a contact-support shape and
   // the primary CTA opens subscription management instead of checkout.
   if (!eligibleForTrial || accessType === "PAID") {
@@ -148,11 +148,11 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
       role="dialog"
       aria-modal="true"
       aria-label={copy.title}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-foreground/40 backdrop-blur-sm backdrop-blur-sm px-4"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl border border-orange-500/30 bg-background p-6 shadow-2xl"
+        className="relative w-full max-w-md rounded-2xl border border-tone-orange-br bg-background p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -166,8 +166,8 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-2.5">
-            <Sparkles className="h-5 w-5 text-orange-400" />
+          <div className="rounded-xl border border-tone-orange-br bg-tone-orange-bg p-2.5">
+            <Sparkles className="h-5 w-5 text-tone-orange-fg" />
           </div>
           <h2 className="text-lg font-semibold text-foreground">{copy.title}</h2>
         </div>
@@ -191,7 +191,7 @@ export function ServiceLimitUpsell({ open, details, onClose, returnTo }: Service
           <button
             type="button"
             onClick={handleUpgrade}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-semibold text-white transition hover:bg-tone-orange-bg"
           >
             {copy.primary}
             <ArrowRight className="h-4 w-4" />

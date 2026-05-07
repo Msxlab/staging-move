@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Bell, Loader2, Receipt, Calendar, Mail } from "lucide-react";
@@ -17,7 +17,7 @@ const notifGroups: NotifGroup[] = [
   {
     title: "Billing & Payments",
     icon: Receipt,
-    iconColor: "text-amber-400",
+    iconColor: "text-tone-honey-fg",
     items: [
       { key: "billReminder", label: "Bill Due Reminders", description: "Get notified 3 days before a bill is due" },
       { key: "billOverdue", label: "Overdue Alerts", description: "Alert when a bill passes its due date" },
@@ -27,7 +27,7 @@ const notifGroups: NotifGroup[] = [
   {
     title: "Moving & Tasks",
     icon: Calendar,
-    iconColor: "text-cyan-400",
+    iconColor: "text-tone-cyan-fg",
     items: [
       { key: "taskReminder", label: "Task Reminders", description: "Reminders for upcoming moving tasks" },
       { key: "moveUpdate", label: "Moving Plan Updates", description: "Updates on your active moving plan progress" },
@@ -36,7 +36,7 @@ const notifGroups: NotifGroup[] = [
   {
     title: "Reports & Summary",
     icon: Mail,
-    iconColor: "text-rose-400",
+    iconColor: "text-destructive",
     items: [
       { key: "weeklySummary", label: "Weekly Summary", description: "Weekly digest of activity and upcoming items" },
       { key: "monthlyReport", label: "Monthly Report", description: "Monthly expense summary and trends" },
@@ -135,7 +135,7 @@ export default function NotificationsPage() {
                     aria-label={item.label}
                     onClick={() => toggle(item.key)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
-                      settings[item.key] ? "bg-orange-500" : "bg-foreground/10"
+                      settings[item.key] ? "bg-tone-orange-fg" : "bg-foreground/10"
                     }`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
@@ -152,7 +152,7 @@ export default function NotificationsPage() {
       {/* Email Delivery Settings */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
-          <Mail className="h-4 w-4 text-orange-400" />
+          <Mail className="h-4 w-4 text-tone-orange-fg" />
           <h3 className="text-sm font-semibold text-foreground">Email Delivery</h3>
         </div>
         <div className="px-5 pb-5 space-y-4">
@@ -160,7 +160,7 @@ export default function NotificationsPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Weekly Digest Day</label>
               <select
-                className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+                className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
                 value={digestDay}
                 onChange={(e) => setDigestDay(e.target.value)}
               >
@@ -172,7 +172,7 @@ export default function NotificationsPage() {
             <div className="space-y-1.5">
               <label className="text-xs font-medium text-muted-foreground">Bill Reminder Lead Time</label>
               <select
-                className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+                className="w-full rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
                 value={reminderDays}
                 onChange={(e) => setReminderDays(e.target.value)}
               >
@@ -196,7 +196,7 @@ export default function NotificationsPage() {
               aria-label="Enable email notifications"
               onClick={() => setEmailEnabled(!emailEnabled)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
-                emailEnabled ? "bg-orange-500" : "bg-foreground/10"
+                emailEnabled ? "bg-tone-orange-fg" : "bg-foreground/10"
               }`}
             >
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
@@ -209,7 +209,7 @@ export default function NotificationsPage() {
 
       <div className="flex justify-end">
         <button onClick={handleSave} disabled={saving}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50">
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50">
           {saving ? <><Loader2 className="h-4 w-4 animate-spin" />Saving...</> : "Save Preferences"}
         </button>
       </div>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
@@ -27,9 +27,9 @@ import { CSS } from "@dnd-kit/utilities";
 
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 const categoryColors: Record<string, string> = {
-  GOVERNMENT: "bg-red-500", UTILITY: "bg-amber-500", FINANCIAL: "bg-emerald-500",
-  HOUSING: "bg-sky-500", HEALTHCARE: "bg-rose-500", TRANSPORTATION: "bg-blue-500",
-  KIDS: "bg-purple-500", FITNESS: "bg-orange-500", SHOPPING: "bg-pink-500", OTHER: "bg-gray-500",
+  GOVERNMENT: "bg-destructive", UTILITY: "bg-tone-honey-fg", FINANCIAL: "bg-tone-emerald-fg",
+  HOUSING: "bg-tone-sky-bg", HEALTHCARE: "bg-destructive", TRANSPORTATION: "bg-tone-sky-fg",
+  KIDS: "bg-tone-foil-fg", FITNESS: "bg-tone-orange-fg", SHOPPING: "bg-destructive", OTHER: "bg-tone-slate-fg",
 };
 const CATEGORY_KEYS = ["GOVERNMENT", "UTILITY", "FINANCIAL", "HOUSING", "HEALTHCARE", "TRANSPORTATION", "KIDS", "FITNESS", "SHOPPING", "OTHER"] as const;
 
@@ -100,7 +100,7 @@ function SortableItem({ id, label, dragLabel, enabled, onToggle }: { id: string;
         aria-pressed={enabled}
         className={`flex-1 px-3 py-2 rounded-xl text-xs font-medium border transition text-left ${
           enabled
-            ? "border-orange-500/30 bg-orange-500/10 text-orange-300"
+            ? "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"
             : "border-border text-muted-foreground hover:text-foreground/80"
         }`}
       >
@@ -336,7 +336,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           <div className="flex items-center gap-3">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">{td("title")}</h1>
             {isPremium && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 border border-amber-500/30 text-amber-300 animate-pulse">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-primary0/20 via-primary/600/20 to-accent0/20 border border-tone-honey-br text-tone-honey-fg animate-pulse">
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
                 {td("premiumBadge")}
               </span>
@@ -348,7 +348,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           <button
             onClick={() => setShowWidgetPanel(!showWidgetPanel)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition ${
-              showWidgetPanel ? "border-orange-500/30 bg-orange-500/10 text-orange-400" : "border-border text-muted-foreground hover:bg-foreground/5"
+              showWidgetPanel ? "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg" : "border-border text-muted-foreground hover:bg-foreground/5"
             }`}
           >
             <SlidersHorizontal className="h-4 w-4" /> {td("customize")}
@@ -359,7 +359,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
             </button>
           </Link>
           <Link href="/moving/new">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
               <Truck className="h-4 w-4" /> {td("planMoveBtn")}
             </button>
           </Link>
@@ -382,7 +382,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
       {/* Widget Customization Panel */}
       {showWidgetPanel && (
-        <div className="rounded-2xl border border-orange-500/20 bg-foreground/5 backdrop-blur-xl p-4">
+        <div className="rounded-2xl border border-tone-orange-br bg-foreground/5 backdrop-blur-xl p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">{td("widget_panel_title")}</h3>
             <button onClick={() => setShowWidgetPanel(false)} className="p-1 rounded-lg text-foreground/40 hover:text-foreground hover:bg-foreground/5 transition">
@@ -421,17 +421,17 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left Column — rendered in user's drag order */}
+        {/* Left Column â€” rendered in user's drag order */}
         <div className="lg:col-span-2 space-y-5">
           {orderedLeft.map((key) => {
             if (!w(key)) return null;
             switch (key) {
               case "nextCritical":
                 return criticalActions.length > 0 ? (
-                  <div key={key} className="rounded-2xl border border-red-500/20 bg-gradient-to-br from-red-500/5 to-orange-500/5 p-5 space-y-3">
+                  <div key={key} className="rounded-2xl border border-destructive bg-gradient-to-br from-primary0/5 to-accent0/5 p-5 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-red-400" />
+                        <Sparkles className="h-4 w-4 text-destructive" />
                         <h3 className="text-sm font-bold text-foreground">{td("widget_nextCritical")}</h3>
                       </div>
                       <Link href="/providers">
@@ -448,20 +448,20 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                           href={`/providers/${action.id}`}
                           className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.03] hover:bg-foreground/[0.06] transition group"
                         >
-                          <div className="h-9 w-9 rounded-lg bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
-                            <AlertTriangle className="h-4 w-4 text-red-400" />
+                          <div className="h-9 w-9 rounded-lg bg-destructive/15 border border-destructive flex items-center justify-center shrink-0">
+                            <AlertTriangle className="h-4 w-4 text-destructive" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-foreground truncate">{action.name}</p>
                             <p className="text-xs text-muted-foreground truncate">
                               {(action.category || "").replace(/_/g, " ")}
-                              {action.deadline ? ` · ${action.deadline}` : ""}
+                              {action.deadline ? ` Â· ${action.deadline}` : ""}
                             </p>
                             {action.reason && (
                               <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{action.reason}</p>
                             )}
                           </div>
-                          <ArrowRight className="h-4 w-4 text-foreground/40 group-hover:text-orange-400 transition shrink-0" />
+                          <ArrowRight className="h-4 w-4 text-foreground/40 group-hover:text-tone-orange-fg transition shrink-0" />
                         </Link>
                       ))}
                     </div>
@@ -472,7 +472,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                   <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
-                        <Home className="h-4 w-4 text-orange-400" />
+                        <Home className="h-4 w-4 text-tone-orange-fg" />
                         <h3 className="text-sm font-semibold text-foreground">{td("widget_spending")}</h3>
                       </div>
                       <Link href="/addresses"><button className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</button></Link>
@@ -486,23 +486,23 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                         return (
                           <Link key={addr.id} href={`/addresses/${addr.id}`}>
                             <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-foreground/[0.02] hover:bg-foreground/[0.05] transition-all group cursor-pointer">
-                              <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 group-hover:bg-orange-500 group-hover:border-orange-500 transition-colors shrink-0">
-                                <TypeIcon className="h-4 w-4 text-orange-400 group-hover:text-foreground transition-colors" />
+                              <div className="p-2 rounded-lg bg-tone-orange-bg border border-tone-orange-br group-hover:bg-tone-orange-fg group-hover:border-tone-orange-br transition-colors shrink-0">
+                                <TypeIcon className="h-4 w-4 text-tone-orange-fg group-hover:text-foreground transition-colors" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm font-medium text-foreground truncate">{addr.nickname || addr.street}</p>
-                                  {addr.isPrimary && <Star className="h-3 w-3 text-amber-400 fill-amber-400 shrink-0" />}
+                                  {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400 shrink-0" />}
                                 </div>
                                 <div className="flex items-center gap-2 mt-1">
                                   <div className="flex-1 h-1.5 bg-foreground/5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={`${addr.nickname || addr.street} spending percentage`}>
-                                    <div className="h-full bg-gradient-to-r from-orange-500 to-cyan-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                                    <div className="h-full bg-gradient-to-r from-primary0 to-accent0 rounded-full transition-all" style={{ width: `${pct}%` }} />
                                   </div>
                                   <span className="text-xs text-muted-foreground shrink-0">{Math.round(pct)}%</span>
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="text-sm font-semibold text-emerald-400">{formatCurrency(addrCost)}</p>
+                                <p className="text-sm font-semibold text-tone-emerald-fg">{formatCurrency(addrCost)}</p>
                                 <p className="text-xs text-muted-foreground">{td("servicesCount", { count: svcCount })}</p>
                               </div>
                             </div>
@@ -515,15 +515,15 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
               case "moving": {
                 const phaseInfo = checklist ? RELOCATION_PHASES.find((ph: any) => ph.phase === checklist.currentPhase) : null;
                 return stats.activePlan ? (
-                  <div key={key} className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-transparent p-5 space-y-4">
+                  <div key={key} className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-transparent p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{phaseInfo?.icon || "🚚"}</span>
+                        <span className="text-xl">{phaseInfo?.icon || "ðŸšš"}</span>
                         <div>
                           <h3 className="text-sm font-bold text-foreground">{td("section_moving")}</h3>
                           <p className="text-xs text-muted-foreground">
-                            {stats.activePlan.fromCity} → {stats.activePlan.toCity}
-                            {checklist ? ` · ${td("moving_phase", { phase: checklist.currentPhase + 1, label: phaseInfo?.label || "" })}` : ""}
+                            {stats.activePlan.fromCity} â†’ {stats.activePlan.toCity}
+                            {checklist ? ` Â· ${td("moving_phase", { phase: checklist.currentPhase + 1, label: phaseInfo?.label || "" })}` : ""}
                           </p>
                         </div>
                       </div>
@@ -538,19 +538,19 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                     {/* Progress bar */}
                     <div className="h-2 rounded-full bg-foreground/5 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-orange-500 to-cyan-500 transition-all duration-500"
+                        className="h-full rounded-full bg-gradient-to-r from-primary0 to-accent0 transition-all duration-500"
                         style={{ width: `${checklist?.progressPercent ?? progress}%` }}
                       />
                     </div>
 
                     {/* Overdue items */}
                     {checklist && checklist.overdueItems.length > 0 && (
-                      <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                        <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive">
+                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-semibold text-red-400">{td("moving_overdue")} ({checklist.overdueItems.length})</p>
-                          <p className="text-xs text-red-300/70 mt-0.5">
-                            {checklist.overdueItems.slice(0, 2).map((i: any) => i.title).join(" · ")}
+                          <p className="text-xs font-semibold text-destructive">{td("moving_overdue")} ({checklist.overdueItems.length})</p>
+                          <p className="text-xs text-destructive/70 mt-0.5">
+                            {checklist.overdueItems.slice(0, 2).map((i: any) => i.title).join(" Â· ")}
                             {checklist.overdueItems.length > 2 && ` ${td("moving_overdueMore", { count: checklist.overdueItems.length - 2 })}`}
                           </p>
                         </div>
@@ -559,15 +559,15 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
                     {/* Urgent deadlines */}
                     {checklist && checklist.urgentItems.filter((i: any) => !i.isOverdue).length > 0 && (
-                      <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                        <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-2 p-3 rounded-xl bg-tone-honey-bg border border-tone-honey-br">
+                        <Clock className="h-4 w-4 text-tone-honey-fg shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs font-semibold text-amber-400">{td("moving_deadlineSoon")}</p>
-                          <p className="text-xs text-amber-300/70 mt-0.5">
+                          <p className="text-xs font-semibold text-tone-honey-fg">{td("moving_deadlineSoon")}</p>
+                          <p className="text-xs text-tone-honey-fg/70 mt-0.5">
                             {checklist.urgentItems.filter((i: any) => !i.isOverdue).slice(0, 2).map((i: any) => {
                               const dl = i.daysUntilDeadline !== null ? ` (${i.daysUntilDeadline}d)` : "";
                               return `${i.title}${dl}`;
-                            }).join(" · ")}
+                            }).join(" Â· ")}
                           </p>
                         </div>
                       </div>
@@ -580,14 +580,14 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{checklist.nextAction.title}</p>
                           {checklist.nextAction.stateNote && (
-                            <p className="text-[11px] text-amber-300/70 truncate">{checklist.nextAction.stateNote}</p>
+                            <p className="text-[11px] text-tone-honey-fg/70 truncate">{checklist.nextAction.stateNote}</p>
                           )}
                           {checklist.nextAction.estimatedMinutes && (
                             <span className="text-xs text-muted-foreground">~{checklist.nextAction.estimatedMinutes} {td("moving_minute")}</span>
                           )}
                         </div>
                         <Link href="/services">
-                          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition whitespace-nowrap">
+                          <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition whitespace-nowrap">
                             {t("doIt")} <ArrowRight className="h-3 w-3" />
                           </button>
                         </Link>
@@ -599,7 +599,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                         <button className="w-full py-2 rounded-xl border border-border text-sm text-muted-foreground hover:bg-foreground/5 transition">{td("moving_viewPlan")}</button>
                       </Link>
                       <Link href="/services" className="flex-1">
-                        <button className="w-full py-2 rounded-xl border border-orange-500/30 bg-orange-500/10 text-sm text-orange-400 hover:bg-orange-500/20 transition">{td("moving_checklist")}</button>
+                        <button className="w-full py-2 rounded-xl border border-tone-orange-br bg-tone-orange-bg text-sm text-tone-orange-fg hover:bg-tone-orange-bg transition">{td("moving_checklist")}</button>
                       </Link>
                     </div>
                   </div>
@@ -616,7 +616,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                   <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-cyan-400" />
+                        <Calendar className="h-4 w-4 text-tone-cyan-fg" />
                         <h3 className="text-sm font-semibold text-foreground">{td("section_recent")}</h3>
                       </div>
                       <Link href="/services"><button className="text-[10px] text-foreground/40 hover:text-foreground transition">{td("viewAll")}</button></Link>
@@ -628,7 +628,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                             <p className="text-sm font-medium text-foreground truncate">{svc.providerName}</p>
                             <p className="text-xs text-muted-foreground">
                               {(svc.category || "").replace(/_/g, " ")}
-                              {svc.address && ` · ${svc.address.city || ""}`}
+                              {svc.address && ` Â· ${svc.address.city || ""}`}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -636,7 +636,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                               <span className="text-xs font-medium text-muted-foreground">{formatCurrency(svc.monthlyCost)}/mo</span>
                             )}
                             <Link href={`/services/${svc.id}`}>
-                              <button className="p-1 rounded-md text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10 transition opacity-0 group-hover:opacity-100" aria-label={td("recent_editService")}>
+                              <button className="p-1 rounded-md text-muted-foreground hover:text-tone-orange-fg hover:bg-tone-orange-bg transition opacity-0 group-hover:opacity-100" aria-label={td("recent_editService")}>
                                 <Edit className="h-3 w-3" />
                               </button>
                             </Link>
@@ -651,7 +651,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           })}
         </div>
 
-        {/* Right Column — rendered in user's drag order */}
+        {/* Right Column â€” rendered in user's drag order */}
         <div className="space-y-5">
           {orderedRight.map((key) => {
             if (!w(key)) return null;
@@ -663,7 +663,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                   <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
-                        <PieChart className="h-4 w-4 text-emerald-400" />
+                        <PieChart className="h-4 w-4 text-tone-emerald-fg" />
                         <h3 className="text-sm font-semibold text-foreground">{td("widget_categories")}</h3>
                       </div>
                       <span className="text-lg font-bold text-foreground">{formatCurrency(stats.monthlyExpenses)}</span>
@@ -676,7 +676,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                             <span className="font-medium text-foreground/80 text-xs">{formatCurrency(amount)}</span>
                           </div>
                           <div className="h-1.5 bg-foreground/5 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full ${categoryColors[cat] || "bg-gray-500"} transition-all`} style={{ width: `${(amount / maxCatAmount) * 100}%` }} />
+                            <div className={`h-full rounded-full ${categoryColors[cat] || "bg-tone-slate-fg"} transition-all`} style={{ width: `${(amount / maxCatAmount) * 100}%` }} />
                           </div>
                         </div>
                       ))}
@@ -688,7 +688,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                   <div key={key} className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
                     <div className="flex items-center justify-between px-5 pt-5 pb-3">
                       <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-amber-400" />
+                        <TrendingUp className="h-4 w-4 text-tone-honey-fg" />
                         <h3 className="text-sm font-semibold text-foreground">{td("widget_topSpending")}</h3>
                       </div>
                     </div>
@@ -699,7 +699,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-foreground/80 truncate">{svc.providerName}</p>
                           </div>
-                          <span className="text-xs font-semibold text-emerald-400 shrink-0">{formatCurrency(svc.monthlyCost)}</span>
+                          <span className="text-xs font-semibold text-tone-emerald-fg shrink-0">{formatCurrency(svc.monthlyCost)}</span>
                         </div>
                       ))}
                     </div>

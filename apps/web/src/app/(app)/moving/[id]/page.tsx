@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -11,9 +11,9 @@ import { normalizeMovingPlanStatus, type MoveTaskLocalEffect } from "@locateflow
 
 const STATUS_BADGE_CLASSES: Record<string, { cls: string }> = {
   PLANNING: { cls: "bg-foreground/5 text-muted-foreground border-border" },
-  IN_PROGRESS: { cls: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" },
-  COMPLETED: { cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-  CANCELED: { cls: "bg-red-500/10 text-red-400 border-red-500/20" },
+  IN_PROGRESS: { cls: "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br" },
+  COMPLETED: { cls: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br" },
+  CANCELED: { cls: "bg-destructive/10 text-destructive border-destructive" },
 };
 
 const STATUS_LABEL_KEYS: Record<string, "status_planning" | "status_inProgress" | "status_complete" | "status_canceled"> = {
@@ -134,7 +134,7 @@ export default function MovingPlanDetailPage() {
   // Single-tap "Done": replaces the old `window.confirm` modal. Completing
   // a task is fully reversible via Reopen, so prompting the user every
   // time is friction without a payoff. The undo toast covers the rare
-  // mis-tap path with a 5-second window — same pattern Gmail uses for
+  // mis-tap path with a 5-second window â€” same pattern Gmail uses for
   // archive.
   const handleCompleteMoveTask = async (taskId: string) => {
     const ok = await updateMoveTask(taskId, "COMPLETE");
@@ -243,7 +243,7 @@ export default function MovingPlanDetailPage() {
     ? t("interstateMoveFocus")
     : t("intrastateMoveFocus");
   const migrationSummaryLabel = migration
-    ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
+    ? `${migration.transitionPlans?.length || migration.summary.total} transition items Â· guidance only`
     : t("migrationGuidanceEmpty");
 
   return (
@@ -271,12 +271,12 @@ export default function MovingPlanDetailPage() {
             {statusLabel}
           </span>
           {plan.status === "PLANNING" && (
-            <button onClick={() => handleStatusChange("IN_PROGRESS")} className="px-3 py-1.5 rounded-xl bg-cyan-500 text-white text-xs font-medium hover:bg-cyan-600 transition">
+            <button onClick={() => handleStatusChange("IN_PROGRESS")} className="px-3 py-1.5 rounded-xl bg-tone-cyan-fg text-white text-xs font-medium hover:bg-tone-cyan-fg/80 transition">
               Start Moving
             </button>
           )}
           {plan.status === "IN_PROGRESS" && (
-            <button onClick={() => handleStatusChange("COMPLETED")} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition">
+            <button onClick={() => handleStatusChange("COMPLETED")} className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:bg-tone-emerald-bg transition">
               Mark Complete
             </button>
           )}
@@ -302,28 +302,28 @@ export default function MovingPlanDetailPage() {
 
       {/* Move Date */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-4 flex items-center gap-4">
-        <Calendar className="h-6 w-6 text-orange-400 shrink-0" />
+        <Calendar className="h-6 w-6 text-tone-orange-fg shrink-0" />
         <div>
           <p className="text-2xl font-bold text-foreground">{new Date(plan.moveDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
           <p className="text-[11px] text-muted-foreground">Move Date</p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-xl p-5">
+      <div className="rounded-2xl border border-tone-emerald-br bg-tone-emerald-bg backdrop-blur-xl p-5">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-foreground">Your move checklist</h2>
             <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-              These items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
+              These items are tracked locally in LocateFlow â€” marking one done won't change anything at the provider.
             </p>
           </div>
           <button
             onClick={generateMoveTasks}
             disabled={tasksLoading}
-            className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:bg-tone-emerald-bg transition disabled:opacity-50"
           >
             {tasksLoading
-              ? "Working…"
+              ? "Workingâ€¦"
               : moveTasks.length === 0
                 ? "Generate checklist"
                 : "Refresh checklist"}
@@ -344,10 +344,10 @@ export default function MovingPlanDetailPage() {
             const isDismissed = task.status === "DISMISSED";
             const statusLabel = isDone ? "Done" : isDismissed ? "Skipped" : "To do";
             const statusCls = isDone
-              ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/25"
+              ? "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br"
               : isDismissed
                 ? "bg-foreground/[0.04] text-foreground/35 border-border"
-                : "bg-cyan-500/10 text-cyan-300 border-cyan-500/20";
+                : "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br";
             return (
               <div
                 key={task.id}
@@ -364,7 +364,7 @@ export default function MovingPlanDetailPage() {
                         {statusLabel}
                       </span>
                       {task.localEffect?.localOnly && !isDone && !isDismissed && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-300">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg">
                           LocateFlow only
                         </span>
                       )}
@@ -376,7 +376,7 @@ export default function MovingPlanDetailPage() {
                       <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
                     )}
                     {task.destinationProvider?.name && !isDone && !isDismissed && (
-                      <p className="text-[11px] text-emerald-300 mt-2">Candidate: {task.destinationProvider.name}</p>
+                      <p className="text-[11px] text-tone-emerald-fg mt-2">Candidate: {task.destinationProvider.name}</p>
                     )}
                     {task.caveats?.[0] && !isDone && !isDismissed && (
                       <p className="text-[10px] text-foreground/40 mt-2">{task.caveats[0]}</p>
@@ -388,7 +388,7 @@ export default function MovingPlanDetailPage() {
                         <button
                           disabled={busy}
                           onClick={() => handleCompleteMoveTask(task.id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[11px] font-medium hover:bg-emerald-500/30 disabled:opacity-50"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-tone-emerald-bg text-tone-emerald-fg text-[11px] font-medium hover:bg-tone-emerald-bg disabled:opacity-50"
                         >
                           {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
                           Done
@@ -425,8 +425,8 @@ export default function MovingPlanDetailPage() {
           <p className="text-[11px] uppercase tracking-wider text-foreground/40 mb-1">Move scope</p>
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-base font-semibold text-foreground">{moveScopeLabel}</h3>
-            <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${isInterstateMove ? "bg-amber-500/10 text-amber-300 border-amber-500/20" : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"}`}>
-              {plan.fromAddress.state} → {plan.toAddress.state}
+            <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${isInterstateMove ? "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br" : "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br"}`}>
+              {plan.fromAddress.state} â†’ {plan.toAddress.state}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{focusLabel}</p>
@@ -434,7 +434,7 @@ export default function MovingPlanDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
           <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
             <p className="text-[10px] uppercase tracking-wider text-foreground/35 mb-1">Route</p>
-            <p className="text-sm font-medium text-foreground">{plan.fromAddress.city}, {plan.fromAddress.state} → {plan.toAddress.city}, {plan.toAddress.state}</p>
+            <p className="text-sm font-medium text-foreground">{plan.fromAddress.city}, {plan.fromAddress.state} â†’ {plan.toAddress.city}, {plan.toAddress.state}</p>
             <p className="text-xs text-foreground/35 mt-1">Your guidance uses this route, but provider actions remain manual.</p>
           </div>
           <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
@@ -452,27 +452,27 @@ export default function MovingPlanDetailPage() {
 
       {/* Migration Panel */}
       {(migration || migrationLoading) && (
-        <div className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-transparent backdrop-blur-xl overflow-hidden">
+        <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-transparent backdrop-blur-xl overflow-hidden">
           <div className="p-5 pb-3">
             <div className="flex items-center gap-2 mb-1">
-              <ArrowRightLeft className="h-4 w-4 text-orange-400" />
+              <ArrowRightLeft className="h-4 w-4 text-tone-orange-fg" />
               <h3 className="text-sm font-semibold text-foreground">Service Migration Plan</h3>
               {migration && (
                 <span className="ml-auto text-[10px] text-foreground/40">
-                  {plan?.fromAddress?.state} → {plan?.toAddress?.state}
+                  {plan?.fromAddress?.state} â†’ {plan?.toAddress?.state}
                 </span>
               )}
             </div>
             {migration && (
               <p className="text-xs text-muted-foreground">
-                {migration.summary.total} services analyzed · {migration.transitionPlans?.length || 0} manual transition guidance items
+                {migration.summary.total} services analyzed Â· {migration.transitionPlans?.length || 0} manual transition guidance items
               </p>
             )}
           </div>
 
           {migrationLoading ? (
             <div className="flex items-center justify-center gap-2 py-8">
-              <Loader2 className="h-4 w-4 animate-spin text-orange-400" />
+              <Loader2 className="h-4 w-4 animate-spin text-tone-orange-fg" />
               <span className="text-xs text-muted-foreground">Analyzing your services...</span>
             </div>
           ) : migration ? (
@@ -486,7 +486,7 @@ export default function MovingPlanDetailPage() {
                         Read-only guidance. LocateFlow does not update provider accounts or execute address changes.
                       </p>
                     </div>
-                    <span className="text-[10px] px-2 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-300">
+                    <span className="text-[10px] px-2 py-1 rounded-full border border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg">
                       Manual tracking only
                     </span>
                   </div>
@@ -509,7 +509,7 @@ export default function MovingPlanDetailPage() {
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {planItem.destinationProviderCandidates.slice(0, 3).map((candidate: any) => (
                               <span key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} className="text-[10px] px-2 py-1 rounded-full bg-foreground/5 text-foreground/45 border border-border">
-                                {candidate.name} · {candidate.coverageLabel}
+                                {candidate.name} Â· {candidate.coverageLabel}
                               </span>
                             ))}
                           </div>
@@ -527,8 +527,8 @@ export default function MovingPlanDetailPage() {
               {migration.keeps.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Shield className="h-3.5 w-3.5 text-emerald-400" />
-                    <span className="text-[11px] font-medium text-emerald-400 uppercase tracking-wider">Keep ({migration.keeps.length})</span>
+                    <Shield className="h-3.5 w-3.5 text-tone-emerald-fg" />
+                    <span className="text-[11px] font-medium text-tone-emerald-fg uppercase tracking-wider">Keep ({migration.keeps.length})</span>
                     <span className="text-[10px] text-foreground/30">Update address only</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -537,19 +537,19 @@ export default function MovingPlanDetailPage() {
                       const confirmed = item.currentService?.migrationAction === "KEEP";
                       const busy = confirming === sid;
                       return (
-                        <div key={`keep-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                        <div key={`keep-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-tone-emerald-bg border border-tone-emerald-br">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm text-foreground/80 truncate">{item.currentService?.providerName}</p>
                             <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
                           </div>
                           {confirmed ? (
-                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-emerald-400 font-medium">
+                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-tone-emerald-fg font-medium">
                               <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
                             </span>
                           ) : sid ? (
                             <button onClick={() => confirmAction(sid, "KEEP")} disabled={busy}
-                              className="shrink-0 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-[10px] font-medium hover:bg-emerald-500/30 transition disabled:opacity-50">
+                              className="shrink-0 px-2 py-1 rounded-lg bg-tone-emerald-bg text-tone-emerald-fg text-[10px] font-medium hover:bg-tone-emerald-bg transition disabled:opacity-50">
                               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
                             </button>
                           ) : null}
@@ -564,8 +564,8 @@ export default function MovingPlanDetailPage() {
               {migration.transfers.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Repeat className="h-3.5 w-3.5 text-cyan-400" />
-                    <span className="text-[11px] font-medium text-cyan-400 uppercase tracking-wider">Transfer ({migration.transfers.length})</span>
+                    <Repeat className="h-3.5 w-3.5 text-tone-cyan-fg" />
+                    <span className="text-[11px] font-medium text-tone-cyan-fg uppercase tracking-wider">Transfer ({migration.transfers.length})</span>
                     <span className="text-[10px] text-foreground/30">Same provider, new state</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -574,19 +574,19 @@ export default function MovingPlanDetailPage() {
                       const confirmed = item.currentService?.migrationAction === "TRANSFER";
                       const busy = confirming === sid;
                       return (
-                        <div key={`transfer-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
+                        <div key={`transfer-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-tone-cyan-bg border border-tone-cyan-br">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm text-foreground/80 truncate">{item.currentService?.providerName}</p>
                             <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
                           </div>
                           {confirmed ? (
-                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-cyan-400 font-medium">
+                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-tone-cyan-fg font-medium">
                               <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
                             </span>
                           ) : sid ? (
                             <button onClick={() => confirmAction(sid, "TRANSFER")} disabled={busy}
-                              className="shrink-0 px-2 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[10px] font-medium hover:bg-cyan-500/30 transition disabled:opacity-50">
+                              className="shrink-0 px-2 py-1 rounded-lg bg-tone-cyan-bg text-tone-cyan-fg text-[10px] font-medium hover:bg-tone-cyan-bg transition disabled:opacity-50">
                               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
                             </button>
                           ) : null}
@@ -601,8 +601,8 @@ export default function MovingPlanDetailPage() {
               {migration.switches.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <ArrowRightLeft className="h-3.5 w-3.5 text-amber-400" />
-                    <span className="text-[11px] font-medium text-amber-400 uppercase tracking-wider">Switch ({migration.switches.length})</span>
+                    <ArrowRightLeft className="h-3.5 w-3.5 text-tone-honey-fg" />
+                    <span className="text-[11px] font-medium text-tone-honey-fg uppercase tracking-wider">Switch ({migration.switches.length})</span>
                     <span className="text-[10px] text-foreground/30">Provider change needed</span>
                   </div>
                   <div className="space-y-1.5">
@@ -614,19 +614,19 @@ export default function MovingPlanDetailPage() {
                         ? `/services/new?fromServiceId=${sid}&category=${encodeURIComponent(item.category)}${item.recommendedProvider ? `&providerId=${item.recommendedProvider.id}` : ""}`
                         : `/services/new`;
                       return (
-                        <div key={`switch-${i}`} className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                        <div key={`switch-${i}`} className="flex items-center gap-2.5 p-3 rounded-xl bg-tone-honey-bg border border-tone-honey-br">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5">
                               <p className="text-sm text-muted-foreground line-through truncate">{item.currentService?.providerName}</p>
-                              <ArrowRight className="h-3 w-3 text-amber-400 shrink-0" />
-                              <p className="text-sm font-medium text-amber-300 truncate">{item.recommendedProvider?.name || "Find new"}</p>
+                              <ArrowRight className="h-3 w-3 text-tone-honey-fg shrink-0" />
+                              <p className="text-sm font-medium text-tone-honey-fg truncate">{item.recommendedProvider?.name || "Find new"}</p>
                             </div>
                             <p className="text-[10px] text-foreground/35 truncate mt-0.5">{item.note}</p>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {confirmed ? (
-                              <span className="flex items-center gap-1 text-[10px] text-amber-400 font-medium">
+                              <span className="flex items-center gap-1 text-[10px] text-tone-honey-fg font-medium">
                                 <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
                               </span>
                             ) : sid ? (
@@ -636,7 +636,7 @@ export default function MovingPlanDetailPage() {
                               </button>
                             ) : null}
                             <Link href={newHref}>
-                              <button className="px-2 py-1 rounded-lg bg-amber-500/20 text-amber-300 text-[10px] font-medium hover:bg-amber-500/30 transition">
+                              <button className="px-2 py-1 rounded-lg bg-tone-honey-bg text-tone-honey-fg text-[10px] font-medium hover:bg-tone-honey-bg transition">
                                 Select
                               </button>
                             </Link>
@@ -652,24 +652,24 @@ export default function MovingPlanDetailPage() {
               {migration.newNeeded.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <PlusCircle className="h-3.5 w-3.5 text-orange-400" />
-                    <span className="text-[11px] font-medium text-orange-400 uppercase tracking-wider">New Needed ({migration.newNeeded.length})</span>
+                    <PlusCircle className="h-3.5 w-3.5 text-tone-orange-fg" />
+                    <span className="text-[11px] font-medium text-tone-orange-fg uppercase tracking-wider">New Needed ({migration.newNeeded.length})</span>
                     <span className="text-[10px] text-foreground/30">Services you'll need</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {migration.newNeeded.map((item: any, i: number) => {
                       const newHref = `/services/new?category=${encodeURIComponent(item.category)}${item.recommendedProvider ? `&providerId=${item.recommendedProvider.id}` : ""}`;
                       return (
-                        <div key={`new-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-orange-500/5 border border-orange-500/10">
+                        <div key={`new-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-tone-orange-bg border border-tone-orange-br">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm text-foreground/80 truncate">{item.categoryLabel}</p>
                             {item.recommendedProvider && (
-                              <p className="text-[10px] text-orange-300 truncate">Rec: {item.recommendedProvider.name}</p>
+                              <p className="text-[10px] text-tone-orange-fg truncate">Rec: {item.recommendedProvider.name}</p>
                             )}
                           </div>
                           <Link href={newHref}>
-                            <button className="shrink-0 px-2 py-1 rounded-lg bg-orange-500/20 text-orange-300 text-[10px] font-medium hover:bg-orange-500/30 transition">
+                            <button className="shrink-0 px-2 py-1 rounded-lg bg-tone-orange-bg text-tone-orange-fg text-[10px] font-medium hover:bg-tone-orange-bg transition">
                               Browse
                             </button>
                           </Link>
@@ -684,8 +684,8 @@ export default function MovingPlanDetailPage() {
               {migration.cancels.length > 0 && (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <XCircle className="h-3.5 w-3.5 text-red-400" />
-                    <span className="text-[11px] font-medium text-red-400 uppercase tracking-wider">Cancel ({migration.cancels.length})</span>
+                    <XCircle className="h-3.5 w-3.5 text-destructive" />
+                    <span className="text-[11px] font-medium text-destructive uppercase tracking-wider">Cancel ({migration.cancels.length})</span>
                     <span className="text-[10px] text-foreground/30">No longer needed</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -694,19 +694,19 @@ export default function MovingPlanDetailPage() {
                       const confirmed = item.currentService?.migrationAction === "CANCEL";
                       const busy = confirming === sid;
                       return (
-                        <div key={`cancel-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-red-500/5 border border-red-500/10">
+                        <div key={`cancel-${i}`} className="flex items-center gap-2.5 p-2.5 rounded-xl bg-destructive/5 border border-destructive/10">
                           <span className="text-base">{item.icon}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm text-muted-foreground truncate">{item.currentService?.providerName}</p>
                             <p className="text-[10px] text-foreground/35 truncate">{item.note}</p>
                           </div>
                           {confirmed ? (
-                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-red-400 font-medium">
+                            <span className="shrink-0 flex items-center gap-1 text-[10px] text-destructive font-medium">
                               <CheckCircle2 className="h-3.5 w-3.5" />Confirmed
                             </span>
                           ) : sid ? (
                             <button onClick={() => confirmAction(sid, "CANCEL")} disabled={busy}
-                              className="shrink-0 px-2 py-1 rounded-lg bg-red-500/20 text-red-300 text-[10px] font-medium hover:bg-red-500/30 transition disabled:opacity-50">
+                              className="shrink-0 px-2 py-1 rounded-lg bg-destructive text-destructive text-[10px] font-medium hover:bg-destructive/30 transition disabled:opacity-50">
                               {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
                             </button>
                           ) : null}
@@ -733,8 +733,8 @@ export default function MovingPlanDetailPage() {
             onClick={() => setStateGuideOpen(!stateGuideOpen)}
           >
             <div className="flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-cyan-400" />
-              <span className="text-sm font-semibold text-foreground">State Guide — {plan.toAddress.state}</span>
+              <BookOpen className="h-4 w-4 text-tone-cyan-fg" />
+              <span className="text-sm font-semibold text-foreground">State Guide â€” {plan.toAddress.state}</span>
             </div>
             {stateGuideOpen ? (
               <ChevronUp className="h-4 w-4 text-foreground/40" />
@@ -784,7 +784,7 @@ export default function MovingPlanDetailPage() {
         {!deleteConfirm ? (
           <button
             onClick={() => setDeleteConfirm(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs text-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs text-foreground/30 hover:text-destructive hover:bg-destructive/10 transition"
           >
             <Trash2 className="h-3.5 w-3.5" />Delete Plan
           </button>
@@ -794,7 +794,7 @@ export default function MovingPlanDetailPage() {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="px-3 py-1.5 rounded-xl text-xs bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50"
+              className="px-3 py-1.5 rounded-xl text-xs bg-destructive text-white hover:bg-destructive/80 transition disabled:opacity-50"
             >
               {deleting ? "Deleting..." : "Confirm Delete"}
             </button>

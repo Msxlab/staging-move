@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -28,19 +28,19 @@ export {
   shouldShowServiceLogo,
 } from "@/components/services/service-logo-mark";
 
-// filterGroups mapping — labels are keys to be translated
+// filterGroups mapping â€” labels are keys to be translated
 // Use getFilterGroups(t) to get translated version in the component
 const FILTER_GROUPS_KEYS = [
-  { label: "filterGroups.all", value: "", icon: "📋" },
-  { label: "filterGroups.government", value: "GOVERNMENT", icon: "🏛️" },
-  { label: "filterGroups.utilities", value: "UTILITY", icon: "⚡" },
-  { label: "filterGroups.financial", value: "FINANCIAL", icon: "💳" },
-  { label: "filterGroups.housing", value: "HOUSING", icon: "🏠" },
-  { label: "filterGroups.healthcare", value: "HEALTHCARE", icon: "🏥" },
-  { label: "filterGroups.transport", value: "TRANSPORTATION", icon: "🚗" },
-  { label: "filterGroups.kids", value: "KIDS", icon: "👶" },
-  { label: "filterGroups.fitness", value: "FITNESS", icon: "💪" },
-  { label: "filterGroups.shopping", value: "SHOPPING", icon: "🛒" },
+  { label: "filterGroups.all", value: "", icon: "ðŸ“‹" },
+  { label: "filterGroups.government", value: "GOVERNMENT", icon: "ðŸ›ï¸" },
+  { label: "filterGroups.utilities", value: "UTILITY", icon: "âš¡" },
+  { label: "filterGroups.financial", value: "FINANCIAL", icon: "ðŸ’³" },
+  { label: "filterGroups.housing", value: "HOUSING", icon: "ðŸ " },
+  { label: "filterGroups.healthcare", value: "HEALTHCARE", icon: "ðŸ¥" },
+  { label: "filterGroups.transport", value: "TRANSPORTATION", icon: "ðŸš—" },
+  { label: "filterGroups.kids", value: "KIDS", icon: "ðŸ‘¶" },
+  { label: "filterGroups.fitness", value: "FITNESS", icon: "ðŸ’ª" },
+  { label: "filterGroups.shopping", value: "SHOPPING", icon: "ðŸ›’" },
 ];
 
 const GROUP_LABELS_KEYS: Record<string, string> = {
@@ -55,8 +55,8 @@ const GROUP_LABELS_KEYS: Record<string, string> = {
   SHOPPING: "groupLabels.shopping",
 };
 const groupIcons: Record<string, string> = {
-  GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
-  TRANSPORTATION: "🚗", KIDS: "👶", FITNESS: "💪", SHOPPING: "🛒",
+  GOVERNMENT: "ðŸ›ï¸", UTILITY: "âš¡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
+  TRANSPORTATION: "ðŸš—", KIDS: "ðŸ‘¶", FITNESS: "ðŸ’ª", SHOPPING: "ðŸ›’",
 };
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 
@@ -193,14 +193,14 @@ export function ServicesClient({
   return (
     <div className="space-y-6">
       {checklist && (
-        <div className="rounded-2xl border border-orange-500/20 bg-gradient-to-br from-orange-500/5 to-transparent p-5 space-y-4">
+        <div className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-transparent p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-xl">{currentPhaseInfo?.icon || ""}</span>
               <div>
                 <h2 className="text-sm font-bold text-foreground">{t("checklist.heading")}</h2>
                 <p className="text-xs text-muted-foreground">
-                  {checklist.fromState} → {checklist.toState} · Phase {checklist.currentPhase + 1}: {currentPhaseInfo?.label || ""}
+                  {checklist.fromState} â†’ {checklist.toState} Â· Phase {checklist.currentPhase + 1}: {currentPhaseInfo?.label || ""}
                 </p>
               </div>
             </div>
@@ -211,16 +211,16 @@ export function ServicesClient({
           </div>
 
           <div className="h-2 rounded-full bg-foreground/5 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-500" style={{ width: `${checklist.progressPercent}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-primary0 to-accent transition-all duration-500" style={{ width: `${checklist.progressPercent}%` }} />
           </div>
 
           {checklist.overdueItems.length > 0 && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-              <AlertTriangle className="h-4 w-4 text-red-400 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive">
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold text-red-400">{t("checklist.overdue", { count: checklist.overdueItems.length })}</p>
-                <p className="text-xs text-red-300/70 mt-0.5">
-                  {checklist.overdueItems.slice(0, 3).map((i) => i.title).join(" · ")}
+                <p className="text-xs font-semibold text-destructive">{t("checklist.overdue", { count: checklist.overdueItems.length })}</p>
+                <p className="text-xs text-destructive/70 mt-0.5">
+                  {checklist.overdueItems.slice(0, 3).map((i) => i.title).join(" Â· ")}
                   {checklist.overdueItems.length > 3 && ` +${checklist.overdueItems.length - 3} more`}
                 </p>
               </div>
@@ -228,15 +228,15 @@ export function ServicesClient({
           )}
 
           {checklist.urgentItems.filter((i) => !i.isOverdue).length > 0 && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <Clock className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-tone-honey-bg border border-tone-honey-br">
+              <Clock className="h-4 w-4 text-tone-honey-fg shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-semibold text-amber-400">{t("checklist.deadlineSoon")}</p>
-                <p className="text-xs text-amber-300/70 mt-0.5">
+                <p className="text-xs font-semibold text-tone-honey-fg">{t("checklist.deadlineSoon")}</p>
+                <p className="text-xs text-tone-honey-fg/70 mt-0.5">
                   {checklist.urgentItems.filter((i) => !i.isOverdue).slice(0, 3).map((i) => {
                     const dl = i.daysUntilDeadline !== null ? ` (${i.daysUntilDeadline}d)` : "";
                     return `${i.title}${dl}`;
-                  }).join(" · ")}
+                  }).join(" Â· ")}
                 </p>
               </div>
             </div>
@@ -248,7 +248,7 @@ export function ServicesClient({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{checklist.nextAction.title}</p>
                 {checklist.nextAction.stateNote && (
-                  <p className="text-[11px] text-amber-300/70 truncate">{checklist.nextAction.stateNote}</p>
+                  <p className="text-[11px] text-tone-honey-fg/70 truncate">{checklist.nextAction.stateNote}</p>
                 )}
                 <p className="text-[11px] text-foreground/35 truncate">{checklist.nextAction.description}</p>
                 {checklist.nextAction.estimatedMinutes && (
@@ -256,7 +256,7 @@ export function ServicesClient({
                 )}
               </div>
               <Link href="/services/new">
-                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-orange-500 text-white text-xs font-medium hover:bg-orange-600 transition whitespace-nowrap">
+                <button className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition whitespace-nowrap">
                   {t("doIt")} <ArrowRight className="h-3 w-3" />
                 </button>
               </Link>
@@ -276,14 +276,14 @@ export function ServicesClient({
               {filtered.length}
             </span>
             {totalMonthlyCost > 0 && (
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-medium">
+              <span className="px-2.5 py-0.5 rounded-full bg-tone-emerald-bg text-tone-emerald-fg text-xs font-medium">
                 {formatCurrency(totalMonthlyCost)}/mo
               </span>
             )}
           </div>
         </div>
         <Link href="/services/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
             <Plus className="h-4 w-4" />{t("newTitle")}
           </button>
         </Link>
@@ -296,7 +296,7 @@ export function ServicesClient({
             <button
               onClick={() => setAddressFilter("")}
               className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                !addressFilter ? "bg-orange-500 text-white shadow-sm" : "bg-foreground/5 text-muted-foreground border border-foreground/[0.06] hover:bg-foreground/10"
+                !addressFilter ? "bg-tone-orange-fg text-white shadow-sm" : "bg-foreground/5 text-muted-foreground border border-foreground/[0.06] hover:bg-foreground/10"
               }`}
             >{tCommon("all")}</button>
             {addresses.map((addr) => {
@@ -307,14 +307,14 @@ export function ServicesClient({
                 <button key={addr.id} onClick={() => setAddressFilter(isActive ? "" : addr.id)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     isActive
-                      ? "bg-orange-500/10 text-orange-300 border border-orange-500/30 ring-1 ring-orange-500/20"
+                      ? "bg-tone-orange-bg text-tone-orange-fg border border-tone-orange-br ring-1 ring-primary/20"
                       : "bg-foreground/[0.03] text-muted-foreground border border-foreground/[0.06] hover:bg-foreground/[0.06]"
                   }`}
                 >
-                  <TypeIcon className={`h-3.5 w-3.5 ${isActive ? "text-orange-400" : "text-foreground/35"}`} />
+                  <TypeIcon className={`h-3.5 w-3.5 ${isActive ? "text-tone-orange-fg" : "text-foreground/35"}`} />
                   <span>{addr.nickname || `${addr.city}, ${addr.state}`}</span>
-                  {addr.isPrimary && <Star className="h-3 w-3 text-amber-400 fill-amber-400" />}
-                  <span className={`px-1.5 py-0 rounded-full text-[10px] ${isActive ? "bg-orange-500/20 text-orange-300" : "bg-foreground/5 text-foreground/35"}`}>{svcCount}</span>
+                  {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400" />}
+                  <span className={`px-1.5 py-0 rounded-full text-[10px] ${isActive ? "bg-tone-orange-bg text-tone-orange-fg" : "bg-foreground/5 text-foreground/35"}`}>{svcCount}</span>
                 </button>
               );
             })}
@@ -329,14 +329,14 @@ export function ServicesClient({
             <input
               aria-label={tCommon("search")}
               placeholder={tCommon("search")}
-              className="w-full rounded-xl border border-border bg-foreground/5 pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition"
+              className="w-full rounded-xl border border-border bg-foreground/5 pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <select
             aria-label={t("sortBy")}
-            className="rounded-xl border border-border bg-foreground/5 px-3 py-2.5 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition min-w-[140px]"
+            className="rounded-xl border border-border bg-foreground/5 px-3 py-2.5 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition min-w-[140px]"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
@@ -351,7 +351,7 @@ export function ServicesClient({
             className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-medium transition whitespace-nowrap ${
               showInactive
                 ? "border-border text-muted-foreground hover:bg-foreground/5"
-                : "border-orange-500/30 bg-orange-500/10 text-orange-400"
+                : "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"
             }`}
           >
             {showInactive ? tCommon("all") : tCommon("active")}
@@ -367,13 +367,13 @@ export function ServicesClient({
                 onClick={() => setCategoryFilter(categoryFilter === g.value ? "" : g.value)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   categoryFilter === g.value
-                    ? "bg-orange-500 text-white shadow-sm"
+                    ? "bg-tone-orange-fg text-white shadow-sm"
                     : "bg-foreground/5 text-muted-foreground hover:bg-foreground/10"
                 }`}
               >
                 <span>{g.icon}</span>
                 {g.label}
-                <span className={`px-1.5 py-0 rounded-full text-[10px] ${categoryFilter === g.value ? "bg-orange-500/20 text-orange-300" : "bg-foreground/5 text-foreground/35"}`}>{count}</span>
+                <span className={`px-1.5 py-0 rounded-full text-[10px] ${categoryFilter === g.value ? "bg-tone-orange-bg text-tone-orange-fg" : "bg-foreground/5 text-foreground/35"}`}>{count}</span>
               </button>
             );
           })}
@@ -408,7 +408,7 @@ export function ServicesClient({
                             <ServiceLogoMark service={service} />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5">
-                                <h3 className="font-medium text-sm text-foreground truncate group-hover:text-orange-300 transition">{service.providerName}</h3>
+                                <h3 className="font-medium text-sm text-foreground truncate group-hover:text-tone-orange-fg transition">{service.providerName}</h3>
                                 <ChevronRight className="h-3.5 w-3.5 text-foreground/30 opacity-0 group-hover:opacity-100 transition shrink-0" />
                               </div>
                               <p className="text-[11px] text-foreground/35 mt-0.5">
@@ -428,7 +428,7 @@ export function ServicesClient({
                                   </span>
                                 )}
                                 {service.monthlyCost > 0 && (
-                                  <span className="font-semibold text-emerald-400/70">{formatCurrency(service.monthlyCost)}/mo</span>
+                                  <span className="font-semibold text-tone-emerald-fg/70">{formatCurrency(service.monthlyCost)}/mo</span>
                                 )}
                               </div>
                             </div>

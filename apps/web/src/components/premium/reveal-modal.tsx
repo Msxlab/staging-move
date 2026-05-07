@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { X, ArrowRight } from "lucide-react";
@@ -17,12 +17,12 @@ interface RevealModalProps {
 }
 
 /**
- * Pro / Family upgrade celebration modal — the ritual moment.
+ * Pro / Family upgrade celebration modal â€” the ritual moment.
  *
  * - Sticker zooms in with elastic bounce (1.2s)
  * - Foil glow + expanding ring loop in the background
  * - 24 confetti pieces (rose / foil / champagne) fall over 2s
- * - Eyebrow → title → sub → buttons fade up in sequence
+ * - Eyebrow â†’ title â†’ sub â†’ buttons fade up in sequence
  * - Esc or backdrop click closes
  *
  * Style is locked to the design-system "champagne and rose" palette and uses
@@ -135,7 +135,7 @@ export function RevealModal({
           </button>
           <button
             type="button"
-            className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-orange-500 to-orange-600 px-4 py-2 text-sm font-medium text-white shadow-md hover:from-orange-500/90 hover:to-orange-600/90 transition-all"
+            className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-br from-primary0 to-accent px-4 py-2 text-sm font-medium text-white shadow-md hover:from-primary0/90 hover:to-accent transition-all"
             onClick={() => {
               onPrimary?.();
               onClose();

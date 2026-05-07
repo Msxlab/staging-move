@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ export function ConfirmDialog({
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 bg-foreground/30 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
           <Card className="relative z-10 w-full max-w-md mx-4">

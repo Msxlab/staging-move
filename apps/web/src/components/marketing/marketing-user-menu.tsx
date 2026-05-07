@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { LayoutDashboard, LogOut, Settings, User } from "lucide-react";
 import Link from "next/link";
@@ -39,13 +39,13 @@ export function MarketingUserMenu() {
     <div className="relative" ref={ref}>
       <button
         type="button"
-        className="p-1 rounded-full hover:bg-foreground/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/60"
+        className="p-1 rounded-full hover:bg-foreground/5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={tNav("userMenu")}
       >
-        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-orange-500/30 to-cyan-500/30 border border-border flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary0/30 to-accent0/30 border border-border flex items-center justify-center">
           {initials ? (
             <span className="text-xs font-bold text-foreground/80">{initials}</span>
           ) : (
@@ -96,7 +96,7 @@ export function MarketingUserMenu() {
           <div className="border-t border-border my-1" />
           <button
             type="button"
-            className="flex items-center gap-2 px-3 py-2 text-sm text-red-400/80 hover:text-red-400 hover:bg-foreground/5 transition-colors w-full text-left"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-destructive/80 hover:text-destructive hover:bg-foreground/5 transition-colors w-full text-left"
             role="menuitem"
             onClick={() => {
               setOpen(false);

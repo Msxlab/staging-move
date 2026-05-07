@@ -1,4 +1,4 @@
-import { ArrowLeft, BarChart3, Calendar, DollarSign, Target, WalletCards } from "lucide-react";
+﻿import { ArrowLeft, BarChart3, Calendar, DollarSign, Target, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -84,7 +84,7 @@ export default async function BudgetMonthPage({ params }: { params: Promise<{ mo
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <DollarSign className="h-4 w-4 text-orange-400" /> Monthly Committed
+              <DollarSign className="h-4 w-4 text-tone-orange-fg" /> Monthly Committed
             </div>
             <p className="text-2xl font-bold">{formatCurrency(summary.monthlyCommitted)}</p>
             <p className="text-xs text-muted-foreground">{summary.costedRecurringServices.length} recurring services</p>
@@ -93,7 +93,7 @@ export default async function BudgetMonthPage({ params }: { params: Promise<{ mo
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <Target className="h-4 w-4 text-cyan-400" /> Budget Limit
+              <Target className="h-4 w-4 text-tone-cyan-fg" /> Budget Limit
             </div>
             <p className="text-2xl font-bold">{budgetLimit > 0 ? formatCurrency(budgetLimit) : "Not set"}</p>
             <p className="text-xs text-muted-foreground">Monthly planning limit</p>
@@ -102,7 +102,7 @@ export default async function BudgetMonthPage({ params }: { params: Promise<{ mo
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <Calendar className="h-4 w-4 text-emerald-400" /> Projected This Month
+              <Calendar className="h-4 w-4 text-tone-emerald-fg" /> Projected This Month
             </div>
             <p className="text-2xl font-bold">{formatCurrency(summary.projectedThisMonth)}</p>
             <p className="text-xs text-muted-foreground">{formatCurrency(summary.oneTimeThisMonth)} one-time</p>
@@ -111,7 +111,7 @@ export default async function BudgetMonthPage({ params }: { params: Promise<{ mo
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <WalletCards className="h-4 w-4 text-amber-400" /> Over / Under
+              <WalletCards className="h-4 w-4 text-tone-honey-fg" /> Over / Under
             </div>
             <p className={`text-2xl font-bold ${delta !== null && delta < 0 ? "text-destructive" : "text-success"}`}>
               {delta === null ? "Not set" : formatCurrency(Math.abs(delta))}

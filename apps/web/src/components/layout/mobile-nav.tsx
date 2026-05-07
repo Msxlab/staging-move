@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,7 +36,7 @@ export function MobileNav() {
               className={cn(
                 "flex flex-col items-center justify-center gap-1 flex-1 py-2 transition-colors",
                 isActive
-                  ? "text-orange-400"
+                  ? "text-tone-orange-fg"
                   : "text-foreground/40"
               )}
             >

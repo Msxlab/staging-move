@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -207,18 +207,18 @@ export function GlobalSearch() {
                 <button
                   key={result.id}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition ${
-                    isSelected ? "bg-orange-500/10" : "hover:bg-foreground/[0.03]"
+                    isSelected ? "bg-tone-orange-bg" : "hover:bg-foreground/[0.03]"
                   }`}
                   onClick={() => navigate(result.href)}
                   onMouseEnter={() => setSelectedIndex(i)}
                 >
                   <div className={`p-1.5 rounded-lg shrink-0 ${
-                    result.type === "address" ? "bg-orange-500/10" :
-                    result.type === "service" ? "bg-cyan-500/10" : "bg-foreground/5"
+                    result.type === "address" ? "bg-tone-orange-bg" :
+                    result.type === "service" ? "bg-tone-cyan-bg" : "bg-foreground/5"
                   }`}>
                     <Icon className={`h-3.5 w-3.5 ${
-                      result.type === "address" ? "text-orange-400" :
-                      result.type === "service" ? "text-cyan-400" : "text-muted-foreground"
+                      result.type === "address" ? "text-tone-orange-fg" :
+                      result.type === "service" ? "text-tone-cyan-fg" : "text-muted-foreground"
                     }`} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -226,8 +226,8 @@ export function GlobalSearch() {
                     <p className="text-[10px] text-foreground/35 truncate">{result.subtitle}</p>
                   </div>
                   <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${
-                    result.type === "address" ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
-                    result.type === "service" ? "bg-cyan-500/10 text-cyan-400 border-cyan-500/20" :
+                    result.type === "address" ? "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br" :
+                    result.type === "service" ? "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br" :
                     "bg-foreground/5 text-foreground/40 border-border"
                   }`}>
                     {result.type === "address" ? "Address" : result.type === "service" ? "Service" : "Page"}

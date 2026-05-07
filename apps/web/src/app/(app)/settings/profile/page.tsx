@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -17,9 +17,9 @@ import {
 import { toast } from "sonner";
 
 const inputCls =
-  "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+  "w-full rounded-xl border border-border bg-foreground/5 px-4 py-2.5 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/50 transition";
 const selectCls =
-  "w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition";
+  "w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition";
 
 const householdOptions = [
   { key: "hasChildren", label: "Children", icon: Baby },
@@ -150,7 +150,7 @@ export default function ProfileSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-orange-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-tone-orange-fg" />
       </div>
     );
   }
@@ -163,7 +163,7 @@ export default function ProfileSettingsPage() {
             <ArrowLeft className="h-4 w-4" />Back
           </button>
         </Link>
-        <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+        <div className="rounded-2xl border border-destructive bg-destructive/5 p-6">
           <h1 className="text-xl font-semibold text-foreground">Profile unavailable</h1>
           <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
           <button
@@ -193,7 +193,7 @@ export default function ProfileSettingsPage() {
 
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-orange-400" />
+          <User className="h-4 w-4 text-tone-orange-fg" />
           <h2 className="text-sm font-semibold text-foreground">Personal Info</h2>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -249,7 +249,7 @@ export default function ProfileSettingsPage() {
               onClick={() => update(item.key, !(form as any)[item.key])}
               className={`flex items-center gap-2 rounded-xl border p-2.5 text-sm transition ${
                 (form as any)[item.key]
-                  ? "border-orange-500/30 bg-orange-500/10 text-foreground"
+                  ? "border-tone-orange-br bg-tone-orange-bg text-foreground"
                   : "border-border bg-foreground/[0.02] text-muted-foreground hover:bg-foreground/[0.05]"
               }`}
             >
@@ -305,7 +305,7 @@ export default function ProfileSettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition disabled:opacity-50"
+          className="flex items-center gap-2 px-5 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition disabled:opacity-50"
         >
           {saving ? (
             <>

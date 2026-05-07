@@ -1,12 +1,12 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 
 interface FoilEmptyStateProps {
-  /** Eyebrow caption above the title — uppercase mono. */
+  /** Eyebrow caption above the title â€” uppercase mono. */
   eyebrow?: string;
   title: string;
   body?: string;
-  /** Primary action — render a `<Link>` or `<Button>` here. */
+  /** Primary action â€” render a `<Link>` or `<Button>` here. */
   action?: ReactNode;
   /** Secondary action, optional. */
   secondaryAction?: ReactNode;
@@ -15,7 +15,7 @@ interface FoilEmptyStateProps {
 }
 
 /**
- * Champagne-and-rose empty state. Used when a list/grid has no items yet —
+ * Champagne-and-rose empty state. Used when a list/grid has no items yet â€”
  * pairs a tonal foil illustration with one short sentence and one CTA.
  *
  * The "foil" effect comes from a soft radial glow behind a thin double ring;
@@ -59,7 +59,7 @@ export function FoilEmptyState({
         >
           {icon ?? (
             <Sparkles
-              className="h-7 w-7 text-orange-400"
+              className="h-7 w-7 text-tone-orange-fg"
               aria-hidden="true"
               strokeWidth={1.5}
             />

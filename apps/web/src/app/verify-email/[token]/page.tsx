@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -40,18 +40,18 @@ export default function VerifyEmailPage() {
       <div className="w-full max-w-md rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl p-8 space-y-4 text-center">
         {state === "verifying" && (
           <>
-            <Loader2 className="h-10 w-10 text-orange-400 mx-auto animate-spin" />
+            <Loader2 className="h-10 w-10 text-tone-orange-fg mx-auto animate-spin" />
             <h1 className="text-2xl font-bold text-foreground">{tAuth("verifying")}</h1>
           </>
         )}
         {state === "ok" && (
           <>
-            <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto" />
+            <CheckCircle2 className="h-10 w-10 text-tone-emerald-fg mx-auto" />
             <h1 className="text-2xl font-bold text-foreground">{tAuth("verified")}</h1>
             <p className="text-sm text-muted-foreground">{tAuth("verifiedDescription")}</p>
             <Link
               href="/sign-in"
-              className="inline-block rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white transition"
+              className="inline-block rounded-xl bg-tone-orange-fg hover:bg-tone-orange-bg px-4 py-2.5 text-sm font-semibold text-white transition"
             >
               {tCommon("signIn")}
             </Link>
@@ -59,7 +59,7 @@ export default function VerifyEmailPage() {
         )}
         {state === "error" && (
           <>
-            <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
+            <AlertCircle className="h-10 w-10 text-destructive mx-auto" />
             <h1 className="text-2xl font-bold text-foreground">{tAuth("verificationFailed")}</h1>
             <p className="text-sm text-muted-foreground">{error || tAuth("verificationFailedDescription")}</p>
             <Link

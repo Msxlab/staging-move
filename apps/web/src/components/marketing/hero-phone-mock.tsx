@@ -1,14 +1,14 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { MapPin, AlertCircle } from "lucide-react";
 
 /**
- * Hero phone mock — emotional acid test.
+ * Hero phone mock â€” emotional acid test.
  * Shows the dashboard in its "I just opened the app and saw the truth" state:
  *   - tracked spend at this address
  *   - cumulative savings since starting
  *   - two attention items: a renewal you forgot, a charge at your old place
  * Both rows are real things people miss when they don't track. The visual
- * itself is the pitch — the phone screen IS the recognition + relief moment.
+ * itself is the pitch â€” the phone screen IS the recognition + relief moment.
  */
 export async function HeroPhoneMock() {
   const t = await getTranslations("landing");
@@ -17,7 +17,7 @@ export async function HeroPhoneMock() {
     <div className="relative mx-auto w-full max-w-[320px]">
       <div
         aria-hidden="true"
-        className="absolute -inset-10 rounded-[80px] bg-gradient-to-br from-primary/25 via-transparent to-amber-500/15 blur-3xl"
+        className="absolute -inset-10 rounded-[80px] bg-gradient-to-br from-primary/25 via-transparent to-accent0/15 blur-3xl"
       />
 
       <div className="relative rounded-[44px] border border-border/80 bg-background p-2 shadow-2xl rotate-[-3deg]">
@@ -34,7 +34,7 @@ export async function HeroPhoneMock() {
             <p className="text-[10px] text-muted-foreground">{t("hero_mock_greeting")}</p>
             <p className="mt-0.5 flex items-center gap-1 text-xs text-foreground/80">
               <MapPin className="h-3 w-3 text-primary" />
-              432 Oak St · Austin
+              432 Oak St Â· Austin
             </p>
           </div>
 
@@ -49,7 +49,7 @@ export async function HeroPhoneMock() {
               </p>
               <p className="text-[9px] text-muted-foreground">{t("hero_mock_tracked_sub")}</p>
             </div>
-            <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 to-amber-500/5 p-3">
+            <div className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/10 to-accent0/5 p-3">
               <p className="text-[9px] uppercase tracking-wider text-primary">
                 {t("hero_mock_saved_label")}
               </p>
@@ -74,9 +74,9 @@ export async function HeroPhoneMock() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/5 px-3 py-2.5">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5">
               <div className="flex items-start gap-2">
-                <AlertCircle className="mt-0.5 h-3 w-3 shrink-0 text-rose-400" />
+                <AlertCircle className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />
                 <div className="min-w-0">
                   <p className="text-[10px] font-semibold">{t("hero_mock_alert_comcast_t")}</p>
                   <p className="text-[9px] text-muted-foreground">{t("hero_mock_alert_comcast_b")}</p>

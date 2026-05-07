@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -81,7 +81,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            {addresses.length} · {totalServices} · {
+            {addresses.length} Â· {totalServices} Â· {
               new Intl.NumberFormat(locale, {
                 style: "currency",
                 currency: "USD",
@@ -91,7 +91,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
           </p>
         </div>
         <Link href="/addresses/new">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-tone-orange-fg text-white text-sm font-medium hover:bg-tone-orange-bg transition">
             <Plus className="h-4 w-4" /> {t("newTitle")}
           </button>
         </Link>
@@ -122,13 +122,13 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-orange-500/10 border border-orange-500/20 group-hover:bg-orange-500 group-hover:border-orange-500 transition-colors">
-                      <TypeIcon className="h-5 w-5 text-orange-400 group-hover:text-foreground transition-colors" />
+                    <div className="p-2.5 rounded-xl bg-tone-orange-bg border border-tone-orange-br group-hover:bg-tone-orange-fg group-hover:border-tone-orange-br transition-colors">
+                      <TypeIcon className="h-5 w-5 text-tone-orange-fg group-hover:text-foreground transition-colors" />
                     </div>
                     <div>
                       <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                         {address.nickname || t("title")}
-                        {address.isPrimary && <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />}
+                        {address.isPrimary && <Star className="h-3.5 w-3.5 text-tone-honey-fg fill-amber-400" />}
                       </h3>
                       <p className="text-sm text-foreground/35">
                         {address.street}, {address.city}, {address.state} {address.zip}
@@ -138,8 +138,8 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full border font-medium shrink-0 ${
                       address.ownership === "OWNER"
-                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                        : "bg-cyan-500/10 text-cyan-400 border-cyan-500/20"
+                        ? "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br"
+                        : "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br"
                     }`}
                   >
                     {address.ownership === "OWNER" ? t("ownership_owner") : t("ownership_renter")}
@@ -152,7 +152,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                       <span className="font-medium text-foreground/80">{servicesCount}</span>
                     </span>
                     <span className="text-muted-foreground">
-                      <span className="font-semibold text-emerald-400">
+                      <span className="font-semibold text-tone-emerald-fg">
                         {new Intl.NumberFormat(locale, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(monthlyCost)}
                       </span>
                     </span>
@@ -171,13 +171,13 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                   </button>
                   <button
                     onClick={() => router.push(`/addresses/${address.id}/edit`)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-orange-400 hover:bg-orange-500/10 transition"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-tone-orange-fg hover:bg-tone-orange-bg transition"
                   >
                     <Edit className="h-3 w-3" />{tCommon("edit")}
                   </button>
                   <button
                     onClick={() => router.push(`/services/new`)}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-tone-emerald-fg hover:bg-tone-emerald-bg transition"
                   >
                     <Zap className="h-3 w-3" />{tServices("newTitle")}
                   </button>
@@ -187,7 +187,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                   {!isConfirming ? (
                     <button
                       onClick={(e) => handleDelete(address.id, e)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-foreground/30 hover:text-destructive hover:bg-destructive/10 transition"
                       aria-label={t("deleteAddress")}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -197,7 +197,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
                       <button
                         onClick={(e) => handleDelete(address.id, e)}
                         disabled={isDeleting}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium bg-destructive text-white hover:bg-destructive/80 transition disabled:opacity-50"
                       >
                         {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
                         {tCommon("confirm")}
