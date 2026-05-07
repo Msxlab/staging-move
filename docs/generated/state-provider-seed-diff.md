@@ -1,10 +1,10 @@
 # State Provider Seed Diff
 
-Generated: 2026-04-24T17:08:05.691Z
+Generated: 2026-05-07T02:55:52.459Z
 
-- newly added: 47
+- newly added: 98
 - already present: 0
-- backlog: 5
+- backlog: 7
 
 ## Newly Added
 
@@ -55,12 +55,65 @@ Generated: 2026-04-24T17:08:05.691Z
 - King County Metro | TRANSPORTATION_TRANSIT | zip_prefix | https://kingcounty.gov/en/dept/metro
 - Mountain Line Transit Authority | TRANSPORTATION_TRANSIT | zip_prefix | https://busride.org/routes/
 - Cheyenne Transit Program | TRANSPORTATION_TRANSIT | zip_prefix | https://www.cheyennecity.org/Your-Government/Departments/Public-Works/Transit/Fixed-Route-Service
+- Anton Anderson Memorial Tunnel / Whittier Tunnel | TRANSPORTATION_TOLL | zip_prefix | https://dot.alaska.gov/creg/whittiertunnel/index.shtml
+- Alabama Department of Revenue Motor Vehicle Division | GOVERNMENT_DMV | state | https://www.revenue.alabama.gov/division/motor-vehicle/
+- Alabama Freedom Pass | TRANSPORTATION_TOLL | state | https://freedompass.americanroads.com
+- 91 Express Lanes | TRANSPORTATION_TOLL | zip_prefix | https://www.91expresslanes.com
+- Metro ExpressLanes | TRANSPORTATION_TOLL | zip_prefix | https://www.metroexpresslanes.net
+- The Toll Roads | TRANSPORTATION_TOLL | zip_prefix | https://www.thetollroads.com
+- E-470 Public Highway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.e-470.com
+- Northwest Parkway | TRANSPORTATION_TOLL | zip_prefix | https://www.nwpky.com
+- Access Health CT | GOVERNMENT_HEALTH | zip_prefix | https://www.accesshealthct.com
+- HUSKY Health | GOVERNMENT_HEALTH | zip_prefix | https://portal.ct.gov/HUSKY
+- Connecticut Department of Revenue Services | GOVERNMENT_TAX | zip_prefix | https://portal.ct.gov/DRS
+- DC Health Link | GOVERNMENT_HEALTH | zip_prefix | https://www.dchealthlink.com
+- District Direct | GOVERNMENT_HEALTH | zip_prefix | https://districtdirect.dc.gov
+- MyTax.DC.gov | GOVERNMENT_TAX | zip_prefix | https://mytax.dc.gov
+- Delaware Medicaid / ASSIST | GOVERNMENT_HEALTH | zip_prefix | https://assist.dhss.delaware.gov
+- Delaware Taxpayer Portal | GOVERNMENT_TAX | zip_prefix | https://tax.delaware.gov
+- Delaware E-ZPass | TRANSPORTATION_TOLL | zip_prefix | https://www.ezpassde.com
+- Florida KidCare | GOVERNMENT_HEALTH | zip_prefix | https://www.floridakidcare.org
+- Florida Medicaid / MyACCESS | GOVERNMENT_HEALTH | zip_prefix | https://myaccess.myflfamilies.com
+- Florida DOR e-Services | GOVERNMENT_TAX | zip_prefix | https://floridarevenue.com
+- E-PASS / Central Florida Expressway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.cfxway.com
+- Greater Miami Expressway Agency | TRANSPORTATION_TOLL | zip_prefix | https://www.gmx-way.com
+- I-4 Express | TRANSPORTATION_TOLL | zip_prefix | https://i4express.com
+- Tampa Hillsborough Expressway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.tampa-xway.com
+- Alaska Electric Light and Power | UTILITY_ELECTRIC | zip_prefix | https://www.aelp.com
+- Golden Valley Electric Association | UTILITY_ELECTRIC | zip_prefix | https://www.gvea.com
+- Homer Electric Association | UTILITY_ELECTRIC | zip_prefix | https://www.homerelectric.com
+- Ketchikan Public Utilities Electric | UTILITY_ELECTRIC | zip_prefix | https://www.ketchikan.gov/ketchikan-public-utilities
+- Matanuska Electric Association | UTILITY_ELECTRIC | zip_prefix | https://www.mea.coop
+- Interior Gas Utility | UTILITY_GAS | zip_prefix | https://www.interiorgas.com
+- Decatur Utilities Electric | UTILITY_ELECTRIC | zip_prefix | https://www.decaturutilities.com
+- Huntsville Utilities Electric | UTILITY_ELECTRIC | zip_prefix | https://www.hsvutil.org
+- Conway Corp Electric | UTILITY_ELECTRIC | zip_prefix | https://www.conwaycorp.com
+- North Little Rock Electric | UTILITY_ELECTRIC | zip_prefix | https://nlrelectric.com
+- Southwestern Electric Power Company (SWEPCO) | UTILITY_ELECTRIC | zip_prefix | https://www.swepco.com
+- Arkansas Oklahoma Gas | UTILITY_GAS | zip_prefix | https://www.aogc.com
+- Tucson Electric Power | UTILITY_ELECTRIC | zip_prefix | https://www.tep.com
+- UniSource Energy Services Electric | UTILITY_ELECTRIC | zip_prefix | https://www.uesaz.com
+- Sacramento Municipal Utility District | UTILITY_ELECTRIC | zip_prefix | https://www.smud.org
+- Jewett City Department of Public Utilities | UTILITY_ELECTRIC | zip_prefix | https://www.jewettcitydpu.com
+- Norwich Public Utilities | UTILITY_ELECTRIC | zip_prefix | https://norwichpublicutilities.com
+- Wallingford Electric Division | UTILITY_ELECTRIC | zip_prefix | https://www.wallingfordct.gov/government/departments/electric-division/
+- City of Dover Electric Department | UTILITY_ELECTRIC | zip_prefix | https://www.cityofdover.gov/Public-Utilities/
+- City of Milford Electric | UTILITY_ELECTRIC | zip_prefix | https://www.cityofmilford.com
+- City of Newark Electric | UTILITY_ELECTRIC | zip_prefix | https://newarkde.gov/18/Electrical-Engineering
+- Delaware Electric Cooperative | UTILITY_ELECTRIC | zip_prefix | https://www.delaware.coop
+- Lewes Board of Public Works Electric | UTILITY_ELECTRIC | zip_prefix | https://www.lewesbpwde.gov
+- Municipal Services Commission of the City of New Castle Electric | UTILITY_ELECTRIC | zip_prefix | https://newcastlemsc.delaware.gov
+- Town of Middletown Electric | UTILITY_ELECTRIC | zip_prefix | https://www.middletown.delaware.gov
+- Town of Smyrna Electric | UTILITY_ELECTRIC | zip_prefix | https://smyrna.delaware.gov
+- Florida City Gas | UTILITY_GAS | zip_prefix | https://www.floridacitygas.com
 
 ## Backlog
 
 - Alaska Communications | UTILITY_INTERNET | live_address | https://www.alaskacommunications.com/Residential
-- Connecticut Natural Gas | UTILITY_GAS | zip_prefix | https://portal.ct.gov/pura/gas/gas
+- Connecticut Natural Gas | UTILITY_GAS | zip_prefix | https://www.cngcorp.com
 - Ohio Turnpike E-ZPass | TRANSPORTATION_TOLL | polygon | https://www.ezpassoh.com
 - Oncor Electric Delivery | UTILITY_ELECTRIC | polygon | https://www.oncor.com
 - Express Pass | TRANSPORTATION_TOLL | polygon | https://www.expresspass.utah.gov
+- Southeast Gas | UTILITY_GAS | live_address | https://southeastgas.com
+- Summit Utilities Arkansas | UTILITY_GAS | live_address | https://summitutilities.com
 
