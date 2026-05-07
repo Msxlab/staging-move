@@ -13,6 +13,8 @@ import {
   recordLoginFailure,
   clearLoginFailures,
 } from "@/lib/login-lockout";
+import { stableRateLimitHash } from "@/lib/rate-limit-policy";
+import { emitSecurityEvent } from "@/lib/security-events";
 import { decrypt } from "@/lib/shared-encryption";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 
@@ -41,6 +43,17 @@ function parseUA(ua: string) {
   if (ua.includes("Mobile") || ua.includes("Android") || ua.includes("iPhone")) r.deviceType = "Mobile";
   else if (ua.includes("iPad") || ua.includes("Tablet")) r.deviceType = "Tablet";
   return r;
+}
+
+function emitLoginLockout(reason: string, lockKey: string, retryAfterSec: number) {
+  emitSecurityEvent({
+    type: "LOCKOUT_STARTED",
+    severity: "warn",
+    group: "auth_login",
+    key: stableRateLimitHash(lockKey),
+    retryAfterSeconds: retryAfterSec,
+    context: { reason },
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -100,6 +113,7 @@ export async function POST(request: NextRequest) {
   if (!user || !user.passwordHash) {
     const nextState = await recordLoginFailure(ip);
     if (nextState.locked) {
+      emitLoginLockout("UNKNOWN_OR_OAUTH_ONLY_ACCOUNT", ip, nextState.retryAfterSec);
       return NextResponse.json(
         { error: "Too many failed attempts. Please wait and try again." },
         { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
@@ -112,6 +126,7 @@ export async function POST(request: NextRequest) {
   if (!passwordOk) {
     const nextState = await recordLoginFailure(ip);
     if (nextState.locked) {
+      emitLoginLockout("INVALID_PASSWORD", ip, nextState.retryAfterSec);
       return NextResponse.json(
         { error: "Too many failed attempts. Please wait and try again." },
         { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },
@@ -152,8 +167,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (!mfaValid) {
+      emitSecurityEvent({
+        type: "MFA_FAILURE_BURST",
+        severity: "warn",
+        group: "mfa_verify",
+        key: stableRateLimitHash(`mfa_fail:${user.id}`),
+        context: {
+          method: mfaCode ? "totp" : "backup_code",
+          userId: user.id,
+        },
+      });
       const nextState = await recordLoginFailure(ip);
       if (nextState.locked) {
+        emitLoginLockout("MFA_FAIL_LOCKOUT", ip, nextState.retryAfterSec);
         return NextResponse.json(
           { error: "Too many failed attempts. Please wait and try again." },
           { status: 429, headers: { "Retry-After": String(nextState.retryAfterSec) } },

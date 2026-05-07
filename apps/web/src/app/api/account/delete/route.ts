@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { emitSecurityEvent } from "@/lib/security-events";
 import { createAccountDeletionRequest, getActiveAccountDeletionRequest, processAccountDeletionRequest } from "@/lib/account-deletion";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { verifyUserStepUp } from "@/lib/user-step-up";
@@ -11,6 +12,12 @@ import { verifyUserStepUp } from "@/lib/user-step-up";
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId({ distinguishDeleted: true });
+    emitSecurityEvent({
+      type: "ACCOUNT_DELETE_ATTEMPT",
+      severity: "warn",
+      group: "account_delete",
+      context: { userId },
+    });
 
     // Rate limit: 3 per minute (destructive action)
     const rlKey = getRateLimitKey(request, "account:delete");

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { decrypt } from "@/lib/shared-encryption";
 import { LEGAL_CONSENT_EVENT } from "@/lib/legal";
+import { emitSecurityEvent } from "@/lib/security-events";
 
 // GET /api/export?type=addresses|services|budget|moving|moveTasks|customProviders|legal|support|notifications|subscription|analytics|full&format=csv|json&includeNotes=true
 //
@@ -17,6 +18,12 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") || "full";
     const format = searchParams.get("format") || "json";
     const includeNotes = searchParams.get("includeNotes") === "true";
+    emitSecurityEvent({
+      type: "EXPORT_ATTEMPT",
+      severity: "info",
+      group: "export_data",
+      context: { userId, type, format, includeNotes },
+    });
 
     // Mask sensitive fields in export data
     const maskValue = (val: string, visibleEnd = 4): string => {

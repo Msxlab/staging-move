@@ -88,6 +88,7 @@ interface RateLimitResult {
 }
 
 function enterRedisDegradedMode(reason: string, err?: unknown) {
+  const wasInDegradedMode = Date.now() < redisDegradedUntil;
   redisDegradedUntil = Date.now() + REDIS_DEGRADE_WINDOW_MS;
   const shouldWarnAgain =
     Date.now() - lastRedisFailureWarningAt >= REDIS_REWARN_WINDOW_MS;
@@ -98,6 +99,36 @@ function enterRedisDegradedMode(reason: string, err?: unknown) {
   } else if (!isProduction) {
     console.warn("[RATE-LIMIT] Redis unavailable, switching to in-memory degraded mode:", reason, err);
   }
+  // Emit LIMITER_DEGRADED only on transition into degraded mode or at
+  // the rewarn cadence; avoids flooding the security-event pipeline
+  // when every request inside the window observes the same failure.
+  // Imported lazily to avoid a circular dependency with security-events,
+  // rate-limit-policy, and rate-limit.
+  if (!wasInDegradedMode || shouldWarnAgain) {
+    emitLimiterDegradedEvent(reason);
+  }
+}
+
+function emitLimiterDegradedEvent(reason: string) {
+  // Lazy import to keep this module decoupled from security-events when
+  // the limiter is used from edge runtimes that don't pull the events
+  // module. The catch-all swallows any tree-shaking edge case.
+  Promise.resolve()
+    .then(() => import("./security-events"))
+    .then(({ emitSecurityEvent }) => {
+      emitSecurityEvent({
+        type: "LIMITER_DEGRADED",
+        severity: "warn",
+        context: {
+          reason,
+          fallback: "memory",
+          windowMs: REDIS_DEGRADE_WINDOW_MS,
+        },
+      });
+    })
+    .catch(() => {
+      /* never throw from the limiter */
+    });
 }
 
 function shouldUseRedis() {

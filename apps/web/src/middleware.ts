@@ -1,9 +1,22 @@
 import { NextResponse, NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/rate-limit";
+import {
+  buildPolicyRateLimitKey,
+  RATE_LIMIT_POLICIES,
+  evaluateRateLimitPolicy,
+  type RateLimitRouteGroup,
+} from "@/lib/rate-limit-policy";
 import { checkIPAccess } from "@/lib/ip-rules";
 import { tryGetUserJwtSecretKey } from "@/lib/user-jwt-secret";
 import { getCanonicalSiteUrl, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
+
+// Shadow userId-keyed counter is gated by an env flag so it can be turned
+// on once ops is ready to absorb the 2nd Redis round-trip per request.
+// Default off so this audit pass is zero-overhead in production until
+// explicitly enabled. See docs/audits/security/rate_limit_policy_matrix.md.
+const SHADOW_USER_KEYED_ENABLED =
+  process.env.RATE_LIMIT_SHADOW_USER_KEYED_ENABLED === "true";
 
 // ── Public routes (no auth required) ───────────────────────────
 const PUBLIC_PATHS = [
@@ -226,39 +239,101 @@ async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
   const pathname = req.nextUrl?.pathname || "";
   if (!pathname.startsWith("/api/")) return null;
   if (pathname.startsWith("/api/internal/")) return null;
+  if (pathname.startsWith("/api/webhooks/")) return null;
+  if (pathname.startsWith("/api/cron/")) return null;
 
   const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
   const isOptionalAuthMe =
     req.method === "GET" &&
     pathname === "/api/auth/me" &&
     ["1", "true"].includes(req.nextUrl.searchParams.get("optional") || "");
-  const key = getRateLimitKey(
+  const group: RateLimitRouteGroup = isOptionalAuthMe
+    ? "public_read"
+    : isWrite
+      ? "user_write"
+      : "public_read";
+  const policy = RATE_LIMIT_POLICIES[group];
+  const key = buildPolicyRateLimitKey(
     req,
-    isOptionalAuthMe ? "auth-me-optional" : isWrite ? "write" : "read",
+    group,
+    { routeId: isOptionalAuthMe ? "auth-me-optional" : pathname },
   );
-  const config = isWrite
-    ? { limit: 30, windowSeconds: 60 }
-    : isOptionalAuthMe
-      ? { limit: 200, windowSeconds: 60, failClosed: false }
-      : { limit: 120, windowSeconds: 60 };
+  const config = {
+    limit: isOptionalAuthMe ? 200 : policy.maxAttempts,
+    windowSeconds: policy.windowSeconds,
+    failClosed: policy.failClosed,
+  };
 
   const result = await rateLimit(key, config);
   if (!result.success) {
+    console.warn("rate_limit_hit", {
+      group,
+      route: pathname,
+      method: req.method,
+      keyStrategy: policy.keyStrategy,
+    });
     return NextResponse.json(
-      { error: "Too many requests. Please try again later." },
+      {
+        code: policy.userFacingErrorCode,
+        error: "Too many requests. Please try again later.",
+        routeGroup: group,
+        retryAfterSeconds: Math.ceil((result.resetAt - Date.now()) / 1000),
+      },
       {
         status: 429,
         headers: {
           "Retry-After": String(
             Math.ceil((result.resetAt - Date.now()) / 1000),
           ),
+          "X-RateLimit-Group": group,
           "X-RateLimit-Limit": String(config.limit),
           "X-RateLimit-Remaining": "0",
         },
       },
     );
   }
+
+  // Shadow userId-keyed counter — never blocks. Logs RATE_LIMIT_SHADOW_HIT
+  // when the per-user counter would have caught what the per-IP enforce
+  // limit didn't. Off by default; enable via RATE_LIMIT_SHADOW_USER_KEYED_ENABLED.
+  if (SHADOW_USER_KEYED_ENABLED) {
+    const userId = await tryReadUserIdFromRequest(req);
+    if (userId) {
+      const shadowGroup: RateLimitRouteGroup = isWrite ? "user_write" : "user_read";
+      // Note: user_write is mode="enforce" today; we still want to capture
+      // a userId-keyed signal alongside it. Override by routing this
+      // through user_read for reads (shadow) and skipping shadow on writes
+      // (user_write enforce already dominates). The decision for write
+      // shadow is deferred until reads have a 30-day baseline.
+      if (shadowGroup === "user_read") {
+        await evaluateRateLimitPolicy(req, "user_read", {
+          userId,
+          routeId: pathname,
+        }).catch(() => null);
+      }
+    }
+  }
   return null;
+}
+
+async function tryReadUserIdFromRequest(req: NextRequest): Promise<string | null> {
+  try {
+    const cookieToken = req.cookies.get("user_session")?.value;
+    const bearer = (() => {
+      const auth = req.headers.get("authorization") || req.headers.get("Authorization");
+      if (!auth) return null;
+      const m = auth.match(/^Bearer\s+(.+)$/i);
+      return m ? m[1].trim() : null;
+    })();
+    const token = cookieToken || bearer;
+    if (!token) return null;
+    const secret = tryGetUserJwtSecretKey();
+    if (!secret) return null;
+    const { payload } = await jwtVerify(token, secret, { algorithms: ["HS256"] });
+    return typeof payload.userId === "string" ? payload.userId : null;
+  } catch {
+    return null;
+  }
 }
 
 // ── Session check ──────────────────────────────────────────────
