@@ -9,9 +9,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0E0A07"
+      "backgroundColor": "#0A0F18"
     },
     "ios": {
       "supportsTablet": true,
@@ -26,7 +26,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0E0A07"
+        "backgroundColor": "#0A0F18"
       },
       "package": "com.locateflow.mobile",
       "versionCode": 1,
@@ -111,7 +111,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#D4846A"
+          "color": "#7FB6E8"
         }
       ],
       "expo-web-browser",

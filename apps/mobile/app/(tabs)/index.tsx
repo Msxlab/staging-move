@@ -210,8 +210,8 @@ export default function DashboardScreen() {
             <Text style={styles.title}>{t("tabs.dashboard")}</Text>
             {isPremium && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: "rgba(245,158,11,0.12)", borderWidth: 1, borderColor: "rgba(245,158,11,0.3)" }}>
-                <Text style={{ fontSize: 10, color: "#E5C9A8" }}>{"✦"}</Text>
-                <Text style={{ fontSize: 10, fontWeight: "700", color: "#E5C9A8", letterSpacing: 0.3 }}>{t("dashboard.premiumBadge")}</Text>
+                <Text style={{ fontSize: 10, color: "#B49BFF" }}>{"✦"}</Text>
+                <Text style={{ fontSize: 10, fontWeight: "700", color: "#B49BFF", letterSpacing: 0.3 }}>{t("dashboard.premiumBadge")}</Text>
               </View>
             )}
           </View>
@@ -325,7 +325,7 @@ export default function DashboardScreen() {
 
               {checklist.overdueItems.length > 0 && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10, padding: 10, borderRadius: 10, backgroundColor: "rgba(239,68,68,0.08)", borderWidth: 1, borderColor: "rgba(239,68,68,0.2)" }}>
-                  <AlertTriangle size={14} color="#C85A3E" />
+                  <AlertTriangle size={14} color="#F08C8E" />
                   <Text style={{ fontSize: 11, color: "#E08A6E", flex: 1 }} numberOfLines={2}>
                     Overdue: {checklist.overdueItems.slice(0, 2).map((i) => i.title).join(", ")}
                     {checklist.overdueItems.length > 2 ? ` +${checklist.overdueItems.length - 2}` : ""}
@@ -343,7 +343,7 @@ export default function DashboardScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={{ fontSize: 13, fontWeight: "600", color: theme.colors.text }} numberOfLines={1}>{checklist.nextAction.title}</Text>
                     {checklist.nextAction.stateNote ? (
-                      <Text style={{ fontSize: 10, color: "#E5C9A8" }} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
+                      <Text style={{ fontSize: 10, color: "#B49BFF" }} numberOfLines={2}>{checklist.nextAction.stateNote}</Text>
                     ) : null}
                     {checklist.nextAction.estimatedMinutes ? (
                       <Text style={{ fontSize: 10, color: theme.colors.textMuted }}>~{checklist.nextAction.estimatedMinutes} min</Text>

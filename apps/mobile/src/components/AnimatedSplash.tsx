@@ -1,7 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, Animated, Easing } from "react-native";
+import { View, StyleSheet, Animated, Easing } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Stop, Path, Circle } from "react-native-svg";
+import Svg, {
+  Defs,
+  LinearGradient as SvgLinearGradient,
+  RadialGradient,
+  Rect,
+  Stop,
+  Path,
+  Circle,
+} from "react-native-svg";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -15,9 +23,6 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
   const pinScale = useRef(new Animated.Value(0)).current;    // rose pin pop-in
   const ringScale = useRef(new Animated.Value(0.6)).current; // rose ripple
   const ringOpacity = useRef(new Animated.Value(0)).current;
-  const textOpacity = useRef(new Animated.Value(0)).current;
-  const textY = useRef(new Animated.Value(24)).current;
-  const flowOpacity = useRef(new Animated.Value(0)).current;
   const glowPulse = useRef(new Animated.Value(0.12)).current;
   const glowScale = useRef(new Animated.Value(0.85)).current;
   const overallOpacity = useRef(new Animated.Value(1)).current;
@@ -78,26 +83,6 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
         duration: 350,
         useNativeDriver: true,
       }),
-      // Phase 4: Wordmark slides up + foil "flow" fades in
-      Animated.parallel([
-        Animated.timing(textOpacity, {
-          toValue: 1,
-          duration: 350,
-          useNativeDriver: true,
-        }),
-        Animated.spring(textY, {
-          toValue: 0,
-          tension: 60,
-          friction: 9,
-          useNativeDriver: true,
-        }),
-        Animated.timing(flowOpacity, {
-          toValue: 1,
-          duration: 500,
-          delay: 150,
-          useNativeDriver: true,
-        }),
-      ]),
     ]);
     introAnimation.start(({ finished }) => {
       if (finished) setIntroDone(true);
@@ -142,7 +127,7 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
       introAnimation.stop();
       glowAnimation.stop();
     };
-  }, [flowOpacity, glowPulse, glowScale, markScale, markY, pinScale, ringOpacity, ringScale, sweep, textOpacity, textY]);
+  }, [glowPulse, glowScale, markScale, markY, pinScale, ringOpacity, ringScale, sweep]);
 
   useEffect(() => {
     if (!ready || !introDone || didFinish.current) return;
@@ -201,6 +186,15 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
         >
           <Svg width={180} height={180} viewBox="0 0 100 100">
             <Defs>
+              <SvgLinearGradient id="splash-bg" x1="0" y1="0" x2="1" y2="1">
+                <Stop offset="0%" stopColor="#1A2438" />
+                <Stop offset="60%" stopColor="#131C2C" />
+                <Stop offset="100%" stopColor="#0A0F18" />
+              </SvgLinearGradient>
+              <RadialGradient id="splash-icon-glow" cx="72%" cy="24%" r="62%">
+                <Stop offset="0%" stopColor="#F4E4D0" stopOpacity="0.22" />
+                <Stop offset="100%" stopColor="#F4E4D0" stopOpacity="0" />
+              </RadialGradient>
               <SvgLinearGradient id="splash-foil" x1="0" y1="1" x2="1" y2="0">
                 <Stop offset="0%" stopColor="#B8936C" />
                 <Stop offset="45%" stopColor="#E5C9A8" />
@@ -211,6 +205,9 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
                 <Stop offset="100%" stopColor="#A85A42" />
               </SvgLinearGradient>
             </Defs>
+
+            <Rect width="100" height="100" rx="22" fill="url(#splash-bg)" />
+            <Rect width="100" height="100" rx="22" fill="url(#splash-icon-glow)" />
 
             {/* Rose ripple */}
             <AnimatedCircle
@@ -225,12 +222,12 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
             />
 
             {/* Foil curve — animates dashoffset to "draw" itself */}
-            <AnimatedCircle cx="20" cy="65" r="4.5" fill="url(#splash-foil)" />
-            <AnimatedCircle cx="20" cy="65" r="1.5" fill="#0E0A07" />
+            <AnimatedCircle cx="20" cy="65" r="5.5" fill="url(#splash-foil)" />
+            <AnimatedCircle cx="20" cy="65" r="1.7" fill="#0A0F18" />
             <Path
               d="M20 65 Q 30 32, 50 48 T 80 40"
               stroke="url(#splash-foil)"
-              strokeWidth="3.25"
+              strokeWidth="5"
               fill="none"
               strokeLinecap="round"
               strokeDasharray={FOIL_LEN}
@@ -241,36 +238,20 @@ export function AnimatedSplash({ onFinish, ready = true }: { onFinish: () => voi
             <AnimatedCircle
               cx="80"
               cy="40"
-              r="7.25"
+              r="9"
               fill="url(#splash-rose)"
               {...({ style: { transform: [{ scale: pinScale }] } } as any)}
             />
             <AnimatedCircle
               cx="80"
               cy="40"
-              r="2.5"
+              r="3"
               fill="#F5F1EA"
               {...({ style: { transform: [{ scale: pinScale }] } } as any)}
             />
           </Svg>
         </Animated.View>
       </View>
-
-      {/* Wordmark */}
-      <Animated.View
-        style={[
-          styles.textContainer,
-          { opacity: textOpacity, transform: [{ translateY: textY }] },
-        ]}
-      >
-        <Text style={styles.brandText}>
-          <Text style={styles.brandLocate}>Locate</Text>
-          <Animated.Text style={[styles.brandFlow, { opacity: flowOpacity }]}>
-            flow
-          </Animated.Text>
-        </Text>
-        <Text style={styles.tagline}>Smart Relocation Management</Text>
-      </Animated.View>
 
       {/* Loading bar */}
       <View style={styles.loadingBarContainer}>
@@ -309,7 +290,7 @@ function LoadingBar() {
         ]}
       >
         <LinearGradient
-          colors={["#B8936C", "#E5C9A8", "#F4E4D0"]}
+          colors={["#5C9DDC", "#7FB6E8", "#DDE7F5"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={{ flex: 1, borderRadius: 2 }}
@@ -326,7 +307,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: "#0E0A07",
+    backgroundColor: "#0A0F18",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
@@ -352,31 +333,6 @@ const styles = StyleSheet.create({
     height: 180,
     alignItems: "center",
     justifyContent: "center",
-  },
-  textContainer: {
-    alignItems: "center",
-  },
-  brandText: {
-    fontSize: 40,
-    letterSpacing: -1,
-    fontFamily: "Fraunces_400Regular",
-  },
-  brandLocate: {
-    color: "#F5F1EA",
-    fontFamily: "Fraunces_400Regular",
-  },
-  brandFlow: {
-    color: "#E5C9A8",
-    fontStyle: "italic",
-    fontFamily: "Fraunces_400Regular_Italic",
-  },
-  tagline: {
-    color: "rgba(245, 241, 234, 0.30)",
-    fontSize: 12,
-    fontWeight: "600",
-    marginTop: 12,
-    letterSpacing: 2,
-    textTransform: "uppercase",
   },
   loadingBarContainer: {
     position: "absolute",

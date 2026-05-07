@@ -1140,7 +1140,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 24, marginTop: 8, padding: 12, borderRadius: theme.radius.lg,
     backgroundColor: "rgba(239,68,68,0.1)", borderWidth: 1, borderColor: "rgba(239,68,68,0.3)",
   },
-  errorText: { fontSize: 13, color: "#C85A3E", textAlign: "center" },
+  errorText: { fontSize: 13, color: "#F08C8E", textAlign: "center" },
   row: { flexDirection: "row", gap: 12, width: "100%" },
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, width: "100%" },
   chip: {

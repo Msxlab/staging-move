@@ -22,8 +22,8 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 const STATUS_COLOR: Record<string, string> = {
   OPEN: theme.colors.primary,
-  IN_PROGRESS: "#f59e0b",
-  WAITING_USER: "#D4846A",
+  IN_PROGRESS: "#F2C46C",
+  WAITING_USER: "#7FB6E8",
   CLOSED: theme.colors.textMuted,
 };
 
