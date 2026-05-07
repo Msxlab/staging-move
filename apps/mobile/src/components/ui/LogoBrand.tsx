@@ -20,9 +20,10 @@ const SIZES = {
   lg: 96,
 } as const;
 
-// Edition VI · Champagne & Rose. Mirrors apps/web/public/logo-mark.svg and
+// Edition VII · Aurora. Mirrors apps/web/public/logo-mark.svg and
 // apps/web/src/components/marketing/logo.tsx so the mobile auth screens read
-// as the same brand as the web sign-in.
+// as the same brand as the web sign-in. Cool/violet/mint palette resolved
+// from packages/shared/src/design-tokens.ts.
 export function LogoBrand({ size = "md" }: LogoBrandProps) {
   const markSize = SIZES[size];
 
@@ -42,17 +43,17 @@ export function LogoBrand({ size = "md" }: LogoBrandProps) {
               <Stop offset="100%" stopColor="#0A0F18" />
             </LinearGradient>
             <RadialGradient id="lf-glow" cx="72%" cy="24%" r="62%">
-              <Stop offset="0%" stopColor="#F4E4D0" stopOpacity="0.22" />
-              <Stop offset="100%" stopColor="#F4E4D0" stopOpacity="0" />
+              <Stop offset="0%" stopColor="#DDE7F5" stopOpacity="0.22" />
+              <Stop offset="100%" stopColor="#DDE7F5" stopOpacity="0" />
             </RadialGradient>
             <LinearGradient id="lf-foil" x1="0" y1="1" x2="1" y2="0">
-              <Stop offset="0%" stopColor="#B8936C" />
-              <Stop offset="45%" stopColor="#E5C9A8" />
-              <Stop offset="100%" stopColor="#F4E4D0" />
+              <Stop offset="0%" stopColor="#5C9DDC" />
+              <Stop offset="45%" stopColor="#7FB6E8" />
+              <Stop offset="100%" stopColor="#DDE7F5" />
             </LinearGradient>
             <LinearGradient id="lf-rose" x1="0" y1="0" x2="1" y2="1">
-              <Stop offset="0%" stopColor="#EDB99D" />
-              <Stop offset="100%" stopColor="#A85A42" />
+              <Stop offset="0%" stopColor="#A5C9F0" />
+              <Stop offset="100%" stopColor="#5C9DDC" />
             </LinearGradient>
           </Defs>
 
@@ -69,7 +70,7 @@ export function LogoBrand({ size = "md" }: LogoBrandProps) {
           <Circle cx="20" cy="65" r="5.5" fill="url(#lf-foil)" />
           <Circle cx="20" cy="65" r="1.7" fill="#0A0F18" />
           <Circle cx="80" cy="40" r="9" fill="url(#lf-rose)" />
-          <Circle cx="80" cy="40" r="3" fill="#F5F1EA" />
+          <Circle cx="80" cy="40" r="3" fill="#ECF1F8" />
         </Svg>
       </View>
     </View>

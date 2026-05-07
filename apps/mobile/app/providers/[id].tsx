@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.errorFaded,
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.3)",
+    borderColor: "rgba(240, 140, 142, 0.30)",
     marginBottom: 14,
   },
   criticalTitle: { fontSize: 14, fontWeight: "700", color: theme.colors.rose.text },

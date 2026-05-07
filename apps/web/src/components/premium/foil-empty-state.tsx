@@ -15,7 +15,7 @@ interface FoilEmptyStateProps {
 }
 
 /**
- * Champagne-and-rose empty state. Used when a list/grid has no items yet â€”
+ * Aurora cool/violet foil empty state. Used when a list/grid has no items yet —
  * pairs a tonal foil illustration with one short sentence and one CTA.
  *
  * The "foil" effect comes from a soft radial glow behind a thin double ring;
@@ -38,7 +38,7 @@ export function FoilEmptyState({
           className="absolute inset-0 -z-10 rounded-full"
           style={{
             background:
-              "radial-gradient(circle, rgba(229,201,168,0.22) 0%, rgba(229,201,168,0) 70%)",
+              "radial-gradient(circle, rgba(180,155,255,0.22) 0%, rgba(180,155,255,0) 70%)",
             transform: "scale(2.4)",
           }}
         />
@@ -46,15 +46,15 @@ export function FoilEmptyState({
         <div
           aria-hidden="true"
           className="absolute inset-[-12px] rounded-full"
-          style={{ border: "1px solid rgba(229,201,168,0.22)" }}
+          style={{ border: "1px solid rgba(180,155,255,0.22)" }}
         />
         {/* inner foil disc */}
         <div
           className="relative flex h-16 w-16 items-center justify-center rounded-full"
           style={{
             background:
-              "linear-gradient(135deg, rgba(244,228,208,0.18) 0%, rgba(229,201,168,0.10) 50%, rgba(184,147,108,0.16) 100%)",
-            border: "1px solid rgba(229,201,168,0.30)",
+              "linear-gradient(135deg, rgba(221,231,245,0.18) 0%, rgba(180,155,255,0.10) 50%, rgba(127,182,232,0.16) 100%)",
+            border: "1px solid rgba(127,182,232,0.30)",
           }}
         >
           {icon ?? (

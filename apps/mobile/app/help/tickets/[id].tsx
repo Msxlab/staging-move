@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12 },
   backBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, alignItems: "center", justifyContent: "center" },
-  closeBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(239,68,68,0.2)", alignItems: "center", justifyContent: "center" },
+  closeBtn: { width: 44, height: 44, borderRadius: 14, backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)", alignItems: "center", justifyContent: "center" },
   title: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "700", color: theme.colors.text, marginHorizontal: 8 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
   ticketMeta: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },

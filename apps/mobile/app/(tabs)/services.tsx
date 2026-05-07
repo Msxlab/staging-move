@@ -358,9 +358,9 @@ export default function ServicesScreen() {
               </View>
 
               {checklist.overdueItems.length > 0 && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, padding: 8, borderRadius: 8, backgroundColor: "rgba(239,68,68,0.08)" }}>
-                  <AlertTriangle size={12} color="#F08C8E" />
-                  <Text style={{ fontSize: 11, color: "#E08A6E", flex: 1 }} numberOfLines={1}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8, padding: 8, borderRadius: 8, backgroundColor: theme.colors.errorFaded }}>
+                  <AlertTriangle size={12} color={theme.colors.error} />
+                  <Text style={{ fontSize: 11, color: theme.colors.error, flex: 1 }} numberOfLines={1}>
                     {t("moving.overdueSummary", { count: checklist.overdueItems.length, title: checklist.overdueItems[0]?.title })}
                   </Text>
                 </View>

@@ -54,7 +54,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 18,
     borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.22)",
+    // Aurora coral (#F08C8E) at 22% — matches `theme.colors.error`.
+    borderColor: "rgba(240, 140, 142, 0.22)",
   },
   title: {
     fontSize: 19,

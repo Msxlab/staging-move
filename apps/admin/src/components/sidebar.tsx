@@ -184,16 +184,16 @@ export function Sidebar() {
           Animations driven by .sb-sweep / .sb-ripple / .sb-pin-float in
           globals.css. All respect prefers-reduced-motion. */}
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
-        <svg className="h-10 w-10 shrink-0 drop-shadow-[0_0_12px_rgba(229,201,168,0.18)]" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <svg className="h-10 w-10 shrink-0 drop-shadow-[0_0_12px_rgba(127,182,232,0.22)]" viewBox="0 0 100 100" fill="none" aria-hidden="true">
           <defs>
             <linearGradient id="admin-mk-foil" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0%" stopColor="#B8936C" />
-              <stop offset="45%" stopColor="#E5C9A8" />
-              <stop offset="100%" stopColor="#F4E4D0" />
+              <stop offset="0%" stopColor="#5C9DDC" />
+              <stop offset="45%" stopColor="#7FB6E8" />
+              <stop offset="100%" stopColor="#DDE7F5" />
             </linearGradient>
             <linearGradient id="admin-mk-rose" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#EDB99D" />
-              <stop offset="100%" stopColor="#A85A42" />
+              <stop offset="0%" stopColor="#A5C9F0" />
+              <stop offset="100%" stopColor="#5C9DDC" />
             </linearGradient>
           </defs>
           <path
@@ -205,8 +205,8 @@ export function Sidebar() {
             strokeLinecap="round"
           />
           <circle cx="20" cy="65" r="4.5" fill="url(#admin-mk-foil)" />
-          <circle cx="20" cy="65" r="1.5" fill="#0E0A07" />
-          {/* Ripple ring under the rose pin */}
+          <circle cx="20" cy="65" r="1.5" fill="#0A0F18" />
+          {/* Ripple ring under the cool pin */}
           <circle
             className="sb-ripple"
             cx="80"
@@ -220,7 +220,7 @@ export function Sidebar() {
           />
           <g className="sb-pin-float" style={{ transformOrigin: "80px 40px", transformBox: "fill-box" }}>
             <circle cx="80" cy="40" r="7.25" fill="url(#admin-mk-rose)" />
-            <circle cx="80" cy="40" r="2.5" fill="#F5F1EA" />
+            <circle cx="80" cy="40" r="2.5" fill="#ECF1F8" />
           </g>
         </svg>
         <div className="flex flex-col leading-none">

@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   dangerBtn: {
     flexDirection: "row", alignItems: "center", gap: 14, padding: 16,
     backgroundColor: theme.colors.errorFaded, borderRadius: theme.radius.xl,
-    borderWidth: 1, borderColor: "rgba(239,68,68,0.2)", marginTop: 8,
+    borderWidth: 1, borderColor: "rgba(240, 140, 142, 0.20)", marginTop: 8,
   },
   dangerLabel: { fontSize: 15, fontWeight: "600", color: theme.colors.error },
   dangerDesc: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },

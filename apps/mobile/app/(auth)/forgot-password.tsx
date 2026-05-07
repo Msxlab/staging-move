@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 24, gap: 10, flexGrow: 1, justifyContent: "center" },
   title: { fontSize: 24, fontWeight: "700", color: theme.colors.text, marginTop: 24 },
   subtitle: { fontSize: 14, color: theme.colors.textMuted, marginBottom: 16 },
-  error: { color: "#E08A6E", fontSize: 13, marginBottom: 8 },
+  error: { color: theme.colors.error, fontSize: 13, marginBottom: 8 },
   sentBox: { alignItems: "center", paddingVertical: 32, gap: 8 },
   linkRow: { alignItems: "center", marginTop: 16 },
   linkText: { color: theme.colors.textMuted, fontSize: 13 },

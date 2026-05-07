@@ -18,7 +18,7 @@ const variantStyles = {
   warning: { bg: theme.colors.warningFaded, border: theme.colors.amber.border, text: theme.colors.amber.text },
   error: { bg: theme.colors.errorFaded, border: theme.colors.rose.border, text: theme.colors.rose.text },
   info: { bg: theme.colors.infoFaded, border: theme.colors.sky.border, text: theme.colors.sky.text },
-  neutral: { bg: "rgba(245, 241, 234, 0.05)", border: theme.colors.border, text: theme.colors.textTertiary },
+  neutral: { bg: "rgba(236, 241, 248, 0.05)", border: theme.colors.border, text: theme.colors.textTertiary },
 };
 
 export function Badge({ label, variant = "neutral", size = "sm", style }: BadgeProps) {

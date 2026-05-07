@@ -20,8 +20,8 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
       <svg width={size} height={size} viewBox="0 0 80 80" aria-hidden="true">
         <defs>
           <linearGradient id={`tm-i-${id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#EDB99D" />
-            <stop offset="100%" stopColor="#A85A42" />
+            <stop offset="0%" stopColor="#A5C9F0" />
+            <stop offset="100%" stopColor="#5C9DDC" />
           </linearGradient>
         </defs>
         <polygon
@@ -49,30 +49,30 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
       <svg width={size} height={size} viewBox="0 0 80 80" aria-hidden="true">
         <defs>
           <linearGradient id={`tm-f-${id}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#F4E4D0" />
-            <stop offset="50%" stopColor="#E5C9A8" />
-            <stop offset="100%" stopColor="#B8936C" />
+            <stop offset="0%" stopColor="#DDE7F5" />
+            <stop offset="50%" stopColor="#B49BFF" />
+            <stop offset="100%" stopColor="#5C9DDC" />
           </linearGradient>
         </defs>
         <polygon points="40,4 70,20 70,60 40,76 10,60 10,20" fill={`url(#tm-f-${id})`} />
         <polygon
           points="40,12 62,24 62,56 40,68 18,56 18,24"
-          fill="#13100B"
-          stroke="rgba(229,201,168,0.4)"
+          fill="#0E1521"
+          stroke="rgba(180,155,255,0.4)"
           strokeWidth="0.5"
         />
         <text
           x="40"
           y="50"
           textAnchor="middle"
-          fill="#E5C9A8"
+          fill="#B49BFF"
           fontFamily="var(--font-display), Georgia, serif"
           fontSize="22"
           fontStyle="italic"
         >
           F
         </text>
-        <circle cx="40" cy="14" r="2" fill="#D4846A" />
+        <circle cx="40" cy="14" r="2" fill="#7FB6E8" />
       </svg>
     );
   }
@@ -81,22 +81,22 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
     <svg width={size} height={size} viewBox="0 0 80 80" aria-hidden="true" className="tm-pro">
       <defs>
         <linearGradient id={`tm-p-foil-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#F4E4D0" />
-          <stop offset="40%" stopColor="#E5C9A8" />
-          <stop offset="100%" stopColor="#8E6D4A" />
+          <stop offset="0%" stopColor="#DDE7F5" />
+          <stop offset="40%" stopColor="#B49BFF" />
+          <stop offset="100%" stopColor="#1F5FA0" />
         </linearGradient>
         <radialGradient id={`tm-p-glow-${id}`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stopColor="#F4E4D0" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#F4E4D0" stopOpacity="0" />
+          <stop offset="0%" stopColor="#B49BFF" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#B49BFF" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="40" cy="40" r="38" fill={`url(#tm-p-glow-${id})`} />
       <polygon points="40,2 72,20 72,60 40,78 8,60 8,20" fill={`url(#tm-p-foil-${id})`} />
-      <polygon points="40,10 65,24 65,56 40,70 15,56 15,24" fill="#13100B" />
+      <polygon points="40,10 65,24 65,56 40,70 15,56 15,24" fill="#0E1521" />
       <polygon
         points="40,15 60,26 60,54 40,65 20,54 20,26"
         fill="none"
-        stroke="#E5C9A8"
+        stroke="#B49BFF"
         strokeOpacity="0.5"
         strokeWidth="0.5"
       />
@@ -104,7 +104,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
         x="40"
         y="38"
         textAnchor="middle"
-        fill="#E5C9A8"
+        fill="#B49BFF"
         fontFamily="var(--font-mono, 'Geist Mono', ui-monospace)"
         fontSize="8"
         fontWeight="600"
@@ -112,8 +112,8 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
       >
         PRO
       </text>
-      <circle cx="40" cy="48" r="5" fill="#D4846A" />
-      <circle cx="38.5" cy="46.5" r="1.5" fill="#FFF6E5" opacity="0.8" />
+      <circle cx="40" cy="48" r="5" fill="#7FB6E8" />
+      <circle cx="38.5" cy="46.5" r="1.5" fill="#DDE7F5" opacity="0.8" />
       {([
         [40, 10],
         [65, 24],
@@ -122,7 +122,7 @@ export function TierMedallion({ tier, size = 56 }: TierMedallionProps) {
         [15, 56],
         [15, 24],
       ] as const).map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="1" fill="#F4E4D0" />
+        <circle key={i} cx={x} cy={y} r="1" fill="#DDE7F5" />
       ))}
     </svg>
   );

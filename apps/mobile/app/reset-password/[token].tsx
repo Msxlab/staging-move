@@ -132,5 +132,5 @@ const styles = StyleSheet.create({
   },
   heading: { fontSize: 24, fontWeight: "800", color: theme.colors.text },
   copy: { fontSize: 14, color: theme.colors.textTertiary, lineHeight: 20, marginBottom: 8 },
-  error: { color: "#E08A6E", fontSize: 13, marginBottom: 4 },
+  error: { color: theme.colors.error, fontSize: 13, marginBottom: 4 },
 });

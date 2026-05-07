@@ -154,7 +154,7 @@ export default async function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="mask-icon" href="/logo-mark.svg" color="#D4846A" />
+        <link rel="mask-icon" href="/logo-mark.svg" color="#7FB6E8" />
         {!BLOCK_INDEXING ? <SiteSchemas /> : null}
       </head>
       <body className={`${geistSans.className} lf-aurora`}>

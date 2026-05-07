@@ -1,4 +1,6 @@
-import { useColorScheme } from "react-native";
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef, type ReactNode } from "react";
+import { Appearance, useColorScheme } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   brandColors,
   semanticColors,
@@ -17,17 +19,30 @@ import {
 } from "@locateflow/shared";
 
 // ──────────────────────────────────────────────────────────────────────
-// Dual-palette theming.
+// Dual-palette theming + user-controlled appearance preference.
 //
 // Token source of truth: packages/shared/src/design-tokens.ts. The
 // palette objects below consume those tokens directly — changing a
 // brand color in shared/design-tokens.ts flows through to every screen
 // without a codemod.
 //
-// Backward compatibility: `theme` (default export) stays dark so the
-// legacy `theme.colors.background` call sites continue to resolve to
-// the dark palette. Screens that opt into light-aware rendering switch
-// to `useAppTheme()`.
+// Two surfaces are exposed:
+//   1. Static `theme` / `lightTheme` exports — backwards-compatible with
+//      every existing `import { theme } from "@/lib/theme"` call site.
+//      `theme` resolves to the dark palette; `lightTheme` to the light
+//      palette. These do not change at runtime.
+//   2. `ThemeProvider` + `useAppTheme()` + `useThemePreference()` —
+//      a Context-driven layer that exposes a stored preference
+//      ("system" | "light" | "dark") plus a resolved scheme that the
+//      Settings screen can read and update. Components opting into the
+//      new system get live theme switching; components still on the
+//      static `theme` import keep rendering the dark palette until
+//      next reload (the gradual-migration tradeoff documented below).
+//
+// Persistence: the user preference is persisted in AsyncStorage under
+// `locateflow.theme.preference`. Default is "system" (follow the OS).
+// When the preference is "system", `Appearance.addChangeListener`
+// reacts to OS theme flips immediately.
 // ──────────────────────────────────────────────────────────────────────
 
 const darkColors = {
@@ -146,18 +161,206 @@ export function themeForScheme(scheme: "light" | "dark" | "unspecified" | null |
   return scheme === "light" ? lightTheme : theme;
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// Appearance preference + Provider
+// ──────────────────────────────────────────────────────────────────────
+
 /**
- * React hook that returns the active palette based on the OS setting.
- * Screens that want to respect light mode should read their colors from
- * this hook instead of the static `theme` export:
+ * Three-state user preference. `system` = follow the OS color scheme;
+ * `light` / `dark` = force a specific palette regardless of the OS.
+ */
+export type ThemePreference = "system" | "light" | "dark";
+
+/** What the app is actually rendering once `system` has been resolved. */
+export type ResolvedScheme = "light" | "dark";
+
+const STORAGE_KEY = "locateflow.theme.preference";
+
+const ALL_PREFERENCES: ReadonlyArray<ThemePreference> = ["system", "light", "dark"];
+
+function isPreference(value: unknown): value is ThemePreference {
+  return typeof value === "string" && (ALL_PREFERENCES as readonly string[]).includes(value);
+}
+
+interface ThemeContextValue {
+  /** User-selected preference. `system` is the default. */
+  preference: ThemePreference;
+  /** What the app is currently rendering. */
+  resolvedScheme: ResolvedScheme;
+  /** Active palette / spacing / radius / shadow tokens. */
+  theme: Theme;
+  /** Convenience access to the active color object. */
+  colors: Theme["colors"];
+  /** Persist a new preference and apply it immediately. */
+  setPreference: (next: ThemePreference) => Promise<void>;
+  /** True until the stored preference has been read from disk. */
+  hydrated: boolean;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+interface ThemeProviderProps {
+  children: ReactNode;
+  /** Optional override used by tests. Real callers should not pass this. */
+  initialPreference?: ThemePreference;
+}
+
+/**
+ * Wraps the app and exposes the theme preference + resolved scheme via
+ * Context. Mount this once at the root of the navigation tree (above
+ * the `<Stack />`).
+ *
+ * Hydration order:
+ *   1. First render returns `system` + the OS color scheme so the very
+ *      first frame already matches the device — no flash of wrong palette.
+ *   2. AsyncStorage read happens in `useEffect`; once it returns, any
+ *      stored preference replaces the default.
+ *   3. When `preference === "system"`, an `Appearance.addChangeListener`
+ *      reacts to OS theme flips and re-renders consumers.
+ */
+export function ThemeProvider({ children, initialPreference }: ThemeProviderProps) {
+  const systemScheme = useColorScheme();
+
+  const [preference, setPreferenceState] = useState<ThemePreference>(
+    initialPreference ?? "system",
+  );
+  const [hydrated, setHydrated] = useState<boolean>(initialPreference !== undefined);
+  // Mirrors `Appearance.getColorScheme()` so we react to OS-level flips
+  // even when `useColorScheme()` cache lags during foreground transitions.
+  const [systemAppearanceScheme, setSystemAppearanceScheme] = useState<ResolvedScheme>(() => {
+    const initial = Appearance.getColorScheme();
+    return initial === "light" ? "light" : "dark";
+  });
+  const hydratedRef = useRef(initialPreference !== undefined);
+
+  // 1) Hydrate the stored preference. Best-effort; on failure we keep
+  //    the default `system`.
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    let cancelled = false;
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((raw) => {
+        if (cancelled) return;
+        if (isPreference(raw)) {
+          setPreferenceState(raw);
+        }
+        setHydrated(true);
+        hydratedRef.current = true;
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setHydrated(true);
+        hydratedRef.current = true;
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // 2) Listen for OS-level theme changes so `system` reacts in real time.
+  //    `useColorScheme()` already triggers a re-render but
+  //    `Appearance.addChangeListener` is the documented event source —
+  //    we keep both in sync to avoid stale reads on Android cold-foreground.
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setSystemAppearanceScheme(colorScheme === "light" ? "light" : "dark");
+    });
+    return () => subscription.remove();
+  }, []);
+
+  const resolvedScheme: ResolvedScheme = useMemo(() => {
+    if (preference === "light") return "light";
+    if (preference === "dark") return "dark";
+    // `system`: prefer the React hook (re-renders synchronously on
+    // change), fall back to the Appearance API mirror.
+    if (systemScheme === "light" || systemScheme === "dark") return systemScheme;
+    return systemAppearanceScheme;
+  }, [preference, systemScheme, systemAppearanceScheme]);
+
+  const activeTheme = useMemo<Theme>(
+    () => (resolvedScheme === "light" ? lightTheme : theme),
+    [resolvedScheme],
+  );
+
+  const setPreference = useCallback(async (next: ThemePreference) => {
+    if (!isPreference(next)) return;
+    setPreferenceState(next);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // Best-effort persistence; the in-memory state is already updated
+      // so the user sees the change. We accept a transient mismatch on
+      // app restart if the disk write fails.
+    }
+  }, []);
+
+  const value = useMemo<ThemeContextValue>(
+    () => ({
+      preference,
+      resolvedScheme,
+      theme: activeTheme,
+      colors: activeTheme.colors,
+      setPreference,
+      hydrated,
+    }),
+    [preference, resolvedScheme, activeTheme, setPreference, hydrated],
+  );
+
+  return React.createElement(ThemeContext.Provider, { value }, children);
+}
+
+/**
+ * React hook that returns the active theme and lets the caller flip
+ * between palettes via `setPreference`. Reads from `ThemeProvider`
+ * context — falls back to a `system`-resolved palette if the provider
+ * is missing so individual screens can't crash in a dev preview.
+ */
+export function useThemePreference(): ThemeContextValue {
+  const ctx = useContext(ThemeContext);
+  if (ctx) return ctx;
+
+  // Fallback so screens hosted outside the provider (e.g. early splash
+  // before the root layout mounts) still render meaningful values.
+  const scheme = Appearance.getColorScheme();
+  const resolved: ResolvedScheme = scheme === "light" ? "light" : "dark";
+  const fallbackTheme = resolved === "light" ? lightTheme : theme;
+  return {
+    preference: "system",
+    resolvedScheme: resolved,
+    theme: fallbackTheme,
+    colors: fallbackTheme.colors,
+    setPreference: async () => {
+      // No-op without a provider — surface this in __DEV__ so it's caught.
+      if (__DEV__) {
+        console.warn("[theme] setPreference called without a ThemeProvider mounted.");
+      }
+    },
+    hydrated: true,
+  };
+}
+
+/**
+ * Convenience hook — the active palette only. Drop-in replacement for
+ * `import { theme }` when a component needs to react to user theme
+ * changes. Identical structure to the static `theme` export so call
+ * sites can switch a single import.
  *
  *   const t = useAppTheme();
  *   <View style={{ backgroundColor: t.colors.background }} />
- *
- * Legacy screens using `theme` directly will continue to render dark —
- * the migration is intentionally gradual.
  */
 export function useAppTheme(): Theme {
-  const scheme = useColorScheme();
-  return themeForScheme(scheme === "light" || scheme === "dark" ? scheme : null);
+  return useThemePreference().theme;
 }
+
+/**
+ * Synchronous getter for non-component code (e.g. navigation theme
+ * factories that run before the first render). Reads the OS color
+ * scheme directly — does not see the user's stored preference.
+ */
+export function getInitialTheme(): Theme {
+  const scheme = Appearance.getColorScheme();
+  return scheme === "light" ? lightTheme : theme;
+}
+
+/** Storage key — exported so tests / migration tooling can use it. */
+export const THEME_PREFERENCE_STORAGE_KEY = STORAGE_KEY;

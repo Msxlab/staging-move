@@ -27,6 +27,7 @@ import { theme } from "@/lib/theme";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { LanguageSelector } from "@/components/ui/LanguageSelector";
+import { ThemeSelector } from "@/components/ui/ThemeSelector";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -89,6 +90,12 @@ export default function SettingsScreen() {
             );
           })}
         </Card>
+
+        {/* Appearance picker — persisted to AsyncStorage and applied
+            immediately by `ThemeProvider`. Default is System. */}
+        <View style={{ marginTop: 20 }}>
+          <ThemeSelector />
+        </View>
 
         {/* Language picker — persists per-device + syncs to DB for
             logged-in users via /api/user/locale. */}
