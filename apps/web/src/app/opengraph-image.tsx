@@ -18,8 +18,8 @@ export default function OpengraphImage() {
           height: "100%",
           padding: "80px",
           background:
-            "linear-gradient(135deg, #0E0A07 0%, #181410 50%, #261F17 100%)",
-          color: "#F5F1EA",
+            "linear-gradient(135deg, #0A0F18 0%, #0E1521 50%, #131C2C 100%)",
+          color: "#ECF1F8",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
@@ -36,21 +36,21 @@ export default function OpengraphImage() {
               width: 72,
               height: 72,
               borderRadius: 18,
-              background: "linear-gradient(135deg, #EDB99D 0%, #A85A42 100%)",
+              background: "linear-gradient(135deg, #B49BFF 0%, #5C9DDC 100%)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 40px rgba(212, 132, 106, 0.40)",
+              boxShadow: "0 0 40px rgba(127, 182, 232, 0.40)",
             }}
           >
-            <span style={{ fontSize: 40, fontWeight: 800, color: "#F5F1EA" }}>L</span>
+            <span style={{ fontSize: 40, fontWeight: 800, color: "#ECF1F8" }}>L</span>
           </div>
           <span
             style={{
               fontSize: 44,
               fontWeight: 800,
               letterSpacing: -1.5,
-              color: "#F5F1EA",
+              color: "#ECF1F8",
             }}
           >
             LocateFlow
@@ -63,7 +63,7 @@ export default function OpengraphImage() {
             lineHeight: 1.05,
             letterSpacing: -2.5,
             marginBottom: 24,
-            color: "#F5F1EA",
+            color: "#ECF1F8",
             maxWidth: 1000,
           }}
         >
@@ -72,7 +72,7 @@ export default function OpengraphImage() {
         <div
           style={{
             fontSize: 28,
-            color: "rgba(245, 241, 234, 0.62)",
+            color: "rgba(236, 241, 248, 0.62)",
             lineHeight: 1.3,
             maxWidth: 900,
           }}
@@ -87,8 +87,8 @@ export default function OpengraphImage() {
             marginTop: 48,
             padding: "12px 20px",
             borderRadius: 999,
-            background: "rgba(212, 132, 106, 0.10)",
-            border: "1px solid rgba(212, 132, 106, 0.30)",
+            background: "rgba(127, 182, 232, 0.10)",
+            border: "1px solid rgba(127, 182, 232, 0.30)",
           }}
         >
           <div
@@ -96,10 +96,10 @@ export default function OpengraphImage() {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: "#D4846A",
+              background: "#7FB6E8",
             }}
           />
-          <span style={{ fontSize: 20, color: "#EDB99D", fontWeight: 600 }}>
+          <span style={{ fontSize: 20, color: "#A5C9F0", fontWeight: 600 }}>
             locateflow.com
           </span>
         </div>

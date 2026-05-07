@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView,
   TouchableOpacity,
@@ -227,9 +227,9 @@ const styles = StyleSheet.create({
     color: "#fde68a",
     fontSize: 12,
     lineHeight: 18,
-    backgroundColor: "rgba(245, 158, 11, 0.12)",
+    backgroundColor: "rgba(242, 196, 108, 0.12)",
     borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.2)",
+    borderColor: "rgba(242, 196, 108, 0.2)",
     borderRadius: theme.radius.lg,
     paddingHorizontal: 12,
     paddingVertical: 10,

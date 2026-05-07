@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -700,8 +700,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderRadius: theme.radius.xl,
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106,0.3)",
-    backgroundColor: "rgba(212, 132, 106,0.08)",
+    borderColor: "rgba(127, 182, 232,0.3)",
+    backgroundColor: "rgba(127, 182, 232,0.08)",
     padding: 16,
   },
   currentPlanLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, paddingRight: 12 },
@@ -711,7 +711,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(212, 132, 106,0.14)",
+    backgroundColor: "rgba(127, 182, 232,0.14)",
   },
   currentPlanTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
   currentPlanMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },

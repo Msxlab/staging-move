@@ -1,23 +1,23 @@
 # State Provider Completeness Catalog
 
-Generated: 2026-05-07T02:55:52.459Z
+Generated: 2026-05-07T04:05:37.408Z
 
 ## Summary
 
-- Catalog entries: 105
+- Catalog entries: 145
 - States covered: 51
 - Already present in raw seed: 0
-- Newly added in merged seed: 98
+- Newly added in merged seed: 138
 - Catalog-only backlog entries: 7
-- Coverage models: state=14, zip_prefix=85, polygon=3, live_address=3
-- Official URL validation: ok=105, redirect=0, error=0
+- Coverage models: state=14, zip_prefix=125, polygon=3, live_address=3
+- Official URL validation: ok=145, redirect=0, error=0
 
 ## Per-State Diff
 
 ### AL
 
 - Repo before: Alabama Power, Alagasco, Astound Broadband, AT&T Fiber, Birmingham Water Works, CenturyLink (Lumen), E-ZPass, Frontier Communications, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Alabama Freedom Pass, Alabama Power, Alagasco, Astound Broadband, AT&T Fiber, Birmingham Water Works, CenturyLink (Lumen), Decatur Utilities Electric, E-ZPass, Frontier Communications, Huntsville Utilities, MAX Transit, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Alabama Freedom Pass, Alabama Power, Alagasco, Astound Broadband, AT&T Fiber, Birmingham Water Works, CenturyLink (Lumen), City of Tuscaloosa Water, Decatur Utilities Electric, E-ZPass, Frontier Communications, Huntsville Utilities, Madison County Water Department, MAX Transit, Mobile Area Water and Sewer System Water, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - MAX Transit | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://maxtransit.org
   note: Birmingham-area transit provider missing from the seed; modeled with Birmingham metro ZIP prefixes.
 - Alabama Department of Revenue Motor Vehicle Division | GOVERNMENT_DMV | newly_added | state | https://www.revenue.alabama.gov/division/motor-vehicle/
@@ -30,11 +30,21 @@ Generated: 2026-05-07T02:55:52.459Z
   note: Real municipal utility; gas duplicate is folded into this single provider row.
 - Southeast Gas | UTILITY_GAS | catalog_backlog | live_address | https://southeastgas.com
   note: Real gas utility from Batch 1, but the candidate had unknown territory; catalog-only until ZIP/service-area confirmation.
+- City of Huntsville Water Pollution Control | UTILITY_SEWER | newly_added | zip_prefix | https://www.huntsvilleal.gov
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Jefferson County Environmental Services Department | UTILITY_SEWER | newly_added | zip_prefix | https://www.jeffcoes.org
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of Tuscaloosa Water | UTILITY_WATER | newly_added | zip_prefix | https://www.tuscaloosa.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Madison County Water Department | UTILITY_WATER | newly_added | zip_prefix | https://www.madisoncountyal.gov/departments/water-department
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Mobile Area Water and Sewer System Water | UTILITY_WATER | newly_added | zip_prefix | https://www.mawss.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### AK
 
 - Repo before: Anchorage Water & Wastewater Utility, Astound Broadband, AT&T Fiber, Chugach Electric, E-ZPass, ENSTAR Natural Gas, GCI, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Alaska Electric Light and Power, Anchorage Water & Wastewater Utility, Anton Anderson Memorial Tunnel / Whittier Tunnel, Astound Broadband, AT&T Fiber, Chugach Electric, E-ZPass, ENSTAR Natural Gas, GCI, Golden Valley Electric Association, Homer Electric Association, Interior Gas Utility, Ketchikan Public Utilities Electric, Matanuska Electric Association, People Mover, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Alaska Electric Light and Power, Anchorage Water & Wastewater Utility, Anton Anderson Memorial Tunnel / Whittier Tunnel, Astound Broadband, AT&T Fiber, Chugach Electric, City and Borough of Juneau Water Utility, College & Golden Heart Utilities Water, E-ZPass, ENSTAR Natural Gas, GCI, Golden Valley Electric Association, Homer Electric Association, Interior Gas Utility, Ketchikan Public Utilities Electric, Matanuska Electric Association, People Mover, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - People Mover | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx
   note: Anchorage People Mover is the largest public transit provider in Alaska and was not in seed.
 - Alaska Communications | UTILITY_INTERNET | catalog_backlog | live_address | https://www.alaskacommunications.com/Residential
@@ -53,22 +63,38 @@ Generated: 2026-05-07T02:55:52.459Z
   note: Real electric cooperative; modeled with cautious AK 995/996 ZIP prefixes and address confirmation language.
 - Interior Gas Utility | UTILITY_GAS | newly_added | zip_prefix | https://www.interiorgas.com
   note: Real gas utility; modeled with cautious AK 997 ZIP prefix and address confirmation language.
+- City and Borough of Juneau Water Utility | UTILITY_WATER | newly_added | zip_prefix | https://juneau.org
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- College & Golden Heart Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.mywater.us/alaska/about-us-menu
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### AZ
 
 - Repo before: APS (Arizona Public Service), Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Frontier Communications, Google Fiber, Mesa Utilities, Phoenix Water Services, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Tucson Water, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: APS (Arizona Public Service), Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Frontier Communications, Google Fiber, Mesa Utilities, Phoenix Water Services, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Tucson Electric Power, Tucson Water, UniSource Energy Services, Valley Metro, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: APS (Arizona Public Service), Astound Broadband, AT&T Fiber, CenturyLink (Lumen), City of Chandler Water, City of Tempe Water Services, Cox Communications, E-ZPass, Frontier Communications, Glendale Water Services, Google Fiber, Mesa Utilities, Phoenix Water Services, Scottsdale Water, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Town of Gilbert Water, Tucson Electric Power, Tucson Water, UniSource Energy Services, Valley Metro, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Valley Metro | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://www.valleymetro.org/maps-schedules
   note: Phoenix-area Valley Metro was absent from seed and is modeled with core metro ZIP prefixes.
 - Tucson Electric Power | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.tep.com
   note: Real electric utility; modeled with Tucson-area ZIP prefixes and address confirmation language.
 - UniSource Energy Services Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.uesaz.com
   note: Real utility account provider; gas duplicate is folded into this single provider row.
+- Pima County Regional Wastewater Reclamation Department | UTILITY_SEWER | newly_added | zip_prefix | https://www.pima.gov/wastewater
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of Chandler Water | UTILITY_WATER | newly_added | zip_prefix | https://www.chandleraz.gov/residents/water
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of Tempe Water Services | UTILITY_WATER | newly_added | zip_prefix | https://www.tempe.gov
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Glendale Water Services | UTILITY_WATER | newly_added | zip_prefix | https://www.glendaleaz.com/live/city_services/water_services
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Scottsdale Water | UTILITY_WATER | newly_added | zip_prefix | https://www.scottsdaleaz.gov/water
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Town of Gilbert Water | UTILITY_WATER | newly_added | zip_prefix | https://www.gilbertaz.gov/departments/public-works/water
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### AR
 
 - Repo before: Astound Broadband, AT&T Fiber, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Cox Communications, E-ZPass, OG&E, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Arkansas Oklahoma Gas, Astound Broadband, AT&T Fiber, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Conway Corp Electric, Cox Communications, E-ZPass, Entergy Arkansas, North Little Rock Electric, OG&E, Southwestern Electric Power Company (SWEPCO), Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Arkansas Oklahoma Gas, Astound Broadband, AT&T Fiber, Bentonville Water Utilities, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Conway Corp Electric, Cox Communications, E-ZPass, Entergy Arkansas, Fayetteville Water and Sewer, Fort Smith Utilities Water, Jonesboro City Water and Light Water, North Little Rock Electric, OG&E, Rogers Water Utilities, Southwestern Electric Power Company (SWEPCO), Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Entergy Arkansas | UTILITY_ELECTRIC | newly_added | state | https://www.entergy-arkansas.com
   note: Major Arkansas electric utility identified in state rules but missing from seed.
 - Conway Corp Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.conwaycorp.com
@@ -81,11 +107,25 @@ Generated: 2026-05-07T02:55:52.459Z
   note: Real gas utility; modeled with cautious western Arkansas ZIP prefix and address confirmation language.
 - Summit Utilities Arkansas | UTILITY_GAS | catalog_backlog | live_address | https://summitutilities.com
   note: Real gas utility from Batch 1, but the candidate had unknown territory; catalog-only until ZIP/service-area confirmation.
+- Little Rock Water Reclamation Authority | UTILITY_SEWER | newly_added | zip_prefix | https://lrwra.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Springdale Water Utilities Wastewater | UTILITY_SEWER | newly_added | zip_prefix | https://springdalewater.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Bentonville Water Utilities | UTILITY_WATER | newly_added | zip_prefix | https://www.bentonvillear.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Fayetteville Water and Sewer | UTILITY_WATER | newly_added | zip_prefix | https://www.fayetteville-ar.gov
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Fort Smith Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.fortsmithar.gov
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Jonesboro City Water and Light Water | UTILITY_WATER | newly_added | zip_prefix | https://www.jonesborocwl.org
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Rogers Water Utilities | UTILITY_WATER | newly_added | zip_prefix | https://www.rwu.org
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### CA
 
 - Repo before: AC Transit, Astound Broadband, AT&T Fiber, BART, Caltrain, Cox Communications, E-ZPass, FasTrak, Frontier Communications, LA Metro, LADWP, PG&E, San Diego MTS, SF Muni, SoCal Edison, SoCal Gas, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, VTA, WOW! Internet, Xfinity (Comcast)
-- Repo after: 91 Express Lanes, AC Transit, Astound Broadband, AT&T Fiber, BART, Caltrain, Cox Communications, E-ZPass, FasTrak, Frontier Communications, LA Metro, LADWP, Metro ExpressLanes, PG&E, Sacramento Municipal Utility District, San Diego Gas & Electric, San Diego MTS, SF Muni, SoCal Edison, SoCal Gas, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, The Toll Roads, Verizon 5G Home Internet, Verizon Fios, VTA, WOW! Internet, Xfinity (Comcast)
+- Repo after: 91 Express Lanes, AC Transit, Astound Broadband, AT&T Fiber, BART, Caltrain, City of Fresno Utilities Water, City of Sacramento Department of Utilities Water, City of San Diego Public Utilities Water, Cox Communications, E-ZPass, East Bay Municipal Utility District Water, FasTrak, Frontier Communications, LA Metro, LADWP, Long Beach Utilities Water, Metro ExpressLanes, PG&E, Sacramento Municipal Utility District, San Diego Gas & Electric, San Diego MTS, San Jose Water, SF Muni, SoCal Edison, SoCal Gas, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, The Toll Roads, Verizon 5G Home Internet, Verizon Fios, VTA, WOW! Internet, Xfinity (Comcast)
 - San Diego Gas & Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.sdge.com/landservices
   note: SDG&E serves San Diego County and parts of southern Orange County; modeled conservatively with southern California ZIP prefixes.
 - 91 Express Lanes | TRANSPORTATION_TOLL | newly_added | zip_prefix | https://www.91expresslanes.com
@@ -96,22 +136,42 @@ Generated: 2026-05-07T02:55:52.459Z
   note: Real toll account provider; modeled only around Orange County corridor ZIP prefixes from Batch 1.
 - Sacramento Municipal Utility District | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.smud.org
   note: Real electric utility; modeled with cautious Sacramento-area ZIP prefixes and address confirmation language.
+- City of Fresno Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.fresno.gov/publicutilities/
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of Sacramento Department of Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.cityofsacramento.gov/utilities
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of San Diego Public Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.sandiego.gov/public-utilities
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- East Bay Municipal Utility District Water | UTILITY_WATER | newly_added | zip_prefix | https://www.ebmud.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Long Beach Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.longbeach.gov/utilityservices/
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- San Jose Water | UTILITY_WATER | newly_added | zip_prefix | https://www.sjwater.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### CO
 
 - Repo before: Astound Broadband, AT&T Fiber, Black Hills Energy Colorado, Black Hills Energy SD, CenturyLink (Lumen), Denver Water, E-ZPass, ExpressToll, Google Fiber, RTD, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xcel Energy, Xcel Energy ND, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, Black Hills Energy Colorado, Black Hills Energy SD, CenturyLink (Lumen), Denver Water, E-470 Public Highway Authority, E-ZPass, ExpressToll, Google Fiber, Northwest Parkway, RTD, RTD Denver, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xcel Energy, Xcel Energy ND, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, Aurora Water, Black Hills Energy Colorado, Black Hills Energy SD, CenturyLink (Lumen), City of Boulder Water Utilities, Colorado Springs Utilities Water, Denver Water, E-470 Public Highway Authority, E-ZPass, ExpressToll, Fort Collins Utilities Water, Google Fiber, Northwest Parkway, RTD, RTD Denver, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xcel Energy, Xcel Energy ND, Xfinity (Comcast)
 - RTD Denver | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://www.rtd-denver.com/system-map
   note: Regional Transportation District is the core transit provider for Denver metro.
 - E-470 Public Highway Authority | TRANSPORTATION_TOLL | newly_added | zip_prefix | https://www.e-470.com
   note: Real toll account provider; modeled only around Denver-area corridor ZIP prefixes from Batch 1.
 - Northwest Parkway | TRANSPORTATION_TOLL | newly_added | zip_prefix | https://www.nwpky.com
   note: Real toll road account surface; modeled only around corridor ZIP prefixes from Batch 1.
+- Aurora Water | UTILITY_WATER | newly_added | zip_prefix | https://www.auroragov.org/residents/water
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of Boulder Water Utilities | UTILITY_WATER | newly_added | zip_prefix | https://bouldercolorado.gov/services/water-utilities
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Colorado Springs Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.csu.org
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Fort Collins Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.fcgov.com/utilities
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### CT
 
 - Repo before: Aquarion Water, Astound Broadband, AT&T Fiber, Cox Communications, E-ZPass, Eversource, Eversource NH, Frontier Communications, Optimum, Southern Connecticut Gas, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Aquarion Water, Astound Broadband, AT&T Fiber, Cox Communications, E-ZPass, Eversource, Eversource NH, Frontier Communications, Jewett City Department of Public Utilities, Norwich Public Utilities, Optimum, Southern Connecticut Gas, Spectrum, Starlink, T-Mobile Home Internet, United Illuminating, Verizon 5G Home Internet, Verizon Fios, Wallingford Electric Division, WOW! Internet, Xfinity (Comcast)
+- Repo after: Aquarion Water, Astound Broadband, AT&T Fiber, Cox Communications, E-ZPass, Eversource, Eversource NH, Frontier Communications, Jewett City Department of Public Utilities, Metropolitan District Commission, Norwich Public Utilities, Optimum, South Central Connecticut Regional Water Authority, Southern Connecticut Gas, Spectrum, Starlink, T-Mobile Home Internet, United Illuminating, Verizon 5G Home Internet, Verizon Fios, Wallingford Electric Division, WOW! Internet, Xfinity (Comcast)
 - United Illuminating | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.uinet.com/ourcompany/whoweare/servicearea
   note: United Illuminating covers southern Connecticut and is a material seed gap for CT.
 - Connecticut Natural Gas | UTILITY_GAS | catalog_backlog | zip_prefix | https://www.cngcorp.com
@@ -128,11 +188,21 @@ Generated: 2026-05-07T02:55:52.459Z
   note: Real municipal utility; modeled with CT 063 ZIP prefix and address confirmation language.
 - Wallingford Electric Division | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.wallingfordct.gov/government/departments/electric-division/
   note: Real municipal electric utility; modeled with CT 064 ZIP prefix and address confirmation language.
+- Bridgeport Water Pollution Control Authority | UTILITY_SEWER | newly_added | zip_prefix | https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Greater New Haven Water Pollution Control Authority | UTILITY_SEWER | newly_added | zip_prefix | https://gnhwpca.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Stamford Water Pollution Control Authority | UTILITY_SEWER | newly_added | zip_prefix | https://www.stamfordct.gov/government/operations/water-pollution-control-authority
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Metropolitan District Commission | UTILITY_WATER | newly_added | zip_prefix | https://themdc.org
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- South Central Connecticut Regional Water Authority | UTILITY_WATER | newly_added | zip_prefix | https://www.rwater.com
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### DE
 
 - Repo before: Artesian Water Company, Astound Broadband, AT&T Fiber, Chesapeake Utilities Delaware, Delmarva Power, E-ZPass, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Artesian Water Company, Astound Broadband, AT&T Fiber, Chesapeake Utilities Delaware, City of Dover Electric Department, City of Milford Electric, City of Newark Electric, DART First State, Delaware E-ZPass, Delaware Electric Cooperative, Delmarva Power, E-ZPass, Lewes Board of Public Works Electric, Municipal Services Commission of the City of New Castle Electric, Spectrum, Starlink, T-Mobile Home Internet, Town of Middletown Electric, Town of Smyrna Electric, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Artesian Water Company, Astound Broadband, AT&T Fiber, Chesapeake Utilities Delaware, City of Dover Electric Department, City of Milford Electric, City of Newark Electric, DART First State, Delaware E-ZPass, Delaware Electric Cooperative, Delmarva Power, E-ZPass, Lewes Board of Public Works Electric, Municipal Services Commission of the City of New Castle Electric, Spectrum, Starlink, T-Mobile Home Internet, Town of Middletown Electric, Town of Smyrna Electric, Verizon 5G Home Internet, Verizon Fios, Wilmington Water Utility, WOW! Internet, Xfinity (Comcast)
 - DART First State | TRANSPORTATION_TRANSIT | newly_added | state | https://dartfirststate.com/map/
   note: DART First State operates statewide bus and paratransit service in Delaware.
 - Delaware Medicaid / ASSIST | GOVERNMENT_HEALTH | newly_added | zip_prefix | https://assist.dhss.delaware.gov
@@ -157,6 +227,14 @@ Generated: 2026-05-07T02:55:52.459Z
   note: Real municipal electric utility; modeled with exact Middletown ZIPs from Batch 1 and address confirmation language.
 - Town of Smyrna Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://smyrna.delaware.gov
   note: Real municipal electric utility; modeled with exact Smyrna ZIP from Batch 1 and address confirmation language.
+- Kent County Wastewater Division | UTILITY_SEWER | newly_added | zip_prefix | https://www.kentcountyde.gov/My-Government/Departments/Public-Works
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- New Castle County Sewer | UTILITY_SEWER | newly_added | zip_prefix | https://www.newcastlede.gov
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Sussex County Environmental Services | UTILITY_SEWER | newly_added | zip_prefix | https://sussexcountyde.gov/sewer-water
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Wilmington Water Utility | UTILITY_WATER | newly_added | zip_prefix | https://www.wilmingtondewater.gov
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### DC
 
@@ -174,7 +252,7 @@ Generated: 2026-05-07T02:55:52.459Z
 ### FL
 
 - Repo before: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-ZPass, FPL (Florida Power & Light), Frontier Communications, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-PASS / Central Florida Expressway Authority, E-ZPass, Florida City Gas, FPL (Florida Power & Light), Frontier Communications, Greater Miami Expressway Agency, I-4 Express, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Electric, Tampa Hillsborough Expressway Authority, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, Duke Energy Florida, E-PASS / Central Florida Expressway Authority, E-ZPass, Florida City Gas, FPL (Florida Power & Light), Frontier Communications, Greater Miami Expressway Agency, Hillsborough County Water Resources, I-4 Express, JEA, Lynx, Miami-Dade Transit, Miami-Dade Water & Sewer, Orlando Utilities Commission, Spectrum, Starlink, SunPass, T-Mobile Home Internet, Tampa Electric, Tampa Hillsborough Expressway Authority, Tampa Water Department, TECO Peoples Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Tampa Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/
   note: Tampa Electric is a major missing Florida electric provider with a clear Tampa Bay service area.
 - Florida KidCare | GOVERNMENT_HEALTH | newly_added | zip_prefix | https://www.floridakidcare.org
@@ -193,6 +271,8 @@ Generated: 2026-05-07T02:55:52.459Z
   note: Real Tampa-area toll account/payment provider; modeled around Batch 1 corridor ZIP prefixes.
 - Florida City Gas | UTILITY_GAS | newly_added | zip_prefix | https://www.floridacitygas.com
   note: Real gas utility; modeled with cautious South Florida ZIP prefixes and address confirmation language.
+- Hillsborough County Water Resources | UTILITY_WATER | newly_added | zip_prefix | https://hcfl.gov
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### GA
 

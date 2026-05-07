@@ -39,7 +39,7 @@ export function EmailVerificationBanner({ context }: { context?: string }) {
   return (
     <View style={styles.card}>
       <View style={styles.iconBox}>
-        <MailWarning size={18} color="#f59e0b" />
+        <MailWarning size={18} color={theme.colors.warning} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.title}>{t("auth.verifyEmail_title")}</Text>
@@ -70,15 +70,16 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: theme.radius.xl,
     borderWidth: 1,
-    borderColor: "rgba(245, 158, 11, 0.3)",
-    backgroundColor: "rgba(245, 158, 11, 0.10)",
+    // Aurora amber 30% — matches `theme.colors.warning` (#F2C46C).
+    borderColor: "rgba(242, 196, 108, 0.3)",
+    backgroundColor: theme.colors.warningFaded,
     marginBottom: 16,
   },
   iconBox: {
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "rgba(245, 158, 11, 0.18)",
+    backgroundColor: "rgba(242, 196, 108, 0.18)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -90,7 +91,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: theme.radius.lg,
-    backgroundColor: "#f59e0b",
+    backgroundColor: theme.colors.warning,
   },
-  ctaText: { fontSize: 12, fontWeight: "700", color: "#1a1a1a" },
+  // Aurora navy reads cleanly on the warm amber CTA.
+  ctaText: { fontSize: 12, fontWeight: "700", color: "#0A0F18" },
 });

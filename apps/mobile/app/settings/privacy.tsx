@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   methodLabel: { fontSize: 13, fontWeight: "600", color: theme.colors.text },
   methodEnabled: { fontSize: 12, color: theme.colors.success },
   methodDisabled: { fontSize: 12, color: theme.colors.warning },
-  passwordBox: { gap: 10, padding: 12, borderWidth: 1, borderColor: "rgba(245,158,11,0.25)", borderRadius: theme.radius.lg, backgroundColor: theme.colors.warningFaded },
+  passwordBox: { gap: 10, padding: 12, borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)", borderRadius: theme.radius.lg, backgroundColor: theme.colors.warningFaded },
   sessionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 8 },
   sessionRow: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radius.lg, backgroundColor: theme.colors.surface },
   sectionTitle: {

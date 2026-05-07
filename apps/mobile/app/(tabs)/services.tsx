@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+﻿import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -340,7 +340,7 @@ export default function ServicesScreen() {
           const currentItems = checklist.phases.find((p) => p.phase === checklist.currentPhase);
           const pending = currentItems?.items.filter((i) => !i.isCompleted).slice(0, 3) || [];
           return (
-            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(212, 132, 106,0.2)", backgroundColor: "rgba(212, 132, 106,0.04)", padding: 14 }}>
+            <View style={{ marginBottom: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)", backgroundColor: "rgba(127, 182, 232,0.04)", padding: 14 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                   <CategoryIcon emoji={phase?.icon || ""} size={16} color={theme.colors.primary} />
@@ -449,7 +449,7 @@ export default function ServicesScreen() {
                     {service.monthlyCost > 0 ? (
                       <Text style={styles.cost}>${service.monthlyCost.toLocaleString()}<Text style={styles.costPer}>/mo</Text></Text>
                     ) : (
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(245,158,11,0.1)", borderWidth: 1, borderColor: "rgba(245,158,11,0.25)" }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: "rgba(242, 196, 108,0.1)", borderWidth: 1, borderColor: "rgba(242, 196, 108,0.25)" }}>
                         <DollarSign size={10} color="#B49BFF" />
                         <Text style={{ fontSize: 10, fontWeight: "600", color: "#B49BFF" }}>{t("services.addCost")}</Text>
                       </View>
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.32)" },
+  addressChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.32)" },
   addressChipText: { fontSize: 13, fontWeight: "700", color: theme.colors.textSecondary, textAlign: "center" },
   addressChipTextActive: { color: theme.colors.orange.text },
   filterRow: { marginBottom: 10 },
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(212, 132, 106,0.3)" },
+  filterChipActive: { backgroundColor: theme.colors.primaryFaded, borderColor: "rgba(127, 182, 232,0.3)" },
   filterDot: { width: 8, height: 8, borderRadius: 4 },
   filterText: { flexShrink: 1, fontSize: 13, color: theme.colors.textSecondary, fontWeight: "700" },
   filterTextActive: { color: theme.colors.orange.text },

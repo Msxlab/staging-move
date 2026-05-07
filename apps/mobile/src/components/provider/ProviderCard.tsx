@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { View, Text, Image, StyleSheet, type ViewStyle } from "react-native";
 import { ChevronRight, MapPin, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -214,7 +214,7 @@ const compactStyles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106,0.2)",
+    borderColor: "rgba(127, 182, 232,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -272,7 +272,7 @@ const fullStyles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106,0.2)",
+    borderColor: "rgba(127, 182, 232,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },

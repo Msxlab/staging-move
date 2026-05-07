@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   serviceRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 13 },
   serviceName: { color: theme.colors.text, fontSize: 14, fontWeight: "700" },
   serviceMeta: { color: theme.colors.textTertiary, fontSize: 12, marginTop: 2 },
-  editBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24, paddingVertical: 14, borderRadius: theme.radius.lg, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(212, 132, 106,0.2)" },
+  editBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 24, paddingVertical: 14, borderRadius: theme.radius.lg, backgroundColor: theme.colors.primaryFaded, borderWidth: 1, borderColor: "rgba(127, 182, 232,0.2)" },
   editText: { fontSize: 14, fontWeight: "600", color: theme.colors.primary },
   deleteBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12, paddingVertical: 14, borderRadius: theme.radius.lg, backgroundColor: theme.colors.errorFaded, borderWidth: 1, borderColor: "rgba(239,68,68,0.2)" },
   deleteText: { fontSize: 14, fontWeight: "600", color: theme.colors.error },

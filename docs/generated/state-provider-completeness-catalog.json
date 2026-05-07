@@ -1,7 +1,7 @@
 {
   "summary": {
-    "generatedAt": "2026-05-07T02:55:52.459Z",
-    "catalogEntries": 105,
+    "generatedAt": "2026-05-07T04:05:37.408Z",
+    "catalogEntries": 145,
     "statesCovered": [
       "AL",
       "AK",
@@ -57,17 +57,17 @@
     ],
     "coverageModelCounts": {
       "state": 14,
-      "zipPrefix": 85,
+      "zipPrefix": 125,
       "polygon": 3,
       "liveAddress": 3
     },
     "statusCounts": {
       "alreadyPresent": 0,
-      "newlyAdded": 98,
+      "newlyAdded": 138,
       "backlog": 7
     },
     "validationCounts": {
-      "ok": 105,
+      "ok": 145,
       "redirect": 0,
       "error": 0
     }
@@ -4562,6 +4562,1833 @@
         "error": null
       },
       "status": "newly_added"
+    },
+    {
+      "providerName": "City and Borough of Juneau Water Utility",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://juneau.org",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City and Borough of Juneau Water Utility",
+        "slug": "juneau-water-utility",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://juneau.org",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "998"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "water",
+          "utility",
+          "juneau",
+          "alaska",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City and Borough of Juneau Water Utility",
+        "slug": "juneau-water-utility"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://juneau.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "College & Golden Heart Utilities Water",
+      "states": [
+        "AK"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.mywater.us/alaska/about-us-menu",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "College & Golden Heart Utilities Water",
+        "slug": "college-golden-heart-utilities-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.mywater.us/alaska/about-us-menu",
+        "states": [
+          "AK"
+        ],
+        "zipCodes": [
+          "997"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "water",
+          "utility",
+          "fairbanks",
+          "alaska",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "College & Golden Heart Utilities Water",
+        "slug": "college-golden-heart-utilities-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.mywater.us/alaska/about-us-menu",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Huntsville Water Pollution Control",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://www.huntsvilleal.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of Huntsville Water Pollution Control",
+        "slug": "huntsville-water-pollution-control",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://www.huntsvilleal.gov",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "357",
+          "358"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "huntsville",
+          "alabama",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Huntsville Water Pollution Control",
+        "slug": "huntsville-water-pollution-control"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.huntsvilleal.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Jefferson County Environmental Services Department",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://www.jeffcoes.org",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Jefferson County Environmental Services Department",
+        "slug": "jefferson-county-environmental-services",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://www.jeffcoes.org",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "350",
+          "351",
+          "352"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "jefferson-county",
+          "alabama",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Jefferson County Environmental Services Department",
+        "slug": "jefferson-county-environmental-services"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.jeffcoes.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Tuscaloosa Water",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.tuscaloosa.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of Tuscaloosa Water",
+        "slug": "tuscaloosa-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.tuscaloosa.com",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "354"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "tuscaloosa",
+          "alabama",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Tuscaloosa Water",
+        "slug": "tuscaloosa-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.tuscaloosa.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Madison County Water Department",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.madisoncountyal.gov/departments/water-department",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Madison County Water Department",
+        "slug": "madison-county-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.madisoncountyal.gov/departments/water-department",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "357",
+          "358"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "madison-county",
+          "alabama",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Madison County Water Department",
+        "slug": "madison-county-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.madisoncountyal.gov/departments/water-department",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Mobile Area Water and Sewer System Water",
+      "states": [
+        "AL"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.mawss.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Mobile Area Water and Sewer System Water",
+        "slug": "mawss-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.mawss.com",
+        "states": [
+          "AL"
+        ],
+        "zipCodes": [
+          "366"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "water",
+          "utility",
+          "mobile",
+          "alabama",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Mobile Area Water and Sewer System Water",
+        "slug": "mawss-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.mawss.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Little Rock Water Reclamation Authority",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://lrwra.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Little Rock Water Reclamation Authority",
+        "slug": "little-rock-water-reclamation",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://lrwra.com",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "722"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "little-rock",
+          "arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Little Rock Water Reclamation Authority",
+        "slug": "little-rock-water-reclamation"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://lrwra.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Springdale Water Utilities Wastewater",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://springdalewater.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Springdale Water Utilities Wastewater",
+        "slug": "springdale-water-utilities-wastewater",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://springdalewater.com",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "727"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "springdale",
+          "arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Springdale Water Utilities Wastewater",
+        "slug": "springdale-water-utilities-wastewater"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://springdalewater.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Bentonville Water Utilities",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.bentonvillear.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Bentonville Water Utilities",
+        "slug": "bentonville-water-utilities",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.bentonvillear.com",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "727"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "water",
+          "utility",
+          "bentonville",
+          "arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Bentonville Water Utilities",
+        "slug": "bentonville-water-utilities"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.bentonvillear.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Fayetteville Water and Sewer",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.fayetteville-ar.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Fayetteville Water and Sewer",
+        "slug": "fayetteville-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.fayetteville-ar.gov",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "727"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "fayetteville",
+          "arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Fayetteville Water and Sewer",
+        "slug": "fayetteville-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.fayetteville-ar.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Fort Smith Utilities Water",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.fortsmithar.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Fort Smith Utilities Water",
+        "slug": "fort-smith-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.fortsmithar.gov",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "729"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "fort-smith",
+          "arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Fort Smith Utilities Water",
+        "slug": "fort-smith-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.fortsmithar.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Jonesboro City Water and Light Water",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.jonesborocwl.org",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Jonesboro City Water and Light Water",
+        "slug": "jonesboro-cwl-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.jonesborocwl.org",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "724"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "water",
+          "utility",
+          "jonesboro",
+          "arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Jonesboro City Water and Light Water",
+        "slug": "jonesboro-cwl-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.jonesborocwl.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Rogers Water Utilities",
+      "states": [
+        "AR"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.rwu.org",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Rogers Water Utilities",
+        "slug": "rogers-water-utilities",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.rwu.org",
+        "states": [
+          "AR"
+        ],
+        "zipCodes": [
+          "727"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "water",
+          "utility",
+          "rogers",
+          "arkansas",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Rogers Water Utilities",
+        "slug": "rogers-water-utilities"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.rwu.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Pima County Regional Wastewater Reclamation Department",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://www.pima.gov/wastewater",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Pima County Regional Wastewater Reclamation Department",
+        "slug": "pima-county-wastewater",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://www.pima.gov/wastewater",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "856",
+          "857"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "pima-county",
+          "arizona",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Pima County Regional Wastewater Reclamation Department",
+        "slug": "pima-county-wastewater"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.pima.gov/wastewater",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Chandler Water",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.chandleraz.gov/residents/water",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of Chandler Water",
+        "slug": "chandler-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.chandleraz.gov/residents/water",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "852"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "chandler",
+          "arizona",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Chandler Water",
+        "slug": "chandler-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.chandleraz.gov/residents/water",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Tempe Water Services",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.tempe.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of Tempe Water Services",
+        "slug": "tempe-water-services",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.tempe.gov",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "852"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "tempe",
+          "arizona",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Tempe Water Services",
+        "slug": "tempe-water-services"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.tempe.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Glendale Water Services",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.glendaleaz.com/live/city_services/water_services",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Glendale Water Services",
+        "slug": "glendale-water-services",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.glendaleaz.com/live/city_services/water_services",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "853"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "glendale",
+          "arizona",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Glendale Water Services",
+        "slug": "glendale-water-services"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.glendaleaz.com/live/city_services/water_services",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Scottsdale Water",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.scottsdaleaz.gov/water",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Scottsdale Water",
+        "slug": "scottsdale-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.scottsdaleaz.gov/water",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "852"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "scottsdale",
+          "arizona",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Scottsdale Water",
+        "slug": "scottsdale-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.scottsdaleaz.gov/water",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Town of Gilbert Water",
+      "states": [
+        "AZ"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.gilbertaz.gov/departments/public-works/water",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Town of Gilbert Water",
+        "slug": "gilbert-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.gilbertaz.gov/departments/public-works/water",
+        "states": [
+          "AZ"
+        ],
+        "zipCodes": [
+          "852"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "gilbert",
+          "arizona",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Town of Gilbert Water",
+        "slug": "gilbert-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.gilbertaz.gov/departments/public-works/water",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Fresno Utilities Water",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.fresno.gov/publicutilities/",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of Fresno Utilities Water",
+        "slug": "fresno-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.fresno.gov/publicutilities/",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "937"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "water",
+          "utility",
+          "fresno",
+          "california",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Fresno Utilities Water",
+        "slug": "fresno-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.fresno.gov/publicutilities/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Sacramento Department of Utilities Water",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.cityofsacramento.gov/utilities",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of Sacramento Department of Utilities Water",
+        "slug": "sacramento-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.cityofsacramento.gov/utilities",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "958"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "water",
+          "utility",
+          "sacramento",
+          "california",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Sacramento Department of Utilities Water",
+        "slug": "sacramento-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.cityofsacramento.gov/utilities",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of San Diego Public Utilities Water",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.sandiego.gov/public-utilities",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of San Diego Public Utilities Water",
+        "slug": "san-diego-public-utilities-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.sandiego.gov/public-utilities",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "919",
+          "920",
+          "921"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "water",
+          "utility",
+          "san-diego",
+          "california",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of San Diego Public Utilities Water",
+        "slug": "san-diego-public-utilities-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.sandiego.gov/public-utilities",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "East Bay Municipal Utility District Water",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.ebmud.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "East Bay Municipal Utility District Water",
+        "slug": "ebmud-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.ebmud.com",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "945",
+          "946",
+          "947",
+          "948"
+        ],
+        "popularityScore": 70,
+        "tags": [
+          "water",
+          "utility",
+          "east-bay",
+          "california",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "East Bay Municipal Utility District Water",
+        "slug": "ebmud-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.ebmud.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Long Beach Utilities Water",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.longbeach.gov/utilityservices/",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Long Beach Utilities Water",
+        "slug": "long-beach-utilities-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.longbeach.gov/utilityservices/",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "908"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "water",
+          "utility",
+          "long-beach",
+          "california",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Long Beach Utilities Water",
+        "slug": "long-beach-utilities-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.longbeach.gov/utilityservices/",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "San Jose Water",
+      "states": [
+        "CA"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.sjwater.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "San Jose Water",
+        "slug": "san-jose-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.sjwater.com",
+        "states": [
+          "CA"
+        ],
+        "zipCodes": [
+          "951"
+        ],
+        "popularityScore": 68,
+        "tags": [
+          "water",
+          "utility",
+          "san-jose",
+          "california",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "San Jose Water",
+        "slug": "san-jose-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.sjwater.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Aurora Water",
+      "states": [
+        "CO"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.auroragov.org/residents/water",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Aurora Water",
+        "slug": "aurora-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.auroragov.org/residents/water",
+        "states": [
+          "CO"
+        ],
+        "zipCodes": [
+          "800",
+          "801"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "water",
+          "utility",
+          "aurora",
+          "colorado",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Aurora Water",
+        "slug": "aurora-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.auroragov.org/residents/water",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "City of Boulder Water Utilities",
+      "states": [
+        "CO"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://bouldercolorado.gov/services/water-utilities",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "City of Boulder Water Utilities",
+        "slug": "boulder-water-utilities",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://bouldercolorado.gov/services/water-utilities",
+        "states": [
+          "CO"
+        ],
+        "zipCodes": [
+          "803"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "boulder",
+          "colorado",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "City of Boulder Water Utilities",
+        "slug": "boulder-water-utilities"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://bouldercolorado.gov/services/water-utilities",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Colorado Springs Utilities Water",
+      "states": [
+        "CO"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.csu.org",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Colorado Springs Utilities Water",
+        "slug": "colorado-springs-utilities-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.csu.org",
+        "states": [
+          "CO"
+        ],
+        "zipCodes": [
+          "809"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "water",
+          "utility",
+          "colorado-springs",
+          "colorado",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Colorado Springs Utilities Water",
+        "slug": "colorado-springs-utilities-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.csu.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Fort Collins Utilities Water",
+      "states": [
+        "CO"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.fcgov.com/utilities",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Fort Collins Utilities Water",
+        "slug": "fort-collins-utilities-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.fcgov.com/utilities",
+        "states": [
+          "CO"
+        ],
+        "zipCodes": [
+          "805"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "water",
+          "utility",
+          "fort-collins",
+          "colorado",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Fort Collins Utilities Water",
+        "slug": "fort-collins-utilities-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.fcgov.com/utilities",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Bridgeport Water Pollution Control Authority",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Bridgeport Water Pollution Control Authority",
+        "slug": "bridgeport-wpca",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "066"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "bridgeport",
+          "connecticut",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Bridgeport Water Pollution Control Authority",
+        "slug": "bridgeport-wpca"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Greater New Haven Water Pollution Control Authority",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://gnhwpca.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Greater New Haven Water Pollution Control Authority",
+        "slug": "gnhwpca",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://gnhwpca.com",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "064",
+          "065"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "new-haven",
+          "connecticut",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Greater New Haven Water Pollution Control Authority",
+        "slug": "gnhwpca"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://gnhwpca.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Stamford Water Pollution Control Authority",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://www.stamfordct.gov/government/operations/water-pollution-control-authority",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Stamford Water Pollution Control Authority",
+        "slug": "stamford-wpca",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://www.stamfordct.gov/government/operations/water-pollution-control-authority",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "069"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "stamford",
+          "connecticut",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Stamford Water Pollution Control Authority",
+        "slug": "stamford-wpca"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.stamfordct.gov/government/operations/water-pollution-control-authority",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Metropolitan District Commission",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://themdc.org",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Metropolitan District Commission",
+        "slug": "mdc-ct-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://themdc.org",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "060",
+          "061"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "water",
+          "utility",
+          "hartford",
+          "connecticut",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Metropolitan District Commission",
+        "slug": "mdc-ct-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://themdc.org",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "South Central Connecticut Regional Water Authority",
+      "states": [
+        "CT"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.rwater.com",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "South Central Connecticut Regional Water Authority",
+        "slug": "regional-water-authority-ct",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.rwater.com",
+        "states": [
+          "CT"
+        ],
+        "zipCodes": [
+          "064",
+          "065"
+        ],
+        "popularityScore": 64,
+        "tags": [
+          "water",
+          "utility",
+          "new-haven",
+          "connecticut",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "South Central Connecticut Regional Water Authority",
+        "slug": "regional-water-authority-ct"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.rwater.com",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Kent County Wastewater Division",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://www.kentcountyde.gov/My-Government/Departments/Public-Works",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Kent County Wastewater Division",
+        "slug": "kent-county-wastewater",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://www.kentcountyde.gov/My-Government/Departments/Public-Works",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "199"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "kent-county",
+          "delaware",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Kent County Wastewater Division",
+        "slug": "kent-county-wastewater"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.kentcountyde.gov/My-Government/Departments/Public-Works",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "New Castle County Sewer",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://www.newcastlede.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "New Castle County Sewer",
+        "slug": "new-castle-county-sewer",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://www.newcastlede.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "197",
+          "198"
+        ],
+        "popularityScore": 62,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "new-castle-county",
+          "delaware",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "New Castle County Sewer",
+        "slug": "new-castle-county-sewer"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.newcastlede.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Sussex County Environmental Services",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_SEWER",
+      "officialUrl": "https://sussexcountyde.gov/sewer-water",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Sussex County Environmental Services",
+        "slug": "sussex-county-sewer",
+        "category": "UTILITY_SEWER",
+        "description": "Local wastewater/sewer utility customer account and service-address support",
+        "website": "https://sussexcountyde.gov/sewer-water",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "199"
+        ],
+        "popularityScore": 58,
+        "tags": [
+          "sewer",
+          "utility",
+          "wastewater",
+          "sussex-county",
+          "delaware",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Sussex County Environmental Services",
+        "slug": "sussex-county-sewer"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://sussexcountyde.gov/sewer-water",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Wilmington Water Utility",
+      "states": [
+        "DE"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://www.wilmingtondewater.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Wilmington Water Utility",
+        "slug": "wilmington-water-utility",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://www.wilmingtondewater.gov",
+        "states": [
+          "DE"
+        ],
+        "zipCodes": [
+          "198"
+        ],
+        "popularityScore": 60,
+        "tags": [
+          "water",
+          "utility",
+          "wilmington",
+          "delaware",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Wilmington Water Utility",
+        "slug": "wilmington-water-utility"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://www.wilmingtondewater.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
+    },
+    {
+      "providerName": "Hillsborough County Water Resources",
+      "states": [
+        "FL"
+      ],
+      "category": "UTILITY_WATER",
+      "officialUrl": "https://hcfl.gov",
+      "coverageModel": "zip_prefix",
+      "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+      "seedRecord": {
+        "name": "Hillsborough County Water Resources",
+        "slug": "hillsborough-county-water",
+        "category": "UTILITY_WATER",
+        "description": "Local water utility customer account and service-address support",
+        "website": "https://hcfl.gov",
+        "states": [
+          "FL"
+        ],
+        "zipCodes": [
+          "335",
+          "336"
+        ],
+        "popularityScore": 66,
+        "tags": [
+          "water",
+          "utility",
+          "hillsborough-county",
+          "florida",
+          "address-check"
+        ],
+        "scope": "STATE"
+      },
+      "rawSeedMatch": null,
+      "mergedSeedMatch": {
+        "name": "Hillsborough County Water Resources",
+        "slug": "hillsborough-county-water"
+      },
+      "validation": {
+        "status": "ok",
+        "httpStatus": 200,
+        "finalUrl": "https://hcfl.gov",
+        "title": null,
+        "error": null
+      },
+      "status": "newly_added"
     }
   ],
   "alreadyPresent": [],
@@ -4738,11 +6565,14 @@
         "AT&T Fiber",
         "Birmingham Water Works",
         "CenturyLink (Lumen)",
+        "City of Tuscaloosa Water",
         "Decatur Utilities Electric",
         "E-ZPass",
         "Frontier Communications",
         "Huntsville Utilities",
+        "Madison County Water Department",
         "MAX Transit",
+        "Mobile Area Water and Sewer System Water",
         "Spectrum",
         "Starlink",
         "T-Mobile Home Internet",
@@ -4989,6 +6819,237 @@
             "error": null
           },
           "status": "catalog_backlog"
+        },
+        {
+          "providerName": "City of Huntsville Water Pollution Control",
+          "states": [
+            "AL"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://www.huntsvilleal.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of Huntsville Water Pollution Control",
+            "slug": "huntsville-water-pollution-control",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://www.huntsvilleal.gov",
+            "states": [
+              "AL"
+            ],
+            "zipCodes": [
+              "357",
+              "358"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "huntsville",
+              "alabama",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of Huntsville Water Pollution Control",
+            "slug": "huntsville-water-pollution-control"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.huntsvilleal.gov",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Jefferson County Environmental Services Department",
+          "states": [
+            "AL"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://www.jeffcoes.org",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Jefferson County Environmental Services Department",
+            "slug": "jefferson-county-environmental-services",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://www.jeffcoes.org",
+            "states": [
+              "AL"
+            ],
+            "zipCodes": [
+              "350",
+              "351",
+              "352"
+            ],
+            "popularityScore": 64,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "jefferson-county",
+              "alabama",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Jefferson County Environmental Services Department",
+            "slug": "jefferson-county-environmental-services"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.jeffcoes.org",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "City of Tuscaloosa Water",
+          "states": [
+            "AL"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.tuscaloosa.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of Tuscaloosa Water",
+            "slug": "tuscaloosa-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.tuscaloosa.com",
+            "states": [
+              "AL"
+            ],
+            "zipCodes": [
+              "354"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "tuscaloosa",
+              "alabama",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of Tuscaloosa Water",
+            "slug": "tuscaloosa-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.tuscaloosa.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Madison County Water Department",
+          "states": [
+            "AL"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.madisoncountyal.gov/departments/water-department",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Madison County Water Department",
+            "slug": "madison-county-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.madisoncountyal.gov/departments/water-department",
+            "states": [
+              "AL"
+            ],
+            "zipCodes": [
+              "357",
+              "358"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "madison-county",
+              "alabama",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Madison County Water Department",
+            "slug": "madison-county-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.madisoncountyal.gov/departments/water-department",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Mobile Area Water and Sewer System Water",
+          "states": [
+            "AL"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.mawss.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Mobile Area Water and Sewer System Water",
+            "slug": "mawss-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.mawss.com",
+            "states": [
+              "AL"
+            ],
+            "zipCodes": [
+              "366"
+            ],
+            "popularityScore": 64,
+            "tags": [
+              "water",
+              "utility",
+              "mobile",
+              "alabama",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Mobile Area Water and Sewer System Water",
+            "slug": "mawss-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.mawss.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -5017,6 +7078,8 @@
         "Astound Broadband",
         "AT&T Fiber",
         "Chugach Electric",
+        "City and Borough of Juneau Water Utility",
+        "College & Golden Heart Utilities Water",
         "E-ZPass",
         "ENSTAR Natural Gas",
         "GCI",
@@ -5409,6 +7472,96 @@
             "error": null
           },
           "status": "newly_added"
+        },
+        {
+          "providerName": "City and Borough of Juneau Water Utility",
+          "states": [
+            "AK"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://juneau.org",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City and Borough of Juneau Water Utility",
+            "slug": "juneau-water-utility",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://juneau.org",
+            "states": [
+              "AK"
+            ],
+            "zipCodes": [
+              "998"
+            ],
+            "popularityScore": 58,
+            "tags": [
+              "water",
+              "utility",
+              "juneau",
+              "alaska",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City and Borough of Juneau Water Utility",
+            "slug": "juneau-water-utility"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://juneau.org",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "College & Golden Heart Utilities Water",
+          "states": [
+            "AK"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.mywater.us/alaska/about-us-menu",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "College & Golden Heart Utilities Water",
+            "slug": "college-golden-heart-utilities-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.mywater.us/alaska/about-us-menu",
+            "states": [
+              "AK"
+            ],
+            "zipCodes": [
+              "997"
+            ],
+            "popularityScore": 58,
+            "tags": [
+              "water",
+              "utility",
+              "fairbanks",
+              "alaska",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "College & Golden Heart Utilities Water",
+            "slug": "college-golden-heart-utilities-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.mywater.us/alaska/about-us-menu",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -5441,17 +7594,22 @@
         "Astound Broadband",
         "AT&T Fiber",
         "CenturyLink (Lumen)",
+        "City of Chandler Water",
+        "City of Tempe Water Services",
         "Cox Communications",
         "E-ZPass",
         "Frontier Communications",
+        "Glendale Water Services",
         "Google Fiber",
         "Mesa Utilities",
         "Phoenix Water Services",
+        "Scottsdale Water",
         "Southwest Gas",
         "Spectrum",
         "SRP (Salt River Project)",
         "Starlink",
         "T-Mobile Home Internet",
+        "Town of Gilbert Water",
         "Tucson Electric Power",
         "Tucson Water",
         "UniSource Energy Services",
@@ -5599,6 +7757,278 @@
             "error": null
           },
           "status": "newly_added"
+        },
+        {
+          "providerName": "Pima County Regional Wastewater Reclamation Department",
+          "states": [
+            "AZ"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://www.pima.gov/wastewater",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Pima County Regional Wastewater Reclamation Department",
+            "slug": "pima-county-wastewater",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://www.pima.gov/wastewater",
+            "states": [
+              "AZ"
+            ],
+            "zipCodes": [
+              "856",
+              "857"
+            ],
+            "popularityScore": 64,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "pima-county",
+              "arizona",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Pima County Regional Wastewater Reclamation Department",
+            "slug": "pima-county-wastewater"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.pima.gov/wastewater",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "City of Chandler Water",
+          "states": [
+            "AZ"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.chandleraz.gov/residents/water",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of Chandler Water",
+            "slug": "chandler-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.chandleraz.gov/residents/water",
+            "states": [
+              "AZ"
+            ],
+            "zipCodes": [
+              "852"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "chandler",
+              "arizona",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of Chandler Water",
+            "slug": "chandler-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.chandleraz.gov/residents/water",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "City of Tempe Water Services",
+          "states": [
+            "AZ"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.tempe.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of Tempe Water Services",
+            "slug": "tempe-water-services",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.tempe.gov",
+            "states": [
+              "AZ"
+            ],
+            "zipCodes": [
+              "852"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "tempe",
+              "arizona",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of Tempe Water Services",
+            "slug": "tempe-water-services"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.tempe.gov",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Glendale Water Services",
+          "states": [
+            "AZ"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.glendaleaz.com/live/city_services/water_services",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Glendale Water Services",
+            "slug": "glendale-water-services",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.glendaleaz.com/live/city_services/water_services",
+            "states": [
+              "AZ"
+            ],
+            "zipCodes": [
+              "853"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "glendale",
+              "arizona",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Glendale Water Services",
+            "slug": "glendale-water-services"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.glendaleaz.com/live/city_services/water_services",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Scottsdale Water",
+          "states": [
+            "AZ"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.scottsdaleaz.gov/water",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Scottsdale Water",
+            "slug": "scottsdale-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.scottsdaleaz.gov/water",
+            "states": [
+              "AZ"
+            ],
+            "zipCodes": [
+              "852"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "scottsdale",
+              "arizona",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Scottsdale Water",
+            "slug": "scottsdale-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.scottsdaleaz.gov/water",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Town of Gilbert Water",
+          "states": [
+            "AZ"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.gilbertaz.gov/departments/public-works/water",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Town of Gilbert Water",
+            "slug": "gilbert-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.gilbertaz.gov/departments/public-works/water",
+            "states": [
+              "AZ"
+            ],
+            "zipCodes": [
+              "852"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "gilbert",
+              "arizona",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Town of Gilbert Water",
+            "slug": "gilbert-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.gilbertaz.gov/departments/public-works/water",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -5626,6 +8056,7 @@
         "Arkansas Oklahoma Gas",
         "Astound Broadband",
         "AT&T Fiber",
+        "Bentonville Water Utilities",
         "Black Hills Energy SD",
         "CenterPoint Energy Arkansas",
         "Central Arkansas Water",
@@ -5634,8 +8065,12 @@
         "Cox Communications",
         "E-ZPass",
         "Entergy Arkansas",
+        "Fayetteville Water and Sewer",
+        "Fort Smith Utilities Water",
+        "Jonesboro City Water and Light Water",
         "North Little Rock Electric",
         "OG&E",
+        "Rogers Water Utilities",
         "Southwestern Electric Power Company (SWEPCO)",
         "Spectrum",
         "Starlink",
@@ -5881,6 +8316,323 @@
             "error": null
           },
           "status": "catalog_backlog"
+        },
+        {
+          "providerName": "Little Rock Water Reclamation Authority",
+          "states": [
+            "AR"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://lrwra.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Little Rock Water Reclamation Authority",
+            "slug": "little-rock-water-reclamation",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://lrwra.com",
+            "states": [
+              "AR"
+            ],
+            "zipCodes": [
+              "722"
+            ],
+            "popularityScore": 64,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "little-rock",
+              "arkansas",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Little Rock Water Reclamation Authority",
+            "slug": "little-rock-water-reclamation"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://lrwra.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Springdale Water Utilities Wastewater",
+          "states": [
+            "AR"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://springdalewater.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Springdale Water Utilities Wastewater",
+            "slug": "springdale-water-utilities-wastewater",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://springdalewater.com",
+            "states": [
+              "AR"
+            ],
+            "zipCodes": [
+              "727"
+            ],
+            "popularityScore": 60,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "springdale",
+              "arkansas",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Springdale Water Utilities Wastewater",
+            "slug": "springdale-water-utilities-wastewater"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://springdalewater.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Bentonville Water Utilities",
+          "states": [
+            "AR"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.bentonvillear.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Bentonville Water Utilities",
+            "slug": "bentonville-water-utilities",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.bentonvillear.com",
+            "states": [
+              "AR"
+            ],
+            "zipCodes": [
+              "727"
+            ],
+            "popularityScore": 60,
+            "tags": [
+              "water",
+              "utility",
+              "bentonville",
+              "arkansas",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Bentonville Water Utilities",
+            "slug": "bentonville-water-utilities"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.bentonvillear.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Fayetteville Water and Sewer",
+          "states": [
+            "AR"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.fayetteville-ar.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Fayetteville Water and Sewer",
+            "slug": "fayetteville-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.fayetteville-ar.gov",
+            "states": [
+              "AR"
+            ],
+            "zipCodes": [
+              "727"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "fayetteville",
+              "arkansas",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Fayetteville Water and Sewer",
+            "slug": "fayetteville-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.fayetteville-ar.gov",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Fort Smith Utilities Water",
+          "states": [
+            "AR"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.fortsmithar.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Fort Smith Utilities Water",
+            "slug": "fort-smith-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.fortsmithar.gov",
+            "states": [
+              "AR"
+            ],
+            "zipCodes": [
+              "729"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "fort-smith",
+              "arkansas",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Fort Smith Utilities Water",
+            "slug": "fort-smith-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.fortsmithar.gov",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Jonesboro City Water and Light Water",
+          "states": [
+            "AR"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.jonesborocwl.org",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Jonesboro City Water and Light Water",
+            "slug": "jonesboro-cwl-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.jonesborocwl.org",
+            "states": [
+              "AR"
+            ],
+            "zipCodes": [
+              "724"
+            ],
+            "popularityScore": 60,
+            "tags": [
+              "water",
+              "utility",
+              "jonesboro",
+              "arkansas",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Jonesboro City Water and Light Water",
+            "slug": "jonesboro-cwl-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.jonesborocwl.org",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Rogers Water Utilities",
+          "states": [
+            "AR"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.rwu.org",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Rogers Water Utilities",
+            "slug": "rogers-water-utilities",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.rwu.org",
+            "states": [
+              "AR"
+            ],
+            "zipCodes": [
+              "727"
+            ],
+            "popularityScore": 60,
+            "tags": [
+              "water",
+              "utility",
+              "rogers",
+              "arkansas",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Rogers Water Utilities",
+            "slug": "rogers-water-utilities"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.rwu.org",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -5920,17 +8672,23 @@
         "AT&T Fiber",
         "BART",
         "Caltrain",
+        "City of Fresno Utilities Water",
+        "City of Sacramento Department of Utilities Water",
+        "City of San Diego Public Utilities Water",
         "Cox Communications",
         "E-ZPass",
+        "East Bay Municipal Utility District Water",
         "FasTrak",
         "Frontier Communications",
         "LA Metro",
         "LADWP",
+        "Long Beach Utilities Water",
         "Metro ExpressLanes",
         "PG&E",
         "Sacramento Municipal Utility District",
         "San Diego Gas & Electric",
         "San Diego MTS",
+        "San Jose Water",
         "SF Muni",
         "SoCal Edison",
         "SoCal Gas",
@@ -6172,6 +8930,281 @@
             "error": null
           },
           "status": "newly_added"
+        },
+        {
+          "providerName": "City of Fresno Utilities Water",
+          "states": [
+            "CA"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.fresno.gov/publicutilities/",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of Fresno Utilities Water",
+            "slug": "fresno-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.fresno.gov/publicutilities/",
+            "states": [
+              "CA"
+            ],
+            "zipCodes": [
+              "937"
+            ],
+            "popularityScore": 66,
+            "tags": [
+              "water",
+              "utility",
+              "fresno",
+              "california",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of Fresno Utilities Water",
+            "slug": "fresno-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.fresno.gov/publicutilities/",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "City of Sacramento Department of Utilities Water",
+          "states": [
+            "CA"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.cityofsacramento.gov/utilities",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of Sacramento Department of Utilities Water",
+            "slug": "sacramento-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.cityofsacramento.gov/utilities",
+            "states": [
+              "CA"
+            ],
+            "zipCodes": [
+              "958"
+            ],
+            "popularityScore": 66,
+            "tags": [
+              "water",
+              "utility",
+              "sacramento",
+              "california",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of Sacramento Department of Utilities Water",
+            "slug": "sacramento-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.cityofsacramento.gov/utilities",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "City of San Diego Public Utilities Water",
+          "states": [
+            "CA"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.sandiego.gov/public-utilities",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of San Diego Public Utilities Water",
+            "slug": "san-diego-public-utilities-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.sandiego.gov/public-utilities",
+            "states": [
+              "CA"
+            ],
+            "zipCodes": [
+              "919",
+              "920",
+              "921"
+            ],
+            "popularityScore": 70,
+            "tags": [
+              "water",
+              "utility",
+              "san-diego",
+              "california",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of San Diego Public Utilities Water",
+            "slug": "san-diego-public-utilities-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.sandiego.gov/public-utilities",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "East Bay Municipal Utility District Water",
+          "states": [
+            "CA"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.ebmud.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "East Bay Municipal Utility District Water",
+            "slug": "ebmud-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.ebmud.com",
+            "states": [
+              "CA"
+            ],
+            "zipCodes": [
+              "945",
+              "946",
+              "947",
+              "948"
+            ],
+            "popularityScore": 70,
+            "tags": [
+              "water",
+              "utility",
+              "east-bay",
+              "california",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "East Bay Municipal Utility District Water",
+            "slug": "ebmud-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.ebmud.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Long Beach Utilities Water",
+          "states": [
+            "CA"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.longbeach.gov/utilityservices/",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Long Beach Utilities Water",
+            "slug": "long-beach-utilities-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.longbeach.gov/utilityservices/",
+            "states": [
+              "CA"
+            ],
+            "zipCodes": [
+              "908"
+            ],
+            "popularityScore": 66,
+            "tags": [
+              "water",
+              "utility",
+              "long-beach",
+              "california",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Long Beach Utilities Water",
+            "slug": "long-beach-utilities-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.longbeach.gov/utilityservices/",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "San Jose Water",
+          "states": [
+            "CA"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.sjwater.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "San Jose Water",
+            "slug": "san-jose-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.sjwater.com",
+            "states": [
+              "CA"
+            ],
+            "zipCodes": [
+              "951"
+            ],
+            "popularityScore": 68,
+            "tags": [
+              "water",
+              "utility",
+              "san-jose",
+              "california",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "San Jose Water",
+            "slug": "san-jose-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.sjwater.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -6201,13 +9234,17 @@
       "repoProvidersAfter": [
         "Astound Broadband",
         "AT&T Fiber",
+        "Aurora Water",
         "Black Hills Energy Colorado",
         "Black Hills Energy SD",
         "CenturyLink (Lumen)",
+        "City of Boulder Water Utilities",
+        "Colorado Springs Utilities Water",
         "Denver Water",
         "E-470 Public Highway Authority",
         "E-ZPass",
         "ExpressToll",
+        "Fort Collins Utilities Water",
         "Google Fiber",
         "Northwest Parkway",
         "RTD",
@@ -6359,6 +9396,187 @@
             "error": null
           },
           "status": "newly_added"
+        },
+        {
+          "providerName": "Aurora Water",
+          "states": [
+            "CO"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.auroragov.org/residents/water",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Aurora Water",
+            "slug": "aurora-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.auroragov.org/residents/water",
+            "states": [
+              "CO"
+            ],
+            "zipCodes": [
+              "800",
+              "801"
+            ],
+            "popularityScore": 64,
+            "tags": [
+              "water",
+              "utility",
+              "aurora",
+              "colorado",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Aurora Water",
+            "slug": "aurora-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.auroragov.org/residents/water",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "City of Boulder Water Utilities",
+          "states": [
+            "CO"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://bouldercolorado.gov/services/water-utilities",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "City of Boulder Water Utilities",
+            "slug": "boulder-water-utilities",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://bouldercolorado.gov/services/water-utilities",
+            "states": [
+              "CO"
+            ],
+            "zipCodes": [
+              "803"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "boulder",
+              "colorado",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "City of Boulder Water Utilities",
+            "slug": "boulder-water-utilities"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://bouldercolorado.gov/services/water-utilities",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Colorado Springs Utilities Water",
+          "states": [
+            "CO"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.csu.org",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Colorado Springs Utilities Water",
+            "slug": "colorado-springs-utilities-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.csu.org",
+            "states": [
+              "CO"
+            ],
+            "zipCodes": [
+              "809"
+            ],
+            "popularityScore": 66,
+            "tags": [
+              "water",
+              "utility",
+              "colorado-springs",
+              "colorado",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Colorado Springs Utilities Water",
+            "slug": "colorado-springs-utilities-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.csu.org",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Fort Collins Utilities Water",
+          "states": [
+            "CO"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.fcgov.com/utilities",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Fort Collins Utilities Water",
+            "slug": "fort-collins-utilities-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.fcgov.com/utilities",
+            "states": [
+              "CO"
+            ],
+            "zipCodes": [
+              "805"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "water",
+              "utility",
+              "fort-collins",
+              "colorado",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Fort Collins Utilities Water",
+            "slug": "fort-collins-utilities-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.fcgov.com/utilities",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -6393,8 +9611,10 @@
         "Eversource NH",
         "Frontier Communications",
         "Jewett City Department of Public Utilities",
+        "Metropolitan District Commission",
         "Norwich Public Utilities",
         "Optimum",
+        "South Central Connecticut Regional Water Authority",
         "Southern Connecticut Gas",
         "Spectrum",
         "Starlink",
@@ -6763,6 +9983,237 @@
             "error": null
           },
           "status": "newly_added"
+        },
+        {
+          "providerName": "Bridgeport Water Pollution Control Authority",
+          "states": [
+            "CT"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Bridgeport Water Pollution Control Authority",
+            "slug": "bridgeport-wpca",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca",
+            "states": [
+              "CT"
+            ],
+            "zipCodes": [
+              "066"
+            ],
+            "popularityScore": 60,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "bridgeport",
+              "connecticut",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Bridgeport Water Pollution Control Authority",
+            "slug": "bridgeport-wpca"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Greater New Haven Water Pollution Control Authority",
+          "states": [
+            "CT"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://gnhwpca.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Greater New Haven Water Pollution Control Authority",
+            "slug": "gnhwpca",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://gnhwpca.com",
+            "states": [
+              "CT"
+            ],
+            "zipCodes": [
+              "064",
+              "065"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "new-haven",
+              "connecticut",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Greater New Haven Water Pollution Control Authority",
+            "slug": "gnhwpca"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://gnhwpca.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Stamford Water Pollution Control Authority",
+          "states": [
+            "CT"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://www.stamfordct.gov/government/operations/water-pollution-control-authority",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Stamford Water Pollution Control Authority",
+            "slug": "stamford-wpca",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://www.stamfordct.gov/government/operations/water-pollution-control-authority",
+            "states": [
+              "CT"
+            ],
+            "zipCodes": [
+              "069"
+            ],
+            "popularityScore": 60,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "stamford",
+              "connecticut",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Stamford Water Pollution Control Authority",
+            "slug": "stamford-wpca"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.stamfordct.gov/government/operations/water-pollution-control-authority",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Metropolitan District Commission",
+          "states": [
+            "CT"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://themdc.org",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Metropolitan District Commission",
+            "slug": "mdc-ct-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://themdc.org",
+            "states": [
+              "CT"
+            ],
+            "zipCodes": [
+              "060",
+              "061"
+            ],
+            "popularityScore": 64,
+            "tags": [
+              "water",
+              "utility",
+              "hartford",
+              "connecticut",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Metropolitan District Commission",
+            "slug": "mdc-ct-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://themdc.org",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "South Central Connecticut Regional Water Authority",
+          "states": [
+            "CT"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.rwater.com",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "South Central Connecticut Regional Water Authority",
+            "slug": "regional-water-authority-ct",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.rwater.com",
+            "states": [
+              "CT"
+            ],
+            "zipCodes": [
+              "064",
+              "065"
+            ],
+            "popularityScore": 64,
+            "tags": [
+              "water",
+              "utility",
+              "new-haven",
+              "connecticut",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "South Central Connecticut Regional Water Authority",
+            "slug": "regional-water-authority-ct"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.rwater.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -6805,6 +10256,7 @@
         "Town of Smyrna Electric",
         "Verizon 5G Home Internet",
         "Verizon Fios",
+        "Wilmington Water Utility",
         "WOW! Internet",
         "Xfinity (Comcast)"
       ],
@@ -7343,6 +10795,190 @@
             "error": null
           },
           "status": "newly_added"
+        },
+        {
+          "providerName": "Kent County Wastewater Division",
+          "states": [
+            "DE"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://www.kentcountyde.gov/My-Government/Departments/Public-Works",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Kent County Wastewater Division",
+            "slug": "kent-county-wastewater",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://www.kentcountyde.gov/My-Government/Departments/Public-Works",
+            "states": [
+              "DE"
+            ],
+            "zipCodes": [
+              "199"
+            ],
+            "popularityScore": 58,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "kent-county",
+              "delaware",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Kent County Wastewater Division",
+            "slug": "kent-county-wastewater"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.kentcountyde.gov/My-Government/Departments/Public-Works",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "New Castle County Sewer",
+          "states": [
+            "DE"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://www.newcastlede.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "New Castle County Sewer",
+            "slug": "new-castle-county-sewer",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://www.newcastlede.gov",
+            "states": [
+              "DE"
+            ],
+            "zipCodes": [
+              "197",
+              "198"
+            ],
+            "popularityScore": 62,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "new-castle-county",
+              "delaware",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "New Castle County Sewer",
+            "slug": "new-castle-county-sewer"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.newcastlede.gov",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Sussex County Environmental Services",
+          "states": [
+            "DE"
+          ],
+          "category": "UTILITY_SEWER",
+          "officialUrl": "https://sussexcountyde.gov/sewer-water",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Sussex County Environmental Services",
+            "slug": "sussex-county-sewer",
+            "category": "UTILITY_SEWER",
+            "description": "Local wastewater/sewer utility customer account and service-address support",
+            "website": "https://sussexcountyde.gov/sewer-water",
+            "states": [
+              "DE"
+            ],
+            "zipCodes": [
+              "199"
+            ],
+            "popularityScore": 58,
+            "tags": [
+              "sewer",
+              "utility",
+              "wastewater",
+              "sussex-county",
+              "delaware",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Sussex County Environmental Services",
+            "slug": "sussex-county-sewer"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://sussexcountyde.gov/sewer-water",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Wilmington Water Utility",
+          "states": [
+            "DE"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://www.wilmingtondewater.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Wilmington Water Utility",
+            "slug": "wilmington-water-utility",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://www.wilmingtondewater.gov",
+            "states": [
+              "DE"
+            ],
+            "zipCodes": [
+              "198"
+            ],
+            "popularityScore": 60,
+            "tags": [
+              "water",
+              "utility",
+              "wilmington",
+              "delaware",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Wilmington Water Utility",
+            "slug": "wilmington-water-utility"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://www.wilmingtondewater.gov",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
         }
       ]
     },
@@ -7610,6 +11246,7 @@
         "FPL (Florida Power & Light)",
         "Frontier Communications",
         "Greater Miami Expressway Agency",
+        "Hillsborough County Water Resources",
         "I-4 Express",
         "JEA",
         "Lynx",
@@ -8107,6 +11744,52 @@
             "status": "ok",
             "httpStatus": 200,
             "finalUrl": "https://www.floridacitygas.com",
+            "title": null,
+            "error": null
+          },
+          "status": "newly_added"
+        },
+        {
+          "providerName": "Hillsborough County Water Resources",
+          "states": [
+            "FL"
+          ],
+          "category": "UTILITY_WATER",
+          "officialUrl": "https://hcfl.gov",
+          "coverageModel": "zip_prefix",
+          "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+          "seedRecord": {
+            "name": "Hillsborough County Water Resources",
+            "slug": "hillsborough-county-water",
+            "category": "UTILITY_WATER",
+            "description": "Local water utility customer account and service-address support",
+            "website": "https://hcfl.gov",
+            "states": [
+              "FL"
+            ],
+            "zipCodes": [
+              "335",
+              "336"
+            ],
+            "popularityScore": 66,
+            "tags": [
+              "water",
+              "utility",
+              "hillsborough-county",
+              "florida",
+              "address-check"
+            ],
+            "scope": "STATE"
+          },
+          "rawSeedMatch": null,
+          "mergedSeedMatch": {
+            "name": "Hillsborough County Water Resources",
+            "slug": "hillsborough-county-water"
+          },
+          "validation": {
+            "status": "ok",
+            "httpStatus": 200,
+            "finalUrl": "https://hcfl.gov",
             "title": null,
             "error": null
           },

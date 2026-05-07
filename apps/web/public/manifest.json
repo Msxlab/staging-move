@@ -4,8 +4,8 @@
   "description": "Manage your addresses, services, and moving processes with intelligent assistance.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0E0A07",
-  "theme_color": "#0E0A07",
+  "background_color": "#0A0F18",
+  "theme_color": "#0A0F18",
   "orientation": "portrait-primary",
   "icons": [
     {

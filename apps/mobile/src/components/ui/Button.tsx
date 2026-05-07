@@ -143,7 +143,8 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: theme.colors.primaryFaded,
     borderWidth: 1,
-    borderColor: "rgba(212, 132, 106, 0.30)",
+    // Aurora cool 30% — matches `theme.colors.primary` (#7FB6E8).
+    borderColor: "rgba(127, 182, 232, 0.30)",
   },
   ghost: {
     backgroundColor: "transparent",
