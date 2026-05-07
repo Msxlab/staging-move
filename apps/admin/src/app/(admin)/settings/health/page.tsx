@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -27,26 +27,26 @@ import {
 const STATUS_CONFIG = {
   healthy: {
     icon: CheckCircle2,
-    color: "text-green-500",
-    bg: "bg-green-500/10",
+    color: "text-tone-sage-fg",
+    bg: "bg-tone-sage-bg",
     label: "Healthy",
   },
   degraded: {
     icon: AlertTriangle,
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
+    color: "text-tone-honey-fg",
+    bg: "bg-tone-honey-bg",
     label: "Degraded",
   },
   down: {
     icon: XCircle,
-    color: "text-red-500",
-    bg: "bg-red-500/10",
+    color: "text-destructive",
+    bg: "bg-destructive/10",
     label: "Down",
   },
   unknown: {
     icon: HelpCircle,
-    color: "text-gray-400",
-    bg: "bg-gray-400/10",
+    color: "text-muted-foreground",
+    bg: "bg-tone-slate-fg/10",
     label: "Unknown",
   },
 };
@@ -135,7 +135,7 @@ export default function HealthPage() {
 
       {/* Overall Status */}
       <div
-        className={`rounded-xl border p-6 ${data.overall === "healthy" ? "border-green-500/30 bg-green-500/5" : data.overall === "down" ? "border-red-500/30 bg-red-500/5" : "border-amber-500/30 bg-amber-500/5"}`}
+        className={`rounded-xl border p-6 ${data.overall === "healthy" ? "border-tone-sage-br bg-tone-sage-bg" : data.overall === "down" ? "border-destructive/30 bg-destructive/5" : "border-tone-honey-br bg-tone-honey-bg"}`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -194,7 +194,7 @@ export default function HealthPage() {
                       {check.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {check.details || "—"}
+                      {check.details || "â€”"}
                     </p>
                   </div>
                 </div>

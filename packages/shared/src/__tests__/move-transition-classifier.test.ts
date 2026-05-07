@@ -247,4 +247,26 @@ describe("classifyMoveServiceTransition", () => {
     expect(plan.taskEffectType).toBe("CLOSE_OLD_SERVICE");
     expect(plan.addressContext).toBe("OLD_ADDRESS");
   });
+
+  it("does not generate provider start/stop tasks for transit resources", () => {
+    const plan = classifyMoveServiceTransition({
+      service: {
+        category: "TRANSPORTATION_TRANSIT",
+        providerName: "Old Transit",
+      },
+      originAddress: { state: "NJ", zip: "07102" },
+      destinationAddress: { state: "DC", zip: "20001" },
+      destinationProviderCandidates: [
+        {
+          id: "dc-streetcar",
+          name: "DC Streetcar",
+          category: "TRANSPORTATION_TRANSIT",
+          coverageConfidence: "ZIP_PREFIX",
+        },
+      ],
+    });
+
+    expect(plan.actionType).toBe("NO_ACTION");
+    expect(plan.taskEffectType).toBe("NO_LOCAL_STATE_CHANGE");
+  });
 });

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Fragment, useState, useEffect } from "react";
 import { Mail, Plus, Trash2, Edit2, Eye, Send, CheckCircle2, XCircle, X } from "lucide-react";
@@ -82,10 +82,10 @@ export default function EmailTemplatesPage() {
   const reset = () => { setEditing(null); setShowForm(false); setForm({ slug: "", name: "", subject: "", body: "", category: "SYSTEM", variables: "", isActive: true }); };
 
   const statCards = [
-    { label: "Total Templates", value: stats.totalTemplates, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Active", value: stats.activeTemplates, color: "text-green-500", bg: "bg-green-500/10" },
-    { label: "Emails Sent", value: stats.totalSent, color: "text-purple-500", bg: "bg-purple-500/10" },
-    { label: "Failed", value: stats.totalFailed, color: "text-red-500", bg: "bg-red-500/10" },
+    { label: "Total Templates", value: stats.totalTemplates, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },
+    { label: "Active", value: stats.activeTemplates, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
+    { label: "Emails Sent", value: stats.totalSent, color: "text-tone-foil-fg", bg: "bg-tone-foil-bg" },
+    { label: "Failed", value: stats.totalFailed, color: "text-destructive", bg: "bg-destructive/10" },
   ];
 
   return (
@@ -100,7 +100,7 @@ export default function EmailTemplatesPage() {
       </div>
 
       {preview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setPreview(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" onClick={() => setPreview(null)}>
           <div className="w-full max-w-2xl max-h-[80vh] overflow-auto rounded-xl border border-border bg-card p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4"><h2 className="text-lg font-semibold text-foreground">Preview: {preview.name}</h2><button onClick={() => setPreview(null)}><X className="h-5 w-5 text-muted-foreground" /></button></div>
             <p className="text-sm text-muted-foreground mb-2">Subject: {preview.subject}</p>
@@ -146,7 +146,7 @@ export default function EmailTemplatesPage() {
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{t.category}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{t.sendCounts?.sent ?? t._count?.emailLogs ?? 0}</td>
                   <td className="px-4 py-3 text-muted-foreground">{t.sendCounts?.failed ?? 0}</td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.isActive ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>{t.isActive ? "Active" : "Inactive"}</span></td>
+                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${t.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{t.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => setPreview(t)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Eye className="h-4 w-4" /></button>
                     <button onClick={() => startEdit(t)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
@@ -172,7 +172,7 @@ export default function EmailTemplatesPage() {
                       {l.template ? <span>{l.template.name} <span className="font-mono">({l.template.slug})</span></span> : "Manual"}
                     </td>
                     <td className="px-4 py-3 text-foreground truncate max-w-xs">{l.subject}</td>
-                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "SENT" ? "bg-green-500/10 text-green-500" : l.status === "FAILED" ? "bg-red-500/10 text-red-500" : "bg-yellow-500/10 text-yellow-500"}`}>{l.status}</span></td>
+                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${l.status === "SENT" ? "bg-tone-sage-bg text-tone-sage-fg" : l.status === "FAILED" ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{l.status}</span></td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{l.sentAt ? new Date(l.sentAt).toLocaleString() : new Date(l.failedAt || l.createdAt).toLocaleString()}</td>
                     <td className="px-4 py-3 font-mono text-muted-foreground text-xs">{l.providerMessageId || "-"}</td>
                     <td className="px-4 py-3">

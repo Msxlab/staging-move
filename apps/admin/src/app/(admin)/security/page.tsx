@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { Lock, Shield, Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Globe, FileText, CheckCircle2, CircleHelp, TriangleAlert } from "lucide-react";
@@ -37,18 +37,18 @@ export default function SecurityPage() {
   useEffect(() => { load(); }, []);
 
   const readinessStatCards = readiness ? [
-    { label: "Ready", value: readiness.summary.ready, color: "text-green-500", bg: "bg-green-500/10", icon: CheckCircle2 },
-    { label: "Warnings", value: readiness.summary.warn, color: "text-amber-500", bg: "bg-amber-500/10", icon: TriangleAlert },
-    { label: "Missing", value: readiness.summary.missing, color: "text-red-500", bg: "bg-red-500/10", icon: AlertTriangle },
-    { label: "Unknown", value: readiness.summary.unknown, color: "text-slate-500", bg: "bg-slate-500/10", icon: CircleHelp },
-    { label: "Required Missing", value: readiness.summary.missingRequired, color: "text-red-600", bg: "bg-red-500/10", icon: Lock },
+    { label: "Ready", value: readiness.summary.ready, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg", icon: CheckCircle2 },
+    { label: "Warnings", value: readiness.summary.warn, color: "text-tone-honey-fg", bg: "bg-tone-honey-bg", icon: TriangleAlert },
+    { label: "Missing", value: readiness.summary.missing, color: "text-destructive", bg: "bg-destructive/10", icon: AlertTriangle },
+    { label: "Unknown", value: readiness.summary.unknown, color: "text-muted-foreground", bg: "bg-tone-slate-bg", icon: CircleHelp },
+    { label: "Required Missing", value: readiness.summary.missingRequired, color: "text-destructive", bg: "bg-destructive/10", icon: Lock },
   ] : [];
 
   const statusClasses: Record<SecurityReadinessCheck["status"], string> = {
-    ready: "bg-green-500/10 text-green-500",
-    warn: "bg-amber-500/10 text-amber-500",
-    missing: "bg-red-500/10 text-red-500",
-    unknown: "bg-slate-500/10 text-slate-500",
+    ready: "bg-tone-sage-bg text-tone-sage-fg",
+    warn: "bg-tone-honey-bg text-tone-honey-fg",
+    missing: "bg-destructive/10 text-destructive",
+    unknown: "bg-tone-slate-bg text-muted-foreground",
   };
 
   const addIPRule = async () => {
@@ -80,11 +80,11 @@ export default function SecurityPage() {
   };
 
   const statCards = [
-    { label: "IP Rules", value: stats.totalIPRules, icon: Globe, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Whitelisted", value: stats.whitelisted, icon: Shield, color: "text-green-500", bg: "bg-green-500/10" },
-    { label: "Blacklisted", value: stats.blacklisted, icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10" },
-    { label: "Blocked Requests", value: stats.blockedRequests, icon: Lock, color: "text-orange-500", bg: "bg-orange-500/10" },
-    { label: "GDPR Pending", value: stats.pendingGDPR, icon: FileText, color: "text-purple-500", bg: "bg-purple-500/10" },
+    { label: "IP Rules", value: stats.totalIPRules, icon: Globe, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },
+    { label: "Whitelisted", value: stats.whitelisted, icon: Shield, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
+    { label: "Blacklisted", value: stats.blacklisted, icon: AlertTriangle, color: "text-destructive", bg: "bg-destructive/10" },
+    { label: "Blocked Requests", value: stats.blockedRequests, icon: Lock, color: "text-tone-orange-fg", bg: "bg-tone-orange-bg" },
+    { label: "GDPR Pending", value: stats.pendingGDPR, icon: FileText, color: "text-tone-foil-fg", bg: "bg-tone-foil-bg" },
   ];
 
   return (
@@ -122,7 +122,7 @@ export default function SecurityPage() {
                 Live view of preventive controls, detection wiring, and backup recovery readiness.
               </p>
             </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${readiness.summary.missingRequired > 0 ? "bg-red-500/10 text-red-500" : "bg-green-500/10 text-green-500"}`}>
+            <span className={`rounded-full px-3 py-1 text-xs font-medium ${readiness.summary.missingRequired > 0 ? "bg-destructive/10 text-destructive" : "bg-tone-sage-bg text-tone-sage-fg"}`}>
               {readiness.summary.missingRequired > 0 ? "Needs attention" : "Baseline healthy"}
             </span>
           </div>
@@ -142,8 +142,8 @@ export default function SecurityPage() {
           </div>
 
           {readiness.missingRequiredKeys.length > 0 && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-              <p className="text-sm font-medium text-red-500">Missing required controls</p>
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+              <p className="text-sm font-medium text-destructive">Missing required controls</p>
               <p className="mt-2 text-sm text-muted-foreground">{readiness.missingRequiredKeys.join(", ")}</p>
             </div>
           )}
@@ -174,7 +174,7 @@ export default function SecurityPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-muted-foreground">
             <span>Last snapshot: {new Date(readiness.generatedAt).toLocaleString()}</span>
             <span>
-              Last backup: {readiness.lastBackup ? `${new Date(readiness.lastBackup.createdAt).toLocaleString()} · ${readiness.lastBackup.type}` : "No completed backup"}
+              Last backup: {readiness.lastBackup ? `${new Date(readiness.lastBackup.createdAt).toLocaleString()} Â· ${readiness.lastBackup.type}` : "No completed backup"}
             </span>
           </div>
         </div>
@@ -207,12 +207,12 @@ export default function SecurityPage() {
               {ipRules.length === 0 ? (<tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No IP rules</td></tr>) : ipRules.map(r => (
                 <tr key={r.id} className="border-b border-border hover:bg-accent/30">
                   <td className="px-4 py-3 font-mono text-foreground">{r.ipAddress}</td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.type === "BLACKLIST" ? "bg-red-500/10 text-red-500" : "bg-green-500/10 text-green-500"}`}>{r.type}</span></td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.reason || "—"}</td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.isActive ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}`}>{r.isActive ? "Active" : "Inactive"}</span></td>
+                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.type === "BLACKLIST" ? "bg-destructive/10 text-destructive" : "bg-tone-sage-bg text-tone-sage-fg"}`}>{r.type}</span></td>
+                  <td className="px-4 py-3 text-muted-foreground">{r.reason || "â€”"}</td>
+                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>{r.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{r.expiresAt ? new Date(r.expiresAt).toLocaleString() : "Never"}</td>
                   <td className="px-4 py-3 flex gap-1">
-                    <button onClick={() => toggleIPRule(r.id)} className="rounded p-1 text-muted-foreground hover:bg-accent">{r.isActive ? <ToggleRight className="h-4 w-4 text-green-500" /> : <ToggleLeft className="h-4 w-4" />}</button>
+                    <button onClick={() => toggleIPRule(r.id)} className="rounded p-1 text-muted-foreground hover:bg-accent">{r.isActive ? <ToggleRight className="h-4 w-4 text-tone-sage-fg" /> : <ToggleLeft className="h-4 w-4" />}</button>
                     <button onClick={() => deleteIPRule(r.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
@@ -232,7 +232,7 @@ export default function SecurityPage() {
                   <td className="px-4 py-3 font-mono text-foreground">{l.ipAddress}</td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{l.endpoint}</td>
                   <td className="px-4 py-3 text-foreground font-medium">{l.count}</td>
-                  <td className="px-4 py-3"><span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">Blocked</span></td>
+                  <td className="px-4 py-3"><span className="rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">Blocked</span></td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(l.windowStart).toLocaleString()}</td>
                 </tr>
               ))}
@@ -250,23 +250,23 @@ export default function SecurityPage() {
                 <tr key={r.id} className="border-b border-border hover:bg-accent/30">
                   <td className="px-4 py-3 font-mono text-foreground text-xs">{r.userId}</td>
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{r.type}</span></td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "COMPLETED" ? "bg-green-500/10 text-green-500" : r.status === "PENDING" ? "bg-yellow-500/10 text-yellow-500" : r.status === "PROCESSING" ? "bg-blue-500/10 text-blue-500" : "bg-red-500/10 text-red-500"}`}>{r.status}</span></td>
+                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.status === "COMPLETED" ? "bg-tone-sage-bg text-tone-sage-fg" : r.status === "PENDING" ? "bg-tone-honey-bg text-tone-honey-fg" : r.status === "PROCESSING" ? "bg-tone-sky-bg text-tone-sky-fg" : "bg-destructive/10 text-destructive"}`}>{r.status}</span></td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(r.createdAt).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">{r.completedAt ? new Date(r.completedAt).toLocaleString() : "—"}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">{r.completedAt ? new Date(r.completedAt).toLocaleString() : "â€”"}</td>
                   <td className="px-4 py-3">
                     {r.status === "PENDING" && (
                       <div className="flex gap-1">
-                        <button onClick={() => updateGDPR(r.id, "PROCESSING")} className="rounded px-2 py-1 text-xs bg-blue-500/10 text-blue-500 hover:bg-blue-500/20">Process</button>
+                        <button onClick={() => updateGDPR(r.id, "PROCESSING")} className="rounded px-2 py-1 text-xs bg-tone-sky-bg text-tone-sky-fg hover:bg-tone-sky-bg">Process</button>
                         {r.type !== "DELETE" && (
-                          <button onClick={() => updateGDPR(r.id, "COMPLETED")} className="rounded px-2 py-1 text-xs bg-green-500/10 text-green-500 hover:bg-green-500/20">Complete</button>
+                          <button onClick={() => updateGDPR(r.id, "COMPLETED")} className="rounded px-2 py-1 text-xs bg-tone-sage-bg text-tone-sage-fg hover:bg-tone-sage-bg">Complete</button>
                         )}
-                        <button onClick={() => updateGDPR(r.id, "REJECTED")} className="rounded px-2 py-1 text-xs bg-red-500/10 text-red-500 hover:bg-red-500/20">Reject</button>
+                        <button onClick={() => updateGDPR(r.id, "REJECTED")} className="rounded px-2 py-1 text-xs bg-destructive/10 text-destructive hover:bg-destructive/20">Reject</button>
                       </div>
                     )}
                     {r.status === "PROCESSING" && (
                       r.type === "DELETE"
                         ? <span className="text-xs text-muted-foreground">Auto-completes after staged cleanup</span>
-                        : <button onClick={() => updateGDPR(r.id, "COMPLETED")} className="rounded px-2 py-1 text-xs bg-green-500/10 text-green-500 hover:bg-green-500/20">Complete</button>
+                        : <button onClick={() => updateGDPR(r.id, "COMPLETED")} className="rounded px-2 py-1 text-xs bg-tone-sage-bg text-tone-sage-fg hover:bg-tone-sage-bg">Complete</button>
                     )}
                   </td>
                 </tr>
@@ -278,3 +278,5 @@ export default function SecurityPage() {
     </div>
   );
 }
+
+

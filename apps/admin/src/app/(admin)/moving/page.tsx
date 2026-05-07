@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -69,10 +69,10 @@ const EMPTY_STATS: Stats = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PLANNING: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
-  IN_PROGRESS: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  COMPLETED: "bg-green-500/10 text-green-500 border-green-500/20",
-  CANCELED: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  PLANNING: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
+  IN_PROGRESS: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
+  COMPLETED: "bg-tone-sage-bg text-tone-sage-fg border-tone-sage-br",
+  CANCELED: "bg-tone-slate-bg text-muted-foreground border-tone-slate-br",
 };
 
 const STATUS_ICONS: Record<string, any> = {
@@ -222,36 +222,36 @@ export default function MovingPage() {
             label: "Planning",
             value: stats.planning,
             icon: Clock,
-            color: "text-yellow-500",
-            bg: "bg-yellow-500/5",
+            color: "text-tone-honey-fg",
+            bg: "bg-tone-honey-bg",
           },
           {
             label: "In Progress",
             value: stats.inProgress,
             icon: Truck,
-            color: "text-blue-500",
-            bg: "bg-blue-500/5",
+            color: "text-tone-sky-fg",
+            bg: "bg-tone-sky-bg",
           },
           {
             label: "Completed",
             value: stats.completed,
             icon: CheckCircle2,
-            color: "text-green-500",
-            bg: "bg-green-500/5",
+            color: "text-tone-sage-fg",
+            bg: "bg-tone-sage-bg",
           },
           {
             label: "Canceled",
             value: stats.cancelled,
             icon: XCircle,
-            color: "text-gray-400",
-            bg: "bg-gray-500/5",
+            color: "text-muted-foreground",
+            bg: "bg-tone-slate-bg",
           },
           {
             label: "This Month",
             value: stats.thisMonth,
             icon: Calendar,
-            color: "text-purple-500",
-            bg: "bg-purple-500/5",
+            color: "text-tone-foil-fg",
+            bg: "bg-tone-foil-bg",
           },
         ].map((s) => (
           <button
@@ -439,12 +439,12 @@ export default function MovingPage() {
                   {/* Route */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-orange-500 flex-shrink-0" />
+                      <MapPin className="h-4 w-4 text-tone-orange-fg flex-shrink-0" />
                       <span className="font-medium text-foreground text-sm truncate">
                         {plan.fromAddress.city}, {plan.fromAddress.state}
                       </span>
                       <ArrowRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                      <MapPin className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      <MapPin className="h-4 w-4 text-tone-sage-fg flex-shrink-0" />
                       <span className="font-medium text-foreground text-sm truncate">
                         {plan.toAddress.city}, {plan.toAddress.state}
                       </span>
@@ -452,7 +452,7 @@ export default function MovingPage() {
                     <div className="flex items-center gap-2 mt-1">
                       <User className="h-3 w-3 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {plan.user.firstName} {plan.user.lastName} ·{" "}
+                        {plan.user.firstName} {plan.user.lastName} Â·{" "}
                         {plan.user.email}
                       </span>
                     </div>
@@ -464,7 +464,7 @@ export default function MovingPage() {
                       {new Date(plan.moveDate).toLocaleDateString()}
                     </p>
                     <p
-                      className={`text-[11px] ${days > 7 ? "text-muted-foreground" : days > 0 ? "text-yellow-500" : days === 0 ? "text-red-500 font-bold" : "text-muted-foreground"}`}
+                      className={`text-[11px] ${days > 7 ? "text-muted-foreground" : days > 0 ? "text-tone-honey-fg" : days === 0 ? "text-destructive font-bold" : "text-muted-foreground"}`}
                     >
                       {days > 0
                         ? `${days} days left`
@@ -490,7 +490,7 @@ export default function MovingPage() {
                       {/* From */}
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-orange-500" /> FROM
+                          <MapPin className="h-3 w-3 text-tone-orange-fg" /> FROM
                         </p>
                         <p className="text-sm font-medium text-foreground">
                           {plan.fromAddress.street}
@@ -503,7 +503,7 @@ export default function MovingPage() {
                       {/* To */}
                       <div>
                         <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-green-500" /> TO
+                          <MapPin className="h-3 w-3 text-tone-sage-fg" /> TO
                         </p>
                         <p className="text-sm font-medium text-foreground">
                           {plan.toAddress.street}
@@ -541,9 +541,9 @@ export default function MovingPage() {
                         )}
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3">
+                    <div className="mt-4 rounded-lg border border-tone-honey-br bg-tone-honey-bg p-3">
                       <div className="flex items-start gap-3">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" />
                         <div className="flex-1">
                           <p className="text-sm font-semibold text-foreground">
                             Operator transition context
@@ -565,12 +565,12 @@ export default function MovingPage() {
                               Move tasks: {moveTaskCount}
                             </span>
                             {openMoveTaskCount > 0 && (
-                              <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-2 py-1 text-[11px] text-blue-600">
+                              <span className="rounded-full border border-tone-sky-br bg-tone-sky-bg px-2 py-1 text-[11px] text-tone-sky-fg">
                                 Open tasks: {openMoveTaskCount}
                               </span>
                             )}
                             {originServiceCount > 0 && destinationServiceCount === 0 && (
-                              <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-600">
+                              <span className="rounded-full border border-tone-honey-br bg-tone-honey-bg px-2 py-1 text-[11px] text-tone-honey-fg">
                                 Destination service setup not tracked yet
                               </span>
                             )}
@@ -583,7 +583,7 @@ export default function MovingPage() {
                                     <div className="min-w-0">
                                       <p className="truncate text-xs font-medium text-foreground">{task.title}</p>
                                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                        {formatLabel(task.actionType)} · {task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
+                                        {formatLabel(task.actionType)} Â· {task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
                                       </p>
                                     </div>
                                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>
@@ -631,9 +631,9 @@ function formatLabel(value: string) {
 }
 
 function taskStatusClass(status: string) {
-  if (status === "COMPLETED") return "bg-green-500/10 text-green-500";
+  if (status === "COMPLETED") return "bg-tone-sage-bg text-tone-sage-fg";
   if (status === "DISMISSED") return "bg-muted text-muted-foreground";
-  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-blue-500/10 text-blue-500";
-  if (status === "REOPENED") return "bg-purple-500/10 text-purple-500";
-  return "bg-amber-500/10 text-amber-500";
+  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-tone-sky-bg text-tone-sky-fg";
+  if (status === "REOPENED") return "bg-tone-foil-bg text-tone-foil-fg";
+  return "bg-tone-honey-bg text-tone-honey-fg";
 }

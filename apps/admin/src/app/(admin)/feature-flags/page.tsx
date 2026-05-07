@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { Flag, Plus, Trash2, ToggleLeft, ToggleRight, Edit2 } from "lucide-react";
@@ -60,8 +60,8 @@ export default function FeatureFlagsPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Total Flags</p><p className="mt-1 text-2xl font-bold text-foreground">{flags.length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Enabled</p><p className="mt-1 text-2xl font-bold text-green-500">{flags.filter(f => f.enabled).length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Disabled</p><p className="mt-1 text-2xl font-bold text-red-500">{flags.filter(f => !f.enabled).length}</p></div>
+        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Enabled</p><p className="mt-1 text-2xl font-bold text-tone-sage-fg">{flags.filter(f => f.enabled).length}</p></div>
+        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Disabled</p><p className="mt-1 text-2xl font-bold text-destructive">{flags.filter(f => !f.enabled).length}</p></div>
       </div>
 
       {showForm && (
@@ -84,9 +84,9 @@ export default function FeatureFlagsPage() {
         {loading ? <div className="text-center py-8 text-muted-foreground">Loading...</div> : flags.length === 0 ? <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">No feature flags yet</div> : flags.map(f => (
           <div key={f.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={() => toggle(f)} className="transition-colors">{f.enabled ? <ToggleRight className="h-7 w-7 text-green-500" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}</button>
+              <button onClick={() => toggle(f)} className="transition-colors">{f.enabled ? <ToggleRight className="h-7 w-7 text-tone-sage-fg" /> : <ToggleLeft className="h-7 w-7 text-muted-foreground" />}</button>
               <div>
-                <div className="flex items-center gap-2"><p className="font-mono font-medium text-foreground">{f.name}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${f.enabled ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"}`}>{f.enabled ? "ON" : "OFF"}</span></div>
+                <div className="flex items-center gap-2"><p className="font-mono font-medium text-foreground">{f.name}</p><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${f.enabled ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-destructive/10 text-destructive"}`}>{f.enabled ? "ON" : "OFF"}</span></div>
                 {f.description && <p className="text-xs text-muted-foreground mt-0.5">{f.description}</p>}
                 <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                   <span>Target: {f.targetType}</span>

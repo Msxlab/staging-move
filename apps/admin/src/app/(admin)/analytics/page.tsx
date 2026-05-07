@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -28,13 +28,13 @@ const DEVICE_ICONS: Record<string, any> = {
 };
 
 const OS_COLORS: Record<string, string> = {
-  Windows: "bg-blue-500", macOS: "bg-gray-400", Android: "bg-green-500",
-  iOS: "bg-gray-300", Linux: "bg-orange-500", ChromeOS: "bg-yellow-500", Unknown: "bg-gray-600",
+  Windows: "bg-tone-sky-fg", macOS: "bg-tone-slate-fg", Android: "bg-tone-sage-fg",
+  iOS: "bg-muted-foreground", Linux: "bg-tone-orange-fg", ChromeOS: "bg-tone-honey-fg", Unknown: "bg-tone-slate-fg",
 };
 
 const BROWSER_COLORS: Record<string, string> = {
-  Chrome: "bg-green-500", Safari: "bg-blue-400", Firefox: "bg-orange-500",
-  Edge: "bg-blue-600", Opera: "bg-red-500", Unknown: "bg-gray-500",
+  Chrome: "bg-tone-sage-fg", Safari: "bg-tone-sky-fg", Firefox: "bg-tone-orange-fg",
+  Edge: "bg-tone-foil-fg", Opera: "bg-destructive", Unknown: "bg-tone-slate-fg",
 };
 
 function BarChart({ data, colorMap, maxItems = 6 }: { data: [string, number][]; colorMap?: Record<string, string>; maxItems?: number }) {
@@ -76,7 +76,12 @@ function DonutChart({ data, colorMap }: { data: [string, number][]; colorMap?: R
     return seg;
   });
 
-  const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4", "#ec4899", "#6b7280"];
+  // Aurora-friendly categorical palette — cool / mint / honey / coral / violet
+  // / sky / rose / slate. Resolved at render so theme switching repaints.
+  const colors = [
+    "var(--au-cool)", "var(--au-mint)", "var(--au-amber)", "var(--au-coral)",
+    "var(--au-violet)", "var(--au-cool-2)", "var(--au-rose)", "var(--au-ink-3)",
+  ];
 
   return (
     <div className="flex items-center gap-6">
@@ -160,9 +165,9 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-4 gap-4">
         {[
           { label: "Total Users", value: data.activeUsers.total, icon: Users, color: "text-foreground", bg: "bg-card" },
-          { label: "Active Today", value: data.activeUsers.today, icon: Activity, color: "text-green-500", bg: "bg-green-500/5" },
-          { label: "This Week", value: data.activeUsers.week, icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/5" },
-          { label: "This Month", value: data.activeUsers.month, icon: BarChart3, color: "text-purple-500", bg: "bg-purple-500/5" },
+          { label: "Active Today", value: data.activeUsers.today, icon: Activity, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
+          { label: "This Week", value: data.activeUsers.week, icon: TrendingUp, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },
+          { label: "This Month", value: data.activeUsers.month, icon: BarChart3, color: "text-tone-foil-fg", bg: "bg-tone-foil-bg" },
         ].map((s) => (
           <div key={s.label} className={`rounded-xl border border-border ${s.bg} p-5`}>
             <div className="flex items-center justify-between">
@@ -179,14 +184,14 @@ export default function AnalyticsPage() {
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-medium text-muted-foreground">Total Sessions</p>
-            <Eye className="h-4 w-4 text-cyan-500" />
+            <Eye className="h-4 w-4 text-tone-cyan-fg" />
           </div>
           <p className="text-2xl font-bold text-foreground">{data.totalSessions}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5">
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-medium text-muted-foreground">Total Events</p>
-            <Clock className="h-4 w-4 text-orange-500" />
+            <Clock className="h-4 w-4 text-tone-orange-fg" />
           </div>
           <p className="text-2xl font-bold text-foreground">{data.totalEvents}</p>
         </div>
@@ -312,22 +317,22 @@ export default function AnalyticsPage() {
                           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold">
                             {s.initials || "?"}
                           </span>
-                          <span className="font-mono text-xs">{s.userId.slice(0, 8)}…</span>
+                          <span className="font-mono text-xs">{s.userId.slice(0, 8)}â€¦</span>
                         </a>
-                      ) : "—"}
+                      ) : "â€”"}
                     </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.browser || "—"}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.os || "—"}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.browser || "â€”"}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.os || "â€”"}</td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                        s.deviceType === "Mobile" ? "bg-green-500/10 text-green-500" :
-                        s.deviceType === "Tablet" ? "bg-purple-500/10 text-purple-500" :
-                        "bg-blue-500/10 text-blue-500"
+                        s.deviceType === "Mobile" ? "bg-tone-sage-bg text-tone-sage-fg" :
+                        s.deviceType === "Tablet" ? "bg-tone-foil-bg text-tone-foil-fg" :
+                        "bg-tone-sky-bg text-tone-sky-fg"
                       }`}>{s.deviceType || "Desktop"}</span>
                     </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{s.platform || "WEB"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">
-                      {s.city && s.region ? `${s.city}, ${s.region}` : s.country || "—"}
+                      {s.city && s.region ? `${s.city}, ${s.region}` : s.country || "â€”"}
                     </td>
                     <td className="px-3 py-2 text-center text-xs font-medium text-foreground">{s.pageViews}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(s.sessionStart).toLocaleString()}</td>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -137,7 +137,7 @@ export default function SecurityDashboardPage() {
               <p className="text-xs font-medium text-muted-foreground">Active Sessions</p>
               <p className="mt-1 text-2xl font-bold text-foreground">{activeSessions.length}</p>
             </div>
-            <div className="rounded-lg bg-green-500/10 p-2.5"><Monitor className="h-5 w-5 text-green-500" /></div>
+            <div className="rounded-lg bg-tone-sage-bg p-2.5"><Monitor className="h-5 w-5 text-tone-sage-fg" /></div>
           </div>
         </div>
         <div className="rounded-xl border border-border bg-card p-5">
@@ -146,7 +146,7 @@ export default function SecurityDashboardPage() {
               <p className="text-xs font-medium text-muted-foreground">Logins (24h)</p>
               <p className="mt-1 text-2xl font-bold text-foreground">{loginStats.total24h || 0}</p>
             </div>
-            <div className="rounded-lg bg-blue-500/10 p-2.5"><KeyRound className="h-5 w-5 text-blue-500" /></div>
+            <div className="rounded-lg bg-tone-sky-bg p-2.5"><KeyRound className="h-5 w-5 text-tone-sky-fg" /></div>
           </div>
         </div>
         <div className="rounded-xl border border-border bg-card p-5">
@@ -155,8 +155,8 @@ export default function SecurityDashboardPage() {
               <p className="text-xs font-medium text-muted-foreground">Failed (24h)</p>
               <p className="mt-1 text-2xl font-bold text-foreground">{loginStats.failed24h || 0}</p>
             </div>
-            <div className={`rounded-lg p-2.5 ${(loginStats.failed24h || 0) > 5 ? "bg-red-500/10" : "bg-amber-500/10"}`}>
-              <XCircle className={`h-5 w-5 ${(loginStats.failed24h || 0) > 5 ? "text-red-500" : "text-amber-500"}`} />
+            <div className={`rounded-lg p-2.5 ${(loginStats.failed24h || 0) > 5 ? "bg-destructive/10" : "bg-tone-honey-bg"}`}>
+              <XCircle className={`h-5 w-5 ${(loginStats.failed24h || 0) > 5 ? "text-destructive" : "text-tone-honey-fg"}`} />
             </div>
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function SecurityDashboardPage() {
               <p className="text-xs font-medium text-muted-foreground">Failed (7d)</p>
               <p className="mt-1 text-2xl font-bold text-foreground">{loginStats.failed7d || 0}</p>
             </div>
-            <div className="rounded-lg bg-orange-500/10 p-2.5"><AlertTriangle className="h-5 w-5 text-orange-500" /></div>
+            <div className="rounded-lg bg-tone-orange-bg p-2.5"><AlertTriangle className="h-5 w-5 text-tone-orange-fg" /></div>
           </div>
         </div>
       </div>
@@ -219,19 +219,19 @@ export default function SecurityDashboardPage() {
                 <div key={s.id} className={`rounded-xl border p-5 transition ${s.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`rounded-lg p-2.5 ${s.deviceType === "Mobile" ? "bg-blue-500/10" : "bg-emerald-500/10"}`}>
-                        {s.deviceType === "Mobile" ? <Smartphone className="h-5 w-5 text-blue-500" /> : <Laptop className="h-5 w-5 text-emerald-500" />}
+                      <div className={`rounded-lg p-2.5 ${s.deviceType === "Mobile" ? "bg-tone-sky-bg" : "bg-tone-emerald-bg"}`}>
+                        {s.deviceType === "Mobile" ? <Smartphone className="h-5 w-5 text-tone-sky-fg" /> : <Laptop className="h-5 w-5 text-tone-emerald-fg" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground">{s.browser || "Unknown"} · {s.os || "Unknown"}</p>
+                          <p className="font-medium text-foreground">{s.browser || "Unknown"} Â· {s.os || "Unknown"}</p>
                           {s.isCurrent && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Current</span>}
                         </div>
                         {showAll && s.adminUser && (
                           <p className="text-xs text-muted-foreground">{s.adminUser.firstName} {s.adminUser.lastName} ({s.adminUser.email})</p>
                         )}
                         <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {s.ipAddress || "—"}</span>
+                          <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {s.ipAddress || "â€”"}</span>
                           {s.country && <span>{s.city ? `${s.city}, ` : ""}{s.country}</span>}
                           <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {relativeTime(s.lastActivity)}</span>
                         </div>
@@ -292,21 +292,21 @@ export default function SecurityDashboardPage() {
                     </td>
                     <td className="px-4 py-3">
                       {log.success ? (
-                        <span className="flex items-center gap-1 text-xs font-medium text-green-500"><CheckCircle2 className="h-3.5 w-3.5" /> Success</span>
+                        <span className="flex items-center gap-1 text-xs font-medium text-tone-sage-fg"><CheckCircle2 className="h-3.5 w-3.5" /> Success</span>
                       ) : (
                         <div>
-                          <span className="flex items-center gap-1 text-xs font-medium text-red-500"><XCircle className="h-3.5 w-3.5" /> Failed</span>
+                          <span className="flex items-center gap-1 text-xs font-medium text-destructive"><XCircle className="h-3.5 w-3.5" /> Failed</span>
                           {log.failReason && <p className="text-[10px] text-muted-foreground mt-0.5">{log.failReason}</p>}
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{log.ipAddress || "—"}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{log.browser || "—"} / {log.os || "—"}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{log.ipAddress || "â€”"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">{log.browser || "â€”"} / {log.os || "â€”"}</td>
                     <td className="px-4 py-3">
                       {log.mfaUsed ? (
                         <span className="flex items-center gap-1 text-xs text-primary"><Shield className="h-3 w-3" /> {log.mfaMethod || "Yes"}</span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">â€”</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -337,7 +337,7 @@ export default function SecurityDashboardPage() {
           <p className="text-sm text-muted-foreground">{securityEvents.length} recent security events</p>
           {securityEvents.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-12 text-center">
-              <Shield className="h-10 w-10 mx-auto text-green-500/30 mb-3" />
+              <Shield className="h-10 w-10 mx-auto text-tone-sage-fg/30 mb-3" />
               <p className="text-sm text-muted-foreground">No security events detected. Your system is clean.</p>
             </div>
           ) : (
@@ -345,7 +345,7 @@ export default function SecurityDashboardPage() {
               {securityEvents.map((event: any) => {
                 const changes = event.changes ? JSON.parse(event.changes) : {};
                 const severity = event.entityId;
-                const sevColor = severity === "CRITICAL" ? "bg-red-500/10 text-red-500" : severity === "HIGH" ? "bg-orange-500/10 text-orange-500" : severity === "MEDIUM" ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500";
+                const sevColor = severity === "CRITICAL" ? "bg-destructive/10 text-destructive" : severity === "HIGH" ? "bg-tone-orange-bg text-tone-orange-fg" : severity === "MEDIUM" ? "bg-tone-honey-bg text-tone-honey-fg" : "bg-tone-sky-bg text-tone-sky-fg";
                 return (
                   <div key={event.id} className="rounded-xl border border-border bg-card p-4">
                     <div className="flex items-center justify-between mb-2">
@@ -355,7 +355,7 @@ export default function SecurityDashboardPage() {
                       </div>
                       <span className="text-xs text-muted-foreground">{relativeTime(event.createdAt)}</span>
                     </div>
-                    <p className="text-xs text-muted-foreground">{changes.details || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{changes.details || "â€”"}</p>
                     {changes.ip && <p className="text-xs text-muted-foreground mt-1">IP: {changes.ip}</p>}
                   </div>
                 );

@@ -1,10 +1,10 @@
-/**
- * Admin /blog — list + entry point.
+﻿/**
+ * Admin /blog â€” list + entry point.
  *
  * Server component reads the requested status / locale / search slice
  * straight from the URL so editors can deep-link to a specific view
  * (e.g. /blog?status=DRAFT&q=move). The actual list is small enough
- * to render server-side without pagination — we cap at 200 rows; once
+ * to render server-side without pagination â€” we cap at 200 rows; once
  * the catalog crosses that we'll layer a cursor in.
  */
 export const dynamic = "force-dynamic";
@@ -35,8 +35,8 @@ const STATUS_TABS: Array<{ key: StatusFilter; label: string }> = [
 
 const STATUS_BADGE: Record<string, string> = {
   DRAFT: "bg-muted text-muted-foreground border-border",
-  SCHEDULED: "bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-300",
-  PUBLISHED: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 dark:text-emerald-300",
+  SCHEDULED: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br dark:text-tone-honey-fg",
+  PUBLISHED: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br dark:text-tone-emerald-fg",
   ARCHIVED: "bg-foreground/5 text-foreground/60 border-foreground/10",
 };
 
@@ -250,7 +250,7 @@ export default async function BlogListPage({
               type="search"
               name="q"
               defaultValue={query}
-              placeholder="Search title or slug…"
+              placeholder="Search title or slugâ€¦"
               className="w-56 rounded-md border border-border bg-background py-1.5 pl-7 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </form>
@@ -317,7 +317,7 @@ export default async function BlogListPage({
                       </Link>
                       <div className="mt-0.5 text-xs text-muted-foreground">
                         /{p.slug}
-                        {p.category ? <span> · {p.category.name}</span> : null}
+                        {p.category ? <span> Â· {p.category.name}</span> : null}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -407,7 +407,7 @@ export default async function BlogListPage({
           className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-4 py-3 text-xs text-muted-foreground"
         >
           <span>
-            Page {page} of {totalPages} · {totalMatching.toLocaleString()} posts
+            Page {page} of {totalPages} Â· {totalMatching.toLocaleString()} posts
           </span>
           <div className="flex items-center gap-1">
             {page > 1 ? (

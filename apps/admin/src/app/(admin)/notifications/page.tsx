@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -217,9 +217,9 @@ export default function NotificationsPage() {
 
     const channelExtra =
       form.channel === "EMAIL"
-        ? ` · email delivered ${data.emailDelivered ?? 0}, skipped ${data.emailSkipped ?? 0}`
+        ? ` Â· email delivered ${data.emailDelivered ?? 0}, skipped ${data.emailSkipped ?? 0}`
         : form.channel === "PUSH"
-          ? ` · push delivered ${data.pushDelivered ?? 0}, skipped ${data.pushSkipped ?? 0}`
+          ? ` Â· push delivered ${data.pushDelivered ?? 0}, skipped ${data.pushSkipped ?? 0}`
           : "";
 
     toast.success(
@@ -247,29 +247,29 @@ export default function NotificationsPage() {
       label: "Total Sent",
       value: stats.total,
       icon: Bell,
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
+      color: "text-tone-sky-fg",
+      bg: "bg-tone-sky-bg",
     },
     {
       label: "Unread",
       value: stats.unread,
       icon: Eye,
-      color: "text-yellow-500",
-      bg: "bg-yellow-500/10",
+      color: "text-tone-honey-fg",
+      bg: "bg-tone-honey-bg",
     },
     {
       label: "Delivered",
       value: stats.sent,
       icon: CheckCircle2,
-      color: "text-green-500",
-      bg: "bg-green-500/10",
+      color: "text-tone-sage-fg",
+      bg: "bg-tone-sage-bg",
     },
     {
       label: "Queue Records",
       value: stats.queued,
       icon: Clock,
-      color: "text-purple-500",
-      bg: "bg-purple-500/10",
+      color: "text-tone-foil-fg",
+      bg: "bg-tone-foil-bg",
     },
   ];
 
@@ -312,9 +312,9 @@ export default function NotificationsPage() {
         ))}
       </div>
 
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4">
         <div className="flex items-start gap-3">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" />
+          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-tone-honey-fg" />
           <div className="space-y-1 text-sm">
             <p className="font-medium text-foreground">
               Delivery is synchronous and unscheduled.
@@ -723,8 +723,8 @@ export default function NotificationsPage() {
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         notification.read
-                          ? "bg-green-500/10 text-green-500"
-                          : "bg-yellow-500/10 text-yellow-500"
+                          ? "bg-tone-sage-bg text-tone-sage-fg"
+                          : "bg-tone-honey-bg text-tone-honey-fg"
                       }`}
                     >
                       {notification.read ? "Read" : "Unread"}

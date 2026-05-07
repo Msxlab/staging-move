@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -242,21 +242,21 @@ export default function NewProviderPage() {
                 i === step
                   ? "border-primary bg-primary/5"
                   : i < step
-                    ? "border-green-500/30 bg-green-500/5 cursor-pointer hover:bg-green-500/10"
+                    ? "border-tone-sage-br bg-tone-sage-bg cursor-pointer hover:bg-tone-sage-bg"
                     : "border-border bg-card opacity-50 cursor-not-allowed"
               }`}
             >
               <div
                 className={`flex h-9 w-9 items-center justify-center rounded-lg ${
                   i < step
-                    ? "bg-green-500/10"
+                    ? "bg-tone-sage-bg"
                     : i === step
                       ? "bg-primary/10"
                       : "bg-muted"
                 }`}
               >
                 {i < step ? (
-                  <Check className="h-5 w-5 text-green-500" />
+                  <Check className="h-5 w-5 text-tone-sage-fg" />
                 ) : (
                   <s.icon
                     className={`h-5 w-5 ${i === step ? "text-primary" : "text-muted-foreground"}`}
@@ -265,7 +265,7 @@ export default function NewProviderPage() {
               </div>
               <div className="text-left">
                 <p
-                  className={`text-sm font-medium ${i === step ? "text-primary" : i < step ? "text-green-500" : "text-muted-foreground"}`}
+                  className={`text-sm font-medium ${i === step ? "text-primary" : i < step ? "text-tone-sage-fg" : "text-muted-foreground"}`}
                 >
                   Step {i + 1}: {s.label}
                 </p>
@@ -312,10 +312,10 @@ export default function NewProviderPage() {
                 value={form.slug}
                 onChange={(e) => setForm({ ...form, slug: e.target.value })}
                 required
-                className={`${inputCls} ${slugDup ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}`}
+                className={`${inputCls} ${slugDup ? "border-destructive focus:border-destructive focus:ring-destructive/20" : ""}`}
               />
               {slugDup && (
-                <p className="mt-1 flex items-center gap-1 text-xs text-red-500">
+                <p className="mt-1 flex items-center gap-1 text-xs text-destructive">
                   <AlertCircle className="h-3 w-3" /> This slug already exists
                 </p>
               )}
@@ -522,7 +522,7 @@ export default function NewProviderPage() {
             <button
               type="button"
               onClick={() => setForm({ ...form, isActive: !form.isActive })}
-              className={`relative h-6 w-11 rounded-full transition-colors ${form.isActive ? "bg-green-500" : "bg-muted"}`}
+              className={`relative h-6 w-11 rounded-full transition-colors ${form.isActive ? "bg-tone-sage-fg" : "bg-muted"}`}
             >
               <div
                 className={`absolute top-0.5 h-5 w-5 rounded-full bg-foreground shadow transition-transform ${form.isActive ? "left-[22px]" : "left-0.5"}`}
@@ -608,7 +608,7 @@ export default function NewProviderPage() {
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Name</p>
-              <p className="font-medium text-foreground">{form.name || "—"}</p>
+              <p className="font-medium text-foreground">{form.name || "â€”"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Category</p>
@@ -637,7 +637,7 @@ export default function NewProviderPage() {
             <div>
               <p className="text-xs text-muted-foreground">Website</p>
               <p className="font-medium text-foreground truncate">
-                {form.website || "—"}
+                {form.website || "â€”"}
               </p>
             </div>
             <div>
@@ -649,7 +649,7 @@ export default function NewProviderPage() {
             <div>
               <p className="text-xs text-muted-foreground">Status</p>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${form.isActive ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-400"}`}
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${form.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}
               >
                 {form.isActive ? "Active" : "Inactive"}
               </span>
@@ -689,7 +689,7 @@ export default function NewProviderPage() {
             type="button"
             onClick={handleSubmit}
             disabled={saving || !canProceed()}
-            className="flex items-center gap-2 rounded-lg bg-green-600 px-8 py-2.5 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-tone-sage-fg px-8 py-2.5 text-sm font-medium text-white hover:bg-tone-sage-fg disabled:opacity-50"
           >
             {saving ? (
               "Creating..."

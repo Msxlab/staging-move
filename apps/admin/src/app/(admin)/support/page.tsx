@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -7,17 +7,17 @@ import { Loader2, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react"
 import { toast } from "sonner";
 
 const statusBadge: Record<string, string> = {
-  OPEN: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  IN_PROGRESS: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  WAITING_USER: "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  RESOLVED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  OPEN: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
+  IN_PROGRESS: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
+  WAITING_USER: "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br",
+  RESOLVED: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br",
   CLOSED: "bg-muted text-muted-foreground border-border",
 };
 
 const priorityBadge: Record<string, string> = {
-  URGENT: "bg-red-500/10 text-red-500 border-red-500/20",
-  HIGH: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  MEDIUM: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
+  URGENT: "bg-destructive/10 text-destructive border-destructive/20",
+  HIGH: "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br",
+  MEDIUM: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
   LOW: "bg-muted text-muted-foreground border-border",
 };
 
@@ -113,11 +113,11 @@ export default function AdminSupportPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {[
-          { label: "Open", value: stats.open, cls: "text-blue-500" },
-          { label: "In Progress", value: stats.inProgress, cls: "text-amber-500" },
-          { label: "Waiting User", value: stats.waitingUser, cls: "text-orange-500" },
-          { label: "Urgent", value: stats.urgent, cls: "text-red-500" },
-          { label: "My Queue", value: stats.myTickets, cls: "text-emerald-500" },
+          { label: "Open", value: stats.open, cls: "text-tone-sky-fg" },
+          { label: "In Progress", value: stats.inProgress, cls: "text-tone-honey-fg" },
+          { label: "Waiting User", value: stats.waitingUser, cls: "text-tone-orange-fg" },
+          { label: "Urgent", value: stats.urgent, cls: "text-destructive" },
+          { label: "My Queue", value: stats.myTickets, cls: "text-tone-emerald-fg" },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4">
             <p className={`text-2xl font-bold ${s.cls}`}>{s.value}</p>
@@ -244,10 +244,10 @@ export default function AdminSupportPage() {
                 <tr key={ticket.id} className="hover:bg-muted/20 transition">
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground truncate max-w-[220px]">{ticket.subject}</p>
-                    <p className="text-xs text-muted-foreground">{ticket.category} · {ticket._count.messages} messages</p>
+                    <p className="text-xs text-muted-foreground">{ticket.category} Â· {ticket._count.messages} messages</p>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-foreground">{[ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || "—"}</p>
+                    <p className="text-foreground">{[ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || "â€”"}</p>
                     <p className="text-xs text-muted-foreground">{ticket.user.email}</p>
                   </td>
                   <td className="px-4 py-3">
@@ -270,7 +270,7 @@ export default function AdminSupportPage() {
                   <td className="px-4 py-3">
                     <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${
                       ticket.sla?.breached
-                        ? "bg-red-500/10 text-red-500 border-red-500/20"
+                        ? "bg-destructive/10 text-destructive border-destructive/20"
                         : "bg-muted text-muted-foreground border-border"
                     }`}>
                       {getSlaLabel(ticket.sla)}

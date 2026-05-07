@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -128,12 +128,12 @@ export default function RuntimeConfigPage() {
         <MetricCard label="Missing" value={configs.filter((item) => item.source === "MISSING").length} tone="danger" />
       </div>
 
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-100">
+      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 text-sm text-tone-honey-fg">
         <div className="flex items-start gap-3">
           <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <div>
             <p className="font-medium">Secrets are never shown in full.</p>
-            <p className="mt-1 text-amber-100/80">For production, the safest model is still deployment-level secret management. DB overrides are encrypted at rest and intended for controlled break-glass or managed runtime updates.</p>
+            <p className="mt-1 text-tone-honey-fg/80">For production, the safest model is still deployment-level secret management. DB overrides are encrypted at rest and intended for controlled break-glass or managed runtime updates.</p>
           </div>
         </div>
       </div>
@@ -163,7 +163,7 @@ export default function RuntimeConfigPage() {
                           </div>
                           <p className="text-sm text-muted-foreground">{item.description}</p>
                           {item.warning ? (
-                            <p className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
+                            <p className="rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-xs text-tone-honey-fg">
                               {item.warning}
                             </p>
                           ) : null}
@@ -171,7 +171,7 @@ export default function RuntimeConfigPage() {
                             <div><span className="font-medium text-foreground">Key:</span> <span className="font-mono">{item.key}</span></div>
                             <div><span className="font-medium text-foreground">Scope:</span> {item.scope}</div>
                             <div><span className="font-medium text-foreground">Value:</span> {item.maskedValue || "Not configured"}</div>
-                            <div><span className="font-medium text-foreground">Last validation:</span> {item.lastValidatedAt ? new Date(item.lastValidatedAt).toLocaleString() : "—"}</div>
+                            <div><span className="font-medium text-foreground">Last validation:</span> {item.lastValidatedAt ? new Date(item.lastValidatedAt).toLocaleString() : "â€”"}</div>
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -260,16 +260,16 @@ function MetricCard({ label, value, tone = "default" }: { label: string; value: 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-red-500" : "text-foreground"}`}>{value}</p>
+      <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-destructive" : "text-foreground"}`}>{value}</p>
     </div>
   );
 }
 
 function StatusBadge({ label, tone }: { label: string; tone: "success" | "warning" | "danger" | "neutral" }) {
   const tones = {
-    success: "bg-green-500/10 text-green-500",
-    warning: "bg-amber-500/10 text-amber-400",
-    danger: "bg-red-500/10 text-red-500",
+    success: "bg-tone-sage-bg text-tone-sage-fg",
+    warning: "bg-tone-honey-bg text-tone-honey-fg",
+    danger: "bg-destructive/10 text-destructive",
     neutral: "bg-muted text-muted-foreground",
   } as const;
 

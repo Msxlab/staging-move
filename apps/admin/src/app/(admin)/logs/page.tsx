@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -23,9 +23,9 @@ function relativeTime(date: string) {
 }
 
 const ACTION_COLORS: Record<string, string> = {
-  CREATE: "bg-green-500/10 text-green-500", UPDATE: "bg-blue-500/10 text-blue-500",
-  DELETE: "bg-red-500/10 text-red-500", LOGIN: "bg-cyan-500/10 text-cyan-500",
-  APPROVE: "bg-green-500/10 text-green-500", REJECT: "bg-red-500/10 text-red-500",
+  CREATE: "bg-tone-sage-bg text-tone-sage-fg", UPDATE: "bg-tone-sky-bg text-tone-sky-fg",
+  DELETE: "bg-destructive/10 text-destructive", LOGIN: "bg-tone-cyan-bg text-tone-cyan-fg",
+  APPROVE: "bg-tone-sage-bg text-tone-sage-fg", REJECT: "bg-destructive/10 text-destructive",
 };
 
 function actionColor(action: string) {
@@ -225,7 +225,7 @@ export default function LogsPage() {
                     <span className="text-sm text-foreground">{log.entityType}</span>
                     <p className="text-xs text-muted-foreground font-mono">{log.entityId.slice(0, 10)}...</p>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{log.ipAddress || "—"}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{log.ipAddress || "â€”"}</td>
                   <td className="px-4 py-3">
                     <p className="text-xs text-foreground">{relativeTime(log.createdAt)}</p>
                     <p className="text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
@@ -237,7 +237,7 @@ export default function LogsPage() {
                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-xs text-muted-foreground">â€”</span>
                     )}
                   </td>
                 </tr>
@@ -255,7 +255,7 @@ export default function LogsPage() {
         return (
           <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-foreground">Changes — {log.action} on {log.entityType}</p>
+              <p className="text-xs font-medium text-foreground">Changes â€” {log.action} on {log.entityType}</p>
               <button onClick={() => setExpandedLog(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
             </div>
             <pre className="text-xs text-muted-foreground bg-card rounded-lg p-3 overflow-x-auto max-h-64 border border-border">
@@ -268,7 +268,7 @@ export default function LogsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
+          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}â€“{Math.min(page * perPage, total)} of {total}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
             <span className="px-3 text-sm text-muted-foreground">Page {page} / {totalPages}</span>

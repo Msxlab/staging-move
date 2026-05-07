@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, Calendar, ChevronLeft, ChevronRight, CheckCircle2, Copy, Pause, Pencil, Play, Plus, RefreshCw, Save, Search, Square, Ticket, Trash2, X } from "lucide-react";
@@ -197,7 +197,7 @@ function SlotCard({
   return (
     <div
       className={`rounded-xl border p-5 ${
-        live ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5"
+        live ? "border-tone-emerald-br bg-tone-emerald-bg" : "border-tone-honey-br bg-tone-honey-bg"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -205,9 +205,9 @@ function SlotCard({
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
           <div className="mt-1 flex items-center gap-2">
             {live ? (
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" aria-hidden="true" />
+              <CheckCircle2 className="h-5 w-5 text-tone-emerald-fg" aria-hidden="true" />
             ) : (
-              <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              <AlertTriangle className="h-5 w-5 text-tone-honey-fg" aria-hidden="true" />
             )}
             <h3 className="text-base font-semibold text-foreground">
               {live ? "Live" : "Empty"}
@@ -238,8 +238,8 @@ function SlotCard({
           <p className="font-medium text-foreground">{campaign.name}</p>
           <p className="text-xs text-muted-foreground">
             Code: <span className="font-mono">{campaign.code}</span>
-            {campaign.displayPriceLabel ? ` · ${campaign.displayPriceLabel}` : ""}
-            {campaign.accessType === "FREE_TRIAL" && campaign.trialDays ? ` · ${campaign.trialDays}-day trial` : ""}
+            {campaign.displayPriceLabel ? ` Â· ${campaign.displayPriceLabel}` : ""}
+            {campaign.accessType === "FREE_TRIAL" && campaign.trialDays ? ` Â· ${campaign.trialDays}-day trial` : ""}
           </p>
           {campaign.publicHeadline ? (
             <p className="text-xs italic text-muted-foreground">&ldquo;{campaign.publicHeadline}&rdquo;</p>
@@ -564,15 +564,15 @@ export default function AcquisitionCampaignsPage() {
         <h1 className="text-3xl font-bold text-foreground">Acquisition Campaigns</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Each public surface (homepage, /pricing, settings upgrade banner) reads from the active
-          campaign in its slot. Slots are independent — Annual Trial and Monthly Paid each need
+          campaign in its slot. Slots are independent â€” Annual Trial and Monthly Paid each need
           their own campaign. Public site updates within 60 seconds after activation.
         </p>
       </div>
 
       {slotConflicts.length > 0 ? (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+        <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 text-sm">
           <div className="flex items-start gap-2">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" aria-hidden="true" />
             <div>
               <p className="font-medium text-foreground">Multiple active campaigns detected</p>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -582,7 +582,7 @@ export default function AcquisitionCampaignsPage() {
               <ul className="mt-2 space-y-1 text-xs text-foreground">
                 {slotConflicts.map((conflict) => (
                   <li key={conflict.key}>
-                    <span className="font-mono text-[11px]">{conflict.key.replace(":", " · ")}</span>:{" "}
+                    <span className="font-mono text-[11px]">{conflict.key.replace(":", " Â· ")}</span>:{" "}
                     {conflict.campaigns.map((c) => c.code).join(", ")}
                   </li>
                 ))}
@@ -712,7 +712,7 @@ export default function AcquisitionCampaignsPage() {
                   {form.billingInterval === "YEAR" ? <option value="YEAR">Yearly (legacy)</option> : null}
                 </select>
                 {form.billingInterval === "YEAR" ? (
-                  <p className="mt-1 text-[11px] text-amber-500">
+                  <p className="mt-1 text-[11px] text-tone-honey-fg">
                     Annual paid is legacy and not consumed by checkout. Switch to Monthly or use the Annual Trial slot.
                   </p>
                 ) : null}
@@ -777,10 +777,10 @@ export default function AcquisitionCampaignsPage() {
           <div
             className={`mt-4 flex flex-wrap items-start justify-between gap-3 rounded-lg border px-3 py-2 text-sm ${
               priceValidation.error
-                ? "border-red-500/30 bg-red-500/10 text-red-300"
+                ? "border-destructive/30 bg-destructive/10 text-destructive"
                 : priceValidation.warning
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                  ? "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg"
+                  : "border-tone-emerald-br bg-tone-emerald-bg text-tone-emerald-fg"
             }`}
           >
             <span className="flex-1">
@@ -958,7 +958,7 @@ export default function AcquisitionCampaignsPage() {
                     <button
                       onClick={() => void deleteCampaign(campaign)}
                       disabled={campaign.redemptionCount > 0}
-                      title={campaign.redemptionCount > 0 ? "End this campaign — it has redemptions on record." : "Delete draft / unused campaign"}
+                      title={campaign.redemptionCount > 0 ? "End this campaign â€” it has redemptions on record." : "Delete draft / unused campaign"}
                       className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-2 text-xs text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     >
                       <Trash2 className="h-3.5 w-3.5" /> Delete
@@ -973,7 +973,7 @@ export default function AcquisitionCampaignsPage() {
         {total > PAGE_SIZE ? (
           <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3 text-xs text-muted-foreground">
             <span>
-              Page {page} of {Math.max(1, Math.ceil(total / PAGE_SIZE))} · {total} campaigns
+              Page {page} of {Math.max(1, Math.ceil(total / PAGE_SIZE))} Â· {total} campaigns
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -1010,7 +1010,7 @@ export default function AcquisitionCampaignsPage() {
               <div>
                 <h3 id="redemptions-title" className="font-semibold text-foreground">Redemptions</h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {redemptionsFor.campaign.name} · <span className="font-mono">{redemptionsFor.campaign.code}</span>
+                  {redemptionsFor.campaign.name} Â· <span className="font-mono">{redemptionsFor.campaign.code}</span>
                 </p>
               </div>
               <button

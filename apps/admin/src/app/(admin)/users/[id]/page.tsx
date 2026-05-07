@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -408,7 +408,7 @@ export default function UserDetailPage() {
     { label: "Profile", complete: !!user.profile, detail: user.profile ? user.profile.moveType || "Profile saved" : "Missing" },
     { label: "Primary address", complete: !!primaryAddress, detail: primaryAddress ? `${primaryAddress.city}, ${primaryAddress.state}` : "Missing" },
     { label: "Service setup", complete: totalServices > 0, detail: totalServices > 0 ? `${totalServices} active service${totalServices === 1 ? "" : "s"}` : "No services" },
-    { label: "Moving plan", complete: !!activeMove, detail: activeMove ? `${activeMove.fromAddress?.state || "—"} → ${activeMove.toAddress?.state || "—"}` : "No move plan" },
+    { label: "Moving plan", complete: !!activeMove, detail: activeMove ? `${activeMove.fromAddress?.state || "â€”"} â†’ ${activeMove.toAddress?.state || "â€”"}` : "No move plan" },
   ];
   const onboardingCompletedCount = onboardingChecks.filter((step) => step.complete).length;
   const onboardingStatus = onboardingCompletedCount === 0
@@ -417,12 +417,12 @@ export default function UserDetailPage() {
       ? "Complete"
       : "In Progress";
   const authHealth = !lastSeenAt
-    ? { label: "No Activity Yet", tone: "text-amber-500", badge: "bg-amber-500/10 text-amber-500" }
+    ? { label: "No Activity Yet", tone: "text-tone-honey-fg", badge: "bg-tone-honey-bg text-tone-honey-fg" }
     : daysSinceLastSeen !== null && daysSinceLastSeen <= 1
-      ? { label: "Healthy", tone: "text-green-500", badge: "bg-green-500/10 text-green-500" }
+      ? { label: "Healthy", tone: "text-tone-sage-fg", badge: "bg-tone-sage-bg text-tone-sage-fg" }
       : daysSinceLastSeen !== null && daysSinceLastSeen <= 7
-        ? { label: "Idle", tone: "text-amber-500", badge: "bg-amber-500/10 text-amber-500" }
-        : { label: "Stale", tone: "text-red-500", badge: "bg-red-500/10 text-red-500" };
+        ? { label: "Idle", tone: "text-tone-honey-fg", badge: "bg-tone-honey-bg text-tone-honey-fg" }
+        : { label: "Stale", tone: "text-destructive", badge: "bg-destructive/10 text-destructive" };
   const supportFlags = [
     !user.profile ? "User has not created a profile yet." : null,
     !primaryAddress ? "No primary address is available." : null,
@@ -441,9 +441,9 @@ export default function UserDetailPage() {
       id: `session-${session.id}`,
       type: "Session",
       title: `${session.isActive ? "Active" : "Ended"} ${session.platform || session.deviceType || "session"}`,
-      detail: `${session.browser || "Unknown browser"}${session.os ? ` · ${session.os}` : ""}${session.ipAddress ? ` · ${session.ipAddress}` : ""}`,
+      detail: `${session.browser || "Unknown browser"}${session.os ? ` Â· ${session.os}` : ""}${session.ipAddress ? ` Â· ${session.ipAddress}` : ""}`,
       timestamp: session.lastActivity || session.sessionStart,
-      badge: session.isActive ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground",
+      badge: session.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground",
     })),
     ...recentEvents.slice(0, 12).map((event: any) => ({
       id: `event-${event.id}`,
@@ -451,7 +451,7 @@ export default function UserDetailPage() {
       title: event.event,
       detail: event.page || event.label || event.element || "Tracked user event",
       timestamp: event.createdAt,
-      badge: event.event === "LOGIN" ? "bg-green-500/10 text-green-500" : event.event === "SEARCH" ? "bg-amber-500/10 text-amber-500" : "bg-blue-500/10 text-blue-500",
+      badge: event.event === "LOGIN" ? "bg-tone-sage-bg text-tone-sage-fg" : event.event === "SEARCH" ? "bg-tone-honey-bg text-tone-honey-fg" : "bg-tone-sky-bg text-tone-sky-fg",
     })),
     ...auditLogs.slice(0, 8).map((log: any) => ({
       id: `audit-${log.id}`,
@@ -459,7 +459,7 @@ export default function UserDetailPage() {
       title: log.action,
       detail: log.entityType || "Admin update",
       timestamp: log.createdAt,
-      badge: "bg-purple-500/10 text-purple-500",
+      badge: "bg-tone-foil-bg text-tone-foil-fg",
     })),
   ]
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -522,7 +522,7 @@ export default function UserDetailPage() {
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-bold text-foreground">{user.firstName} {user.lastName}</h1>
               {isDeleted && (
-                <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-500">
+                <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
                   Blocked / Deleted
                 </span>
               )}
@@ -573,11 +573,11 @@ export default function UserDetailPage() {
       </div>
 
       {isDeleted && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500">
+        <div className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <p className="font-medium">This account is blocked by soft deletion.</p>
-            <p className="mt-1 text-xs text-red-500/90">
+            <p className="mt-1 text-xs text-destructive/90">
               OAuth and password login remain blocked until a SUPER_ADMIN restores/unblocks it. Existing sessions stay revoked after restore.
             </p>
           </div>
@@ -627,7 +627,7 @@ export default function UserDetailPage() {
                   <p className="font-medium text-foreground">{step.label}</p>
                   <p className="text-xs text-muted-foreground">{step.detail}</p>
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${step.complete ? "bg-green-500/10 text-green-500" : "bg-amber-500/10 text-amber-500"}`}>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${step.complete ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
                   {step.complete ? "Ready" : "Needs attention"}
                 </span>
               </div>
@@ -638,7 +638,7 @@ export default function UserDetailPage() {
             {supportFlags.length > 0 ? (
               <div className="space-y-2">
                 {supportFlags.map((flag) => (
-                  <div key={flag} className="rounded-lg bg-amber-500/10 px-3 py-2 text-sm text-amber-500">{flag}</div>
+                  <div key={flag} className="rounded-lg bg-tone-honey-bg px-3 py-2 text-sm text-tone-honey-fg">{flag}</div>
                 ))}
               </div>
             ) : (
@@ -677,7 +677,7 @@ export default function UserDetailPage() {
             <div className="rounded-lg border border-border bg-muted/20 p-4">
               <p className="text-xs font-medium uppercase text-muted-foreground mb-3">Linked Sign-In Methods</p>
               <div className="flex flex-wrap gap-2 mb-3">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${hasPasswordLogin ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${hasPasswordLogin ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground"}`}>
                   Password
                 </span>
                 {linkedProviders.map((account: any) => (
@@ -686,7 +686,7 @@ export default function UserDetailPage() {
                   </span>
                 ))}
                 {linkedProviders.length === 0 && !hasPasswordLogin && (
-                  <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-500">
+                  <span className="rounded-full bg-tone-honey-bg px-2.5 py-1 text-xs font-medium text-tone-honey-fg">
                     No sign-in method found
                   </span>
                 )}
@@ -696,7 +696,7 @@ export default function UserDetailPage() {
                   <div key={account.id} className="rounded-lg bg-background/70 px-3 py-2">
                     <p className="font-medium text-foreground">{formatAuthProvider(account.provider)}</p>
                     <p className="text-xs text-muted-foreground">
-                      Linked {new Date(account.createdAt).toLocaleString()} · ID {account.providerIdHint || "—"}
+                      Linked {new Date(account.createdAt).toLocaleString()} Â· ID {account.providerIdHint || "â€”"}
                     </p>
                   </div>
                 ))}
@@ -717,7 +717,7 @@ export default function UserDetailPage() {
                     {user.emailVerifiedAt
                       ? `Verified on ${new Date(user.emailVerifiedAt).toLocaleString()}`
                       : latestVerificationToken
-                        ? `Latest token ${new Date(latestVerificationToken.createdAt).toLocaleString()} · ${latestVerificationToken.consumedAt ? "Consumed" : "Pending"}`
+                        ? `Latest token ${new Date(latestVerificationToken.createdAt).toLocaleString()} Â· ${latestVerificationToken.consumedAt ? "Consumed" : "Pending"}`
                         : "No verification token activity recorded"}
                   </p>
                 </div>
@@ -727,7 +727,7 @@ export default function UserDetailPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {latestPasswordReset
-                      ? `Latest token ${new Date(latestPasswordReset.createdAt).toLocaleString()} · ${latestPasswordReset.usedAt ? "Used" : "Unused"}`
+                      ? `Latest token ${new Date(latestPasswordReset.createdAt).toLocaleString()} Â· ${latestPasswordReset.usedAt ? "Used" : "Unused"}`
                       : "No password reset activity recorded"}
                   </p>
                 </div>
@@ -737,7 +737,7 @@ export default function UserDetailPage() {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {lastLoginSession
-                      ? `${new Date(lastLoginSession.lastActivity || lastLoginSession.createdAt).toLocaleString()} · ${lastLoginSession.browser || "Unknown browser"}${lastLoginSession.os ? ` / ${lastLoginSession.os}` : ""}`
+                      ? `${new Date(lastLoginSession.lastActivity || lastLoginSession.createdAt).toLocaleString()} Â· ${lastLoginSession.browser || "Unknown browser"}${lastLoginSession.os ? ` / ${lastLoginSession.os}` : ""}`
                       : "No login-session record found"}
                   </p>
                 </div>
@@ -756,23 +756,23 @@ export default function UserDetailPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${session.isActive ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${session.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground"}`}>
                             {session.isActive ? "Active" : "Revoked"}
                           </span>
                           {session.impersonatedByAdminId && (
-                            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-500">
+                            <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-[10px] font-medium text-tone-honey-fg">
                               Impersonated
                             </span>
                           )}
                         </div>
                         <p className="mt-2 text-sm font-medium text-foreground">
-                          {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}{session.deviceType ? ` · ${session.deviceType}` : ""}
+                          {session.browser || "Unknown browser"}{session.os ? ` / ${session.os}` : ""}{session.deviceType ? ` Â· ${session.deviceType}` : ""}
                         </p>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {session.ipAddress || "No IP"} · Created {new Date(session.createdAt).toLocaleString()}
+                          {session.ipAddress || "No IP"} Â· Created {new Date(session.createdAt).toLocaleString()}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Last activity {new Date(session.lastActivity).toLocaleString()} · Expires {new Date(session.expiresAt).toLocaleString()}
+                          Last activity {new Date(session.lastActivity).toLocaleString()} Â· Expires {new Date(session.expiresAt).toLocaleString()}
                         </p>
                       </div>
                       {session.isActive && (
@@ -808,7 +808,7 @@ export default function UserDetailPage() {
                   {latestConsentByCategory.map((entry: any) => (
                     <span
                       key={`${entry.category}-${entry.createdAt}`}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${entry.granted ? "bg-green-500/10 text-green-500" : "bg-muted text-muted-foreground"}`}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${entry.granted ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-muted text-muted-foreground"}`}
                     >
                       {formatConsentCategory(entry.category)}: {entry.granted ? "Granted" : "Off"}
                     </span>
@@ -819,7 +819,7 @@ export default function UserDetailPage() {
                 <div className="mt-3 space-y-2">
                   {user.dataConsents.slice(0, 6).map((entry: any) => (
                     <div key={entry.id} className="rounded-lg bg-background/70 px-3 py-2 text-xs text-muted-foreground">
-                      {formatConsentCategory(entry.category)} · {entry.granted ? "Granted" : "Revoked"} · {new Date(entry.createdAt).toLocaleString()}
+                      {formatConsentCategory(entry.category)} Â· {entry.granted ? "Granted" : "Revoked"} Â· {new Date(entry.createdAt).toLocaleString()}
                     </div>
                   ))}
                 </div>
@@ -843,12 +843,12 @@ export default function UserDetailPage() {
                         </div>
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                           request.status === "COMPLETED"
-                            ? "bg-green-500/10 text-green-500"
+                            ? "bg-tone-sage-bg text-tone-sage-fg"
                             : request.status === "REJECTED"
-                              ? "bg-red-500/10 text-red-500"
+                              ? "bg-destructive/10 text-destructive"
                               : request.status === "PROCESSING"
-                                ? "bg-blue-500/10 text-blue-500"
-                                : "bg-amber-500/10 text-amber-500"
+                                ? "bg-tone-sky-bg text-tone-sky-fg"
+                                : "bg-tone-honey-bg text-tone-honey-fg"
                         }`}>
                           {request.status}
                         </span>
@@ -1097,7 +1097,7 @@ export default function UserDetailPage() {
         <div className="flex items-center justify-between">
           <div className="text-xs text-muted-foreground">
             {user.subscription?.premiumGrantedAt && (
-              <span>Last granted: {new Date(user.subscription.premiumGrantedAt).toLocaleDateString()} {user.subscription.premiumNote ? `— "${user.subscription.premiumNote}"` : ""}</span>
+              <span>Last granted: {new Date(user.subscription.premiumGrantedAt).toLocaleDateString()} {user.subscription.premiumNote ? `â€” "${user.subscription.premiumNote}"` : ""}</span>
             )}
           </div>
           <button
@@ -1125,8 +1125,8 @@ export default function UserDetailPage() {
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="mb-4 text-lg font-semibold text-foreground">Profile</h2>
           <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 lg:grid-cols-6">
-            <InfoItem label="Family Status" value={user.profile.familyStatus || "—"} />
-            <InfoItem label="Move Type" value={user.profile.moveType || "—"} />
+            <InfoItem label="Family Status" value={user.profile.familyStatus || "â€”"} />
+            <InfoItem label="Move Type" value={user.profile.moveType || "â€”"} />
             <InfoItem label="Children" value={user.profile.hasChildren ? `Yes (${user.profile.childrenCount})` : "No"} />
             <InfoItem label="Pets" value={user.profile.hasPets ? "Yes" : "No"} />
             <InfoItem label="Cars" value={user.profile.carCount || 0} />
@@ -1138,7 +1138,7 @@ export default function UserDetailPage() {
             <InfoItem label="Boat/RV" value={user.profile.hasBoatRV ? "Yes" : "No"} />
             <InfoItem label="Storage" value={user.profile.needsStorage ? "Yes" : "No"} />
             <InfoItem label="Language" value={user.profile.preferredLanguage || "en"} />
-            <InfoItem label="Timezone" value={user.profile.timezone || "—"} />
+            <InfoItem label="Timezone" value={user.profile.timezone || "â€”"} />
           </div>
         </div>
       )}
@@ -1176,18 +1176,18 @@ export default function UserDetailPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                   <div className="rounded-lg bg-muted/30 p-3">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Top Browser</p>
-                    <p className="text-sm font-semibold text-foreground">{topBrowser?.[0] || "—"}</p>
+                    <p className="text-sm font-semibold text-foreground">{topBrowser?.[0] || "â€”"}</p>
                     <p className="text-[10px] text-muted-foreground">{topBrowser?.[1] || 0} sessions</p>
                   </div>
                   <div className="rounded-lg bg-muted/30 p-3">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Top OS</p>
-                    <p className="text-sm font-semibold text-foreground">{topOS?.[0] || "—"}</p>
+                    <p className="text-sm font-semibold text-foreground">{topOS?.[0] || "â€”"}</p>
                     <p className="text-[10px] text-muted-foreground">{topOS?.[1] || 0} sessions</p>
                   </div>
                   <div className="rounded-lg bg-muted/30 p-3">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Device Type</p>
-                    <p className="text-sm font-semibold text-foreground">{topDevice?.[0] || "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">{hasWeb && hasMobile ? "Web + Mobile" : hasWeb ? "Web only" : hasMobile ? "Mobile only" : "—"}</p>
+                    <p className="text-sm font-semibold text-foreground">{topDevice?.[0] || "â€”"}</p>
+                    <p className="text-[10px] text-muted-foreground">{hasWeb && hasMobile ? "Web + Mobile" : hasWeb ? "Web only" : hasMobile ? "Mobile only" : "â€”"}</p>
                   </div>
                   <div className="rounded-lg bg-muted/30 p-3">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Total Sessions</p>
@@ -1196,13 +1196,13 @@ export default function UserDetailPage() {
                   </div>
                   <div className="rounded-lg bg-muted/30 p-3">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Last Seen</p>
-                    <p className="text-sm font-semibold text-foreground">{lastSession ? new Date(lastSession.sessionStart).toLocaleDateString() : "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">{lastSession?.ipAddress || "—"}</p>
+                    <p className="text-sm font-semibold text-foreground">{lastSession ? new Date(lastSession.sessionStart).toLocaleDateString() : "â€”"}</p>
+                    <p className="text-[10px] text-muted-foreground">{lastSession?.ipAddress || "â€”"}</p>
                   </div>
                   <div className="rounded-lg bg-muted/30 p-3">
                     <p className="text-[10px] font-medium text-muted-foreground uppercase mb-1">Last Device</p>
-                    <p className="text-sm font-semibold text-foreground">{lastSession?.browser || "—"} {lastSession?.os ? `/ ${lastSession.os}` : ""}</p>
-                    <p className="text-[10px] text-muted-foreground">{lastSession?.device || lastSession?.deviceType || "—"}</p>
+                    <p className="text-sm font-semibold text-foreground">{lastSession?.browser || "â€”"} {lastSession?.os ? `/ ${lastSession.os}` : ""}</p>
+                    <p className="text-[10px] text-muted-foreground">{lastSession?.device || lastSession?.deviceType || "â€”"}</p>
                   </div>
                 </div>
               </div>
@@ -1214,27 +1214,27 @@ export default function UserDetailPage() {
               <div key={s.id} className="rounded-lg bg-muted/50 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    {s.deviceType === "MOBILE" ? <Smartphone className="h-4 w-4 text-blue-400" /> : <Monitor className="h-4 w-4 text-emerald-400" />}
+                    {s.deviceType === "MOBILE" ? <Smartphone className="h-4 w-4 text-tone-sky-fg" /> : <Monitor className="h-4 w-4 text-tone-emerald-fg" />}
                     <div>
                       <p className="font-medium text-foreground text-sm">
-                        {s.browser || "Unknown"} {s.browserVersion || ""} · {s.os || "Unknown"} {s.osVersion || ""}
+                        {s.browser || "Unknown"} {s.browserVersion || ""} Â· {s.os || "Unknown"} {s.osVersion || ""}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {s.device || s.deviceType || "Unknown device"} · {s.platform || "WEB"} · {s.screenResolution || "—"}
+                        {s.device || s.deviceType || "Unknown device"} Â· {s.platform || "WEB"} Â· {s.screenResolution || "â€”"}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.isActive ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-400"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>
                       {s.isActive ? "Active" : "Ended"}
                     </span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {s.country || "—"}{s.city ? `, ${s.city}` : ""}{s.region ? ` (${s.region})` : ""}</span>
+                  <span className="flex items-center gap-1"><Globe className="h-3 w-3" /> {s.country || "â€”"}{s.city ? `, ${s.city}` : ""}{s.region ? ` (${s.region})` : ""}</span>
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {new Date(s.sessionStart).toLocaleString()}</span>
                   <span>{s.pageViews || 0} page views</span>
-                  <span className="flex items-center gap-1">IP: {s.ipAddress || "—"}</span>
+                  <span className="flex items-center gap-1">IP: {s.ipAddress || "â€”"}</span>
                 </div>
                 {s.language && <p className="text-xs text-muted-foreground mt-1">Language: {s.language}</p>}
               </div>
@@ -1273,13 +1273,13 @@ export default function UserDetailPage() {
                   <div key={ev.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2.5 text-sm">
                     <div className="flex items-center gap-3">
                       <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${
-                        ev.event === "PAGE_VIEW" ? "bg-blue-500/10 text-blue-400" :
-                        ev.event === "BUTTON_CLICK" ? "bg-orange-500/10 text-orange-400" :
-                        ev.event === "SEARCH" ? "bg-amber-500/10 text-amber-400" :
-                        ev.event === "LOGIN" ? "bg-green-500/10 text-green-400" :
-                        "bg-gray-500/10 text-gray-400"
+                        ev.event === "PAGE_VIEW" ? "bg-tone-sky-bg text-tone-sky-fg" :
+                        ev.event === "BUTTON_CLICK" ? "bg-tone-orange-bg text-tone-orange-fg" :
+                        ev.event === "SEARCH" ? "bg-tone-honey-bg text-tone-honey-fg" :
+                        ev.event === "LOGIN" ? "bg-tone-sage-bg text-tone-sage-fg" :
+                        "bg-tone-slate-bg text-muted-foreground"
                       }`}>{ev.event}</span>
-                      <span className="text-muted-foreground text-xs truncate max-w-[250px]">{ev.page || "—"}</span>
+                      <span className="text-muted-foreground text-xs truncate max-w-[250px]">{ev.page || "â€”"}</span>
                     </div>
                     <span className="text-[10px] text-muted-foreground shrink-0">{new Date(ev.createdAt).toLocaleString()}</span>
                   </div>
@@ -1292,9 +1292,9 @@ export default function UserDetailPage() {
 
       {/* Move Transition Context */}
       {activeMove && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-6">
+        <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-6">
           <div className="flex items-start gap-3">
-            <Truck className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+            <Truck className="mt-0.5 h-5 w-5 shrink-0 text-tone-honey-fg" />
             <div className="flex-1">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -1303,7 +1303,7 @@ export default function UserDetailPage() {
                     This is operator context for manual guidance. LocateFlow does not update provider accounts or execute address changes.
                   </p>
                 </div>
-                <span className="rounded-full border border-amber-500/20 bg-background px-2.5 py-1 text-xs font-medium text-amber-600">
+                <span className="rounded-full border border-tone-honey-br bg-background px-2.5 py-1 text-xs font-medium text-tone-honey-fg">
                   Manual guidance only
                 </span>
               </div>
@@ -1326,8 +1326,8 @@ export default function UserDetailPage() {
                 />
               </div>
               {activeMoveOriginServices > 0 && activeMoveDestinationServices === 0 && (
-                <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/20 bg-background/70 p-3 text-sm text-muted-foreground">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <div className="mt-4 flex items-start gap-2 rounded-lg border border-tone-honey-br bg-background/70 p-3 text-sm text-muted-foreground">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-tone-honey-fg" />
                   <p>
                     Origin services exist, but no destination services are tracked yet. Support should expect stop, verify, shop, or start-service guidance depending on provider coverage.
                   </p>
@@ -1343,7 +1343,7 @@ export default function UserDetailPage() {
                           <div className="min-w-0">
                             <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
                             <p className="mt-1 text-xs text-muted-foreground">
-                              {formatTaskAction(task.actionType)} · {task.service?.providerName || task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
+                              {formatTaskAction(task.actionType)} Â· {task.service?.providerName || task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
                             </p>
                           </div>
                           <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>
@@ -1384,10 +1384,10 @@ export default function UserDetailPage() {
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">{provider.name}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {provider.category} · {provider.providerType || "OTHER"} · {provider.trustStatus || "USER_CUSTOM"}
+                      {provider.category} Â· {provider.providerType || "OTHER"} Â· {provider.trustStatus || "USER_CUSTOM"}
                     </p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${provider.adminReviewStatus === "REVIEWED" ? "bg-green-500/10 text-green-500" : "bg-amber-500/10 text-amber-500"}`}>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${provider.adminReviewStatus === "REVIEWED" ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
                     {formatStatus(provider.adminReviewStatus || "NOT_REVIEWED")}
                   </span>
                 </div>
@@ -1439,10 +1439,10 @@ export default function UserDetailPage() {
             {pushDevices.map((d: any) => (
               <div key={d.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-3 text-sm">
                 <div className="flex items-center gap-3 min-w-0">
-                  <Smartphone className={`h-4 w-4 shrink-0 ${d.platform === "ios" ? "text-blue-400" : "text-emerald-400"}`} />
+                  <Smartphone className={`h-4 w-4 shrink-0 ${d.platform === "ios" ? "text-tone-sky-fg" : "text-tone-emerald-fg"}`} />
                   <div className="min-w-0">
                     <p className="font-medium text-foreground truncate">
-                      {d.deviceName || "Unnamed device"} <span className="text-xs font-normal text-muted-foreground">· {d.platform}</span>
+                      {d.deviceName || "Unnamed device"} <span className="text-xs font-normal text-muted-foreground">Â· {d.platform}</span>
                     </p>
                     <p className="text-[11px] text-muted-foreground truncate">Token redacted from admin browser response</p>
                   </div>
@@ -1466,14 +1466,14 @@ export default function UserDetailPage() {
               <div key={plan.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-4">
                 <div>
                   <p className="font-medium text-foreground">
-                    {plan.fromAddress?.city}, {plan.fromAddress?.state} → {plan.toAddress?.city}, {plan.toAddress?.state}
+                    {plan.fromAddress?.city}, {plan.fromAddress?.state} â†’ {plan.toAddress?.city}, {plan.toAddress?.state}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Move date: {plan.moveDate ? new Date(plan.moveDate).toLocaleDateString() : "—"}
+                    Move date: {plan.moveDate ? new Date(plan.moveDate).toLocaleDateString() : "â€”"}
                   </p>
                 </div>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  plan.status === "COMPLETED" ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
+                  plan.status === "COMPLETED" ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-sky-bg text-tone-sky-fg"
                 }`}>{plan.status}</span>
               </div>
             ))}
@@ -1494,9 +1494,9 @@ export default function UserDetailPage() {
             {supportTickets.map((ticket: any) => {
               const lastMsg = ticket.messages?.[0];
               const statusColor =
-                ticket.status === "OPEN" ? "bg-blue-500/10 text-blue-500" :
-                ticket.status === "IN_PROGRESS" ? "bg-amber-500/10 text-amber-500" :
-                ticket.status === "WAITING_USER" ? "bg-orange-500/10 text-orange-500" :
+                ticket.status === "OPEN" ? "bg-tone-sky-bg text-tone-sky-fg" :
+                ticket.status === "IN_PROGRESS" ? "bg-tone-honey-bg text-tone-honey-fg" :
+                ticket.status === "WAITING_USER" ? "bg-tone-orange-bg text-tone-orange-fg" :
                 "bg-muted text-muted-foreground";
               return (
                 <Link key={ticket.id} href={`/support/${ticket.id}`}>
@@ -1661,11 +1661,11 @@ function formatTaskAction(value: string) {
 }
 
 function taskStatusClass(status: string) {
-  if (status === "COMPLETED") return "bg-green-500/10 text-green-500";
+  if (status === "COMPLETED") return "bg-tone-sage-bg text-tone-sage-fg";
   if (status === "DISMISSED") return "bg-muted text-muted-foreground";
-  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-blue-500/10 text-blue-500";
-  if (status === "REOPENED") return "bg-purple-500/10 text-purple-500";
-  return "bg-amber-500/10 text-amber-500";
+  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-tone-sky-bg text-tone-sky-fg";
+  if (status === "REOPENED") return "bg-tone-foil-bg text-tone-foil-fg";
+  return "bg-tone-honey-bg text-tone-honey-fg";
 }
 
 function buildLatestConsentEntries(entries: any[]) {
@@ -1692,9 +1692,9 @@ function formatAuthProvider(provider: string) {
 }
 
 function maskProviderIdentifier(value: string | null | undefined) {
-  if (!value) return "—";
+  if (!value) return "â€”";
   if (value.length <= 10) return value;
-  return `${value.slice(0, 4)}…${value.slice(-4)}`;
+  return `${value.slice(0, 4)}â€¦${value.slice(-4)}`;
 }
 
 function extractAdminNote(note: any) {

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useCallback,
@@ -184,22 +184,22 @@ const STATUS_FILTERS = [
 const OFFSITE_FILTERS = ["ALL", "stored", "failed", "disabled"] as const;
 
 const statusToneClasses: Record<string, string> = {
-  COMPLETED: "bg-green-500/10 text-green-500 border-green-500/20",
-  FAILED: "bg-red-500/10 text-red-500 border-red-500/20",
-  IN_PROGRESS: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  PENDING: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+  COMPLETED: "bg-tone-sage-bg text-tone-sage-fg border-tone-sage-br",
+  FAILED: "bg-destructive/10 text-destructive border-destructive/20",
+  IN_PROGRESS: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
+  PENDING: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
 };
 
 const offsiteToneClasses: Record<string, string> = {
-  stored: "bg-green-500/10 text-green-500 border-green-500/20",
-  failed: "bg-red-500/10 text-red-500 border-red-500/20",
-  disabled: "bg-slate-500/10 text-slate-400 border-slate-500/20",
+  stored: "bg-tone-sage-bg text-tone-sage-fg border-tone-sage-br",
+  failed: "bg-destructive/10 text-destructive border-destructive/20",
+  disabled: "bg-tone-slate-bg text-muted-foreground border-tone-slate-br",
 };
 
 const checkToneClasses: Record<VerifyCheck["status"], string> = {
-  pass: "bg-green-500/10 text-green-500 border-green-500/20",
-  warn: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  fail: "bg-red-500/10 text-red-500 border-red-500/20",
+  pass: "bg-tone-sage-bg text-tone-sage-fg border-tone-sage-br",
+  warn: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
+  fail: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 function formatBytes(bytes?: number | null): string {
@@ -214,7 +214,7 @@ function formatBytes(bytes?: number | null): string {
 }
 
 function formatRelativeTime(value?: string | null): string {
-  if (!value) return "—";
+  if (!value) return "â€”";
   const diff = Date.now() - new Date(value).getTime();
   const minutes = Math.max(Math.round(diff / 60000), 0);
   if (minutes < 1) return "just now";
@@ -343,11 +343,11 @@ function buildToneClass(
   tone: "neutral" | "success" | "warning" | "danger" | "info",
 ) {
   if (tone === "success")
-    return "border-green-500/20 bg-green-500/5 text-green-500";
+    return "border-tone-sage-br bg-tone-sage-bg text-tone-sage-fg";
   if (tone === "warning")
-    return "border-amber-500/20 bg-amber-500/5 text-amber-400";
-  if (tone === "danger") return "border-red-500/20 bg-red-500/5 text-red-500";
-  if (tone === "info") return "border-blue-500/20 bg-blue-500/5 text-blue-400";
+    return "border-tone-honey-br bg-tone-honey-bg text-tone-honey-fg";
+  if (tone === "danger") return "border-destructive/20 bg-destructive/5 text-destructive";
+  if (tone === "info") return "border-tone-sky-br bg-tone-sky-bg text-tone-sky-fg";
   return "border-border bg-background text-foreground";
 }
 
@@ -1250,7 +1250,7 @@ export function BackupControlPlane() {
                           filteredBackups.map((backup) => {
                             const statusClass =
                               statusToneClasses[backup.status] ||
-                              "bg-slate-500/10 text-slate-400 border-slate-500/20";
+                              "bg-tone-slate-bg text-muted-foreground border-tone-slate-br";
                             const offsiteStatus =
                               backup.offsite?.status || "disabled";
                             const offsiteClass =
@@ -1283,7 +1283,7 @@ export function BackupControlPlane() {
                                       </span>
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                      {truncate(backup.id, 18)} ·{" "}
+                                      {truncate(backup.id, 18)} Â·{" "}
                                       {getBackupTypeLabel(backup.type)}
                                     </p>
                                   </div>
@@ -1452,7 +1452,7 @@ export function BackupControlPlane() {
                           </InlineBadge>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {Object.keys(importPreview).length} tables ·{" "}
+                          {Object.keys(importPreview).length} tables Â·{" "}
                           {Object.values(importPreview)
                             .reduce((sum, value) => sum + value, 0)
                             .toLocaleString()}{" "}
@@ -1522,7 +1522,7 @@ export function BackupControlPlane() {
                             className={cn(
                               "rounded-xl border p-3 text-left transition",
                               importMode === "REPLACE"
-                                ? "border-red-500/30 bg-red-500/10"
+                                ? "border-destructive/30 bg-destructive/10"
                                 : "border-border bg-background hover:bg-accent",
                             )}
                           >
@@ -1536,7 +1536,7 @@ export function BackupControlPlane() {
                           </button>
                         </div>
                         {importMode === "REPLACE" ? (
-                          <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-xs text-red-400">
+                          <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive">
                             Replace mode is destructive. The API rolls back on
                             failure, but you should still verify and dry-run
                             first.
@@ -1689,10 +1689,10 @@ export function BackupControlPlane() {
                                         {tableMap[table]?.label || table}
                                       </span>
                                       <span>
-                                        {result.imported} import ·{" "}
+                                        {result.imported} import Â·{" "}
                                         {result.skipped} skip
                                         {typeof result.deleted === "number"
-                                          ? ` · ${result.deleted} delete`
+                                          ? ` Â· ${result.deleted} delete`
                                           : ""}
                                       </span>
                                     </div>
@@ -1706,9 +1706,9 @@ export function BackupControlPlane() {
                     </div>
 
                     {importResult?.summary ? (
-                      <div className="rounded-2xl border border-green-500/20 bg-green-500/5 p-4">
+                      <div className="rounded-2xl border border-tone-sage-br bg-tone-sage-bg p-4">
                         <div className="flex items-start gap-3">
-                          <CheckCircle2 className="mt-0.5 h-5 w-5 text-green-500" />
+                          <CheckCircle2 className="mt-0.5 h-5 w-5 text-tone-sage-fg" />
                           <div className="space-y-3">
                             <p className="text-sm font-semibold text-foreground">
                               Restore completed
@@ -1798,10 +1798,10 @@ export function BackupControlPlane() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <SummaryItem
                     label="Provider"
-                    value={storage?.provider || "—"}
+                    value={storage?.provider || "â€”"}
                   />
-                  <SummaryItem label="Bucket" value={storage?.bucket || "—"} />
-                  <SummaryItem label="Region" value={storage?.region || "—"} />
+                  <SummaryItem label="Bucket" value={storage?.bucket || "â€”"} />
+                  <SummaryItem label="Region" value={storage?.region || "â€”"} />
                   <SummaryItem
                     label="Credentials"
                     value={
@@ -1834,7 +1834,7 @@ export function BackupControlPlane() {
                         <p className="mt-1 text-xs text-muted-foreground">
                           {selectedBackup.createdByLabel ||
                             selectedBackup.createdBy}{" "}
-                          · {getBackupTypeLabel(selectedBackup.type)}
+                          Â· {getBackupTypeLabel(selectedBackup.type)}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -1842,7 +1842,7 @@ export function BackupControlPlane() {
                           className={cn(
                             "rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
                             statusToneClasses[selectedBackup.status] ||
-                              "bg-slate-500/10 text-slate-400 border-slate-500/20",
+                              "bg-tone-slate-bg text-muted-foreground border-tone-slate-br",
                           )}
                         >
                           {selectedBackup.status}
@@ -1873,7 +1873,7 @@ export function BackupControlPlane() {
                         value={
                           selectedBackup.completedAt
                             ? formatDateTime(selectedBackup.completedAt)
-                            : "—"
+                            : "â€”"
                         }
                       />
                       <SummaryItem
@@ -1966,16 +1966,16 @@ export function BackupControlPlane() {
                         value={
                           selectedBackup.offsite?.uploadedAt
                             ? formatDateTime(selectedBackup.offsite.uploadedAt)
-                            : "—"
+                            : "â€”"
                         }
                       />
                       <SummaryItem
                         label="Bucket"
-                        value={selectedBackup.offsite?.bucket || "—"}
+                        value={selectedBackup.offsite?.bucket || "â€”"}
                       />
                       <SummaryItem
                         label="Region"
-                        value={selectedBackup.offsite?.region || "—"}
+                        value={selectedBackup.offsite?.region || "â€”"}
                       />
                     </div>
                     <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
@@ -2052,7 +2052,7 @@ export function BackupControlPlane() {
       </div>
 
       {passwordPrompt.open ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>

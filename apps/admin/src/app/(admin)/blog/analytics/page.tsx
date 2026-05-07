@@ -1,5 +1,5 @@
-/**
- * Admin /blog/analytics — read-only telemetry dashboard.
+﻿/**
+ * Admin /blog/analytics â€” read-only telemetry dashboard.
  *
  * Three questions every editor asks first:
  *   1. "Which posts are pulling traffic?"
@@ -44,12 +44,12 @@ export default async function BlogAnalyticsPage({
   const postId = sp.postId ?? null;
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
-  // Per-post drill-down branch — show a focused view for a single post.
+  // Per-post drill-down branch â€” show a focused view for a single post.
   if (postId) {
     return <PerPostAnalytics postId={postId} since={since} />;
   }
 
-  // Two queries — compact, no joins beyond `post` for titles. We
+  // Two queries â€” compact, no joins beyond `post` for titles. We
   // intentionally aggregate in JS so the SQL stays portable across
   // MySQL versions and so a sparse table keeps cost low.
   const [recentViews, totalsByBot] = await Promise.all([
@@ -101,23 +101,23 @@ export default async function BlogAnalyticsPage({
   return (
     <div className="p-6 max-w-5xl">
       <h1 className="text-2xl font-semibold mb-2">Blog analytics</h1>
-      <p className="text-sm text-zinc-500 mb-6">
+      <p className="text-sm text-muted-foreground mb-6">
         Last {WINDOW_DAYS} days. View counts exclude duplicate visits within
         the same UTC day from the same hashed IP.
       </p>
 
       <section className="grid grid-cols-2 gap-4 mb-8">
         <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-zinc-500">Human views</div>
+          <div className="text-xs uppercase text-muted-foreground">Human views</div>
           <div className="text-3xl font-semibold mt-1">{totals.human.toLocaleString()}</div>
-          <div className="text-xs text-zinc-500 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             {Math.round((totals.human / totalAll) * 100)}% of all hits
           </div>
         </div>
         <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-zinc-500">Bot / AI views</div>
+          <div className="text-xs uppercase text-muted-foreground">Bot / AI views</div>
           <div className="text-3xl font-semibold mt-1">{totals.bot.toLocaleString()}</div>
-          <div className="text-xs text-zinc-500 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             {Math.round((totals.bot / totalAll) * 100)}% of all hits
           </div>
         </div>
@@ -125,12 +125,12 @@ export default async function BlogAnalyticsPage({
 
       <h2 className="text-lg font-medium mb-3">Top posts (humans)</h2>
       {topPosts.length === 0 ? (
-        <div className="border rounded-md p-6 text-sm text-zinc-500 text-center">
+        <div className="border rounded-md p-6 text-sm text-muted-foreground text-center">
           No views recorded yet in this window.
         </div>
       ) : (
         <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase text-zinc-500">
+          <thead className="text-left text-xs uppercase text-muted-foreground">
             <tr>
               <th className="py-2">Title</th>
               <th>Locale</th>
@@ -148,11 +148,11 @@ export default async function BlogAnalyticsPage({
                   >
                     {p.title}
                   </Link>
-                  <div className="text-xs text-zinc-500">/{p.slug}</div>
+                  <div className="text-xs text-muted-foreground">/{p.slug}</div>
                 </td>
                 <td>{p.locale}</td>
                 <td>{p.human.toLocaleString()}</td>
-                <td className="text-zinc-500">{p.bot.toLocaleString()}</td>
+                <td className="text-muted-foreground">{p.bot.toLocaleString()}</td>
               </tr>
             ))}
           </tbody>
@@ -181,11 +181,11 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
   if (!post) {
     return (
       <div className="p-6 max-w-3xl space-y-4">
-        <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300">
+        <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
           Back to overview
         </Link>
-        <div className="rounded-md border p-6 text-sm text-zinc-500">Post not found.</div>
+        <div className="rounded-md border p-6 text-sm text-muted-foreground">Post not found.</div>
       </div>
     );
   }
@@ -216,7 +216,7 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
     dailyMap.set(day, dailyEntry);
 
     if (!v.isBot) {
-      const localeKey = v.locale ?? "—";
+      const localeKey = v.locale ?? "â€”";
       localeMap.set(localeKey, (localeMap.get(localeKey) ?? 0) + 1);
       const refKey = shortenReferrer(v.referrer);
       referrerMap.set(refKey, (referrerMap.get(refKey) ?? 0) + 1);
@@ -238,35 +238,35 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
 
   return (
     <div className="p-6 max-w-5xl">
-      <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300">
+      <Link href="/blog/analytics" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" />
         Back to overview
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">{post.title}</h1>
-      <p className="mt-1 text-sm text-zinc-500">
-        /{post.slug} · {post.locale.toUpperCase()} · {post.status}
-        {post.publishedAt ? ` · published ${post.publishedAt.toISOString().slice(0, 10)}` : ""}
+      <p className="mt-1 text-sm text-muted-foreground">
+        /{post.slug} Â· {post.locale.toUpperCase()} Â· {post.status}
+        {post.publishedAt ? ` Â· published ${post.publishedAt.toISOString().slice(0, 10)}` : ""}
       </p>
-      <p className="mt-1 text-xs text-zinc-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         Last {WINDOW_DAYS} days. Lifetime human views: {(post.viewCount ?? 0).toLocaleString()}
       </p>
 
       <section className="mt-6 grid grid-cols-2 gap-4">
         <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-zinc-500">Human views (30d)</div>
+          <div className="text-xs uppercase text-muted-foreground">Human views (30d)</div>
           <div className="text-3xl font-semibold mt-1">{totals.human.toLocaleString()}</div>
-          <div className="text-xs text-zinc-500 mt-1">{Math.round((totals.human / totalAll) * 100)}% of all hits</div>
+          <div className="text-xs text-muted-foreground mt-1">{Math.round((totals.human / totalAll) * 100)}% of all hits</div>
         </div>
         <div className="border rounded-md p-4">
-          <div className="text-xs uppercase text-zinc-500">Bot / AI views (30d)</div>
+          <div className="text-xs uppercase text-muted-foreground">Bot / AI views (30d)</div>
           <div className="text-3xl font-semibold mt-1">{totals.bot.toLocaleString()}</div>
-          <div className="text-xs text-zinc-500 mt-1">{Math.round((totals.bot / totalAll) * 100)}% of all hits</div>
+          <div className="text-xs text-muted-foreground mt-1">{Math.round((totals.bot / totalAll) * 100)}% of all hits</div>
         </div>
       </section>
 
       <h2 className="mt-8 text-lg font-medium">Daily timeline</h2>
       {daily.length === 0 ? (
-        <div className="mt-3 border rounded-md p-6 text-sm text-zinc-500 text-center">
+        <div className="mt-3 border rounded-md p-6 text-sm text-muted-foreground text-center">
           No views recorded in this window.
         </div>
       ) : (
@@ -278,13 +278,13 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
                 <div
                   key={day.day}
                   title={`${day.day}: ${day.human} human, ${day.bot} bot`}
-                  className="relative flex-1 bg-emerald-500/40 rounded-sm"
+                  className="relative flex-1 bg-tone-sage-fg/40 rounded-sm"
                   style={{ height: `${heightPct}%` }}
                 />
               );
             })}
           </div>
-          <div className="mt-2 flex justify-between text-[10px] text-zinc-500 font-mono">
+          <div className="mt-2 flex justify-between text-[10px] text-muted-foreground font-mono">
             <span>{daily[0]?.day}</span>
             <span>{daily[daily.length - 1]?.day}</span>
           </div>
@@ -295,10 +295,10 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
         <section>
           <h2 className="text-lg font-medium">Top referrers (humans)</h2>
           {referrerRows.length === 0 ? (
-            <div className="mt-3 border rounded-md p-6 text-sm text-zinc-500 text-center">No referrers.</div>
+            <div className="mt-3 border rounded-md p-6 text-sm text-muted-foreground text-center">No referrers.</div>
           ) : (
             <table className="mt-3 w-full text-sm">
-              <thead className="text-left text-xs uppercase text-zinc-500">
+              <thead className="text-left text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="py-2">Source</th>
                   <th>Visits</th>
@@ -319,10 +319,10 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
         <section>
           <h2 className="text-lg font-medium">Locale split (humans)</h2>
           {localeRows.length === 0 ? (
-            <div className="mt-3 border rounded-md p-6 text-sm text-zinc-500 text-center">No data.</div>
+            <div className="mt-3 border rounded-md p-6 text-sm text-muted-foreground text-center">No data.</div>
           ) : (
             <table className="mt-3 w-full text-sm">
-              <thead className="text-left text-xs uppercase text-zinc-500">
+              <thead className="text-left text-xs uppercase text-muted-foreground">
                 <tr>
                   <th className="py-2">Locale</th>
                   <th>Visits</th>
@@ -343,3 +343,4 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, TrendingDown, Users, CreditCard, AlertTriangle, ArrowUpRight, ArrowDownRight, Clock, Smartphone, ShieldAlert, Store } from "lucide-react";
@@ -65,17 +65,17 @@ export default function BillingPage() {
   const subGrowth = data.newSubsLastMonth > 0 ? ((data.newSubsThisMonth - data.newSubsLastMonth) / data.newSubsLastMonth) * 100 : 0;
 
   const kpis = [
-    { label: "MRR", value: `$${data.mrr.toLocaleString()}`, icon: DollarSign, color: "text-green-500", bg: "bg-green-500/10" },
-    { label: "ARR", value: `$${data.arr.toLocaleString()}`, icon: TrendingUp, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { label: "Active Subs", value: data.activeSubscriptions.toLocaleString(), icon: Users, color: "text-purple-500", bg: "bg-purple-500/10", sub: `of ${data.totalSubscriptions} total` },
-    { label: "Churn Rate", value: `${data.churnRate}%`, icon: data.churnRate > data.lastMonthChurn ? TrendingDown : TrendingUp, color: data.churnRate > 5 ? "text-red-500" : "text-green-500", bg: data.churnRate > 5 ? "bg-red-500/10" : "bg-green-500/10", sub: `Last month: ${data.lastMonthChurn}%` },
-    { label: "ARPU", value: `$${data.avgRevenuePerUser}`, icon: CreditCard, color: "text-cyan-500", bg: "bg-cyan-500/10" },
-    { label: "LTV", value: data.ltv > 0 ? `$${data.ltv.toLocaleString()}` : "N/A", icon: DollarSign, color: "text-orange-500", bg: "bg-orange-500/10" },
-    { label: "New This Month", value: data.newSubsThisMonth.toString(), icon: ArrowUpRight, color: "text-emerald-500", bg: "bg-emerald-500/10", sub: subGrowth !== 0 ? `${subGrowth > 0 ? "+" : ""}${Math.round(subGrowth)}% vs last month` : undefined },
-    { label: "Trials Expiring", value: data.trialExpiring.length.toString(), icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10", sub: "Within 7 days" },
+    { label: "MRR", value: `$${data.mrr.toLocaleString()}`, icon: DollarSign, color: "text-tone-sage-fg", bg: "bg-tone-sage-bg" },
+    { label: "ARR", value: `$${data.arr.toLocaleString()}`, icon: TrendingUp, color: "text-tone-sky-fg", bg: "bg-tone-sky-bg" },
+    { label: "Active Subs", value: data.activeSubscriptions.toLocaleString(), icon: Users, color: "text-tone-foil-fg", bg: "bg-tone-foil-bg", sub: `of ${data.totalSubscriptions} total` },
+    { label: "Churn Rate", value: `${data.churnRate}%`, icon: data.churnRate > data.lastMonthChurn ? TrendingDown : TrendingUp, color: data.churnRate > 5 ? "text-destructive" : "text-tone-sage-fg", bg: data.churnRate > 5 ? "bg-destructive/10" : "bg-tone-sage-bg", sub: `Last month: ${data.lastMonthChurn}%` },
+    { label: "ARPU", value: `$${data.avgRevenuePerUser}`, icon: CreditCard, color: "text-tone-cyan-fg", bg: "bg-tone-cyan-bg" },
+    { label: "LTV", value: data.ltv > 0 ? `$${data.ltv.toLocaleString()}` : "N/A", icon: DollarSign, color: "text-tone-orange-fg", bg: "bg-tone-orange-bg" },
+    { label: "New This Month", value: data.newSubsThisMonth.toString(), icon: ArrowUpRight, color: "text-tone-emerald-fg", bg: "bg-tone-emerald-bg", sub: subGrowth !== 0 ? `${subGrowth > 0 ? "+" : ""}${Math.round(subGrowth)}% vs last month` : undefined },
+    { label: "Trials Expiring", value: data.trialExpiring.length.toString(), icon: Clock, color: "text-tone-honey-fg", bg: "bg-tone-honey-bg", sub: "Within 7 days" },
   ];
 
-  const planColors: Record<string, string> = { FREE_TRIAL: "bg-gray-500", INDIVIDUAL: "bg-blue-500", FAMILY: "bg-orange-500", STARTER: "bg-blue-500", PRO: "bg-purple-500", PREMIUM: "bg-orange-500", ENTERPRISE: "bg-red-500" };
+  const planColors: Record<string, string> = { FREE_TRIAL: "bg-tone-slate-fg", INDIVIDUAL: "bg-tone-sky-fg", FAMILY: "bg-tone-orange-fg", STARTER: "bg-tone-sky-fg", PRO: "bg-tone-foil-fg", PREMIUM: "bg-tone-orange-fg", ENTERPRISE: "bg-destructive" };
   const totalActive = data.activeSubscriptions || 1;
   const totalByProvider = Object.values(data.providerDistribution).reduce((sum, value) => sum + value, 0) || 1;
   const totalByPlatform = Object.values(data.platformDistribution).reduce((sum, value) => sum + value, 0) || 1;
@@ -135,7 +135,7 @@ export default function BillingPage() {
                 <div key={plan}>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <div className={`h-2.5 w-2.5 rounded-full ${planColors[plan] || "bg-gray-500"}`} />
+                      <div className={`h-2.5 w-2.5 rounded-full ${planColors[plan] || "bg-tone-slate-fg"}`} />
                       <span className="text-sm font-medium text-foreground">{plan}</span>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -144,7 +144,7 @@ export default function BillingPage() {
                     </div>
                   </div>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div className={`h-full rounded-full ${planColors[plan] || "bg-gray-500"} transition-all`} style={{ width: `${pct}%` }} />
+                    <div className={`h-full rounded-full ${planColors[plan] || "bg-tone-slate-fg"} transition-all`} style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               );
@@ -161,11 +161,11 @@ export default function BillingPage() {
               <p className="mt-1 text-2xl font-bold text-foreground">{data.mobileOps.totalSubscriptions}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{data.mobileOps.activeSubscriptions} active</p>
             </div>
-            <div className="rounded-lg bg-blue-500/10 p-2.5"><Smartphone className="h-5 w-5 text-blue-500" /></div>
+            <div className="rounded-lg bg-tone-sky-bg p-2.5"><Smartphone className="h-5 w-5 text-tone-sky-fg" /></div>
           </div>
           <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
             <span>{data.mobileOps.appStoreSubscriptions} App Store</span>
-            <span>·</span>
+            <span>Â·</span>
             <span>{data.mobileOps.playStoreSubscriptions} Play Store</span>
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function BillingPage() {
               <p className="mt-1 text-2xl font-bold text-foreground">{data.mobileOps.staleValidationCount}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{data.mobileOps.neverValidatedCount} never validated</p>
             </div>
-            <div className="rounded-lg bg-amber-500/10 p-2.5"><Clock className="h-5 w-5 text-amber-500" /></div>
+            <div className="rounded-lg bg-tone-honey-bg p-2.5"><Clock className="h-5 w-5 text-tone-honey-fg" /></div>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">Subscriptions older than 24h should be covered by the mobile billing revalidation cron.</p>
         </div>
@@ -187,7 +187,7 @@ export default function BillingPage() {
               <p className="mt-1 text-2xl font-bold text-foreground">{data.mobileOps.missingReceiptIdentifierCount}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{data.mobileOps.pendingValidationCount} pending or unknown</p>
             </div>
-            <div className="rounded-lg bg-red-500/10 p-2.5"><ShieldAlert className="h-5 w-5 text-red-500" /></div>
+            <div className="rounded-lg bg-destructive/10 p-2.5"><ShieldAlert className="h-5 w-5 text-destructive" /></div>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">Missing tokens or transaction IDs block automated store revalidation.</p>
         </div>
@@ -197,7 +197,7 @@ export default function BillingPage() {
         {/* Trials Expiring Soon */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" /> Trials Expiring (7 days)
+            <AlertTriangle className="h-4 w-4 text-tone-honey-fg" /> Trials Expiring (7 days)
           </h2>
           {data.trialExpiring.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No trials expiring soon</p>
@@ -209,7 +209,7 @@ export default function BillingPage() {
                     <p className="text-sm font-medium text-foreground">{maskEmail(s.user?.email)}</p>
                     <p className="text-xs text-muted-foreground">{s.plan}</p>
                   </div>
-                  <span className={`text-xs font-medium ${s.daysLeft <= 2 ? "text-red-500" : "text-amber-500"}`}>{s.daysLeft}d left</span>
+                  <span className={`text-xs font-medium ${s.daysLeft <= 2 ? "text-destructive" : "text-tone-honey-fg"}`}>{s.daysLeft}d left</span>
                 </div>
               ))}
             </div>
@@ -219,7 +219,7 @@ export default function BillingPage() {
         {/* Recent Cancellations */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <ArrowDownRight className="h-4 w-4 text-red-500" /> Recent Cancellations
+            <ArrowDownRight className="h-4 w-4 text-destructive" /> Recent Cancellations
           </h2>
           {data.recentCancellations.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No recent cancellations</p>
@@ -242,7 +242,7 @@ export default function BillingPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="mb-4 text-sm font-semibold text-foreground flex items-center gap-2">
-            <Store className="h-4 w-4 text-blue-500" /> Billing Provider Distribution
+            <Store className="h-4 w-4 text-tone-sky-fg" /> Billing Provider Distribution
           </h2>
           <div className="space-y-3">
             {Object.entries(data.providerDistribution).sort((a, b) => b[1] - a[1]).map(([provider, count]) => {
@@ -251,7 +251,7 @@ export default function BillingPage() {
                 <div key={provider}>
                   <div className="mb-1 flex items-center justify-between text-sm">
                     <span className="font-medium text-foreground">{provider}</span>
-                    <span className="text-xs text-muted-foreground">{count} · {pct}%</span>
+                    <span className="text-xs text-muted-foreground">{count} Â· {pct}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
                     <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
@@ -268,7 +268,7 @@ export default function BillingPage() {
                 return (
                   <div key={platform} className="rounded-lg border border-border p-3">
                     <p className="text-sm font-medium text-foreground">{platform}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{count} subscriptions · {pct}%</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{count} subscriptions Â· {pct}%</p>
                   </div>
                 );
               })}
@@ -278,7 +278,7 @@ export default function BillingPage() {
 
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="mb-4 text-sm font-semibold text-foreground flex items-center gap-2">
-            <Clock className="h-4 w-4 text-amber-500" /> Stale Mobile Validations
+            <Clock className="h-4 w-4 text-tone-honey-fg" /> Stale Mobile Validations
           </h2>
           {data.staleMobileSubscriptions.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">No stale mobile subscriptions detected.</p>
@@ -289,9 +289,9 @@ export default function BillingPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium text-foreground">{subscription.user?.email ? maskEmail(subscription.user.email) : "Unknown user"}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{subscription.provider || "UNKNOWN"} · {subscription.platform || "unassigned"} · {subscription.plan || "Unknown plan"}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{subscription.provider || "UNKNOWN"} Â· {subscription.platform || "unassigned"} Â· {subscription.plan || "Unknown plan"}</p>
                     </div>
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${subscription.missingReceiptIdentifier ? "bg-red-500/10 text-red-500" : "bg-amber-500/10 text-amber-500"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${subscription.missingReceiptIdentifier ? "bg-destructive/10 text-destructive" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
                       {subscription.missingReceiptIdentifier ? "Missing receipt" : subscription.status || "UNKNOWN"}
                     </span>
                   </div>
@@ -317,8 +317,8 @@ export default function BillingPage() {
         <h2 className="text-sm font-semibold text-foreground mb-4">Subscription Status Breakdown</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {Object.entries(data.statusDistribution).map(([status, count]) => {
-            const colors: Record<string, string> = { ACTIVE: "text-green-500 bg-green-500/10", TRIALING: "text-blue-500 bg-blue-500/10", CANCELED: "text-red-500 bg-red-500/10", PAST_DUE: "text-amber-500 bg-amber-500/10" };
-            const c = colors[status] || "text-gray-500 bg-gray-500/10";
+            const colors: Record<string, string> = { ACTIVE: "text-tone-sage-fg bg-tone-sage-bg", TRIALING: "text-tone-sky-fg bg-tone-sky-bg", CANCELED: "text-destructive bg-destructive/10", PAST_DUE: "text-tone-honey-fg bg-tone-honey-bg" };
+            const c = colors[status] || "text-muted-foreground bg-tone-slate-bg";
             return (
               <div key={status} className={`rounded-lg p-4 ${c.split(" ")[1]}`}>
                 <p className={`text-2xl font-bold ${c.split(" ")[0]}`}>{count}</p>
@@ -331,3 +331,4 @@ export default function BillingPage() {
     </div>
   );
 }
+

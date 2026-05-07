@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * SEO readiness panel for the post editor.
@@ -9,7 +9,7 @@
  * floor. Each rule is a one-line judgement (good / warn / bad) with a
  * short note so the editor knows why.
  *
- * This is deliberately *not* a magic AI-powered score — it's the
+ * This is deliberately *not* a magic AI-powered score â€” it's the
  * checklist a senior editor would run mentally. Honest, deterministic,
  * and never gives a misleading green bar to a half-finished post.
  */
@@ -46,14 +46,14 @@ function lengthRule(opts: {
 }): Rule {
   const len = opts.value.trim().length;
   if (len === 0) {
-    return { id: opts.id, label: opts.label, status: "warn", note: `Empty — ${opts.hint}` };
+    return { id: opts.id, label: opts.label, status: "warn", note: `Empty â€” ${opts.hint}` };
   }
   if (len > opts.hardMax) {
     return {
       id: opts.id,
       label: opts.label,
       status: "bad",
-      note: `${len} chars — too long, search engines will truncate.`,
+      note: `${len} chars â€” too long, search engines will truncate.`,
     };
   }
   if (len < opts.ideal[0]) {
@@ -61,7 +61,7 @@ function lengthRule(opts: {
       id: opts.id,
       label: opts.label,
       status: "warn",
-      note: `${len} chars — short. Aim for ${opts.ideal[0]}–${opts.ideal[1]}.`,
+      note: `${len} chars â€” short. Aim for ${opts.ideal[0]}â€“${opts.ideal[1]}.`,
     };
   }
   if (len > opts.ideal[1]) {
@@ -69,10 +69,10 @@ function lengthRule(opts: {
       id: opts.id,
       label: opts.label,
       status: "warn",
-      note: `${len} chars — close to truncation. Ideal is ${opts.ideal[0]}–${opts.ideal[1]}.`,
+      note: `${len} chars â€” close to truncation. Ideal is ${opts.ideal[0]}â€“${opts.ideal[1]}.`,
     };
   }
-  return { id: opts.id, label: opts.label, status: "good", note: `${len} chars — looks good.` };
+  return { id: opts.id, label: opts.label, status: "good", note: `${len} chars â€” looks good.` };
 }
 
 export function evaluateSeo(props: SeoScoreProps): { rules: Rule[]; score: number } {
@@ -94,15 +94,15 @@ export function evaluateSeo(props: SeoScoreProps): { rules: Rule[]; score: numbe
       value: effectiveDesc,
       ideal: [120, 160],
       hardMax: 200,
-      hint: "Aim for 120–160 — answer the question the title raises.",
+      hint: "Aim for 120â€“160 â€” answer the question the title raises.",
     }),
     (() => {
       const slug = props.slug.trim();
       if (!slug) {
-        return { id: "slug", label: "URL slug", status: "warn" as Status, note: "Empty — will be auto-generated from the title." };
+        return { id: "slug", label: "URL slug", status: "warn" as Status, note: "Empty â€” will be auto-generated from the title." };
       }
       if (slug.length > 75) {
-        return { id: "slug", label: "URL slug", status: "warn" as Status, note: `${slug.length} chars — long URLs hurt CTR.` };
+        return { id: "slug", label: "URL slug", status: "warn" as Status, note: `${slug.length} chars â€” long URLs hurt CTR.` };
       }
       if (!/^[a-z0-9-]+$/.test(slug)) {
         return { id: "slug", label: "URL slug", status: "bad" as Status, note: "Only lowercase letters, numbers, and dashes." };
@@ -115,7 +115,7 @@ export function evaluateSeo(props: SeoScoreProps): { rules: Rule[]; score: numbe
           id: "og-image",
           label: "Cover image",
           status: "warn" as Status,
-          note: "No cover — social and AI previews fall back to the site default.",
+          note: "No cover â€” social and AI previews fall back to the site default.",
         };
       }
       if (!props.ogImageAlt.trim()) {
@@ -123,7 +123,7 @@ export function evaluateSeo(props: SeoScoreProps): { rules: Rule[]; score: numbe
           id: "og-image-alt",
           label: "Cover alt text",
           status: "warn" as Status,
-          note: "Image uploaded but no alt text — accessibility and SEO miss.",
+          note: "Image uploaded but no alt text â€” accessibility and SEO miss.",
         };
       }
       return { id: "og-image", label: "Cover image", status: "good" as Status, note: "Uploaded with alt text." };
@@ -131,15 +131,15 @@ export function evaluateSeo(props: SeoScoreProps): { rules: Rule[]; score: numbe
     (() => {
       const len = props.contentText.trim().length;
       if (len === 0) {
-        return { id: "body", label: "Body length", status: "warn" as Status, note: "Empty — write the post." };
+        return { id: "body", label: "Body length", status: "warn" as Status, note: "Empty â€” write the post." };
       }
       if (len < 600) {
-        return { id: "body", label: "Body length", status: "warn" as Status, note: `~${len} chars — thin. Most ranking posts pass 1,200.` };
+        return { id: "body", label: "Body length", status: "warn" as Status, note: `~${len} chars â€” thin. Most ranking posts pass 1,200.` };
       }
       if (len < 1500) {
-        return { id: "body", label: "Body length", status: "good" as Status, note: `~${len} chars — solid.` };
+        return { id: "body", label: "Body length", status: "good" as Status, note: `~${len} chars â€” solid.` };
       }
-      return { id: "body", label: "Body length", status: "good" as Status, note: `~${len} chars — comprehensive.` };
+      return { id: "body", label: "Body length", status: "good" as Status, note: `~${len} chars â€” comprehensive.` };
     })(),
   ];
 
@@ -149,8 +149,8 @@ export function evaluateSeo(props: SeoScoreProps): { rules: Rule[]; score: numbe
 }
 
 const STATUS_VARIANTS: Record<Status, { Icon: React.ComponentType<{ className?: string }>; cls: string }> = {
-  good: { Icon: CheckCircle2, cls: "text-emerald-600 dark:text-emerald-400" },
-  warn: { Icon: AlertTriangle, cls: "text-amber-600 dark:text-amber-400" },
+  good: { Icon: CheckCircle2, cls: "text-tone-emerald-fg dark:text-tone-emerald-fg" },
+  warn: { Icon: AlertTriangle, cls: "text-tone-honey-fg dark:text-tone-honey-fg" },
   bad: { Icon: AlertCircle, cls: "text-destructive" },
 };
 
@@ -158,9 +158,9 @@ export function SeoScore(props: SeoScoreProps) {
   const { rules, score } = evaluateSeo(props);
   const scoreTone =
     score >= 80
-      ? "text-emerald-600 dark:text-emerald-400"
+      ? "text-tone-emerald-fg dark:text-tone-emerald-fg"
       : score >= 50
-        ? "text-amber-600 dark:text-amber-400"
+        ? "text-tone-honey-fg dark:text-tone-honey-fg"
         : "text-destructive";
 
   return (

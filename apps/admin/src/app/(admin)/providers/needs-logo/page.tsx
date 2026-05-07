@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -50,6 +50,17 @@ type RowStatus =
   | { kind: "done"; logoUrl: string }
   | { kind: "error"; message: string };
 
+interface ReviewCandidateOptions {
+  silent?: boolean;
+  reload?: boolean;
+}
+
+interface AutoFetchOptions {
+  autoAccept?: boolean;
+  silent?: boolean;
+  reloadOnAccept?: boolean;
+}
+
 const MAX_CATALOG_CANDIDATES_PER_RUN = 50;
 
 export default function NeedsLogoPage() {
@@ -62,6 +73,7 @@ export default function NeedsLogoPage() {
   const [statuses, setStatuses] = useState<Record<string, RowStatus>>({});
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number; ok: number; failed: number } | null>(null);
+  const [autoAcceptGenerated, setAutoAcceptGenerated] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -99,7 +111,7 @@ export default function NeedsLogoPage() {
       return next;
     });
 
-  async function autoFetch(providerId: string) {
+  async function autoFetch(providerId: string, options: AutoFetchOptions = {}) {
     setRowStatus(providerId, { kind: "running", action: "auto-fetch" });
     try {
       const res = await fetch(`/api/providers/${providerId}/logo/auto-fetch`, {
@@ -124,6 +136,13 @@ export default function NeedsLogoPage() {
         });
         return false;
       }
+      if (options.autoAccept) {
+        return reviewCandidate(providerId, candidate.id, "approve", {
+          silent: options.silent,
+          reload: options.reloadOnAccept,
+        });
+      }
+
       setRowStatus(providerId, { kind: "candidate", candidate });
       return true;
     } catch (err: any) {
@@ -136,8 +155,17 @@ export default function NeedsLogoPage() {
   }
 
   async function handleAutoFetch(providerId: string) {
-    const ok = await autoFetch(providerId);
-    if (ok) toast.success("Logo candidate ready for review");
+    const ok = await autoFetch(providerId, {
+      autoAccept: autoAcceptGenerated,
+      silent: true,
+    });
+    if (ok) {
+      toast.success(
+        autoAcceptGenerated
+          ? "Logo generated and accepted"
+          : "Logo candidate ready for review",
+      );
+    }
   }
 
   async function handleAutoFetchAll() {
@@ -149,8 +177,31 @@ export default function NeedsLogoPage() {
     let done = 0;
     for (const provider of providers) {
       const currentStatus = statuses[provider.id];
+      const candidateToAccept =
+        autoAcceptGenerated
+          ? currentStatus?.kind === "candidate"
+            ? currentStatus.candidate
+            : provider.logoCandidates[0] ?? null
+          : null;
+      if (currentStatus?.kind === "done") {
+        done++;
+        setBulkProgress({ done, total: providers.length, ok: success, failed });
+        continue;
+      }
+      if (candidateToAccept) {
+        const ok = await reviewCandidate(
+          provider.id,
+          candidateToAccept.id,
+          "approve",
+          { silent: true, reload: false },
+        );
+        if (ok) success++;
+        else failed++;
+        done++;
+        setBulkProgress({ done, total: providers.length, ok: success, failed });
+        continue;
+      }
       if (
-        currentStatus?.kind === "done" ||
         currentStatus?.kind === "candidate" ||
         provider.logoCandidates.length > 0
       ) {
@@ -158,14 +209,20 @@ export default function NeedsLogoPage() {
         setBulkProgress({ done, total: providers.length, ok: success, failed });
         continue;
       }
-      const ok = await autoFetch(provider.id);
+      const ok = await autoFetch(provider.id, {
+        autoAccept: autoAcceptGenerated,
+        silent: true,
+        reloadOnAccept: false,
+      });
       if (ok) success++;
       else failed++;
       done++;
       setBulkProgress({ done, total: providers.length, ok: success, failed });
     }
     setBulkRunning(false);
-    toast(`Page done - ${success} candidates, ${failed} failed`);
+    toast(
+      `Page done - ${success} ${autoAcceptGenerated ? "accepted" : "candidates"}, ${failed} failed`,
+    );
     if (success > 0) load();
   }
 
@@ -175,9 +232,9 @@ export default function NeedsLogoPage() {
 
     // Batch the catalog path so one click cannot fan out across the whole
     // provider catalog. Operators can rerun this after reviewing results.
-    const allIds: string[] = [];
+    const allTasks: { id: string; candidateId?: string }[] = [];
     let cursor = 1;
-    while (allIds.length < MAX_CATALOG_CANDIDATES_PER_RUN) {
+    while (allTasks.length < MAX_CATALOG_CANDIDATES_PER_RUN) {
       const params = new URLSearchParams({
         page: String(cursor),
         perPage: "200",
@@ -190,28 +247,33 @@ export default function NeedsLogoPage() {
         return;
       }
       const data = await res.json();
-      const ids: string[] = data.providers
-        .filter((p: { logoCandidates?: LogoCandidate[] }) => !p.logoCandidates?.length)
-        .map((p: { id: string }) => p.id);
-      allIds.push(...ids);
+      const tasks: { id: string; candidateId?: string }[] = data.providers
+        .filter((p: { logoCandidates?: LogoCandidate[] }) =>
+          autoAcceptGenerated || !p.logoCandidates?.length,
+        )
+        .map((p: { id: string; logoCandidates?: LogoCandidate[] }) => ({
+          id: p.id,
+          candidateId: p.logoCandidates?.[0]?.id,
+        }));
+      allTasks.push(...tasks);
       if (data.providers.length < 200) break;
       cursor++;
     }
 
-    if (allIds.length === 0) {
+    if (allTasks.length === 0) {
       setBulkRunning(false);
       toast("No providers left to generate candidates for");
       return;
     }
 
-    const batchIds = allIds.slice(0, MAX_CATALOG_CANDIDATES_PER_RUN);
-    if (allIds.length > batchIds.length) {
+    const batchTasks = allTasks.slice(0, MAX_CATALOG_CANDIDATES_PER_RUN);
+    if (allTasks.length > batchTasks.length) {
       toast(
-        `Generating the next ${batchIds.length} candidates only; rerun after review for the remaining providers.`,
+        `Generating the next ${batchTasks.length} candidates only; rerun after review for the remaining providers.`,
       );
     }
 
-    setBulkProgress({ done: 0, total: batchIds.length, ok: 0, failed: 0 });
+    setBulkProgress({ done: 0, total: batchTasks.length, ok: 0, failed: 0 });
 
     // Limited concurrency keeps upstream logo CDNs and the admin API from
     // turning a bulk run into many long-running requests at once.
@@ -224,23 +286,32 @@ export default function NeedsLogoPage() {
     async function worker() {
       while (true) {
         const i = nextIndex++;
-        if (i >= batchIds.length) return;
-        const id = batchIds[i];
-        const ok = await autoFetch(id);
+        if (i >= batchTasks.length) return;
+        const task = batchTasks[i];
+        const ok = task.candidateId
+          ? await reviewCandidate(task.id, task.candidateId, "approve", {
+              silent: true,
+              reload: false,
+            })
+          : await autoFetch(task.id, {
+              autoAccept: autoAcceptGenerated,
+              silent: true,
+              reloadOnAccept: false,
+            });
         if (ok) success++;
         else failed++;
         done++;
-        setBulkProgress({ done, total: batchIds.length, ok: success, failed });
+        setBulkProgress({ done, total: batchTasks.length, ok: success, failed });
       }
     }
 
     await Promise.all(
-      Array.from({ length: Math.min(CONCURRENCY, batchIds.length) }, () => worker()),
+      Array.from({ length: Math.min(CONCURRENCY, batchTasks.length) }, () => worker()),
     );
 
     setBulkRunning(false);
     toast.success(
-      `Catalog candidate batch done - ${success} candidates, ${failed} failed of ${batchIds.length}`,
+      `Catalog batch done - ${success} ${autoAcceptGenerated ? "accepted" : "candidates"}, ${failed} failed of ${batchTasks.length}`,
     );
     load();
   }
@@ -278,6 +349,7 @@ export default function NeedsLogoPage() {
     providerId: string,
     candidateId: string,
     action: "approve" | "reject",
+    options: ReviewCandidateOptions = {},
   ) {
     setRowStatus(providerId, { kind: "running", action: "review" });
     try {
@@ -293,22 +365,24 @@ export default function NeedsLogoPage() {
       if (!res.ok) {
         const message = data.error || `Failed to ${action} logo candidate`;
         setRowStatus(providerId, { kind: "error", message });
-        toast.error(message);
-        return;
+        if (!options.silent) toast.error(message);
+        return false;
       }
 
       if (action === "approve") {
         setRowStatus(providerId, { kind: "done", logoUrl: data.logoUrl });
-        toast.success("Logo approved and published");
+        if (!options.silent) toast.success("Logo approved and published");
       } else {
         clearRowStatus(providerId);
-        toast.success("Logo candidate rejected");
+        if (!options.silent) toast.success("Logo candidate rejected");
       }
-      load();
+      if (options.reload !== false) load();
+      return true;
     } catch (err: any) {
       const message = err?.message || `Failed to ${action} logo candidate`;
       setRowStatus(providerId, { kind: "error", message });
-      toast.error(message);
+      if (!options.silent) toast.error(message);
+      return false;
     }
   }
 
@@ -326,7 +400,7 @@ export default function NeedsLogoPage() {
             <ImageOff className="h-6 w-6" /> Providers needing logos
           </h1>
           <p className="text-sm text-muted-foreground">
-            {loading ? "Loading…" : `${total} active provider${total === 1 ? "" : "s"} with no logo`}
+            {loading ? "Loadingâ€¦" : `${total} active provider${total === 1 ? "" : "s"} with no logo`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -349,7 +423,7 @@ export default function NeedsLogoPage() {
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            Generate page
+            {autoAcceptGenerated ? "Generate + accept page" : "Generate page"}
           </button>
           <button
             type="button"
@@ -362,7 +436,9 @@ export default function NeedsLogoPage() {
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            Generate next 50 candidates
+            {autoAcceptGenerated
+              ? "Generate + accept next 50"
+              : "Generate next 50 candidates"}
           </button>
         </div>
       </div>
@@ -371,9 +447,11 @@ export default function NeedsLogoPage() {
         <div className="rounded border bg-card p-3">
           <div className="flex items-center justify-between text-sm mb-2">
             <span>
-              {bulkProgress.done} / {bulkProgress.total} processed —{" "}
-              <span className="text-green-600">{bulkProgress.ok} candidates</span> ·{" "}
-              <span className="text-red-600">{bulkProgress.failed} failed</span>
+              {bulkProgress.done} / {bulkProgress.total} processed â€”{" "}
+              <span className="text-tone-sage-fg">
+                {bulkProgress.ok} {autoAcceptGenerated ? "accepted" : "candidates"}
+              </span> Â·{" "}
+              <span className="text-destructive">{bulkProgress.failed} failed</span>
             </span>
             <span className="text-xs text-muted-foreground">
               {Math.round((bulkProgress.done / Math.max(1, bulkProgress.total)) * 100)}%
@@ -401,6 +479,14 @@ export default function NeedsLogoPage() {
             }}
           />
           Only show providers that have a website
+        </label>
+        <label className="inline-flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={autoAcceptGenerated}
+            onChange={(e) => setAutoAcceptGenerated(e.target.checked)}
+          />
+          Auto-accept generated logos
         </label>
       </div>
 
@@ -438,7 +524,7 @@ export default function NeedsLogoPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {p.category}
-                    {p.scope === "STATE" ? " · STATE" : ""}
+                    {p.scope === "STATE" ? " Â· STATE" : ""}
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {p.website ? (
@@ -452,7 +538,7 @@ export default function NeedsLogoPage() {
                         {p.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                       </a>
                     ) : (
-                      <span className="text-muted-foreground">—</span>
+                      <span className="text-muted-foreground">â€”</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs">
@@ -460,13 +546,13 @@ export default function NeedsLogoPage() {
                       <span className="text-muted-foreground">Pending</span>
                     )}
                     {status.kind === "running" && (
-                      <span className="inline-flex items-center gap-1 text-blue-600">
+                      <span className="inline-flex items-center gap-1 text-tone-sky-fg">
                         <Loader2 className="h-3 w-3 animate-spin" />
                         {status.action === "auto-fetch"
-                          ? "Fetching…"
+                          ? "Fetchingâ€¦"
                           : status.action === "review"
-                            ? "Reviewing…"
-                            : "Uploading…"}
+                            ? "Reviewingâ€¦"
+                            : "Uploadingâ€¦"}
                       </span>
                     )}
                     {status.kind === "candidate" && (
@@ -474,10 +560,10 @@ export default function NeedsLogoPage() {
                         <img
                           src={status.candidate.publicUrl}
                           alt=""
-                          className="h-6 w-6 rounded object-contain bg-white"
+                          className="h-6 w-6 rounded object-contain bg-card"
                         />
-                        <span className="text-amber-700">
-                          Candidate · {status.candidate.source}
+                        <span className="text-tone-honey-fg">
+                          Candidate Â· {status.candidate.source}
                         </span>
                       </span>
                     )}
@@ -486,15 +572,15 @@ export default function NeedsLogoPage() {
                         <img
                           src={status.logoUrl}
                           alt=""
-                          className="h-6 w-6 rounded object-contain bg-white"
+                          className="h-6 w-6 rounded object-contain bg-card"
                         />
-                        <span className="text-green-600">Done</span>
+                        <span className="text-tone-sage-fg">Done</span>
                       </span>
                     )}
                     {status.kind === "error" && (
-                      <span className="text-red-600" title={status.message}>
+                      <span className="text-destructive" title={status.message}>
                         {status.message.length > 40
-                          ? status.message.slice(0, 40) + "…"
+                          ? status.message.slice(0, 40) + "â€¦"
                           : status.message}
                       </span>
                     )}
@@ -508,7 +594,7 @@ export default function NeedsLogoPage() {
                             onClick={() =>
                               reviewCandidate(p.id, status.candidate.id, "approve")
                             }
-                            className="inline-flex items-center gap-1 rounded border border-green-200 px-2 py-1 text-xs text-green-700 hover:bg-green-50"
+                            className="inline-flex items-center gap-1 rounded border border-tone-sage-br px-2 py-1 text-xs text-tone-sage-fg hover:bg-tone-sage-bg"
                           >
                             <Check className="h-3 w-3" /> Approve
                           </button>
@@ -517,7 +603,7 @@ export default function NeedsLogoPage() {
                             onClick={() =>
                               reviewCandidate(p.id, status.candidate.id, "reject")
                             }
-                            className="inline-flex items-center gap-1 rounded border border-red-200 px-2 py-1 text-xs text-red-700 hover:bg-red-50"
+                            className="inline-flex items-center gap-1 rounded border border-destructive/30 px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
                           >
                             <X className="h-3 w-3" /> Reject
                           </button>

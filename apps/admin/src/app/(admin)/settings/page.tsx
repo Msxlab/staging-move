@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -239,7 +239,7 @@ export default function SettingsPage() {
                   value={
                     profile.lastLoginAt
                       ? new Date(profile.lastLoginAt).toLocaleString()
-                      : "—"
+                      : "â€”"
                   }
                 />
                 <InfoCard
@@ -294,7 +294,7 @@ export default function SettingsPage() {
               />
             </div>
             {data.runtimeSummary.missingRequiredKeys.length > 0 && (
-              <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+              <div className="mt-4 rounded-lg border border-tone-honey-br bg-tone-honey-bg p-4">
                 <p className="text-sm font-medium text-foreground">
                   Required runtime keys still missing
                 </p>
@@ -322,8 +322,8 @@ export default function SettingsPage() {
                     </div>
                     <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase ${
                       item.status === "enabled"
-                        ? "bg-green-500/10 text-green-600"
-                        : "bg-amber-500/10 text-amber-600"
+                        ? "bg-tone-sage-bg text-tone-sage-fg"
+                        : "bg-tone-honey-bg text-tone-honey-fg"
                     }`}>
                       {item.status.replace(/_/g, " ")}
                     </span>
@@ -426,8 +426,8 @@ export default function SettingsPage() {
                       <span
                         className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${
                           integration.configured
-                            ? "bg-green-500/10 text-green-500"
-                            : "bg-amber-500/10 text-amber-500"
+                            ? "bg-tone-sage-bg text-tone-sage-fg"
+                            : "bg-tone-honey-bg text-tone-honey-fg"
                         }`}
                       >
                         {integration.configured ? "Ready" : "Needs config"}
@@ -530,7 +530,7 @@ export default function SettingsPage() {
                       {entry.action}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {entry.entityType} · {new Date(entry.createdAt).toLocaleString()}
+                      {entry.entityType} Â· {new Date(entry.createdAt).toLocaleString()}
                     </p>
                   </div>
                 ))}
