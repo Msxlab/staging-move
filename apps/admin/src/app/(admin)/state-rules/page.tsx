@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
@@ -187,11 +187,11 @@ export default function StateRulesPage() {
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-1">
-                {rule.dmvRules && <span className="rounded bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500">DMV</span>}
-                {rule.voterRegistration && <span className="rounded bg-green-500/10 px-2 py-0.5 text-xs text-green-500">Voter</span>}
-                {rule.utilityInfo && <span className="rounded bg-orange-500/10 px-2 py-0.5 text-xs text-orange-500">Utility</span>}
-                {rule.taxInfo && <span className="rounded bg-purple-500/10 px-2 py-0.5 text-xs text-purple-500">Tax</span>}
-                {rule.insuranceRules && <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs text-red-500">Insurance</span>}
+                {rule.dmvRules && <span className="rounded bg-tone-sky-bg px-2 py-0.5 text-xs text-tone-sky-fg">DMV</span>}
+                {rule.voterRegistration && <span className="rounded bg-tone-sage-bg px-2 py-0.5 text-xs text-tone-sage-fg">Voter</span>}
+                {rule.utilityInfo && <span className="rounded bg-tone-orange-bg px-2 py-0.5 text-xs text-tone-orange-fg">Utility</span>}
+                {rule.taxInfo && <span className="rounded bg-tone-foil-bg px-2 py-0.5 text-xs text-tone-foil-fg">Tax</span>}
+                {rule.insuranceRules && <span className="rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">Insurance</span>}
               </div>
             </div>
           ))}
@@ -199,7 +199,7 @@ export default function StateRulesPage() {
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4">
           <div role="dialog" aria-modal="true" className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>

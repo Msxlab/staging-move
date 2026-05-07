@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { DollarSign, MapPin, Tag, Loader2, Lock } from "lucide-react";
@@ -68,7 +68,7 @@ export function SpendingByRegionWidget() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-orange-500" /> User-reported spending by region & category
+            <DollarSign className="h-4 w-4 text-tone-orange-fg" /> User-reported spending by region & category
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
             Aggregated from `Service.monthlyCost`. Cells with fewer than{" "}
@@ -80,7 +80,7 @@ export function SpendingByRegionWidget() {
             <p className="text-xs text-muted-foreground">Total monthly</p>
             <p className="text-lg font-bold text-foreground">{USD.format(data.total.totalSpend)}</p>
             <p className="text-xs text-muted-foreground">
-              {data.total.userCount} users · {data.total.serviceCount} services
+              {data.total.userCount} users Â· {data.total.serviceCount} services
             </p>
           </div>
         )}
@@ -93,7 +93,7 @@ export function SpendingByRegionWidget() {
       )}
 
       {error && (
-        <div className="rounded border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-500">
+        <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -163,7 +163,7 @@ export function SpendingByRegionWidget() {
       {data && data.byStateCategory.length > 0 && (
         <details className="rounded border border-border">
           <summary className="cursor-pointer px-3 py-2 text-sm font-medium hover:bg-muted">
-            State × category breakdown ({data.byStateCategory.length} cells)
+            State Ã— category breakdown ({data.byStateCategory.length} cells)
           </summary>
           <div className="px-3 py-2 max-h-96 overflow-auto">
             <table className="w-full text-xs">

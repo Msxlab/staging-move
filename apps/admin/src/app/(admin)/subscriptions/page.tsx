@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -41,16 +41,16 @@ function stripeDashboardUrl(stripeCustomerId: string | null) {
 }
 
 const PLAN_COLORS: Record<string, string> = {
-  FREE_TRIAL: "bg-yellow-500/10 text-yellow-500",
-  INDIVIDUAL: "bg-blue-500/10 text-blue-500",
-  FAMILY: "bg-purple-500/10 text-purple-500",
+  FREE_TRIAL: "bg-tone-honey-bg text-tone-honey-fg",
+  INDIVIDUAL: "bg-tone-sky-bg text-tone-sky-fg",
+  FAMILY: "bg-tone-foil-bg text-tone-foil-fg",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "bg-green-500/10 text-green-500",
-  TRIALING: "bg-cyan-500/10 text-cyan-500",
-  CANCELED: "bg-red-500/10 text-red-500",
-  EXPIRED: "bg-gray-500/10 text-gray-400",
+  ACTIVE: "bg-tone-sage-bg text-tone-sage-fg",
+  TRIALING: "bg-tone-cyan-bg text-tone-cyan-fg",
+  CANCELED: "bg-destructive/10 text-destructive",
+  EXPIRED: "bg-tone-slate-bg text-muted-foreground",
 };
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -102,18 +102,18 @@ export default function SubscriptionsPage() {
 
   function getOpsStatus(sub: Sub) {
     if (sub.provider === "APP_STORE") {
-      if (!sub.latestTransactionId && !sub.originalTransactionId) return { label: "Missing transaction", cls: "bg-red-500/10 text-red-500" };
-      if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-amber-500/10 text-amber-500" };
+      if (!sub.latestTransactionId && !sub.originalTransactionId) return { label: "Missing transaction", cls: "bg-destructive/10 text-destructive" };
+      if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-tone-honey-bg text-tone-honey-fg" };
     }
     if (sub.provider === "PLAY_STORE") {
-      if (!sub.purchaseToken) return { label: "Missing token", cls: "bg-red-500/10 text-red-500" };
-      if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-amber-500/10 text-amber-500" };
+      if (!sub.purchaseToken) return { label: "Missing token", cls: "bg-destructive/10 text-destructive" };
+      if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-tone-honey-bg text-tone-honey-fg" };
     }
     if (sub.lastValidatedAt && ["APP_STORE", "PLAY_STORE"].includes(sub.provider)) {
       const hoursSinceValidation = (Date.now() - new Date(sub.lastValidatedAt).getTime()) / (1000 * 60 * 60);
-      if (hoursSinceValidation > 24) return { label: "Stale validation", cls: "bg-amber-500/10 text-amber-500" };
+      if (hoursSinceValidation > 24) return { label: "Stale validation", cls: "bg-tone-honey-bg text-tone-honey-fg" };
     }
-    return { label: "OK", cls: "bg-green-500/10 text-green-500" };
+    return { label: "OK", cls: "bg-tone-sage-bg text-tone-sage-fg" };
   }
 
   return (
@@ -133,37 +133,37 @@ export default function SubscriptionsPage() {
                 <p className="text-xs font-medium text-muted-foreground">Total</p>
                 <p className="mt-1 text-2xl font-bold text-foreground">{stats.totalAll}</p>
               </div>
-              <div className="rounded-lg bg-blue-500/10 p-2"><CreditCard className="h-4 w-4 text-blue-500" /></div>
+              <div className="rounded-lg bg-tone-sky-bg p-2"><CreditCard className="h-4 w-4 text-tone-sky-fg" /></div>
             </div>
           </div>
           <button onClick={() => { setFilters({ ...filters, status: filters.status === "ACTIVE" ? "" : "ACTIVE" }); setPage(1); }}
-            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "ACTIVE" ? "border-green-500/30 bg-green-500/5" : "border-border hover:border-green-500/20"}`}>
+            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "ACTIVE" ? "border-tone-sage-br bg-tone-sage-bg" : "border-border hover:border-tone-sage-br"}`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Active</p>
-                <p className="mt-1 text-2xl font-bold text-green-500">{stats.activeCount}</p>
+                <p className="mt-1 text-2xl font-bold text-tone-sage-fg">{stats.activeCount}</p>
               </div>
-              <div className="rounded-lg bg-green-500/10 p-2"><CheckCircle2 className="h-4 w-4 text-green-500" /></div>
+              <div className="rounded-lg bg-tone-sage-bg p-2"><CheckCircle2 className="h-4 w-4 text-tone-sage-fg" /></div>
             </div>
           </button>
           <button onClick={() => { setFilters({ ...filters, status: filters.status === "TRIALING" ? "" : "TRIALING" }); setPage(1); }}
-            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "TRIALING" ? "border-cyan-500/30 bg-cyan-500/5" : "border-border hover:border-cyan-500/20"}`}>
+            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "TRIALING" ? "border-tone-cyan-br bg-tone-cyan-bg" : "border-border hover:border-tone-cyan-br"}`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Trialing</p>
-                <p className="mt-1 text-2xl font-bold text-cyan-500">{stats.trialingCount}</p>
+                <p className="mt-1 text-2xl font-bold text-tone-cyan-fg">{stats.trialingCount}</p>
               </div>
-              <div className="rounded-lg bg-cyan-500/10 p-2"><Clock className="h-4 w-4 text-cyan-500" /></div>
+              <div className="rounded-lg bg-tone-cyan-bg p-2"><Clock className="h-4 w-4 text-tone-cyan-fg" /></div>
             </div>
           </button>
           <button onClick={() => { setFilters({ ...filters, status: filters.status === "CANCELED" ? "" : "CANCELED" }); setPage(1); }}
-            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "CANCELED" ? "border-red-500/30 bg-red-500/5" : "border-border hover:border-red-500/20"}`}>
+            className={`rounded-xl border bg-card p-4 text-left transition-all ${filters.status === "CANCELED" ? "border-destructive/30 bg-destructive/5" : "border-border hover:border-destructive/20"}`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">Canceled</p>
-                <p className="mt-1 text-2xl font-bold text-red-500">{stats.canceledCount}</p>
+                <p className="mt-1 text-2xl font-bold text-destructive">{stats.canceledCount}</p>
               </div>
-              <div className="rounded-lg bg-red-500/10 p-2"><XCircle className="h-4 w-4 text-red-500" /></div>
+              <div className="rounded-lg bg-destructive/10 p-2"><XCircle className="h-4 w-4 text-destructive" /></div>
             </div>
           </button>
           <div className="rounded-xl border border-border bg-card p-4">
@@ -172,7 +172,7 @@ export default function SubscriptionsPage() {
                 <p className="text-xs font-medium text-muted-foreground">New This Month</p>
                 <p className="mt-1 text-2xl font-bold text-foreground">{stats.newThisMonth}</p>
               </div>
-              <div className="rounded-lg bg-purple-500/10 p-2"><TrendingUp className="h-4 w-4 text-purple-500" /></div>
+              <div className="rounded-lg bg-tone-foil-bg p-2"><TrendingUp className="h-4 w-4 text-tone-foil-fg" /></div>
             </div>
           </div>
         </div>
@@ -343,14 +343,14 @@ export default function SubscriptionsPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {sub.trialEndsAt ? (
-                      <span className={trialDays !== null && trialDays <= 3 ? "text-red-500 font-medium" : trialDays !== null && trialDays <= 7 ? "text-yellow-500" : ""}>
+                      <span className={trialDays !== null && trialDays <= 3 ? "text-destructive font-medium" : trialDays !== null && trialDays <= 7 ? "text-tone-honey-fg" : ""}>
                         {new Date(sub.trialEndsAt).toLocaleDateString()}
                         {trialDays !== null && trialDays > 0 && <span className="ml-1">({trialDays}d)</span>}
                       </span>
-                    ) : "—"}
+                    ) : "â€”"}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
-                    {sub.stripeCurrentPeriodEnd ? new Date(sub.stripeCurrentPeriodEnd).toLocaleDateString() : "—"}
+                    {sub.stripeCurrentPeriodEnd ? new Date(sub.stripeCurrentPeriodEnd).toLocaleDateString() : "â€”"}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3 text-right">
@@ -373,7 +373,7 @@ export default function SubscriptionsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
+          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}â€“{Math.min(page * perPage, total)} of {total}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50">
               <ChevronLeft className="h-4 w-4" />
@@ -388,7 +388,7 @@ export default function SubscriptionsPage() {
 
       {/* Detail Modal */}
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setDetail(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm" onClick={() => setDetail(null)}>
           <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold text-foreground">Subscription Detail</h2>
@@ -411,9 +411,9 @@ export default function SubscriptionsPage() {
                 <DetailItem label="Platform" value={detail.platform || "unassigned"} />
                 <DetailItem label="Created" value={new Date(detail.createdAt).toLocaleDateString()} />
                 <DetailItem label="Updated" value={new Date(detail.updatedAt).toLocaleDateString()} />
-                <DetailItem label="Trial Ends" value={detail.trialEndsAt ? new Date(detail.trialEndsAt).toLocaleDateString() : "—"} />
-                <DetailItem label="Canceled At" value={detail.canceledAt ? new Date(detail.canceledAt).toLocaleDateString() : "—"} />
-                <DetailItem label="Period End" value={detail.stripeCurrentPeriodEnd ? new Date(detail.stripeCurrentPeriodEnd).toLocaleDateString() : "—"} />
+                <DetailItem label="Trial Ends" value={detail.trialEndsAt ? new Date(detail.trialEndsAt).toLocaleDateString() : "â€”"} />
+                <DetailItem label="Canceled At" value={detail.canceledAt ? new Date(detail.canceledAt).toLocaleDateString() : "â€”"} />
+                <DetailItem label="Period End" value={detail.stripeCurrentPeriodEnd ? new Date(detail.stripeCurrentPeriodEnd).toLocaleDateString() : "â€”"} />
                 <DetailItem label="Stripe Customer" value={maskProviderIdentifier(detail.stripeCustomerId)} />
                 <DetailItem label="Last Validated" value={detail.lastValidatedAt ? new Date(detail.lastValidatedAt).toLocaleString() : "Never"} />
                 <DetailItem label="Last Synced" value={detail.lastSyncedAt ? new Date(detail.lastSyncedAt).toLocaleString() : "Never"} />
@@ -435,7 +435,7 @@ export default function SubscriptionsPage() {
                     className="inline-flex items-center gap-1 rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
                     title="Open this customer in the Stripe Dashboard"
                   >
-                    Open in Stripe ↗
+                    Open in Stripe â†—
                   </a>
                 ) : null}
                 <button onClick={() => { setDetail(null); router.push(`/users/${detail.user.id}`); }}

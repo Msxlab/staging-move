@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, Link2, RefreshCw, ShieldAlert } from "lucide-react";
@@ -94,7 +94,7 @@ export default function ProviderGovernancePage() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200">
+      <div className="rounded-lg border border-tone-honey-br bg-tone-honey-bg p-4 text-sm text-tone-honey-fg dark:text-tone-honey-fg">
         <div className="flex gap-2">
           <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
@@ -132,7 +132,7 @@ export default function ProviderGovernancePage() {
                           {provider?.category || "Unknown category"} {provider?.scope ? `- ${provider.scope}` : ""}
                         </p>
                       </div>
-                      <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-tone-honey-fg" />
                     </div>
                     <p className="mt-2 text-sm">{item.warning?.label || item.warning?.code}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{item.warning?.message || "Needs operator review."}</p>

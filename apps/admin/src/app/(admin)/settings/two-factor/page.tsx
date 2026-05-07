@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -117,7 +117,7 @@ export default function TwoFactorPage() {
 
   function downloadBackupCodes() {
     const content = [
-      "LocateFlow Admin — 2FA Backup Codes",
+      "LocateFlow Admin â€” 2FA Backup Codes",
       "====================================",
       `Generated: ${new Date().toISOString()}`,
       "",
@@ -170,10 +170,10 @@ export default function TwoFactorPage() {
       {showEnrollmentBanner && (
         <div
           role="alert"
-          className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 flex items-start gap-3"
+          className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 flex items-start gap-3"
         >
-          <div className="rounded-lg bg-amber-500/20 p-2 mt-0.5">
-            <Lock className="h-5 w-5 text-amber-600" />
+          <div className="rounded-lg bg-tone-honey-bg p-2 mt-0.5">
+            <Lock className="h-5 w-5 text-tone-honey-fg" />
           </div>
           <div className="space-y-1">
             <p className="font-semibold text-foreground">
@@ -181,7 +181,7 @@ export default function TwoFactorPage() {
             </p>
             <p className="text-sm text-muted-foreground">
               SUPER_ADMIN accounts must enroll MFA before accessing the rest
-              of the admin panel. Complete the steps below — the rest of the
+              of the admin panel. Complete the steps below â€” the rest of the
               navigation will unlock automatically once MFA is verified.
             </p>
           </div>
@@ -189,16 +189,16 @@ export default function TwoFactorPage() {
       )}
 
       {/* Current Status */}
-      <div className={`rounded-xl border p-6 ${status === "enabled" ? "border-green-500/30 bg-green-500/5" : "border-border bg-card"}`}>
+      <div className={`rounded-xl border p-6 ${status === "enabled" ? "border-tone-sage-br bg-tone-sage-bg" : "border-border bg-card"}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {status === "enabled" ? (
-              <div className="rounded-lg bg-green-500/10 p-2.5">
-                <ShieldCheck className="h-6 w-6 text-green-500" />
+              <div className="rounded-lg bg-tone-sage-bg p-2.5">
+                <ShieldCheck className="h-6 w-6 text-tone-sage-fg" />
               </div>
             ) : (
-              <div className="rounded-lg bg-amber-500/10 p-2.5">
-                <AlertTriangle className="h-6 w-6 text-amber-500" />
+              <div className="rounded-lg bg-tone-honey-bg p-2.5">
+                <AlertTriangle className="h-6 w-6 text-tone-honey-fg" />
               </div>
             )}
             <div>
@@ -212,13 +212,13 @@ export default function TwoFactorPage() {
               </p>
             </div>
           </div>
-          <span className={`rounded-full px-3 py-1 text-xs font-medium ${status === "enabled" ? "bg-green-500/10 text-green-500" : "bg-amber-500/10 text-amber-500"}`}>
+          <span className={`rounded-full px-3 py-1 text-xs font-medium ${status === "enabled" ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>
             {status === "enabled" ? "Active" : "Inactive"}
           </span>
         </div>
       </div>
 
-      {/* Setup Flow — Disabled state */}
+      {/* Setup Flow â€” Disabled state */}
       {status === "disabled" && setupStep === "idle" && (
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -271,7 +271,7 @@ export default function TwoFactorPage() {
 
           <div className="flex flex-col items-center gap-4">
             {qrUrl && (
-              <div className="rounded-xl border border-border bg-white p-4">
+              <div className="rounded-xl border border-border bg-card p-4">
                 <img src={qrUrl} alt="2FA QR Code" width={240} height={240} className="block" />
               </div>
             )}
@@ -289,16 +289,16 @@ export default function TwoFactorPage() {
                 </div>
               </div>
               <p className="text-sm font-mono text-foreground tracking-wider break-all">
-                {showSecret ? secret : "••••••••••••••••••••••••••••••••"}
+                {showSecret ? secret : "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"}
               </p>
             </div>
           </div>
 
           {/* Backup Codes */}
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+          <div className="rounded-lg border border-tone-honey-br bg-tone-honey-bg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" /> Backup Codes
+                <AlertTriangle className="h-4 w-4 text-tone-honey-fg" /> Backup Codes
               </p>
               <button onClick={downloadBackupCodes}
                 className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent">
@@ -322,7 +322,7 @@ export default function TwoFactorPage() {
 
           <button onClick={() => setSetupStep("verifying")}
             className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            I&apos;ve saved the backup codes — Continue
+            I&apos;ve saved the backup codes â€” Continue
           </button>
         </div>
       )}
@@ -360,8 +360,8 @@ export default function TwoFactorPage() {
 
       {/* Step 4: Done */}
       {setupStep === "done" && (
-        <div className="rounded-xl border border-green-500/30 bg-green-500/5 p-6 text-center space-y-3">
-          <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
+        <div className="rounded-xl border border-tone-sage-br bg-tone-sage-bg p-6 text-center space-y-3">
+          <CheckCircle2 className="h-12 w-12 text-tone-sage-fg mx-auto" />
           <h2 className="text-lg font-semibold text-foreground">Two-Factor Authentication Enabled</h2>
           <p className="text-sm text-muted-foreground">
             Your account is now secured with an authenticator app. You&apos;ll need to enter a code each time you sign in.

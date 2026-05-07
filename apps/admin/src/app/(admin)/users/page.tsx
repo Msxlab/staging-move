@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,7 @@ import { computeUserHealth } from "@/lib/user-health";
 import { maskEmail } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
 
-// Health column is on by default — support team's #1 ask. Sticker is part
+// Health column is on by default â€” support team's #1 ask. Sticker is part
 // of the "user" cell, not its own column, so it always rides next to the
 // user's name.
 const USER_COLUMNS = [
@@ -51,17 +51,17 @@ interface User {
 }
 
 const PLAN_COLORS: Record<string, string> = {
-  FREE_TRIAL: "bg-yellow-500/10 text-yellow-500",
-  INDIVIDUAL: "bg-blue-500/10 text-blue-500",
-  FAMILY: "bg-purple-500/10 text-purple-500",
+  FREE_TRIAL: "bg-tone-honey-bg text-tone-honey-fg",
+  INDIVIDUAL: "bg-tone-sky-bg text-tone-sky-fg",
+  FAMILY: "bg-tone-foil-bg text-tone-foil-fg",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  ACTIVE: "bg-green-500/10 text-green-500",
-  TRIALING: "bg-cyan-500/10 text-cyan-500",
-  CANCELED: "bg-red-500/10 text-red-500",
-  EXPIRED: "bg-gray-500/10 text-gray-400",
-  BLOCKED: "bg-red-500/10 text-red-500",
+  ACTIVE: "bg-tone-sage-bg text-tone-sage-fg",
+  TRIALING: "bg-tone-cyan-bg text-tone-cyan-fg",
+  CANCELED: "bg-destructive/10 text-destructive",
+  EXPIRED: "bg-tone-slate-bg text-muted-foreground",
+  BLOCKED: "bg-destructive/10 text-destructive",
 };
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -231,7 +231,7 @@ export default function UsersPage() {
         }
       />
 
-      {/* KPI Cards — same data, foil hairline + Fraunces values */}
+      {/* KPI Cards â€” same data, foil hairline + Fraunces values */}
       {stats && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
@@ -240,7 +240,7 @@ export default function UsersPage() {
                 <p className="kpi-label">Total Users</p>
                 <p className="kpi-value mt-2 text-foreground">{stats.totalAll}</p>
               </div>
-              <div className="rounded-lg bg-blue-500/10 p-2.5"><Users className="h-5 w-5 text-blue-500" /></div>
+              <div className="rounded-lg bg-tone-sky-bg p-2.5"><Users className="h-5 w-5 text-tone-sky-fg" /></div>
             </div>
           </div>
           <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
@@ -256,7 +256,7 @@ export default function UsersPage() {
                   )}
                 </div>
               </div>
-              <div className="rounded-lg bg-green-500/10 p-2.5"><UserPlus className="h-5 w-5 text-green-500" /></div>
+              <div className="rounded-lg bg-tone-sage-bg p-2.5"><UserPlus className="h-5 w-5 text-tone-sage-fg" /></div>
             </div>
           </div>
           <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
@@ -265,7 +265,7 @@ export default function UsersPage() {
                 <p className="kpi-label">Active Subscriptions</p>
                 <p className="kpi-value mt-2 text-foreground">{stats.activeSubCount}</p>
               </div>
-              <div className="rounded-lg bg-purple-500/10 p-2.5"><CreditCard className="h-5 w-5 text-purple-500" /></div>
+              <div className="rounded-lg bg-tone-foil-bg p-2.5"><CreditCard className="h-5 w-5 text-tone-foil-fg" /></div>
             </div>
           </div>
           <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
@@ -380,7 +380,7 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* Table — admin-panel chrome (foil hairline + warm hover) */}
+      {/* Table â€” admin-panel chrome (foil hairline + warm hover) */}
       <div className="admin-panel overflow-hidden">
         <table className="w-full">
           <thead className="bg-muted/50">
@@ -455,7 +455,7 @@ export default function UsersPage() {
                   {cols.isVisible("status") && (
                     <td className="px-3 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "BLOCKED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
-                        {user.deletedAt ? "BLOCKED" : user.subscription?.status || "—"}
+                        {user.deletedAt ? "BLOCKED" : user.subscription?.status || "â€”"}
                       </span>
                     </td>
                   )}
@@ -480,7 +480,7 @@ export default function UsersPage() {
                   {cols.isVisible("joined") && <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</td>}
                   {cols.isVisible("deletedAt") && (
                     <td className="px-3 py-3 text-xs text-muted-foreground">
-                      {user.deletedAt ? new Date(user.deletedAt).toLocaleString() : "—"}
+                      {user.deletedAt ? new Date(user.deletedAt).toLocaleString() : "â€”"}
                     </td>
                   )}
                   <td className="px-3 py-3 text-right">
@@ -505,7 +505,7 @@ export default function UsersPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
+          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}â€“{Math.min(page * perPage, total)} of {total}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50">
               <ChevronLeft className="h-4 w-4" />

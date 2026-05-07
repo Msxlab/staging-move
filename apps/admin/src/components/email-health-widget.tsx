@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -81,15 +81,15 @@ export function EmailHealthWidget() {
           </h2>
         </div>
         <Link href="/email-templates" className="text-xs text-muted-foreground hover:text-foreground">
-          View logs →
+          View logs â†’
         </Link>
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <Stat icon={CheckCircle2} label="Sent" value={sent} color="text-green-500" />
-        <Stat icon={AlertTriangle} label="Failed" value={failed} color="text-red-500" />
-        <Stat icon={Clock} label="Pending" value={pending} color="text-amber-500" />
-        <Stat icon={AlertTriangle} label="Bounced" value={bounced} color="text-orange-500" />
+        <Stat icon={CheckCircle2} label="Sent" value={sent} color="text-tone-sage-fg" />
+        <Stat icon={AlertTriangle} label="Failed" value={failed} color="text-destructive" />
+        <Stat icon={Clock} label="Pending" value={pending} color="text-tone-honey-fg" />
+        <Stat icon={AlertTriangle} label="Bounced" value={bounced} color="text-tone-orange-fg" />
       </div>
 
       {data.byTemplate.length > 0 && (
@@ -110,7 +110,7 @@ export function EmailHealthWidget() {
                   <div className="flex items-center gap-3 text-xs">
                     <span className="text-muted-foreground">{row.total}</span>
                     {(row.failed + row.bounced) > 0 && (
-                      <span className={failureRate >= 25 ? "text-red-500" : "text-amber-500"}>
+                      <span className={failureRate >= 25 ? "text-destructive" : "text-tone-honey-fg"}>
                         {failureRate}% fail
                       </span>
                     )}
@@ -128,7 +128,7 @@ export function EmailHealthWidget() {
           <ul className="space-y-1">
             {data.topFailures.map((f, i) => (
               <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                <span className="rounded bg-red-500/10 px-1.5 py-0.5 font-mono text-red-500 shrink-0">×{f.count}</span>
+                <span className="rounded bg-destructive/10 px-1.5 py-0.5 font-mono text-destructive shrink-0">Ã—{f.count}</span>
                 <span className="break-all">{f.message}</span>
               </li>
             ))}

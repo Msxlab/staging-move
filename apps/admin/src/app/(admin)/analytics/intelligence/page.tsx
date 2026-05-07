@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -54,7 +54,7 @@ export default function ActivityIntelligencePage() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-foreground">{step.step}</span>
                       {i > 0 && dropoff > 0 && (
-                        <span className="text-[10px] text-red-400">-{dropoff}%</span>
+                        <span className="text-[10px] text-destructive">-{dropoff}%</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -74,15 +74,15 @@ export default function ActivityIntelligencePage() {
         {/* Engagement Scoring */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber-500" /> Engagement Distribution
+            <Zap className="h-5 w-5 text-tone-honey-fg" /> Engagement Distribution
           </h2>
           <p className="text-xs text-muted-foreground mb-4">Based on sessions + events in the last 30 days</p>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: "High", value: engagement?.high || 0, color: "bg-green-500", desc: "30+ activity score" },
-              { label: "Medium", value: engagement?.medium || 0, color: "bg-blue-500", desc: "10-29 activity score" },
-              { label: "Low", value: engagement?.low || 0, color: "bg-amber-500", desc: "1-9 activity score" },
-              { label: "None", value: engagement?.none || 0, color: "bg-red-500", desc: "No activity" },
+              { label: "High", value: engagement?.high || 0, color: "bg-tone-sage-fg", desc: "30+ activity score" },
+              { label: "Medium", value: engagement?.medium || 0, color: "bg-tone-sky-fg", desc: "10-29 activity score" },
+              { label: "Low", value: engagement?.low || 0, color: "bg-tone-honey-fg", desc: "1-9 activity score" },
+              { label: "None", value: engagement?.none || 0, color: "bg-destructive", desc: "No activity" },
             ].map((seg) => (
               <div key={seg.label} className="rounded-lg bg-muted/30 p-4">
                 <div className="flex items-center gap-2 mb-1">
@@ -102,16 +102,16 @@ export default function ActivityIntelligencePage() {
         {/* Churn Risk */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" /> Churn Risk
+            <AlertTriangle className="h-5 w-5 text-destructive" /> Churn Risk
           </h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="rounded-lg bg-red-500/5 border border-red-500/20 p-4">
-              <p className="text-xs font-medium text-red-400 uppercase">At Risk</p>
+            <div className="rounded-lg bg-destructive/5 border border-destructive/20 p-4">
+              <p className="text-xs font-medium text-destructive uppercase">At Risk</p>
               <p className="text-3xl font-bold text-foreground mt-1">{churn?.atRisk || 0}</p>
               <p className="text-xs text-muted-foreground">No activity in 14+ days</p>
             </div>
-            <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-4">
-              <p className="text-xs font-medium text-amber-400 uppercase">Trial Expiring</p>
+            <div className="rounded-lg bg-tone-honey-bg border border-tone-honey-br p-4">
+              <p className="text-xs font-medium text-tone-honey-fg uppercase">Trial Expiring</p>
               <p className="text-3xl font-bold text-foreground mt-1">{churn?.trialExpiringSoon || 0}</p>
               <p className="text-xs text-muted-foreground">Within 3 days</p>
             </div>
@@ -122,7 +122,7 @@ export default function ActivityIntelligencePage() {
               <span className="text-sm font-bold text-foreground">{churn?.activeRate || 0}%</span>
             </div>
             <div className="h-3 rounded-full bg-muted/50 overflow-hidden">
-              <div className="h-full rounded-full bg-green-500 transition-all" style={{ width: `${churn?.activeRate || 0}%` }} />
+              <div className="h-full rounded-full bg-tone-sage-fg transition-all" style={{ width: `${churn?.activeRate || 0}%` }} />
             </div>
             <p className="text-xs text-muted-foreground mt-2">{churn?.oldUsers || 0} users signed up 7+ days ago</p>
           </div>
@@ -131,14 +131,14 @@ export default function ActivityIntelligencePage() {
         {/* Platform Distribution */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-blue-500" /> Platform Usage (30d)
+            <Smartphone className="h-5 w-5 text-tone-sky-fg" /> Platform Usage (30d)
           </h2>
           <div className="space-y-3">
             {(platforms || []).map((p: any) => {
               const total = platforms.reduce((s: number, x: any) => s + x.count, 0);
               const pct = total > 0 ? Math.round((p.count / total) * 100) : 0;
               const Icon = p.platform === "MOBILE" ? Smartphone : Monitor;
-              const color = p.platform === "MOBILE" ? "bg-blue-500" : p.platform === "PWA" ? "bg-purple-500" : "bg-emerald-500";
+              const color = p.platform === "MOBILE" ? "bg-tone-sky-fg" : p.platform === "PWA" ? "bg-tone-foil-fg" : "bg-tone-emerald-fg";
               return (
                 <div key={p.platform} className="flex items-center gap-3">
                   <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -198,7 +198,7 @@ export default function ActivityIntelligencePage() {
         {/* Daily Active Users */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-emerald-500" /> Daily Active Users (30d)
+            <BarChart3 className="h-5 w-5 text-tone-emerald-fg" /> Daily Active Users (30d)
           </h2>
           {(!dau || dau.length === 0) ? (
             <p className="text-sm text-muted-foreground text-center py-8">No DAU data yet</p>

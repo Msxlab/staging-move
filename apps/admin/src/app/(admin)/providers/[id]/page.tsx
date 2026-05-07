@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -158,9 +158,9 @@ export default function ProviderDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-5">
+      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-5">
         <div className="flex items-start gap-3">
-          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-tone-honey-fg" />
           <div className="flex-1">
             <h2 className="font-semibold text-foreground">Provider quality warnings</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -214,8 +214,8 @@ export default function ProviderDetailPage() {
               <span
                 className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                   provider.isActive
-                    ? "bg-green-500/10 text-green-500"
-                    : "bg-gray-500/10 text-gray-400"
+                    ? "bg-tone-sage-bg text-tone-sage-fg"
+                    : "bg-tone-slate-bg text-muted-foreground"
                 }`}
               >
                 {provider.isActive ? "Active" : "Inactive"}
@@ -277,7 +277,7 @@ export default function ProviderDetailPage() {
             />
             <DetailRow label="Display Order" value={provider.displayOrder} />
             <DetailRow label="Version" value={provider.version} />
-            <DetailRow label="ZIP Rules" value={zipCodes.length || "—"} />
+            <DetailRow label="ZIP Rules" value={zipCodes.length || "â€”"} />
             <DetailRow
               label="Created"
               value={new Date(provider.createdAt).toLocaleDateString()}
@@ -319,7 +319,7 @@ export default function ProviderDetailPage() {
             {states.map((state) => (
               <span
                 key={state}
-                className="rounded-lg bg-orange-500/10 px-3 py-1 text-xs font-medium text-orange-500"
+                className="rounded-lg bg-tone-orange-bg px-3 py-1 text-xs font-medium text-tone-orange-fg"
               >
                 {state}
               </span>
@@ -337,7 +337,7 @@ export default function ProviderDetailPage() {
             {zipCodes.map((zip) => (
               <span
                 key={zip}
-                className="rounded-lg bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-500"
+                className="rounded-lg bg-tone-sky-bg px-3 py-1 text-xs font-medium text-tone-sky-fg"
               >
                 {zip}
               </span>
@@ -388,7 +388,7 @@ export default function ProviderDetailPage() {
 
       {showDeletePrompt && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
           onClick={() => {
             setShowDeletePrompt(false);
             setConfirmPassword("");
@@ -464,10 +464,10 @@ function StatCard({
   tone: "purple" | "cyan" | "amber" | "blue";
 }) {
   const toneMap = {
-    purple: "bg-purple-500/10 text-purple-500",
-    cyan: "bg-cyan-500/10 text-cyan-500",
-    amber: "bg-amber-500/10 text-amber-500",
-    blue: "bg-blue-500/10 text-blue-500",
+    purple: "bg-tone-foil-bg text-tone-foil-fg",
+    cyan: "bg-tone-cyan-bg text-tone-cyan-fg",
+    amber: "bg-tone-honey-bg text-tone-honey-fg",
+    blue: "bg-tone-sky-bg text-tone-sky-fg",
   } as const;
 
   return (

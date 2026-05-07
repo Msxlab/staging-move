@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
@@ -10,10 +10,10 @@ const STATUS_OPTIONS = ["OPEN", "IN_PROGRESS", "WAITING_USER", "RESOLVED", "CLOS
 const PRIORITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 
 const statusCls: Record<string, string> = {
-  OPEN: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  IN_PROGRESS: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  WAITING_USER: "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  RESOLVED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  OPEN: "bg-tone-sky-bg text-tone-sky-fg border-tone-sky-br",
+  IN_PROGRESS: "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br",
+  WAITING_USER: "bg-tone-orange-bg text-tone-orange-fg border-tone-orange-br",
+  RESOLVED: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br",
   CLOSED: "bg-muted text-muted-foreground border-border",
 };
 
@@ -174,7 +174,7 @@ export default function AdminTicketDetailPage() {
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-  if (!ticket) return <div className="p-6"><p className="text-muted-foreground">Ticket not found.</p><Link href="/support" className="text-primary text-sm mt-2 inline-block">← Back</Link></div>;
+  if (!ticket) return <div className="p-6"><p className="text-muted-foreground">Ticket not found.</p><Link href="/support" className="text-primary text-sm mt-2 inline-block">â† Back</Link></div>;
 
   const userName = [ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || ticket.user.email || "Unknown";
   const activeMove = ticket.user.movingPlans?.[0] || null;
@@ -191,7 +191,7 @@ export default function AdminTicketDetailPage() {
         </Link>
         <div>
           <h1 className="text-xl font-bold text-foreground">{ticket.subject}</h1>
-          <p className="text-xs text-muted-foreground">#{ticket.id.slice(-8)} · {ticket.category} · {userName}</p>
+          <p className="text-xs text-muted-foreground">#{ticket.id.slice(-8)} Â· {ticket.category} Â· {userName}</p>
         </div>
       </div>
 
@@ -203,19 +203,19 @@ export default function AdminTicketDetailPage() {
               const isUser = msg.senderType === "USER";
               const isSystem = msg.senderType === "SYSTEM";
               return (
-                <div key={msg.id} className={`p-4 ${msg.isInternal ? "bg-yellow-500/5 border-l-2 border-yellow-500/30" : ""}`}>
+                <div key={msg.id} className={`p-4 ${msg.isInternal ? "bg-tone-honey-bg border-l-2 border-tone-honey-br" : ""}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold ${
-                      isUser ? "bg-blue-500/20 text-blue-400" :
+                      isUser ? "bg-tone-sky-bg text-tone-sky-fg" :
                       isSystem ? "bg-muted text-muted-foreground" :
-                      "bg-emerald-500/20 text-emerald-400"
+                      "bg-tone-emerald-bg text-tone-emerald-fg"
                     }`}>
-                      {isUser ? "U" : isSystem ? "⚙" : "A"}
+                      {isUser ? "U" : isSystem ? "âš™" : "A"}
                     </div>
                     <span className="text-xs font-medium text-foreground">
                       {isUser ? userName : isSystem ? "System" : "Admin"}
                     </span>
-                    {msg.isInternal && <span className="text-[10px] text-yellow-500 bg-yellow-500/10 px-1.5 py-0.5 rounded">Internal</span>}
+                    {msg.isInternal && <span className="text-[10px] text-tone-honey-fg bg-tone-honey-bg px-1.5 py-0.5 rounded">Internal</span>}
                     <span className="text-[10px] text-muted-foreground ml-auto">
                       {new Date(msg.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} {new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                     </span>
@@ -269,11 +269,11 @@ export default function AdminTicketDetailPage() {
               </p>
             )}
             <Link href={`/users/${ticket.user.id}`}>
-              <button className="mt-3 text-xs text-primary hover:underline">View user profile →</button>
+              <button className="mt-3 text-xs text-primary hover:underline">View user profile â†’</button>
             </Link>
           </div>
 
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Move Support Context</p>
             <p className="text-xs text-muted-foreground">
               Manual guidance only. LocateFlow task completion updates local state and does not update external provider accounts.
@@ -288,11 +288,11 @@ export default function AdminTicketDetailPage() {
                     {activeMove.status} - Move date {new Date(activeMove.moveDate).toLocaleDateString()}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] text-blue-500">
+                    <span className="rounded-full bg-tone-sky-bg px-2 py-0.5 text-[10px] text-tone-sky-fg">
                       Open tasks: {openMoveTasks.length}
                     </span>
                     {lowConfidenceTasks.length > 0 && (
-                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-500">
+                      <span className="rounded-full bg-tone-honey-bg px-2 py-0.5 text-[10px] text-tone-honey-fg">
                         Low confidence: {lowConfidenceTasks.length}
                       </span>
                     )}
@@ -378,16 +378,16 @@ export default function AdminTicketDetailPage() {
             </div>
             <div className={`rounded-lg border p-3 ${
               ticket.sla?.breached
-                ? "border-red-500/30 bg-red-500/5"
+                ? "border-destructive/30 bg-destructive/5"
                 : "border-border bg-background/50"
             }`}>
               <p className="text-xs text-muted-foreground">Response Target</p>
-              <p className={`mt-1 text-sm font-medium ${ticket.sla?.breached ? "text-red-400" : "text-foreground"}`}>
+              <p className={`mt-1 text-sm font-medium ${ticket.sla?.breached ? "text-destructive" : "text-foreground"}`}>
                 {getSlaLabel(ticket.sla)}
               </p>
               {ticket.sla && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Derived {ticket.sla.targetHours}h target · Due {new Date(ticket.sla.dueAt).toLocaleString()}
+                  Derived {ticket.sla.targetHours}h target Â· Due {new Date(ticket.sla.dueAt).toLocaleString()}
                 </p>
               )}
               <p className="mt-1 text-[11px] text-muted-foreground">
@@ -414,9 +414,9 @@ function formatLabel(value: string) {
 }
 
 function taskStatusClass(status: string) {
-  if (status === "COMPLETED") return "bg-green-500/10 text-green-500";
+  if (status === "COMPLETED") return "bg-tone-sage-bg text-tone-sage-fg";
   if (status === "DISMISSED") return "bg-muted text-muted-foreground";
-  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-blue-500/10 text-blue-500";
-  if (status === "REOPENED") return "bg-purple-500/10 text-purple-500";
-  return "bg-amber-500/10 text-amber-500";
+  if (status === "ACCEPTED" || status === "IN_PROGRESS") return "bg-tone-sky-bg text-tone-sky-fg";
+  if (status === "REOPENED") return "bg-tone-foil-bg text-tone-foil-fg";
+  return "bg-tone-honey-bg text-tone-honey-fg";
 }

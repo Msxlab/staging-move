@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -52,10 +52,10 @@ const ROLE_ICONS: Record<string, typeof Shield> = {
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  SUPER_ADMIN: "bg-red-500/10 text-red-500",
-  ADMIN: "bg-purple-500/10 text-purple-500",
-  MODERATOR: "bg-blue-500/10 text-blue-500",
-  VIEWER: "bg-gray-500/10 text-gray-500",
+  SUPER_ADMIN: "bg-destructive/10 text-destructive",
+  ADMIN: "bg-tone-foil-bg text-tone-foil-fg",
+  MODERATOR: "bg-tone-sky-bg text-tone-sky-fg",
+  VIEWER: "bg-tone-slate-bg text-muted-foreground",
 };
 
 const RESOURCE_LABELS: Record<string, string> = {
@@ -560,16 +560,16 @@ export default function TeamPage() {
                           {admin.role.replace("_", " ")}
                         </span>
                         {!admin.isActive && (
-                          <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-[10px] font-medium text-red-500">
+                          <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-[10px] font-medium text-destructive">
                             Inactive
                           </span>
                         )}
                         {admin.mfaEnabled ? (
-                          <span className="rounded-full bg-green-500/10 px-2.5 py-1 text-[10px] font-medium text-green-500">
+                          <span className="rounded-full bg-tone-sage-bg px-2.5 py-1 text-[10px] font-medium text-tone-sage-fg">
                             MFA enabled
                           </span>
                         ) : (
-                          <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-[10px] font-medium text-amber-500">
+                          <span className="rounded-full bg-tone-honey-bg px-2.5 py-1 text-[10px] font-medium text-tone-honey-fg">
                             MFA missing
                           </span>
                         )}
@@ -674,7 +674,7 @@ export default function TeamPage() {
 
       {editAdmin && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
           onClick={() => setEditAdmin(null)}
         >
           <div
@@ -876,7 +876,7 @@ export default function TeamPage() {
 
       {archiveTarget && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
           onClick={() => {
             setArchiveTarget(null);
             setArchivePassword("");
@@ -972,3 +972,4 @@ function MetricCard({
     </div>
   );
 }
+

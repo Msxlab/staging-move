@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { AuroraBackground } from "@/components/aurora";
+import "../aurora.css";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -78,8 +80,9 @@ export default function LoginPage() {
   const inputCls = "mt-1 block w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-2xl">
+    <div className="adm-aurora relative flex min-h-screen items-center justify-center bg-background">
+      <AuroraBackground />
+      <div className="relative z-10 w-full max-w-md space-y-8 rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur-xl">
         <div className="text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
             {mfaRequired ? (

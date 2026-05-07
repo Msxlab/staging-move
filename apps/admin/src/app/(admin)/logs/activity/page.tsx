@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -74,7 +74,7 @@ export default function AdminActivityPage() {
                         <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                         <div>
                           <p className="text-sm font-medium text-foreground">{item.admin.firstName} {item.admin.lastName}</p>
-                          <p className="text-[10px] text-muted-foreground">{item.admin.email} · {item.admin.role}</p>
+                          <p className="text-[10px] text-muted-foreground">{item.admin.email} Â· {item.admin.role}</p>
                         </div>
                       </div>
                       <span className="text-sm font-bold text-foreground">{item.actions}</span>
@@ -92,7 +92,7 @@ export default function AdminActivityPage() {
         {/* Action Types */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-amber-500" /> Action Types (30d)
+            <Activity className="h-5 w-5 text-tone-honey-fg" /> Action Types (30d)
           </h2>
           {(!actionTypes || actionTypes.length === 0) ? (
             <p className="text-sm text-muted-foreground text-center py-4">No data</p>
@@ -106,11 +106,11 @@ export default function AdminActivityPage() {
                   <div key={a.action} className="flex items-center gap-3">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-0.5">
-                        <span className={`text-sm font-mono ${isDangerous ? "text-red-400 font-medium" : "text-foreground"}`}>{a.action}</span>
+                        <span className={`text-sm font-mono ${isDangerous ? "text-destructive font-medium" : "text-foreground"}`}>{a.action}</span>
                         <span className="text-xs text-muted-foreground">{a.count}</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${isDangerous ? "bg-red-500/60" : "bg-amber-500/60"}`} style={{ width: `${pct}%` }} />
+                        <div className={`h-full rounded-full transition-all ${isDangerous ? "bg-destructive/60" : "bg-tone-honey-bg"}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   </div>
@@ -123,7 +123,7 @@ export default function AdminActivityPage() {
         {/* Entity Types */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-emerald-500" /> Entity Types (30d)
+            <BarChart3 className="h-5 w-5 text-tone-emerald-fg" /> Entity Types (30d)
           </h2>
           {(!entityTypes || entityTypes.length === 0) ? (
             <p className="text-sm text-muted-foreground text-center py-4">No data</p>
@@ -140,7 +140,7 @@ export default function AdminActivityPage() {
                         <span className="text-xs text-muted-foreground">{e.count}</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
-                        <div className="h-full rounded-full bg-emerald-500/60 transition-all" style={{ width: `${pct}%` }} />
+                        <div className="h-full rounded-full bg-tone-emerald-bg transition-all" style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   </div>
@@ -153,7 +153,7 @@ export default function AdminActivityPage() {
         {/* Daily Activity Chart */}
         <div className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-blue-500" /> Daily Admin Activity (30d)
+            <TrendingUp className="h-5 w-5 text-tone-sky-fg" /> Daily Admin Activity (30d)
           </h2>
           {(!dailyActivity || dailyActivity.length === 0) ? (
             <p className="text-sm text-muted-foreground text-center py-8">No data</p>
@@ -161,7 +161,7 @@ export default function AdminActivityPage() {
             <div className="flex items-end gap-[2px] h-32">
               {dailyActivity.map((d: any) => (
                 <div key={d.date} className="flex-1 flex flex-col items-center justify-end h-full group relative">
-                  <div className="w-full rounded-t bg-blue-500/60 hover:bg-blue-500 transition-all min-h-[2px]"
+                  <div className="w-full rounded-t bg-tone-sky-bg hover:bg-tone-sky-fg transition-all min-h-[2px]"
                     style={{ height: `${Math.max((d.count / maxDaily) * 100, 2)}%` }} />
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-card border border-border rounded px-2 py-1 text-[10px] text-foreground whitespace-nowrap shadow-lg z-10">
                     {d.date}: {d.count} actions
@@ -175,17 +175,17 @@ export default function AdminActivityPage() {
 
       {/* Critical Actions */}
       {criticalActions && criticalActions.length > 0 && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-6">
           <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" /> Critical Actions (30d)
+            <AlertTriangle className="h-5 w-5 text-destructive" /> Critical Actions (30d)
           </h2>
           <div className="space-y-2">
             {criticalActions.map((c: any) => (
               <div key={c.id} className="flex items-center justify-between rounded-lg bg-card/80 p-3 border border-border">
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-500">{c.action}</span>
+                  <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">{c.action}</span>
                   <div>
-                    <p className="text-sm text-foreground">{c.entityType} · {c.entityId}</p>
+                    <p className="text-sm text-foreground">{c.entityType} Â· {c.entityId}</p>
                     {c.admin && <p className="text-[10px] text-muted-foreground">{c.admin.firstName} {c.admin.lastName}</p>}
                   </div>
                 </div>

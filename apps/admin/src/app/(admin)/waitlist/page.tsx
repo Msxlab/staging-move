@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { type ComponentType, useEffect, useMemo, useState } from "react";
@@ -45,16 +45,16 @@ const TARGET_META: Record<
     color: string;
   }
 > = {
-  MOBILE_IOS: { label: "iOS beta", icon: Smartphone, color: "text-blue-500" },
+  MOBILE_IOS: { label: "iOS beta", icon: Smartphone, color: "text-tone-sky-fg" },
   MOBILE_ANDROID: {
     label: "Android beta",
     icon: Smartphone,
-    color: "text-green-500",
+    color: "text-tone-sage-fg",
   },
-  MOBILE_ANY: { label: "Mobile (any)", icon: Smartphone, color: "text-sky-500" },
-  PLAN_FAMILY: { label: "Legacy plan interest", icon: Users, color: "text-rose-500" },
-  PLAN_PRO: { label: "Legacy plan interest", icon: Crown, color: "text-amber-500" },
-  API_ACCESS: { label: "Legacy integration interest", icon: Code2, color: "text-purple-500" },
+  MOBILE_ANY: { label: "Mobile (any)", icon: Smartphone, color: "text-tone-sky-fg" },
+  PLAN_FAMILY: { label: "Legacy plan interest", icon: Users, color: "text-destructive" },
+  PLAN_PRO: { label: "Legacy plan interest", icon: Crown, color: "text-tone-honey-fg" },
+  API_ACCESS: { label: "Legacy integration interest", icon: Code2, color: "text-tone-foil-fg" },
 };
 
 const TARGETS: Target[] = [
@@ -320,7 +320,7 @@ export default function WaitlistPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {signup.source || "—"}
+                      {signup.source || "â€”"}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {signup.userId ? (
@@ -331,7 +331,7 @@ export default function WaitlistPage() {
                           View user
                         </Link>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">â€”</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -340,7 +340,7 @@ export default function WaitlistPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
                         {signup.notifiedAt ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-green-500">
+                          <span className="inline-flex items-center gap-1 text-xs text-tone-sage-fg">
                             <Bell className="h-3 w-3" /> Notified
                           </span>
                         ) : (
@@ -349,14 +349,14 @@ export default function WaitlistPage() {
                           </span>
                         )}
                         {signup.convertedAt ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-blue-500">
+                          <span className="inline-flex items-center gap-1 text-xs text-tone-sky-fg">
                             <Check className="h-3 w-3" /> Converted
                           </span>
                         ) : null}
                       </div>
                     </td>
                     <td className="max-w-xs px-4 py-3 text-xs text-muted-foreground">
-                      <div className="truncate">{signup.note || "—"}</div>
+                      <div className="truncate">{signup.note || "â€”"}</div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">

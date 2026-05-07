@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Activity, CheckCircle2, AlertTriangle, XCircle, HelpCircle, RefreshCw } from "lucide-react";
@@ -18,9 +18,9 @@ interface HealthResponse {
 }
 
 const STATUS_STYLE: Record<HealthCheck["status"], { bg: string; text: string; icon: typeof CheckCircle2 }> = {
-  healthy: { bg: "bg-green-500/10", text: "text-green-500", icon: CheckCircle2 },
-  degraded: { bg: "bg-amber-500/10", text: "text-amber-500", icon: AlertTriangle },
-  down: { bg: "bg-red-500/10", text: "text-red-500", icon: XCircle },
+  healthy: { bg: "bg-tone-sage-bg", text: "text-tone-sage-fg", icon: CheckCircle2 },
+  degraded: { bg: "bg-tone-honey-bg", text: "text-tone-honey-fg", icon: AlertTriangle },
+  down: { bg: "bg-destructive/10", text: "text-destructive", icon: XCircle },
   unknown: { bg: "bg-muted", text: "text-muted-foreground", icon: HelpCircle },
 };
 

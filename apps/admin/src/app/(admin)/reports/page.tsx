@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import {
@@ -174,7 +174,7 @@ export default function ReportsPage() {
             }}
             className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
           />
-          <span className="text-muted-foreground">—</span>
+          <span className="text-muted-foreground">â€”</span>
           <input
             type="date"
             value={endDate}
@@ -218,7 +218,7 @@ export default function ReportsPage() {
                     </span>
                     {m.change !== 0 && (
                       <span
-                        className={`flex items-center gap-0.5 text-xs font-medium ${m.change > 0 ? "text-green-500" : "text-red-500"}`}
+                        className={`flex items-center gap-0.5 text-xs font-medium ${m.change > 0 ? "text-tone-sage-fg" : "text-destructive"}`}
                       >
                         {m.change > 0 ? (
                           <TrendingUp className="h-3 w-3" />
@@ -254,7 +254,7 @@ export default function ReportsPage() {
                           {date}: {count}
                         </div>
                         <div
-                          className="w-full bg-blue-500/60 rounded-t hover:bg-blue-500"
+                          className="w-full bg-tone-sky-bg rounded-t hover:bg-tone-sky-fg"
                           style={{
                             height: `${(count / max) * 100}%`,
                             minHeight: "2px",
@@ -277,13 +277,13 @@ export default function ReportsPage() {
                 ) : (
                   data.movingByStatus.map((m) => {
                     const colors: Record<string, string> = {
-                      PLANNING: "bg-blue-500", IN_PROGRESS: "bg-amber-500",
-                      COMPLETED: "bg-green-500", CANCELED: "bg-red-500",
+                      PLANNING: "bg-tone-sky-fg", IN_PROGRESS: "bg-tone-honey-fg",
+                      COMPLETED: "bg-tone-sage-fg", CANCELED: "bg-destructive",
                     };
                     const total = data.movingByStatus.reduce((s, x) => s + x.count, 0) || 1;
                     return (
                       <div key={m.status} className="flex items-center gap-2">
-                        <div className={`h-2 w-2 rounded-full ${colors[m.status] || "bg-gray-500"}`} />
+                        <div className={`h-2 w-2 rounded-full ${colors[m.status] || "bg-tone-slate-fg"}`} />
                         <span className="text-sm text-foreground flex-1">{m.status}</span>
                         <span className="text-sm font-medium text-foreground">{m.count}</span>
                         <span className="text-xs text-muted-foreground w-10 text-right">
@@ -335,7 +335,7 @@ export default function ReportsPage() {
                       </div>
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                         <div
-                          className="h-full bg-cyan-500 rounded-full"
+                          className="h-full bg-tone-cyan-fg rounded-full"
                           style={{ width: `${(s.count / max) * 100}%` }}
                         />
                       </div>

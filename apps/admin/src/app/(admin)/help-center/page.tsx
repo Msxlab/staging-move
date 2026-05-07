@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { HelpCircle, Plus, Trash2, Edit2, Eye, EyeOff, MessageCircle, FileText, X } from "lucide-react";
@@ -64,9 +64,9 @@ export default function HelpCenterPage() {
 
       <div className="grid grid-cols-4 gap-4">
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Articles</p><p className="mt-1 text-2xl font-bold text-foreground">{articles.length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Published</p><p className="mt-1 text-2xl font-bold text-green-500">{articles.filter(a => a.isPublished).length}</p></div>
+        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Published</p><p className="mt-1 text-2xl font-bold text-tone-sage-fg">{articles.filter(a => a.isPublished).length}</p></div>
         <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">FAQs</p><p className="mt-1 text-2xl font-bold text-foreground">{faqs.length}</p></div>
-        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Total Views</p><p className="mt-1 text-2xl font-bold text-blue-500">{articles.reduce((s, a) => s + a.viewCount, 0)}</p></div>
+        <div className="rounded-xl border border-border bg-card p-5"><p className="text-sm text-muted-foreground">Total Views</p><p className="mt-1 text-2xl font-bold text-tone-sky-fg">{articles.reduce((s, a) => s + a.viewCount, 0)}</p></div>
       </div>
 
       <div className="flex gap-2 border-b border-border">
@@ -118,8 +118,8 @@ export default function HelpCenterPage() {
                   <td className="px-4 py-3"><p className="font-medium text-foreground">{a.title}</p><p className="text-xs text-muted-foreground">{a.slug}</p></td>
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{a.category}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{a.viewCount}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{a.helpfulYes} 👍 {a.helpfulNo} 👎</td>
-                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.isPublished ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>{a.isPublished ? "Published" : "Draft"}</span></td>
+                  <td className="px-4 py-3 text-muted-foreground">{a.helpfulYes} ðŸ‘ {a.helpfulNo} ðŸ‘Ž</td>
+                  <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.isPublished ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{a.isPublished ? "Published" : "Draft"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => togglePublish(a, "article")} className="rounded p-1 text-muted-foreground hover:bg-accent">{a.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
                     <button onClick={() => editArticle(a)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Edit2 className="h-4 w-4" /></button>
@@ -140,7 +140,7 @@ export default function HelpCenterPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{f.category}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.isPublished ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500"}`}>{f.isPublished ? "Published" : "Draft"}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${f.isPublished ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{f.isPublished ? "Published" : "Draft"}</span>
                   </div>
                   <p className="font-medium text-foreground">{f.question}</p>
                   <p className="text-sm text-muted-foreground mt-1">{f.answer}</p>
