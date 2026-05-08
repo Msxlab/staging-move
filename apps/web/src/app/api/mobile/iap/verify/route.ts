@@ -119,6 +119,9 @@ export async function POST(request: NextRequest) {
       if (err?.message === "IAP_TXN_OWNED_BY_ANOTHER_USER") {
         return NextResponse.json({ error: "RECEIPT_OWNED_BY_ANOTHER_ACCOUNT" }, { status: 409 });
       }
+      if (err?.message === "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE") {
+        return NextResponse.json({ error: "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE" }, { status: 409 });
+      }
       throw err;
     }
 
@@ -140,6 +143,9 @@ export async function POST(request: NextRequest) {
     }
     if (error?.message === "APPLE_API_CREDS_MISSING" || error?.message === "GOOGLE_API_CREDS_MISSING") {
       return NextResponse.json({ error: "IAP_NOT_CONFIGURED" }, { status: 503 });
+    }
+    if (error?.message === "APPLE_JWS_BUNDLE_MISMATCH") {
+      return NextResponse.json({ error: "INVALID_RECEIPT" }, { status: 400 });
     }
     if (typeof error?.message === "string" && error.message.startsWith("GOOGLE_ACK_")) {
       return NextResponse.json({ error: "IAP_ACKNOWLEDGEMENT_FAILED" }, { status: 503 });

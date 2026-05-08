@@ -1,17 +1,18 @@
 # LocateFlow Play Billing Internal Testing Report
 
-Date: 2026-05-07
+Date: 2026-05-08
 
 ## Readiness Decision
 
-Code readiness after this pass: conditionally ready for Android Play Billing internal testing.
+Code readiness after this pass: ready for Android Play Billing internal testing after Play Console/runtime configuration is completed.
 
 Conditionally ready means:
 
 - The source now handles Android subscription offer tokens.
 - Backend verification and acknowledgement behavior are safer.
 - Billing permission is intentionally present.
-- Purchase UI must stay disabled until Play Console and runtime config are completed.
+- Production EAS store builds now compile mobile store purchase support on.
+- If runtime product IDs are missing, the mobile UI still fails closed and shows no broken purchase flow.
 
 ## Android Billing Permission
 
@@ -66,14 +67,30 @@ Remaining backend/manual dependencies:
 
 Current source state:
 
-- `EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED=false` in EAS profiles.
+- Development/preview/staging-preview keep mobile store purchases disabled.
+- Production EAS store builds set:
+  - `EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED=true`
+  - `EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED=true`
+  - `EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED=true`
 
 Recommendation:
 
-- Keep false until manual Play setup is complete.
-- After Play products/runtime config are ready, enable true for Android internal test store builds only.
+- Build Play Internal Testing and TestFlight/store builds from the production profile after runtime product IDs and store products are configured.
 - Do not use Stripe checkout or portal inside mobile.
-- Do not enable Apple IAP as part of this Android-only task.
+- Do not use Apple Pay for digital subscription unlocks. iOS uses StoreKit/IAP.
+
+## Cross-Platform Subscription Guards
+
+This pass also hardens mixed-source entitlement behavior:
+
+- Mobile manage-subscription links are platform-aware.
+- An iOS App Store subscription is not sent to Google Play management on Android.
+- A Google Play subscription is not sent to App Store management on iOS.
+- Stripe subscriptions remain usable on mobile but mobile does not expose Stripe checkout or portal.
+- Backend IAP verification rejects new store purchases when the user already has an active subscription managed by another provider.
+- Web Stripe checkout rejects active App Store / Google Play subscribers to avoid duplicate billing.
+- Expired Stripe users can move to store billing; stale Stripe fields are cleared when the store subscription is attached.
+- Apple and Google canceled-but-not-expired subscriptions remain entitled through the paid period using `CANCEL_AT_PERIOD_END`.
 
 ## Required Runtime Values
 
@@ -87,6 +104,16 @@ Use these exact keys. Do not print or commit secret values.
 - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL`
 - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY` if yearly is supported
 
+For iOS StoreKit:
+
+- `APPLE_BUNDLE_ID=com.locateflow.mobile`
+- `APPLE_APP_STORE_ISSUER_ID`
+- `APPLE_APP_STORE_KEY_ID`
+- `APPLE_APP_STORE_PRIVATE_KEY`
+- `APPLE_APP_STORE_ENVIRONMENT`
+- `MOBILE_IOS_PRODUCT_INDIVIDUAL`
+- `MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY` if yearly is supported
+
 ## New AAB Requirement
 
 A new AAB is required because Android manifest permissions are binary-level metadata.
@@ -96,4 +123,3 @@ The next AAB should:
 - Keep `com.android.vending.BILLING`.
 - Remove/block `CAMERA`.
 - Remove/block legacy external storage permissions.
-

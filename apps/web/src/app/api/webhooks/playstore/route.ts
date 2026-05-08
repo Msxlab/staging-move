@@ -205,6 +205,17 @@ export async function POST(request: NextRequest) {
 
     // ── 4. Validate package name matches our app (defense in depth). ──
     const expectedPackage = await getRuntimeConfigValue("GOOGLE_PLAY_PACKAGE_NAME");
+    if (isProductionLikeRuntime() && !expectedPackage) {
+      emitPlaystoreFailure("missing_expected_package", { messageId });
+      captureMessage(
+        "[PLAYSTORE WEBHOOK] GOOGLE_PLAY_PACKAGE_NAME unset in production-like runtime; rejecting RTDN",
+        "error",
+      );
+      return NextResponse.json(
+        { error: "Google Play package name is not configured" },
+        { status: 503 },
+      );
+    }
     if (expectedPackage && rtdn.packageName && rtdn.packageName !== expectedPackage) {
       emitPlaystoreFailure("package_mismatch", { messageId });
       captureMessage(

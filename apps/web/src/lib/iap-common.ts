@@ -52,6 +52,15 @@ export interface MobilePlanResolution {
 }
 
 const IAP_ACTIVE_STATUSES = new Set<SubscriptionStatus>(["ACTIVE", "TRIALING"]);
+const IAP_PURCHASE_BLOCKING_STATUSES = new Set<SubscriptionStatus>([
+  "ACTIVE",
+  "TRIALING",
+  "CANCEL_AT_PERIOD_END",
+  "GRACE_PERIOD",
+  "PAST_DUE",
+  "PENDING_VALIDATION",
+]);
+const IAP_MANAGED_PROVIDERS = new Set(["STRIPE", "APP_STORE", "PLAY_STORE"]);
 const IAP_CANCELED_STATUSES = new Set<SubscriptionStatus>([
   "CANCEL_AT_PERIOD_END",
   "TRIAL_CANCELED",
@@ -254,8 +263,11 @@ export async function normalizeAppleResult(
     // Clock skew or stale API response — downgrade defensively.
     status = "EXPIRED";
   }
+  if (status === "ACTIVE" && result.renewal?.autoRenewStatus === 0 && expiresAt && expiresAt.getTime() > now) {
+    status = "CANCEL_AT_PERIOD_END";
+  }
   if (result.transaction.revocationDate) {
-    status = "CANCELED";
+    status = "REFUNDED";
   }
 
   return {
@@ -342,8 +354,27 @@ export async function applyIapStateToUser(opts: {
 
   const existingByUser = await prisma.subscription.findUnique({
     where: { userId },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      provider: true,
+      accessType: true,
+      originalTransactionId: true,
+      purchaseToken: true,
+      stripeSubscriptionId: true,
+    },
   });
+
+  const existingProvider = existingByUser?.provider || null;
+  const existingStatus = existingByUser?.status as SubscriptionStatus | null | undefined;
+  const existingBlocksNewPurchase =
+    Boolean(existingByUser) &&
+    existingByUser?.accessType !== "FREE_ACCESS" &&
+    IAP_MANAGED_PROVIDERS.has(String(existingProvider)) &&
+    Boolean(existingStatus && IAP_PURCHASE_BLOCKING_STATUSES.has(existingStatus));
+  if (existingBlocksNewPurchase && existingProvider !== state.provider) {
+    throw new Error("ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE");
+  }
 
   const now = new Date();
   // accessType is "PAID" once a real store transaction has cleared. Trial and
@@ -358,6 +389,10 @@ export async function applyIapStateToUser(opts: {
     accessType: state.status === "TRIALING" ? "FREE_TRIAL" : "PAID",
     billingInterval: state.billingInterval,
     billingProductId: state.productId,
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
+    stripePriceId: null,
+    stripeCurrentPeriodEnd: null,
     originalTransactionId: state.originalTransactionId,
     latestTransactionId: state.latestTransactionId,
     purchaseToken: state.purchaseToken,
@@ -365,6 +400,9 @@ export async function applyIapStateToUser(opts: {
     trialEndsAt: state.status === "TRIALING" ? state.expiresAt : null,
     gracePeriodEndsAt: state.gracePeriodEndsAt,
     appStoreEnvironment: state.environment,
+    cancelAtPeriodEnd: state.status === "CANCEL_AT_PERIOD_END",
+    autoRenew: !IAP_CANCELED_STATUSES.has(state.status),
+    canceledAt: IAP_CANCELED_STATUSES.has(state.status) ? now : null,
     lastValidatedAt: now,
     lastSyncedAt: now,
   } as const;

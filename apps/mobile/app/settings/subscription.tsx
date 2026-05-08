@@ -23,7 +23,7 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
-import { MOBILE_STORE_PURCHASES_ENABLED } from "@/lib/billing-flags";
+import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import {
   closeConnection,
@@ -96,6 +96,15 @@ type IapProductsResponse = {
 };
 
 type Cycle = "monthly" | "yearly";
+
+const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
+  "ACTIVE",
+  "TRIALING",
+  "CANCEL_AT_PERIOD_END",
+  "GRACE_PERIOD",
+  "PAST_DUE",
+  "PENDING_VALIDATION",
+]);
 
 function resolveSkuFromResponse(
   iapProducts: IapProductsResponse | null,
@@ -189,7 +198,7 @@ function LegacySubscriptionScreen() {
   }, []);
 
   const fetchIapProducts = useCallback(async () => {
-    if (!MOBILE_STORE_PURCHASES_ENABLED || (Platform.OS !== "ios" && Platform.OS !== "android")) {
+    if (!isMobileStorePurchasesEnabledForPlatform() || (Platform.OS !== "ios" && Platform.OS !== "android")) {
       setIapProducts(null);
       return;
     }
@@ -209,7 +218,7 @@ function LegacySubscriptionScreen() {
   const yearlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "yearly"), [iapProducts]);
   const iapAvailable = Boolean(monthlySku || yearlySku);
   const isNativeStorePlatform = Platform.OS === "ios" || Platform.OS === "android";
-  const mobileStorePurchasesEnabled = MOBILE_STORE_PURCHASES_ENABLED;
+  const mobileStorePurchasesEnabled = isMobileStorePurchasesEnabledForPlatform();
   const canUseNativePurchases = isNativeStorePlatform && mobileStorePurchasesEnabled && iapAvailable;
 
   // Pull localized prices for both SKUs in a single fetchProducts call so
@@ -272,9 +281,31 @@ function LegacySubscriptionScreen() {
   const trialEndLabel = formatDateLabel(subscription?.trialEndsAt);
   const isStoreManaged = currentProvider === "APP_STORE" || currentProvider === "PLAY_STORE";
   const isStripeManaged = currentProvider === "STRIPE" || Boolean(subscription?.stripeCustomerId);
+  const currentPlatformStoreProvider =
+    Platform.OS === "ios" ? "APP_STORE" : Platform.OS === "android" ? "PLAY_STORE" : null;
+  const isCurrentPlatformStoreManaged =
+    Boolean(currentPlatformStoreProvider) && currentProvider === currentPlatformStoreProvider;
+  const isOtherPlatformStoreManaged = isStoreManaged && !isCurrentPlatformStoreManaged;
+  const managedSubscriptionBlocksPurchase =
+    currentPlanKey === "INDIVIDUAL" &&
+    MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(currentStatus) &&
+    (isStripeManaged || isOtherPlatformStoreManaged);
+  const canStartNativePurchase = canUseNativePurchases && !managedSubscriptionBlocksPurchase;
   const canManageBilling =
-    (isStoreManaged && canUseNativePurchases) ||
+    (isCurrentPlatformStoreManaged && canUseNativePurchases) ||
     (!isNativeStorePlatform && Boolean(subscription?.stripeCustomerId) && !isStoreManaged);
+
+  const managedElsewhereMessage = isStripeManaged
+    ? t("settings.subscription_webManagedReadOnly")
+    : currentProvider === "APP_STORE"
+      ? t("settings.subscription_appStoreManagedReadOnly", {
+          defaultValue: "Your subscription is managed in the App Store. You can continue using your account here.",
+        })
+      : currentProvider === "PLAY_STORE"
+        ? t("settings.subscription_playStoreManagedReadOnly", {
+            defaultValue: "Your subscription is managed in Google Play. You can continue using your account here.",
+          })
+        : t("settings.subscription_mobilePurchasesUnavailable");
 
   const getLocalizedIapError = useCallback((message?: string) => {
     if (message === IAP_PURCHASE_FAILED_MESSAGE) return t("settings.subscription_purchaseFailed");
@@ -283,6 +314,11 @@ function LegacySubscriptionScreen() {
     if (message === IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE) {
       return t("settings.subscription_androidOfferMissing", {
         defaultValue: "Google Play subscription offer is not configured. Please try again later.",
+      });
+    }
+    if (message === "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE") {
+      return t("settings.subscription_activeManagedElsewhere", {
+        defaultValue: "This account already has an active subscription managed elsewhere. You can continue using LocateFlow here.",
       });
     }
     return message || t("toast.networkError");
@@ -297,10 +333,15 @@ function LegacySubscriptionScreen() {
     const processingKey = `${planKey}_${cycle}`;
     setProcessingPlan(processingKey);
 
-    if (!canUseNativePurchases) {
+    if (!canStartNativePurchase) {
       setProcessingPlan(null);
       hapticError();
-      Alert.alert(t("settings.subscription_billingUnavailable"), t("settings.subscription_mobilePurchasesUnavailable"));
+      Alert.alert(
+        t("settings.subscription_billingUnavailable"),
+        managedSubscriptionBlocksPurchase
+          ? managedElsewhereMessage
+          : t("settings.subscription_mobilePurchasesUnavailable"),
+      );
       return;
     }
 
@@ -369,7 +410,9 @@ function LegacySubscriptionScreen() {
     hapticError();
     Alert.alert(t("settings.subscription_billingUnavailable"), t("settings.subscription_storeUnavailable"));
   }, [
-    canUseNativePurchases,
+    canStartNativePurchase,
+    managedSubscriptionBlocksPurchase,
+    managedElsewhereMessage,
     monthlySku,
     yearlySku,
     monthlyOfferToken,
@@ -387,7 +430,7 @@ function LegacySubscriptionScreen() {
     setProcessingPlan("MANAGE");
 
     // Store-managed subscriptions: send the user to the native management page.
-    if (isStoreManaged && canUseNativePurchases) {
+    if (isCurrentPlatformStoreManaged && canUseNativePurchases) {
       setProcessingPlan(null);
       await openNativeSubscriptionSettings(
         subscription?.billingProductId || monthlySku || yearlySku || undefined,
@@ -399,14 +442,16 @@ function LegacySubscriptionScreen() {
     hapticError();
     Alert.alert(
       t("settings.subscription_billingUnavailable"),
-      isStripeManaged
-        ? t("settings.subscription_webManagedReadOnly")
+      isStripeManaged || isOtherPlatformStoreManaged
+        ? managedElsewhereMessage
         : t("settings.subscription_mobilePurchasesUnavailable"),
     );
   }, [
     canUseNativePurchases,
-    isStoreManaged,
+    isCurrentPlatformStoreManaged,
+    isOtherPlatformStoreManaged,
     isStripeManaged,
+    managedElsewhereMessage,
     subscription?.billingProductId,
     monthlySku,
     yearlySku,
@@ -414,7 +459,7 @@ function LegacySubscriptionScreen() {
   ]);
 
   const handleRestore = useCallback(async () => {
-    if (!canUseNativePurchases) return;
+    if (!canUseNativePurchases || managedSubscriptionBlocksPurchase) return;
     setProcessingPlan("RESTORE");
     const results = await restorePurchases();
     setProcessingPlan(null);
@@ -427,7 +472,7 @@ function LegacySubscriptionScreen() {
       hapticError();
       Alert.alert(t("settings.subscription_nothingToRestore"), t("settings.subscription_nothingToRestoreDescription"));
     }
-  }, [canUseNativePurchases, fetchSubscription, t]);
+  }, [canUseNativePurchases, managedSubscriptionBlocksPurchase, fetchSubscription, t]);
 
   if (loading) {
     return (
@@ -488,11 +533,11 @@ function LegacySubscriptionScreen() {
           />
         </View>
 
-        {isNativeStorePlatform && (isStripeManaged || !canUseNativePurchases) && (
+        {isNativeStorePlatform && (isStripeManaged || isOtherPlatformStoreManaged || !canUseNativePurchases) && (
           <View style={styles.mobileBillingNotice}>
             <Text style={styles.mobileBillingNoticeText}>
-              {isStripeManaged
-                ? t("settings.subscription_webManagedReadOnly")
+              {isStripeManaged || isOtherPlatformStoreManaged
+                ? managedElsewhereMessage
                 : t("settings.subscription_mobilePurchasesUnavailable")}
             </Text>
           </View>
@@ -514,7 +559,7 @@ function LegacySubscriptionScreen() {
           const showSplitCtas =
             plan.key === "INDIVIDUAL" &&
             plan.key !== currentPlanKey &&
-            canUseNativePurchases &&
+            canStartNativePurchase &&
             Boolean(yearlySku) &&
             Boolean(monthlySku);
           const monthlyDisplayPrice =
@@ -589,10 +634,12 @@ function LegacySubscriptionScreen() {
               <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yTrial")} accessibilityState={{ disabled: true }}>
                 <Text style={styles.currentBtnText}>{t("pricing.cta_trial")}</Text>
               </TouchableOpacity>
-            ) : isNativeStorePlatform && !canUseNativePurchases ? (
+            ) : isNativeStorePlatform && !canStartNativePurchase ? (
               <View style={styles.disabledPurchaseNotice}>
                 <Text style={styles.disabledPurchaseText}>
-                  {t("settings.subscription_mobilePurchasesUnavailable")}
+                  {managedSubscriptionBlocksPurchase
+                    ? managedElsewhereMessage
+                    : t("settings.subscription_mobilePurchasesUnavailable")}
                 </Text>
               </View>
             ) : showSplitCtas ? (
@@ -687,7 +734,7 @@ function LegacySubscriptionScreen() {
           </Card>
           );
         })}
-        {canUseNativePurchases && (
+        {canUseNativePurchases && !managedSubscriptionBlocksPurchase && (
           <TouchableOpacity
             style={styles.restoreBtn}
             activeOpacity={0.7}
@@ -707,7 +754,9 @@ function LegacySubscriptionScreen() {
         )}
 
         <Text style={styles.footer}>
-          {isNativeStorePlatform && !canUseNativePurchases
+          {isNativeStorePlatform && managedSubscriptionBlocksPurchase
+            ? managedElsewhereMessage
+            : isNativeStorePlatform && !canUseNativePurchases
             ? t("settings.subscription_mobilePurchasesUnavailable")
             : t("settings.subscription_manage")}
         </Text>

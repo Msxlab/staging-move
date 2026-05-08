@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   sendIapCancellationNotice: vi.fn(),
   captureException: vi.fn(),
   captureMessage: vi.fn(),
+  getRuntimeConfigValue: vi.fn(),
   emitSecurityEvent: vi.fn(),
   prisma: {
     processedWebhookEvent: {
@@ -24,6 +25,9 @@ vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
 vi.mock("@/lib/sentry", () => ({
   captureException: mocks.captureException,
   captureMessage: mocks.captureMessage,
+}));
+vi.mock("@/lib/runtime-config", () => ({
+  getRuntimeConfigValue: mocks.getRuntimeConfigValue,
 }));
 vi.mock("@/lib/iap-apple", () => ({
   verifyAppleJws: mocks.verifyAppleJws,
@@ -59,10 +63,11 @@ function mockNotification(notificationUUID = "apple-notification-1") {
       notificationUUID,
       notificationType: "DID_RENEW",
       signedDate: Date.now(),
-      data: { signedTransactionInfo: "transaction-jws" },
+      data: { bundleId: "com.locateflow.mobile", signedTransactionInfo: "transaction-jws" },
     })
     .mockReturnValueOnce({
       originalTransactionId: "apple-original-transaction",
+      bundleId: "com.locateflow.mobile",
     });
 }
 
@@ -71,6 +76,7 @@ describe("App Store webhook idempotency", () => {
     vi.clearAllMocks();
     processedMock.findUnique.mockResolvedValue(null);
     processedMock.create.mockResolvedValue({});
+    mocks.getRuntimeConfigValue.mockResolvedValue("com.locateflow.mobile");
     mocks.findUserByIapIdentifier.mockResolvedValue({ userId: "user-1" });
     mocks.refreshAppleSubscriptionFor.mockResolvedValue({ provider: "APP_STORE", status: "ACTIVE" });
     mocks.applyIapStateToUser.mockResolvedValue({});
@@ -84,7 +90,7 @@ describe("App Store webhook idempotency", () => {
       notificationUUID: "apple-notification-1",
       notificationType: "DID_RENEW",
       signedDate: Date.now(),
-      data: { signedTransactionInfo: "transaction-jws" },
+      data: { bundleId: "com.locateflow.mobile", signedTransactionInfo: "transaction-jws" },
     });
 
     const second = await POST(request());
@@ -129,6 +135,29 @@ describe("App Store webhook idempotency", () => {
         tokenLength: "outer-jws".length,
       }),
     }));
+    expect(processedMock.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects App Store notifications for the wrong bundle id", async () => {
+    mocks.verifyAppleJws.mockReturnValueOnce({
+      notificationUUID: "apple-notification-bad-bundle",
+      notificationType: "DID_RENEW",
+      signedDate: Date.now(),
+      data: { bundleId: "com.attacker.app", signedTransactionInfo: "transaction-jws" },
+    });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "Invalid bundle" });
+    expect(mocks.emitSecurityEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: "WEBHOOK_SIG_FAILURE",
+      context: expect.objectContaining({
+        provider: "appstore",
+        reason: "bundle_mismatch",
+      }),
+    }));
+    expect(mocks.applyIapStateToUser).not.toHaveBeenCalled();
     expect(processedMock.create).not.toHaveBeenCalled();
   });
 });

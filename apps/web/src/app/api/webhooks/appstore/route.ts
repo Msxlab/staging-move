@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { captureException, captureMessage } from "@/lib/sentry";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
 import {
   verifyAppleJws,
@@ -40,6 +41,20 @@ export const dynamic = "force-dynamic";
 // bytes; re-introduce a per-route ceiling so a hostile client can't
 // stream MB-scale junk hoping verifyAppleJws gives up.
 const APPSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
+
+function emitAppstoreFailure(reason: string, context: Record<string, unknown> = {}) {
+  emitSecurityEvent({
+    type: "WEBHOOK_SIG_FAILURE",
+    severity: "warn",
+    group: "webhook",
+    context: {
+      provider: "appstore",
+      reason,
+      environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+      ...context,
+    },
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,6 +89,12 @@ export async function POST(request: NextRequest) {
 
     if (!outer?.notificationUUID) {
       return NextResponse.json({ error: "Missing notificationUUID" }, { status: 400 });
+    }
+
+    const expectedBundleId = await getRuntimeConfigValue("APPLE_BUNDLE_ID");
+    if (expectedBundleId && outer.data?.bundleId && outer.data.bundleId !== expectedBundleId) {
+      emitAppstoreFailure("bundle_mismatch", { correlationId: outer.notificationUUID });
+      return NextResponse.json({ error: "Invalid bundle" }, { status: 400 });
     }
 
     // Replay protection — reject payloads older than 72h.
@@ -124,6 +145,11 @@ export async function POST(request: NextRequest) {
         },
       });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+
+    if (expectedBundleId && innerTransaction?.bundleId && innerTransaction.bundleId !== expectedBundleId) {
+      emitAppstoreFailure("inner_bundle_mismatch", { correlationId: outer.notificationUUID });
+      return NextResponse.json({ error: "Invalid bundle" }, { status: 400 });
     }
 
     const originalTransactionId =

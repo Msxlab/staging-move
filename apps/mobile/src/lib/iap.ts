@@ -14,7 +14,7 @@
 
 import { Platform } from "react-native";
 import { api } from "@/lib/api";
-import { MOBILE_STORE_PURCHASES_ENABLED } from "@/lib/billing-flags";
+import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
 import { captureException } from "@/lib/sentry";
 import {
   buildSubscriptionPurchaseRequest,
@@ -94,7 +94,7 @@ export async function closeConnection() {
 }
 
 export async function fetchSubscriptionProducts(skus: string[]): Promise<SubscriptionProduct[]> {
-  if (!MOBILE_STORE_PURCHASES_ENABLED) return [];
+  if (!isMobileStorePurchasesEnabledForPlatform()) return [];
   if (skus.length === 0) return [];
   const ok = await ensureConnection();
   if (!ok) return [];
@@ -134,7 +134,7 @@ export async function purchaseSubscription(opts: {
   productId: string;
   offerToken?: string | null;
 }): Promise<PurchaseResult> {
-  if (!MOBILE_STORE_PURCHASES_ENABLED) {
+  if (!isMobileStorePurchasesEnabledForPlatform()) {
     return { status: "error", message: IAP_STORE_UNAVAILABLE_MESSAGE };
   }
 
@@ -259,7 +259,7 @@ export async function purchaseSubscription(opts: {
  * to recover a subscription after reinstall.
  */
 export async function restorePurchases(): Promise<PurchaseResult[]> {
-  if (!MOBILE_STORE_PURCHASES_ENABLED) return [];
+  if (!isMobileStorePurchasesEnabledForPlatform()) return [];
 
   const ok = await ensureConnection();
   if (!ok) return [];
@@ -322,7 +322,7 @@ export async function restorePurchases(): Promise<PurchaseResult[]> {
 }
 
 export async function openNativeSubscriptionSettings(productId?: string) {
-  if (!MOBILE_STORE_PURCHASES_ENABLED) return;
+  if (!isMobileStorePurchasesEnabledForPlatform()) return;
 
   const IAP = getIapModule();
   if (!IAP) return;
