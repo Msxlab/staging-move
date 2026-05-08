@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Require password confirmation to set up MFA
-    const confirm = await requirePasswordConfirm(session, body.confirmPassword);
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, { operation: "admin_mfa_setup" });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }

@@ -46,12 +46,15 @@ vi.mock("@/lib/audit", () => ({
 import { prisma } from "@/lib/db";
 import { createUserSession, verifyPassword } from "@/lib/user-auth";
 import { createAuditLog } from "@/lib/audit";
+import { verifyBackupCode } from "@/lib/totp";
 import { POST } from "./route";
+import { POST as MOBILE_POST } from "../../mobile/auth/login/route";
 
 const userMock = prisma.user as unknown as { findFirst: Mock };
 const createAuditLogMock = createAuditLog as unknown as Mock;
 const createUserSessionMock = createUserSession as unknown as Mock;
 const verifyPasswordMock = verifyPassword as unknown as Mock;
+const verifyBackupCodeMock = verifyBackupCode as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("https://locateflow.com/api/auth/login", {
@@ -132,5 +135,79 @@ describe("login route", () => {
       }),
     );
     expect(JSON.stringify(createAuditLogMock.mock.calls)).not.toContain("Password-2026!");
+  });
+
+  it("does not expose the bearer token from the web login response", async () => {
+    userMock.findFirst.mockResolvedValue({
+      id: "user_1",
+      email: "user@example.com",
+      firstName: "User",
+      lastName: "Example",
+      imageUrl: null,
+      emailVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
+      passwordHash: "hash",
+      mfaEnabled: false,
+      mfaSecret: null,
+    });
+    verifyPasswordMock.mockResolvedValue(true);
+
+    const response = await POST(makeRequest({ email: "user@example.com", password: "Password-2026!" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.token).toBeUndefined();
+    expect(createUserSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ clientType: "web" }),
+    );
+  });
+
+  it("returns a bearer token from the mobile login endpoint", async () => {
+    userMock.findFirst.mockResolvedValue({
+      id: "user_1",
+      email: "user@example.com",
+      firstName: "User",
+      lastName: "Example",
+      imageUrl: null,
+      emailVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
+      passwordHash: "hash",
+      mfaEnabled: false,
+      mfaSecret: null,
+    });
+    verifyPasswordMock.mockResolvedValue(true);
+
+    const response = await MOBILE_POST(makeRequest({ email: "user@example.com", password: "Password-2026!" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.token).toBe("session-token");
+    expect(createUserSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({ clientType: "mobile" }),
+    );
+  });
+
+  it("handles corrupt backup-code JSON without returning a 500", async () => {
+    userMock.findFirst.mockResolvedValue({
+      id: "user_1",
+      email: "user@example.com",
+      firstName: "User",
+      lastName: "Example",
+      imageUrl: null,
+      emailVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
+      passwordHash: "hash",
+      mfaEnabled: true,
+      mfaSecret: "encrypted-secret",
+      mfaBackupCodes: "{not-json",
+    });
+    verifyPasswordMock.mockResolvedValue(true);
+    verifyBackupCodeMock.mockResolvedValue(-1);
+
+    const response = await POST(
+      makeRequest({ email: "user@example.com", password: "Password-2026!", backupCode: "backup-code" }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({ error: "Invalid MFA code." });
   });
 });

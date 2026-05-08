@@ -1,7 +1,7 @@
 ﻿import { getTranslations } from "next-intl/server";
 
 /**
- * Testimonial â€” the social proof + emotional landing.
+ * Testimonial — the social proof + emotional landing.
  * One large pull-quote describing the *feeling* after using the app.
  * Sits right before the pricing/CTA so the reader's last impression
  * before deciding is what someone like them said about the relief.

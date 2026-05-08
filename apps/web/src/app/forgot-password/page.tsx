@@ -21,7 +21,7 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email: email.trim() }),
       });
     } catch {
-      /* intentionally ignore â€” always show the generic success message */
+      /* intentionally ignore — always show the generic success message */
     }
     setSubmitted(true);
     setLoading(false);

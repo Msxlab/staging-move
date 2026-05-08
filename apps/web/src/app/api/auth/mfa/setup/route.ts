@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import QRCode from "qrcode";
 import { prisma } from "@/lib/db";
 import { requireDbUserId, verifyPassword } from "@/lib/user-auth";
 import { generateSecret, generateProvisioningURI, generateBackupCodes } from "@/lib/totp";
 import { encrypt } from "@/lib/shared-encryption";
-import { getRateLimitKey, rateLimit } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -21,15 +22,6 @@ const schema = z.object({
  * call /api/auth/mfa/confirm with a fresh TOTP code to complete setup.
  */
 export async function POST(request: NextRequest) {
-  const rl = await rateLimit(getRateLimitKey(request, "auth:mfa:setup"), {
-    limit: 5,
-    windowSeconds: 60,
-    failClosed: true,
-  });
-  if (!rl.success) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
-  }
-
   let userId: string;
   try {
     userId = await requireDbUserId();
@@ -37,13 +29,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRl = await rateLimit(`auth:mfa:setup:user:${userId}`, {
-    limit: 3,
-    windowSeconds: 60,
-    failClosed: true,
+  const rl = await enforceRateLimitPolicy(request, "mfa_verify", {
+    userId,
+    routeId: "mfa_setup",
   });
-  if (!userRl.success) {
-    return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
+  if (!rl.success) {
+    return NextResponse.json(
+      { code: rl.policy.userFacingErrorCode, error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
   }
 
   let body: unknown;
@@ -81,10 +75,16 @@ export async function POST(request: NextRequest) {
   });
 
   const uri = generateProvisioningURI(secret, user.email);
+  const qrDataUrl = await QRCode.toDataURL(uri, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 200,
+  });
 
   return NextResponse.json({
     success: true,
     provisioningUri: uri,
+    qrDataUrl,
     secret, // plaintext, shown once so the user can paste into an authenticator
     backupCodes: codes,
   });

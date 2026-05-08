@@ -303,7 +303,7 @@ export function ProviderDetailClient({
           {provider.tags.length > 0 && (
             <div>
               <p className="text-muted-foreground">Tags</p>
-              <p className="text-foreground/80 mt-0.5">{provider.tags.join(" Â· ")}</p>
+              <p className="text-foreground/80 mt-0.5">{provider.tags.join(" · ")}</p>
             </div>
           )}
           {provider.subCategory && (

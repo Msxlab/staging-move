@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
+import { buildLimiterHealth, probeLimiterReachable } from "@/lib/rate-limit-health";
 
 interface HealthCheck {
   name: string;
@@ -61,43 +62,42 @@ export async function GET(request: NextRequest) {
     }
 
     // ── Redis (Upstash) ─────────────────────────────────────
+    // Probe via the shared limiter-health helper so the URL/token never
+    // appear in the response or log line. The probe scrubs error
+    // messages of URLs/tokens before returning a `reason` code.
     const redisUrl = runtimeValues.UPSTASH_REDIS_REST_URL;
     const redisToken = runtimeValues.UPSTASH_REDIS_REST_TOKEN;
-    if (redisUrl && redisToken && !redisUrl.includes("REPLACE")) {
-      const redisStart = Date.now();
-      try {
-        const res = await fetch(`${redisUrl}/ping`, {
-          headers: { Authorization: `Bearer ${redisToken}` },
-          signal: AbortSignal.timeout(5000),
-        });
-        const redisLatency = Date.now() - redisStart;
-        const data = await res.json();
-        checks.push({
-          name: "Redis (Upstash)",
-          status:
-            data.result === "PONG"
-              ? redisLatency > 300
-                ? "degraded"
-                : "healthy"
-              : "degraded",
-          latencyMs: redisLatency,
-          details: data.result === "PONG" ? "Connected" : "Unexpected response",
-        });
-      } catch (err: any) {
-        checks.push({
-          name: "Redis (Upstash)",
-          status: "down",
-          latencyMs: Date.now() - redisStart,
-          details: err.message?.slice(0, 100),
-        });
-      }
-    } else {
+    const limiterProbe = await probeLimiterReachable({
+      url: redisUrl,
+      token: redisToken,
+    });
+    if (limiterProbe.reason === "NOT_CONFIGURED") {
       checks.push({
         name: "Redis (Upstash)",
         status: "unknown",
         details: "Not configured",
       });
+    } else if (limiterProbe.ok) {
+      const latency = limiterProbe.latencyMs ?? 0;
+      checks.push({
+        name: "Redis (Upstash)",
+        status: latency > 300 ? "degraded" : "healthy",
+        latencyMs: latency,
+        details: "Connected",
+      });
+    } else {
+      checks.push({
+        name: "Redis (Upstash)",
+        status: "down",
+        latencyMs: limiterProbe.latencyMs ?? undefined,
+        details: limiterProbe.reason ?? "Unreachable",
+      });
     }
+    const limiterHealth = buildLimiterHealth(
+      { url: redisUrl, token: redisToken },
+      limiterProbe.reason === "NOT_CONFIGURED" ? undefined : limiterProbe.ok,
+      limiterProbe.reason === "NOT_CONFIGURED" ? null : limiterProbe.reason,
+    );
 
     // ── Auth (JWT secret) ───────────────────────────────────
     const jwtSecret =
@@ -264,6 +264,10 @@ export async function GET(request: NextRequest) {
         activeAdminSessions,
         lastBackup,
       },
+      // Admin-only detailed view of the distributed limiter — safe to
+      // surface here behind admin auth. URL/token never appear; reason
+      // codes are scrubbed in `probeLimiterReachable`.
+      limiter: limiterHealth,
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV,
       version: "1.0.0",

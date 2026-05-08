@@ -400,7 +400,7 @@ export default function NeedsLogoPage() {
             <ImageOff className="h-6 w-6" /> Providers needing logos
           </h1>
           <p className="text-sm text-muted-foreground">
-            {loading ? "Loadingâ€¦" : `${total} active provider${total === 1 ? "" : "s"} with no logo`}
+            {loading ? "Loading…" : `${total} active provider${total === 1 ? "" : "s"} with no logo`}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -447,10 +447,10 @@ export default function NeedsLogoPage() {
         <div className="rounded border bg-card p-3">
           <div className="flex items-center justify-between text-sm mb-2">
             <span>
-              {bulkProgress.done} / {bulkProgress.total} processed â€”{" "}
+              {bulkProgress.done} / {bulkProgress.total} processed —{" "}
               <span className="text-tone-sage-fg">
                 {bulkProgress.ok} {autoAcceptGenerated ? "accepted" : "candidates"}
-              </span> Â·{" "}
+              </span> ·{" "}
               <span className="text-destructive">{bulkProgress.failed} failed</span>
             </span>
             <span className="text-xs text-muted-foreground">
@@ -524,7 +524,7 @@ export default function NeedsLogoPage() {
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {p.category}
-                    {p.scope === "STATE" ? " Â· STATE" : ""}
+                    {p.scope === "STATE" ? " · STATE" : ""}
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {p.website ? (
@@ -538,7 +538,7 @@ export default function NeedsLogoPage() {
                         {p.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
                       </a>
                     ) : (
-                      <span className="text-muted-foreground">â€”</span>
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs">
@@ -549,10 +549,10 @@ export default function NeedsLogoPage() {
                       <span className="inline-flex items-center gap-1 text-tone-sky-fg">
                         <Loader2 className="h-3 w-3 animate-spin" />
                         {status.action === "auto-fetch"
-                          ? "Fetchingâ€¦"
+                          ? "Fetching…"
                           : status.action === "review"
-                            ? "Reviewingâ€¦"
-                            : "Uploadingâ€¦"}
+                            ? "Reviewing…"
+                            : "Uploading…"}
                       </span>
                     )}
                     {status.kind === "candidate" && (
@@ -563,7 +563,7 @@ export default function NeedsLogoPage() {
                           className="h-6 w-6 rounded object-contain bg-card"
                         />
                         <span className="text-tone-honey-fg">
-                          Candidate Â· {status.candidate.source}
+                          Candidate · {status.candidate.source}
                         </span>
                       </span>
                     )}
@@ -580,7 +580,7 @@ export default function NeedsLogoPage() {
                     {status.kind === "error" && (
                       <span className="text-destructive" title={status.message}>
                         {status.message.length > 40
-                          ? status.message.slice(0, 40) + "â€¦"
+                          ? status.message.slice(0, 40) + "…"
                           : status.message}
                       </span>
                     )}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { getConfiguredAppUrl } from "@/lib/app-url";
 import { logger } from "@/lib/logger";
 
@@ -137,20 +137,23 @@ function isAutomationEnabled(): boolean {
 }
 
 async function handle(request: NextRequest): Promise<NextResponse<MonitorReport>> {
-  const xCronSecret = request.headers.get("x-cron-secret");
-  const authHeader = request.headers.get("authorization");
-  const effective = authHeader || (xCronSecret ? `Bearer ${xCronSecret}` : null);
-  if (!verifyInternalAuth(effective, "cron")) {
+  // Synthetic monitor is a read-only probe but is still a cron — guard it
+  // with a generous limit so external uptime checks (every minute or two)
+  // pass cleanly while a leaked secret can't be used to amplify outbound
+  // traffic into a hot loop.
+  const guard = await guardCronRequest(request, "synthetic-monitor", { limit: 60 });
+  if (!guard.ok) {
+    const isAuth = guard.response.status === 401;
     return NextResponse.json(
       {
         ok: false,
-        testRunId: "unauthorized",
+        testRunId: isAuth ? "unauthorized" : "rate-limited",
         baseUrl: "",
         durationMs: 0,
         checks: [],
-        failures: ["unauthorized"],
+        failures: [isAuth ? "unauthorized" : "rate-limited"],
       },
-      { status: 401 },
+      { status: guard.response.status },
     );
   }
 

@@ -1,0 +1,339 @@
+﻿"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { EyeOff, KeyRound, RefreshCw, Save, ShieldAlert } from "lucide-react";
+
+type RuntimeConfigCatalogStatus =
+  | "Verified from ENV"
+  | "Verified from Runtime Config"
+  | "Missing"
+  | "Invalid"
+  | "Conflict"
+  | "Not required in this environment"
+  | "Build-time only"
+  | "Manual console action required";
+
+type RuntimeConfigCatalogEditable = "Yes" | "Restricted" | "No";
+
+type RuntimeConfigCatalogSource =
+  | "ENV"
+  | "Runtime Config"
+  | "ENV + Runtime Config"
+  | "Missing"
+  | "Default";
+
+interface RuntimeConfigCatalogItem {
+  key: string;
+  label: string;
+  description: string;
+  scope: string;
+  category: string;
+  isSecret: boolean;
+  requiredInProduction: boolean;
+  configured: boolean;
+  source: RuntimeConfigCatalogSource;
+  status: RuntimeConfigCatalogStatus;
+  editable: RuntimeConfigCatalogEditable;
+  maskedValue: string | null;
+  warning: string | null;
+  dbOverrideIgnored: boolean;
+  usedBy: string[];
+  validation: string | null;
+  notes: string[];
+  buildTimeOnly: boolean;
+  conflict: boolean;
+  updatedAt: string | null;
+  lastValidatedAt: string | null;
+  lastValidationStatus: string | null;
+}
+
+const STATUS_TONE: Record<RuntimeConfigCatalogStatus, "success" | "warning" | "danger" | "neutral"> = {
+  "Verified from ENV": "success",
+  "Verified from Runtime Config": "success",
+  "Missing": "danger",
+  "Invalid": "danger",
+  "Conflict": "warning",
+  "Not required in this environment": "neutral",
+  "Build-time only": "neutral",
+  "Manual console action required": "warning",
+};
+
+const EDITABLE_LABEL: Record<RuntimeConfigCatalogEditable, string> = {
+  Yes: "Editable",
+  Restricted: "Restricted",
+  No: "Deployment env only",
+};
+
+export default function RuntimeConfigClient() {
+  const [configs, setConfigs] = useState<RuntimeConfigCatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [form, setForm] = useState({ value: "", note: "", confirmPassword: "" });
+
+  const grouped = useMemo(() => {
+    return configs.reduce<Record<string, RuntimeConfigCatalogItem[]>>((acc, item) => {
+      const key = item.category;
+      acc[key] = acc[key] || [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+  }, [configs]);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/runtime-config");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load runtime config");
+      setConfigs(data.configs || []);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to load runtime config");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function save(key: string) {
+    setSavingKey(key);
+    try {
+      const res = await fetch("/api/runtime-config", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, ...form }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save config");
+      toast.success("Runtime config updated");
+      setEditingKey(null);
+      setForm({ value: "", note: "", confirmPassword: "" });
+      await load();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to save config");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  async function reset(key: string) {
+    const confirmAction = window.confirm("Reset this key to ENV fallback?");
+    if (!confirmAction) return;
+
+    if (!form.confirmPassword) {
+      toast.error("Password confirmation required");
+      return;
+    }
+
+    setSavingKey(key);
+    try {
+      const res = await fetch("/api/runtime-config", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key, confirmPassword: form.confirmPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to reset config");
+      toast.success("Runtime config reset to ENV fallback");
+      setEditingKey(null);
+      setForm({ value: "", note: "", confirmPassword: "" });
+      await load();
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to reset config");
+    } finally {
+      setSavingKey(null);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Runtime Config</h1>
+          <p className="mt-1 text-muted-foreground">Manage masked runtime settings with step-up authentication and env fallback.</p>
+        </div>
+        <button
+          onClick={() => void load()}
+          className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+        >
+          <RefreshCw className="h-4 w-4" /> Refresh
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <MetricCard label="Managed Keys" value={configs.length} />
+        <MetricCard label="Verified from ENV" value={configs.filter((item) => item.status === "Verified from ENV").length} />
+        <MetricCard label="Conflicts" value={configs.filter((item) => item.status === "Conflict").length} tone={configs.some((item) => item.status === "Conflict") ? "danger" : "default"} />
+        <MetricCard label="Missing required" value={configs.filter((item) => item.status === "Missing" && item.requiredInProduction).length} tone="danger" />
+      </div>
+
+      <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 text-sm text-tone-honey-fg">
+        <div className="flex items-start gap-3">
+          <ShieldAlert className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <div>
+            <p className="font-medium">Secrets are never shown in full.</p>
+            <p className="mt-1 text-tone-honey-fg/80">For production, the safest model is still deployment-level secret management. DB overrides are encrypted at rest and intended for controlled break-glass or managed runtime updates.</p>
+          </div>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="rounded-xl border border-border bg-card p-10 text-center text-muted-foreground">Loading runtime config...</div>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(grouped).map(([category, items]) => (
+            <div key={category} className="space-y-3">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">{category.replace(/_/g, " ")}</h2>
+                <p className="text-sm text-muted-foreground">{items.length} managed key{items.length === 1 ? "" : "s"}</p>
+              </div>
+              <div className="space-y-3">
+                {items.map((item) => {
+                  const isEditing = editingKey === item.key;
+                  const editLocked = item.editable === "No";
+                  return (
+                    <div key={item.key} className="rounded-xl border border-border bg-card p-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{item.label}</h3>
+                            <StatusBadge label={item.status} tone={STATUS_TONE[item.status]} />
+                            {item.requiredInProduction && <StatusBadge label="Required" tone="warning" />}
+                            {item.isSecret && <StatusBadge label="Secret" tone="neutral" />}
+                            <StatusBadge label={EDITABLE_LABEL[item.editable]} tone="neutral" />
+                          </div>
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                          {item.warning ? (
+                            <p className="rounded-lg border border-tone-honey-br bg-tone-honey-bg px-3 py-2 text-xs text-tone-honey-fg">
+                              {item.warning}
+                            </p>
+                          ) : null}
+                          {item.notes && item.notes.length > 0 ? (
+                            <ul className="list-disc rounded-lg border border-border bg-background/50 px-5 py-2 text-xs text-muted-foreground">
+                              {item.notes.map((note, idx) => (
+                                <li key={idx}>{note}</li>
+                              ))}
+                            </ul>
+                          ) : null}
+                          <div className="grid grid-cols-1 gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                            <div><span className="font-medium text-foreground">Key:</span> <span className="font-mono">{item.key}</span></div>
+                            <div><span className="font-medium text-foreground">Scope:</span> {item.scope}</div>
+                            <div><span className="font-medium text-foreground">Source:</span> {item.source === "Missing" ? "—" : item.source}</div>
+                            <div><span className="font-medium text-foreground">Value:</span> {item.maskedValue || "Not configured"}</div>
+                            {item.validation ? (
+                              <div><span className="font-medium text-foreground">Validation:</span> {item.validation}</div>
+                            ) : null}
+                            {item.usedBy && item.usedBy.length > 0 ? (
+                              <div><span className="font-medium text-foreground">Used by:</span> {item.usedBy.join(", ")}</div>
+                            ) : null}
+                            <div><span className="font-medium text-foreground">Last validation:</span> {item.lastValidatedAt ? new Date(item.lastValidatedAt).toLocaleString() : "—"}</div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            disabled={editLocked}
+                            onClick={() => {
+                              if (editLocked) return;
+                              setEditingKey(item.key);
+                              setForm({ value: "", note: "", confirmPassword: "" });
+                            }}
+                            className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                            title={editLocked ? "Deployment-only key — update in DigitalOcean env." : undefined}
+                          >
+                            <KeyRound className="h-4 w-4" /> Edit
+                          </button>
+                        </div>
+                      </div>
+
+                      {isEditing && (
+                        <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-border bg-background/50 p-4 lg:grid-cols-2">
+                          <div className="lg:col-span-2">
+                            <label className="mb-1 block text-sm font-medium text-muted-foreground">New value</label>
+                            <textarea
+                              value={form.value}
+                              onChange={(event) => setForm((prev) => ({ ...prev, value: event.target.value }))}
+                              className="min-h-24 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              placeholder={item.isSecret ? "Paste secret value" : "Enter runtime value"}
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-muted-foreground">Change note</label>
+                            <input
+                              value={form.note}
+                              onChange={(event) => setForm((prev) => ({ ...prev, note: event.target.value }))}
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              placeholder="Rotation, override, emergency, etc."
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-muted-foreground">Confirm password</label>
+                            <input
+                              type="password"
+                              value={form.confirmPassword}
+                              onChange={(event) => setForm((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              placeholder="Required"
+                            />
+                          </div>
+                          <div className="lg:col-span-2 flex flex-wrap gap-2">
+                            <button
+                              onClick={() => void save(item.key)}
+                              disabled={savingKey === item.key}
+                              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            >
+                              <Save className="h-4 w-4" /> {savingKey === item.key ? "Saving..." : "Save Override"}
+                            </button>
+                            <button
+                              onClick={() => void reset(item.key)}
+                              disabled={savingKey === item.key}
+                              className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                            >
+                              <EyeOff className="h-4 w-4" /> Reset to ENV
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingKey(null);
+                                setForm({ value: "", note: "", confirmPassword: "" });
+                              }}
+                              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MetricCard({ label, value, tone = "default" }: { label: string; value: number; tone?: "default" | "danger" }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-5">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-2xl font-bold ${tone === "danger" ? "text-destructive" : "text-foreground"}`}>{value}</p>
+    </div>
+  );
+}
+
+function StatusBadge({ label, tone }: { label: string; tone: "success" | "warning" | "danger" | "neutral" }) {
+  const tones = {
+    success: "bg-tone-sage-bg text-tone-sage-fg",
+    warning: "bg-tone-honey-bg text-tone-honey-fg",
+    danger: "bg-destructive/10 text-destructive",
+    neutral: "bg-muted text-muted-foreground",
+  } as const;
+
+  return <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${tones[tone]}`}>{label}</span>;
+}

@@ -33,6 +33,7 @@ vi.mock("@/lib/iap-google", () => ({
 
 import {
   applyIapStateToUser,
+  hashPurchaseToken,
   normalizeAppleResult,
   normalizeGoogleResult,
   refreshGoogleSubscriptionFor,
@@ -211,6 +212,89 @@ describe("IAP normalization", () => {
     await expect(applyIapStateToUser({ userId: "user-other", state }))
       .rejects
       .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
+    expect(prisma.subscription.findFirst).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { purchaseTokenHash: hashPurchaseToken("purchase-token") },
+          { purchaseToken: "purchase-token" },
+        ],
+      },
+    });
+  });
+
+  it("maps Google Play purchase-token unique races to a controlled ownership error", async () => {
+    vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockRejectedValue({
+      code: "P2002",
+      meta: { target: ["purchaseTokenHash"] },
+    });
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "MONTH",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state }))
+      .rejects
+      .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
+  });
+
+  it("allows the same user to refresh an already-owned Google Play purchase token", async () => {
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: "sub-owned",
+        userId: "user-1",
+        status: "ACTIVE",
+        provider: "PLAY_STORE",
+        accessType: "PAID",
+      } as any);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue({
+      id: "sub-owned",
+      userId: "user-1",
+    } as any);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-owned",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "MONTH",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state })).resolves.toMatchObject({
+      userId: "user-1",
+    });
+    expect(prisma.subscription.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({
+        purchaseTokenHash: hashPurchaseToken("purchase-token"),
+      }),
+    }));
   });
 
   it("blocks a new store purchase when an active Stripe subscription already exists", async () => {

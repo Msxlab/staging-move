@@ -545,6 +545,7 @@
     "appLock_usePasscode": "Usar codigo",
     "appLock_lockedTitle": "LocateFlow esta bloqueado",
     "appLock_lockedDescription": "Usa {{method}} o el codigo del dispositivo para continuar.",
+    "appLock_unavailableDescription": "El bloqueo de la app esta activado, pero {{method}} no esta disponible. Inicia sesion de nuevo para continuar, o cierra sesion abajo.",
     "appLock_unlockButton": "Desbloquear",
     "appLock_signOut": "Cerrar sesion",
     "backA11y": "Atrás",

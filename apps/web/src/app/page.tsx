@@ -88,7 +88,7 @@ export default async function LandingPage() {
     getPublicSubscriptionOffersViewModel(),
   ]);
   const individualPlan = BILLING_PLAN_DEFINITIONS.INDIVIDUAL;
-  // Server-side translation â€” getTranslations resolves the locale from
+  // Server-side translation — getTranslations resolves the locale from
   // the request config and returns a synchronous `t()`. The landing is
   // a server component so we never ship translations to the client.
   const t = await getTranslations("landing");
@@ -129,7 +129,7 @@ export default async function LandingPage() {
       <JsonLd id="ld-home-software" data={structuredData} />
       <MarketingHeader userId={userId} />
 
-      {/* Hero â€” text left, phone mock right (md+). The phone is the wound *and*
+      {/* Hero — text left, phone mock right (md+). The phone is the wound *and*
           the relief in one frame: real spend, real savings, two real attention items. */}
       <section className="relative overflow-hidden">
         <div
@@ -188,7 +188,7 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        {/* Scope strip â€” what the product actually does, in three quiet lines */}
+        {/* Scope strip — what the product actually does, in three quiet lines */}
         <div className="container">
           <div className="mx-auto mb-16 mt-2 max-w-4xl">
             <div className="grid grid-cols-1 gap-4 rounded-2xl border bg-card/40 px-6 py-5 text-center sm:grid-cols-3">
@@ -215,13 +215,13 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Recognition â€” the chip storm. Visceral expansion of the wound. */}
+      {/* Recognition — the chip storm. Visceral expansion of the wound. */}
       <RecognitionChipStorm />
 
-      {/* Hard stats â€” credibility, sourced. */}
+      {/* Hard stats — credibility, sourced. */}
       <HardStats />
 
-      {/* Risk grid â€” what goes to your old address (existing) */}
+      {/* Risk grid — what goes to your old address (existing) */}
       <section className="container py-20 border-t">
         <div className="text-center mb-14 max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-tone-honey-br bg-tone-honey-bg px-3 py-1 text-xs text-tone-honey-fg dark:text-tone-honey-fg">
@@ -253,10 +253,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Moving moment â€” first taste of relief. Checklist mock + pitch. */}
+      {/* Moving moment — first taste of relief. Checklist mock + pitch. */}
       <MovingMomentMock />
 
-      {/* Features Grid â€” the full product reveal */}
+      {/* Features Grid — the full product reveal */}
       <section id="features" className="container py-20 border-t">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold mb-4">{t("section_features_title")}</h2>
@@ -311,10 +311,10 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Bilingual showcase â€” the wedge */}
+      {/* Bilingual showcase — the wedge */}
       <BilingualShowcase />
 
-      {/* Testimonial â€” emotional landing right before pricing */}
+      {/* Testimonial — emotional landing right before pricing */}
       <TestimonialQuote />
 
       <PricingSection
@@ -324,7 +324,7 @@ export default async function LandingPage() {
         offers={publicCampaign}
       />
 
-      {/* Latest blog posts â€” server component, ISR-cached. Renders
+      {/* Latest blog posts — server component, ISR-cached. Renders
           nothing if the blog hasn't published anything yet. */}
       <LatestBlogPosts />
 

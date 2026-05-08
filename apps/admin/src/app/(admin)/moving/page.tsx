@@ -452,7 +452,7 @@ export default function MovingPage() {
                     <div className="flex items-center gap-2 mt-1">
                       <User className="h-3 w-3 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {plan.user.firstName} {plan.user.lastName} Â·{" "}
+                        {plan.user.firstName} {plan.user.lastName} ·{" "}
                         {plan.user.email}
                       </span>
                     </div>
@@ -583,7 +583,7 @@ export default function MovingPage() {
                                     <div className="min-w-0">
                                       <p className="truncate text-xs font-medium text-foreground">{task.title}</p>
                                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                        {formatLabel(task.actionType)} Â· {task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
+                                        {formatLabel(task.actionType)} · {task.provider?.name || task.customProvider?.name || task.destinationProvider?.name || "No provider selected"}
                                       </p>
                                     </div>
                                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${taskStatusClass(task.status)}`}>

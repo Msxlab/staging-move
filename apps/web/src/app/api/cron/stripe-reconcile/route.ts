@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { prisma, rawPrisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { mapStripePriceIdToPlanAndInterval } from "@/lib/billing";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { captureMessage } from "@/lib/sentry";
 import { logger } from "@/lib/logger";
 
@@ -51,9 +51,10 @@ interface ReconcileReport {
 }
 
 export async function POST(request: NextRequest) {
-  if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Stripe reconcile is heavy (hits Stripe + writes to DB for every sub).
+  // Cap at 2/min so a leaked secret cannot trigger thousands of API calls.
+  const guard = await guardCronRequest(request, "stripe-reconcile", { limit: 2 });
+  if (!guard.ok) return guard.response;
 
   const stripeSecretKey = await getRuntimeConfigValue("STRIPE_SECRET_KEY");
   if (!stripeSecretKey) {

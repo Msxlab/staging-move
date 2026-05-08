@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
 import {
   LayoutDashboard,
   Users,
@@ -41,12 +42,29 @@ interface NavItem {
   nameKey: string; // key in messages.nav.*
   href: string;
   icon: React.ElementType;
+  /**
+   * Predicate that decides whether the link should appear in the
+   * sidebar for the current admin. Receives the server-resolved role
+   * and permission map from page-guard. Hiding is purely UX — page-
+   * guard + API gates remain authoritative.
+   */
+  show?: (ctx: { role: AdminRoleString; permissions: AdminPermissionsMap }) => boolean;
 }
 
 interface NavGroup {
   label: string;
   labelKey: string; // key in messages.nav.*
   items: NavItem[];
+}
+
+function meetsRole(actual: AdminRoleString, required: AdminRoleString): boolean {
+  const order: Record<AdminRoleString, number> = {
+    VIEWER: 0,
+    MODERATOR: 1,
+    ADMIN: 2,
+    SUPER_ADMIN: 3,
+  };
+  return order[actual] >= order[required];
 }
 
 // `name` (English) is the source of truth for search filtering — users
@@ -59,31 +77,31 @@ const navGroups: NavGroup[] = [
     labelKey: "core",
     items: [
       { name: "Dashboard", nameKey: "dashboard", href: "/", icon: LayoutDashboard },
-      { name: "Users", nameKey: "users", href: "/users", icon: Users },
-      { name: "Subscriptions", nameKey: "subscriptions", href: "/subscriptions", icon: CreditCard },
-      { name: "Acquisition Campaigns", nameKey: "acquisitionCampaigns", href: "/acquisition-campaigns", icon: Ticket },
-      { name: "Billing", nameKey: "billing", href: "/billing", icon: DollarSign },
+      { name: "Users", nameKey: "users", href: "/users", icon: Users, show: ({ permissions }) => permissions.users.canRead },
+      { name: "Subscriptions", nameKey: "subscriptions", href: "/subscriptions", icon: CreditCard, show: ({ permissions }) => permissions.subscriptions.canRead },
+      { name: "Acquisition Campaigns", nameKey: "acquisitionCampaigns", href: "/acquisition-campaigns", icon: Ticket, show: ({ permissions }) => permissions.acquisition_campaigns.canRead },
+      { name: "Billing", nameKey: "billing", href: "/billing", icon: DollarSign, show: ({ permissions }) => permissions.subscriptions.canRead },
     ],
   },
   {
     label: "Content",
     labelKey: "content",
     items: [
-      { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2 },
-      { name: "Provider Governance", nameKey: "providerGovernance", href: "/provider-governance", icon: Shield },
-      { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin },
-      { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck },
+      { name: "Providers", nameKey: "providers", href: "/providers", icon: Building2, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "Provider Governance", nameKey: "providerGovernance", href: "/provider-governance", icon: Shield, show: ({ permissions }) => permissions.providers.canRead },
+      { name: "State Rules", nameKey: "stateRules", href: "/state-rules", icon: MapPin, show: ({ permissions }) => permissions.state_rules.canRead },
+      { name: "Moving Plans", nameKey: "movingPlans", href: "/moving", icon: Truck, show: ({ permissions }) => permissions.moving_plans.canRead },
     ],
   },
   {
     label: "Communication",
     labelKey: "communication",
     items: [
-      { name: "Tickets", nameKey: "tickets", href: "/support", icon: LifeBuoy },
-      { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell },
-      { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail },
+      { name: "Tickets", nameKey: "tickets", href: "/support", icon: LifeBuoy, show: ({ permissions }) => permissions.tickets.canRead },
+      { name: "Notifications", nameKey: "notifications", href: "/notifications", icon: Bell, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Email Templates", nameKey: "emailTemplates", href: "/email-templates", icon: Mail, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Help Center", nameKey: "helpCenter", href: "/help-center", icon: HelpCircle },
-      { name: "Blog", nameKey: "blog", href: "/blog", icon: FileText },
+      { name: "Blog", nameKey: "blog", href: "/blog", icon: FileText, show: ({ permissions }) => permissions.blog.canRead },
       { name: "Waitlist", nameKey: "waitlist", href: "/waitlist", icon: Sparkles },
     ],
   },
@@ -99,22 +117,35 @@ const navGroups: NavGroup[] = [
     label: "System",
     labelKey: "system",
     items: [
-      { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag },
-      { name: "Security", nameKey: "security", href: "/security", icon: Lock },
-      { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Lock },
-      { name: "Backups", nameKey: "backups", href: "/backups", icon: Database },
-      { name: "Audit Logs", nameKey: "auditLogs", href: "/logs", icon: ScrollText },
-      { name: "Admin Team", nameKey: "users", href: "/team", icon: Shield },
+      // Privileged System links only render when the corresponding
+      // server-side gate would let the admin in. Hiding is UX only —
+      // direct URL access still hits page-guard / API guards.
+      { name: "Feature Flags", nameKey: "featureFlags", href: "/feature-flags", icon: Flag, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Security", nameKey: "security", href: "/security", icon: Lock, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Runtime Config", nameKey: "runtimeConfig", href: "/runtime-config", icon: Lock, show: ({ role }) => role === "SUPER_ADMIN" },
+      { name: "Backups", nameKey: "backups", href: "/backups", icon: Database, show: ({ role }) => meetsRole(role, "ADMIN") },
+      { name: "Audit Logs", nameKey: "auditLogs", href: "/logs", icon: ScrollText, show: ({ permissions }) => permissions.audit_logs.canRead },
+      { name: "Admin Team", nameKey: "users", href: "/team", icon: Shield, show: ({ role }) => meetsRole(role, "ADMIN") },
       { name: "Settings", nameKey: "settings", href: "/settings", icon: Settings },
     ],
   },
 ];
 
-const allItems = navGroups.flatMap((g) => g.items);
+function filterNavGroups(
+  ctx: { role: AdminRoleString; permissions: AdminPermissionsMap } | null,
+): NavGroup[] {
+  if (!ctx) return navGroups;
+  return navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.show || item.show(ctx)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
-function getInitialCollapsed(pathname: string): Record<string, boolean> {
+function getInitialCollapsed(pathname: string, groups: NavGroup[]): Record<string, boolean> {
   const collapsed: Record<string, boolean> = {};
-  navGroups.forEach((group) => {
+  groups.forEach((group) => {
     const hasActive = group.items.some(
       (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
     );
@@ -125,17 +156,29 @@ function getInitialCollapsed(pathname: string): Record<string, boolean> {
   return collapsed;
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  /**
+   * Server-resolved permission context. When omitted (e.g. during the
+   * brief client mount before context is wired) the sidebar shows all
+   * links, since this is purely a display affordance — page-guard and
+   * API guards are authoritative.
+   */
+  ctx?: { role: AdminRoleString; permissions: AdminPermissionsMap };
+}
+
+export function Sidebar({ ctx }: SidebarProps = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(pathname));
+  const filteredGroups = filterNavGroups(ctx ?? null);
+  const allItems = filteredGroups.flatMap((g) => g.items);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => getInitialCollapsed(pathname, filteredGroups));
   const tNav = useTranslations("nav");
   const tCommon = useTranslations("common");
 
   // Auto-expand group when navigating
   useEffect(() => {
-    navGroups.forEach((group) => {
+    filteredGroups.forEach((group) => {
       const hasActive = group.items.some(
         (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
       );
@@ -143,7 +186,7 @@ export function Sidebar() {
         setCollapsed((prev) => ({ ...prev, [group.label]: false }));
       }
     });
-  }, [pathname]);
+  }, [pathname, filteredGroups]);
 
   const toggleGroup = (label: string) => {
     setCollapsed((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -282,7 +325,7 @@ export function Sidebar() {
         ) : (
           // Grouped navigation
           <div className="space-y-1">
-            {navGroups.map((group) => {
+            {filteredGroups.map((group) => {
               const isCollapsed = collapsed[group.label];
               const hasActive = group.items.some(
                 (item) => pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))

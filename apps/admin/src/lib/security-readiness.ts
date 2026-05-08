@@ -54,7 +54,7 @@ function buildConfigCheck(
     label,
     status,
     detail: configured ? `${readyDetail} Source: ${entry?.source || "ENV"}.` : missingDetail,
-    source: configured ? entry?.source || "ENV" : entry?.source || "MISSING",
+    source: configured ? entry?.source || "ENV" : entry?.source || "Missing",
   };
 }
 

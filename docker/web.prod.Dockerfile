@@ -5,7 +5,7 @@
 # -----------------------------------------------------------------
 
 # ── 1) deps: install pnpm + deps only (cached) ────────────────────
-FROM node:25-bookworm-slim AS deps
+FROM node:22-bookworm-slim AS deps
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -28,23 +28,36 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 # ── 2) builder: generate prisma client + next build ───────────────
-FROM node:25-bookworm-slim AS builder
+FROM node:22-bookworm-slim AS builder
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-ENV USER_JWT_SECRET=build_time_user_secret_32_chars_minimum
-ENV ADMIN_JWT_SECRET=build_time_admin_secret_32_chars_minimum
-ENV FIELD_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000
-ENV CRON_SECRET=build_time_cron_secret_32_chars_minimum
+
+# BUILD_PHASE=true tells `next build` and any startup-time validators
+# that this is a build container — not a runtime container — so the
+# strict secret/runtime-config gate (apps/web/src/lib/internal-secrets.ts
+# etc.) skips the production-required check. The runtime image below
+# does NOT set BUILD_PHASE, so it must be supplied with the real
+# secrets at container start (via Docker compose env_file or platform
+# secret manager) or the runtime validator throws on first request.
+ENV BUILD_PHASE=true
+
 ENV NEXT_PUBLIC_APP_URL=https://locateflow.com
 ENV NEXT_PUBLIC_SITE_URL=https://locateflow.com
 ENV SITE_URL=https://locateflow.com
 ENV APP_ENV=production
-ENV R2_BUCKET=locateflow
-ENV IMGPROXY_KEY=0000000000000000000000000000000000000000000000000000000000000000
-ENV IMGPROXY_SALT=0000000000000000000000000000000000000000000000000000000000000000
 ENV NEXT_PUBLIC_IMGPROXY_URL=https://img.locateflow.com
+
+# IMPORTANT: secrets MUST NOT be baked into image layers via ENV.
+# - USER_JWT_SECRET, ADMIN_JWT_SECRET, FIELD_ENCRYPTION_KEY, CRON_SECRET,
+#   IMGPROXY_KEY, IMGPROXY_SALT, R2_*, STRIPE_*, RESEND_API_KEY, etc.
+#   are read from the runtime environment (compose `env_file` or the
+#   platform's secret manager).
+# - During build, `next build` does not need real production secrets —
+#   `BUILD_PHASE=true` is honored by validators and the build proceeds
+#   with placeholder logic. Any new code path that requires a secret
+#   at build time must guard on `process.env.BUILD_PHASE === "true"`.
 
 WORKDIR /workspace
 
@@ -64,7 +77,7 @@ RUN pnpm --filter @locateflow/db exec prisma generate \
  && pnpm --filter @locateflow/web build
 
 # ── 3) runner: minimal image with standalone output ───────────────
-FROM node:25-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 ENV NODE_ENV=production
 ENV APP_ENV=production
 ENV NEXT_PUBLIC_APP_URL=https://locateflow.com
@@ -73,6 +86,9 @@ ENV SITE_URL=https://locateflow.com
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+# BUILD_PHASE is intentionally unset at runtime so the secret/runtime-
+# config validators run in strict mode. The container will refuse to
+# serve traffic until the real secrets are present in the environment.
 
 WORKDIR /app
 

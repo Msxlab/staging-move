@@ -174,7 +174,7 @@ export default function ReportsPage() {
             }}
             className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
           />
-          <span className="text-muted-foreground">â€”</span>
+          <span className="text-muted-foreground">—</span>
           <input
             type="date"
             value={endDate}

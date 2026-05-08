@@ -117,7 +117,7 @@ export default function TwoFactorPage() {
 
   function downloadBackupCodes() {
     const content = [
-      "LocateFlow Admin â€” 2FA Backup Codes",
+      "LocateFlow Admin — 2FA Backup Codes",
       "====================================",
       `Generated: ${new Date().toISOString()}`,
       "",
@@ -181,7 +181,7 @@ export default function TwoFactorPage() {
             </p>
             <p className="text-sm text-muted-foreground">
               SUPER_ADMIN accounts must enroll MFA before accessing the rest
-              of the admin panel. Complete the steps below â€” the rest of the
+              of the admin panel. Complete the steps below — the rest of the
               navigation will unlock automatically once MFA is verified.
             </p>
           </div>
@@ -218,7 +218,7 @@ export default function TwoFactorPage() {
         </div>
       </div>
 
-      {/* Setup Flow â€” Disabled state */}
+      {/* Setup Flow — Disabled state */}
       {status === "disabled" && setupStep === "idle" && (
         <div className="rounded-xl border border-border bg-card p-6 space-y-4">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -289,7 +289,7 @@ export default function TwoFactorPage() {
                 </div>
               </div>
               <p className="text-sm font-mono text-foreground tracking-wider break-all">
-                {showSecret ? secret : "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"}
+                {showSecret ? secret : "••••••••••••••••••••••••••••••••"}
               </p>
             </div>
           </div>
@@ -322,7 +322,7 @@ export default function TwoFactorPage() {
 
           <button onClick={() => setSetupStep("verifying")}
             className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-            I&apos;ve saved the backup codes â€” Continue
+            I&apos;ve saved the backup codes — Continue
           </button>
         </div>
       )}

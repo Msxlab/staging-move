@@ -7,6 +7,7 @@
  */
 
 import { prisma } from "@/lib/db";
+import { createHash } from "node:crypto";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import {
   getAppleSubscriptionStatus,
@@ -73,6 +74,12 @@ const IAP_PAYMENT_ATTENTION_STATUSES = new Set<SubscriptionStatus>([
   "GRACE_PERIOD",
   "UNPAID",
 ]);
+
+export function hashPurchaseToken(purchaseToken: string | null | undefined): string | null {
+  const normalized = purchaseToken?.trim();
+  if (!normalized) return null;
+  return createHash("sha256").update(normalized).digest("hex");
+}
 
 function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
   if (!date) return null;
@@ -332,6 +339,7 @@ export async function applyIapStateToUser(opts: {
   state: NormalizedIapState;
 }) {
   const { userId, state } = opts;
+  const purchaseTokenHash = hashPurchaseToken(state.purchaseToken);
 
   // Guard: if another user already owns this originalTransactionId, refuse.
   const existingByTxn = state.originalTransactionId
@@ -343,9 +351,14 @@ export async function applyIapStateToUser(opts: {
   if (existingByTxn && existingByTxn.userId !== userId) {
     throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
   }
-  const existingByPurchaseToken = state.purchaseToken
+  const existingByPurchaseToken = purchaseTokenHash
     ? await prisma.subscription.findFirst({
-        where: { purchaseToken: state.purchaseToken },
+        where: {
+          OR: [
+            { purchaseTokenHash },
+            { purchaseToken: state.purchaseToken },
+          ],
+        },
       })
     : null;
   if (existingByPurchaseToken && existingByPurchaseToken.userId !== userId) {
@@ -381,7 +394,7 @@ export async function applyIapStateToUser(opts: {
   // billing-retry status comes from the store-specific normalized status; the
   // unified entitlement resolver reads `status` directly, so a TRIALING status
   // overrides the access banner via deriveUserSubscriptionState.
-  const data = {
+  const data: any = {
     plan: state.plan,
     status: state.status,
     provider: state.provider,
@@ -396,6 +409,7 @@ export async function applyIapStateToUser(opts: {
     originalTransactionId: state.originalTransactionId,
     latestTransactionId: state.latestTransactionId,
     purchaseToken: state.purchaseToken,
+    purchaseTokenHash,
     currentPeriodEndsAt: state.expiresAt,
     trialEndsAt: state.status === "TRIALING" ? state.expiresAt : null,
     gracePeriodEndsAt: state.gracePeriodEndsAt,
@@ -405,7 +419,7 @@ export async function applyIapStateToUser(opts: {
     canceledAt: IAP_CANCELED_STATUSES.has(state.status) ? now : null,
     lastValidatedAt: now,
     lastSyncedAt: now,
-  } as const;
+  };
 
   try {
     const subscription = await prisma.subscription.upsert({
@@ -426,7 +440,8 @@ export async function applyIapStateToUser(opts: {
     if (
       error?.code === "P2002" &&
       Array.isArray(error?.meta?.target) &&
-      error.meta.target.includes("originalTransactionId")
+      (error.meta.target.includes("originalTransactionId") ||
+        error.meta.target.includes("purchaseTokenHash"))
     ) {
       throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
     }
@@ -449,9 +464,15 @@ export async function findUserByIapIdentifier(opts: {
     });
     if (row) return row;
   }
-  if (opts.purchaseToken) {
+  const purchaseTokenHash = hashPurchaseToken(opts.purchaseToken);
+  if (purchaseTokenHash || opts.purchaseToken) {
     const row = await prisma.subscription.findFirst({
-      where: { purchaseToken: opts.purchaseToken },
+      where: {
+        OR: [
+          ...(purchaseTokenHash ? [{ purchaseTokenHash }] : []),
+          ...(opts.purchaseToken ? [{ purchaseToken: opts.purchaseToken }] : []),
+        ],
+      },
       select: { id: true, userId: true },
     });
     if (row) return row;

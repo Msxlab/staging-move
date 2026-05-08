@@ -86,7 +86,7 @@ export function AddressesClient({ initial }: { initial: AddressItem[] }) {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">
-            {addresses.length} Â· {totalServices} Â· {
+            {addresses.length} · {totalServices} · {
               new Intl.NumberFormat(locale, {
                 style: "currency",
                 currency: "USD",

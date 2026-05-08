@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { processPendingAccountDeletionRequests } from "@/lib/account-deletion";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { LEGAL_CONSENT_EVENT, ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 
 /**
@@ -14,14 +14,10 @@ import { LEGAL_CONSENT_EVENT, ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
  * Recommended schedule: daily at 3:00 AM UTC.
  */
 export async function POST(request: NextRequest) {
-  // Accept either the `Authorization: Bearer ...` header (preferred) or the
-  // legacy `x-cron-secret` header for compatibility with older schedulers.
-  const xCronSecret = request.headers.get("x-cron-secret");
-  const authHeader = request.headers.get("authorization");
-  const effective = authHeader || (xCronSecret ? `Bearer ${xCronSecret}` : null);
-  if (!verifyInternalAuth(effective, "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Cron-secret check + per-route rate limit. Heavy retention sweep — keep
+  // the limit low so a leaked secret can't trigger repeated mass deletes.
+  const guard = await guardCronRequest(request, "data-retention", { limit: 2 });
+  if (!guard.ok) return guard.response;
 
   const now = new Date();
   const results: Record<string, number> = {};

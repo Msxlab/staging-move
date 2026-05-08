@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendMonthlyReportEmail } from "@/lib/email-service";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import {
   buildWebNotificationSettings,
   groupNotificationPreferencesByUser,
@@ -16,9 +16,10 @@ function previousMonthWindow(now: Date) {
 }
 
 export async function GET(req: Request) {
-  if (!verifyInternalAuth(req.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Heavy fan-out (one mail per user): cap at 2/min so a leaked secret
+  // can't trigger mass sends.
+  const guard = await guardCronRequest(req, "monthly-report", { limit: 2 });
+  if (!guard.ok) return guard.response;
 
   try {
     const now = new Date();

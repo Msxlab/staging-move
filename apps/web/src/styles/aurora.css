@@ -50,7 +50,7 @@
   letter-spacing: -0.005em;
 }
 
-/* Light theme â€” drives off next-themes' absence of `.dark` on <html>. */
+/* Light theme — drives off next-themes' absence of `.dark` on <html>. */
 .light .lf-aurora {
   --au-ink:       #14202F;
   --au-ink-2:     #4A5C75;
@@ -89,7 +89,7 @@
 .lf-aurora[data-density="compact"] { --au-row: 36px; --au-pad: 12px; --au-gap: 12px; }
 .lf-aurora[data-density="roomy"]   { --au-row: 52px; --au-pad: 20px; --au-gap: 20px; }
 
-/* "Lite" mode â€” calmer aurora, less translucency */
+/* "Lite" mode — calmer aurora, less translucency */
 .lf-aurora[data-mode="lite"] {
   --au-pane:    rgba(20, 28, 40, 0.55);
   --au-pane-2:  rgba(20, 28, 40, 0.65);
@@ -160,7 +160,7 @@
   .lf-aurora .au-aurora__layer { animation: none !important; }
 }
 
-/* Fine grain noise â€” adds the "real glass" feel */
+/* Fine grain noise — adds the "real glass" feel */
 .lf-aurora .au-grain {
   position: fixed; inset: 0; pointer-events: none; z-index: 1;
   opacity: 0.5; mix-blend-mode: overlay;
@@ -277,7 +277,7 @@
 }
 .light .lf-aurora .au-pill.neutral { background: rgba(20,32,47,0.05); }
 
-/* === Buttons / Inputs (au-* family â€” opt-in) ======================== */
+/* === Buttons / Inputs (au-* family — opt-in) ======================== */
 .lf-aurora .au-btn {
   display: inline-flex; align-items: center; gap: 8px;
   height: 34px; padding: 0 14px; border-radius: 9px;
@@ -421,15 +421,15 @@
    System-wide Aurora theming
    -------------------------------------------------------------------------
    Overrides shadcn/Tailwind HSL tokens inside `.lf-aurora` so every
-   existing utility â€” bg-card, border-border, text-foreground,
-   text-muted-foreground, bg-primary/10 etc. â€” picks up Aurora colors
+   existing utility — bg-card, border-border, text-foreground,
+   text-muted-foreground, bg-primary/10 etc. — picks up Aurora colors
    without source-level changes. Cascades through the whole subtree
    (sidebar + every admin route).
    ========================================================================= */
 
 /* --- Dark (default) ------------------------------------------------- */
 .lf-aurora {
-  /* shadcn surface tokens â€” HSL channel triplets (no hsl() wrapper) */
+  /* shadcn surface tokens — HSL channel triplets (no hsl() wrapper) */
   --background:           218 43% 6%;
   --foreground:           214 36% 95%;
   --card:                 217 41% 9%;
@@ -451,7 +451,7 @@
   --ring:                 207 67% 70%;
   --radius:               0.625rem;
 
-  /* Brand-token redirect â€” anything still calling --rose / --foil-* gets
+  /* Brand-token redirect — anything still calling --rose / --foil-* gets
      the Aurora cool / violet palette. The SVG sidebar logo sets its own
      gradients via inline `<defs>`, so it's not affected. */
   --rose:        var(--au-cool);
@@ -468,7 +468,7 @@
   --brand-orange-dark:  var(--au-cool-2);
   --brand-amber:        var(--au-violet);
 
-  /* Tone tokens â€” every page that uses bg-tone-rose-bg / text-tone-sage-fg
+  /* Tone tokens — every page that uses bg-tone-rose-bg / text-tone-sage-fg
      etc. now reads Aurora colors. Mappings preserve semantic intent
      (rose=warning/attention, sage=positive, honey=caution, slate=neutral). */
   --tone-rose-bg:    rgba(127, 182, 232, 0.10); --tone-rose-br:    rgba(127, 182, 232, 0.22); --tone-rose-fg:    var(--au-cool);
@@ -517,7 +517,7 @@
 
 /* --- Aurora-flavored chrome upgrades for legacy classes ------------- */
 
-/* Sidebar surface â€” already uses bg-card / border-border so it picks up
+/* Sidebar surface — already uses bg-card / border-border so it picks up
    the new tokens automatically. Add a subtle backdrop-filter for that
    Aurora pane feeling. */
 .lf-aurora aside.bg-card {
@@ -534,7 +534,7 @@
     var(--au-base-2);
 }
 
-/* Foil text â†’ Aurora cool gradient. Affects sidebar wordmark + any inline
+/* Foil text → Aurora cool gradient. Affects sidebar wordmark + any inline
    `<em>` titles via `.foil-text`, plus h1/h2/h3 `<em>` segments. */
 .lf-aurora .foil-text,
 .lf-aurora h1 em,
@@ -557,7 +557,7 @@
   color: transparent;
 }
 
-/* KPI foil cards â†’ glass cards with Aurora reflex hover. Picked up by
+/* KPI foil cards → glass cards with Aurora reflex hover. Picked up by
    every page (Users, Subscriptions, Billing, etc.) that still uses the
    `.kpi-foil` class. */
 .lf-aurora .kpi-foil {
@@ -597,7 +597,7 @@
   color: var(--au-ink-3);
 }
 
-/* Health pill â€” keep semantic green/amber/red, but use Aurora ramp. */
+/* Health pill — keep semantic green/amber/red, but use Aurora ramp. */
 .lf-aurora .health-pill.tone-sage {
   background: var(--au-mint-soft);
   border-color: rgba(135, 221, 192, 0.28);
@@ -645,7 +645,7 @@
   color: var(--au-amber);
 }
 
-/* Tier distribution bar â€” Aurora cool/violet/mint segmentation. */
+/* Tier distribution bar — Aurora cool/violet/mint segmentation. */
 .lf-aurora .tier-bar { background: var(--au-rule); }
 .lf-aurora .tier-bar-seg-individual { background: linear-gradient(90deg, var(--au-cool), var(--au-cool-2)); }
 .lf-aurora .tier-bar-seg-family     { background: linear-gradient(90deg, var(--au-violet), #8B73E0); }
@@ -654,7 +654,7 @@
   box-shadow: 0 0 8px rgba(127, 182, 232, 0.4);
 }
 
-/* Inputs / search fields â€” anything using `bg-background` + `border-input`
+/* Inputs / search fields — anything using `bg-background` + `border-input`
    already updates via the var overrides; just polish focus rings. */
 .lf-aurora input:focus-visible,
 .lf-aurora textarea:focus-visible,
@@ -664,7 +664,7 @@
   box-shadow: 0 0 0 2px rgba(127, 182, 232, 0.20);
 }
 
-/* Tables inside admin-panel â€” slim hover with Aurora cool tint. */
+/* Tables inside admin-panel — slim hover with Aurora cool tint. */
 .lf-aurora .admin-panel table tbody tr:hover {
   background: var(--au-cool-soft);
 }
@@ -681,7 +681,7 @@
   border-bottom: 1px solid var(--au-rule);
 }
 
-/* Buttons â€” primary/destructive/ghost variants used across the admin
+/* Buttons — primary/destructive/ghost variants used across the admin
    already pull from --primary / --destructive vars, so they auto-update.
    Touch up the rounded-lg ghost border style. */
 .lf-aurora button.border-primary,
@@ -689,13 +689,13 @@
   border-color: var(--au-cool) !important;
 }
 
-/* Card hover lift â€” apply to everything matching `bg-card` so generic
+/* Card hover lift — apply to everything matching `bg-card` so generic
    Tailwind cards on smaller pages still feel Aurora. */
 .lf-aurora .bg-card {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
-/* Foil-text inside the sidebar wordmark â€” keep the cool gradient
+/* Foil-text inside the sidebar wordmark — keep the cool gradient
    regardless of theme so the brand mark always reads Aurora. */
 .lf-aurora aside .foil-text {
   background: linear-gradient(135deg, #DDE7F5 0%, var(--au-cool) 60%, var(--au-cool-2) 100%);
@@ -703,13 +703,13 @@
           background-clip: text;
 }
 
-/* Sidebar nav active state â€” already uses bg-primary/10, which now reads
+/* Sidebar nav active state — already uses bg-primary/10, which now reads
    Aurora cool. Add a subtle inner border ring like the prototype. */
 .lf-aurora aside a.bg-primary\/10 {
   border: 1px solid rgba(127, 182, 232, 0.22);
 }
 
 /* The shared sidebar logo SVG keeps its champagne-and-rose gradient
-   (defined inline in the SVG `<defs>`) â€” that's intentional, it's the
+   (defined inline in the SVG `<defs>`) — that's intentional, it's the
    brand mark. Everything else cascades through the variable overrides
    above. */

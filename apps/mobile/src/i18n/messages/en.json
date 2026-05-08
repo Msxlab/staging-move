@@ -545,6 +545,7 @@
     "appLock_usePasscode": "Use passcode",
     "appLock_lockedTitle": "LocateFlow is locked",
     "appLock_lockedDescription": "Use {{method}} or your device passcode to continue.",
+    "appLock_unavailableDescription": "App lock is enabled, but {{method}} is not available. Sign in again to continue, or sign out below.",
     "appLock_unlockButton": "Unlock",
     "appLock_signOut": "Sign out instead",
     "backA11y": "Go back",

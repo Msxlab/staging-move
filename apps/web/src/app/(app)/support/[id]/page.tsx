@@ -104,7 +104,7 @@ export default function SupportTicketPage() {
     return (
       <div className="text-center py-16">
         <p className="text-muted-foreground">Ticket not found.</p>
-        <Link href="/support" className="text-tone-orange-fg text-sm mt-2 inline-block">â† Back to Support</Link>
+        <Link href="/support" className="text-tone-orange-fg text-sm mt-2 inline-block">← Back to Support</Link>
       </div>
     );
   }
@@ -158,13 +158,13 @@ export default function SupportTicketPage() {
                     isSystem ? "bg-foreground/5 text-foreground/40" :
                     "bg-tone-cyan-bg text-tone-cyan-fg"
                   }`}>
-                    {isUser ? "U" : isSystem ? "âš™" : "S"}
+                    {isUser ? "U" : isSystem ? "⚙" : "S"}
                   </div>
                   <span className={`text-xs font-medium ${isUser ? "text-tone-orange-fg" : isSystem ? "text-foreground/40" : "text-tone-cyan-fg"}`}>
                     {isUser ? "You" : isSystem ? "System" : "Support"}
                   </span>
                   <span className="text-[10px] text-foreground/30">
-                    {new Date(msg.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} Â·{" "}
+                    {new Date(msg.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })} ·{" "}
                     {new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 </div>

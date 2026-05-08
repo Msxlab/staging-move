@@ -42,7 +42,14 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
+// `prismaUnsafe` is imported by the route for REPLACE so deleteMany is a
+// real delete instead of being rewritten to soft-delete by the default
+// extension. The test fixture aliases both names to the same mock object.
+vi.mock("@/lib/db", () => ({
+  prisma: mocks.prisma,
+  prismaUnsafe: mocks.prisma,
+  rawPrisma: mocks.prisma,
+}));
 vi.mock("@/lib/auth", () => ({
   requirePermission: mocks.requirePermission,
   requirePasswordConfirm: mocks.requirePasswordConfirm,
@@ -167,7 +174,14 @@ describe("backup import signature enforcement", () => {
   it("requires a strong REPLACE confirmation phrase", async () => {
     vi.stubEnv("APP_ENV", "staging");
     vi.stubEnv("DATABASE_URL", "mysql://admin:secret@target.example.com/staging");
+    const target = getCurrentBackupEnvironmentMetadata();
     const rawContent = JSON.stringify({
+      metadata: {
+        environment: {
+          name: target.name,
+          databaseFingerprint: target.databaseFingerprint,
+        },
+      },
       data: { users: [{ id: "user_1" }] },
     });
 
@@ -192,6 +206,12 @@ describe("backup import signature enforcement", () => {
     vi.stubEnv("DATABASE_URL", "mysql://admin:secret@target.example.com/prod");
     const target = getCurrentBackupEnvironmentMetadata();
     const rawContent = JSON.stringify({
+      metadata: {
+        environment: {
+          name: target.name,
+          databaseFingerprint: target.databaseFingerprint,
+        },
+      },
       data: { users: [{ id: "user_1" }] },
     });
 
@@ -227,6 +247,12 @@ describe("backup import signature enforcement", () => {
       }),
     );
     const rawContent = JSON.stringify({
+      metadata: {
+        environment: {
+          name: target.name,
+          databaseFingerprint: target.databaseFingerprint,
+        },
+      },
       data: { users: [{ id: "user_1" }] },
     });
 

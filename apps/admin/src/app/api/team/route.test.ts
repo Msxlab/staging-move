@@ -88,9 +88,13 @@ describe("admin team create", () => {
     const response = await POST(request({ ...validBody, confirmPassword: "admin-password" }));
 
     expect(response.status).toBe(201);
+    // Step-up grace cache is keyed by `(adminId, sessionScope, operation)`,
+    // so the route passes an `operation` string. The test matches against
+    // that (lib/auth.ts:requirePasswordConfirm).
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
       { adminId: "admin_1" },
       "admin-password",
+      { operation: "admin_user_create" },
     );
     expect(mocks.adminCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({

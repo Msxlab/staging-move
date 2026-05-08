@@ -66,6 +66,7 @@ const PUBLIC_API_EXACT = [
   "/api/auth/reset-password",
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
+  "/api/mobile/auth/login",
   "/api/mobile/auth/exchange",
   // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated
   // session cookie enters the browser. The route validates a short-lived
@@ -238,16 +239,18 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
 async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
   const pathname = req.nextUrl?.pathname || "";
   if (!pathname.startsWith("/api/")) return null;
-  if (pathname.startsWith("/api/internal/")) return null;
   if (pathname.startsWith("/api/webhooks/")) return null;
-  if (pathname.startsWith("/api/cron/")) return null;
 
   const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
   const isOptionalAuthMe =
     req.method === "GET" &&
     pathname === "/api/auth/me" &&
     ["1", "true"].includes(req.nextUrl.searchParams.get("optional") || "");
-  const group: RateLimitRouteGroup = isOptionalAuthMe
+  const group: RateLimitRouteGroup = pathname.startsWith("/api/cron/")
+    ? "cron"
+    : pathname.startsWith("/api/internal/")
+      ? "internal"
+      : isOptionalAuthMe
     ? "public_read"
     : isWrite
       ? "user_write"

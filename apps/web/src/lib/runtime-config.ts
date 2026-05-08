@@ -1,7 +1,10 @@
 import { prisma } from "@/lib/db";
 import { decrypt } from "@/lib/shared-encryption";
 import {
+  getRuntimeConfigDefinition,
   getRuntimeConfigEnvValue,
+  isRuntimeConfigDbBackedKeyAllowed,
+  normalizeRuntimeConfigValue,
   shouldPreferEnvRuntimeConfigValue,
 } from "@/lib/shared-runtime-config";
 
@@ -22,21 +25,9 @@ function resolveStoredValue(entry: RuntimeConfigEntryRecord | null | undefined) 
   return entry.valuePlain;
 }
 
-function normalizeConfigValue(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (
-    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-    (trimmed.startsWith("'") && trimmed.endsWith("'"))
-  ) {
-    return trimmed.slice(1, -1).trim() || null;
-  }
-  return trimmed;
-}
-
 export async function getRuntimeConfigValue(key: string): Promise<string | null> {
-  const envValue = normalizeConfigValue(getRuntimeConfigEnvValue(key, process.env));
+  const definition = getRuntimeConfigDefinition(key);
+  const envValue = normalizeRuntimeConfigValue(getRuntimeConfigEnvValue(key, process.env));
   const preferEnv = shouldPreferEnvRuntimeConfigValue(key, process.env);
   if (preferEnv && envValue) return envValue;
 
@@ -52,8 +43,10 @@ export async function getRuntimeConfigValue(key: string): Promise<string | null>
     },
   }).catch(() => null as RuntimeConfigEntryRecord | null);
 
-  const storedValue = normalizeConfigValue(resolveStoredValue(entry));
-  if (storedValue) return storedValue;
+  const storedValue = normalizeRuntimeConfigValue(resolveStoredValue(entry));
+  if (storedValue && definition && isRuntimeConfigDbBackedKeyAllowed(definition)) {
+    return storedValue;
+  }
 
   if (envValue) return envValue;
 

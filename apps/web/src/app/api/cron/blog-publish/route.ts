@@ -16,33 +16,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { pingIndexNow } from "@/lib/blog/indexnow";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
-
-function unauthorized(req: NextRequest): boolean {
-  // Accept either `Authorization: Bearer <secret>` (Ofelia cron — see
-  // docker/ofelia.ini) or `x-cron-secret` (manual ops triggers). The
-  // bearer form is the canonical one used by every other cron route.
-  // Both go through the constant-time comparator in verifyInternalAuth
-  // so neither path leaks timing.
-  const xCronSecret = req.headers.get("x-cron-secret");
-  const authHeader = req.headers.get("authorization");
-  const effective = authHeader || (xCronSecret ? `Bearer ${xCronSecret}` : null);
-  return !verifyInternalAuth(effective, "cron");
-}
+import { guardCronRequest } from "@/lib/cron-guard";
 
 export async function POST(req: NextRequest) {
-  if (unauthorized(req)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await guardCronRequest(req, "blog-publish");
+  if (!guard.ok) return guard.response;
   return runCron();
 }
 
 // Ofelia hits us with GET — accept either verb so the docker config
-// stays simple. The auth is identical.
+// stays simple. The guard is identical.
 export async function GET(req: NextRequest) {
-  if (unauthorized(req)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const guard = await guardCronRequest(req, "blog-publish");
+  if (!guard.ok) return guard.response;
   return runCron();
 }
 

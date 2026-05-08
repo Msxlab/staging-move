@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+// `prisma` is the soft-delete-extended client, fine for read/audit/MERGE.
+// `prismaUnsafe` is the raw client — only used for REPLACE so `deleteMany`
+// actually removes rows instead of being rewritten to soft-delete (which
+// would then collide with the imported rows on `create`).
+import { prisma, prismaUnsafe } from "@/lib/db";
 import { parseBackupArchive } from "@/lib/backup-archive";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import {
@@ -297,18 +301,27 @@ export async function POST(request: NextRequest) {
       minimumRole: "SUPER_ADMIN",
     });
     const body = await request.json();
-    const { tables, mode = "MERGE", confirmPassword } = body;
+    const { tables, mode = "MERGE", confirmPassword, mfaCode, backupCode } = body;
     const { data, signature, rawContent, encryptedArchive, metadata: archiveMetadata } =
       resolveImportPayload(body);
 
-    if (mode !== "DRY_RUN") {
-      const confirm = await requirePasswordConfirm(session, confirmPassword);
-      if (!confirm.confirmed) {
-        return NextResponse.json(
-          { error: confirm.error, requiresPassword: true },
-          { status: 403 },
-        );
-      }
+    // DRY_RUN does not mutate the DB but still inspects backup payload
+    // contents (which may include encrypted PII). Require step-up here
+    // too, scoped under a separate operation so a confirmed dry-run does
+    // not silently authorize a follow-up REPLACE.
+    const stepUpOperation = mode === "DRY_RUN" ? "backup_import_dry_run" : "backup_import";
+    const requireMfaForOp = mode === "REPLACE" || mode === "MERGE";
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: stepUpOperation,
+      requireMfa: requireMfaForOp,
+      mfaCode: typeof mfaCode === "string" ? mfaCode : undefined,
+      backupCode: typeof backupCode === "string" ? backupCode : undefined,
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa },
+        { status: 403 },
+      );
     }
 
     if (!data || typeof data !== "object") {
@@ -474,8 +487,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (mode === "REPLACE") {
+      // The default `prisma` client has the soft-delete extension, which
+      // rewrites `deleteMany({})` on User/Address/Service/etc. into an
+      // `updateMany({deletedAt: now})`. That would silently orphan rows in
+      // a REPLACE: we'd "delete" then re-create with the same id and hit a
+      // unique constraint, or worse, end up with a half-purged DB. Use the
+      // raw `prismaUnsafe` so REPLACE is what it says on the tin.
       try {
-        await prisma.$transaction(
+        await prismaUnsafe.$transaction(
           async (tx: any) => {
             for (const tableName of selectedTables) {
               const records = data[tableName];

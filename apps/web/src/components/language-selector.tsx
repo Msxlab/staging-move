@@ -39,7 +39,7 @@ const localeFlags = {
  * Language selector dropdown.
  *
  * Clicking a language:
- *   1. POSTs to `/api/user/locale` â€” this refreshes the `NEXT_LOCALE`
+ *   1. POSTs to `/api/user/locale` — this refreshes the `NEXT_LOCALE`
  *      cookie and, if the caller is logged in, mirrors the choice to
  *      `User.preferredLocale` so it persists across devices.
  *   2. Reloads the page so server components re-render with the new
@@ -84,7 +84,7 @@ export function LanguageSelector({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locale: next }),
       }).catch(() => null);
-      // Hard reload â€” next-intl's getRequestConfig reads the cookie at
+      // Hard reload — next-intl's getRequestConfig reads the cookie at
       // request time, and server-rendered bits are cached.
       window.location.reload();
     });

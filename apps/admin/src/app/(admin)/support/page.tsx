@@ -244,10 +244,10 @@ export default function AdminSupportPage() {
                 <tr key={ticket.id} className="hover:bg-muted/20 transition">
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground truncate max-w-[220px]">{ticket.subject}</p>
-                    <p className="text-xs text-muted-foreground">{ticket.category} Â· {ticket._count.messages} messages</p>
+                    <p className="text-xs text-muted-foreground">{ticket.category} · {ticket._count.messages} messages</p>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-foreground">{[ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || "â€”"}</p>
+                    <p className="text-foreground">{[ticket.user.firstName, ticket.user.lastName].filter(Boolean).join(" ") || "—"}</p>
                     <p className="text-xs text-muted-foreground">{ticket.user.email}</p>
                   </td>
                   <td className="px-4 py-3">

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MovingPage() {
   const userId = await requireDbUserId();
-  // Server-side translations â€” the status badge labels re-compute per
+  // Server-side translations — the status badge labels re-compute per
   // request so Spanish users see "Planificando" instead of "Planning".
   const t = await getTranslations("moving");
   const tEmpty = await getTranslations("empty");

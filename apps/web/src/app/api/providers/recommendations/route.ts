@@ -10,7 +10,7 @@ import {
   type Provider,
 } from "@/lib/recommendation-engine";
 import { getProviderMatchLevelFromDb, resolveEffectiveState, safeJsonArray, tierProvidersFromDb } from "@/lib/provider-matching";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 
 // GET /api/providers/recommendations — personalized, completion-aware recommendations
 // Returns tiered clusters with "next critical actions" based on what user already has
@@ -18,11 +18,14 @@ export async function GET(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
 
-    const rl = await rateLimit(getRateLimitKey(request, `recommendations:${userId}`), { limit: 30, windowSeconds: 60 });
+    const rl = await enforceRateLimitPolicy(request, "provider_recommendations", {
+      userId,
+      routeId: "providers_recommendations",
+    });
     if (!rl.success) {
       return NextResponse.json(
-        { error: "Too many requests" },
-        { status: 429, headers: { "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString() } }
+        { code: rl.policy.userFacingErrorCode, error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } }
       );
     }
 

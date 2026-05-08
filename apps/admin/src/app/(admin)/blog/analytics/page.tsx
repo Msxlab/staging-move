@@ -1,5 +1,5 @@
 ﻿/**
- * Admin /blog/analytics â€” read-only telemetry dashboard.
+ * Admin /blog/analytics — read-only telemetry dashboard.
  *
  * Three questions every editor asks first:
  *   1. "Which posts are pulling traffic?"
@@ -44,12 +44,12 @@ export default async function BlogAnalyticsPage({
   const postId = sp.postId ?? null;
   const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
 
-  // Per-post drill-down branch â€” show a focused view for a single post.
+  // Per-post drill-down branch — show a focused view for a single post.
   if (postId) {
     return <PerPostAnalytics postId={postId} since={since} />;
   }
 
-  // Two queries â€” compact, no joins beyond `post` for titles. We
+  // Two queries — compact, no joins beyond `post` for titles. We
   // intentionally aggregate in JS so the SQL stays portable across
   // MySQL versions and so a sparse table keeps cost low.
   const [recentViews, totalsByBot] = await Promise.all([
@@ -216,7 +216,7 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
     dailyMap.set(day, dailyEntry);
 
     if (!v.isBot) {
-      const localeKey = v.locale ?? "â€”";
+      const localeKey = v.locale ?? "—";
       localeMap.set(localeKey, (localeMap.get(localeKey) ?? 0) + 1);
       const refKey = shortenReferrer(v.referrer);
       referrerMap.set(refKey, (referrerMap.get(refKey) ?? 0) + 1);
@@ -244,8 +244,8 @@ async function PerPostAnalytics({ postId, since }: { postId: string; since: Date
       </Link>
       <h1 className="mt-2 text-2xl font-semibold">{post.title}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        /{post.slug} Â· {post.locale.toUpperCase()} Â· {post.status}
-        {post.publishedAt ? ` Â· published ${post.publishedAt.toISOString().slice(0, 10)}` : ""}
+        /{post.slug} · {post.locale.toUpperCase()} · {post.status}
+        {post.publishedAt ? ` · published ${post.publishedAt.toISOString().slice(0, 10)}` : ""}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
         Last {WINDOW_DAYS} days. Lifetime human views: {(post.viewCount ?? 0).toLocaleString()}

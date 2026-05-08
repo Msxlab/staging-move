@@ -124,7 +124,7 @@ export default function NotificationsPage() {
                   {notif.body && <p className="text-xs text-foreground/40 mt-0.5">{notif.body}</p>}
                   <p className="text-[10px] text-foreground/30 mt-1.5">
                     {new Date(notif.createdAt).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" })}
-                    {" Â· "}
+                    {" · "}
                     {new Date(notif.createdAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
 
       <div className="text-center">
         <Link href="/settings/notifications" className="text-xs text-foreground/35 hover:text-muted-foreground transition">
-          {tNav("notificationSettings")} â†’
+          {tNav("notificationSettings")} →
         </Link>
       </div>
     </div>
