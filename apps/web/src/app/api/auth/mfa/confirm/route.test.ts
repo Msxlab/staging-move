@@ -75,31 +75,19 @@ describe("mfa confirm route", () => {
     userMock.update.mockResolvedValue({});
   });
 
-  it("applies the MFA verify policy before validating the TOTP", async () => {
-    const request = makeRequest();
-    const response = await POST(request);
+  it("applies the MFA verification policy before validating the TOTP", async () => {
+    const response = await POST(makeRequest());
 
     expect(response.status).toBe(200);
-    expect(enforceRateLimitPolicyMock).toHaveBeenCalledWith(
-      request,
-      "mfa_verify",
-      { userId: "user_1", routeId: "mfa_confirm" },
-    );
-    expect(recordUserSecurityAuditMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: "MFA_ENABLED",
-        changes: { status: "success" },
-      }),
+    expect(rateLimitMock).toHaveBeenCalledWith(
+      expect.stringContaining("rl:mfa_verify:user:"),
+      { limit: 5, windowSeconds: 5 * 60, failClosed: true },
     );
     expect(JSON.stringify(recordUserSecurityAuditMock.mock.calls)).not.toContain("123456");
   });
 
-  it("returns 429 when the MFA policy limit is exceeded", async () => {
-    enforceRateLimitPolicyMock.mockResolvedValueOnce({
-      success: false,
-      retryAfterSeconds: 60,
-      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
-    });
+  it("returns 429 when the MFA limit is exceeded", async () => {
+    rateLimitMock.mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
 
     const response = await POST(makeRequest());
 

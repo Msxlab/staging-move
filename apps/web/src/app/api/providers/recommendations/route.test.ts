@@ -47,6 +47,7 @@ vi.mock("@/lib/recommendation-engine", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { GET } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
@@ -55,6 +56,7 @@ const mockAddress = prisma.address as unknown as { findMany: Mock };
 const mockService = prisma.service as unknown as { findMany: Mock };
 const mockMovingPlan = prisma.movingPlan as unknown as { findFirst: Mock };
 const mockServiceProvider = prisma.serviceProvider as unknown as { findMany: Mock };
+const rateLimitMock = rateLimit as unknown as Mock;
 
 function makeRequest(search = "") {
   return new Request(`http://localhost/api/providers/recommendations${search}`) as any;
@@ -86,6 +88,19 @@ describe("provider recommendations route", () => {
         }),
         include: { coverages: false },
       }),
+    );
+    expect(rateLimitMock).toHaveBeenCalledWith(
+      expect.stringContaining("rl:provider_recommendations:user:"),
+      expect.objectContaining({ limit: 120, windowSeconds: 60, failClosed: false }),
+    );
+  });
+
+  it("uses a generous recommendation limit so normal dashboard usage is not throttled", async () => {
+    await GET(makeRequest());
+
+    expect(rateLimitMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ limit: 120, windowSeconds: 60 }),
     );
   });
 });

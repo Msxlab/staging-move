@@ -64,15 +64,16 @@ describe("mfa setup rate limits", () => {
   });
 
   it("returns 429 when the per-user setup limit is exceeded", async () => {
-    enforceRateLimitPolicyMock.mockResolvedValueOnce({
-      success: false,
-      retryAfterSeconds: 60,
-      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
-    });
+    (rateLimit as unknown as Mock)
+      .mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
 
     const response = await POST(request());
 
     expect(response.status).toBe(429);
+    expect(rateLimit).toHaveBeenCalledWith(
+      expect.stringContaining("rl:mfa_verify:user:"),
+      expect.objectContaining({ limit: 5, windowSeconds: 5 * 60, failClosed: true }),
+    );
   });
 
   it("returns a local QR data URL instead of an external QR service URL", async () => {

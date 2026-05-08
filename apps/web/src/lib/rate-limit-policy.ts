@@ -309,8 +309,8 @@ export const RATE_LIMIT_POLICIES: Record<RateLimitRouteGroup, RateLimitPolicy> =
   },
   cron: {
     group: "cron",
-    maxAttempts: 1,
-    windowSeconds: 60,
+    maxAttempts: 0,
+    windowSeconds: 0,
     cooldownSeconds: 0,
     hardLockoutThreshold: 0,
     hardLockoutSeconds: 0,
@@ -321,8 +321,8 @@ export const RATE_LIMIT_POLICIES: Record<RateLimitRouteGroup, RateLimitPolicy> =
   },
   internal: {
     group: "internal",
-    maxAttempts: 60,
-    windowSeconds: 60,
+    maxAttempts: 0,
+    windowSeconds: 0,
     cooldownSeconds: 0,
     hardLockoutThreshold: 0,
     hardLockoutSeconds: 0,

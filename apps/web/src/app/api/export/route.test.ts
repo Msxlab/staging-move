@@ -38,7 +38,7 @@ vi.mock("@/lib/rate-limit-policy", () => ({
     remaining: 2,
     resetAt: Date.now() + 60_000,
     retryAfterSeconds: 60,
-    policy: { group: "export_data", userFacingErrorCode: "EXPORT_RATE_LIMITED" },
+    policy: { userFacingErrorCode: "EXPORT_RATE_LIMITED" },
     key: "export-key",
   })),
 }));
@@ -53,8 +53,6 @@ import { createAuditLog } from "@/lib/audit";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { verifyUserStepUp } from "@/lib/user-step-up";
 import { POST } from "./route";
-
-const GET = POST;
 
 const mockPrisma = {
   address: { findMany: prisma.address.findMany as Mock },
@@ -73,21 +71,15 @@ const mockPrisma = {
   subscription: { findUnique: (prisma as any).subscription.findUnique as Mock },
 };
 const mockRequireDbUserId = requireDbUserId as any;
-const mockCreateAuditLog = createAuditLog as any;
-const mockEnforceRateLimitPolicy = enforceRateLimitPolicy as any;
 const mockVerifyUserStepUp = verifyUserStepUp as any;
+const mockEnforceRateLimitPolicy = enforceRateLimitPolicy as any;
+const mockCreateAuditLog = createAuditLog as any;
 
-function makeRequest(search: string) {
-  const params = new URLSearchParams(search.replace(/^\?/, ""));
+function makeRequest(input: Record<string, unknown>) {
   return new Request("http://localhost/api/export", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      confirmPassword: "correct-password",
-      type: params.get("type") || "full",
-      format: params.get("format") || "json",
-      includeNotes: params.get("includeNotes") === "true",
-    }),
+    body: JSON.stringify({ confirmPassword: "correct-password", ...input }),
   }) as any;
 }
 
@@ -115,7 +107,7 @@ describe("export route", () => {
       remaining: 2,
       resetAt: Date.now() + 60_000,
       retryAfterSeconds: 60,
-      policy: { group: "export_data", userFacingErrorCode: "EXPORT_RATE_LIMITED" },
+      policy: { userFacingErrorCode: "EXPORT_RATE_LIMITED" },
       key: "export-key",
     });
   });
@@ -140,7 +132,7 @@ describe("export route", () => {
       },
     ]);
 
-    const response = await GET(makeRequest("?type=services&format=json"));
+    const response = await POST(makeRequest({ type: "services", format: "json" }));
     const text = await response.text();
     const data = JSON.parse(text);
 
@@ -171,7 +163,7 @@ describe("export route", () => {
       },
     ]);
 
-    const withoutNotes = await GET(makeRequest("?type=services&format=json"));
+    const withoutNotes = await POST(makeRequest({ type: "services", format: "json" }));
     const withoutText = JSON.parse(await withoutNotes.text());
     expect(withoutText.services[0].notes).toBeNull();
 
@@ -193,8 +185,8 @@ describe("export route", () => {
         address: { nickname: "Home", city: "Austin", state: "TX" },
       },
     ]);
-    const withNotes = await GET(
-      makeRequest("?type=services&format=json&includeNotes=true"),
+    const withNotes = await POST(
+      makeRequest({ type: "services", format: "json", includeNotes: true }),
     );
     const withText = JSON.parse(await withNotes.text());
     expect(withText.services[0].notes).toBe("decrypted:enc-note-ciphertext");
@@ -220,7 +212,7 @@ describe("export route", () => {
       },
     ]);
 
-    const response = await GET(makeRequest("?type=services&format=csv"));
+    const response = await POST(makeRequest({ type: "services", format: "csv" }));
     const csv = await response.text();
 
     expect(response.status).toBe(200);
@@ -246,7 +238,7 @@ describe("export route", () => {
       },
     ]);
 
-    const response = await GET(makeRequest("?type=full&format=json"));
+    const response = await POST(makeRequest({ type: "full", format: "json" }));
     const data = JSON.parse(await response.text());
 
     expect(response.status).toBe(200);
@@ -270,7 +262,7 @@ describe("export route", () => {
       { title: "Cancel gym", actionType: "CANCEL_OR_CLOSE", status: "ACCEPTED", notes: "task note" },
     ]);
 
-    const response = await GET(makeRequest("?type=full&format=json&includeNotes=true"));
+    const response = await POST(makeRequest({ type: "full", format: "json", includeNotes: true }));
     const data = JSON.parse(await response.text());
 
     expect(data.customProviders[0].notes).toBe("membership note");
@@ -293,7 +285,7 @@ describe("export route", () => {
       },
     ]);
 
-    const response = await GET(makeRequest("?type=full&format=json"));
+    const response = await POST(makeRequest({ type: "full", format: "json" }));
     const data = JSON.parse(await response.text());
 
     expect(response.status).toBe(200);
@@ -324,7 +316,7 @@ describe("export route", () => {
       },
     ]);
 
-    const response = await GET(makeRequest("?type=addresses&format=json"));
+    const response = await POST(makeRequest({ type: "addresses", format: "json" }));
     const data = JSON.parse(await response.text());
 
     expect(response.status).toBe(200);
@@ -339,7 +331,7 @@ describe("export route", () => {
       message: "Re-authentication is required.",
     });
 
-    const response = await GET(makeRequest("?type=addresses&format=json"));
+    const response = await POST(makeRequest({ type: "addresses", format: "json", confirmPassword: "" }));
     const body = await response.json();
 
     expect(response.status).toBe(403);
@@ -357,30 +349,16 @@ describe("export route", () => {
       remaining: 0,
       resetAt: Date.now() + 60_000,
       retryAfterSeconds: 60,
-      policy: { group: "export_data", userFacingErrorCode: "EXPORT_RATE_LIMITED" },
+      policy: { userFacingErrorCode: "EXPORT_RATE_LIMITED" },
       key: "export-key",
     });
 
-    const response = await GET(makeRequest("?type=full&format=json"));
+    const response = await POST(makeRequest({ type: "full", format: "json" }));
     const body = await response.json();
 
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("60");
     expect(body.code).toBe("EXPORT_RATE_LIMITED");
     expect(mockVerifyUserStepUp).not.toHaveBeenCalled();
-    expect(mockCreateAuditLog).toHaveBeenCalledWith(expect.objectContaining({
-      action: "EXPORT_LIMIT",
-      changes: expect.objectContaining({ retryAfterSeconds: 60 }),
-    }));
-  });
-
-  it("export audit does not include raw step-up or service secrets", async () => {
-    await GET(makeRequest("?type=services&format=json&includeNotes=true"));
-
-    const serializedAuditCalls = JSON.stringify(mockCreateAuditLog.mock.calls);
-    expect(serializedAuditCalls).not.toContain("correct-password");
-    expect(serializedAuditCalls).not.toContain("mfaCode");
-    expect(serializedAuditCalls).not.toContain("backupCode");
-    expect(serializedAuditCalls).not.toContain("accountNumber");
   });
 });

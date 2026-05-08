@@ -419,6 +419,18 @@ export async function POST(request: NextRequest) {
         },
       });
       console.error("Stripe webhook signature verification failed:", err);
+      emitSecurityEvent({
+        type: "WEBHOOK_SIG_FAILURE",
+        severity: "warn",
+        group: "webhook",
+        context: {
+          provider: "stripe",
+          // Length-only — never log raw signatures or bodies.
+          signatureLength: signature.length,
+          bodyLength: Buffer.byteLength(body, "utf8"),
+          reason: err instanceof Error ? err.message.slice(0, 200) : "constructEvent threw",
+        },
+      });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 

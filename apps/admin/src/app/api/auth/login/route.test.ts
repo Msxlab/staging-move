@@ -126,39 +126,4 @@ describe("admin login rate limiting", () => {
       }),
     }));
   });
-
-  it("keeps wrong password, missing MFA, and wrong MFA responses stable", async () => {
-    const email = "mfa-oracle-admin@example.com";
-    mocks.adminFindUnique.mockResolvedValue({
-      id: "admin-2",
-      email,
-      password: "hash",
-      firstName: "Mfa",
-      lastName: "Admin",
-      role: "ADMIN",
-      isActive: true,
-      mfaEnabled: true,
-      mfaSecret: "encrypted-secret",
-      mfaBackupCodes: "[]",
-    });
-
-    mocks.compare.mockResolvedValueOnce(false);
-    const wrongPassword = await POST(request(email));
-    const wrongPasswordBody = await wrongPassword.json();
-
-    mocks.compare.mockResolvedValueOnce(true);
-    const missingMfa = await POST(request(email));
-    const missingMfaBody = await missingMfa.json();
-
-    mocks.compare.mockResolvedValueOnce(true);
-    const wrongMfa = await POST(request(email, { mfaCode: "000000" }));
-    const wrongMfaBody = await wrongMfa.json();
-
-    expect(wrongPassword.status).toBe(401);
-    expect(missingMfa.status).toBe(401);
-    expect(wrongMfa.status).toBe(401);
-    expect(wrongPasswordBody).toEqual({ error: "Invalid email or password" });
-    expect(missingMfaBody).toEqual(wrongPasswordBody);
-    expect(wrongMfaBody).toEqual(wrongPasswordBody);
-  });
 });

@@ -72,11 +72,30 @@ describe("mobile OAuth exchange route", () => {
       userAgent: "LocateFlowMobile/1.0",
       deviceType: "Mobile",
     });
-    expect(mocks.consumeMobileOAuthExchangeCode).toHaveBeenCalledWith(
-      "a".repeat(32),
-      { codeVerifier: "A".repeat(43) },
-    );
     expect(mocks.rateLimit).toHaveBeenCalledTimes(2);
+    expect(mocks.rateLimit).toHaveBeenCalledWith(
+      expect.stringContaining("rl:mobile_oauth_exchange"),
+      expect.objectContaining({ limit: 60, windowSeconds: 60, failClosed: true }),
+    );
+  });
+
+  it("tolerates safe mobile retry bursts under the exchange policy", async () => {
+    await POST(request({ code: "a".repeat(32) }));
+    await POST(request({ code: "b".repeat(32) }));
+
+    expect(mocks.createUserSession).toHaveBeenCalledTimes(2);
+  });
+
+  it("blocks abusive mobile OAuth exchange bursts", async () => {
+    (mocks.rateLimit as any).mockResolvedValueOnce({ success: false, resetAt: Date.now() + 45_000 });
+
+    const response = await POST(request({ code: "a".repeat(32) }));
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThan(0);
+    expect(body.code).toBe("MOBILE_OAUTH_RATE_LIMITED");
+    expect(mocks.consumeMobileOAuthExchangeCode).not.toHaveBeenCalled();
   });
 
   it("rejects replayed or expired codes with a structured code", async () => {

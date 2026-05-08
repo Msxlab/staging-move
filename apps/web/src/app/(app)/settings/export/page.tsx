@@ -281,6 +281,20 @@ export default function ExportPage() {
           <Download className="h-4 w-4 text-tone-cyan-fg" />
           <h3 className="text-sm font-semibold text-foreground">Data Exports</h3>
         </div>
+        <div className="px-5 pb-3">
+          <label htmlFor="export-password" className="mb-1 block text-xs font-medium text-muted-foreground">
+            Confirm password
+          </label>
+          <input
+            id="export-password"
+            type="password"
+            autoComplete="current-password"
+            value={exportPassword}
+            onChange={(event) => setExportPassword(event.target.value)}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            placeholder="Password"
+          />
+        </div>
         <div className="px-5 pb-5 space-y-2">
           {exportOptions.map((opt) => {
             const OptIcon = opt.icon;

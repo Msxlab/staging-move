@@ -28,9 +28,15 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-vi.mock("@/lib/rate-limit", () => ({
-  getRateLimitKey: vi.fn(() => "rate-key"),
-  rateLimit: vi.fn(() => Promise.resolve({ success: true })),
+vi.mock("@/lib/rate-limit-policy", () => ({
+  enforceRateLimitPolicy: vi.fn(() => Promise.resolve({
+    success: true,
+    remaining: 2,
+    resetAt: Date.now() + 60_000,
+    retryAfterSeconds: 60,
+    policy: { userFacingErrorCode: "ACCOUNT_DELETE_RATE_LIMITED" },
+    key: "delete-key",
+  })),
 }));
 
 vi.mock("@/lib/audit", () => ({
@@ -53,6 +59,9 @@ vi.mock("@/lib/email-service", () => ({
 }));
 
 import { POST } from "./route";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+
+const rateLimitPolicyMock = enforceRateLimitPolicy as any;
 
 function request(body: unknown = {}) {
   return new NextRequest("https://app.locateflow.com/api/account/delete", {
@@ -80,6 +89,14 @@ describe("account deletion route", () => {
       id: "gdpr-1",
       status: "COMPLETED",
       cleanup: { stripeCanceled: true, userDeleted: true },
+    });
+    rateLimitPolicyMock.mockResolvedValue({
+      success: true,
+      remaining: 2,
+      resetAt: Date.now() + 60_000,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "ACCOUNT_DELETE_RATE_LIMITED" },
+      key: "delete-key",
     });
   });
 
@@ -126,5 +143,52 @@ describe("account deletion route", () => {
       action: "ACCOUNT_DEL_PROC",
       entityId: "gdpr-1",
     }));
+  });
+
+  it("applies a user-scoped cooldown before repeated delete attempts", async () => {
+    rateLimitPolicyMock.mockResolvedValueOnce({
+      success: false,
+      remaining: 0,
+      resetAt: Date.now() + 60_000,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "ACCOUNT_DELETE_RATE_LIMITED" },
+      key: "delete-key",
+    });
+
+    const response = await POST(request({ confirmPassword: "correct-password" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("60");
+    expect(body.code).toBe("ACCOUNT_DELETE_RATE_LIMITED");
+    expect(mocks.verifyUserStepUp).not.toHaveBeenCalled();
+    expect(mocks.processAccountDeletionRequest).not.toHaveBeenCalled();
+  });
+
+  it("limits backup-code step-up attempts for account deletion", async () => {
+    rateLimitPolicyMock
+      .mockResolvedValueOnce({
+        success: true,
+        remaining: 2,
+        resetAt: Date.now() + 60_000,
+        retryAfterSeconds: 60,
+        policy: { userFacingErrorCode: "ACCOUNT_DELETE_RATE_LIMITED" },
+        key: "delete-key",
+      })
+      .mockResolvedValueOnce({
+        success: false,
+        remaining: 0,
+        resetAt: Date.now() + 60_000,
+        retryAfterSeconds: 60,
+        policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+        key: "mfa-key",
+      });
+
+    const response = await POST(request({ confirmPassword: "correct-password", backupCode: "backup-123" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(body.code).toBe("MFA_RATE_LIMITED");
+    expect(mocks.verifyUserStepUp).not.toHaveBeenCalled();
   });
 });

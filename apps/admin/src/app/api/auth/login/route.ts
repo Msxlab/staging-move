@@ -177,7 +177,13 @@ function resolveClientIP(request: NextRequest): string {
 }
 
 function stableRateKeyHash(value: string | null | undefined): string {
-  return createHash("sha256").update(value || "none").digest("hex");
+  const input = value || "none";
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
 }
 
 function buildAdminLoginRateKey(email: string, ip: string, userAgent: string): string {
@@ -350,6 +356,34 @@ export async function POST(request: NextRequest) {
       if (!mfaCode && !backupCode) {
         await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_REQUIRED", ip, ua, mfaUsed: true, mfaMethod: null });
         return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      }
+
+      const mfaRateCheck = await checkLoginRateLimitRedis(
+        buildAdminMfaRateKey(admin.id, ip, ua),
+        ADMIN_MFA_RATE_LIMIT,
+      );
+      if (!mfaRateCheck.allowed) {
+        await writeLoginAuditLog({
+          action: "LOGIN_BLOCKED",
+          email,
+          ip,
+          reason: "MFA_RATE_LIMIT_BLOCKED",
+          adminId: admin.id,
+        });
+        await writeLoginLog({
+          adminUserId: admin.id,
+          email,
+          success: false,
+          failReason: "MFA_RATE_LIMIT_BLOCKED",
+          ip,
+          ua,
+          mfaUsed: true,
+          mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE",
+        });
+        return NextResponse.json(
+          { error: "Too many MFA attempts. Please try again later." },
+          { status: 429, headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) } },
+        );
       }
 
       const mfaRateCheck = await checkLoginRateLimitRedis(
