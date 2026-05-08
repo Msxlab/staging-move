@@ -1,8 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { z } from "zod";
+import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
 import { maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
+
+// Closed enums for the subscription columns admins can mutate from this
+// route. Free-form VarChar in the schema means we enforce the allowlist
+// at the API boundary or risk drift the rest of the app can't safely
+// read (`normalizeMovingPlanStatus` style workarounds).
+const SUBSCRIPTION_PLAN_VALUES = ["INDIVIDUAL", "FAMILY", "BUSINESS", "FREE_TRIAL"] as const;
+const SUBSCRIPTION_STATUS_VALUES = [
+  "ACTIVE",
+  "TRIALING",
+  "TRIAL_CANCELED",
+  "CANCEL_AT_PERIOD_END",
+  "CANCELED",
+  "EXPIRED",
+  "PAST_DUE",
+  "GRACE_PERIOD",
+  "PENDING_CHECKOUT",
+  "PENDING_VALIDATION",
+  "REFUNDED",
+  "UNPAID",
+] as const;
+const SUBSCRIPTION_ACCESS_TYPE_VALUES = [
+  "FREE_ACCESS",
+  "FREE_TRIAL",
+  "PAID",
+] as const;
+
+// Accept either a full ISO timestamp with offset OR a YYYY-MM-DD date.
+// The upstream PATCH already wraps strings in `new Date(...)` so we
+// only need to gate against unbounded text and obvious garbage.
+const isoDateString = z
+  .string()
+  .min(8)
+  .max(40)
+  .refine((v) => !Number.isNaN(new Date(v).getTime()), {
+    message: "Invalid ISO date string",
+  })
+  .nullable();
+
+// Strict admin user PATCH body. Only fields explicitly listed here can
+// be set — `.strict()` rejects unknown keys (server-managed columns like
+// `passwordHash`, `id`, `createdAt`, `mfaSecret`, etc.). String fields
+// have explicit caps so a malicious payload can't flood storage.
+const updateUserSchema = z
+  .object({
+    firstName: z.string().trim().min(1).max(100).optional(),
+    lastName: z.string().trim().min(1).max(100).optional(),
+    confirmPassword: z.string().max(256).optional(),
+    plan: z.enum(SUBSCRIPTION_PLAN_VALUES).optional(),
+    subscriptionStatus: z.enum(SUBSCRIPTION_STATUS_VALUES).optional(),
+    accessType: z.enum(SUBSCRIPTION_ACCESS_TYPE_VALUES).nullable().optional(),
+    premiumUntil: isoDateString.optional(),
+    trialEndsAt: isoDateString.optional(),
+    freeAccessEndsAt: isoDateString.optional(),
+    cancelAtPeriodEnd: z.boolean().optional(),
+    autoRenew: z.boolean().optional(),
+    premiumNote: z.string().max(2000).nullable().optional(),
+  })
+  .strict();
 
 const RESTORABLE_GDPR_DELETE_SOURCES = new Set(["admin", "admin_bulk"]);
 
@@ -24,7 +83,9 @@ export async function GET(
     const session = await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
     const { id } = await params;
 
-    const userRecord = await prisma.user.findUnique({
+    // Admin user detail must show soft-deleted users so SUPER_ADMINs
+    // can investigate deletion/restore flows. Use the raw client.
+    const userRecord = await prismaUnsafe.user.findUnique({
       where: { id },
       select: {
         id: true,
@@ -313,12 +374,14 @@ export async function POST(
       const confirm = await requirePasswordConfirm(
         session,
         typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+        { operation: "admin_user_restore" },
       );
       if (!confirm.confirmed) {
         return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
       }
 
-      const user = await prisma.user.findUnique({
+      // Restore needs to see soft-deleted rows — use the raw client.
+      const user = await prismaUnsafe.user.findUnique({
         where: { id },
         select: { id: true, email: true, deletedAt: true },
       });
@@ -546,7 +609,18 @@ export async function PATCH(
   try {
     const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
-    const body = await request.json();
+    const raw = await request.json().catch(() => null);
+    const parsed = updateUserSchema.safeParse(raw);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const field = issue?.path?.join(".") || "body";
+      const message =
+        field === "subscriptionStatus" || field === "plan" || field === "accessType"
+          ? `Invalid ${field}. Value must be one of the supported subscription enums.`
+          : `Invalid request: ${issue?.message || "validation failed"}`;
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    const body = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { id }, include: { subscription: true } });
     if (!user) {
@@ -579,6 +653,7 @@ export async function PATCH(
       const confirm = await requirePasswordConfirm(
         session,
         typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+        { operation: "billing_subscription_update" },
       );
       if (!confirm.confirmed) {
         return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
@@ -680,12 +755,14 @@ export async function DELETE(
       const body = await request.json();
       confirmPassword = body?.confirmPassword;
     } catch { /* no body is fine, password will be required */ }
-    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "admin_user_delete" });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }
 
-    const user = await prisma.user.findUnique({ where: { id }, include: { subscription: true } });
+    // Need to see deletedAt to detect already-deleted state, so use the
+    // raw client.
+    const user = await prismaUnsafe.user.findUnique({ where: { id }, include: { subscription: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

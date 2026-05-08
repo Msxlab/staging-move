@@ -227,6 +227,11 @@ export async function POST(request: NextRequest) {
       const mobileCodeChallenge = normalizeMobileOAuthCodeChallenge(
         request.cookies.get(MOBILE_OAUTH_PKCE_CHALLENGE_COOKIE)?.value,
       );
+      if (!mobileCodeChallenge) {
+        return clearAppleOAuthCookies(
+          NextResponse.redirect(await getOAuthResponseUrl(request, "/sign-in?error=mobile-oauth-pkce-required")),
+        );
+      }
       const mobileState = normalizeMobileOAuthState(
         request.cookies.get(MOBILE_OAUTH_STATE_COOKIE)?.value,
       );

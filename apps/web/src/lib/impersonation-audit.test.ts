@@ -46,7 +46,7 @@ describe("recordImpersonatedMutation", () => {
     expect(JSON.parse(call.data.changes)).toMatchObject({
       actor: "impersonation",
       targetUserId: "user_1",
-      sessionId: "session_1",
+      sessionId: "[REDACTED]",
       route: "/api/addresses/address_99",
       reason: "user-requested",
     });

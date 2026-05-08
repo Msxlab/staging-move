@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 
 // POST /api/cron/provider-stats
 // Daily cron: recalculate userCount for all providers
 export async function POST(request: NextRequest) {
   try {
-    if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const guard = await guardCronRequest(request, "provider-stats");
+    if (!guard.ok) return guard.response;
 
     const providers = await prisma.serviceProvider.findMany({
       where: { isActive: true },

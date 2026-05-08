@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, generateFingerprint, hashSessionToken } from "@/lib/auth";
@@ -353,11 +354,36 @@ export async function POST(request: NextRequest) {
     // MFA check — if enabled, require TOTP code or backup code
     if ((admin as any).mfaEnabled && (admin as any).mfaSecret) {
       if (!mfaCode && !backupCode) {
-        // Password is correct but MFA is needed
-        return NextResponse.json({
-          requiresMfa: true,
-          message: "MFA verification required. Provide mfaCode or backupCode.",
-        }, { status: 403 });
+        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_REQUIRED", ip, ua, mfaUsed: true, mfaMethod: null });
+        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      }
+
+      const mfaRateCheck = await checkLoginRateLimitRedis(
+        buildAdminMfaRateKey(admin.id, ip, ua),
+        ADMIN_MFA_RATE_LIMIT,
+      );
+      if (!mfaRateCheck.allowed) {
+        await writeLoginAuditLog({
+          action: "LOGIN_BLOCKED",
+          email,
+          ip,
+          reason: "MFA_RATE_LIMIT_BLOCKED",
+          adminId: admin.id,
+        });
+        await writeLoginLog({
+          adminUserId: admin.id,
+          email,
+          success: false,
+          failReason: "MFA_RATE_LIMIT_BLOCKED",
+          ip,
+          ua,
+          mfaUsed: true,
+          mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE",
+        });
+        return NextResponse.json(
+          { error: "Too many MFA attempts. Please try again later." },
+          { status: 429, headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) } },
+        );
       }
 
       const mfaRateCheck = await checkLoginRateLimitRedis(
@@ -390,7 +416,8 @@ export async function POST(request: NextRequest) {
 
       const secret = decrypt((admin as any).mfaSecret);
       if (!secret) {
-        return NextResponse.json({ error: "MFA configuration error" }, { status: 500 });
+        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_CONFIG_ERROR", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
+        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
       }
 
       let mfaValid = false;
@@ -426,7 +453,7 @@ export async function POST(request: NextRequest) {
         trackFailedLogin(email, ip);
         await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, reason: "INVALID_MFA", adminId: admin.id });
         await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "INVALID_MFA", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
-        return NextResponse.json({ error: "Invalid MFA code" }, { status: 401 });
+        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
       }
     }
 

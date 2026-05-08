@@ -60,7 +60,7 @@ export default function NewServicePage() {
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
 
-  // Provider state â€” fetch ALL at once like wizard
+  // Provider state — fetch ALL at once like wizard
   const [allProviders, setAllProviders] = useState<ScoredProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [providerSearch, setProviderSearch] = useState("");
@@ -100,7 +100,7 @@ export default function NewServicePage() {
       .catch(() => {});
   }, []);
 
-  // Fetch addresses â€” auto-select primary or first
+  // Fetch addresses — auto-select primary or first
   useEffect(() => {
     fetch("/api/addresses")
       .then((r) => r.json())
@@ -661,7 +661,7 @@ export default function NewServicePage() {
             </div>
           )}
 
-          {/* Provider categories â€” accordion (same as wizard) */}
+          {/* Provider categories — accordion (same as wizard) */}
           {loadingProviders ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-tone-orange-fg" />

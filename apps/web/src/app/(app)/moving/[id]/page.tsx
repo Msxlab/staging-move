@@ -134,7 +134,7 @@ export default function MovingPlanDetailPage() {
   // Single-tap "Done": replaces the old `window.confirm` modal. Completing
   // a task is fully reversible via Reopen, so prompting the user every
   // time is friction without a payoff. The undo toast covers the rare
-  // mis-tap path with a 5-second window â€” same pattern Gmail uses for
+  // mis-tap path with a 5-second window — same pattern Gmail uses for
   // archive.
   const handleCompleteMoveTask = async (taskId: string) => {
     const ok = await updateMoveTask(taskId, "COMPLETE");
@@ -248,7 +248,7 @@ export default function MovingPlanDetailPage() {
     ? t("interstateMoveFocus")
     : t("intrastateMoveFocus");
   const migrationSummaryLabel = migration
-    ? `${migration.transitionPlans?.length || migration.summary.total} transition items Â· guidance only`
+    ? `${migration.transitionPlans?.length || migration.summary.total} transition items · guidance only`
     : t("migrationGuidanceEmpty");
 
   return (
@@ -319,7 +319,7 @@ export default function MovingPlanDetailPage() {
           <div>
             <h2 className="text-sm font-semibold text-foreground">Your move checklist</h2>
             <p className="text-xs text-muted-foreground mt-1 max-w-2xl">
-              These items are tracked locally in LocateFlow â€” marking one done won't change anything at the provider.
+              These items are tracked locally in LocateFlow — marking one done won't change anything at the provider.
             </p>
           </div>
           <button
@@ -328,7 +328,7 @@ export default function MovingPlanDetailPage() {
             className="px-3 py-1.5 rounded-xl bg-tone-emerald-fg text-white text-xs font-medium hover:bg-tone-emerald-bg transition disabled:opacity-50"
           >
             {tasksLoading
-              ? "Workingâ€¦"
+              ? "Working…"
               : moveTasks.length === 0
                 ? "Generate checklist"
                 : "Refresh checklist"}
@@ -431,7 +431,7 @@ export default function MovingPlanDetailPage() {
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-base font-semibold text-foreground">{moveScopeLabel}</h3>
             <span className={`text-[10px] px-2 py-1 rounded-full border font-medium ${isInterstateMove ? "bg-tone-honey-bg text-tone-honey-fg border-tone-honey-br" : "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br"}`}>
-              {plan.fromAddress.state} â†’ {plan.toAddress.state}
+              {plan.fromAddress.state} → {plan.toAddress.state}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-2 max-w-2xl">{focusLabel}</p>
@@ -439,7 +439,7 @@ export default function MovingPlanDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
           <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
             <p className="text-[10px] uppercase tracking-wider text-foreground/35 mb-1">Route</p>
-            <p className="text-sm font-medium text-foreground">{plan.fromAddress.city}, {plan.fromAddress.state} â†’ {plan.toAddress.city}, {plan.toAddress.state}</p>
+            <p className="text-sm font-medium text-foreground">{plan.fromAddress.city}, {plan.fromAddress.state} → {plan.toAddress.city}, {plan.toAddress.state}</p>
             <p className="text-xs text-foreground/35 mt-1">Your guidance uses this route, but provider actions remain manual.</p>
           </div>
           <div className="rounded-xl border border-border bg-foreground/[0.03] p-4">
@@ -464,13 +464,13 @@ export default function MovingPlanDetailPage() {
               <h3 className="text-sm font-semibold text-foreground">Service Migration Plan</h3>
               {migration && (
                 <span className="ml-auto text-[10px] text-foreground/40">
-                  {plan?.fromAddress?.state} â†’ {plan?.toAddress?.state}
+                  {plan?.fromAddress?.state} → {plan?.toAddress?.state}
                 </span>
               )}
             </div>
             {migration && (
               <p className="text-xs text-muted-foreground">
-                {migration.summary.total} services analyzed Â· {migration.transitionPlans?.length || 0} manual transition guidance items
+                {migration.summary.total} services analyzed · {migration.transitionPlans?.length || 0} manual transition guidance items
               </p>
             )}
           </div>
@@ -514,7 +514,7 @@ export default function MovingPlanDetailPage() {
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {planItem.destinationProviderCandidates.slice(0, 3).map((candidate: any) => (
                               <span key={`${planItem.serviceId || i}-${candidate.id || candidate.name}`} className="text-[10px] px-2 py-1 rounded-full bg-foreground/5 text-foreground/45 border border-border">
-                                {candidate.name} Â· {candidate.coverageLabel}
+                                {candidate.name} · {candidate.coverageLabel}
                               </span>
                             ))}
                           </div>
@@ -739,7 +739,7 @@ export default function MovingPlanDetailPage() {
           >
             <div className="flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-tone-cyan-fg" />
-              <span className="text-sm font-semibold text-foreground">State Guide â€” {plan.toAddress.state}</span>
+              <span className="text-sm font-semibold text-foreground">State Guide — {plan.toAddress.state}</span>
             </div>
             {stateGuideOpen ? (
               <ChevronUp className="h-4 w-4 text-foreground/40" />

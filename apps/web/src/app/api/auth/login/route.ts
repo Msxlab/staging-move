@@ -24,31 +24,6 @@ import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 
 export const runtime = "nodejs";
 
-const loginSchema = z.object({
-  email: z.string().email().max(191).transform((v) => v.toLowerCase()),
-  password: z.string().min(1).max(200),
-  mfaCode: z.string().length(6).optional(),
-  backupCode: z.string().min(4).max(32).optional(),
-});
-
-function parseUA(ua: string) {
-  const r = { browser: "Unknown", os: "Unknown", deviceType: "Desktop" };
-  if (!ua) return r;
-  if (ua.includes("Edg")) r.browser = "Edge";
-  else if (ua.includes("OPR") || ua.includes("Opera")) r.browser = "Opera";
-  else if (ua.includes("Chrome")) r.browser = "Chrome";
-  else if (ua.includes("Safari") && !ua.includes("Chrome")) r.browser = "Safari";
-  else if (ua.includes("Firefox")) r.browser = "Firefox";
-  if (ua.includes("Windows")) r.os = "Windows";
-  else if (ua.includes("Mac OS")) r.os = "macOS";
-  else if (ua.includes("Android")) r.os = "Android";
-  else if (ua.includes("iPhone") || ua.includes("iPad")) r.os = "iOS";
-  else if (ua.includes("Linux")) r.os = "Linux";
-  if (ua.includes("Mobile") || ua.includes("Android") || ua.includes("iPhone")) r.deviceType = "Mobile";
-  else if (ua.includes("iPad") || ua.includes("Tablet")) r.deviceType = "Tablet";
-  return r;
-}
-
 export async function POST(request: NextRequest) {
   // General per-IP rate limit for the register/login cluster — absorbs
   // bursty clients without punishing individual accounts.

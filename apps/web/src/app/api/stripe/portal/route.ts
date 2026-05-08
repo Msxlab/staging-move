@@ -6,11 +6,19 @@ import { getConfiguredAppUrl } from "@/lib/app-url";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { captureMessage } from "@/lib/sentry";
+import {
+  isMobileAppClient,
+  mobileExternalBillingNotAllowedResponse,
+} from "@/lib/mobile-external-billing-guard";
 import Stripe from "stripe";
 
 // POST /api/stripe/portal — Create a Stripe Customer Portal session
 export async function POST(request: NextRequest) {
   try {
+    if (isMobileAppClient(request)) {
+      return mobileExternalBillingNotAllowedResponse();
+    }
+
     const stripeSecretKey = requireStripeSecretKeyForMutation(
       await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
     );

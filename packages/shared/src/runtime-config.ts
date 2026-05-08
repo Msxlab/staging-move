@@ -17,9 +17,32 @@ export const RUNTIME_CONFIG_CATEGORY_VALUES = [
 export type RuntimeConfigCategory = (typeof RUNTIME_CONFIG_CATEGORY_VALUES)[number];
 
 export type RuntimeConfigMaskStrategy = "secret" | "id" | "url" | "email" | "plain";
+export type RuntimeConfigSource =
+  | "ENV"
+  | "Runtime Config"
+  | "ENV + Runtime Config"
+  | "Missing"
+  | "Default";
+export type RuntimeConfigStatus =
+  | "Verified from ENV"
+  | "Verified from Runtime Config"
+  | "Missing"
+  | "Invalid"
+  | "Conflict"
+  | "Not required in this environment"
+  | "Build-time only"
+  | "Manual console action required";
+export type RuntimeConfigEditable = "Yes" | "Restricted" | "No";
 
 export const STRIPE_RUNTIME_CONFIG_OVERRIDE_FLAG = "STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED";
 
+/**
+ * Historical allowlist of keys for which deployment env was treated as
+ * authoritative. Kept exported so existing tests/imports keep working,
+ * but the precedence rule is now uniform: deployment env is
+ * authoritative for *every* managed key, and DB overrides only apply
+ * when the operator opts in via STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED.
+ */
 export const ENV_FIRST_RUNTIME_CONFIG_KEYS = [
   "APP_URL",
   "NEXT_PUBLIC_APP_URL",
@@ -31,8 +54,20 @@ export const ENV_FIRST_RUNTIME_CONFIG_KEYS = [
   "STRIPE_ANNUAL_TRIAL_DAYS",
 ] as const;
 
+const RUNTIME_CONFIG_DB_OVERRIDE_KEYS = [
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+  "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+  "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+  "STRIPE_ANNUAL_TRIAL_DAYS",
+] as const;
+
 export function isEnvFirstRuntimeConfigKey(key: string): boolean {
-  return (ENV_FIRST_RUNTIME_CONFIG_KEYS as readonly string[]).includes(key);
+  return (
+    (ENV_FIRST_RUNTIME_CONFIG_KEYS as readonly string[]).includes(key) ||
+    Boolean(getRuntimeConfigDefinition(key))
+  );
 }
 
 export function isRuntimeConfigDbOverrideEnabled(
@@ -41,11 +76,31 @@ export function isRuntimeConfigDbOverrideEnabled(
   return env[STRIPE_RUNTIME_CONFIG_OVERRIDE_FLAG]?.trim().toLowerCase() === "true";
 }
 
+/**
+ * Effective-config precedence rule.
+ *
+ * DigitalOcean / deployment env is the source of truth for every
+ * managed key. The Runtime Config DB is only used as a fallback when
+ * the same key is unset in the deployment env, OR when an operator
+ * explicitly enables the global override flag for break-glass key
+ * rotation. This avoids the foot-gun where an admin re-pastes a
+ * production secret into the UI and silently shadows the deployment-
+ * level env for every other process.
+ *
+ * Returns `true` when the resolver should prefer process.env over
+ * any DB-stored value.
+ */
 export function shouldPreferEnvRuntimeConfigValue(
   key: string,
   env: Record<string, string | undefined> = {},
 ): boolean {
-  return isEnvFirstRuntimeConfigKey(key) && !isRuntimeConfigDbOverrideEnabled(env);
+  if (
+    isRuntimeConfigDbOverrideEnabled(env) &&
+    (RUNTIME_CONFIG_DB_OVERRIDE_KEYS as readonly string[]).includes(key)
+  ) {
+    return false;
+  }
+  return isEnvFirstRuntimeConfigKey(key);
 }
 
 export function getRuntimeConfigEnvValue(
@@ -67,9 +122,79 @@ export interface RuntimeConfigDefinition {
   isSecret: boolean;
   requiredInProduction: boolean;
   maskStrategy: RuntimeConfigMaskStrategy;
+  runtimeEditable?: boolean;
+  buildTimeOnly?: boolean;
+  usedBy?: readonly string[];
+  validation?: string;
+  note?: string;
 }
 
 export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
+  {
+    key: "NODE_ENV",
+    label: "Node Environment",
+    description: "Runtime mode for the deployed process. Production deployments must run with NODE_ENV=production.",
+    scope: "GLOBAL",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: true,
+    maskStrategy: "plain",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "migration job", "cron/worker"],
+    validation: "production environment value",
+  },
+  {
+    key: "APP_ENV",
+    label: "Application Environment",
+    description: "Deployment environment label used to detect production, staging, and preview safety rules.",
+    scope: "GLOBAL",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: true,
+    maskStrategy: "plain",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "cron/worker"],
+    validation: "production-like environment value",
+  },
+  {
+    key: "DATABASE_URL",
+    label: "Database URL",
+    description: "Prisma database connection URL. This is deployment infrastructure config and is never DB-backed.",
+    scope: "GLOBAL",
+    category: "APP",
+    isSecret: true,
+    requiredInProduction: true,
+    maskStrategy: "url",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "migration job", "backup/storage"],
+    validation: "database URL",
+  },
+  {
+    key: "USER_JWT_SECRET",
+    label: "User JWT Secret",
+    description: "Secret used to sign user web and mobile sessions. Must be present in deployment env.",
+    scope: "WEB",
+    category: "SECURITY",
+    isSecret: true,
+    requiredInProduction: true,
+    maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["web app", "mobile/EAS"],
+    validation: "minimum 32 characters",
+  },
+  {
+    key: "ADMIN_JWT_SECRET",
+    label: "Admin JWT Secret",
+    description: "Secret used to sign admin sessions. Must be present in deployment env.",
+    scope: "ADMIN",
+    category: "SECURITY",
+    isSecret: true,
+    requiredInProduction: true,
+    maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["admin app", "web app"],
+    validation: "minimum 32 characters",
+  },
   {
     key: "STRIPE_SECRET_KEY",
     label: "Stripe Secret Key",
@@ -151,6 +276,16 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "secret",
   },
   {
+    key: "RESEND_WEBHOOK_SECRET",
+    label: "Resend Webhook Secret",
+    description: "Signing secret for inbound Resend event webhooks.",
+    scope: "WEB",
+    category: "EMAIL",
+    isSecret: true,
+    requiredInProduction: false,
+    maskStrategy: "secret",
+  },
+  {
     key: "EMAIL_FROM",
     label: "Email From",
     description: "Sender identity used for transactional emails.",
@@ -159,6 +294,36 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: false,
     requiredInProduction: true,
     maskStrategy: "plain",
+  },
+  {
+    key: "EMAIL_REPLY_TO",
+    label: "Email Reply-To",
+    description: "Reply-to address used for transactional and support emails.",
+    scope: "GLOBAL",
+    category: "EMAIL",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+  },
+  {
+    key: "SUPPORT_EMAIL",
+    label: "Support Email",
+    description: "Public support mailbox used in email footers, legal pages, and support workflows.",
+    scope: "GLOBAL",
+    category: "EMAIL",
+    isSecret: false,
+    requiredInProduction: true,
+    maskStrategy: "email",
+  },
+  {
+    key: "ADMIN_ALERT_EMAIL",
+    label: "Admin Alert Email",
+    description: "Recipient for scheduled admin operational digests when configured separately from ALERT_EMAIL_TO.",
+    scope: "ADMIN",
+    category: "EMAIL",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
   },
   {
     key: "ALERT_EMAIL_FROM",
@@ -199,6 +364,62 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: false,
     requiredInProduction: false,
     maskStrategy: "plain",
+    validation: "boolean",
+  },
+  {
+    key: "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
+    label: "Places Autocomplete Daily Limit",
+    description: "Global daily cap for Places autocomplete calls when enabled.",
+    scope: "GLOBAL",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    validation: "positive integer",
+  },
+  {
+    key: "PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT",
+    label: "Places Autocomplete Daily User Limit",
+    description: "Per-user daily cap for Places autocomplete calls.",
+    scope: "GLOBAL",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    validation: "positive integer",
+  },
+  {
+    key: "PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT",
+    label: "Places Autocomplete Daily IP Limit",
+    description: "Per-IP daily cap for Places autocomplete calls.",
+    scope: "GLOBAL",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    validation: "positive integer",
+  },
+  {
+    key: "PLACES_DETAILS_DAILY_USER_LIMIT",
+    label: "Places Details Daily User Limit",
+    description: "Per-user daily cap for Places details lookups.",
+    scope: "GLOBAL",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    validation: "positive integer",
+  },
+  {
+    key: "PLACES_DETAILS_DAILY_IP_LIMIT",
+    label: "Places Details Daily IP Limit",
+    description: "Per-IP daily cap for Places details lookups.",
+    scope: "GLOBAL",
+    category: "MAPS",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    validation: "positive integer",
   },
   {
     key: "R2_ENDPOINT",
@@ -359,6 +580,9 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: false,
     requiredInProduction: true,
     maskStrategy: "url",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "cron/worker", "Redis/Upstash"],
+    validation: "HTTPS URL",
   },
   {
     key: "UPSTASH_REDIS_REST_TOKEN",
@@ -369,6 +593,9 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: true,
     requiredInProduction: true,
     maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "cron/worker", "Redis/Upstash"],
+    validation: "minimum 16 characters",
   },
   {
     key: "CRON_SECRET",
@@ -379,6 +606,9 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: true,
     requiredInProduction: true,
     maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "cron/worker"],
+    validation: "minimum 32 characters",
   },
   {
     key: "INTERNAL_WEBHOOK_SECRET",
@@ -390,6 +620,9 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: true,
     requiredInProduction: true,
     maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "cron/worker"],
+    validation: "minimum 32 characters",
   },
   {
     key: "IMPERSONATION_HANDOFF_SECRET",
@@ -401,6 +634,9 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: true,
     requiredInProduction: true,
     maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app"],
+    validation: "minimum 32 characters",
   },
   {
     key: "FIELD_ENCRYPTION_KEY",
@@ -411,6 +647,9 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: true,
     requiredInProduction: true,
     maskStrategy: "secret",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "backup/storage"],
+    validation: "exactly 64 hex characters",
   },
   {
     key: "SLACK_WEBHOOK_URL",
@@ -451,6 +690,9 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: false,
     requiredInProduction: true,
     maskStrategy: "url",
+    runtimeEditable: false,
+    usedBy: ["web app", "admin app", "billing/Stripe", "email"],
+    validation: "HTTPS production URL",
   },
   {
     key: "NEXT_PUBLIC_APP_URL",
@@ -461,6 +703,82 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     isSecret: false,
     requiredInProduction: true,
     maskStrategy: "url",
+    runtimeEditable: false,
+    buildTimeOnly: true,
+    usedBy: ["web app", "admin app", "mobile/EAS", "email"],
+    validation: "HTTPS production URL",
+    note: "Public build-time value; rebuild and redeploy after changing it.",
+  },
+  {
+    key: "NEXT_PUBLIC_ADMIN_URL",
+    label: "Public Admin URL",
+    description: "Canonical public URL for the admin app.",
+    scope: "ADMIN",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: true,
+    maskStrategy: "url",
+    runtimeEditable: false,
+    buildTimeOnly: true,
+    usedBy: ["admin app", "web app"],
+    validation: "HTTPS production URL",
+    note: "Public build-time value; rebuild and redeploy after changing it.",
+  },
+  {
+    key: "EXPO_PUBLIC_API_URL",
+    label: "Expo Public API URL",
+    description: "Mobile build-time API URL used by the Expo app.",
+    scope: "MOBILE",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "url",
+    runtimeEditable: false,
+    buildTimeOnly: true,
+    usedBy: ["mobile/EAS"],
+    validation: "HTTPS production URL",
+    note: "Mobile build-time value; rebuild the EAS artifact after changing it.",
+  },
+  {
+    key: "EXPO_PUBLIC_APP_URL",
+    label: "Expo Public App URL",
+    description: "Mobile build-time web app URL used for deep links and web fallbacks.",
+    scope: "MOBILE",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "url",
+    runtimeEditable: false,
+    buildTimeOnly: true,
+    usedBy: ["mobile/EAS"],
+    validation: "HTTPS production URL",
+    note: "Mobile build-time value; rebuild the EAS artifact after changing it.",
+  },
+  {
+    key: "EXPO_PUBLIC_SENTRY_DSN",
+    label: "Expo Public Sentry DSN",
+    description: "Mobile build-time Sentry DSN.",
+    scope: "MOBILE",
+    category: "SECURITY",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "url",
+    runtimeEditable: false,
+    buildTimeOnly: true,
+    usedBy: ["mobile/EAS"],
+    validation: "Sentry DSN URL",
+    note: "Mobile build-time value; rebuild the EAS artifact after changing it.",
+  },
+  {
+    key: "NOTIFICATION_PUSH_ENABLED",
+    label: "Push Notifications Enabled",
+    description: "Feature flag controlling push notification dispatch.",
+    scope: "MOBILE",
+    category: "APP",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "plain",
+    validation: "boolean",
   },
 
   // ── OAuth (Google + Apple Sign-in) ─────────────────────────
@@ -637,6 +955,26 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
     maskStrategy: "url",
   },
   {
+    key: "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL",
+    label: "Expected Play Store Webhook Service Account",
+    description: "Expected service account email in Google Play Pub/Sub webhook OIDC tokens.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "email",
+  },
+  {
+    key: "EXPECTED_PLAYSTORE_WEBHOOK_SUBJECT",
+    label: "Expected Play Store Webhook Subject",
+    description: "Expected subject claim in Google Play Pub/Sub webhook OIDC tokens.",
+    scope: "MOBILE",
+    category: "MOBILE_BILLING",
+    isSecret: false,
+    requiredInProduction: false,
+    maskStrategy: "id",
+  },
+  {
     key: "MOBILE_ANDROID_PRODUCT_INDIVIDUAL",
     label: "Android Product ID — Individual (monthly)",
     description: "Google Play product/subscription identifier for the Individual monthly mobile plan.",
@@ -664,6 +1002,341 @@ export function getRuntimeConfigDefinition(key: string): RuntimeConfigDefinition
 
 export function isManagedRuntimeConfigKey(key: string): boolean {
   return RUNTIME_CONFIG_DEFINITIONS.some((definition) => definition.key === key);
+}
+
+export function normalizeRuntimeConfigValue(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim() || null;
+  }
+  return trimmed;
+}
+
+export function isRuntimeConfigDbBackedKeyAllowed(
+  keyOrDefinition: string | RuntimeConfigDefinition,
+): boolean {
+  const definition =
+    typeof keyOrDefinition === "string"
+      ? getRuntimeConfigDefinition(keyOrDefinition)
+      : keyOrDefinition;
+  if (!definition) return false;
+  return definition.runtimeEditable !== false && !definition.buildTimeOnly;
+}
+
+export function isProductionLikeRuntimeConfigEnv(
+  env: Record<string, string | undefined> = {},
+): boolean {
+  const appEnv = (env.APP_ENV || env.VERCEL_ENV || "").toLowerCase();
+  return (
+    env.NODE_ENV === "production" ||
+    appEnv === "production" ||
+    appEnv === "staging" ||
+    appEnv === "preview" ||
+    Boolean(env.DIGITALOCEAN_APP_ID)
+  );
+}
+
+export function isRuntimeConfigRequired(
+  definition: RuntimeConfigDefinition,
+  env: Record<string, string | undefined> = {},
+  productionLike = isProductionLikeRuntimeConfigEnv(env),
+): boolean {
+  return productionLike && definition.requiredInProduction;
+}
+
+export interface RuntimeConfigValidationResult {
+  ok: boolean;
+  reason: string | null;
+}
+
+function validEmailAddress(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function extractEmailAddress(value: string): string {
+  const angle = value.match(/<([^<>]+)>/);
+  return (angle?.[1] || value).trim();
+}
+
+function isLoopbackOrPrivateHost(hostname: string): boolean {
+  const lowerHost = hostname.toLowerCase();
+  return (
+    lowerHost === "localhost" ||
+    lowerHost === "127.0.0.1" ||
+    lowerHost === "0.0.0.0" ||
+    lowerHost === "::1" ||
+    lowerHost.endsWith(".local") ||
+    lowerHost.endsWith(".internal") ||
+    lowerHost === "metadata.google.internal" ||
+    /^10\./.test(lowerHost) ||
+    /^192\.168\./.test(lowerHost) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(lowerHost) ||
+    /^169\.254\./.test(lowerHost)
+  );
+}
+
+function validateUrl(value: string, options: { requireHttps?: boolean; allowDatabaseScheme?: boolean } = {}) {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return "not_a_url";
+  }
+  if (options.allowDatabaseScheme) return null;
+  if (!["http:", "https:"].includes(parsed.protocol)) return "non_http_scheme";
+  if (options.requireHttps && parsed.protocol !== "https:") return "requires_https";
+  if (isLoopbackOrPrivateHost(parsed.hostname)) return "internal_or_loopback_host";
+  return null;
+}
+
+export function validateRuntimeConfigValueShape(
+  key: string,
+  rawValue: string | null | undefined,
+): RuntimeConfigValidationResult {
+  const value = normalizeRuntimeConfigValue(rawValue);
+  if (!value) return { ok: false, reason: "missing" };
+
+  if (key === "NODE_ENV" && value !== "production") {
+    return { ok: false, reason: "production_required" };
+  }
+  if (key === "APP_ENV" && !["production", "staging", "preview"].includes(value.toLowerCase())) {
+    return { ok: false, reason: "production_like_required" };
+  }
+  if (key === "DATABASE_URL") {
+    const reason = validateUrl(value, { allowDatabaseScheme: true });
+    return reason ? { ok: false, reason } : { ok: true, reason: null };
+  }
+
+  const HTTPS_URL_KEYS = new Set([
+    "APP_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_ADMIN_URL",
+    "NEXT_PUBLIC_API_URL",
+    "EXPO_PUBLIC_API_URL",
+    "EXPO_PUBLIC_APP_URL",
+    "UPSTASH_REDIS_REST_URL",
+    "R2_ENDPOINT",
+    "R2_PUBLIC_BASE_URL",
+    "BACKUP_STORAGE_ENDPOINT",
+    "NEXT_PUBLIC_IMGPROXY_URL",
+    "STRIPE_PORTAL_RETURN_URL",
+    "GOOGLE_PLAY_RTDN_AUDIENCE",
+  ]);
+  const URL_KEYS = new Set([
+    ...HTTPS_URL_KEYS,
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "EXPO_PUBLIC_SENTRY_DSN",
+    "SLACK_WEBHOOK_URL",
+  ]);
+  if (URL_KEYS.has(key)) {
+    const reason = validateUrl(value, { requireHttps: HTTPS_URL_KEYS.has(key) });
+    return reason ? { ok: false, reason } : { ok: true, reason: null };
+  }
+
+  if (key === "FIELD_ENCRYPTION_KEY" || key === "IMGPROXY_KEY" || key === "IMGPROXY_SALT") {
+    return /^[0-9a-fA-F]{64}$/.test(value)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "hex_64_required" };
+  }
+
+  const MIN_SECRET_LEN: Record<string, number> = {
+    USER_JWT_SECRET: 32,
+    ADMIN_JWT_SECRET: 32,
+    CRON_SECRET: 32,
+    INTERNAL_WEBHOOK_SECRET: 32,
+    IMPERSONATION_HANDOFF_SECRET: 32,
+    BACKUP_HMAC_SECRET: 32,
+    UPSTASH_REDIS_REST_TOKEN: 16,
+  };
+  if (MIN_SECRET_LEN[key]) {
+    if (value.includes("REPLACE") || /^(test|dev|dummy|changeme)/i.test(value)) {
+      return { ok: false, reason: "placeholder_secret" };
+    }
+    return value.length >= MIN_SECRET_LEN[key]
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "secret_too_short" };
+  }
+
+  if (key === "STRIPE_SECRET_KEY") {
+    return /^sk_(test|live)_[A-Za-z0-9]+$/.test(value)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "stripe_secret_prefix" };
+  }
+  if (key === "STRIPE_WEBHOOK_SECRET") {
+    return /^whsec_[A-Za-z0-9_-]+$/.test(value)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "stripe_webhook_prefix" };
+  }
+  if (key === "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY") {
+    return /^pk_(test|live)_[A-Za-z0-9]+$/.test(value)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "stripe_publishable_prefix" };
+  }
+  if (key === "RESEND_API_KEY") {
+    return /^re_[A-Za-z0-9_-]+$/.test(value)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "resend_prefix" };
+  }
+
+  const BOOLEAN_KEYS = new Set([
+    "STRIPE_RUNTIME_CONFIG_OVERRIDE",
+    "STRIPE_RUNTIME_CONFIG_OVERRIDE_ENABLED",
+    "FEATURE_FLAGS_ENABLED",
+    "ALLOW_PRODUCTION_REPLACE_RESTORE",
+    "PLACES_AUTOCOMPLETE_ENABLED",
+    "NOTIFICATION_PUSH_ENABLED",
+  ]);
+  if (BOOLEAN_KEYS.has(key)) {
+    return value === "true" || value === "false"
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "boolean_required" };
+  }
+
+  const INTEGER_KEYS = new Set([
+    "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
+    "PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT",
+    "PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT",
+    "PLACES_DETAILS_DAILY_USER_LIMIT",
+    "PLACES_DETAILS_DAILY_IP_LIMIT",
+  ]);
+  if (INTEGER_KEYS.has(key)) {
+    return /^[1-9]\d*$/.test(value)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "positive_integer_required" };
+  }
+  if (key === "STRIPE_ANNUAL_TRIAL_DAYS") {
+    return /^(0|[1-9]\d*)$/.test(value)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "non_negative_integer_required" };
+  }
+
+  const EMAIL_KEYS = new Set([
+    "EMAIL_FROM",
+    "EMAIL_REPLY_TO",
+    "ALERT_EMAIL_FROM",
+    "ALERT_EMAIL_TO",
+    "ADMIN_ALERT_EMAIL",
+    "SUPPORT_EMAIL",
+    "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
+    "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL",
+  ]);
+  if (EMAIL_KEYS.has(key)) {
+    const emails = key === "ALERT_EMAIL_TO"
+      ? value.split(",").map((email) => email.trim()).filter(Boolean)
+      : [extractEmailAddress(value)];
+    return emails.length > 0 && emails.every(validEmailAddress)
+      ? { ok: true, reason: null }
+      : { ok: false, reason: "email_required" };
+  }
+
+  return { ok: true, reason: null };
+}
+
+export interface RuntimeConfigResolution {
+  configured: boolean;
+  source: RuntimeConfigSource;
+  status: RuntimeConfigStatus;
+  effectiveValue: string | null;
+  maskedValue: string | null;
+  editable: RuntimeConfigEditable;
+  validation: string;
+  dbOverrideIgnored: boolean;
+  conflict: boolean;
+  notes: string[];
+}
+
+export function resolveRuntimeConfigResolution(input: {
+  definition: RuntimeConfigDefinition;
+  env?: Record<string, string | undefined>;
+  dbValue?: string | null;
+  productionLike?: boolean;
+}): RuntimeConfigResolution {
+  const env = input.env || {};
+  const productionLike = input.productionLike ?? isProductionLikeRuntimeConfigEnv(env);
+  const definition = input.definition;
+  const envValue = normalizeRuntimeConfigValue(getRuntimeConfigEnvValue(definition.key, env));
+  const dbValue = normalizeRuntimeConfigValue(input.dbValue);
+  const dbAllowed = isRuntimeConfigDbBackedKeyAllowed(definition);
+  const overrideEnabled =
+    isRuntimeConfigDbOverrideEnabled(env) &&
+    (RUNTIME_CONFIG_DB_OVERRIDE_KEYS as readonly string[]).includes(definition.key);
+  const hasEnv = Boolean(envValue);
+  const hasDb = Boolean(dbValue);
+  const source: RuntimeConfigSource = hasEnv && hasDb
+    ? "ENV + Runtime Config"
+    : hasEnv
+      ? "ENV"
+      : hasDb
+        ? "Runtime Config"
+        : "Missing";
+  const required = isRuntimeConfigRequired(definition, env, productionLike);
+  const notes = [
+    definition.note,
+    definition.buildTimeOnly ? "Rebuild required after changing this deployment env value." : null,
+    !dbAllowed ? "Managed by deployment environment; do not store this key in Runtime Config DB." : null,
+  ].filter(Boolean) as string[];
+
+  const effectiveValue = hasEnv && (!overrideEnabled || !dbAllowed)
+    ? envValue
+    : hasDb && dbAllowed
+      ? dbValue
+      : null;
+  const validation = effectiveValue
+    ? validateRuntimeConfigValueShape(definition.key, effectiveValue)
+    : { ok: false, reason: "missing" };
+  const dbOverrideIgnored = Boolean(hasEnv && hasDb && (!overrideEnabled || !dbAllowed));
+  const conflict = Boolean(hasEnv && hasDb && !overrideEnabled);
+  const editable: RuntimeConfigEditable = !dbAllowed || definition.buildTimeOnly
+    ? "No"
+    : hasEnv || definition.isSecret
+      ? "Restricted"
+      : "Yes";
+
+  let status: RuntimeConfigStatus;
+  if (!effectiveValue) {
+    status = hasDb && !dbAllowed
+      ? "Manual console action required"
+      : required
+        ? "Missing"
+        : "Not required in this environment";
+  } else if (!validation.ok) {
+    status = "Invalid";
+  } else if (conflict) {
+    status = "Conflict";
+  } else if (definition.buildTimeOnly) {
+    status = "Build-time only";
+  } else {
+    status = source === "Runtime Config" ? "Verified from Runtime Config" : "Verified from ENV";
+  }
+
+  return {
+    configured: Boolean(effectiveValue && validation.ok),
+    source,
+    status,
+    effectiveValue,
+    maskedValue: effectiveValue
+      ? maskRuntimeConfigValue(effectiveValue, definition.maskStrategy)
+      : hasDb
+        ? maskRuntimeConfigValue(dbValue, definition.maskStrategy)
+        : null,
+    editable,
+    validation: validation.ok ? "Valid" : validation.reason || "Invalid",
+    dbOverrideIgnored,
+    conflict,
+    notes,
+  };
+}
+
+const PUBLIC_SECRET_NAME_PATTERN = /(SECRET|TOKEN|PASSWORD|PRIVATE|ACCESS_KEY|WEBHOOK_SECRET)/i;
+
+export function publicRuntimeConfigKeyLooksSecret(key: string): boolean {
+  if (!key.startsWith("NEXT_PUBLIC_") && !key.startsWith("EXPO_PUBLIC_")) return false;
+  return PUBLIC_SECRET_NAME_PATTERN.test(key);
 }
 
 export function maskRuntimeConfigValue(

@@ -6,6 +6,8 @@ import { verifyTOTP } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 
@@ -66,6 +68,14 @@ export async function POST(request: NextRequest) {
   await prisma.user.update({
     where: { id: userId },
     data: { mfaEnabled: true },
+  });
+
+  recordUserSecurityAudit({
+    userId,
+    action: "MFA_ENABLED",
+    entityId: userId,
+    changes: { status: "success" },
+    ...extractRequestMeta(request),
   });
 
   void sendSecurityNoticeEmail({

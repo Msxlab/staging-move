@@ -405,6 +405,19 @@ export async function POST(request: NextRequest) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
+      emitSecurityEvent({
+        type: "WEBHOOK_SIG_FAILURE",
+        severity: "warn",
+        group: "webhook",
+        context: {
+          provider: "stripe",
+          reason: "signature_verification_failed",
+          environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+          signatureLength: signature.length,
+          bodyLength: Buffer.byteLength(body, "utf8"),
+          correlationId: request.headers.get("stripe-request-id") || null,
+        },
+      });
       console.error("Stripe webhook signature verification failed:", err);
       emitSecurityEvent({
         type: "WEBHOOK_SIG_FAILURE",

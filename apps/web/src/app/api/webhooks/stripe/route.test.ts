@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   sendSubscriptionActivatedEmail: vi.fn(),
   sendSubscriptionCanceledEmail: vi.fn(),
   sendPaymentFailedEmail: vi.fn(),
+  emitSecurityEvent: vi.fn(),
   prisma: {
     processedWebhookEvent: {
       findUnique: vi.fn(),
@@ -36,6 +37,9 @@ vi.mock("@/lib/email-service", () => ({
   sendSubscriptionActivatedEmail: mocks.sendSubscriptionActivatedEmail,
   sendSubscriptionCanceledEmail: mocks.sendSubscriptionCanceledEmail,
   sendPaymentFailedEmail: mocks.sendPaymentFailedEmail,
+}));
+vi.mock("@/lib/security-events", () => ({
+  emitSecurityEvent: (...args: any[]) => mocks.emitSecurityEvent(...args),
 }));
 vi.mock("stripe", () => ({ default: mocks.stripeConstructor }));
 
@@ -198,6 +202,26 @@ describe("Stripe webhook idempotency and livemode", () => {
     mocks.sendSubscriptionActivatedEmail.mockResolvedValue({});
     mocks.sendSubscriptionCanceledEmail.mockResolvedValue({});
     mocks.sendPaymentFailedEmail.mockResolvedValue({});
+  });
+
+  it("emits a safe security event when signature verification fails", async () => {
+    mocks.constructEvent.mockImplementationOnce(() => {
+      throw new Error("bad signature");
+    });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(400);
+    expect(mocks.emitSecurityEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: "WEBHOOK_SIG_FAILURE",
+      context: expect.objectContaining({
+        provider: "stripe",
+        reason: "signature_verification_failed",
+        signatureLength: "sig_test".length,
+        bodyLength: 2,
+      }),
+    }));
+    expect(processedMock.create).not.toHaveBeenCalled();
   });
 
   it("skips a duplicate event after successful processing", async () => {

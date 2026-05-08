@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendBillReminderEmail } from "@/lib/email-service";
 import { createInAppNotification } from "@/lib/in-app-notifications";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import {
   buildWebNotificationSettings,
@@ -21,10 +21,8 @@ import {
  */
 
 export async function GET(req: Request) {
-  // SEC-003: Fail-closed — reject if no matching cron secret configured.
-  if (!verifyInternalAuth(req.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await guardCronRequest(req, "bill-reminders");
+  if (!guard.ok) return guard.response;
 
   try {
     const now = new Date();

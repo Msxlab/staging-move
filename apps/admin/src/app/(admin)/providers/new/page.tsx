@@ -608,7 +608,7 @@ export default function NewProviderPage() {
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Name</p>
-              <p className="font-medium text-foreground">{form.name || "â€”"}</p>
+              <p className="font-medium text-foreground">{form.name || "—"}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Category</p>
@@ -637,7 +637,7 @@ export default function NewProviderPage() {
             <div>
               <p className="text-xs text-muted-foreground">Website</p>
               <p className="font-medium text-foreground truncate">
-                {form.website || "â€”"}
+                {form.website || "—"}
               </p>
             </div>
             <div>

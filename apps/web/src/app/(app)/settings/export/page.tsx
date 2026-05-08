@@ -65,7 +65,7 @@ async function downloadFromUrl(url: string, fallbackFilename: string, init?: Req
       const data = await res.json();
       if (data?.error) message = data.error;
     } catch {
-      // non-JSON error body â€” keep the generic message
+      // non-JSON error body — keep the generic message
     }
     throw new Error(message);
   }
@@ -123,14 +123,23 @@ export default function ExportPage() {
     setDownloading(null);
   };
 
-  // Per-address monthly expense PDF â€” produced server-side by pdfkit.
+  // Per-address monthly expense PDF — produced server-side by pdfkit.
   // No more pop-up window or print dialog dependency.
   const handlePdfReport = async (address: AddressInfo) => {
     setGeneratingPdf(address.id);
     try {
       await downloadFromUrl(
-        `/api/export/pdf?type=address&addressId=${encodeURIComponent(address.id)}`,
+        "/api/export/pdf",
         `locateflow-${address.nickname || address.street}-report.pdf`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "address",
+            addressId: address.id,
+            confirmPassword: exportPassword,
+          }),
+        },
       );
       toast.success("PDF report downloaded");
     } catch (err) {
@@ -139,14 +148,22 @@ export default function ExportPage() {
     setGeneratingPdf(null);
   };
 
-  // Full-account snapshot PDF â€” profile, subscription, addresses,
+  // Full-account snapshot PDF — profile, subscription, addresses,
   // services, moving plans, task summary in a single document.
   const handleFullAccountPdf = async () => {
     setGeneratingFullPdf(true);
     try {
       await downloadFromUrl(
-        "/api/export/pdf?type=full",
+        "/api/export/pdf",
         "locateflow-account-snapshot.pdf",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "full",
+            confirmPassword: exportPassword,
+          }),
+        },
       );
       toast.success("Full account PDF downloaded");
     } catch (err) {
@@ -169,6 +186,21 @@ export default function ExportPage() {
         </div>
       </div>
 
+      <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl px-5 py-4">
+        <label htmlFor="export-password" className="mb-1 block text-xs font-medium text-muted-foreground">
+          Confirm password
+        </label>
+        <input
+          id="export-password"
+          type="password"
+          autoComplete="current-password"
+          value={exportPassword}
+          onChange={(event) => setExportPassword(event.target.value)}
+          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          placeholder="Password"
+        />
+      </div>
+
       {/* Per-address PDF reports */}
       <div className="rounded-2xl border border-border bg-foreground/5 backdrop-blur-xl overflow-hidden">
         <div className="flex items-center gap-2 px-5 pt-5 pb-3">
@@ -177,7 +209,7 @@ export default function ExportPage() {
         </div>
         <p className="text-xs text-foreground/40 px-5 pb-3">
           Pick the address you want a monthly report for. Each PDF is generated on the server with branding,
-          category breakdown, and full service details â€” no print dialog needed.
+          category breakdown, and full service details — no print dialog needed.
         </p>
         <div className="px-5 pb-5 space-y-2">
           {loadingAddresses ? (
@@ -202,11 +234,11 @@ export default function ExportPage() {
                       <p className="text-sm font-medium text-foreground truncate">{addr.nickname || addr.street}</p>
                       {addr.isPrimary && <Star className="h-3 w-3 text-tone-honey-fg fill-amber-400 shrink-0" />}
                     </div>
-                    <p className="text-[10px] text-foreground/35">{svcCount} services Â· {formatCurrency(monthlyCost)}/mo</p>
+                    <p className="text-[10px] text-foreground/35">{svcCount} services · {formatCurrency(monthlyCost)}/mo</p>
                   </div>
                   <button
                     onClick={() => handlePdfReport(addr)}
-                    disabled={isGenerating}
+                    disabled={isGenerating || !exportPassword}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-orange-fg text-white text-xs font-medium hover:bg-tone-orange-bg transition disabled:opacity-50 shrink-0"
                   >
                     {isGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
@@ -234,7 +266,7 @@ export default function ExportPage() {
           </div>
           <button
             onClick={handleFullAccountPdf}
-            disabled={generatingFullPdf}
+            disabled={generatingFullPdf || !exportPassword}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tone-honey-fg text-white text-xs font-medium hover:bg-tone-honey-fg/80 transition disabled:opacity-50 shrink-0"
           >
             {generatingFullPdf ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}

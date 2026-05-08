@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const session = await requireAdmin();
     const body = await request.json();
 
-    const confirm = await requirePasswordConfirm(session, body.confirmPassword);
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, { operation: "admin_mfa_disable" });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }

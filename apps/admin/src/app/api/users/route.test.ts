@@ -22,14 +22,15 @@ vi.mock("@/lib/auth", () => ({
   requirePasswordConfirm: (...args: unknown[]) => mocks.requirePasswordConfirm(...args),
 }));
 
-vi.mock("@/lib/db", () => ({
-  prisma: {
+vi.mock("@/lib/db", () => {
+  const userClient = {
+    findMany: (...args: unknown[]) => mocks.userFindMany(...args),
+    updateMany: (...args: unknown[]) => mocks.userUpdateMany(...args),
+    count: (...args: unknown[]) => mocks.userCount(...args),
+  };
+  const prisma = {
     $transaction: (...args: unknown[]) => mocks.transaction(...args),
-    user: {
-      findMany: (...args: unknown[]) => mocks.userFindMany(...args),
-      updateMany: (...args: unknown[]) => mocks.userUpdateMany(...args),
-      count: (...args: unknown[]) => mocks.userCount(...args),
-    },
+    user: userClient,
     userLoginSession: {
       updateMany: (...args: unknown[]) => mocks.userLoginSessionUpdateMany(...args),
     },
@@ -47,8 +48,9 @@ vi.mock("@/lib/db", () => ({
     adminAuditLog: {
       create: (...args: unknown[]) => mocks.adminAuditCreate(...args),
     },
-  },
-}));
+  };
+  return { prisma, prismaUnsafe: prisma, rawPrisma: prisma };
+});
 
 import { DELETE, GET } from "./route";
 

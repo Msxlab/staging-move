@@ -80,7 +80,7 @@ export function SpendingByRegionWidget() {
             <p className="text-xs text-muted-foreground">Total monthly</p>
             <p className="text-lg font-bold text-foreground">{USD.format(data.total.totalSpend)}</p>
             <p className="text-xs text-muted-foreground">
-              {data.total.userCount} users Â· {data.total.serviceCount} services
+              {data.total.userCount} users · {data.total.serviceCount} services
             </p>
           </div>
         )}
@@ -163,7 +163,7 @@ export function SpendingByRegionWidget() {
       {data && data.byStateCategory.length > 0 && (
         <details className="rounded border border-border">
           <summary className="cursor-pointer px-3 py-2 text-sm font-medium hover:bg-muted">
-            State Ã— category breakdown ({data.byStateCategory.length} cells)
+            State × category breakdown ({data.byStateCategory.length} cells)
           </summary>
           <div className="px-3 py-2 max-h-96 overflow-auto">
             <table className="w-full text-xs">

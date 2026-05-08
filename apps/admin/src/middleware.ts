@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { adminRoleRequiresMfa } from "@/lib/admin-roles";
 import { checkIPAccess } from "@/lib/ip-rules";
 import { getInternalCallerSecret } from "@/lib/internal-secrets";
 import { generateAdminSessionFingerprint } from "@/lib/session-fingerprint";
@@ -244,6 +245,7 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   const pathname = req.nextUrl?.pathname || "";
   if (!pathname.startsWith("/api/")) return null;
   if (pathname.startsWith("/api/internal/")) return null;
+  if (pathname.startsWith("/api/cron/")) return null;
 
   const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
   if (!isMutation) return null;
@@ -315,6 +317,55 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   return null;
 }
 
+const adminRateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+function getAdminRouteRateLimit(req: NextRequest): { limit: number; windowMs: number; group: string } | null {
+  const pathname = req.nextUrl?.pathname || "";
+  if (!pathname.startsWith("/api/")) return null;
+  if (pathname.startsWith("/api/cron/")) return { limit: 1, windowMs: 60_000, group: "cron" };
+  if (pathname.startsWith("/api/internal/")) return { limit: 60, windowMs: 60_000, group: "internal" };
+  if (pathname === "/api/auth/login") return { limit: 20, windowMs: 15 * 60_000, group: "admin_login" };
+  if (req.method === "GET" || req.method === "HEAD") return { limit: 240, windowMs: 60_000, group: "admin_read" };
+
+  const isStrict =
+    pathname.startsWith("/api/backup") ||
+    pathname.startsWith("/api/runtime-config") ||
+    pathname.startsWith("/api/security/key-rotation") ||
+    pathname.startsWith("/api/notifications") ||
+    (pathname.startsWith("/api/providers") && req.method === "DELETE") ||
+    pathname.includes("/subscription-actions");
+  return isStrict
+    ? { limit: 20, windowMs: 60_000, group: "admin_sensitive_write" }
+    : { limit: 90, windowMs: 60_000, group: "admin_write" };
+}
+
+function applyAdminRouteRateLimit(req: NextRequest): NextResponse | null {
+  const policy = getAdminRouteRateLimit(req);
+  if (!policy) return null;
+
+  const now = Date.now();
+  const routeKey = policy.group === "cron" ? req.nextUrl.pathname : `${req.method}:${req.nextUrl.pathname}`;
+  const key = `${policy.group}:${resolveClientIP(req)}:${routeKey}`;
+  const entry = adminRateLimitStore.get(key);
+  if (!entry || entry.resetAt <= now) {
+    adminRateLimitStore.set(key, { count: 1, resetAt: now + policy.windowMs });
+    return null;
+  }
+  entry.count += 1;
+  if (entry.count <= policy.limit) return null;
+
+  const retryAfter = Math.max(1, Math.ceil((entry.resetAt - now) / 1000));
+  return NextResponse.json(
+    {
+      error: "Too many requests. Please try again later.",
+      code: "ADMIN_RATE_LIMITED",
+      routeGroup: policy.group,
+      retryAfterSeconds: retryAfter,
+    },
+    { status: 429, headers: { "Retry-After": String(retryAfter), "X-RateLimit-Group": policy.group } },
+  );
+}
+
 // Locale auto-detect: set NEXT_LOCALE cookie from Accept-Language on first
 // visit. Admin's LanguageSelector overwrites this cookie on explicit choice.
 const ADMIN_SUPPORTED_LOCALES = ["en", "es"] as const;
@@ -366,19 +417,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Allow internal endpoints (used by IP rule cache refresh)
-  if (pathname.startsWith("/api/internal/")) {
-    return NextResponse.next();
+  // Body size limit check
+  const bodySizeBlocked = applyBodySizeLimit(request);
+  if (bodySizeBlocked) return hardenEarlyResponse(bodySizeBlocked);
+
+  const rateLimited = applyAdminRouteRateLimit(request);
+  if (rateLimited) return hardenEarlyResponse(rateLimited);
+
+  // Allow internal and cron endpoints; their route handlers verify shared secrets.
+  if (pathname.startsWith("/api/internal/") || pathname.startsWith("/api/cron/")) {
+    return nextWithCsp(request);
   }
 
   // Allow public paths
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return seedLocaleCookie(request, nextWithCsp(request));
   }
-
-  // Body size limit check
-  const bodySizeBlocked = applyBodySizeLimit(request);
-  if (bodySizeBlocked) return hardenEarlyResponse(bodySizeBlocked);
 
   // SEC-008: CSRF check on API mutations
   const csrfBlocked = applyCsrfCheck(request);
@@ -415,7 +469,7 @@ export async function middleware(request: NextRequest) {
     // with `mfaEnabled: true` (see refreshSessionCookie).
     const role = typeof payload.role === "string" ? payload.role : "";
     const mfaEnabled = payload.mfaEnabled === true;
-    const requiresMfaSetup = role === "SUPER_ADMIN" && !mfaEnabled;
+    const requiresMfaSetup = adminRoleRequiresMfa(role) && !mfaEnabled;
     if (requiresMfaSetup) {
       const allowedDuringSetup =
         pathname === "/settings/two-factor" ||

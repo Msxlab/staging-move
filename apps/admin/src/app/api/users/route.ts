@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { parsePaginationParams } from "@/lib/pagination";
 
@@ -67,8 +67,15 @@ export async function GET(request: NextRequest) {
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const prevWeek = new Date(sevenDaysAgo.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    // The admin user list intentionally supports listing soft-deleted
+    // users (deletedScope=all|deleted) so admins can investigate or
+    // restore. Use the raw client for the list query so the soft-delete
+    // extension does not silently strip deleted users when scope=all.
+    // The `where` clause already enforces the right deletedAt filter
+    // explicitly per scope.
+    const userClient = deletedScope === "active" ? prisma : prismaUnsafe;
     const [users, total, totalAll, newThisWeek, newPrevWeek, activeSubCount, planCounts] = await Promise.all([
-      prisma.user.findMany({
+      userClient.user.findMany({
         where,
         select: {
           id: true,
@@ -98,10 +105,10 @@ export async function GET(request: NextRequest) {
         take: perPage,
         skip,
       }),
-      prisma.user.count({ where }),
-      prisma.user.count({ where: deletedWhere }),
-      prisma.user.count({ where: { createdAt: { gte: sevenDaysAgo }, ...deletedWhere } }),
-      prisma.user.count({ where: { createdAt: { gte: prevWeek, lt: sevenDaysAgo }, ...deletedWhere } }),
+      userClient.user.count({ where }),
+      userClient.user.count({ where: deletedWhere }),
+      userClient.user.count({ where: { createdAt: { gte: sevenDaysAgo }, ...deletedWhere } }),
+      userClient.user.count({ where: { createdAt: { gte: prevWeek, lt: sevenDaysAgo }, ...deletedWhere } }),
       prisma.subscription.count({ where: { status: { in: ["ACTIVE", "TRIALING"] } } }),
       prisma.subscription.groupBy({ by: ["plan"], _count: { id: true } }),
     ]);
@@ -157,7 +164,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Step-up auth: bulk user deletion is the highest-blast-radius admin action.
-    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "admin_user_bulk_delete" });
     if (!confirm.confirmed) {
       return NextResponse.json(
         { error: confirm.error, requiresPassword: true },

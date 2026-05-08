@@ -21,7 +21,7 @@ const CATEGORY_META: Record<string, { label: string; icon: string }> = {
   GOVERNMENT_HEALTH: { label: "Healthcare.gov", icon: "ðŸ¥" }, GOVERNMENT_EDUCATION: { label: "Education / FAFSA", icon: "ðŸŽ“" },
   GOVERNMENT_IMMIGRATION: { label: "Immigration", icon: "ðŸŒ" }, GOVERNMENT_HOUSING: { label: "Housing (HUD)", icon: "ðŸ˜ï¸" },
   GOVERNMENT_EMERGENCY: { label: "Emergency (FEMA)", icon: "ðŸš¨" }, GOVERNMENT_OTHER: { label: "Gov. Other", icon: "ðŸ›ï¸" },
-  UTILITY_ELECTRIC: { label: "Electric", icon: "âš¡" }, UTILITY_GAS: { label: "Gas", icon: "ðŸ”¥" },
+  UTILITY_ELECTRIC: { label: "Electric", icon: "⚡" }, UTILITY_GAS: { label: "Gas", icon: "ðŸ”¥" },
   UTILITY_WATER: { label: "Water", icon: "ðŸ’§" }, UTILITY_INTERNET: { label: "Internet", icon: "ðŸŒ" },
   UTILITY_PHONE: { label: "Phone", icon: "ðŸ“±" }, UTILITY_CABLE: { label: "Cable / TV", icon: "ðŸ“º" },
   UTILITY_TRASH: { label: "Trash & Waste", icon: "ðŸ—‘ï¸" }, UTILITY_SEWER: { label: "Sewer", icon: "ðŸš°" },
@@ -259,7 +259,7 @@ export default function AddressDetailPage() {
     SHOPPING: t("detail_group_shopping"),
   };
   const groupIcons: Record<string, string> = {
-    GOVERNMENT: "ðŸ›ï¸", UTILITY: "âš¡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
+    GOVERNMENT: "ðŸ›ï¸", UTILITY: "⚡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
     TRANSPORTATION: "ðŸš—", KIDS: "ðŸ‘¶", FITNESS: "ðŸ’ª", SHOPPING: "ðŸ›’",
   };
 

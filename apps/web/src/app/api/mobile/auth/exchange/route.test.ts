@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/mobile-oauth", () => ({
-  consumeMobileOAuthExchangeCode: (code: string) => (mocks.consumeMobileOAuthExchangeCode as any)(code),
+  consumeMobileOAuthExchangeCode: (code: string, options?: any) => (mocks.consumeMobileOAuthExchangeCode as any)(code, options),
 }));
 
 vi.mock("@/lib/user-auth", () => ({
@@ -18,9 +18,12 @@ vi.mock("@/lib/user-auth", () => ({
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
-  getRateLimitKey: vi.fn(() => "rate-key"),
-  rateLimit: (key: string, config: any) => (mocks.rateLimit as any)(key, config),
   resolveClientIP: vi.fn(() => "203.0.113.10"),
+}));
+
+vi.mock("@/lib/rate-limit-policy", () => ({
+  stableRateLimitHash: vi.fn((value: string) => `hash:${value.slice(0, 4)}`),
+  enforceRateLimitPolicy: (...args: any[]) => (mocks.rateLimit as any)(...args),
 }));
 
 import { POST } from "./route";
@@ -54,7 +57,7 @@ describe("mobile OAuth exchange route", () => {
   });
 
   it("exchanges a one-time code for a mobile bearer token in the response body", async () => {
-    const response = await POST(request({ code: "a".repeat(32) }));
+    const response = await POST(request({ code: "a".repeat(32), code_verifier: "A".repeat(43) }));
     const body = await response.json();
 
     expect(response.status).toBe(200);
@@ -101,11 +104,25 @@ describe("mobile OAuth exchange route", () => {
       error: "REPLAYED_CODE",
     });
 
-    const response = await POST(request({ code: "a".repeat(32) }));
+    const response = await POST(request({ code: "a".repeat(32), code_verifier: "A".repeat(43) }));
     const body = await response.json();
 
     expect(response.status).toBe(400);
     expect(body.code).toBe("REPLAYED_CODE");
+    expect(mocks.createUserSession).not.toHaveBeenCalled();
+  });
+
+  it("rejects exchanges without a PKCE verifier", async () => {
+    (mocks.consumeMobileOAuthExchangeCode as Mock).mockResolvedValue({
+      ok: false,
+      error: "PKCE_VERIFIER_REQUIRED",
+    });
+
+    const response = await POST(request({ code: "a".repeat(32) }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("PKCE_VERIFIER_REQUIRED");
     expect(mocks.createUserSession).not.toHaveBeenCalled();
   });
 });

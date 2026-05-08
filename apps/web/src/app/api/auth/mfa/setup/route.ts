@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import QRCode from "qrcode";
 import { prisma } from "@/lib/db";
 import { requireDbUserId, verifyPassword } from "@/lib/user-auth";
 import { generateSecret, generateProvisioningURI, generateBackupCodes } from "@/lib/totp";
@@ -74,10 +75,16 @@ export async function POST(request: NextRequest) {
   });
 
   const uri = generateProvisioningURI(secret, user.email);
+  const qrDataUrl = await QRCode.toDataURL(uri, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 200,
+  });
 
   return NextResponse.json({
     success: true,
     provisioningUri: uri,
+    qrDataUrl,
     secret, // plaintext, shown once so the user can paste into an authenticator
     backupCodes: codes,
   });

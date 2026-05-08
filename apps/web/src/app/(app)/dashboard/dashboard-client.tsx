@@ -421,7 +421,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left Column â€” rendered in user's drag order */}
+        {/* Left Column — rendered in user's drag order */}
         <div className="lg:col-span-2 space-y-5">
           {orderedLeft.map((key) => {
             if (!w(key)) return null;
@@ -455,7 +455,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                             <p className="text-sm font-semibold text-foreground truncate">{action.name}</p>
                             <p className="text-xs text-muted-foreground truncate">
                               {(action.category || "").replace(/_/g, " ")}
-                              {action.deadline ? ` Â· ${action.deadline}` : ""}
+                              {action.deadline ? ` · ${action.deadline}` : ""}
                             </p>
                             {action.reason && (
                               <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{action.reason}</p>
@@ -522,8 +522,8 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                         <div>
                           <h3 className="text-sm font-bold text-foreground">{td("section_moving")}</h3>
                           <p className="text-xs text-muted-foreground">
-                            {stats.activePlan.fromCity} â†’ {stats.activePlan.toCity}
-                            {checklist ? ` Â· ${td("moving_phase", { phase: checklist.currentPhase + 1, label: phaseInfo?.label || "" })}` : ""}
+                            {stats.activePlan.fromCity} → {stats.activePlan.toCity}
+                            {checklist ? ` · ${td("moving_phase", { phase: checklist.currentPhase + 1, label: phaseInfo?.label || "" })}` : ""}
                           </p>
                         </div>
                       </div>
@@ -550,7 +550,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                         <div>
                           <p className="text-xs font-semibold text-destructive">{td("moving_overdue")} ({checklist.overdueItems.length})</p>
                           <p className="text-xs text-destructive/70 mt-0.5">
-                            {checklist.overdueItems.slice(0, 2).map((i: any) => i.title).join(" Â· ")}
+                            {checklist.overdueItems.slice(0, 2).map((i: any) => i.title).join(" · ")}
                             {checklist.overdueItems.length > 2 && ` ${td("moving_overdueMore", { count: checklist.overdueItems.length - 2 })}`}
                           </p>
                         </div>
@@ -567,7 +567,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                             {checklist.urgentItems.filter((i: any) => !i.isOverdue).slice(0, 2).map((i: any) => {
                               const dl = i.daysUntilDeadline !== null ? ` (${i.daysUntilDeadline}d)` : "";
                               return `${i.title}${dl}`;
-                            }).join(" Â· ")}
+                            }).join(" · ")}
                           </p>
                         </div>
                       </div>
@@ -628,7 +628,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                             <p className="text-sm font-medium text-foreground truncate">{svc.providerName}</p>
                             <p className="text-xs text-muted-foreground">
                               {(svc.category || "").replace(/_/g, " ")}
-                              {svc.address && ` Â· ${svc.address.city || ""}`}
+                              {svc.address && ` · ${svc.address.city || ""}`}
                             </p>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
@@ -651,7 +651,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
           })}
         </div>
 
-        {/* Right Column â€” rendered in user's drag order */}
+        {/* Right Column — rendered in user's drag order */}
         <div className="space-y-5">
           {orderedRight.map((key) => {
             if (!w(key)) return null;

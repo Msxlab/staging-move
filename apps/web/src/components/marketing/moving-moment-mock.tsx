@@ -2,7 +2,7 @@
 import { Check } from "lucide-react";
 
 /**
- * Moving-moment checklist mock â€” the relief reveal.
+ * Moving-moment checklist mock — the relief reveal.
  * After the chip storm + hard stats have made the chaos feel real,
  * this section is the first taste of what calm looks like.
  *

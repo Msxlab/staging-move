@@ -239,7 +239,7 @@ export default function SettingsPage() {
                   value={
                     profile.lastLoginAt
                       ? new Date(profile.lastLoginAt).toLocaleString()
-                      : "â€”"
+                      : "—"
                   }
                 />
                 <InfoCard
@@ -530,7 +530,7 @@ export default function SettingsPage() {
                       {entry.action}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {entry.entityType} Â· {new Date(entry.createdAt).toLocaleString()}
+                      {entry.entityType} · {new Date(entry.createdAt).toLocaleString()}
                     </p>
                   </div>
                 ))}

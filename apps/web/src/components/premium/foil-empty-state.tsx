@@ -2,11 +2,11 @@
 import { Sparkles } from "lucide-react";
 
 interface FoilEmptyStateProps {
-  /** Eyebrow caption above the title â€” uppercase mono. */
+  /** Eyebrow caption above the title — uppercase mono. */
   eyebrow?: string;
   title: string;
   body?: string;
-  /** Primary action â€” render a `<Link>` or `<Button>` here. */
+  /** Primary action — render a `<Link>` or `<Button>` here. */
   action?: ReactNode;
   /** Secondary action, optional. */
   secondaryAction?: ReactNode;

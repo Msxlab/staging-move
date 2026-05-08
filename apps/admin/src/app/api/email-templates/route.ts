@@ -6,6 +6,10 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
 import { maskEmail } from "@/lib/privacy";
+import {
+  sanitizeEmailHtml,
+  sanitizeEmailSubject,
+} from "@/lib/email-template-sanitizer";
 
 // Mass-assignment hardening. POST and PUT bodies both go through these
 // allowlists — `id`, `slug` (on PUT), `createdAt`, `createdBy`, and any
@@ -171,6 +175,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid template payload" }, { status: 400 });
     }
     const { slug, name, subject, body, category, variables, isActive } = parsed.data;
+    // Sanitize at write time so the stored row is never a stored-XSS
+    // primitive — a future change to the renderer or a preview iframe
+    // can't accidentally execute scripts that snuck through. Render
+    // paths should still escape, but defense-in-depth.
+    const safeSubject = sanitizeEmailSubject(subject);
+    const safeBody = sanitizeEmailHtml(body);
 
     const existing = await prisma.emailTemplate.findUnique({ where: { slug } });
     if (existing) return NextResponse.json({ error: "Slug already exists" }, { status: 409 });
@@ -179,8 +189,8 @@ export async function POST(req: NextRequest) {
       data: {
         slug,
         name,
-        subject,
-        body,
+        subject: safeSubject,
+        body: safeBody,
         category: category ?? "SYSTEM",
         variables: variables !== undefined ? JSON.stringify(variables) : null,
         isActive: isActive ?? true,
@@ -220,11 +230,15 @@ export async function PUT(req: NextRequest) {
     const existing = await prisma.emailTemplate.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Template not found" }, { status: 404 });
 
-    const { variables, ...updateRest } = parsed.data;
+    const { variables, subject, body, ...updateRest } = parsed.data;
+    // Sanitize body/subject on update — same rationale as POST.
+    const safeUpdate: Record<string, unknown> = { ...updateRest };
+    if (subject !== undefined) safeUpdate.subject = sanitizeEmailSubject(subject);
+    if (body !== undefined) safeUpdate.body = sanitizeEmailHtml(body);
     const template = await prisma.emailTemplate.update({
       where: { id },
       data: {
-        ...updateRest,
+        ...safeUpdate,
         ...(variables !== undefined ? { variables: JSON.stringify(variables) } : {}),
         updatedBy: session.adminId,
       },

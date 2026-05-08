@@ -194,7 +194,7 @@ export default function HealthPage() {
                       {check.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {check.details || "â€”"}
+                      {check.details || "—"}
                     </p>
                   </div>
                 </div>

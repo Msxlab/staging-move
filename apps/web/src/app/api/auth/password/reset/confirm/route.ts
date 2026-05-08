@@ -9,6 +9,8 @@ import {
 } from "@/lib/user-auth";
 import { enforceRateLimitPolicy, stableRateLimitHash } from "@/lib/rate-limit-policy";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 
@@ -105,6 +107,14 @@ export async function POST(request: NextRequest) {
   }
 
   await destroyAllUserSessions(record.userId);
+
+  recordUserSecurityAudit({
+    userId: record.userId,
+    action: "PWRESET_DONE",
+    entityId: record.userId,
+    changes: { status: "completed" },
+    ...extractRequestMeta(request),
+  });
 
   void sendSecurityNoticeEmail({
     userEmail: user.email,

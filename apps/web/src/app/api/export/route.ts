@@ -475,6 +475,21 @@ export async function POST(request: NextRequest) {
       data.analyticsEvents = events;
     }
 
+    emitSecurityEvent({
+      type: "EXPORT_ATTEMPT",
+      severity: "info",
+      group: "export_data",
+      context: { userId, type, format, includeNotes, outcome: "success", stepUpMethod: stepUp.method },
+    });
+    await createAuditLog({
+      userId,
+      action: "EXPORT",
+      entityType: "User",
+      entityId: userId,
+      changes: { status: "success", type, format, includeNotes, stepUpMethod: stepUp.method },
+      ...meta,
+    });
+
     if (format === "csv") {
       // Convert to CSV - flatten the primary data type
       let csvContent = "";

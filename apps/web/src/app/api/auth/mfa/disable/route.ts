@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId, verifyPassword } from "@/lib/user-auth";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 
@@ -58,6 +60,14 @@ export async function POST(request: NextRequest) {
   await prisma.user.update({
     where: { id: userId },
     data: { mfaEnabled: false, mfaSecret: null, mfaBackupCodes: null },
+  });
+
+  recordUserSecurityAudit({
+    userId,
+    action: "MFA_DISABLED",
+    entityId: userId,
+    changes: { status: "success" },
+    ...extractRequestMeta(request),
   });
 
   void sendSecurityNoticeEmail({

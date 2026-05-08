@@ -1,7 +1,6 @@
 import { AuroraBackground } from "@/components/aurora";
 import { Sidebar } from "@/components/sidebar";
-import { requireAdmin } from "@/lib/auth";
-import { redirect } from "next/navigation";
+import { requirePageAdmin } from "@/lib/page-guard";
 import "../aurora.css";
 
 export default async function AdminLayout({
@@ -9,11 +8,10 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  try {
-    await requireAdmin();
-  } catch {
-    redirect("/login");
-  }
+  // Server-side resolve role + permission map. Sidebar receives only
+  // the role and permission booleans; nothing else from the session.
+  // requirePageAdmin redirects unauthenticated requests to /login.
+  const ctx = await requirePageAdmin();
 
   return (
     <div className="adm-aurora flex min-h-screen">
@@ -32,7 +30,7 @@ export default async function AdminLayout({
       >
         Skip to main content
       </a>
-      <Sidebar />
+      <Sidebar ctx={{ role: ctx.role, permissions: ctx.permissions }} />
       <main
         id="admin-main"
         tabIndex={-1}

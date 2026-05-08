@@ -6,16 +6,33 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/lib/user-auth", () => ({
   requireDbUserId: vi.fn(),
-  verifyPassword: vi.fn(),
+  verifyPassword: vi.fn(() => Promise.resolve(true)),
 }));
-vi.mock("@/lib/rate-limit", () => ({
-  getRateLimitKey: vi.fn(() => "mfa-disable-ip-key"),
-  rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
+vi.mock("@/lib/rate-limit-policy", () => ({
+  enforceRateLimitPolicy: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+    }),
+  ),
+}));
+vi.mock("@/lib/user-security-audit", () => ({
+  recordUserSecurityAudit: vi.fn(),
+}));
+vi.mock("@/lib/email-service", () => ({
+  sendSecurityNoticeEmail: vi.fn(() => Promise.resolve()),
 }));
 
+import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/user-auth";
-import { rateLimit } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 import { POST } from "./route";
+
+const userMock = prisma.user as unknown as { findUnique: Mock; update: Mock };
+const enforceRateLimitPolicyMock = enforceRateLimitPolicy as unknown as Mock;
+const recordUserSecurityAuditMock = recordUserSecurityAudit as unknown as Mock;
 
 function request() {
   return new NextRequest("https://locateflow.com/api/auth/mfa/disable", {
@@ -29,6 +46,19 @@ describe("mfa disable rate limits", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (requireDbUserId as unknown as Mock).mockResolvedValue("user_1");
+    enforceRateLimitPolicyMock.mockResolvedValue({
+      success: true,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+    });
+    userMock.findUnique.mockResolvedValue({
+      email: "user@example.com",
+      firstName: "User",
+      preferredLocale: "en",
+      passwordHash: "hash",
+      mfaEnabled: true,
+    });
+    userMock.update.mockResolvedValue({});
   });
 
   it("returns 429 when the per-user disable limit is exceeded", async () => {
@@ -42,5 +72,18 @@ describe("mfa disable rate limits", () => {
       expect.stringContaining("rl:mfa_verify:user:"),
       expect.objectContaining({ limit: 5, windowSeconds: 5 * 60, failClosed: true }),
     );
+  });
+
+  it("audits MFA disable without storing the password", async () => {
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(recordUserSecurityAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "MFA_DISABLED",
+        changes: { status: "success" },
+      }),
+    );
+    expect(JSON.stringify(recordUserSecurityAuditMock.mock.calls)).not.toContain("password");
   });
 });

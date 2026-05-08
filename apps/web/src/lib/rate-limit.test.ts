@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getRateLimitKey, rateLimit } from "./rate-limit";
+import {
+  __resetLimiterHealthForTests,
+  getLimiterHealth,
+  getRateLimitKey,
+  rateLimit,
+} from "./rate-limit";
 
 const originalEnv = { ...process.env };
 
@@ -149,6 +154,106 @@ describe("rateLimit fail-closed mode", () => {
 
     expect(result.success).toBe(true);
     expect(result.remaining).toBe(0);
+  });
+});
+
+describe("getLimiterHealth", () => {
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    vi.resetModules();
+  });
+
+  it("reports memory mode and productionEnvOk=false in production without Redis", async () => {
+    const mod = await importFreshRateLimit({
+      NODE_ENV: "production",
+      APP_ENV: "production",
+    });
+    const health = mod.getLimiterHealth();
+    expect(health.distributedLimiterConfigured).toBe(false);
+    expect(health.limiterMode).toBe("memory");
+    expect(health.provider).toBe("memory");
+    expect(health.environment).toBe("production");
+    expect(health.productionEnvOk).toBe(false);
+  });
+
+  it("allows memory fallback in development without flagging productionEnvOk", async () => {
+    const mod = await importFreshRateLimit({
+      NODE_ENV: "development",
+      APP_ENV: "development",
+    });
+    const health = mod.getLimiterHealth();
+    expect(health.limiterMode).toBe("memory");
+    expect(health.environment).toBe("development");
+    expect(health.productionEnvOk).toBe(true);
+  });
+
+  it("never returns the Upstash URL or token in any field", async () => {
+    process.env = {
+      ...originalEnv,
+      UPSTASH_REDIS_REST_URL: "https://secret-host.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "supersecrettoken1234567890ABCDEF",
+      APP_ENV: "production",
+      NODE_ENV: "production",
+    };
+    vi.resetModules();
+    const mod = await import("./rate-limit");
+    const health = mod.getLimiterHealth();
+    const serialized = JSON.stringify(health);
+    expect(serialized).not.toContain("secret-host.upstash.io");
+    expect(serialized).not.toContain("supersecrettoken1234567890ABCDEF");
+    expect(health.distributedLimiterConfigured).toBe(true);
+  });
+
+  it("can be reset for tests", () => {
+    __resetLimiterHealthForTests();
+    const health = getLimiterHealth();
+    expect(health.lastDegradedAt).toBeNull();
+    expect(health.lastErrorReasonCode).toBeNull();
+  });
+});
+
+describe("LIMITER_DEGRADED redaction", () => {
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    vi.doUnmock("@upstash/ratelimit");
+    vi.doUnmock("@upstash/redis");
+    vi.resetModules();
+  });
+
+  it("scrubs URLs and bearer tokens out of the lastErrorReasonCode", async () => {
+    vi.doMock("@upstash/ratelimit", () => {
+      class MockRatelimit {
+        static slidingWindow = () => ({});
+        async limit() {
+          throw new Error(
+            "fetch failed: GET https://leaky.upstash.io/incr Bearer SUPERSECRETTOKEN_LEAKED",
+          );
+        }
+      }
+      return { Ratelimit: MockRatelimit };
+    });
+    vi.doMock("@upstash/redis", () => ({
+      Redis: class MockRedis {
+        constructor(_config: unknown) {}
+      },
+    }));
+    vi.resetModules();
+    process.env = {
+      ...originalEnv,
+      UPSTASH_REDIS_REST_URL: "https://leaky.upstash.io",
+      UPSTASH_REDIS_REST_TOKEN: "SUPERSECRETTOKEN_LEAKED_PLEASE_REDACT",
+    };
+
+    const mod = await import("./rate-limit");
+    mod.__resetLimiterHealthForTests();
+    await mod.rateLimit("redacted-test-key", { limit: 5, windowSeconds: 60 });
+
+    const health = mod.getLimiterHealth();
+    expect(health.limiterMode).toBe("degraded");
+    const serialized = JSON.stringify(health);
+    expect(serialized).not.toContain("leaky.upstash.io");
+    expect(serialized).not.toContain("SUPERSECRETTOKEN_LEAKED");
+    expect(health.lastErrorReasonCode).toMatch(/REDACTED|fetch failed/);
   });
 });
 

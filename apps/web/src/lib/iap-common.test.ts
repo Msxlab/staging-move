@@ -12,7 +12,9 @@ vi.mock("@/lib/db", () => ({
 
 vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: vi.fn(async (key: string) => {
+    if (key.includes("IOS") && key.includes("YEARLY")) return "individual.ios.yearly";
     if (key.includes("IOS")) return "individual.ios";
+    if (key.includes("ANDROID") && key.includes("YEARLY")) return "individual.android.yearly";
     if (key.includes("ANDROID")) return "individual.android";
     return null;
   }),
@@ -29,15 +31,25 @@ vi.mock("@/lib/iap-google", () => ({
   mapGoogleSubscriptionState: vi.fn(() => "ACTIVE"),
 }));
 
-import { applyIapStateToUser, normalizeAppleResult, normalizeGoogleResult, type NormalizedIapState } from "./iap-common";
+import {
+  applyIapStateToUser,
+  hashPurchaseToken,
+  normalizeAppleResult,
+  normalizeGoogleResult,
+  refreshGoogleSubscriptionFor,
+  type NormalizedIapState,
+} from "./iap-common";
 import { prisma } from "@/lib/db";
 import { mapAppleStatus } from "@/lib/iap-apple";
+import { acknowledgeGoogleSubscription, getGoogleSubscription, mapGoogleSubscriptionState } from "@/lib/iap-google";
 
 const originalEnv = { ...process.env };
 
 describe("IAP normalization", () => {
   afterEach(() => {
     process.env = { ...originalEnv };
+    vi.clearAllMocks();
+    vi.mocked(mapGoogleSubscriptionState).mockReturnValue("ACTIVE");
   });
 
   it("rejects Google Play test purchases in production billing environments", async () => {
@@ -90,6 +102,62 @@ describe("IAP normalization", () => {
     });
   });
 
+  it("keeps canceled Apple auto-renewal active until the store period ends", async () => {
+    vi.mocked(mapAppleStatus).mockReturnValue("ACTIVE");
+    const expiresDate = Date.now() + 10 * 24 * 60 * 60 * 1000;
+
+    const normalized = await normalizeAppleResult({
+      environment: "Sandbox",
+      rawStatus: 1,
+      renewal: {
+        originalTransactionId: "1000000000001",
+        autoRenewProductId: "individual.ios",
+        productId: "individual.ios",
+        autoRenewStatus: 0,
+        environment: "Sandbox",
+      },
+      transaction: {
+        transactionId: "1000000000002",
+        originalTransactionId: "1000000000001",
+        bundleId: "com.locateflow",
+        productId: "individual.ios",
+        purchaseDate: Date.now(),
+        originalPurchaseDate: Date.now(),
+        expiresDate,
+        quantity: 1,
+        type: "Auto-Renewable Subscription",
+        inAppOwnershipType: "PURCHASED",
+        signedDate: Date.now(),
+        environment: "Sandbox",
+      },
+    });
+
+    expect(normalized).toMatchObject({
+      status: "CANCEL_AT_PERIOD_END",
+      expiresAt: new Date(expiresDate),
+    });
+  });
+
+  it("maps Google Play canceled subscriptions to cancel-at-period-end while expiry remains", async () => {
+    vi.mocked(mapGoogleSubscriptionState).mockReturnValueOnce("CANCEL_AT_PERIOD_END");
+
+    const normalized = await normalizeGoogleResult({
+      packageName: "com.locateflow.mobile",
+      purchaseToken: "purchase-token",
+      response: {
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_CANCELED",
+        lineItems: [{ productId: "individual.android", expiryTime: "2027-01-01T00:00:00Z" }],
+      },
+    });
+
+    expect(normalized).toMatchObject({
+      status: "CANCEL_AT_PERIOD_END",
+      provider: "PLAY_STORE",
+      expiresAt: new Date("2027-01-01T00:00:00Z"),
+    });
+  });
+
   it("maps original transaction unique races to a controlled ownership error", async () => {
     vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
     vi.mocked(prisma.subscription.upsert).mockRejectedValue({
@@ -116,5 +184,240 @@ describe("IAP normalization", () => {
     await expect(applyIapStateToUser({ userId: "user-1", state }))
       .rejects
       .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
+  });
+
+  it("prevents restoring a Google Play purchase token onto another account", async () => {
+    vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue({
+      id: "sub-owned",
+      userId: "user-owner",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "MONTH",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-other", state }))
+      .rejects
+      .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
+    expect(prisma.subscription.findFirst).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { purchaseTokenHash: hashPurchaseToken("purchase-token") },
+          { purchaseToken: "purchase-token" },
+        ],
+      },
+    });
+  });
+
+  it("maps Google Play purchase-token unique races to a controlled ownership error", async () => {
+    vi.mocked(prisma.subscription.findUnique).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockRejectedValue({
+      code: "P2002",
+      meta: { target: ["purchaseTokenHash"] },
+    });
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "MONTH",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state }))
+      .rejects
+      .toThrow("IAP_TXN_OWNED_BY_ANOTHER_USER");
+  });
+
+  it("allows the same user to refresh an already-owned Google Play purchase token", async () => {
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: "sub-owned",
+        userId: "user-1",
+        status: "ACTIVE",
+        provider: "PLAY_STORE",
+        accessType: "PAID",
+      } as any);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue({
+      id: "sub-owned",
+      userId: "user-1",
+    } as any);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-owned",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "android",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      billingInterval: "MONTH",
+      originalTransactionId: "GPA.123",
+      latestTransactionId: "GPA.123",
+      purchaseToken: "purchase-token",
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state })).resolves.toMatchObject({
+      userId: "user-1",
+    });
+    expect(prisma.subscription.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({
+        purchaseTokenHash: hashPurchaseToken("purchase-token"),
+      }),
+    }));
+  });
+
+  it("blocks a new store purchase when an active Stripe subscription already exists", async () => {
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: "sub-stripe",
+        userId: "user-1",
+        status: "ACTIVE",
+        provider: "STRIPE",
+        accessType: "PAID",
+        stripeSubscriptionId: "sub_123",
+      } as any);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+
+    const state: NormalizedIapState = {
+      platform: "ios",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "individual.ios",
+      billingInterval: "MONTH",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await expect(applyIapStateToUser({ userId: "user-1", state }))
+      .rejects
+      .toThrow("ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE");
+    expect(prisma.subscription.upsert).not.toHaveBeenCalled();
+  });
+
+  it("clears stale Stripe fields when an expired Stripe user starts a store subscription", async () => {
+    vi.mocked(prisma.subscription.findUnique)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: "sub-expired",
+        userId: "user-1",
+        status: "EXPIRED",
+        provider: "STRIPE",
+        accessType: "PAID",
+        stripeSubscriptionId: "sub_old",
+      } as any);
+    vi.mocked(prisma.subscription.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.subscription.upsert).mockResolvedValue({
+      id: "sub-expired",
+      userId: "user-1",
+      status: "ACTIVE",
+    } as any);
+
+    const state: NormalizedIapState = {
+      platform: "ios",
+      plan: "INDIVIDUAL",
+      status: "ACTIVE",
+      provider: "APP_STORE",
+      productId: "individual.ios",
+      billingInterval: "MONTH",
+      originalTransactionId: "1000000000001",
+      latestTransactionId: "1000000000002",
+      purchaseToken: null,
+      expiresAt: new Date(Date.now() + 86_400_000),
+      gracePeriodEndsAt: null,
+      environment: "Sandbox",
+      raw: {},
+    };
+
+    await applyIapStateToUser({ userId: "user-1", state });
+
+    expect(prisma.subscription.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      update: expect.objectContaining({
+        provider: "APP_STORE",
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        stripePriceId: null,
+        stripeCurrentPeriodEnd: null,
+      }),
+    }));
+  });
+
+  it("acknowledges pending active Google Play subscriptions before returning entitlement state", async () => {
+    vi.mocked(getGoogleSubscription).mockResolvedValue({
+      packageName: "com.locateflow.mobile",
+      purchaseToken: "purchase-token",
+      response: {
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
+        lineItems: [{ productId: "individual.android" }],
+      },
+    });
+    vi.mocked(acknowledgeGoogleSubscription).mockResolvedValue();
+
+    const normalized = await refreshGoogleSubscriptionFor("purchase-token");
+
+    expect(acknowledgeGoogleSubscription).toHaveBeenCalledWith({
+      purchaseToken: "purchase-token",
+      productId: "individual.android",
+    });
+    expect(normalized).toMatchObject({
+      provider: "PLAY_STORE",
+      productId: "individual.android",
+      status: "ACTIVE",
+    });
+  });
+
+  it("does not return durable Google Play entitlement state when acknowledgement fails", async () => {
+    vi.mocked(getGoogleSubscription).mockResolvedValue({
+      packageName: "com.locateflow.mobile",
+      purchaseToken: "purchase-token",
+      response: {
+        latestOrderId: "GPA.123",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_PENDING",
+        lineItems: [{ productId: "individual.android" }],
+      },
+    });
+    vi.mocked(acknowledgeGoogleSubscription).mockRejectedValue(new Error("GOOGLE_ACK_503:down"));
+
+    await expect(refreshGoogleSubscriptionFor("purchase-token")).rejects.toThrow("GOOGLE_ACK_503");
   });
 });

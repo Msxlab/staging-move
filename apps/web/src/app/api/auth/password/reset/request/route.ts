@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { generateOpaqueToken } from "@/lib/user-auth";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendPasswordResetEmail } from "@/lib/email-service";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 export const GENERIC_FORGOT_PASSWORD_MESSAGE =
@@ -114,6 +116,14 @@ export async function POST(request: NextRequest) {
       tokenHash: hash,
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     },
+  });
+
+  recordUserSecurityAudit({
+    userId: user.id,
+    action: "PWRESET_REQ",
+    entityId: user.id,
+    changes: { status: "requested", mode: hasPasswordLogin ? "reset" : "set_password" },
+    ...extractRequestMeta(request),
   });
 
   const sent = await sendPasswordResetEmail({

@@ -1,5 +1,5 @@
 ﻿/**
- * /blog/preview/<token> â€” short-lived signed preview of a draft post.
+ * /blog/preview/<token> — short-lived signed preview of a draft post.
  *
  * The admin "Preview" button hits the admin webhook
  * (`/api/blog/posts/[id]/preview-token`), gets back a JWT, and links
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Preview Â· LocateFlow",
+  title: "Preview · LocateFlow",
   robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
 };
 
@@ -29,7 +29,7 @@ export default async function PreviewPage({
 }: {
   params: Promise<{ token: string }>;
 }) {
-  // Touch headers() so this page is always SSR'd â€” never cached.
+  // Touch headers() so this page is always SSR'd — never cached.
   await headers();
 
   const { token } = await params;
@@ -61,7 +61,7 @@ export default async function PreviewPage({
         className="mb-6 rounded-md border border-tone-honey-br bg-tone-honey-bg px-4 py-2 text-sm text-tone-honey-fg"
         role="status"
       >
-        Preview mode Â· status: <strong>{post.status}</strong>. This page is
+        Preview mode · status: <strong>{post.status}</strong>. This page is
         excluded from search and feeds.
       </div>
 
@@ -74,7 +74,7 @@ export default async function PreviewPage({
         <h1 className="mt-1 text-4xl font-semibold tracking-tight">{post.title}</h1>
         <p className="mt-3 text-muted-foreground dark:text-muted-foreground">{post.excerpt}</p>
         <p className="mt-4 text-xs text-muted-foreground">
-          By {authorName} Â· {post.readingMinutes} min read
+          By {authorName} · {post.readingMinutes} min read
         </p>
       </header>
 
@@ -86,7 +86,7 @@ export default async function PreviewPage({
 
       <article
         className="prose prose-zinc dark:prose-invert max-w-none"
-        // Already-sanitized HTML â€” same write-time pipeline as published posts.
+        // Already-sanitized HTML — same write-time pipeline as published posts.
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: post.contentHtml }}
       />

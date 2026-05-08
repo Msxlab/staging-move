@@ -66,6 +66,7 @@ const PUBLIC_API_EXACT = [
   "/api/auth/reset-password",
   "/api/auth/password/reset/request",
   "/api/auth/password/reset/confirm",
+  "/api/mobile/auth/login",
   "/api/mobile/auth/exchange",
   // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated
   // session cookie enters the browser. The route validates a short-lived

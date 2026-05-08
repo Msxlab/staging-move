@@ -162,10 +162,19 @@ describe("Free Access redemption route", () => {
     const response = await POST(redeemRequest());
 
     expect(response.status).toBe(200);
+    // Uncapped campaign: no `redemptionCount` predicate, but the route now
+    // also re-checks the campaign time window inside the atomic update so
+    // an expiry that crosses between assert and increment is caught.
     expect(mocks.campaignUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: "camp_uncapped", status: "ACTIVE" },
+        where: expect.objectContaining({
+          id: "camp_uncapped",
+          status: "ACTIVE",
+        }),
+        data: { redemptionCount: { increment: 1 } },
       }),
     );
+    const callArg = mocks.campaignUpdateMany.mock.calls[0][0];
+    expect(callArg.where.redemptionCount).toBeUndefined();
   });
 });

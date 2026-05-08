@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendLoggedEmail } from "@/lib/email-service";
 import { escapeHtml, htmlToPlainText } from "@/lib/email";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 
 export const runtime = "nodejs";
@@ -40,9 +40,8 @@ function renderList(items: string[], emptyLabel: string) {
 }
 
 export async function GET(request: Request) {
-  if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await guardCronRequest(request, "admin-daily-digest");
+  if (!guard.ok) return guard.response;
 
   const adminEmail =
     (await getRuntimeConfigValue("ADMIN_ALERT_EMAIL")) ||

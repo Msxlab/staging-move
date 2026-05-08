@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Switch,
+  Linking,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +19,7 @@ import {
   Eye,
   Lock,
   Smartphone,
+  ExternalLink,
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
@@ -28,6 +30,8 @@ import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
 import { api } from "@/lib/api";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
+
+const PRIVACY_POLICY_URL = "https://locateflow.com/privacy";
 
 interface AccountSecurityState {
   account: {
@@ -205,6 +209,15 @@ export default function PrivacySettingsScreen() {
         },
       ]
     );
+  };
+
+  const handleOpenPrivacyPolicy = async () => {
+    try {
+      await Linking.openURL(PRIVACY_POLICY_URL);
+    } catch {
+      hapticError();
+      Alert.alert(t("settings.privacy"), t("providers.linkUnavailable"));
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -431,6 +444,20 @@ export default function PrivacySettingsScreen() {
 
         {/* Actions */}
         <Text style={styles.sectionTitle}>{t("common.more")}</Text>
+
+        <TouchableOpacity style={styles.actionBtn} onPress={handleOpenPrivacyPolicy} activeOpacity={0.6}>
+          <ExternalLink size={18} color={theme.colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.actionLabel}>
+              {t("settings.privacyPolicy", { defaultValue: "Privacy Policy" })}
+            </Text>
+            <Text style={styles.actionDesc}>
+              {t("settings.privacyPolicy_description", {
+                defaultValue: "Open LocateFlow's privacy policy.",
+              })}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionBtn} onPress={handleExportData} activeOpacity={0.6}>
           <Download size={18} color={theme.colors.primary} />

@@ -17,12 +17,12 @@ interface RevealModalProps {
 }
 
 /**
- * Pro / Family upgrade celebration modal â€” the ritual moment.
+ * Pro / Family upgrade celebration modal — the ritual moment.
  *
  * - Sticker zooms in with elastic bounce (1.2s)
  * - Foil glow + expanding ring loop in the background
  * - 24 confetti pieces (rose / foil / champagne) fall over 2s
- * - Eyebrow â†’ title â†’ sub â†’ buttons fade up in sequence
+ * - Eyebrow → title → sub → buttons fade up in sequence
  * - Esc or backdrop click closes
  *
  * Style is locked to the design-system "champagne and rose" palette and uses

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendTaskReminderEmail } from "@/lib/email-service";
 import { createInAppNotification } from "@/lib/in-app-notifications";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import {
   buildWebNotificationSettings,
@@ -38,9 +38,8 @@ function movingPlanLabel(plan: {
 }
 
 export async function GET(req: Request) {
-  if (!verifyInternalAuth(req.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await guardCronRequest(req, "task-reminders");
+  if (!guard.ok) return guard.response;
 
   try {
     const now = new Date();

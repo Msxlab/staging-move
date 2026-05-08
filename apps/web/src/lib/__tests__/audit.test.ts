@@ -51,6 +51,68 @@ describe("createAuditLog", () => {
       }),
     });
   });
+
+  it("redacts service PII and nested metadata before storing changes", async () => {
+    const { prisma } = await import("@/lib/db");
+
+    await createAuditLog({
+      userId: "user-1",
+      action: "UPDATE",
+      entityType: "Service",
+      entityId: "svc-1",
+      changes: {
+        accountNumber: "123456789",
+        notes: "call me at home",
+        metadata: {
+          INTERNAL_WEBHOOK_SECRET: "super-secret",
+          ok: "safe",
+        },
+      },
+    });
+
+    const call = (prisma.auditLog.create as Mock).mock.calls.at(-1)?.[0];
+    const stored = call.data.changes as string;
+    expect(stored).not.toContain("123456789");
+    expect(stored).not.toContain("call me at home");
+    expect(stored).not.toContain("super-secret");
+    expect(JSON.parse(stored)).toMatchObject({
+      accountNumber: "[REDACTED]",
+      notes: "[REDACTED]",
+      metadata: {
+        INTERNAL_WEBHOOK_SECRET: "[REDACTED]",
+        ok: "safe",
+      },
+    });
+  });
+
+  it("redacts address fields before storing changes", async () => {
+    const { prisma } = await import("@/lib/db");
+
+    await createAuditLog({
+      userId: "user-1",
+      action: "UPDATE",
+      entityType: "Address",
+      entityId: "addr-1",
+      changes: {
+        street: "123 Main St",
+        city: "Austin",
+        zip: "78701",
+        isPrimary: true,
+      },
+    });
+
+    const call = (prisma.auditLog.create as Mock).mock.calls.at(-1)?.[0];
+    const stored = call.data.changes as string;
+    expect(stored).not.toContain("123 Main St");
+    expect(stored).not.toContain("Austin");
+    expect(stored).not.toContain("78701");
+    expect(JSON.parse(stored)).toMatchObject({
+      street: "[REDACTED]",
+      city: "[REDACTED]",
+      zip: "[REDACTED]",
+      isPrimary: true,
+    });
+  });
 });
 
 describe("extractRequestMeta", () => {

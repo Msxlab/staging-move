@@ -22,18 +22,31 @@ vi.mock("@/lib/shared-encryption", () => ({
   decrypt: vi.fn(() => "secret"),
 }));
 
-vi.mock("@/lib/rate-limit", () => ({
-  getRateLimitKey: vi.fn(() => "auth:mfa:confirm:ip:203.0.113.10"),
-  rateLimit: vi.fn(() =>
-    Promise.resolve({ success: true, resetAt: Date.now() + 60_000 }),
+vi.mock("@/lib/rate-limit-policy", () => ({
+  enforceRateLimitPolicy: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+    }),
   ),
 }));
 
+vi.mock("@/lib/user-security-audit", () => ({
+  recordUserSecurityAudit: vi.fn(),
+}));
+
+vi.mock("@/lib/email-service", () => ({
+  sendSecurityNoticeEmail: vi.fn(() => Promise.resolve()),
+}));
+
 import { prisma } from "@/lib/db";
-import { rateLimit } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 import { POST } from "./route";
 
-const rateLimitMock = rateLimit as unknown as Mock;
+const enforceRateLimitPolicyMock = enforceRateLimitPolicy as unknown as Mock;
+const recordUserSecurityAuditMock = recordUserSecurityAudit as unknown as Mock;
 const userMock = prisma.user as unknown as { findUnique: Mock; update: Mock };
 
 function makeRequest() {
@@ -47,11 +60,15 @@ function makeRequest() {
 describe("mfa confirm route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    rateLimitMock.mockResolvedValue({
+    enforceRateLimitPolicyMock.mockResolvedValue({
       success: true,
-      resetAt: Date.now() + 60_000,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
     });
     userMock.findUnique.mockResolvedValue({
+      email: "user@example.com",
+      firstName: "User",
+      preferredLocale: "en",
       mfaSecret: "encrypted",
       mfaEnabled: false,
     });
@@ -66,6 +83,7 @@ describe("mfa confirm route", () => {
       expect.stringContaining("rl:mfa_verify:user:"),
       { limit: 5, windowSeconds: 5 * 60, failClosed: true },
     );
+    expect(JSON.stringify(recordUserSecurityAuditMock.mock.calls)).not.toContain("123456");
   });
 
   it("returns 429 when the MFA limit is exceeded", async () => {

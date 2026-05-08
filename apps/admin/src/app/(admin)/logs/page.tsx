@@ -78,19 +78,46 @@ export default function LogsPage() {
     setPage(1);
   }
 
-  function exportCSV() {
-    const header = tab === "admin"
-      ? "ID,Admin,Action,Entity Type,Entity ID,IP,Date"
-      : "ID,User,Action,Entity Type,Entity ID,IP,Date";
-    const rows = logs.map((l: any) => {
-      const who = tab === "admin" ? l.adminUser?.email : (l.user?.email || l.userId);
-      return `${l.id},${who},${l.action},${l.entityType},${l.entityId},${l.ipAddress || ""},${new Date(l.createdAt).toISOString()}`;
-    });
-    const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `${tab}-logs.csv`; a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${rows.length} logs`);
+  async function exportCSV() {
+    // Server-side export at /api/logs/export. The previous in-page Blob
+    // path bypassed step-up confirmation, audit logging, CSV-injection
+    // escaping, and the row cap — and only exported the rows currently
+    // in React state, silently truncating exports without telling the
+    // operator. The endpoint asks for a password confirm out-of-band
+    // (browser prompt or operators' password manager).
+    const password = window.prompt("Confirm your admin password to export logs:");
+    if (!password) return;
+    try {
+      const res = await fetch("/api/logs/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tab,
+          confirmPassword: password,
+          search,
+          action: filters.action || undefined,
+          entityType: filters.entityType || undefined,
+          adminId: filters.adminId || undefined,
+          dateFrom: filters.dateFrom || undefined,
+          dateTo: filters.dateTo || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || `Export failed (${res.status})`);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${tab}-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export downloaded");
+    } catch {
+      toast.error("Export failed");
+    }
   }
 
   function tryParseJSON(str: string | null) {
@@ -225,7 +252,7 @@ export default function LogsPage() {
                     <span className="text-sm text-foreground">{log.entityType}</span>
                     <p className="text-xs text-muted-foreground font-mono">{log.entityId.slice(0, 10)}...</p>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{log.ipAddress || "â€”"}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{log.ipAddress || "—"}</td>
                   <td className="px-4 py-3">
                     <p className="text-xs text-foreground">{relativeTime(log.createdAt)}</p>
                     <p className="text-[10px] text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</p>
@@ -237,7 +264,7 @@ export default function LogsPage() {
                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       </button>
                     ) : (
-                      <span className="text-xs text-muted-foreground">â€”</span>
+                      <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
                 </tr>
@@ -255,7 +282,7 @@ export default function LogsPage() {
         return (
           <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-foreground">Changes â€” {log.action} on {log.entityType}</p>
+              <p className="text-xs font-medium text-foreground">Changes — {log.action} on {log.entityType}</p>
               <button onClick={() => setExpandedLog(null)} className="text-xs text-muted-foreground hover:text-foreground">Close</button>
             </div>
             <pre className="text-xs text-muted-foreground bg-card rounded-lg p-3 overflow-x-auto max-h-64 border border-border">
@@ -268,7 +295,7 @@ export default function LogsPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}â€“{Math.min(page * perPage, total)} of {total}</p>
+          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50"><ChevronLeft className="h-4 w-4" /></button>
             <span className="px-3 text-sm text-muted-foreground">Page {page} / {totalPages}</span>

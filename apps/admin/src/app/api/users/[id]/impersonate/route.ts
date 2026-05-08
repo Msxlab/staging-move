@@ -47,7 +47,7 @@ export async function POST(
     } catch {
       /* no body is fine — confirm will fail below */
     }
-    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "user_impersonation" });
     if (!confirm.confirmed) {
       return NextResponse.json(
         { error: confirm.error, requiresPassword: true },

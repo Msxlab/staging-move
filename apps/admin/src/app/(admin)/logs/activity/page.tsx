@@ -74,7 +74,7 @@ export default function AdminActivityPage() {
                         <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                         <div>
                           <p className="text-sm font-medium text-foreground">{item.admin.firstName} {item.admin.lastName}</p>
-                          <p className="text-[10px] text-muted-foreground">{item.admin.email} Â· {item.admin.role}</p>
+                          <p className="text-[10px] text-muted-foreground">{item.admin.email} · {item.admin.role}</p>
                         </div>
                       </div>
                       <span className="text-sm font-bold text-foreground">{item.actions}</span>
@@ -185,7 +185,7 @@ export default function AdminActivityPage() {
                 <div className="flex items-center gap-3">
                   <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive">{c.action}</span>
                   <div>
-                    <p className="text-sm text-foreground">{c.entityType} Â· {c.entityId}</p>
+                    <p className="text-sm text-foreground">{c.entityType} · {c.entityId}</p>
                     {c.admin && <p className="text-[10px] text-muted-foreground">{c.admin.firstName} {c.admin.lastName}</p>}
                   </div>
                 </div>

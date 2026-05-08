@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { redactAuditPayload } from "@locateflow/shared";
 
 export interface AuditLogParams {
   userId: string;
@@ -12,13 +13,16 @@ export interface AuditLogParams {
 
 export async function createAuditLog(params: AuditLogParams): Promise<void> {
   try {
+    const safeChanges = params.changes
+      ? redactAuditPayload(params.changes) as Record<string, unknown>
+      : null;
     await prisma.auditLog.create({
       data: {
         userId: params.userId,
         action: params.action,
         entityType: params.entityType,
         entityId: params.entityId,
-        changes: params.changes ? JSON.stringify(params.changes) : null,
+        changes: safeChanges ? JSON.stringify(safeChanges) : null,
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent ?? null,
       },

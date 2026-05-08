@@ -156,7 +156,9 @@ export async function GET(request: NextRequest) {
         (item: RuntimeConfigCatalogItem) => item.configured,
       ).length,
       dbOverrides: runtimeCatalog.filter(
-        (item: RuntimeConfigCatalogItem) => item.source === "DB",
+        (item: RuntimeConfigCatalogItem) =>
+          item.source === "Runtime Config" ||
+          item.source === "ENV + Runtime Config",
       ).length,
       missingRequired: runtimeCatalog.filter(
         (item: RuntimeConfigCatalogItem) =>
@@ -292,7 +294,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Step-up auth: granting premium is a sensitive billing operation
-      const confirm = await requirePasswordConfirm(session, parsed.data.confirmPassword);
+      const confirm = await requirePasswordConfirm(session, parsed.data.confirmPassword, { operation: "billing_premium_grant" });
       if (!confirm.confirmed) {
         return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
       }

@@ -2,13 +2,13 @@
 import { MapPin, AlertCircle } from "lucide-react";
 
 /**
- * Hero phone mock â€” emotional acid test.
+ * Hero phone mock — emotional acid test.
  * Shows the dashboard in its "I just opened the app and saw the truth" state:
  *   - tracked spend at this address
  *   - cumulative savings since starting
  *   - two attention items: a renewal you forgot, a charge at your old place
  * Both rows are real things people miss when they don't track. The visual
- * itself is the pitch â€” the phone screen IS the recognition + relief moment.
+ * itself is the pitch — the phone screen IS the recognition + relief moment.
  */
 export async function HeroPhoneMock() {
   const t = await getTranslations("landing");
