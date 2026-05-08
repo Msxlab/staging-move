@@ -676,11 +676,14 @@ export async function POST(request: NextRequest) {
 
         // Scope by stripeSubscriptionId so a customer with multiple
         // subscriptions (rare, but possible after admin reassignment)
-        // does not get every row CANCELED at once.
+        // does not get every row CANCELED at once. Also skip rows that
+        // have been switched to a manual admin grant — those should not
+        // be flipped to CANCELED by a stale Stripe deletion.
         await prisma.subscription.updateMany({
           where: {
             stripeCustomerId,
             stripeSubscriptionId: subscription.id,
+            provider: { not: "ADMIN" },
           },
           data: {
             status: "CANCELED",
@@ -797,7 +800,14 @@ export async function POST(request: NextRequest) {
         }
 
         await prisma.subscription.updateMany({
-          where: { stripeCustomerId },
+          where: {
+            stripeCustomerId,
+            // Defense against stale stripeCustomerId on a row that has
+            // since been switched to a manual admin grant. grant_premium
+            // clears stripeCustomerId on write, but legacy rows may still
+            // carry it; never overwrite an admin manual premium row.
+            provider: { not: "ADMIN" },
+          },
           data: updateData,
         });
         break;
@@ -844,8 +854,8 @@ export async function POST(request: NextRequest) {
 
         await prisma.subscription.updateMany({
           where: stripeSubscriptionId
-            ? { stripeCustomerId, stripeSubscriptionId }
-            : { stripeCustomerId },
+            ? { stripeCustomerId, stripeSubscriptionId, provider: { not: "ADMIN" } }
+            : { stripeCustomerId, provider: { not: "ADMIN" } },
           data: updateData,
         });
 
@@ -891,8 +901,8 @@ export async function POST(request: NextRequest) {
 
           await prisma.subscription.updateMany({
             where: stripeSubscriptionId
-              ? { stripeCustomerId, stripeSubscriptionId }
-              : { stripeCustomerId },
+              ? { stripeCustomerId, stripeSubscriptionId, provider: { not: "ADMIN" } }
+              : { stripeCustomerId, provider: { not: "ADMIN" } },
             data: {
               status: "REFUNDED",
               provider: "STRIPE",

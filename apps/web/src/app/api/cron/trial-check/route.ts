@@ -150,7 +150,7 @@ async function handleCron(request: NextRequest) {
       renewalNotified++;
     }
 
-    // Mark expired trials
+    // Mark expired legacy trials (plan=FREE_TRIAL but no Stripe-backed accessType).
     const expiredTrials = await prisma.subscription.updateMany({
       where: {
         plan: "FREE_TRIAL",
@@ -164,9 +164,31 @@ async function handleCron(request: NextRequest) {
     });
     expired = expiredTrials.count;
 
+    // Backstop: provider-backed FREE_TRIAL rows whose webhook delivery
+    // dropped. Reconciliation cron normally catches these for Stripe, but
+    // we expire them here too so users don't keep TRIALING+isActive past
+    // the trial date if reconcile is delayed. Scoped tightly so we do not
+    // touch rows that still have time left on their trial.
+    const expiredProviderTrials = await prisma.subscription.updateMany({
+      where: {
+        accessType: "FREE_TRIAL",
+        status: "TRIALING",
+        trialEndsAt: { lt: now },
+      },
+      data: {
+        status: "EXPIRED",
+        autoRenew: false,
+      },
+    });
+    expired += expiredProviderTrials.count;
+
     const expiredFreeAccess = await prisma.subscription.updateMany({
       where: {
         accessType: "FREE_ACCESS",
+        // ADMIN-provider rows here are campaign FREE_ACCESS grants. Manual
+        // admin premium grants live in a separate path below (premiumUntil
+        // is the gate, not freeAccessEndsAt).
+        premiumGrantedBy: null,
         status: { in: ["ACTIVE", "FREE_ACCESS"] },
         freeAccessEndsAt: { lt: now },
       },
@@ -177,6 +199,24 @@ async function handleCron(request: NextRequest) {
       },
     });
     expired += expiredFreeAccess.count;
+
+    // Manual admin premium grants: drop status to EXPIRED once premiumUntil
+    // passes so getEffectiveEntitlement reports MANUAL_PREMIUM_EXPIRED and
+    // plan-limits stops granting Individual limits.
+    const expiredManualPremium = await prisma.subscription.updateMany({
+      where: {
+        provider: "ADMIN",
+        premiumGrantedBy: { not: null },
+        status: "ACTIVE",
+        premiumUntil: { lt: now },
+      },
+      data: {
+        status: "EXPIRED",
+        autoRenew: false,
+        cancelAtPeriodEnd: false,
+      },
+    });
+    expired += expiredManualPremium.count;
 
     return NextResponse.json({ success: true, sent, freeAccessNotified, renewalNotified, expired });
   } catch (error) {

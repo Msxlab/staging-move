@@ -47,3 +47,13 @@ export {
   type SubscriptionAccessLike,
   type CampaignSnapshot,
 } from "../../../../packages/shared/src/acquisition";
+
+export {
+  getEffectiveEntitlement,
+  effectiveStatusLabel,
+  accessSourceLabel,
+  type EffectiveEntitlement,
+  type EffectiveStatus,
+  type AccessSource,
+  type EntitlementSubscriptionLike,
+} from "../../../../packages/shared/src/entitlement";

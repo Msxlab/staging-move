@@ -7,6 +7,11 @@ import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, Credi
 import { toast } from "sonner";
 import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 import { maskEmail } from "@/lib/privacy";
+import {
+  accessSourceLabel,
+  effectiveStatusLabel,
+  getEffectiveEntitlement,
+} from "@/lib/shared-billing";
 
 async function readAdminApiError(response: Response, fallback: string) {
   const data = await response.json().catch(() => ({}));
@@ -937,6 +942,51 @@ export default function UserDetailClient() {
         <h2 className="mb-4 text-lg font-semibold text-foreground">
           <CreditCard className="mr-2 inline h-5 w-5" /> Subscription & Premium
         </h2>
+        {(() => {
+          const eff = getEffectiveEntitlement(user.subscription || null);
+          const expires = eff.expiresAt
+            ? new Date(eff.expiresAt).toLocaleDateString()
+            : "—";
+          return (
+            <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 rounded-lg border border-border bg-muted/30 p-4">
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Effective Access</p>
+                <p className={`mt-1 text-sm font-semibold ${eff.hasPremium ? "text-tone-sage-fg" : eff.hasAccess ? "text-foreground" : "text-destructive"}`}>
+                  {effectiveStatusLabel(eff.effectiveStatus)}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Plan tier: {eff.effectivePlan === "INDIVIDUAL" ? "Individual" : "Free"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Source</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{accessSourceLabel(eff.accessSource)}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Manual override: {eff.isManualOverride ? "Yes" : "No"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Expires</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{expires}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Auto-renewal: {eff.autoRenew ? "On" : "Off"}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Raw fields</p>
+                <p className="mt-1 text-xs text-foreground">
+                  {(user.subscription?.status || "—")} / {(user.subscription?.provider || "—")} / {(user.subscription?.accessType || "—")}
+                </p>
+                {eff.warnings.length > 0 && (
+                  <div className="mt-1 flex items-start gap-1 text-[11px] text-tone-honey-fg">
+                    <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                    <span>{eff.warnings[0]}{eff.warnings.length > 1 ? ` (+${eff.warnings.length - 1} more)` : ""}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="block text-xs font-medium text-muted-foreground mb-1">Status</label>
