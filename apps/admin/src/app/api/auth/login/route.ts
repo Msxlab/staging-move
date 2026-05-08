@@ -386,34 +386,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const mfaRateCheck = await checkLoginRateLimitRedis(
-        buildAdminMfaRateKey(admin.id, ip, ua),
-        ADMIN_MFA_RATE_LIMIT,
-      );
-      if (!mfaRateCheck.allowed) {
-        await writeLoginAuditLog({
-          action: "LOGIN_BLOCKED",
-          email,
-          ip,
-          reason: "MFA_RATE_LIMIT_BLOCKED",
-          adminId: admin.id,
-        });
-        await writeLoginLog({
-          adminUserId: admin.id,
-          email,
-          success: false,
-          failReason: "MFA_RATE_LIMIT_BLOCKED",
-          ip,
-          ua,
-          mfaUsed: true,
-          mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE",
-        });
-        return NextResponse.json(
-          { error: "Too many MFA attempts. Please try again later." },
-          { status: 429, headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) } },
-        );
-      }
-
       const secret = decrypt((admin as any).mfaSecret);
       if (!secret) {
         await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_CONFIG_ERROR", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
