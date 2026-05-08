@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import type { AdminPermissionsMap, AdminRoleString } from "@/lib/page-guard";
@@ -168,7 +167,6 @@ interface SidebarProps {
 
 export function Sidebar({ ctx }: SidebarProps = {}) {
   const pathname = usePathname();
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const filteredGroups = filterNavGroups(ctx ?? null);
   const allItems = filteredGroups.flatMap((g) => g.items);
@@ -200,8 +198,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
       cache: "no-store",
     });
     toast.success(tCommon("signOut"));
-    router.push("/login");
-    router.refresh();
+    window.location.assign("/login");
   }
 
   const isSearching = search.trim().length > 0;
@@ -302,7 +299,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
               filteredItems.map((item) => {
                 const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                 return (
-                  <Link
+                  <a
                     key={item.name}
                     href={item.href}
                     onClick={() => setSearch("")}
@@ -315,7 +312,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {tNav(item.nameKey)}
-                  </Link>
+                  </a>
                 );
               })
             ) : (
@@ -354,7 +351,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                       {group.items.map((item) => {
                         const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                         return (
-                          <Link
+                          <a
                             key={item.name}
                             href={item.href}
                             className={cn(
@@ -366,7 +363,7 @@ export function Sidebar({ ctx }: SidebarProps = {}) {
                           >
                             <item.icon className="h-4 w-4 flex-shrink-0" />
                             {tNav(item.nameKey)}
-                          </Link>
+                          </a>
                         );
                       })}
                     </div>
