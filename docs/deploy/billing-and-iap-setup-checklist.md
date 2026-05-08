@@ -113,6 +113,7 @@ Google Play:
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY`
 - `GOOGLE_PLAY_RTDN_AUDIENCE=https://locateflow.com/api/webhooks/playstore`
+- `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` — Pub/Sub push auth service account email
 - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL` — monthly Play product/base plan
 - `MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY` — annual Play product/base plan
 
@@ -123,7 +124,7 @@ Play Console setup (use Internal Testing track first):
 3. Add base plan `annual` → Auto-renewing → Billing period = 1 year → Price = $39.99.
 4. On the annual base plan add an Offer of type "Free trial" → Duration = 3 months → Eligibility = "New customer acquisition (subscriptions)". The trial is surfaced by Play Billing only when the user is eligible — do NOT fake the trial in app code.
 5. Play Console → Setup → API access: link the project that owns the service account whose email is configured in `GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL`. Grant `View financial data, orders, cancellation survey responses` and `Manage orders and subscriptions`.
-6. Real-Time Developer Notifications: create a Pub/Sub topic, point it at `https://locateflow.com/api/webhooks/playstore`, and configure the `aud` claim to match `GOOGLE_PLAY_RTDN_AUDIENCE`. The webhook rejects payloads without that audience in production.
+6. Real-Time Developer Notifications: create a Pub/Sub topic, point it at `https://locateflow.com/api/webhooks/playstore`, configure the `aud` claim to match `GOOGLE_PLAY_RTDN_AUDIENCE`, and set `EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL` to the authenticated push service account. The webhook rejects payloads without that audience or expected identity in production.
 7. License testers: Play Console → Settings → License testing → add at least one Google account; test purchases on that account skip the 3-month grace and surface as `testPurchase=true` (the verifier rejects these in production but accepts them in test/staging).
 
 If IAP credentials are missing:

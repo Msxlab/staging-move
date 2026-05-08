@@ -123,8 +123,11 @@ export async function createMobileOAuthExchangeCode(input: {
   userId: string;
   provider: "google" | "apple";
   redirectUri: string;
-  codeChallenge?: string | null;
+  codeChallenge: string;
 }) {
+  if (!normalizeMobileOAuthCodeChallenge(input.codeChallenge)) {
+    throw new Error("PKCE_CHALLENGE_REQUIRED");
+  }
   const { token, hash } = generateOpaqueToken();
   await prisma.mobileOAuthCode.create({
     data: {
@@ -132,7 +135,7 @@ export async function createMobileOAuthExchangeCode(input: {
       provider: input.provider,
       redirectUri: input.redirectUri,
       codeHash: hash,
-      codeChallenge: input.codeChallenge ?? null,
+      codeChallenge: input.codeChallenge,
       expiresAt: new Date(Date.now() + MOBILE_OAUTH_CODE_TTL_MS),
     },
   });
@@ -159,6 +162,7 @@ export type MobileOAuthExchangeResult =
         | "EXPIRED_CODE"
         | "REPLAYED_CODE"
         | "ACCOUNT_UNAVAILABLE"
+        | "PKCE_CHALLENGE_REQUIRED"
         | "PKCE_VERIFIER_REQUIRED"
         | "PKCE_VERIFIER_INVALID";
     };
@@ -191,15 +195,14 @@ export async function consumeMobileOAuthExchangeCode(
   if (record.expiresAt.getTime() <= Date.now()) return { ok: false, error: "EXPIRED_CODE" };
   if (!record.user || record.user.deletedAt) return { ok: false, error: "ACCOUNT_UNAVAILABLE" };
 
-  // When the row carries a codeChallenge, the caller must present a
-  // matching code_verifier. This prevents custom-scheme hijack exchanges.
-  if (record.codeChallenge) {
-    if (!options.codeVerifier) {
-      return { ok: false, error: "PKCE_VERIFIER_REQUIRED" };
-    }
-    if (!verifyPkceCodeVerifier(options.codeVerifier, record.codeChallenge)) {
-      return { ok: false, error: "PKCE_VERIFIER_INVALID" };
-    }
+  if (!record.codeChallenge) {
+    return { ok: false, error: "PKCE_CHALLENGE_REQUIRED" };
+  }
+  if (!options.codeVerifier) {
+    return { ok: false, error: "PKCE_VERIFIER_REQUIRED" };
+  }
+  if (!verifyPkceCodeVerifier(options.codeVerifier, record.codeChallenge)) {
+    return { ok: false, error: "PKCE_VERIFIER_INVALID" };
   }
 
   const consumed = await prisma.mobileOAuthCode.updateMany({

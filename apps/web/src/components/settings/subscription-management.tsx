@@ -182,7 +182,7 @@ export default function SubscriptionManagementPage() {
 
   // Stripe Checkout returns the user here while the `customer.subscription.*`
   // webhook is still in flight. Poll a short window so the page resolves to
-  // TRIALING/ACTIVE before we celebrate â€” otherwise the reveal modal would
+  // TRIALING/ACTIVE before we celebrate — otherwise the reveal modal would
   // flash the success animation while the underlying state is still pending.
   useEffect(() => {
     if (!successFlag) return;
@@ -257,22 +257,22 @@ export default function SubscriptionManagementPage() {
   });
   const canManageStripeBilling = currentProvider === "STRIPE" && Boolean(subscription?.stripeCustomerId);
   // Store-managed subscriptions (Apple / Google) cannot be cancelled or
-  // modified through Stripe Customer Portal â€” store policy requires the
-  // user to manage them in iOS Settings â†’ Subscriptions or Play Store â†’
+  // modified through Stripe Customer Portal — store policy requires the
+  // user to manage them in iOS Settings → Subscriptions or Play Store →
   // Subscriptions. Tell the user where to go so they don't search for a
   // missing button.
   const storeManageHint =
     currentProvider === "APP_STORE"
-      ? "Manage or cancel this subscription in iOS Settings â†’ Apple ID â†’ Subscriptions."
+      ? "Manage or cancel this subscription in iOS Settings → Apple ID → Subscriptions."
       : currentProvider === "PLAY_STORE"
-        ? "Manage or cancel this subscription in the Google Play Store app â†’ Payments & subscriptions."
+        ? "Manage or cancel this subscription in the Google Play Store app → Payments & subscriptions."
         : null;
   // Trialing, active, and pending-checkout users have either already started
-  // the annual plan or are mid-checkout â€” re-offering the trial CTA in those
+  // the annual plan or are mid-checkout — re-offering the trial CTA in those
   // states confused users into thinking the trial hadn't begun. Also hide
   // it while we're polling for Stripe activation so a Free Access user
   // returning from Checkout doesn't see "Start annual trial" stacked under
-  // the "Activatingâ€¦" banner.
+  // the "Activating…" banner.
   const showAnnualTrialOffer =
     !waitingForActivation &&
     ["FREE_ACCESS", "FREE_ACCESS_EXPIRED", "CANCELED"].includes(currentState) &&
@@ -419,9 +419,9 @@ export default function SubscriptionManagementPage() {
 
       {waitingForActivation ? (
         <div className="rounded-2xl border border-tone-honey-br bg-tone-honey-bg p-5 text-tone-honey-fg">
-          <p className="text-base font-medium">Activating your annual trialâ€¦</p>
+          <p className="text-base font-medium">Activating your annual trial…</p>
           <p className="mt-1 text-sm text-tone-honey-fg/80">
-            Stripe just confirmed your checkout. We are syncing your subscription â€” this usually takes a few seconds.
+            Stripe just confirmed your checkout. We are syncing your subscription — this usually takes a few seconds.
           </p>
         </div>
       ) : null}

@@ -1,0 +1,389 @@
+/**
+ * Production startup config validation.
+ *
+ * Package 4 removed dummy build-time secrets from Dockerfiles, but at
+ * runtime the app can still start with critical env vars missing — for
+ * example, an Ofelia container restarted with stale env, or a
+ * DigitalOcean App Spec that lost a secret during a manual rollback.
+ * Without a startup gate, the app silently serves traffic with a
+ * fall-through state: USER_JWT_SECRET undefined makes every login fail
+ * with an opaque 500, FIELD_ENCRYPTION_KEY missing silently writes
+ * un-encrypted data into PII columns.
+ *
+ * This module computes a structured readiness report from process.env
+ * (and a few derived signals like DB connectivity) and a compact summary
+ * suitable for a /api/ready endpoint and orchestrator health checks. The
+ * goal is to fail clearly and early — the deployment pipeline should
+ * never accept traffic until /api/ready returns 200.
+ *
+ * The module deliberately does NOT throw on import. Production hosts
+ * sometimes need a degraded process to come up so an operator can connect
+ * with a console; throwing at import time would make that impossible.
+ */
+
+import { validateRuntimeConfigValueShape } from "@/lib/shared-runtime-config";
+
+const PROD_ENVS = new Set(["production", "staging"]);
+export const READINESS_CONFIG_KEYS = [
+  "NODE_ENV",
+  "APP_ENV",
+  "APP_URL",
+  "NEXT_PUBLIC_APP_URL",
+  "NEXT_PUBLIC_ADMIN_URL",
+  "DATABASE_URL",
+  "USER_JWT_SECRET",
+  "ADMIN_JWT_SECRET",
+  "FIELD_ENCRYPTION_KEY",
+  "CRON_SECRET",
+  "INTERNAL_WEBHOOK_SECRET",
+  "IMPERSONATION_HANDOFF_SECRET",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "RESEND_API_KEY",
+  "EMAIL_FROM",
+  "EMAIL_REPLY_TO",
+  "SUPPORT_EMAIL",
+  "ALERT_EMAIL_FROM",
+  "ALERT_EMAIL_TO",
+  "ADMIN_ALERT_EMAIL",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
+  "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+  "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+  "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+  "STRIPE_ANNUAL_TRIAL_DAYS",
+  "GOOGLE_OAUTH_CLIENT_ID",
+  "GOOGLE_OAUTH_CLIENT_SECRET",
+  "GOOGLE_MAPS_API_KEY",
+  "PLACES_AUTOCOMPLETE_ENABLED",
+  "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
+  "PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT",
+  "PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT",
+  "PLACES_DETAILS_DAILY_USER_LIMIT",
+  "PLACES_DETAILS_DAILY_IP_LIMIT",
+  "R2_BUCKET",
+  "R2_ENDPOINT",
+  "R2_REGION",
+  "R2_ACCESS_KEY_ID",
+  "R2_SECRET_ACCESS_KEY",
+  "R2_PUBLIC_BASE_URL",
+  "BACKUP_STORAGE_PROVIDER",
+  "BACKUP_STORAGE_BUCKET",
+  "BACKUP_STORAGE_REGION",
+  "BACKUP_STORAGE_ENDPOINT",
+  "BACKUP_STORAGE_ACCESS_KEY_ID",
+  "BACKUP_STORAGE_SECRET_ACCESS_KEY",
+] as const;
+
+export function getReadinessConfigKeys(): string[] {
+  return [...READINESS_CONFIG_KEYS];
+}
+
+function isProductionLike(env: NodeJS.ProcessEnv = process.env): boolean {
+  const explicit = (env.APP_ENV || env.VERCEL_ENV || "").toLowerCase();
+  if (PROD_ENVS.has(explicit)) return true;
+  if (env.NODE_ENV === "production") return true;
+  if (env.DIGITALOCEAN_APP_ID) return true;
+  return false;
+}
+
+function isLocalhostUrl(value: string | undefined | null): boolean {
+  if (!value) return false;
+  const v = value.toLowerCase();
+  return (
+    v.includes("localhost") ||
+    v.includes("127.0.0.1") ||
+    v.includes("0.0.0.0") ||
+    v.includes("::1")
+  );
+}
+
+function isHexKey(value: string | undefined, expectedLength = 64): boolean {
+  if (!value) return false;
+  return new RegExp(`^[0-9a-fA-F]{${expectedLength}}$`).test(value);
+}
+
+function hasMinSecret(value: string | undefined, minLength = 32): boolean {
+  if (!value) return false;
+  if (value.includes("REPLACE")) return false;
+  if (/^(test|dev|dummy|changeme)/i.test(value)) return false;
+  return value.length >= minLength;
+}
+
+export type ReadinessSeverity = "ok" | "warn" | "fail";
+
+export interface ReadinessIssue {
+  key: string;
+  severity: ReadinessSeverity;
+  message: string;
+}
+
+export interface ReadinessReport {
+  ready: boolean;
+  productionLike: boolean;
+  failCount: number;
+  warnCount: number;
+  issues: ReadinessIssue[];
+}
+
+/**
+ * Build a readiness report. Pure: reads only `env` and the
+ * `productionLike` parameter (defaults to detecting from env). Never
+ * touches DB. Callers that want DB readiness should compose this with
+ * their own SELECT 1 probe.
+ */
+export function buildReadinessReport(
+  env: NodeJS.ProcessEnv = process.env,
+  productionLike: boolean = isProductionLike(env),
+  effectiveConfig: Record<string, string | null | undefined> = {},
+): ReadinessReport {
+  const issues: ReadinessIssue[] = [];
+  const readConfig = (key: string): string | undefined => {
+    if (Object.prototype.hasOwnProperty.call(effectiveConfig, key)) {
+      return effectiveConfig[key] || undefined;
+    }
+    return env[key];
+  };
+
+  function fail(key: string, message: string) {
+    issues.push({ key, severity: productionLike ? "fail" : "warn", message });
+  }
+
+  function warn(key: string, message: string) {
+    issues.push({ key, severity: "warn", message });
+  }
+
+  const userJwtSecret = readConfig("USER_JWT_SECRET");
+  const adminJwtSecret = readConfig("ADMIN_JWT_SECRET");
+  const fieldEncryptionKey = readConfig("FIELD_ENCRYPTION_KEY");
+  const cronSecret = readConfig("CRON_SECRET");
+  const internalWebhookSecret = readConfig("INTERNAL_WEBHOOK_SECRET");
+  const impersonationHandoffSecret = readConfig("IMPERSONATION_HANDOFF_SECRET");
+  const databaseUrl = readConfig("DATABASE_URL");
+  const upstashRedisRestUrl = readConfig("UPSTASH_REDIS_REST_URL");
+  const upstashRedisRestToken = readConfig("UPSTASH_REDIS_REST_TOKEN");
+
+  // ── Auth / session secrets ───────────────────────────────────
+  if (!hasMinSecret(userJwtSecret)) {
+    fail("USER_JWT_SECRET", "USER_JWT_SECRET must be set and at least 32 characters in production.");
+  }
+  if (!hasMinSecret(adminJwtSecret)) {
+    fail("ADMIN_JWT_SECRET", "ADMIN_JWT_SECRET must be set and at least 32 characters in production.");
+  }
+  if (env.SESSION_SECRET !== undefined && !hasMinSecret(env.SESSION_SECRET)) {
+    warn("SESSION_SECRET", "SESSION_SECRET is set but too short; remove it or rotate to ≥32 chars.");
+  }
+
+  // ── Field encryption key (256-bit hex) ───────────────────────
+  if (!fieldEncryptionKey) {
+    fail(
+      "FIELD_ENCRYPTION_KEY",
+      "FIELD_ENCRYPTION_KEY must be a 64-character hex string in production. Encrypted columns will fail without it.",
+    );
+  } else if (!isHexKey(fieldEncryptionKey, 64)) {
+    fail(
+      "FIELD_ENCRYPTION_KEY",
+      "FIELD_ENCRYPTION_KEY is set but is not a 64-character hex string (256-bit key).",
+    );
+  }
+
+  // ── Cron / internal webhook / impersonation secrets ──────────
+  if (!hasMinSecret(cronSecret)) {
+    fail("CRON_SECRET", "CRON_SECRET must be set and at least 32 characters in production.");
+  }
+  if (!hasMinSecret(internalWebhookSecret)) {
+    // Required-in-production per the runtime-config catalog. Without
+    // it, server-to-server internal webhook routes reject every call,
+    // breaking IP-rule cache refresh, security event fan-out, and
+    // rate-limit log shipping.
+    fail(
+      "INTERNAL_WEBHOOK_SECRET",
+      "INTERNAL_WEBHOOK_SECRET must be set and at least 32 characters in production. Required independently from CRON_SECRET.",
+    );
+  }
+  if (!hasMinSecret(impersonationHandoffSecret)) {
+    // Required-in-production per the runtime-config catalog. Guards
+    // the admin → web impersonation handoff endpoint; missing in
+    // production disables the impersonation flow entirely.
+    fail(
+      "IMPERSONATION_HANDOFF_SECRET",
+      "IMPERSONATION_HANDOFF_SECRET must be set and at least 32 characters in production. Required independently from CRON_SECRET and INTERNAL_WEBHOOK_SECRET.",
+    );
+  }
+
+  // ── Database ─────────────────────────────────────────────────
+  if (!databaseUrl) {
+    fail("DATABASE_URL", "DATABASE_URL must be set.");
+  } else if (productionLike && isLocalhostUrl(databaseUrl)) {
+    fail(
+      "DATABASE_URL",
+      "DATABASE_URL points to localhost in a production-like environment.",
+    );
+  }
+
+  // ── Redis (rate-limit / step-up store) ───────────────────────
+  if (productionLike) {
+    if (!upstashRedisRestUrl || !upstashRedisRestToken) {
+      fail(
+        "UPSTASH_REDIS",
+        "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be configured in production for rate limiting and shared step-up state.",
+      );
+    } else if (
+      upstashRedisRestUrl.includes("REPLACE") ||
+      upstashRedisRestToken.includes("REPLACE")
+    ) {
+      fail(
+        "UPSTASH_REDIS",
+        "UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN still contains a placeholder value.",
+      );
+    }
+  }
+
+  // ── Public URLs ──────────────────────────────────────────────
+  const publicUrls: Array<[string, string | undefined]> = [
+    ["APP_URL", readConfig("APP_URL")],
+    ["NEXT_PUBLIC_APP_URL", readConfig("NEXT_PUBLIC_APP_URL")],
+    ["NEXT_PUBLIC_ADMIN_URL", readConfig("NEXT_PUBLIC_ADMIN_URL")],
+  ];
+  for (const [key, value] of publicUrls) {
+    if (productionLike && !value) {
+      fail(key, `${key} must be set in a production-like environment.`);
+    } else if (productionLike && value && isLocalhostUrl(value)) {
+      fail(key, `${key} must not point to localhost in a production-like environment.`);
+    } else if (productionLike && value) {
+      const validation = validateRuntimeConfigValueShape(key, value);
+      if (!validation.ok) {
+        fail(key, `${key} is invalid: ${validation.reason}.`);
+      }
+    }
+  }
+
+  // ── Debug / dev modes ────────────────────────────────────────
+  const requiredEmailKeys = ["RESEND_API_KEY", "EMAIL_FROM", "SUPPORT_EMAIL"] as const;
+  for (const key of requiredEmailKeys) {
+    const value = readConfig(key);
+    if (!value) {
+      fail(key, `${key} must be configured for production email delivery.`);
+      continue;
+    }
+    const validation = validateRuntimeConfigValueShape(key, value);
+    if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
+  }
+  for (const key of ["EMAIL_REPLY_TO", "ALERT_EMAIL_FROM", "ALERT_EMAIL_TO", "ADMIN_ALERT_EMAIL"] as const) {
+    const value = readConfig(key);
+    if (!value) continue;
+    const validation = validateRuntimeConfigValueShape(key, value);
+    if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
+  }
+
+  const requiredStripeKeys = [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+    "STRIPE_PRICE_INDIVIDUAL_YEARLY",
+  ] as const;
+  for (const key of requiredStripeKeys) {
+    const value = readConfig(key);
+    if (!value) {
+      fail(key, `${key} must be configured for production billing.`);
+      continue;
+    }
+    const validation = validateRuntimeConfigValueShape(key, value);
+    if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
+  }
+  const annualTrialDays = readConfig("STRIPE_ANNUAL_TRIAL_DAYS");
+  if (annualTrialDays) {
+    const validation = validateRuntimeConfigValueShape("STRIPE_ANNUAL_TRIAL_DAYS", annualTrialDays);
+    if (!validation.ok) fail("STRIPE_ANNUAL_TRIAL_DAYS", `STRIPE_ANNUAL_TRIAL_DAYS is invalid: ${validation.reason}.`);
+  }
+
+  const placesEnabled = (readConfig("PLACES_AUTOCOMPLETE_ENABLED") || "true").toLowerCase() !== "false";
+  if (placesEnabled && !readConfig("GOOGLE_MAPS_API_KEY")) {
+    fail("GOOGLE_MAPS_API_KEY", "GOOGLE_MAPS_API_KEY must be configured when Places autocomplete is enabled.");
+  }
+  for (const key of [
+    "PLACES_AUTOCOMPLETE_ENABLED",
+    "PLACES_AUTOCOMPLETE_DAILY_LIMIT",
+    "PLACES_AUTOCOMPLETE_DAILY_USER_LIMIT",
+    "PLACES_AUTOCOMPLETE_DAILY_IP_LIMIT",
+    "PLACES_DETAILS_DAILY_USER_LIMIT",
+    "PLACES_DETAILS_DAILY_IP_LIMIT",
+  ] as const) {
+    const value = readConfig(key);
+    if (!value) continue;
+    const validation = validateRuntimeConfigValueShape(key, value);
+    if (!validation.ok) fail(key, `${key} is invalid: ${validation.reason}.`);
+  }
+
+  const googleOAuthId = readConfig("GOOGLE_OAUTH_CLIENT_ID");
+  const googleOAuthSecret = readConfig("GOOGLE_OAUTH_CLIENT_SECRET");
+  if (googleOAuthId || googleOAuthSecret) {
+    if (!googleOAuthId) fail("GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_OAUTH_CLIENT_ID is required when Google OAuth is enabled.");
+    if (!googleOAuthSecret) fail("GOOGLE_OAUTH_CLIENT_SECRET", "GOOGLE_OAUTH_CLIENT_SECRET is required when Google OAuth is enabled.");
+  }
+
+  const configuredR2Keys = [
+    "R2_BUCKET",
+    "R2_ENDPOINT",
+    "R2_REGION",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_PUBLIC_BASE_URL",
+  ] as const;
+  if (configuredR2Keys.some((key) => Boolean(readConfig(key)))) {
+    for (const key of ["R2_BUCKET", "R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"] as const) {
+      if (!readConfig(key)) fail(key, `${key} is required when R2 asset storage is configured.`);
+    }
+  }
+
+  const configuredBackupKeys = [
+    "BACKUP_STORAGE_PROVIDER",
+    "BACKUP_STORAGE_BUCKET",
+    "BACKUP_STORAGE_REGION",
+    "BACKUP_STORAGE_ENDPOINT",
+    "BACKUP_STORAGE_ACCESS_KEY_ID",
+    "BACKUP_STORAGE_SECRET_ACCESS_KEY",
+  ] as const;
+  if (configuredBackupKeys.some((key) => Boolean(readConfig(key)))) {
+    for (const key of ["BACKUP_STORAGE_PROVIDER", "BACKUP_STORAGE_BUCKET", "BACKUP_STORAGE_ACCESS_KEY_ID", "BACKUP_STORAGE_SECRET_ACCESS_KEY"] as const) {
+      if (!readConfig(key)) fail(key, `${key} is required when backup storage is configured.`);
+    }
+  }
+
+  if (productionLike) {
+    if ((env.NEXT_PUBLIC_DEBUG || "").toLowerCase() === "true") {
+      warn("NEXT_PUBLIC_DEBUG", "NEXT_PUBLIC_DEBUG=true in production-like environment.");
+    }
+    if ((env.ALLOW_PRODUCTION_REPLACE_RESTORE || "").toLowerCase() === "true") {
+      warn(
+        "ALLOW_PRODUCTION_REPLACE_RESTORE",
+        "ALLOW_PRODUCTION_REPLACE_RESTORE=true: production REPLACE backup restore is unlocked. Disable when not actively restoring.",
+      );
+    }
+  }
+
+  const failCount = issues.filter((i) => i.severity === "fail").length;
+  const warnCount = issues.filter((i) => i.severity === "warn").length;
+
+  return {
+    ready: failCount === 0,
+    productionLike,
+    failCount,
+    warnCount,
+    issues,
+  };
+}
+
+/**
+ * Return a small, safe summary of the readiness report — never includes
+ * secret values, just key names and severity. Suitable for /api/ready.
+ */
+export function summarizeReadinessForResponse(report: ReadinessReport) {
+  return {
+    ready: report.ready,
+    productionLike: report.productionLike,
+    failures: report.issues.filter((i) => i.severity === "fail").map((i) => ({ key: i.key, message: i.message })),
+    warnings: report.issues.filter((i) => i.severity === "warn").map((i) => ({ key: i.key, message: i.message })),
+  };
+}

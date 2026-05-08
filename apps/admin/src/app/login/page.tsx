@@ -35,12 +35,10 @@ export default function LoginPage() {
 
     try {
       const body: Record<string, string> = { email, password };
-      if (mfaRequired) {
-        if (useBackupCode) {
-          body.backupCode = backupCode.trim();
-        } else {
-          body.mfaCode = mfaCode.trim();
-        }
+      if (useBackupCode && backupCode.trim()) {
+        body.backupCode = backupCode.trim();
+      } else if (!useBackupCode && mfaCode.trim()) {
+        body.mfaCode = mfaCode.trim();
       }
 
       const res = await fetch("/api/auth/login", {
@@ -112,6 +110,42 @@ export default function LoginPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-foreground">{tLogin("password")}</label>
                 <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className={inputCls} placeholder="••••••••" autoComplete="current-password" />
               </div>
+              {!useBackupCode ? (
+                <div>
+                  <label htmlFor="mfaCode" className="block text-sm font-medium text-foreground">{tLogin("mfaCode")}</label>
+                  <input
+                    ref={mfaInputRef}
+                    id="mfaCode"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className={inputCls + " text-center text-lg font-mono"}
+                    placeholder="000000"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label htmlFor="backupCode" className="block text-sm font-medium text-foreground">{tLogin("backupCode")}</label>
+                  <input
+                    ref={mfaInputRef}
+                    id="backupCode"
+                    type="text"
+                    autoComplete="off"
+                    maxLength={16}
+                    value={backupCode}
+                    onChange={(e) => setBackupCode(e.target.value.toUpperCase().slice(0, 16))}
+                    className={inputCls + " text-center text-lg tracking-widest font-mono"}
+                    placeholder="XXXXXXXX"
+                  />
+                </div>
+              )}
+              <button type="button" onClick={() => { setUseBackupCode(!useBackupCode); setMfaCode(""); setBackupCode(""); }}
+                className="text-xs text-primary hover:underline">
+                {tLogin("useBackupCode")}
+              </button>
             </>
           ) : (
             <>
@@ -164,7 +198,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading || (mfaRequired && !useBackupCode && mfaCode.length !== 6) || (mfaRequired && useBackupCode && backupCode.length < 6)}
+            disabled={loading}
             className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {loading ? tCommon("loading") : mfaRequired ? tCommon("confirm") : tLogin("submit")}

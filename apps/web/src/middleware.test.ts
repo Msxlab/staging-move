@@ -4,6 +4,9 @@ import { NextRequest } from "next/server";
 const mocks = vi.hoisted(() => ({
   jwtVerify: vi.fn(),
   tryGetUserJwtSecretKey: vi.fn(() => null),
+  rateLimitMock: vi.fn(() =>
+    Promise.resolve({ success: true, resetAt: Date.now() + 60_000, remaining: 100 }),
+  ),
 }));
 
 vi.mock("@/lib/ip-rules", () => ({
@@ -12,7 +15,17 @@ vi.mock("@/lib/ip-rules", () => ({
 
 vi.mock("@/lib/rate-limit", () => ({
   getRateLimitKey: vi.fn(() => "rate-key"),
-  rateLimit: vi.fn(() => Promise.resolve({ success: true, resetAt: Date.now() + 60_000 })),
+  rateLimit: mocks.rateLimitMock,
+  getLimiterHealth: vi.fn(() => ({
+    distributedLimiterConfigured: false,
+    limiterMode: "memory",
+    provider: "memory",
+    environment: "production",
+    productionEnvOk: false,
+    lastDegradedAt: null,
+    lastRecoveredAt: null,
+    lastErrorReasonCode: null,
+  })),
 }));
 
 vi.mock("@/lib/user-jwt-secret", () => ({
@@ -274,6 +287,51 @@ describe("web middleware auth boundaries", () => {
     expect(response.status).toBe(401);
     expect(response.headers.get("X-LocateFlow-Auth-Layer")).toBe("middleware");
     expect(response.headers.get("X-LocateFlow-Auth-Failure")).toBe("JWT_INVALID");
+  });
+
+  it("exempts webhook routes from the global IP rate limiter", async () => {
+    mocks.rateLimitMock.mockClear();
+    const response = await middleware(
+      request("https://locateflow.com/api/webhooks/stripe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      }),
+    );
+    expect(mocks.rateLimitMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+  });
+
+  it("rate limits cron routes before auth", async () => {
+    mocks.rateLimitMock.mockClear();
+    const response = await middleware(
+      request("https://locateflow.com/api/cron/expire-trials", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      }),
+    );
+    expect(mocks.rateLimitMock).toHaveBeenCalledWith(
+      expect.stringContaining("rl:cron:"),
+      expect.objectContaining({ limit: 1, windowSeconds: 60 }),
+    );
+    expect(response.status).toBe(401);
+  });
+
+  it("rate limits internal routes while keeping them publicly routable to secret checks", async () => {
+    mocks.rateLimitMock.mockClear();
+    const response = await middleware(
+      request("https://locateflow.com/api/internal/refresh-cache", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      }),
+    );
+    expect(mocks.rateLimitMock).toHaveBeenCalledWith(
+      expect.stringContaining("rl:internal:"),
+      expect.objectContaining({ limit: 60, windowSeconds: 60 }),
+    );
+    expect(response.status).toBe(200);
   });
 
   it("tries later duplicate session cookie values before rejecting protected API requests", async () => {

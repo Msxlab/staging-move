@@ -64,7 +64,7 @@ export async function GET(
     const { id } = await params;
 
     const [provider, coverageCount, auditLogs, comparableProviders] = await Promise.all([
-      prisma.serviceProvider.findUnique({ where: { id } }),
+      prisma.serviceProvider.findFirst({ where: { id, deletedAt: null } }),
       prisma.serviceProviderCoverage.count({ where: { providerId: id } }),
       prisma.adminAuditLog.findMany({
         where: {
@@ -84,6 +84,7 @@ export async function GET(
         },
       }),
       prisma.serviceProvider.findMany({
+        where: { deletedAt: null },
         select: {
           website: true,
         },
@@ -133,13 +134,14 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const existing = await prisma.serviceProvider.findUnique({ where: { id } });
+    const existing = await prisma.serviceProvider.findFirst({ where: { id, deletedAt: null } });
     if (!existing) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
     }
 
     const normalized = buildNormalizedCandidate(existing, body);
     const comparableProviders = await prisma.serviceProvider.findMany({
+      where: { deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -261,7 +263,7 @@ export async function DELETE(
     } catch {
       /* no body is fine — password will be required and the 403 response tells the client */
     }
-    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "provider_delete" });
     if (!confirm.confirmed) {
       return NextResponse.json(
         { error: confirm.error, requiresPassword: true },
@@ -269,12 +271,15 @@ export async function DELETE(
       );
     }
 
-    const provider = await prisma.serviceProvider.findUnique({ where: { id } });
+    const provider = await prisma.serviceProvider.findFirst({ where: { id, deletedAt: null } });
     if (!provider) {
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
     }
 
-    await prisma.serviceProvider.delete({ where: { id } });
+    await prisma.serviceProvider.update({
+      where: { id },
+      data: { deletedAt: new Date(), isActive: false },
+    });
 
     await prisma.adminAuditLog.create({
       data: {
@@ -282,7 +287,7 @@ export async function DELETE(
         action: "DELETE_PROVIDER",
         entityType: "ServiceProvider",
         entityId: id,
-        changes: JSON.stringify({ name: provider.name }),
+        changes: JSON.stringify({ name: provider.name, mode: "soft_delete", isActive: false }),
         ipAddress: request.headers.get("x-forwarded-for") || "unknown",
       },
     });

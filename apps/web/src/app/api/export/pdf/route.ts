@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { createAuditLog, extractRequestMeta } from "@/lib/audit";
 import { generateAddressReportPdf } from "@/lib/pdf/address-report";
 import { generateFullAccountPdf } from "@/lib/pdf/full-account";
 import type { PdfAccountSnapshot, PdfAddress } from "@/lib/pdf/types";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { emitSecurityEvent } from "@/lib/security-events";
+import { verifyUserStepUp } from "@/lib/user-step-up";
 
 /**
  * GET /api/export/pdf?type=address&addressId=xxx
@@ -29,58 +32,162 @@ import type { PdfAccountSnapshot, PdfAddress } from "@/lib/pdf/types";
 // must run on the Node.js runtime (not edge).
 export const runtime = "nodejs";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
+  return noStoreJson(
+    {
+      error: "PDF export requires POST with step-up verification.",
+      code: "STEP_UP_REQUIRED",
+    },
+    403,
+    { Allow: "POST" },
+  );
+}
+
+export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
+    const meta = extractRequestMeta(request);
+    const body: any = await request.json().catch(() => ({}));
+    const type = typeof body?.type === "string" ? body.type : "address";
 
-    // 5 PDF exports per minute is plenty for a real user; anything
-    // beyond that is either a runaway loop or abuse.
-    const rlKey = getRateLimitKey(request, "export:pdf");
-    const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60 });
+    emitSecurityEvent({
+      type: "EXPORT_ATTEMPT",
+      severity: "info",
+      group: "export_pdf",
+      context: { userId, type, format: "pdf", outcome: "started" },
+    });
+
+    const rl = await enforceRateLimitPolicy(request, "export_pdf", {
+      userId,
+      routeId: "export_pdf",
+    });
     if (!rl.success) {
-      return NextResponse.json(
-        { error: "Too many PDF exports. Please wait a minute and try again." },
-        { status: 429 },
+      emitSecurityEvent({
+        type: "EXPORT_ATTEMPT",
+        severity: "warn",
+        group: "export_pdf",
+        retryAfterSeconds: rl.retryAfterSeconds,
+        context: { userId, type, format: "pdf", outcome: "rate_limited" },
+      });
+      await createAuditLog({
+        userId,
+        action: "EXPORT_LIMIT",
+        entityType: "User",
+        entityId: userId,
+        changes: { status: "rate_limited", type, format: "pdf", retryAfterSeconds: rl.retryAfterSeconds },
+        ...meta,
+      });
+      return noStoreJson(
+        {
+          code: rl.policy.userFacingErrorCode,
+          error: "Too many PDF exports. Please wait and try again.",
+          routeGroup: rl.policy.group,
+          retryAfterSeconds: rl.retryAfterSeconds,
+        },
+        429,
+        { "Retry-After": String(rl.retryAfterSeconds) },
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type") || "address";
+    const stepUp = await verifyUserStepUp({
+      userId,
+      confirmPassword: typeof body?.confirmPassword === "string" ? body.confirmPassword : null,
+      mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : null,
+      backupCode: typeof body?.backupCode === "string" ? body.backupCode : null,
+    });
+    if (!stepUp.ok) {
+      emitSecurityEvent({
+        type: "EXPORT_ATTEMPT",
+        severity: "warn",
+        group: "export_pdf",
+        context: { userId, type, format: "pdf", outcome: "failed_step_up", code: stepUp.code },
+      });
+      await createAuditLog({
+        userId,
+        action: "EXPORT_BLOCK",
+        entityType: "User",
+        entityId: userId,
+        changes: { status: "failed_step_up", type, format: "pdf", code: stepUp.code },
+        ...meta,
+      });
+      return noStoreJson(
+        { error: stepUp.message, code: stepUp.code },
+        stepUp.code === "STEP_UP_REQUIRED" ? 403 : 401,
+      );
+    }
 
     if (type === "address") {
-      const addressId = searchParams.get("addressId");
+      const addressId = typeof body?.addressId === "string" ? body.addressId : "";
       if (!addressId) {
-        return NextResponse.json(
-          { error: "addressId is required for type=address" },
-          { status: 400 },
-        );
+        return noStoreJson({ error: "addressId is required for type=address" }, 400);
       }
       const buffer = await buildAddressPdf(userId, addressId);
       if (!buffer) {
-        return NextResponse.json(
-          { error: "Address not found" },
-          { status: 404 },
-        );
+        return noStoreJson({ error: "Address not found" }, 404);
       }
+      await auditSuccessfulPdfExport({ userId, type, meta, stepUpMethod: stepUp.method, entityId: addressId });
       return pdfResponse(buffer, `locateflow-address-report.pdf`);
     }
 
     if (type === "full") {
       const buffer = await buildFullAccountPdf(userId);
+      await auditSuccessfulPdfExport({ userId, type, meta, stepUpMethod: stepUp.method, entityId: userId });
       return pdfResponse(buffer, `locateflow-account-snapshot.pdf`);
     }
 
-    return NextResponse.json(
-      { error: "Unsupported export type. Use 'address' or 'full'." },
-      { status: 400 },
-    );
+    return noStoreJson({ error: "Unsupported export type. Use 'address' or 'full'." }, 400);
   } catch (error) {
     console.error("[EXPORT/PDF] Failed:", error);
-    return NextResponse.json(
-      { error: "Failed to generate PDF" },
-      { status: 500 },
-    );
+    return noStoreJson({ error: "Failed to generate PDF" }, 500);
   }
+}
+
+function noStoreJson(
+  body: Record<string, unknown>,
+  status: number,
+  headers: Record<string, string> = {},
+): NextResponse {
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      "Cache-Control": "private, no-store",
+      ...headers,
+    },
+  });
+}
+
+async function auditSuccessfulPdfExport(input: {
+  userId: string;
+  type: string;
+  meta: ReturnType<typeof extractRequestMeta>;
+  stepUpMethod: string;
+  entityId: string;
+}) {
+  emitSecurityEvent({
+    type: "EXPORT_ATTEMPT",
+    severity: "info",
+    group: "export_pdf",
+    context: {
+      userId: input.userId,
+      type: input.type,
+      format: "pdf",
+      outcome: "success",
+      stepUpMethod: input.stepUpMethod,
+    },
+  });
+  await createAuditLog({
+    userId: input.userId,
+    action: "EXPORT_PDF",
+    entityType: "User",
+    entityId: input.entityId,
+    changes: {
+      status: "success",
+      type: input.type,
+      format: "pdf",
+      stepUpMethod: input.stepUpMethod,
+    },
+    ...input.meta,
+  });
 }
 
 function pdfResponse(buffer: Buffer, filename: string): NextResponse {

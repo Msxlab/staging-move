@@ -3,8 +3,19 @@ import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import { prisma } from "./db";
 import bcrypt from "bcryptjs";
+import { adminRoleRequiresMfa } from "./admin-roles";
 import { trackFailedPasswordConfirm, trackSensitiveOp } from "./security-monitor";
 import { generateAdminSessionFingerprint } from "./session-fingerprint";
+import { decrypt } from "./shared-encryption";
+import { verifyBackupCode, verifyTOTP } from "./totp";
+import {
+  clearFailures as clearStepUpFailures,
+  clearStepUpStateForTests as clearStepUpStoreForTests,
+  getFailureLockout as getStepUpLockout,
+  hasRecentConfirm as hasRecentStepUpConfirm,
+  registerFailure as registerStepUpFailure,
+  rememberConfirm as rememberStepUpConfirm,
+} from "./auth-step-up-store";
 
 const adminJwtSecret = process.env.ADMIN_JWT_SECRET;
 if (!adminJwtSecret || adminJwtSecret.length < 32) {
@@ -304,10 +315,13 @@ export async function requireRole(requiredRole: string): Promise<AdminSession> {
   // Re-read role from DB to prevent stale JWT role claims (SEC-005)
   const freshAdmin = await prisma.adminUser.findUnique({
     where: { id: session.adminId },
-    select: { role: true, isActive: true },
+    select: { role: true, isActive: true, mfaEnabled: true },
   });
   if (!freshAdmin || !freshAdmin.isActive) {
     throw new Error("UNAUTHORIZED");
+  }
+  if (adminRoleRequiresMfa(freshAdmin.role) && !freshAdmin.mfaEnabled) {
+    throw new Error("FORBIDDEN");
   }
   const currentRole = freshAdmin.role;
 
@@ -346,30 +360,85 @@ export async function destroySession() {
   clearSessionCookie(cookieStore);
 }
 
-/**
- * Step-up authentication for sensitive operations.
- * Requires the admin to re-enter their password.
- * Uses a 15-minute grace window — if confirmed within the last 15 minutes, skips re-check.
- */
-const recentConfirms = new Map<string, number>(); // adminId → timestamp
-const CONFIRM_GRACE_MS = 15 * 60 * 1000; // 15 minutes
+// Step-up confirmation grace + bad-attempt counters now live in a shared
+// store (Upstash Redis when configured, in-memory fallback otherwise) —
+// see auth-step-up-store.ts. The constants below stay here because
+// requirePasswordConfirm is the only caller that needs to know about them.
+const DEFAULT_CONFIRM_GRACE_MS = 10 * 60 * 1000;
+const SECRET_ROTATION_GRACE_MS = 2 * 60 * 1000;
+const STEP_UP_FAILURE_WINDOW_MS = 5 * 60 * 1000;
+const STEP_UP_LOCKOUT_MS = 10 * 60 * 1000;
+const STEP_UP_MAX_FAILURES = 5;
 
-// Cleanup stale entries every 10 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, ts] of recentConfirms) {
-    if (now - ts > CONFIRM_GRACE_MS) recentConfirms.delete(key);
+export interface AdminStepUpOptions {
+  operation?: string;
+  mfaCode?: string | null;
+  backupCode?: string | null;
+  requireMfa?: boolean;
+  maxAgeMs?: number;
+}
+
+function normalizeStepUpOperation(operation: string | undefined): string {
+  return (operation || "sensitive_action").trim().toLowerCase().replace(/[^a-z0-9:_-]+/g, "_");
+}
+
+function stepUpCacheKey(session: AdminSession, operation: string): string {
+  const sessionScope = session.sessionId || session.fingerprint || "legacy-session";
+  return `${session.adminId}:${sessionScope}:${operation}`;
+}
+
+function stepUpGraceMs(operation: string, maxAgeMs?: number): number {
+  if (typeof maxAgeMs === "number" && maxAgeMs >= 0) return maxAgeMs;
+  if (operation.includes("key_rotation") || operation.includes("secret")) return SECRET_ROTATION_GRACE_MS;
+  return DEFAULT_CONFIRM_GRACE_MS;
+}
+
+async function checkStepUpFailureLimit(key: string): Promise<{ allowed: boolean; retryAfterSec: number }> {
+  const lock = await getStepUpLockout(key);
+  if (lock.locked) {
+    return { allowed: false, retryAfterSec: lock.retryAfterSec };
   }
-}, 10 * 60 * 1000);
+  return { allowed: true, retryAfterSec: 0 };
+}
+
+async function recordStepUpFailure(key: string): Promise<{ locked: boolean; retryAfterSec: number }> {
+  return registerStepUpFailure({
+    key,
+    windowSec: Math.ceil(STEP_UP_FAILURE_WINDOW_MS / 1000),
+    maxFailures: STEP_UP_MAX_FAILURES,
+    lockoutSec: Math.ceil(STEP_UP_LOCKOUT_MS / 1000),
+  });
+}
+
+export function clearAdminStepUpStateForTests() {
+  clearStepUpStoreForTests();
+}
 
 export async function requirePasswordConfirm(
   session: AdminSession,
-  password: string | undefined
-): Promise<{ confirmed: boolean; error?: string }> {
-  // Check grace window
-  const lastConfirm = recentConfirms.get(session.adminId);
-  if (lastConfirm && Date.now() - lastConfirm < CONFIRM_GRACE_MS) {
-    return { confirmed: true };
+  password: string | undefined,
+  options: AdminStepUpOptions = {},
+): Promise<{ confirmed: boolean; error?: string; requiresMfa?: boolean; rateLimited?: boolean; retryAfterSec?: number }> {
+  const operation = normalizeStepUpOperation(options.operation);
+  const cacheKey = stepUpCacheKey(session, operation);
+  const failureKey = `${cacheKey}:failure`;
+
+  const graceMs = stepUpGraceMs(operation, options.maxAgeMs);
+  if (graceMs > 0) {
+    const recent = await hasRecentStepUpConfirm(cacheKey, graceMs);
+    if (recent) {
+      return { confirmed: true };
+    }
+  }
+
+  const failureLimit = await checkStepUpFailureLimit(failureKey);
+  if (!failureLimit.allowed) {
+    return {
+      confirmed: false,
+      error: "Too many confirmation attempts. Please wait and try again.",
+      rateLimited: true,
+      retryAfterSec: failureLimit.retryAfterSec,
+    };
   }
 
   if (!password) {
@@ -378,7 +447,13 @@ export async function requirePasswordConfirm(
 
   const admin = await prisma.adminUser.findUnique({
     where: { id: session.adminId },
-    select: { password: true, isActive: true },
+    select: {
+      password: true,
+      isActive: true,
+      mfaEnabled: true,
+      mfaSecret: true,
+      mfaBackupCodes: true,
+    },
   });
 
   if (!admin || !admin.isActive) {
@@ -387,13 +462,67 @@ export async function requirePasswordConfirm(
 
   const valid = await bcrypt.compare(password, admin.password);
   if (!valid) {
-    trackFailedPasswordConfirm(session.adminId, "unknown");
-    return { confirmed: false, error: "Incorrect password." };
+    const lock = await recordStepUpFailure(failureKey);
+    trackFailedPasswordConfirm(session.adminId, operation);
+    return {
+      confirmed: false,
+      error: lock.locked ? "Too many confirmation attempts. Please wait and try again." : "Incorrect password.",
+      rateLimited: lock.locked,
+      retryAfterSec: lock.retryAfterSec || undefined,
+    };
   }
 
-  // Set grace window
-  recentConfirms.set(session.adminId, Date.now());
-  trackSensitiveOp(session.adminId, "unknown", "password_confirm");
+  if (options.requireMfa && admin.mfaEnabled) {
+    let mfaValid = false;
+    const secret = admin.mfaSecret ? decrypt(admin.mfaSecret) : "";
+    const mfaCode = options.mfaCode?.trim();
+    const backupCode = options.backupCode?.trim();
+
+    if (mfaCode && secret) {
+      mfaValid = verifyTOTP(secret, mfaCode);
+    } else if (backupCode && admin.mfaBackupCodes) {
+      const originalBackupCodes = admin.mfaBackupCodes || "[]";
+      let storedHashes: string[] = [];
+      try {
+        const parsed = JSON.parse(originalBackupCodes);
+        if (Array.isArray(parsed)) storedHashes = parsed.filter((item) => typeof item === "string");
+      } catch {
+        storedHashes = [];
+      }
+      const matchIndex = await verifyBackupCode(backupCode, storedHashes);
+      if (matchIndex >= 0) {
+        storedHashes.splice(matchIndex, 1);
+        const consumed = await prisma.adminUser.updateMany({
+          where: { id: session.adminId, mfaBackupCodes: originalBackupCodes },
+          data: { mfaBackupCodes: JSON.stringify(storedHashes) },
+        });
+        mfaValid = consumed.count === 1;
+      }
+    }
+
+    if (!mfaValid) {
+      const lock = await recordStepUpFailure(failureKey);
+      trackFailedPasswordConfirm(session.adminId, operation);
+      return {
+        confirmed: false,
+        error: lock.locked
+          ? "Too many confirmation attempts. Please wait and try again."
+          : "MFA verification required for this operation.",
+        requiresMfa: true,
+        rateLimited: lock.locked,
+        retryAfterSec: lock.retryAfterSec || undefined,
+      };
+    }
+  }
+
+  // Persist the confirm with a TTL matching the longest grace window — the
+  // store will expire it on its own. We pick a generous ceiling so a
+  // follow-up call inside the per-operation `stepUpGraceMs` can still find
+  // it; the per-operation freshness check above gates by exact age.
+  const ttlSec = Math.max(60, Math.ceil(graceMs / 1000));
+  await rememberStepUpConfirm(cacheKey, ttlSec);
+  await clearStepUpFailures(failureKey);
+  trackSensitiveOp(session.adminId, operation, "password_confirm");
   return { confirmed: true };
 }
 

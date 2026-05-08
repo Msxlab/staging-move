@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -38,9 +38,8 @@ interface CleanupReport {
 }
 
 export async function POST(request: NextRequest) {
-  if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await guardCronRequest(request, "checkout-cleanup");
+  if (!guard.ok) return guard.response;
 
   const now = new Date();
   const cutoff = new Date(now.getTime() - STALE_THRESHOLD_MS);

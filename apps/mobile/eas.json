@@ -10,7 +10,10 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "http://localhost:3000/api",
         "EXPO_PUBLIC_APP_URL": "http://localhost:3000",
-        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
+        "EXPO_PUBLIC_ENV": "development",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false",
+        "EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED": "false",
+        "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "false"
       }
     },
     "development-simulator": {
@@ -25,9 +28,12 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
-        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
+        "EXPO_PUBLIC_API_URL": "https://staging.locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://staging.locateflow.com",
+        "EXPO_PUBLIC_ENV": "staging",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false",
+        "EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED": "false",
+        "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "false"
       }
     },
     "staging-preview": {
@@ -36,9 +42,12 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
-        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
+        "EXPO_PUBLIC_API_URL": "https://staging.locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://staging.locateflow.com",
+        "EXPO_PUBLIC_ENV": "staging",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false",
+        "EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED": "false",
+        "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "false"
       }
     },
     "production": {
@@ -46,14 +55,17 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
         "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
-        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false"
+        "EXPO_PUBLIC_ENV": "production",
+        "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "true",
+        "EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED": "true",
+        "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "true"
       }
     }
   },
   "submit": {
     "production": {
       "android": {
-        "track": "production"
+        "track": "internal"
       },
       "ios": {}
     }

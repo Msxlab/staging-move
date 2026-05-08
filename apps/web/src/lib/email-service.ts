@@ -1,3 +1,4 @@
+import { sharedSanitizeEmailHtml, sharedSanitizeEmailSubject } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import {
   appendUnsubscribeFooter,
@@ -361,10 +362,19 @@ export async function renderTemplate(
     html = html.replace(pattern, escaped);
   }
 
+  // Defense-in-depth: even though the admin save path sanitizes on write,
+  // older templates persisted before sanitization (or any out-of-band DB
+  // edit) could carry unsafe HTML. Sanitize again at render so the final
+  // email body never contains <script>, <iframe>, event handlers, or
+  // javascript: URLs regardless of what's stored. Variable values are
+  // already escaped above, so this pass is idempotent on safe input.
+  const safeSubject = sharedSanitizeEmailSubject(subject);
+  const safeHtml = sharedSanitizeEmailHtml(html);
+
   return {
-    subject,
-    html,
-    text: htmlToPlainText(html),
+    subject: safeSubject,
+    html: safeHtml,
+    text: htmlToPlainText(safeHtml),
     templateId: template.id,
     slug: template.slug,
   };

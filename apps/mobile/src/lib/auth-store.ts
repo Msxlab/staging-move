@@ -1,8 +1,8 @@
 /**
  * Mobile auth store — keeps the signed-in user in memory + SecureStore.
  *
- * The server issues a JWT that we treat as an opaque bearer token. We:
- *   1. Receive it from /api/auth/login or /api/auth/oauth/*
+ * The mobile login/exchange endpoints issue a JWT that we treat as an opaque bearer token. We:
+ *   1. Receive it from /api/mobile/auth/login or /api/mobile/auth/exchange
  *   2. Persist it with expo-secure-store (keychain/keystore-backed)
  *   3. Attach it as Authorization: Bearer <jwt> on every API call
  *

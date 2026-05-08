@@ -544,6 +544,28 @@ describe("stripe checkout route", () => {
     expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
 
+  it("blocks web Stripe checkout when the account already has an active app-store subscription", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      provider: "APP_STORE",
+      accessType: "PAID",
+      status: "ACTIVE",
+      platform: "ios",
+    });
+    mocks.getStripePriceIdForPlanAndInterval.mockResolvedValue("price_yearly");
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "SUBSCRIPTION_MANAGED_ELSEWHERE" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
   it("blocks re-checkout for a real Stripe-backed trial", async () => {
     subscriptionMock.findUnique.mockResolvedValue({
       userId: "user_1",

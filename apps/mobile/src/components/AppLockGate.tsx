@@ -49,6 +49,7 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
   const locked = useAppLockStore((s) => s.locked);
   const authenticating = useAppLockStore((s) => s.authenticating);
   const methodLabel = useAppLockStore((s) => s.methodLabel);
+  const lockError = useAppLockStore((s) => s.error);
   const hydrate = useAppLockStore((s) => s.hydrate);
   const lock = useAppLockStore((s) => s.lock);
   const unlock = useAppLockStore((s) => s.unlock);
@@ -126,7 +127,9 @@ export function AppLockGate({ children }: { children: React.ReactNode }) {
           </View>
           <Text style={styles.title}>{t("settings.appLock_lockedTitle")}</Text>
           <Text style={styles.description}>
-            {t("settings.appLock_lockedDescription", { method: methodLabel })}
+            {lockError
+              ? t("settings.appLock_unavailableDescription", { method: methodLabel })
+              : t("settings.appLock_lockedDescription", { method: methodLabel })}
           </Text>
           {authenticating || !hydrated ? (
             <View style={styles.busyRow}>

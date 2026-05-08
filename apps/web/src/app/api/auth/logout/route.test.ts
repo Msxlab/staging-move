@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 
 vi.mock("@/lib/user-auth", () => ({
   destroyUserSession: vi.fn(() => Promise.resolve()),
+  getUserSession: vi.fn(() => Promise.resolve(null)),
   expireUserSessionCookies: vi.fn((response) => {
     response.cookies.set("user_session", "", {
       httpOnly: true,

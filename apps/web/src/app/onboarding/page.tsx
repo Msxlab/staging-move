@@ -202,7 +202,7 @@ export default function OnboardingPage() {
     };
   }, [legalStepRequested, router]);
 
-  // Step 0 â€“ Profile
+  // Step 0 – Profile
   // `sensitiveOptIn` gates disability + immigration fields behind an explicit
   // user checkbox. Default off = we never collect GDPR Art. 9 / CCPA sensitive
   // categories without consent.
@@ -218,7 +218,7 @@ export default function OnboardingPage() {
     sensitiveOptIn: false,
   });
 
-  // Step 1 â€“ Address
+  // Step 1 – Address
   const [address, setAddress] = useState({
     nickname: "", street: "", city: "", state: "", zip: "",
     country: "USA", type: "HOME", ownership: "RENTER", startDate: new Date().toISOString().slice(0, 10),
@@ -229,7 +229,7 @@ export default function OnboardingPage() {
   });
   const [createdAddressId, setCreatedAddressId] = useState<string | null>(null);
 
-  // Step 2 â€“ Providers
+  // Step 2 – Providers
   const [providers, setProviders] = useState<ScoredProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<Map<string, ScoredProvider>>(new Map());
@@ -237,7 +237,7 @@ export default function OnboardingPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
 
-  // Step 3 â€“ Moving plan
+  // Step 3 – Moving plan
   const [wantsToMove, setWantsToMove] = useState<boolean | null>(null);
   const [movingForm, setMovingForm] = useState({
     street: "", city: "", state: "", zip: "", country: "USA",
@@ -755,7 +755,7 @@ export default function OnboardingPage() {
             </div>
 
             <p className="text-xs text-muted-foreground -mt-2">
-              Tap the ones that apply â€” all optional. We use these only to tailor your checklist.
+              Tap the ones that apply — all optional. We use these only to tailor your checklist.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
@@ -803,7 +803,7 @@ export default function OnboardingPage() {
                     Share accessibility and immigration details <span className="text-muted-foreground font-normal">(optional)</span>
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                    These fields are sensitive under US and EU privacy law. They&apos;re never required, never shared, and you can turn this off any time in Settings â†’ Privacy.
+                    These fields are sensitive under US and EU privacy law. They&apos;re never required, never shared, and you can turn this off any time in Settings → Privacy.
                   </p>
                 </div>
               </label>
@@ -865,7 +865,7 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* Immigration Status â€” only shown when sensitive opt-in is on. */}
+            {/* Immigration Status — only shown when sensitive opt-in is on. */}
             {profile.sensitiveOptIn ? (
               <div className="rounded-xl border border-border bg-foreground/[0.03] p-4 space-y-3">
                 <div>
@@ -1041,7 +1041,7 @@ export default function OnboardingPage() {
             />
           </div>
 
-          {/* Category filter â€“ collapsed by default */}
+          {/* Category filter – collapsed by default */}
           <div>
             <button
               onClick={() => setShowCategories(!showCategories)}
@@ -1114,7 +1114,7 @@ export default function OnboardingPage() {
             </GlassCard>
           )}
 
-          {/* Provider categories â€“ collapsed accordion */}
+          {/* Provider categories – collapsed accordion */}
           {loadingProviders ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-tone-orange-fg" />

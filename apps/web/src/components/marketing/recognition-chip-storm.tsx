@@ -1,7 +1,7 @@
 ﻿import { getTranslations } from "next-intl/server";
 
 /**
- * Recognition / chip-storm â€” the visceral wound.
+ * Recognition / chip-storm — the visceral wound.
  *
  * Three rows of provider chips (4 / 3 / 4) flex-laid so they stay
  * visible at every viewport. Each chip carries a tiny dread-tag
@@ -25,11 +25,11 @@ export async function RecognitionChipStorm() {
     brand: string;
     statusKey: string;
     tone: Tone;
-    /** Static -3Â°..+3Â° tilt so the cluster reads as scattered, not gridded. */
+    /** Static -3°..+3° tilt so the cluster reads as scattered, not gridded. */
     tilt: number;
   }
 
-  // Provider names stay literal â€” they're brand strings.
+  // Provider names stay literal — they're brand strings.
   // Only the trailing "status" half is localized via t().
   // The visual order matters: severity tones (rose) sprinkled across
   // all three rows so the eye finds at least one wound per band.
@@ -54,7 +54,7 @@ export async function RecognitionChipStorm() {
   // Each tone maps to a tonal pair from the Edition VI palette
   // (defined in globals.css as `--tone-*-bg/br/fg` triples). Solid
   // backgrounds + opaque foreground guarantees readability in both
-  // light and dark modes â€” the previous `bg-destructive/12` arbitrary
+  // light and dark modes — the previous `bg-destructive/12` arbitrary
   // alpha quietly dropped on some builds and left chips ghostlike.
   const toneClasses: Record<Tone, string> = {
     rose: "bg-tone-rose-bg border-tone-rose-br text-tone-rose-fg",
@@ -97,9 +97,9 @@ export async function RecognitionChipStorm() {
         </p>
       </div>
 
-      {/* Chip cloud â€” three rows, flex-wrap, never clips and never collapses */}
+      {/* Chip cloud — three rows, flex-wrap, never clips and never collapses */}
       <div className="relative mx-auto mt-14 flex max-w-5xl flex-col gap-6 sm:gap-8">
-        {/* Soft ambient glow behind the cluster â€” purely decorative */}
+        {/* Soft ambient glow behind the cluster — purely decorative */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_50%,hsl(var(--primary)/0.08),transparent_65%)]"

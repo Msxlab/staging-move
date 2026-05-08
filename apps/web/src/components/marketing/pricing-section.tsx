@@ -315,7 +315,7 @@ export function PricingSection({
                 <span className="text-muted-foreground">{monthlyPriceParts.suffix}</span>
                 {monthlyApproxYear ? (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    â‰ˆ ${monthlyApproxYear.toFixed(monthlyApproxYear % 1 === 0 ? 0 : 2)}/year billed monthly
+                    ≈ ${monthlyApproxYear.toFixed(monthlyApproxYear % 1 === 0 ? 0 : 2)}/year billed monthly
                   </p>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">

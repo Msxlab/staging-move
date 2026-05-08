@@ -81,6 +81,39 @@ export function assertRestoreTargetAllowed(input: {
 
   const archiveEnvironment = input.archiveMetadata?.environment || null;
   const warnings: string[] = [];
+
+  // Pre-fingerprint backups (or hand-crafted archives that omit metadata)
+  // must be rejected for destructive restores. Without a fingerprint we
+  // cannot prove the archive came from this environment, and a stray
+  // staging or dev backup landing in production via REPLACE would silently
+  // wipe live data. DRY_RUN is gated above; here MERGE/REPLACE both apply.
+  if (
+    !archiveEnvironment?.databaseFingerprint &&
+    (input.mode === "REPLACE" || input.mode === "MERGE")
+  ) {
+    const allowMissing =
+      input.body.allowMissingFingerprint === true &&
+      getBodyString(input.body, ["missingFingerprintConfirmation"]) ===
+        `IMPORT WITHOUT FINGERPRINT INTO ${currentEnvironment.name}`;
+    if (!allowMissing) {
+      throw new RestoreTargetGuardError(
+        "RESTORE_FINGERPRINT_MISSING",
+        "Backup archive does not include an environment fingerprint. Re-export from a current backup, or pass an explicit override.",
+        400,
+        {
+          targetEnvironment: currentEnvironment.name,
+          targetDatabaseFingerprint: fingerprintPrefix(
+            currentEnvironment.databaseFingerprint,
+          ),
+          overrideConfirmation: `IMPORT WITHOUT FINGERPRINT INTO ${currentEnvironment.name}`,
+        },
+      );
+    }
+    warnings.push(
+      "Imported a fingerprintless archive after explicit admin confirmation.",
+    );
+  }
+
   if (archiveEnvironment?.databaseFingerprint) {
     const mismatch =
       archiveEnvironment.name !== currentEnvironment.name ||

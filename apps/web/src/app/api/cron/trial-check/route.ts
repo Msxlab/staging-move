@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendTrialExpiringEmail } from "@/lib/email-service";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { INDIVIDUAL_ANNUAL_PRICE_LABEL } from "@/lib/shared-billing";
 
 export const runtime = "nodejs";
@@ -9,9 +9,8 @@ export const runtime = "nodejs";
 // Cron handler for trial expiration checks and warnings
 async function handleCron(request: NextRequest) {
   try {
-    if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const guard = await guardCronRequest(request, "trial-check");
+    if (!guard.ok) return guard.response;
 
     const now = new Date();
     const reminderDays = [7, 1];

@@ -109,6 +109,7 @@ describe("admin team sensitive update", () => {
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
       { adminId: "admin_1", role: "SUPER_ADMIN" },
       "admin-password",
+      { operation: "admin_user_sensitive_update" },
     );
     expect(mocks.transaction).toHaveBeenCalled();
     expect(mocks.sessionUpdateMany).toHaveBeenCalledWith({

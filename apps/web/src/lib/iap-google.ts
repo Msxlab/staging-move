@@ -179,7 +179,7 @@ export async function acknowledgeGoogleSubscription(opts: {
  */
 export function mapGoogleSubscriptionState(
   state: string | undefined | null,
-): "ACTIVE" | "TRIALING" | "GRACE_PERIOD" | "PAST_DUE" | "CANCELED" | "EXPIRED" | "PENDING_VALIDATION" | "UNKNOWN" {
+): "ACTIVE" | "TRIALING" | "GRACE_PERIOD" | "PAST_DUE" | "CANCEL_AT_PERIOD_END" | "CANCELED" | "EXPIRED" | "PENDING_VALIDATION" | "UNKNOWN" {
   switch (state) {
     case "SUBSCRIPTION_STATE_ACTIVE":
       return "ACTIVE";
@@ -190,7 +190,7 @@ export function mapGoogleSubscriptionState(
     case "SUBSCRIPTION_STATE_PAUSED":
       return "PAST_DUE";
     case "SUBSCRIPTION_STATE_CANCELED":
-      return "CANCELED";
+      return "CANCEL_AT_PERIOD_END";
     case "SUBSCRIPTION_STATE_EXPIRED":
       return "EXPIRED";
     case "SUBSCRIPTION_STATE_PENDING":
@@ -213,6 +213,7 @@ const GOOGLE_OIDC_JWKS = createRemoteJWKSet(
 export interface VerifiedPubsubPush {
   audience: string;
   issuer: string;
+  subject: string;
   email: string;
   emailVerified: boolean;
 }
@@ -231,6 +232,7 @@ export async function verifyPubsubOidcToken(
   return {
     audience: String(payload.aud || ""),
     issuer: String(payload.iss || ""),
+    subject: String(payload.sub || ""),
     email,
     emailVerified,
   };

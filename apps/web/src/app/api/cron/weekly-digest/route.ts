@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendWeeklyDigestEmail } from "@/lib/email-service";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import {
   buildWebNotificationSettings,
   getDaysUntilDate,
@@ -19,10 +19,10 @@ import {
  * Query count is O(1) w.r.t. user count (was 3 per user).
  */
 export async function GET(req: Request) {
-  // SEC-003: Fail-closed — reject if no matching cron secret configured.
-  if (!verifyInternalAuth(req.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Heavy fan-out cron: keeps to 2/min so a leaked secret can't trigger
+  // mass digest emails.
+  const guard = await guardCronRequest(req, "weekly-digest", { limit: 2 });
+  if (!guard.ok) return guard.response;
 
   try {
     const now = new Date();

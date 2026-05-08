@@ -81,7 +81,7 @@ export function EmailHealthWidget() {
           </h2>
         </div>
         <Link href="/email-templates" className="text-xs text-muted-foreground hover:text-foreground">
-          View logs â†’
+          View logs →
         </Link>
       </div>
 
@@ -128,7 +128,7 @@ export function EmailHealthWidget() {
           <ul className="space-y-1">
             {data.topFailures.map((f, i) => (
               <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
-                <span className="rounded bg-destructive/10 px-1.5 py-0.5 font-mono text-destructive shrink-0">Ã—{f.count}</span>
+                <span className="rounded bg-destructive/10 px-1.5 py-0.5 font-mono text-destructive shrink-0">×{f.count}</span>
                 <span className="break-all">{f.message}</span>
               </li>
             ))}

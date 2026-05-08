@@ -7,6 +7,7 @@ import {
   verifyResendSignature,
 } from "@/lib/resend-webhook";
 import { processUnsubscribe } from "@/lib/unsubscribe-actions";
+import { emitSecurityEvent } from "@/lib/security-events";
 
 export const runtime = "nodejs";
 
@@ -55,6 +56,19 @@ export async function POST(request: NextRequest) {
     rawBody,
   );
   if (!verifyResult.valid) {
+    emitSecurityEvent({
+      type: "WEBHOOK_SIG_FAILURE",
+      severity: "warn",
+      group: "webhook",
+      context: {
+        provider: "resend",
+        reason: verifyResult.reason,
+        environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+        bodyLength: Buffer.byteLength(rawBody, "utf8"),
+        signatureLength: request.headers.get("svix-signature")?.length ?? 0,
+        correlationId: request.headers.get("svix-id") || null,
+      },
+    });
     return new NextResponse(`Invalid signature (${verifyResult.reason})`, { status: 401 });
   }
 

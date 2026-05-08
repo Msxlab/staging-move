@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "delete") {
-      const confirm = await requirePasswordConfirm(session, confirmPassword);
+      const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "provider_delete" });
       if (!confirm.confirmed) {
         return NextResponse.json(
           { error: confirm.error, requiresPassword: true },
@@ -43,8 +43,9 @@ export async function POST(request: NextRequest) {
         break;
 
       case "delete":
-        result = await prisma.serviceProvider.deleteMany({
-          where: { id: { in: ids } },
+        result = await prisma.serviceProvider.updateMany({
+          where: { id: { in: ids }, deletedAt: null },
+          data: { deletedAt: new Date(), isActive: false },
         });
         break;
 

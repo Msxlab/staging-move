@@ -277,7 +277,7 @@ export default function ProviderDetailPage() {
             />
             <DetailRow label="Display Order" value={provider.displayOrder} />
             <DetailRow label="Version" value={provider.version} />
-            <DetailRow label="ZIP Rules" value={zipCodes.length || "â€”"} />
+            <DetailRow label="ZIP Rules" value={zipCodes.length || "—"} />
             <DetailRow
               label="Created"
               value={new Date(provider.createdAt).toLocaleDateString()}

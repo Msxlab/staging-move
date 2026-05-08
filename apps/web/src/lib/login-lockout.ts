@@ -1,5 +1,5 @@
 /**
- * Per-IP login failure tracker with a hard lockout after N failures.
+ * Per-subject login failure tracker with a hard lockout after N failures.
  *
  * The general rate limiter in `lib/rate-limit.ts` protects every API
  * endpoint uniformly, but the login endpoint needs a more aggressive
@@ -10,7 +10,8 @@
  *
  * Defaults: 5 failures / 15 min window, then 30 min lockout. Success
  * clears the counter so legitimate users never get locked out by a
- * noisy neighbor on the same NAT.
+ * noisy neighbor on the same NAT. Callers should pass a hashed
+ * normalized-email + network/client bucket, not a raw email address.
  */
 
 import { getRequiredRuntimeConfigValues } from "@/lib/runtime-config";
@@ -81,11 +82,11 @@ export interface LockoutCheck {
  * Returns the lockout state for an IP WITHOUT consuming an attempt.
  * Call this before running the expensive bcrypt comparison.
  */
-export async function isLoginLocked(ip: string): Promise<LockoutCheck> {
+export async function isLoginLocked(subjectKey: string): Promise<LockoutCheck> {
   const redisConfig = await resolveRedisConfig();
 
   if (redisConfig) {
-    const lockKey = `user:login:lock:${ip}`;
+    const lockKey = `user:login:lock:${subjectKey}`;
     const data = await redisCall(
       redisConfig,
       `/get/${encodeURIComponent(lockKey)}`,
@@ -109,7 +110,7 @@ export async function isLoginLocked(ip: string): Promise<LockoutCheck> {
     return { locked: false, retryAfterSec: 0 };
   }
 
-  const entry = memStore.get(ip);
+  const entry = memStore.get(subjectKey);
   if (entry && entry.lockedUntil > Date.now()) {
     return {
       locked: true,
@@ -123,12 +124,12 @@ export async function isLoginLocked(ip: string): Promise<LockoutCheck> {
  * Record a failed login attempt. Returns the updated lockout state —
  * callers can surface `locked: true` to the client in the same response.
  */
-export async function recordLoginFailure(ip: string): Promise<LockoutCheck> {
+export async function recordLoginFailure(subjectKey: string): Promise<LockoutCheck> {
   const redisConfig = await resolveRedisConfig();
 
   if (redisConfig) {
-    const countKey = `user:login:fail:${ip}`;
-    const lockKey = `user:login:lock:${ip}`;
+    const countKey = `user:login:fail:${subjectKey}`;
+    const lockKey = `user:login:lock:${subjectKey}`;
     const incr = await redisCall(
       redisConfig,
       `/incr/${encodeURIComponent(countKey)}`,
@@ -155,9 +156,9 @@ export async function recordLoginFailure(ip: string): Promise<LockoutCheck> {
   }
 
   const now = Date.now();
-  const entry = memStore.get(ip);
+  const entry = memStore.get(subjectKey);
   if (!entry || entry.resetAt < now) {
-    memStore.set(ip, {
+    memStore.set(subjectKey, {
       count: 1,
       resetAt: now + WINDOW_SECONDS * 1000,
       lockedUntil: 0,
@@ -174,13 +175,13 @@ export async function recordLoginFailure(ip: string): Promise<LockoutCheck> {
 }
 
 /** Called on a successful login — resets the counter so NAT neighbors aren't punished. */
-export async function clearLoginFailures(ip: string): Promise<void> {
+export async function clearLoginFailures(subjectKey: string): Promise<void> {
   const redisConfig = await resolveRedisConfig();
 
   if (redisConfig) {
-    const countKey = `user:login:fail:${ip}`;
+    const countKey = `user:login:fail:${subjectKey}`;
     await redisCall(redisConfig, `/del/${encodeURIComponent(countKey)}`);
     return;
   }
-  memStore.delete(ip);
+  memStore.delete(subjectKey);
 }

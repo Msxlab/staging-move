@@ -15,7 +15,7 @@ import { ArrowLeft, Check, Crown } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
-import { MOBILE_STORE_PURCHASES_ENABLED } from "@/lib/billing-flags";
+import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 
 function getCurrentMonthValue() {
@@ -148,7 +148,7 @@ export default function NewBudgetScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.gateTitle}>{t("budget.gate_subscriptionRequired_title")}</Text>
               <Text style={styles.gateBody}>{t("budget.gate_subscriptionRequired_body")}</Text>
-              {MOBILE_STORE_PURCHASES_ENABLED ? (
+              {isMobileStorePurchasesEnabledForPlatform() ? (
                 <TouchableOpacity
                   style={styles.gateCta}
                   onPress={() => router.push("/settings/subscription")}

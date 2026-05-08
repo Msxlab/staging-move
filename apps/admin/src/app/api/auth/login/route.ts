@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, generateFingerprint, hashSessionToken } from "@/lib/auth";
@@ -84,6 +85,27 @@ const MAX_ATTEMPTS = 5;
 const WINDOW_SECONDS = 15 * 60; // 15 minutes
 const LOCKOUT_SECONDS = 30 * 60; // 30 minutes lockout after exceeding
 
+interface AdminRateLimitPolicy {
+  prefix: string;
+  maxAttempts: number;
+  windowSeconds: number;
+  lockoutSeconds: number;
+}
+
+const ADMIN_LOGIN_RATE_LIMIT: AdminRateLimitPolicy = {
+  prefix: "admin:login",
+  maxAttempts: MAX_ATTEMPTS,
+  windowSeconds: WINDOW_SECONDS,
+  lockoutSeconds: LOCKOUT_SECONDS,
+};
+
+const ADMIN_MFA_RATE_LIMIT: AdminRateLimitPolicy = {
+  prefix: "admin:mfa",
+  maxAttempts: 4,
+  windowSeconds: 5 * 60,
+  lockoutSeconds: 15 * 60,
+};
+
 // In-memory fallback
 interface LoginAttempt { count: number; resetAt: number; lockedUntil: number; }
 const loginAttempts = new Map<string, LoginAttempt>();
@@ -154,7 +176,22 @@ function resolveClientIP(request: NextRequest): string {
   return "unknown";
 }
 
-async function checkLoginRateLimitRedis(ip: string): Promise<{ allowed: boolean; retryAfterSec: number; unavailable?: boolean }> {
+function stableRateKeyHash(value: string | null | undefined): string {
+  return createHash("sha256").update(value || "none").digest("hex");
+}
+
+function buildAdminLoginRateKey(email: string, ip: string, userAgent: string): string {
+  return `email:${stableRateKeyHash(email.trim().toLowerCase())}:ip:${stableRateKeyHash(ip)}:ua:${stableRateKeyHash(userAgent)}`;
+}
+
+function buildAdminMfaRateKey(adminId: string, ip: string, userAgent: string): string {
+  return `admin:${stableRateKeyHash(adminId)}:ip:${stableRateKeyHash(ip)}:ua:${stableRateKeyHash(userAgent)}`;
+}
+
+async function checkLoginRateLimitRedis(
+  key: string,
+  policy: AdminRateLimitPolicy = ADMIN_LOGIN_RATE_LIMIT,
+): Promise<{ allowed: boolean; retryAfterSec: number; unavailable?: boolean }> {
   const values = await getAdminRuntimeConfigValues([
     "UPSTASH_REDIS_REST_URL",
     "UPSTASH_REDIS_REST_TOKEN",
@@ -162,12 +199,12 @@ async function checkLoginRateLimitRedis(ip: string): Promise<{ allowed: boolean;
   const url = values.UPSTASH_REDIS_REST_URL;
   const token = values.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token || url.includes("REPLACE") || token.includes("REPLACE")) {
-    return checkLoginRateLimitMemory(ip);
+    return checkLoginRateLimitMemory(key, policy);
   }
 
   try {
-    const lockKey = `admin:lock:${ip}`;
-    const countKey = `admin:login:${ip}`;
+    const lockKey = `${policy.prefix}:lock:${key}`;
+    const countKey = `${policy.prefix}:count:${key}`;
     const redisGet = async (path: string) => {
       const res = await fetch(`${url}${path}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -180,7 +217,7 @@ async function checkLoginRateLimitRedis(ip: string): Promise<{ allowed: boolean;
     const lockData = await redisGet(`/get/${encodeURIComponent(lockKey)}`);
     if (lockData.result) {
       const ttlData = await redisGet(`/ttl/${encodeURIComponent(lockKey)}`);
-      return { allowed: false, retryAfterSec: Math.max(ttlData.result || LOCKOUT_SECONDS, 1) };
+      return { allowed: false, retryAfterSec: Math.max(ttlData.result || policy.lockoutSeconds, 1) };
     }
 
     // Increment counter
@@ -190,44 +227,48 @@ async function checkLoginRateLimitRedis(ip: string): Promise<{ allowed: boolean;
     // Set TTL on first attempt
     if (count === 1) {
       try {
-        await redisGet(`/expire/${encodeURIComponent(countKey)}/${WINDOW_SECONDS}`);
+        await redisGet(`/expire/${encodeURIComponent(countKey)}/${policy.windowSeconds}`);
       } catch (err) {
         await redisGet(`/del/${encodeURIComponent(countKey)}`).catch(() => null);
         throw err;
       }
     }
 
-    if (count > MAX_ATTEMPTS) {
+    if (count > policy.maxAttempts) {
       // Lock the IP
-      await redisGet(`/set/${encodeURIComponent(lockKey)}/locked/EX/${LOCKOUT_SECONDS}`);
-      return { allowed: false, retryAfterSec: LOCKOUT_SECONDS };
+      await redisGet(`/set/${encodeURIComponent(lockKey)}/locked/EX/${policy.lockoutSeconds}`);
+      return { allowed: false, retryAfterSec: policy.lockoutSeconds };
     }
 
     return { allowed: true, retryAfterSec: 0 };
   } catch {
     // Fallback to in-memory on Redis error. Upstash should improve distributed
     // protection, but it must not make the only admin login path unavailable.
-    return checkLoginRateLimitMemory(ip);
+    return checkLoginRateLimitMemory(key, policy);
   }
 }
 
-function checkLoginRateLimitMemory(ip: string): { allowed: boolean; retryAfterSec: number } {
+function checkLoginRateLimitMemory(
+  key: string,
+  policy: AdminRateLimitPolicy = ADMIN_LOGIN_RATE_LIMIT,
+): { allowed: boolean; retryAfterSec: number } {
   const now = Date.now();
-  const entry = loginAttempts.get(ip);
+  const memKey = `${policy.prefix}:${key}`;
+  const entry = loginAttempts.get(memKey);
 
   if (entry && entry.lockedUntil > now) {
     return { allowed: false, retryAfterSec: Math.ceil((entry.lockedUntil - now) / 1000) };
   }
 
   if (!entry || entry.resetAt < now) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_SECONDS * 1000, lockedUntil: 0 });
+    loginAttempts.set(memKey, { count: 1, resetAt: now + policy.windowSeconds * 1000, lockedUntil: 0 });
     return { allowed: true, retryAfterSec: 0 };
   }
 
   entry.count++;
-  if (entry.count > MAX_ATTEMPTS) {
-    entry.lockedUntil = now + LOCKOUT_SECONDS * 1000;
-    return { allowed: false, retryAfterSec: LOCKOUT_SECONDS };
+  if (entry.count > policy.maxAttempts) {
+    entry.lockedUntil = now + policy.lockoutSeconds * 1000;
+    return { allowed: false, retryAfterSec: policy.lockoutSeconds };
   }
 
   return { allowed: true, retryAfterSec: 0 };
@@ -252,7 +293,9 @@ export async function POST(request: NextRequest) {
 
     // SEC-005: Rate limiting
     const ip = resolveClientIP(request);
-    const rateCheck = await checkLoginRateLimitRedis(ip);
+    const ua = request.headers.get("user-agent") || "unknown";
+    const loginRateKey = buildAdminLoginRateKey(email, ip, ua);
+    const rateCheck = await checkLoginRateLimitRedis(loginRateKey);
     if (!rateCheck.allowed) {
       await prisma.rateLimitLog.create({
         data: {
@@ -285,8 +328,6 @@ export async function POST(request: NextRequest) {
 
     const admin = await prisma.adminUser.findUnique({ where: { email } });
 
-    const ua = request.headers.get("user-agent") || "unknown";
-
     // SEC-005: Unified error message — prevent username enumeration
     if (!admin || !admin.isActive) {
       trackFailedLogin(email, ip);
@@ -307,16 +348,42 @@ export async function POST(request: NextRequest) {
     // MFA check — if enabled, require TOTP code or backup code
     if ((admin as any).mfaEnabled && (admin as any).mfaSecret) {
       if (!mfaCode && !backupCode) {
-        // Password is correct but MFA is needed
-        return NextResponse.json({
-          requiresMfa: true,
-          message: "MFA verification required. Provide mfaCode or backupCode.",
-        }, { status: 403 });
+        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_REQUIRED", ip, ua, mfaUsed: true, mfaMethod: null });
+        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      }
+
+      const mfaRateCheck = await checkLoginRateLimitRedis(
+        buildAdminMfaRateKey(admin.id, ip, ua),
+        ADMIN_MFA_RATE_LIMIT,
+      );
+      if (!mfaRateCheck.allowed) {
+        await writeLoginAuditLog({
+          action: "LOGIN_BLOCKED",
+          email,
+          ip,
+          reason: "MFA_RATE_LIMIT_BLOCKED",
+          adminId: admin.id,
+        });
+        await writeLoginLog({
+          adminUserId: admin.id,
+          email,
+          success: false,
+          failReason: "MFA_RATE_LIMIT_BLOCKED",
+          ip,
+          ua,
+          mfaUsed: true,
+          mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE",
+        });
+        return NextResponse.json(
+          { error: "Too many MFA attempts. Please try again later." },
+          { status: 429, headers: { "Retry-After": String(mfaRateCheck.retryAfterSec) } },
+        );
       }
 
       const secret = decrypt((admin as any).mfaSecret);
       if (!secret) {
-        return NextResponse.json({ error: "MFA configuration error" }, { status: 500 });
+        await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_CONFIG_ERROR", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
+        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
       }
 
       let mfaValid = false;
@@ -352,7 +419,7 @@ export async function POST(request: NextRequest) {
         trackFailedLogin(email, ip);
         await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, reason: "INVALID_MFA", adminId: admin.id });
         await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "INVALID_MFA", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
-        return NextResponse.json({ error: "Invalid MFA code" }, { status: 401 });
+        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
       }
     }
 

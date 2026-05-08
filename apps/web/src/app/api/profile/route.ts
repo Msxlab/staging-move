@@ -94,6 +94,12 @@ export async function GET() {
       onboardingStepIndex: onboardingProgress.stepIndex,
     });
   } catch (error) {
+    if (error instanceof Error && error.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && error.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     console.error("Failed to fetch profile:", error);
     return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 });
   }
@@ -106,8 +112,8 @@ export async function POST(request: NextRequest) {
   try {
     userId = await requireDbUserId();
   } catch (err: any) {
-    console.error("[PROFILE POST] Auth failed:", err?.message);
-    return NextResponse.json({ error: `Auth failed: ${err?.message}` }, { status: 401 });
+    const status = err?.message === "FORBIDDEN" ? 403 : 401;
+    return NextResponse.json({ error: status === 403 ? "Forbidden" : "Unauthorized" }, { status });
   }
 
   // Rate limit: 20 writes per minute

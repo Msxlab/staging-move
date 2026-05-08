@@ -22,18 +22,31 @@ vi.mock("@/lib/shared-encryption", () => ({
   decrypt: vi.fn(() => "secret"),
 }));
 
-vi.mock("@/lib/rate-limit", () => ({
-  getRateLimitKey: vi.fn(() => "auth:mfa:confirm:ip:203.0.113.10"),
-  rateLimit: vi.fn(() =>
-    Promise.resolve({ success: true, resetAt: Date.now() + 60_000 }),
+vi.mock("@/lib/rate-limit-policy", () => ({
+  enforceRateLimitPolicy: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+    }),
   ),
 }));
 
+vi.mock("@/lib/user-security-audit", () => ({
+  recordUserSecurityAudit: vi.fn(),
+}));
+
+vi.mock("@/lib/email-service", () => ({
+  sendSecurityNoticeEmail: vi.fn(() => Promise.resolve()),
+}));
+
 import { prisma } from "@/lib/db";
-import { rateLimit } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 import { POST } from "./route";
 
-const rateLimitMock = rateLimit as unknown as Mock;
+const enforceRateLimitPolicyMock = enforceRateLimitPolicy as unknown as Mock;
+const recordUserSecurityAuditMock = recordUserSecurityAudit as unknown as Mock;
 const userMock = prisma.user as unknown as { findUnique: Mock; update: Mock };
 
 function makeRequest() {
@@ -47,35 +60,46 @@ function makeRequest() {
 describe("mfa confirm route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    rateLimitMock.mockResolvedValue({
+    enforceRateLimitPolicyMock.mockResolvedValue({
       success: true,
-      resetAt: Date.now() + 60_000,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
     });
     userMock.findUnique.mockResolvedValue({
+      email: "user@example.com",
+      firstName: "User",
+      preferredLocale: "en",
       mfaSecret: "encrypted",
       mfaEnabled: false,
     });
     userMock.update.mockResolvedValue({});
   });
 
-  it("applies both IP and per-user rate limits before validating the TOTP", async () => {
-    const response = await POST(makeRequest());
+  it("applies the MFA verify policy before validating the TOTP", async () => {
+    const request = makeRequest();
+    const response = await POST(request);
 
     expect(response.status).toBe(200);
-    expect(rateLimitMock).toHaveBeenCalledWith(
-      "auth:mfa:confirm:ip:203.0.113.10",
-      { limit: 50, windowSeconds: 60 * 60, failClosed: true },
+    expect(enforceRateLimitPolicyMock).toHaveBeenCalledWith(
+      request,
+      "mfa_verify",
+      { userId: "user_1", routeId: "mfa_confirm" },
     );
-    expect(rateLimitMock).toHaveBeenCalledWith(
-      "auth:mfa:confirm:user:user_1",
-      { limit: 5, windowSeconds: 60, failClosed: true },
+    expect(recordUserSecurityAuditMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "MFA_ENABLED",
+        changes: { status: "success" },
+      }),
     );
+    expect(JSON.stringify(recordUserSecurityAuditMock.mock.calls)).not.toContain("123456");
   });
 
-  it("returns 429 when either MFA limit is exceeded", async () => {
-    rateLimitMock
-      .mockResolvedValueOnce({ success: true, resetAt: Date.now() + 60_000 })
-      .mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
+  it("returns 429 when the MFA policy limit is exceeded", async () => {
+    enforceRateLimitPolicyMock.mockResolvedValueOnce({
+      success: false,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+    });
 
     const response = await POST(makeRequest());
 

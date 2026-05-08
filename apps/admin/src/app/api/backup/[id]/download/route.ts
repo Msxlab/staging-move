@@ -17,12 +17,23 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+    // Backup archives carry every encrypted/PII field in the DB. Force the
+    // download gate to SUPER_ADMIN — a regular ADMIN with `settings.canRead`
+    // can browse the backup list (metadata-only) but cannot pull the
+    // archive bytes. Step-up below also requires MFA for SUPER_ADMINs that
+    // have it enabled (which is mandatory for that role).
+    const session = await requirePermission("settings", "canRead", { minimumRole: "SUPER_ADMIN", fallbackResources: ["audit_logs"] });
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const confirm = await requirePasswordConfirm(
       session,
       typeof body?.confirmPassword === "string" ? body.confirmPassword : undefined,
+      {
+        operation: "backup_download",
+        requireMfa: true,
+        mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : undefined,
+        backupCode: typeof body?.backupCode === "string" ? body.backupCode : undefined,
+      },
     );
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });

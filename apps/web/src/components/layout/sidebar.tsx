@@ -44,8 +44,8 @@ export function Sidebar({
   const isCollapsed = isMobile ? false : collapsed;
 
   // Keys map to `nav.*` in messages/en.json and messages/es.json. Do
-  // NOT hardcode user-visible strings here â€” every label must be a
-  // translation key so adding a third locale (pt, frâ€¦) is a messages
+  // NOT hardcode user-visible strings here — every label must be a
+  // translation key so adding a third locale (pt, fr…) is a messages
   // change, not a sidebar change.
   const navigation = [
     { key: "dashboard", href: "/dashboard", icon: Home },

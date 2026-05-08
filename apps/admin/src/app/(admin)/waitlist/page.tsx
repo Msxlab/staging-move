@@ -320,7 +320,7 @@ export default function WaitlistPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {signup.source || "â€”"}
+                      {signup.source || "—"}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {signup.userId ? (
@@ -331,7 +331,7 @@ export default function WaitlistPage() {
                           View user
                         </Link>
                       ) : (
-                        <span className="text-muted-foreground">â€”</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -356,7 +356,7 @@ export default function WaitlistPage() {
                       </div>
                     </td>
                     <td className="max-w-xs px-4 py-3 text-xs text-muted-foreground">
-                      <div className="truncate">{signup.note || "â€”"}</div>
+                      <div className="truncate">{signup.note || "—"}</div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">

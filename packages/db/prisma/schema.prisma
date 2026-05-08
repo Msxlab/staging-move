@@ -226,6 +226,7 @@ model Subscription {
   originalTransactionId     String?                 @unique @db.VarChar(191)
   latestTransactionId       String?                 @db.VarChar(191)
   purchaseToken             String?                 @db.Text
+  purchaseTokenHash         String?                 @unique @db.VarChar(64)
   appStoreEnvironment       String?                 @db.VarChar(30)
   currentPeriodEndsAt       DateTime?
   gracePeriodEndsAt         DateTime?

@@ -66,7 +66,7 @@ export function buildServiceLimitCopy(details?: ServiceLimitDetails | null) {
     details?.subscription?.eligibleForTrial ?? details?.eligibleForTrial ?? true;
   const campaign = details?.campaign || details?.monthlyOffer || null;
 
-  // Paid users hit the Individual Annual ceiling â€” there's no higher tier
+  // Paid users hit the Individual Annual ceiling — there's no higher tier
   // to upsell into, so the modal switches to a contact-support shape and
   // the primary CTA opens subscription management instead of checkout.
   if (!eligibleForTrial || accessType === "PAID") {

@@ -74,14 +74,13 @@ async function sha256Hex(raw: string): Promise<string> {
     .join("");
 }
 
-// Web tokens may carry an IP+UA fingerprint from older sessions. Validation
-// treats IP drift as advisory and keeps the DB-backed session alive when the
-// browser UA is unchanged or when legacy session rows did not record a UA.
+// Web tokens carry an IP+UA fingerprint. Validation is strict so a stolen
+// cookie cannot replay from a new network just because the browser UA matches.
 export async function generateFingerprint(
   ip: string,
   userAgent: string,
 ): Promise<string> {
-  return sha256Hex(`${ip}|${userAgent}`);
+  return sha256Hex(`${ip}|${userAgent || "unknown"}`);
 }
 
 // Mobile: UA only. Mobile IP changes frequently (Wi-Fi ↔ LTE, carrier NAT),
@@ -90,7 +89,7 @@ export async function generateFingerprint(
 export async function generateMobileFingerprint(
   userAgent: string,
 ): Promise<string> {
-  return sha256Hex(`mobile|${userAgent}`);
+  return sha256Hex(`mobile|${userAgent || "unknown"}`);
 }
 
 export async function hashSessionToken(token: string): Promise<string> {
@@ -231,7 +230,7 @@ export async function createUserSession(input: {
       userId: input.userId,
       tokenHash,
       ipAddress: input.ipAddress || null,
-      userAgent: input.userAgent || null,
+      userAgent: input.userAgent?.trim() || "unknown",
       browser: input.browser || null,
       os: input.os || null,
       deviceType: input.deviceType || null,
@@ -516,14 +515,7 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
               ),
               userAgent,
             ).catch(() => null);
-      // DigitalOcean/proxy/CDN chains can present a different forwarding IP
-      // between OAuth callback and later app/API requests. Keep the DB-backed
-      // web session valid when the browser UA is unchanged. Legacy rows may
-      // have null userAgent, so do not permanently deactivate solely because
-      // the IP-bound fingerprint changed.
-      const webIpChangedButBrowserStillAcceptable =
-        fpMode === "web" && (!record.userAgent || record.userAgent === userAgent);
-      if (!currentFp || (currentFp !== payload.fp && !webIpChangedButBrowserStillAcceptable)) {
+      if (!currentFp || currentFp !== payload.fp) {
         if (diagnostics) diagnostics.fingerprintMatched = false;
         markAuthFailure(diagnostics, "FINGERPRINT_MISMATCH");
         await invalidateSession();

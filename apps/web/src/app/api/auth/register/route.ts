@@ -6,7 +6,7 @@ import {
   validatePasswordPolicy,
   generateOpaqueToken,
 } from "@/lib/user-auth";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendEmailVerificationEmail } from "@/lib/email-service";
 import { LOCALE_COOKIE, resolveLocale } from "@/i18n/config";
 import { ensureSubscriptionDefaults } from "@/lib/billing";
@@ -31,13 +31,6 @@ const registerSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  // Rate limit: 5 registrations per minute per IP
-  const rlKey = getRateLimitKey(request, "auth:register");
-  const rl = await rateLimit(rlKey, { limit: 5, windowSeconds: 60, failClosed: true });
-  if (!rl.success) {
-    return NextResponse.json({ error: "Too many requests. Please wait." }, { status: 429 });
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -51,6 +44,17 @@ export async function POST(request: NextRequest) {
   }
 
   const { email, password, firstName, lastName, legalConsents } = parsed.data;
+  const rl = await enforceRateLimitPolicy(request, "auth_register", {
+    email,
+    routeId: "register",
+  });
+  if (!rl.success) {
+    return NextResponse.json(
+      { code: rl.policy.userFacingErrorCode, error: "Too many requests. Please wait." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+    );
+  }
+
   const acceptedLegalConsents = legalConsents === undefined
     ? null
     : normalizeAcceptedLegalConsents(legalConsents);

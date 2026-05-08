@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { createBackupArchive } from "@/lib/backup-archive";
 import {
@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Step-up auth: backup contains all system data
-    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "backup_create" });
     if (!confirm.confirmed) {
       return NextResponse.json(
         { error: confirm.error, requiresPassword: true },
@@ -242,7 +242,9 @@ export async function POST(request: NextRequest) {
 
     for (const tableName of selectedTables) {
       try {
-        const result = await fetchAllRecords(prisma as any, tableName);
+        // Backup must include soft-deleted rows so a restore is a true
+        // point-in-time snapshot. Use the raw client.
+        const result = await fetchAllRecords(prismaUnsafe as any, tableName);
         backupData[tableName] = result.records;
         tableCounts[tableName] = result.fetched;
         totalRecords += result.fetched;

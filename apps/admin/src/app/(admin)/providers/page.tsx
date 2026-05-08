@@ -500,9 +500,9 @@ export default function ProvidersPage() {
         <div className="space-y-2">
           <div className="flex items-center gap-2 mb-2">
             <button onClick={expandAll} className="text-xs text-primary hover:underline">Expand All</button>
-            <span className="text-muted-foreground">Â·</span>
+            <span className="text-muted-foreground">·</span>
             <button onClick={collapseAll} className="text-xs text-primary hover:underline">Collapse All</button>
-            <span className="text-muted-foreground">Â·</span>
+            <span className="text-muted-foreground">·</span>
             <button onClick={selectAll} className="text-xs text-primary hover:underline">Select All</button>
           </div>
           {categoryStats.sort((a, b) => getCategoryOrder(a.category) - getCategoryOrder(b.category)).map((stat) => {
@@ -564,7 +564,7 @@ export default function ProvidersPage() {
                                 </span>
                               </td>
                               <td className="px-3 py-2.5 text-xs text-muted-foreground max-w-[120px] truncate">
-                                {p.scope === "FEDERAL" ? "All" : states.length > 3 ? `${states.slice(0, 3).join(", ")} +${states.length - 3}` : states.join(", ") || "â€”"}
+                                {p.scope === "FEDERAL" ? "All" : states.length > 3 ? `${states.slice(0, 3).join(", ")} +${states.length - 3}` : states.join(", ") || "—"}
                               </td>
                               <td className="px-3 py-2.5 text-center">
                                 <span className={`text-sm font-bold ${p.popularityScore >= 90 ? "text-tone-sage-fg" : p.popularityScore >= 70 ? "text-tone-sky-fg" : p.popularityScore >= 50 ? "text-tone-honey-fg" : "text-muted-foreground"}`}>
