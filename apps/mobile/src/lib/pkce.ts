@@ -19,6 +19,11 @@
 import * as SecureStore from "expo-secure-store";
 import * as Crypto from "expo-crypto";
 
+const PKCE_SECURE_STORE_OPTIONS: SecureStore.SecureStoreOptions = {
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
+  requireAuthentication: false,
+};
+
 const VERIFIER_BYTES = 32; // 256 bits → 43-char base64url verifier
 const STATE_BYTES = 16; // 128 bits is plenty for cross-flow uniqueness
 const STORAGE_KEY_PREFIX = "locateflow.oauth.pkce.";
@@ -91,7 +96,7 @@ export async function persistPkceVerifier(state: string, verifier: string): Prom
     verifier,
     expiresAt: Date.now() + STORAGE_TTL_MS,
   };
-  await SecureStore.setItemAsync(storageKeyFor(state), JSON.stringify(payload));
+  await SecureStore.setItemAsync(storageKeyFor(state), JSON.stringify(payload), PKCE_SECURE_STORE_OPTIONS);
 }
 
 /**
@@ -105,14 +110,14 @@ export async function consumePkceVerifier(state: string): Promise<string | null>
   const key = storageKeyFor(state);
   let raw: string | null = null;
   try {
-    raw = await SecureStore.getItemAsync(key);
+    raw = await SecureStore.getItemAsync(key, PKCE_SECURE_STORE_OPTIONS);
   } catch {
     raw = null;
   }
   // Best-effort delete; failures here are non-fatal (next OAuth attempt
   // overwrites under a new state key anyway).
   try {
-    await SecureStore.deleteItemAsync(key);
+    await SecureStore.deleteItemAsync(key, PKCE_SECURE_STORE_OPTIONS);
   } catch {
     /* noop */
   }

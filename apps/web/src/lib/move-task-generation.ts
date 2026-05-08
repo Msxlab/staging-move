@@ -1,4 +1,4 @@
-import { getProviderCoverageMetadata, type ProviderCoverageModel } from "@locateflow/db";
+import { getProviderCoverageMetadata, type Prisma, type ProviderCoverageModel } from "@locateflow/db";
 import {
   classifyMoveServiceTransition,
   safeJsonArray,
@@ -264,7 +264,7 @@ export async function syncSuggestedMoveTasks(userId: string, movingPlanId: strin
         toState: context.toState,
         toZip: context.toZip,
         manualGuidanceOnly: true,
-      },
+      } as unknown as Prisma.InputJsonObject,
       idempotencyKey,
       lastStatusChangedAt: now,
     };

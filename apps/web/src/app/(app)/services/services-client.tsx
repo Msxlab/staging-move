@@ -28,12 +28,12 @@ export {
   shouldShowServiceLogo,
 } from "@/components/services/service-logo-mark";
 
-// filterGroups mapping â€” labels are keys to be translated
+// filterGroups mapping — labels are keys to be translated
 // Use getFilterGroups(t) to get translated version in the component
 const FILTER_GROUPS_KEYS = [
   { label: "filterGroups.all", value: "", icon: "ðŸ“‹" },
   { label: "filterGroups.government", value: "GOVERNMENT", icon: "ðŸ›ï¸" },
-  { label: "filterGroups.utilities", value: "UTILITY", icon: "âš¡" },
+  { label: "filterGroups.utilities", value: "UTILITY", icon: "⚡" },
   { label: "filterGroups.financial", value: "FINANCIAL", icon: "ðŸ’³" },
   { label: "filterGroups.housing", value: "HOUSING", icon: "ðŸ " },
   { label: "filterGroups.healthcare", value: "HEALTHCARE", icon: "ðŸ¥" },
@@ -55,7 +55,7 @@ const GROUP_LABELS_KEYS: Record<string, string> = {
   SHOPPING: "groupLabels.shopping",
 };
 const groupIcons: Record<string, string> = {
-  GOVERNMENT: "ðŸ›ï¸", UTILITY: "âš¡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
+  GOVERNMENT: "ðŸ›ï¸", UTILITY: "⚡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
   TRANSPORTATION: "ðŸš—", KIDS: "ðŸ‘¶", FITNESS: "ðŸ’ª", SHOPPING: "ðŸ›’",
 };
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
@@ -200,7 +200,7 @@ export function ServicesClient({
               <div>
                 <h2 className="text-sm font-bold text-foreground">{t("checklist.heading")}</h2>
                 <p className="text-xs text-muted-foreground">
-                  {checklist.fromState} â†’ {checklist.toState} Â· Phase {checklist.currentPhase + 1}: {currentPhaseInfo?.label || ""}
+                  {checklist.fromState} → {checklist.toState} · Phase {checklist.currentPhase + 1}: {currentPhaseInfo?.label || ""}
                 </p>
               </div>
             </div>
@@ -220,7 +220,7 @@ export function ServicesClient({
               <div>
                 <p className="text-xs font-semibold text-destructive">{t("checklist.overdue", { count: checklist.overdueItems.length })}</p>
                 <p className="text-xs text-destructive/70 mt-0.5">
-                  {checklist.overdueItems.slice(0, 3).map((i) => i.title).join(" Â· ")}
+                  {checklist.overdueItems.slice(0, 3).map((i) => i.title).join(" · ")}
                   {checklist.overdueItems.length > 3 && ` +${checklist.overdueItems.length - 3} more`}
                 </p>
               </div>
@@ -236,7 +236,7 @@ export function ServicesClient({
                   {checklist.urgentItems.filter((i) => !i.isOverdue).slice(0, 3).map((i) => {
                     const dl = i.daysUntilDeadline !== null ? ` (${i.daysUntilDeadline}d)` : "";
                     return `${i.title}${dl}`;
-                  }).join(" Â· ")}
+                  }).join(" · ")}
                 </p>
               </div>
             </div>

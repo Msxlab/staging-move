@@ -7,6 +7,7 @@
  */
 
 import { prisma } from "@/lib/db";
+import { createHash } from "node:crypto";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import {
   getAppleSubscriptionStatus,
@@ -52,6 +53,15 @@ export interface MobilePlanResolution {
 }
 
 const IAP_ACTIVE_STATUSES = new Set<SubscriptionStatus>(["ACTIVE", "TRIALING"]);
+const IAP_PURCHASE_BLOCKING_STATUSES = new Set<SubscriptionStatus>([
+  "ACTIVE",
+  "TRIALING",
+  "CANCEL_AT_PERIOD_END",
+  "GRACE_PERIOD",
+  "PAST_DUE",
+  "PENDING_VALIDATION",
+]);
+const IAP_MANAGED_PROVIDERS = new Set(["STRIPE", "APP_STORE", "PLAY_STORE"]);
 const IAP_CANCELED_STATUSES = new Set<SubscriptionStatus>([
   "CANCEL_AT_PERIOD_END",
   "TRIAL_CANCELED",
@@ -64,6 +74,12 @@ const IAP_PAYMENT_ATTENTION_STATUSES = new Set<SubscriptionStatus>([
   "GRACE_PERIOD",
   "UNPAID",
 ]);
+
+export function hashPurchaseToken(purchaseToken: string | null | undefined): string | null {
+  const normalized = purchaseToken?.trim();
+  if (!normalized) return null;
+  return createHash("sha256").update(normalized).digest("hex");
+}
 
 function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
   if (!date) return null;
@@ -254,8 +270,11 @@ export async function normalizeAppleResult(
     // Clock skew or stale API response — downgrade defensively.
     status = "EXPIRED";
   }
+  if (status === "ACTIVE" && result.renewal?.autoRenewStatus === 0 && expiresAt && expiresAt.getTime() > now) {
+    status = "CANCEL_AT_PERIOD_END";
+  }
   if (result.transaction.revocationDate) {
-    status = "CANCELED";
+    status = "REFUNDED";
   }
 
   return {
@@ -320,6 +339,7 @@ export async function applyIapStateToUser(opts: {
   state: NormalizedIapState;
 }) {
   const { userId, state } = opts;
+  const purchaseTokenHash = hashPurchaseToken(state.purchaseToken);
 
   // Guard: if another user already owns this originalTransactionId, refuse.
   const existingByTxn = state.originalTransactionId
@@ -331,18 +351,50 @@ export async function applyIapStateToUser(opts: {
   if (existingByTxn && existingByTxn.userId !== userId) {
     throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
   }
+  const existingByPurchaseToken = purchaseTokenHash
+    ? await prisma.subscription.findFirst({
+        where: {
+          OR: [
+            { purchaseTokenHash },
+            { purchaseToken: state.purchaseToken },
+          ],
+        },
+      })
+    : null;
+  if (existingByPurchaseToken && existingByPurchaseToken.userId !== userId) {
+    throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
+  }
 
   const existingByUser = await prisma.subscription.findUnique({
     where: { userId },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      provider: true,
+      accessType: true,
+      originalTransactionId: true,
+      purchaseToken: true,
+      stripeSubscriptionId: true,
+    },
   });
+
+  const existingProvider = existingByUser?.provider || null;
+  const existingStatus = existingByUser?.status as SubscriptionStatus | null | undefined;
+  const existingBlocksNewPurchase =
+    Boolean(existingByUser) &&
+    existingByUser?.accessType !== "FREE_ACCESS" &&
+    IAP_MANAGED_PROVIDERS.has(String(existingProvider)) &&
+    Boolean(existingStatus && IAP_PURCHASE_BLOCKING_STATUSES.has(existingStatus));
+  if (existingBlocksNewPurchase && existingProvider !== state.provider) {
+    throw new Error("ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE");
+  }
 
   const now = new Date();
   // accessType is "PAID" once a real store transaction has cleared. Trial and
   // billing-retry status comes from the store-specific normalized status; the
   // unified entitlement resolver reads `status` directly, so a TRIALING status
   // overrides the access banner via deriveUserSubscriptionState.
-  const data = {
+  const data: any = {
     plan: state.plan,
     status: state.status,
     provider: state.provider,
@@ -350,16 +402,24 @@ export async function applyIapStateToUser(opts: {
     accessType: state.status === "TRIALING" ? "FREE_TRIAL" : "PAID",
     billingInterval: state.billingInterval,
     billingProductId: state.productId,
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
+    stripePriceId: null,
+    stripeCurrentPeriodEnd: null,
     originalTransactionId: state.originalTransactionId,
     latestTransactionId: state.latestTransactionId,
     purchaseToken: state.purchaseToken,
+    purchaseTokenHash,
     currentPeriodEndsAt: state.expiresAt,
     trialEndsAt: state.status === "TRIALING" ? state.expiresAt : null,
     gracePeriodEndsAt: state.gracePeriodEndsAt,
     appStoreEnvironment: state.environment,
+    cancelAtPeriodEnd: state.status === "CANCEL_AT_PERIOD_END",
+    autoRenew: !IAP_CANCELED_STATUSES.has(state.status),
+    canceledAt: IAP_CANCELED_STATUSES.has(state.status) ? now : null,
     lastValidatedAt: now,
     lastSyncedAt: now,
-  } as const;
+  };
 
   try {
     const subscription = await prisma.subscription.upsert({
@@ -380,7 +440,8 @@ export async function applyIapStateToUser(opts: {
     if (
       error?.code === "P2002" &&
       Array.isArray(error?.meta?.target) &&
-      error.meta.target.includes("originalTransactionId")
+      (error.meta.target.includes("originalTransactionId") ||
+        error.meta.target.includes("purchaseTokenHash"))
     ) {
       throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
     }
@@ -403,9 +464,15 @@ export async function findUserByIapIdentifier(opts: {
     });
     if (row) return row;
   }
-  if (opts.purchaseToken) {
+  const purchaseTokenHash = hashPurchaseToken(opts.purchaseToken);
+  if (purchaseTokenHash || opts.purchaseToken) {
     const row = await prisma.subscription.findFirst({
-      where: { purchaseToken: opts.purchaseToken },
+      where: {
+        OR: [
+          ...(purchaseTokenHash ? [{ purchaseTokenHash }] : []),
+          ...(opts.purchaseToken ? [{ purchaseToken: opts.purchaseToken }] : []),
+        ],
+      },
       select: { id: true, userId: true },
     });
     if (row) return row;
@@ -429,12 +496,9 @@ export async function refreshGoogleSubscriptionFor(purchaseToken: string) {
     normalized.status === "ACTIVE" &&
     result.response.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING"
   ) {
-    // Best-effort ack; do not fail the flow if Google rejects.
     await acknowledgeGoogleSubscription({
       purchaseToken,
       productId: normalized.productId,
-    }).catch((err) => {
-      console.error("[IAP] google ack failed:", err);
     });
   }
 

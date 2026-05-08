@@ -23,7 +23,7 @@
     "summarize:providers:coverage-state": "pnpm exec tsx scripts/summarize-provider-coverage-by-state.ts",
     "verify:provider-guards": "pnpm audit:providers && pnpm audit:providers:coverage && pnpm audit:providers:state-completeness && pnpm --filter @locateflow/web test",
     "verify:typecheck": "pnpm --filter @locateflow/web exec tsc --noEmit && pnpm --filter @locateflow/admin exec tsc --noEmit && pnpm --filter @locateflow/mobile exec tsc --noEmit && pnpm --filter @locateflow/db exec tsc --noEmit",
-    "verify:tests": "pnpm --filter @locateflow/web test",
+    "verify:tests": "pnpm --filter @locateflow/web test && pnpm --filter @locateflow/admin test && pnpm --filter @locateflow/mobile test",
     "verify:ci": "pnpm verify:typecheck && pnpm verify:provider-guards",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
@@ -49,7 +49,8 @@
     "mobile:build:simulator:ios": "pnpm --filter @locateflow/mobile build:simulator:ios",
     "stripe:sync-prices": "pnpm exec tsx scripts/stripe-sync-individual-prices.ts",
     "campaigns:sync-billing": "pnpm exec tsx scripts/sync-acquisition-campaigns.ts",
-    "backfill:subscriptions": "pnpm exec tsx scripts/backfill-missing-subscriptions.ts"
+    "backfill:subscriptions": "pnpm exec tsx scripts/backfill-missing-subscriptions.ts",
+    "rate-limit:check": "pnpm exec tsx scripts/check-rate-limiter-health.ts"
   },
   "devDependencies": {
     "turbo": "^2.9.8"

@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import {
   ADMIN_RESOURCES,
+  ADMIN_ROLE_VALUES,
   buildDefaultPermissionMatrix,
+  isValidAdminRole,
 } from "@/lib/admin-permissions";
+
+// Strict update body. `permissions` is normalized after parsing so we
+// can keep the existing matrix-shape validator. Unknown role strings get
+// a 400 instead of being silently inserted into AdminUser.role.
+const updateAdminSchema = z
+  .object({
+    firstName: z.string().trim().min(1).max(100).optional(),
+    lastName: z.string().trim().min(1).max(100).optional(),
+    email: z.string().trim().min(3).max(254).email().optional(),
+    role: z.enum(ADMIN_ROLE_VALUES).optional(),
+    isActive: z.boolean().optional(),
+    newPassword: z.string().min(12).max(256).optional(),
+    confirmPassword: z.string().max(256).optional(),
+    permissions: z.array(z.unknown()).max(64).optional(),
+  })
+  .strict();
 
 function normalizePermissionMatrix(input: unknown) {
   if (!Array.isArray(input)) return null;
@@ -40,7 +59,23 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const session = await requirePermission("admin_users", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
-    const body = await request.json();
+    const raw = await request.json().catch(() => null);
+    const parsed = updateAdminSchema.safeParse(raw);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const field = issue?.path?.join(".") || "body";
+      if (field === "role") {
+        return NextResponse.json(
+          { error: `Invalid role. Must be one of: ${ADMIN_ROLE_VALUES.join(", ")}` },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json(
+        { error: `Invalid request: ${issue?.message || "validation failed"}` },
+        { status: 400 },
+      );
+    }
+    const body = parsed.data;
 
     const admin = await prisma.adminUser.findUnique({ where: { id } });
     if (!admin) return NextResponse.json({ error: "Admin not found" }, { status: 404 });
@@ -58,6 +93,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const confirm = await requirePasswordConfirm(
         session,
         typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+        { operation: "admin_user_sensitive_update" },
       );
       if (!confirm.confirmed) {
         return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
@@ -181,7 +217,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     } catch {
       /* empty body — the 403 below triggers the password prompt */
     }
-    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "admin_user_delete" });
     if (!confirm.confirmed) {
       return NextResponse.json(
         { error: confirm.error, requiresPassword: true },

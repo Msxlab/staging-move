@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import type { UserSessionClaims } from "@/lib/user-auth";
+import { redactAuditPayload } from "@locateflow/shared";
 
 /**
  * Writes an AdminAuditLog row when a mutating action is performed during
@@ -37,7 +38,7 @@ export async function recordImpersonatedMutation(input: {
         action: input.action.slice(0, 20),
         entityType: input.entityType.slice(0, 50),
         entityId: input.entityId.slice(0, 30),
-        changes: JSON.stringify(changes),
+        changes: JSON.stringify(redactAuditPayload(changes)),
         ipAddress: input.ipAddress ?? null,
       },
     })

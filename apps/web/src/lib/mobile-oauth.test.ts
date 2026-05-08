@@ -27,16 +27,20 @@ import {
   buildMobileOAuthRedirectUrl,
   consumeMobileOAuthExchangeCode,
   createMobileOAuthExchangeCode,
+  normalizeMobileOAuthCodeChallenge,
   normalizeMobileOAuthRedirectUri,
   normalizeMobileOAuthState,
 } from "./mobile-oauth";
+
+const VALID_VERIFIER = "A".repeat(43);
+const VALID_CHALLENGE = "DwBzhbb51LfusnSGBa_hqYSgo7-j8BTQnip4TOnlzRo";
 
 function activeRecord() {
   return {
     id: "handoff-1",
     usedAt: null,
     expiresAt: new Date(Date.now() + 60_000),
-    codeChallenge: null,
+    codeChallenge: VALID_CHALLENGE,
     user: {
       id: "user-1",
       email: "mobile@example.com",
@@ -85,11 +89,18 @@ describe("mobile OAuth handoff codes", () => {
     expect(normalizeMobileOAuthState("short")).toBeNull();
   });
 
+  it("validates mobile PKCE challenge values before storing them", () => {
+    expect(normalizeMobileOAuthCodeChallenge(VALID_CHALLENGE)).toBe(VALID_CHALLENGE);
+    expect(normalizeMobileOAuthCodeChallenge("short")).toBeNull();
+    expect(normalizeMobileOAuthCodeChallenge(`${VALID_CHALLENGE}=`)).toBeNull();
+  });
+
   it("creates a short-lived one-time code without putting bearer tokens in the redirect", async () => {
     await expect(createMobileOAuthExchangeCode({
       userId: "user-1",
       provider: "google",
       redirectUri: "locateflow://oauth",
+      codeChallenge: VALID_CHALLENGE,
     })).resolves.toBe("raw-handoff-code");
 
     expect(mocks.mobileOAuthCodeCreate).toHaveBeenCalledWith({
@@ -98,6 +109,7 @@ describe("mobile OAuth handoff codes", () => {
         provider: "google",
         redirectUri: "locateflow://oauth",
         codeHash: "handoff-hash",
+        codeChallenge: VALID_CHALLENGE,
         expiresAt: expect.any(Date),
       }),
     });
@@ -114,7 +126,9 @@ describe("mobile OAuth handoff codes", () => {
   });
 
   it("exchanges an unused unexpired code exactly once", async () => {
-    await expect(consumeMobileOAuthExchangeCode("raw-handoff-code")).resolves.toMatchObject({
+    await expect(consumeMobileOAuthExchangeCode("raw-handoff-code", {
+      codeVerifier: VALID_VERIFIER,
+    })).resolves.toMatchObject({
       ok: true,
       user: { id: "user-1", email: "mobile@example.com" },
     });
@@ -140,6 +154,26 @@ describe("mobile OAuth handoff codes", () => {
     expect(mocks.mobileOAuthCodeUpdateMany).not.toHaveBeenCalled();
   });
 
+  it("rejects rows that do not carry a stored PKCE challenge", async () => {
+    mocks.mobileOAuthCodeFindUnique.mockResolvedValue({ ...activeRecord(), codeChallenge: null });
+
+    await expect(consumeMobileOAuthExchangeCode("raw-handoff-code", {
+      codeVerifier: VALID_VERIFIER,
+    })).resolves.toEqual({
+      ok: false,
+      error: "PKCE_CHALLENGE_REQUIRED",
+    });
+    expect(mocks.mobileOAuthCodeUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects exchanges without a verifier", async () => {
+    await expect(consumeMobileOAuthExchangeCode("raw-handoff-code")).resolves.toEqual({
+      ok: false,
+      error: "PKCE_VERIFIER_REQUIRED",
+    });
+    expect(mocks.mobileOAuthCodeUpdateMany).not.toHaveBeenCalled();
+  });
+
   it("rejects expired codes", async () => {
     mocks.mobileOAuthCodeFindUnique.mockResolvedValue({
       ...activeRecord(),
@@ -156,7 +190,9 @@ describe("mobile OAuth handoff codes", () => {
   it("rejects concurrent exchange attempts after another request consumes the code", async () => {
     mocks.mobileOAuthCodeUpdateMany.mockResolvedValue({ count: 0 });
 
-    await expect(consumeMobileOAuthExchangeCode("raw-handoff-code")).resolves.toEqual({
+    await expect(consumeMobileOAuthExchangeCode("raw-handoff-code", {
+      codeVerifier: VALID_VERIFIER,
+    })).resolves.toEqual({
       ok: false,
       error: "REPLAYED_CODE",
     });

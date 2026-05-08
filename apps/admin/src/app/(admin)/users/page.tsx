@@ -18,7 +18,7 @@ import { computeUserHealth } from "@/lib/user-health";
 import { maskEmail } from "@/lib/privacy";
 import { AdminPageHeader } from "@/components/admin-page-header";
 
-// Health column is on by default â€” support team's #1 ask. Sticker is part
+// Health column is on by default — support team's #1 ask. Sticker is part
 // of the "user" cell, not its own column, so it always rides next to the
 // user's name.
 const USER_COLUMNS = [
@@ -94,6 +94,9 @@ export default function UsersPage() {
   >(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const perPage = 20;
 
   const fetchUsers = useCallback(async () => {
@@ -189,16 +192,45 @@ export default function UsersPage() {
     }
   }
 
-  function exportCSV() {
-    const header = "ID,Email,First Name,Last Name,Plan,Status,Addresses,Services,Reviews,Moves,Joined";
-    const rows = users.filter((u) => bulk.count === 0 || bulk.isSelected(u.id)).map((u) =>
-      `${u.id},${u.email},${u.firstName || ""},${u.lastName || ""},${u.subscription?.plan || "FREE_TRIAL"},${u.subscription?.status || ""},${u._count.addresses},${u._count.services},${u._count.providerReviews},${u._count.movingPlans},${new Date(u.createdAt).toISOString().split("T")[0]}`
-    );
-    const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "users.csv"; a.click();
-    URL.revokeObjectURL(url);
-    toast.success(`Exported ${rows.length} users`);
+  function openExport() {
+    setExportError(null);
+    setExportOpen(true);
+  }
+
+  async function confirmExport(password: string) {
+    // Server-side export at /api/users/export — handles permission,
+    // step-up password confirm, email masking (full email only for
+    // SUPER_ADMIN), CSV-injection escaping, audit logging, and the
+    // 50k row cap. The previous in-page Blob path leaked unmasked
+    // emails to anyone with browser access to this page and silently
+    // truncated to whatever was loaded into React state.
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      const res = await fetch("/api/users/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword: password }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setExportError(data?.error || `Export failed (${res.status})`);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export downloaded");
+      setExportOpen(false);
+    } catch {
+      setExportError("Export failed");
+    } finally {
+      setExportBusy(false);
+    }
   }
 
   function clearFilters() {
@@ -224,14 +256,14 @@ export default function UsersPage() {
               onReset={cols.reset}
               hiddenCount={cols.hiddenCount}
             />
-            <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
+            <button onClick={openExport} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
               <Download className="h-3.5 w-3.5" /> Export{bulk.count > 0 ? ` (${bulk.count})` : ""}
             </button>
           </>
         }
       />
 
-      {/* KPI Cards â€” same data, foil hairline + Fraunces values */}
+      {/* KPI Cards — same data, foil hairline + Fraunces values */}
       {stats && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="kpi-foil rounded-2xl border border-border bg-card p-4">
@@ -373,14 +405,14 @@ export default function UsersPage() {
           <button onClick={handleBulkDelete} className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20">
             <Trash2 className="h-3.5 w-3.5" /> Delete
           </button>
-          <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent">
+          <button onClick={openExport} className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent">
             <Download className="h-3.5 w-3.5" /> Export
           </button>
           <button onClick={bulk.clear} className="ml-auto text-xs text-muted-foreground hover:text-foreground">Clear selection</button>
         </div>
       )}
 
-      {/* Table â€” admin-panel chrome (foil hairline + warm hover) */}
+      {/* Table — admin-panel chrome (foil hairline + warm hover) */}
       <div className="admin-panel overflow-hidden">
         <table className="w-full">
           <thead className="bg-muted/50">
@@ -455,7 +487,7 @@ export default function UsersPage() {
                   {cols.isVisible("status") && (
                     <td className="px-3 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_COLORS[user.deletedAt ? "BLOCKED" : user.subscription?.status || ""] || "bg-muted text-muted-foreground"}`}>
-                        {user.deletedAt ? "BLOCKED" : user.subscription?.status || "â€”"}
+                        {user.deletedAt ? "BLOCKED" : user.subscription?.status || "—"}
                       </span>
                     </td>
                   )}
@@ -480,7 +512,7 @@ export default function UsersPage() {
                   {cols.isVisible("joined") && <td className="px-3 py-3 text-xs text-muted-foreground">{new Date(user.createdAt).toLocaleDateString()}</td>}
                   {cols.isVisible("deletedAt") && (
                     <td className="px-3 py-3 text-xs text-muted-foreground">
-                      {user.deletedAt ? new Date(user.deletedAt).toLocaleString() : "â€”"}
+                      {user.deletedAt ? new Date(user.deletedAt).toLocaleString() : "—"}
                     </td>
                   )}
                   <td className="px-3 py-3 text-right">
@@ -505,7 +537,7 @@ export default function UsersPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}â€“{Math.min(page * perPage, total)} of {total}</p>
+          <p className="text-xs text-muted-foreground">Showing {(page - 1) * perPage + 1}–{Math.min(page * perPage, total)} of {total}</p>
           <div className="flex items-center gap-2">
             <button onClick={() => setPage(page - 1)} disabled={page <= 1} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent disabled:opacity-50">
               <ChevronLeft className="h-4 w-4" />
@@ -537,6 +569,21 @@ export default function UsersPage() {
           }
         }}
         onConfirm={confirmDelete}
+      />
+      <PasswordConfirmModal
+        open={exportOpen}
+        title="Export users CSV"
+        description="The export contains user PII (emails, plan status). Enter your admin password to continue. This action is audit-logged."
+        confirmLabel="Export"
+        busy={exportBusy}
+        error={exportError}
+        onClose={() => {
+          if (!exportBusy) {
+            setExportOpen(false);
+            setExportError(null);
+          }
+        }}
+        onConfirm={confirmExport}
       />
     </div>
   );

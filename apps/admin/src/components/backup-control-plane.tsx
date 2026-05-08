@@ -236,7 +236,7 @@ function formatBytes(bytes?: number | null): string {
 }
 
 function formatRelativeTime(value?: string | null): string {
-  if (!value) return "â€”";
+  if (!value) return "—";
   const diff = Date.now() - new Date(value).getTime();
   const minutes = Math.max(Math.round(diff / 60000), 0);
   if (minutes < 1) return "just now";
@@ -1401,7 +1401,7 @@ export function BackupControlPlane() {
                                       </span>
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                      {truncate(backup.id, 18)} Â·{" "}
+                                      {truncate(backup.id, 18)} ·{" "}
                                       {getBackupTypeLabel(backup.type)}
                                     </p>
                                   </div>
@@ -1570,7 +1570,7 @@ export function BackupControlPlane() {
                           </InlineBadge>
                         </div>
                         <p className="mt-1 text-xs text-muted-foreground">
-                          {Object.keys(importPreview).length} tables Â·{" "}
+                          {Object.keys(importPreview).length} tables ·{" "}
                           {Object.values(importPreview)
                             .reduce((sum, value) => sum + value, 0)
                             .toLocaleString()}{" "}
@@ -1887,10 +1887,10 @@ export function BackupControlPlane() {
                                         {tableMap[table]?.label || table}
                                       </span>
                                       <span>
-                                        {result.imported} import Â·{" "}
+                                        {result.imported} import ·{" "}
                                         {result.skipped} skip
                                         {typeof result.deleted === "number"
-                                          ? ` Â· ${result.deleted} delete`
+                                          ? ` · ${result.deleted} delete`
                                           : ""}
                                       </span>
                                     </div>
@@ -1996,10 +1996,10 @@ export function BackupControlPlane() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <SummaryItem
                     label="Provider"
-                    value={storage?.provider || "â€”"}
+                    value={storage?.provider || "—"}
                   />
-                  <SummaryItem label="Bucket" value={storage?.bucket || "â€”"} />
-                  <SummaryItem label="Region" value={storage?.region || "â€”"} />
+                  <SummaryItem label="Bucket" value={storage?.bucket || "—"} />
+                  <SummaryItem label="Region" value={storage?.region || "—"} />
                   <SummaryItem
                     label="Credentials"
                     value={
@@ -2032,7 +2032,7 @@ export function BackupControlPlane() {
                         <p className="mt-1 text-xs text-muted-foreground">
                           {selectedBackup.createdByLabel ||
                             selectedBackup.createdBy}{" "}
-                          Â· {getBackupTypeLabel(selectedBackup.type)}
+                          · {getBackupTypeLabel(selectedBackup.type)}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -2071,7 +2071,7 @@ export function BackupControlPlane() {
                         value={
                           selectedBackup.completedAt
                             ? formatDateTime(selectedBackup.completedAt)
-                            : "â€”"
+                            : "—"
                         }
                       />
                       <SummaryItem
@@ -2164,16 +2164,16 @@ export function BackupControlPlane() {
                         value={
                           selectedBackup.offsite?.uploadedAt
                             ? formatDateTime(selectedBackup.offsite.uploadedAt)
-                            : "â€”"
+                            : "—"
                         }
                       />
                       <SummaryItem
                         label="Bucket"
-                        value={selectedBackup.offsite?.bucket || "â€”"}
+                        value={selectedBackup.offsite?.bucket || "—"}
                       />
                       <SummaryItem
                         label="Region"
-                        value={selectedBackup.offsite?.region || "â€”"}
+                        value={selectedBackup.offsite?.region || "—"}
                       />
                     </div>
                     <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">

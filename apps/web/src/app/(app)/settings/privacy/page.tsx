@@ -84,6 +84,7 @@ export default function PrivacyPage() {
   const [mfaPassword, setMfaPassword] = useState("");
   const [mfaSetup, setMfaSetup] = useState<{
     uri: string;
+    qrDataUrl: string;
     secret: string;
     backupCodes: string[];
   } | null>(null);
@@ -203,6 +204,7 @@ export default function PrivacyPage() {
       } else {
         setMfaSetup({
           uri: data.provisioningUri,
+          qrDataUrl: data.qrDataUrl,
           secret: data.secret,
           backupCodes: data.backupCodes || [],
         });
@@ -380,7 +382,7 @@ export default function PrivacyPage() {
                             {!session.isActive && <span className="rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/35">Revoked</span>}
                           </div>
                           <p className="mt-1 text-xs text-foreground/35">
-                            {session.ipAddress || "No IP"} Â· Last active {new Date(session.lastActivity).toLocaleString()}
+                            {session.ipAddress || "No IP"} · Last active {new Date(session.lastActivity).toLocaleString()}
                           </p>
                         </div>
                         {session.isActive && (
@@ -484,7 +486,7 @@ export default function PrivacyPage() {
               <h3 className="text-sm font-semibold text-foreground">Two-Factor Authentication</h3>
               <p className="text-xs text-muted-foreground">
                 {twoFaEnabled
-                  ? "Enabled â€” your account is secured with TOTP"
+                  ? "Enabled — your account is secured with TOTP"
                   : "Add extra security with an authenticator app"}
               </p>
             </div>
@@ -512,7 +514,7 @@ export default function PrivacyPage() {
           </div>
         )}
 
-        {/* Setup â€” step 1: password gate */}
+        {/* Setup — step 1: password gate */}
         {!twoFaEnabled && !mfaSetup && !hasPasswordLogin && (
           <div className="px-5 pb-5 border-t border-border pt-4">
             <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-xs text-tone-honey-fg/75">
@@ -541,7 +543,7 @@ export default function PrivacyPage() {
           </div>
         )}
 
-        {/* Setup â€” step 2: scan QR + verify TOTP */}
+        {/* Setup — step 2: scan QR + verify TOTP */}
         {!twoFaEnabled && mfaSetup && (
           <div className="px-5 pb-5 space-y-4 border-t border-border pt-4">
             <div className="text-center space-y-2">
@@ -550,7 +552,7 @@ export default function PrivacyPage() {
               <div className="inline-block bg-white p-3 rounded-xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(mfaSetup.uri)}`}
+                  src={mfaSetup.qrDataUrl}
                   alt="TOTP QR Code"
                   className="w-48 h-48"
                 />
@@ -563,7 +565,7 @@ export default function PrivacyPage() {
 
             <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 space-y-2">
               <p className="text-xs font-medium text-tone-honey-fg">Save your backup codes</p>
-              <p className="text-[11px] text-tone-honey-fg/70">Each code can be used once if you lose your authenticator. Store somewhere safe â€” we won't show them again.</p>
+              <p className="text-[11px] text-tone-honey-fg/70">Each code can be used once if you lose your authenticator. Store somewhere safe — we won't show them again.</p>
               <div className="grid grid-cols-2 gap-1.5 pt-1">
                 {mfaSetup.backupCodes.map((c) => (
                   <code key={c} className="text-xs text-tone-honey-fg bg-foreground/20 backdrop-blur-sm px-2 py-1 rounded text-center font-mono">{c}</code>
@@ -622,7 +624,7 @@ export default function PrivacyPage() {
         </div>
       </div>
 
-      {/* Danger Zone â€” actual flow lives in <DeleteAccountDialog /> below. */}
+      {/* Danger Zone — actual flow lives in <DeleteAccountDialog /> below. */}
       <div className="rounded-2xl border border-destructive bg-destructive/5 backdrop-blur-xl overflow-hidden">
         <div className="p-5 pb-3 flex items-center gap-2">
           <Trash2 className="h-4 w-4 text-destructive" />

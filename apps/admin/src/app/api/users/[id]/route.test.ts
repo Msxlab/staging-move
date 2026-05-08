@@ -23,8 +23,8 @@ vi.mock("@/lib/auth", () => ({
   requirePasswordConfirm: (...args: unknown[]) => mocks.requirePasswordConfirm(...args),
 }));
 
-vi.mock("@/lib/db", () => ({
-  prisma: {
+vi.mock("@/lib/db", () => {
+  const prisma = {
     $transaction: (...args: unknown[]) => mocks.transaction(...args),
     user: {
       findUnique: (...args: unknown[]) => mocks.userFindUnique(...args),
@@ -49,8 +49,11 @@ vi.mock("@/lib/db", () => ({
     adminAuditLog: {
       create: (...args: unknown[]) => mocks.adminAuditCreate(...args),
     },
-  },
-}));
+  };
+  // Soft-delete-aware default + raw escape hatch share the same mock
+  // surface in tests.
+  return { prisma, prismaUnsafe: prisma, rawPrisma: prisma };
+});
 
 vi.mock("@/lib/user-notify", () => ({
   notifyUserOfAdminChange: vi.fn(),
@@ -325,6 +328,7 @@ describe("admin user detail billing updates", () => {
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
       { adminId: "admin_1" },
       "admin-password",
+      { operation: "billing_subscription_update" },
     );
     expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
       where: { userId: "user_1" },

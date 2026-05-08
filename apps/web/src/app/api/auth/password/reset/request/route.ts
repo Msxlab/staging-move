@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateOpaqueToken } from "@/lib/user-auth";
-import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { sendPasswordResetEmail } from "@/lib/email-service";
+import { extractRequestMeta } from "@/lib/audit";
+import { recordUserSecurityAudit } from "@/lib/user-security-audit";
 
 export const runtime = "nodejs";
 export const GENERIC_FORGOT_PASSWORD_MESSAGE =
@@ -21,13 +23,6 @@ function genericResponse() {
 }
 
 export async function POST(request: NextRequest) {
-  const rlKey = getRateLimitKey(request, "auth:pwreset");
-  const rl = await rateLimit(rlKey, { limit: 3, windowSeconds: 60, failClosed: true });
-  if (!rl.success) {
-    console.info("[AUTH] password reset skipped", { reason: "rate_limited" });
-    return genericResponse();
-  }
-
   let body: unknown;
   try {
     body = await request.json();
@@ -36,6 +31,15 @@ export async function POST(request: NextRequest) {
   }
 
   const parsed = schema.safeParse(body);
+  const rl = await enforceRateLimitPolicy(request, "password_reset", {
+    email: parsed.success ? parsed.data.email : null,
+    routeId: "password_reset_request",
+  });
+  if (!rl.success) {
+    console.info("[AUTH] password reset skipped", { reason: "rate_limited" });
+    return genericResponse();
+  }
+
   if (!parsed.success) {
     // Return the same success response for malformed input to avoid enumeration.
     return genericResponse();
@@ -112,6 +116,14 @@ export async function POST(request: NextRequest) {
       tokenHash: hash,
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     },
+  });
+
+  recordUserSecurityAudit({
+    userId: user.id,
+    action: "PWRESET_REQ",
+    entityId: user.id,
+    changes: { status: "requested", mode: hasPasswordLogin ? "reset" : "set_password" },
+    ...extractRequestMeta(request),
   });
 
   const sent = await sendPasswordResetEmail({

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendBillOverdueEmail } from "@/lib/email-service";
 import { createInAppNotification } from "@/lib/in-app-notifications";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import {
   buildWebNotificationSettings,
@@ -43,9 +43,8 @@ function formatDate(date: Date, locale?: string | null) {
 }
 
 export async function GET(req: Request) {
-  if (!verifyInternalAuth(req.headers.get("authorization"), "cron")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await guardCronRequest(req, "bill-overdue");
+  if (!guard.ok) return guard.response;
 
   try {
     const now = new Date();

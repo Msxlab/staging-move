@@ -25,10 +25,18 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requirePermission("settings", "canUpdate", { minimumRole: "SUPER_ADMIN" });
     const body = await request.json();
-    const { oldKey, confirmPassword, dryRun = false } = body;
+    const { oldKey, confirmPassword, dryRun = false, mfaCode, backupCode } = body;
 
-    // Step-up auth required
-    const confirm = await requirePasswordConfirm(session, confirmPassword);
+    // Key rotation rotates the field-encryption key for every encrypted
+    // PII column. Require MFA on top of the password — the admin role
+    // hierarchy already mandates MFA for SUPER_ADMINs, so the only way
+    // this fails is if the admin disables MFA, which `requireRole` blocks.
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "key_rotation",
+      requireMfa: true,
+      mfaCode: typeof mfaCode === "string" ? mfaCode : undefined,
+      backupCode: typeof backupCode === "string" ? backupCode : undefined,
+    });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }

@@ -410,7 +410,7 @@ export function ProvidersClient({
                 : "border-border text-muted-foreground hover:text-foreground"
             }`}
           >
-            All Â· {providers.length}
+            All · {providers.length}
           </button>
           {categoryCounts.map(([cat, count]) => (
             <button
@@ -424,7 +424,7 @@ export function ProvidersClient({
             >
               <span>{getMergedDisplayCategoryIcon(cat)}</span>
               <span>{getMergedDisplayCategoryLabel(cat)}</span>
-              <span className="text-muted-foreground">Â· {count}</span>
+              <span className="text-muted-foreground">· {count}</span>
             </button>
           ))}
         </div>
@@ -433,7 +433,7 @@ export function ProvidersClient({
       {/* List */}
       {loading ? (
         <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading providersâ€¦
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading providers…
         </div>
       ) : visibleProviders.length === 0 ? (
         <EmptyState

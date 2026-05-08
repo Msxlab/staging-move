@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { captureException, captureMessage } from "@/lib/sentry";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { hasProcessedWebhookEvent, markWebhookEventProcessed } from "@/lib/webhook-idempotency";
 import {
   verifyAppleJws,
@@ -28,6 +29,7 @@ import {
   refreshAppleSubscriptionFor,
   sendIapCancellationNotice,
 } from "@/lib/iap-common";
+import { emitSecurityEvent } from "@/lib/security-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +41,20 @@ export const dynamic = "force-dynamic";
 // bytes; re-introduce a per-route ceiling so a hostile client can't
 // stream MB-scale junk hoping verifyAppleJws gives up.
 const APPSTORE_WEBHOOK_MAX_BODY_BYTES = 64 * 1024;
+
+function emitAppstoreFailure(reason: string, context: Record<string, unknown> = {}) {
+  emitSecurityEvent({
+    type: "WEBHOOK_SIG_FAILURE",
+    severity: "warn",
+    group: "webhook",
+    context: {
+      provider: "appstore",
+      reason,
+      environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+      ...context,
+    },
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,12 +72,29 @@ export async function POST(request: NextRequest) {
     try {
       outer = verifyAppleJws<AppleNotificationPayload>(signedPayload);
     } catch (err) {
+      emitSecurityEvent({
+        type: "WEBHOOK_SIG_FAILURE",
+        severity: "warn",
+        group: "webhook",
+        context: {
+          provider: "appstore",
+          reason: "outer_jws_verify_failed",
+          environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+          tokenLength: signedPayload.length,
+        },
+      });
       console.warn("[APPSTORE WEBHOOK] outer JWS verify failed:", (err as Error).message);
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     if (!outer?.notificationUUID) {
       return NextResponse.json({ error: "Missing notificationUUID" }, { status: 400 });
+    }
+
+    const expectedBundleId = await getRuntimeConfigValue("APPLE_BUNDLE_ID");
+    if (expectedBundleId && outer.data?.bundleId && outer.data.bundleId !== expectedBundleId) {
+      emitAppstoreFailure("bundle_mismatch", { correlationId: outer.notificationUUID });
+      return NextResponse.json({ error: "Invalid bundle" }, { status: 400 });
     }
 
     // Replay protection — reject payloads older than 72h.
@@ -86,12 +119,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(body);
     };
 
-    const innerTransaction = outer.data?.signedTransactionInfo
-      ? verifyAppleJws<AppleTransactionPayload>(outer.data.signedTransactionInfo)
-      : null;
-    const innerRenewal = outer.data?.signedRenewalInfo
-      ? verifyAppleJws<AppleRenewalPayload>(outer.data.signedRenewalInfo)
-      : null;
+    let innerTransaction: AppleTransactionPayload | null = null;
+    let innerRenewal: AppleRenewalPayload | null = null;
+    try {
+      innerTransaction = outer.data?.signedTransactionInfo
+        ? verifyAppleJws<AppleTransactionPayload>(outer.data.signedTransactionInfo)
+        : null;
+      innerRenewal = outer.data?.signedRenewalInfo
+        ? verifyAppleJws<AppleRenewalPayload>(outer.data.signedRenewalInfo)
+        : null;
+    } catch {
+      emitSecurityEvent({
+        type: "WEBHOOK_SIG_FAILURE",
+        severity: "warn",
+        group: "webhook",
+        context: {
+          provider: "appstore",
+          reason: "inner_jws_verify_failed",
+          environment: process.env.APP_ENV || process.env.VERCEL_ENV || process.env.NODE_ENV || "unknown",
+          tokenLength: Math.max(
+            outer.data?.signedTransactionInfo?.length ?? 0,
+            outer.data?.signedRenewalInfo?.length ?? 0,
+          ),
+          correlationId: outer.notificationUUID,
+        },
+      });
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    }
+
+    if (expectedBundleId && innerTransaction?.bundleId && innerTransaction.bundleId !== expectedBundleId) {
+      emitAppstoreFailure("inner_bundle_mismatch", { correlationId: outer.notificationUUID });
+      return NextResponse.json({ error: "Invalid bundle" }, { status: 400 });
+    }
 
     const originalTransactionId =
       innerTransaction?.originalTransactionId || innerRenewal?.originalTransactionId || null;

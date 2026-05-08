@@ -112,8 +112,9 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
       ...capability,
       enabled,
       hydrated: true,
-      locked: enabled && capability.available,
+      locked: enabled,
       checking: false,
+      error: enabled && !capability.available ? capability.reason || "not_available" : null,
     });
   },
 
@@ -153,7 +154,7 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
 
   lock() {
     const state = get();
-    if (state.enabled && state.available) {
+    if (state.enabled) {
       set({ locked: true, error: null });
     }
   },
@@ -165,8 +166,9 @@ export const useAppLockStore = create<AppLockState>((set, get) => ({
     const capability = await resolveCapability();
     set(capability);
     if (!capability.available) {
-      set({ locked: false, error: capability.reason || null });
-      return { success: true, skipped: true };
+      const reason = capability.reason || "not_available";
+      set({ locked: true, error: reason });
+      return { success: false, reason };
     }
 
     set({ authenticating: true, error: null });

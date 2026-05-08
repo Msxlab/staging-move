@@ -58,12 +58,12 @@ export function Header({ onMenuClick }: HeaderProps) {
         <div className="flex items-center gap-1">
           <NotificationCenter />
 
-          {/* Three-state theme toggle: system â†’ light â†’ dark â†’ system.
+          {/* Three-state theme toggle: system → light → dark → system.
               Default `preference="system"` means a new visitor inherits
               their OS setting without interaction. */}
           <ThemeToggle variant="icon" />
 
-          {/* Language selector â€” mirrors choice into NEXT_LOCALE cookie +
+          {/* Language selector — mirrors choice into NEXT_LOCALE cookie +
               User.preferredLocale (via /api/user/locale). Page reloads
               after change so server components re-render in new locale. */}
           <LanguageSelector variant="icon" />

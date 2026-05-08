@@ -21,6 +21,14 @@ vi.mock("@/lib/runtime-config", () => ({
   getRuntimeConfigValue: vi.fn(),
 }));
 
+const securityMocks = vi.hoisted(() => ({
+  emitSecurityEvent: vi.fn(),
+}));
+
+vi.mock("@/lib/security-events", () => ({
+  emitSecurityEvent: (...args: any[]) => securityMocks.emitSecurityEvent(...args),
+}));
+
 import { prisma } from "@/lib/db";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { POST } from "./route";
@@ -117,6 +125,15 @@ describe("POST /api/webhooks/resend", () => {
 
     expect(response.status).toBe(401);
     expect(prefMock.upsert).not.toHaveBeenCalled();
+    expect(securityMocks.emitSecurityEvent).toHaveBeenCalledWith(expect.objectContaining({
+      type: "WEBHOOK_SIG_FAILURE",
+      context: expect.objectContaining({
+        provider: "resend",
+        reason: expect.any(String),
+        signatureLength: "v1,bogus".length,
+        correlationId: id,
+      }),
+    }));
   });
 
   it("returns 503 when RESEND_WEBHOOK_SECRET is unset", async () => {

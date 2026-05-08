@@ -39,12 +39,14 @@ vi.mock("@/lib/billing", () => ({
 }));
 
 import { prisma } from "@/lib/db";
-import { POST } from "./route";
+import { requireDbUserId } from "@/lib/auth";
+import { GET, POST } from "./route";
 
 const mockUser = prisma.user as unknown as { update: Mock };
 const mockUserEvent = prisma.userEvent as unknown as { findFirst: Mock; create: Mock };
 const mockProfile = prisma.profile as unknown as { upsert: Mock };
 const mockDataConsent = prisma.dataConsent as unknown as { findFirst: Mock };
+const requireDbUserIdMock = requireDbUserId as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("http://localhost/api/profile", {
@@ -68,6 +70,27 @@ describe("profile route", () => {
     mockUser.update.mockResolvedValue({});
     mockProfile.upsert.mockResolvedValue({ id: "profile-1", userId: "user-1" });
     mockDataConsent.findFirst.mockResolvedValue(null);
+    requireDbUserIdMock.mockResolvedValue("user-1");
+  });
+
+  it("returns a stable 401 for unauthenticated profile reads", async () => {
+    requireDbUserIdMock.mockRejectedValueOnce(new Error("UNAUTHORIZED"));
+
+    const response = await GET();
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({ error: "Unauthorized" });
+  });
+
+  it("returns a stable 401 for unauthenticated profile writes", async () => {
+    requireDbUserIdMock.mockRejectedValueOnce(new Error("UNAUTHORIZED"));
+
+    const response = await POST(makeRequest({}));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({ error: "Unauthorized" });
   });
 
   it("accepts the real onboarding step-0 payload for a new user", async () => {

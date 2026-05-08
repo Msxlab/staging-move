@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import Stripe from "stripe";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
 
-type SubscriptionAction = "cancel_trial" | "cancel_renewal" | "resume_renewal";
+const SUBSCRIPTION_ACTIONS = [
+  "cancel_trial",
+  "cancel_renewal",
+  "resume_renewal",
+] as const;
+type SubscriptionAction = (typeof SUBSCRIPTION_ACTIONS)[number];
+
+const subscriptionActionSchema = z
+  .object({
+    action: z.enum(SUBSCRIPTION_ACTIONS),
+    confirmPassword: z.string().max(256).optional(),
+  })
+  .strict();
 
 function isBillingProductionLike() {
   const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
@@ -29,18 +42,21 @@ export async function POST(
 ) {
   try {
     const session = await requirePermission("subscriptions", "canUpdate", { minimumRole: "ADMIN" });
-    const body = await request.json().catch(() => ({}));
-    const confirm = await requirePasswordConfirm(
-      session,
-      typeof body?.confirmPassword === "string" ? body.confirmPassword : undefined,
-    );
+    const raw = await request.json().catch(() => null);
+    const parsed = subscriptionActionSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid subscription action." },
+        { status: 400 },
+      );
+    }
+    const { action, confirmPassword } = parsed.data;
+
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "billing_subscription_action",
+    });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
-    }
-
-    const action = body?.action as SubscriptionAction;
-    if (!["cancel_trial", "cancel_renewal", "resume_renewal"].includes(action)) {
-      return NextResponse.json({ error: "Invalid subscription action." }, { status: 400 });
     }
 
     const { id: userId } = await params;
@@ -54,9 +70,44 @@ export async function POST(
       { apiVersion: "2024-06-20" },
     );
     const now = new Date();
-    const stripeSubscription = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-      cancel_at_period_end: action === "resume_renewal" ? false : true,
-    });
+    let stripeSubscription: Stripe.Subscription;
+    try {
+      stripeSubscription = await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+        cancel_at_period_end: action === "resume_renewal" ? false : true,
+      });
+    } catch (stripeError: any) {
+      // Don't leak raw Stripe payloads (request IDs, internal codes, full
+      // error.raw payload). Log them server-side, return a stable public
+      // message the admin UI can show without exposing implementation.
+      console.error("Stripe subscription update failed", {
+        userId,
+        action,
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        message: typeof stripeError?.message === "string" ? stripeError.message.slice(0, 500) : "unknown",
+        type: stripeError?.type || null,
+        code: stripeError?.code || null,
+      });
+      await prisma.adminAuditLog.create({
+        data: {
+          adminUserId: session.adminId,
+          action: "SUBSCRIPTION_ACTION_FAILED",
+          entityType: "Subscription",
+          entityId: subscription.id,
+          changes: JSON.stringify({
+            action,
+            userId,
+            stripeSubscriptionId: subscription.stripeSubscriptionId,
+            errorType: stripeError?.type || null,
+            errorCode: stripeError?.code || null,
+          }),
+          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      }).catch(() => null);
+      return NextResponse.json(
+        { error: "Failed to update subscription with the billing provider. Please try again." },
+        { status: 502 },
+      );
+    }
     const periodEnd = stripeSubscription.current_period_end
       ? new Date(stripeSubscription.current_period_end * 1000)
       : subscription.currentPeriodEndsAt;
@@ -65,7 +116,7 @@ export async function POST(
       subscription.status === "TRIALING" ||
       subscription.status === "TRIAL_CANCELED";
     const trialStillActive = Boolean(subscription.trialEndsAt && subscription.trialEndsAt > now);
-    const nextStatus =
+    const nextStatus: SubscriptionAction extends never ? never : string =
       action === "resume_renewal"
         ? isTrial && trialStillActive ? "TRIALING" : "ACTIVE"
         : isTrial ? "TRIAL_CANCELED" : "CANCEL_AT_PERIOD_END";
@@ -103,6 +154,15 @@ export async function POST(
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ error: error?.message || "Failed to update subscription" }, { status: 500 });
+    // Don't leak runtime config errors (`STRIPE_SECRET_KEY is missing`)
+    // or arbitrary stack traces to the client. Log server-side, return a
+    // stable opaque message.
+    console.error("Subscription action failed", {
+      message: typeof error?.message === "string" ? error.message.slice(0, 500) : "unknown",
+    });
+    return NextResponse.json(
+      { error: "Failed to update subscription. Please try again." },
+      { status: 500 },
+    );
   }
 }

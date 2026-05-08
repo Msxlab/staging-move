@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendContractReminderEmail } from "@/lib/email-service";
 import { createInAppNotification } from "@/lib/in-app-notifications";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 import { sendNotification } from "@/lib/notifications";
 import { buildWebNotificationSettings, groupNotificationPreferencesByUser, isPushTypeEnabled } from "@/lib/notification-preferences";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
@@ -11,9 +11,8 @@ export const runtime = "nodejs";
 
 async function handleCron(request: NextRequest) {
   try {
-    if (!verifyInternalAuth(request.headers.get("authorization"), "cron")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const guard = await guardCronRequest(request, "contract-reminders");
+    if (!guard.ok) return guard.response;
 
     const now = new Date();
     const reminderDays = [30, 14, 7, 1];

@@ -8,6 +8,23 @@
  */
 export type InternalSecretKind = "cron" | "internal" | "impersonation";
 
+// Lazy import to avoid pulling the security-events module into edge-runtime
+// callers that don't need it. Failures are swallowed.
+function emitSecretMisuse(kind: InternalSecretKind, reason: string) {
+  Promise.resolve()
+    .then(() => import("./security-events"))
+    .then(({ emitSecurityEvent }) => {
+      emitSecurityEvent({
+        type: kind === "cron" ? "CRON_SECRET_MISUSE" : "INTERNAL_SECRET_MISUSE",
+        severity: "warn",
+        context: { kind, reason },
+      });
+    })
+    .catch(() => {
+      /* never throw from the auth path */
+    });
+}
+
 function getSpecificEnv(kind: InternalSecretKind): string | undefined {
   if (kind === "internal") return process.env.INTERNAL_WEBHOOK_SECRET;
   if (kind === "impersonation") return process.env.IMPERSONATION_HANDOFF_SECRET;
@@ -32,11 +49,19 @@ export function verifyInternalAuth(
   authHeader: string | null | undefined,
   kind: InternalSecretKind,
 ): boolean {
+  // Missing header is the noise case (uncreated cookies, health probes).
+  // We deliberately do NOT emit on it; that would drown the signal.
   if (!authHeader) return false;
   const match = /^Bearer\s+(.+)$/i.exec(authHeader);
-  if (!match) return false;
+  if (!match) {
+    emitSecretMisuse(kind, "MALFORMED_AUTH_HEADER");
+    return false;
+  }
   const token = match[1].trim();
-  if (!token) return false;
+  if (!token) {
+    emitSecretMisuse(kind, "EMPTY_TOKEN");
+    return false;
+  }
 
   const specific = getSpecificEnv(kind);
   if (specific && safeEqual(token, specific)) return true;
@@ -45,6 +70,9 @@ export function verifyInternalAuth(
     if (cron && safeEqual(token, cron)) return true;
   }
 
+  // A token was supplied and did not match any accepted secret for this
+  // kind: definite misuse signal.
+  emitSecretMisuse(kind, "TOKEN_MISMATCH");
   return false;
 }
 

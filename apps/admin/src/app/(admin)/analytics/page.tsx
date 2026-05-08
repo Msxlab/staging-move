@@ -317,12 +317,12 @@ export default function AnalyticsPage() {
                           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold">
                             {s.initials || "?"}
                           </span>
-                          <span className="font-mono text-xs">{s.userId.slice(0, 8)}â€¦</span>
+                          <span className="font-mono text-xs">{s.userId.slice(0, 8)}…</span>
                         </a>
-                      ) : "â€”"}
+                      ) : "—"}
                     </td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.browser || "â€”"}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.os || "â€”"}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.browser || "—"}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground">{s.os || "—"}</td>
                     <td className="px-3 py-2">
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
                         s.deviceType === "Mobile" ? "bg-tone-sage-bg text-tone-sage-fg" :
@@ -332,7 +332,7 @@ export default function AnalyticsPage() {
                     </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{s.platform || "WEB"}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">
-                      {s.city && s.region ? `${s.city}, ${s.region}` : s.country || "â€”"}
+                      {s.city && s.region ? `${s.city}, ${s.region}` : s.country || "—"}
                     </td>
                     <td className="px-3 py-2 text-center text-xs font-medium text-foreground">{s.pageViews}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{new Date(s.sessionStart).toLocaleString()}</td>

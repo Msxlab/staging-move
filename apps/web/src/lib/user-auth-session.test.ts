@@ -74,6 +74,7 @@ vi.mock("@/lib/billing", () => ({
 
 import {
   createUserAuthDiagnostics,
+  generateMobileFingerprint,
   getUserSession,
   requireDbUserId,
   requireVerifiedUser,
@@ -223,7 +224,7 @@ describe("getUserSession duplicate cookies", () => {
     expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
   });
 
-  it("keeps a web session valid when only the request IP changed and the UA matches", async () => {
+  it("does not let the same UA bypass a web fingerprint mismatch from a different IP", async () => {
     mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
     mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
     mocks.headersGet.mockImplementation((name: string) => {
@@ -249,22 +250,18 @@ describe("getUserSession duplicate cookies", () => {
     });
     const diagnostics = createUserAuthDiagnostics();
 
-    await expect(getUserSession({ diagnostics })).resolves.toMatchObject({
-      userId: "user-1",
-      sessionId: "session-valid",
-    });
+    await expect(getUserSession({ diagnostics })).resolves.toBeNull();
 
     expect(diagnostics).toMatchObject({
       jwtCandidateValidCount: 1,
       dbSessionFound: true,
-      sessionExpired: false,
-      fingerprintMatched: true,
-      finalFailureCode: null,
+      fingerprintMatched: false,
+      finalFailureCode: "FINGERPRINT_MISMATCH",
     });
-    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
   });
 
-  it("keeps legacy web sessions valid on IP changes when the DB row has no stored UA", async () => {
+  it("treats legacy web sessions with null userAgent as untrusted on fingerprint mismatch", async () => {
     mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
     mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
     mocks.headersGet.mockImplementation((name: string) => {
@@ -290,12 +287,50 @@ describe("getUserSession duplicate cookies", () => {
     });
     const diagnostics = createUserAuthDiagnostics();
 
+    await expect(getUserSession({ diagnostics })).resolves.toBeNull();
+
+    expect(diagnostics).toMatchObject({
+      fingerprintMatched: false,
+      finalFailureCode: "FINGERPRINT_MISMATCH",
+    });
+    expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalled();
+  });
+
+  it("keeps mobile sessions valid across IP changes when the UA fingerprint matches", async () => {
+    mocks.cookieGetAll.mockReturnValue([{ name: "user_session", value: "valid-token" }]);
+    mocks.cookieGet.mockReturnValue({ name: "user_session", value: "valid-token" });
+    mocks.headersGet.mockImplementation((name: string) => {
+      const normalized = name.toLowerCase();
+      if (normalized === "cookie") return "user_session=valid-token";
+      if (normalized === "user-agent") return "LocateFlowMobile/1.0";
+      if (normalized === "x-forwarded-for") return "198.51.100.22";
+      return null;
+    });
+    mocks.jwtVerify.mockResolvedValueOnce({
+      payload: {
+        userId: "user-1",
+        email: "user@example.com",
+        fp: await generateMobileFingerprint("LocateFlowMobile/1.0"),
+        fpMode: "mobile",
+      },
+    });
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session-mobile",
+      userId: "user-1",
+      expiresAt: new Date(Date.now() + 60_000),
+      userAgent: "LocateFlowMobile/1.0",
+    });
+    const diagnostics = createUserAuthDiagnostics();
+
     await expect(getUserSession({ diagnostics })).resolves.toMatchObject({
       userId: "user-1",
-      sessionId: "session-valid",
+      sessionId: "session-mobile",
     });
 
-    expect(diagnostics.finalFailureCode).toBeNull();
+    expect(diagnostics).toMatchObject({
+      fingerprintMatched: true,
+      finalFailureCode: null,
+    });
     expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
   });
 

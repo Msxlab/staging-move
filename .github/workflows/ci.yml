@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# Least-privilege default. Individual jobs that need write scopes
+# (e.g. uploading release artifacts, commenting on PRs) should opt in
+# explicitly with their own `permissions:` block.
+permissions:
+  contents: read
+
 jobs:
   lint-and-typecheck:
     name: Lint & Type Check
@@ -19,7 +25,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -62,7 +68,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -87,7 +93,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -97,6 +103,9 @@ jobs:
 
       - name: Run tests (admin)
         run: pnpm --filter @locateflow/admin test
+
+      - name: Run tests (mobile)
+        run: pnpm --filter @locateflow/mobile test
 
   provider-guards:
     name: Provider Data Guards
@@ -110,7 +119,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -138,7 +147,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile

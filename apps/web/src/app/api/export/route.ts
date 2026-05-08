@@ -3,20 +3,97 @@ import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { decrypt } from "@/lib/shared-encryption";
 import { LEGAL_CONSENT_EVENT } from "@/lib/legal";
+import { emitSecurityEvent } from "@/lib/security-events";
+import { createAuditLog, extractRequestMeta } from "@/lib/audit";
+import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
+import { verifyUserStepUp } from "@/lib/user-step-up";
 
-// GET /api/export?type=addresses|services|budget|moving|moveTasks|customProviders|legal|support|notifications|subscription|analytics|full&format=csv|json&includeNotes=true
+// POST /api/export
+// Body: { type, format, includeNotes, confirmPassword?, mfaCode?, backupCode? }
 //
 // `notes` is a free-form, encrypted field; decrypting it into the export
 // default would produce an exported plaintext copy that can easily leak via
 // logs, proxies, or email attachments. We require an explicit opt-in via
 // `?includeNotes=true` to return decrypted notes; otherwise notes are omitted.
-export async function GET(request: NextRequest) {
+export async function GET() {
+  return NextResponse.json(
+    { error: "Export requires a POST request with step-up verification." },
+    { status: 405, headers: { Allow: "POST" } },
+  );
+}
+
+export async function POST(request: NextRequest) {
   try {
     const userId = await requireDbUserId();
-    const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type") || "full";
-    const format = searchParams.get("format") || "json";
-    const includeNotes = searchParams.get("includeNotes") === "true";
+    const body: any = await request.json().catch(() => ({}));
+    const type = typeof body?.type === "string" ? body.type : "full";
+    const format = typeof body?.format === "string" ? body.format.toLowerCase() : "json";
+    const includeNotes = body?.includeNotes === true;
+    const meta = extractRequestMeta(request);
+    emitSecurityEvent({
+      type: "EXPORT_ATTEMPT",
+      severity: "info",
+      group: "export_data",
+      context: { userId, type, format, includeNotes, outcome: "started" },
+    });
+
+    const rl = await enforceRateLimitPolicy(request, "export_data", {
+      userId,
+      routeId: "export_data",
+    });
+    if (!rl.success) {
+      emitSecurityEvent({
+        type: "EXPORT_ATTEMPT",
+        severity: "warn",
+        group: "export_data",
+        retryAfterSeconds: rl.retryAfterSeconds,
+        context: { userId, type, format, outcome: "rate_limited" },
+      });
+      await createAuditLog({
+        userId,
+        action: "EXPORT_LIMIT",
+        entityType: "User",
+        entityId: userId,
+        changes: { status: "rate_limited", type, format, retryAfterSeconds: rl.retryAfterSeconds },
+        ...meta,
+      });
+      return NextResponse.json(
+        {
+          code: rl.policy.userFacingErrorCode,
+          error: "Too many export attempts. Please wait and try again.",
+          routeGroup: rl.policy.group,
+          retryAfterSeconds: rl.retryAfterSeconds,
+        },
+        { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } },
+      );
+    }
+
+    const stepUp = await verifyUserStepUp({
+      userId,
+      confirmPassword: typeof body?.confirmPassword === "string" ? body.confirmPassword : null,
+      mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : null,
+      backupCode: typeof body?.backupCode === "string" ? body.backupCode : null,
+    });
+    if (!stepUp.ok) {
+      emitSecurityEvent({
+        type: "EXPORT_ATTEMPT",
+        severity: "warn",
+        group: "export_data",
+        context: { userId, type, format, outcome: "failed_step_up", code: stepUp.code },
+      });
+      await createAuditLog({
+        userId,
+        action: "EXPORT_BLOCK",
+        entityType: "User",
+        entityId: userId,
+        changes: { status: "failed_step_up", type, format, code: stepUp.code },
+        ...meta,
+      });
+      return NextResponse.json(
+        { error: stepUp.message, code: stepUp.code },
+        { status: stepUp.code === "STEP_UP_REQUIRED" ? 403 : 401 },
+      );
+    }
 
     // Mask sensitive fields in export data
     const maskValue = (val: string, visibleEnd = 4): string => {
@@ -376,6 +453,21 @@ export async function GET(request: NextRequest) {
       data.analyticsSessions = sessions;
       data.analyticsEvents = events;
     }
+
+    emitSecurityEvent({
+      type: "EXPORT_ATTEMPT",
+      severity: "info",
+      group: "export_data",
+      context: { userId, type, format, includeNotes, outcome: "success", stepUpMethod: stepUp.method },
+    });
+    await createAuditLog({
+      userId,
+      action: "EXPORT",
+      entityType: "User",
+      entityId: userId,
+      changes: { status: "success", type, format, includeNotes, stepUpMethod: stepUp.method },
+      ...meta,
+    });
 
     if (format === "csv") {
       // Convert to CSV - flatten the primary data type

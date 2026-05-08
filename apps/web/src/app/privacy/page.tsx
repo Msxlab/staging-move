@@ -33,6 +33,11 @@ const highlights = [
   },
 ] as const;
 
+const privacyLegalEntityName =
+  LEGAL_INFO.legalEntityName === "[Legal entity name to be finalized]"
+    ? "LocateFlow"
+    : LEGAL_INFO.legalEntityName;
+
 export default function PrivacyPage() {
   return (
     <PublicPageShell
@@ -42,7 +47,7 @@ export default function PrivacyPage() {
     >
       <div className="rounded-2xl border bg-muted/30 p-5 text-sm leading-6 text-muted-foreground">
         <p>{policyLastUpdatedLabel()}</p>
-        <p>Legal entity: {LEGAL_INFO.legalEntityName}</p>
+        <p>Legal entity: {privacyLegalEntityName}</p>
         <p>
           Privacy contact:{" "}
           <a href={mailto(LEGAL_CONTACTS.privacy, "LocateFlow privacy request")} className="underline">

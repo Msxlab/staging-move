@@ -1,8 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
-import { buildDefaultPermissionMatrix } from "@/lib/admin-permissions";
+import {
+  ADMIN_ROLE_VALUES,
+  buildDefaultPermissionMatrix,
+} from "@/lib/admin-permissions";
+
+// Strict body shape for admin creation. Role is a closed enum — unknown
+// strings (typos, deprecated roles, attacker-supplied junk) get a 400
+// instead of being silently coerced into a permission matrix that may
+// not have a valid hierarchy entry.
+const createAdminSchema = z
+  .object({
+    email: z.string().trim().min(3).max(254).email(),
+    password: z.string().min(12).max(256),
+    firstName: z.string().trim().min(1).max(100),
+    lastName: z.string().trim().min(1).max(100),
+    role: z.enum(ADMIN_ROLE_VALUES).default("MODERATOR"),
+    // confirmPassword is optional at the schema layer — the missing
+    // case is what triggers the 403 step-up prompt, not a 400 from zod.
+    confirmPassword: z.string().max(256).optional(),
+  })
+  .strict();
 
 export async function GET() {
   try {
@@ -87,24 +108,34 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const session = await requirePermission("admin_users", "canCreate", { minimumRole: "SUPER_ADMIN" });
-    const body = await request.json();
+    const raw = await request.json().catch(() => null);
+    const parsed = createAdminSchema.safeParse(raw);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const field = issue?.path?.join(".") || "body";
+      // Friendly errors for the most common validation failures.
+      if (field === "role") {
+        return NextResponse.json(
+          { error: `Invalid role. Must be one of: ${ADMIN_ROLE_VALUES.join(", ")}` },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json(
+        { error: `Invalid request: ${issue?.message || "validation failed"}` },
+        { status: 400 },
+      );
+    }
+    const body = parsed.data;
 
-    const confirm = await requirePasswordConfirm(
-      session,
-      typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
-    );
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
+      operation: "admin_user_create",
+    });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }
 
-    if (!body.email || !body.password || !body.firstName || !body.lastName) {
-      return NextResponse.json({ error: "All fields are required" }, { status: 400 });
-    }
-
-    // SEC-009: Strong password policy for new admin accounts
-    if (body.password.length < 12) {
-      return NextResponse.json({ error: "Password must be at least 12 characters" }, { status: 400 });
-    }
+    // SEC-009: complexity requirement is separate from zod min(12) so we
+    // can surface it as a discrete error.
     if (!/[A-Z]/.test(body.password) || !/[a-z]/.test(body.password) || !/[0-9]/.test(body.password)) {
       return NextResponse.json({ error: "Password must contain uppercase, lowercase, and a number" }, { status: 400 });
     }
@@ -122,7 +153,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         firstName: body.firstName,
         lastName: body.lastName,
-        role: body.role || "MODERATOR",
+        role: body.role,
         isActive: true,
         createdBy: session.adminId,
       },

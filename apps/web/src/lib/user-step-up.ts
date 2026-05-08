@@ -48,7 +48,13 @@ export async function verifyUserStepUp(input: {
   const backupCode = input.backupCode?.trim();
   if (backupCode && user.mfaEnabled && user.mfaBackupCodes) {
     const originalBackupCodes = user.mfaBackupCodes || "[]";
-    const storedHashes: string[] = JSON.parse(originalBackupCodes);
+    let storedHashes: string[] = [];
+    try {
+      const decoded = JSON.parse(originalBackupCodes);
+      if (Array.isArray(decoded)) storedHashes = decoded.filter((item) => typeof item === "string");
+    } catch {
+      storedHashes = [];
+    }
     const matchIndex = await verifyBackupCode(backupCode, storedHashes);
     if (matchIndex >= 0) {
       storedHashes.splice(matchIndex, 1);

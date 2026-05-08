@@ -14,29 +14,21 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { verifyInternalAuth } from "@/lib/internal-secrets";
+import { guardCronRequest } from "@/lib/cron-guard";
 
 const VIEW_RETENTION_DAYS = 90;
 const REVISION_RETENTION_DAYS = 90;
 const DELETE_BATCH_SIZE = 10_000;
 
-function unauthorized(req: NextRequest): boolean {
-  // Constant-time check via verifyInternalAuth, mirroring every other
-  // cron route. Accepts the canonical `Authorization: Bearer <secret>`
-  // or the legacy `x-cron-secret` header.
-  const xCronSecret = req.headers.get("x-cron-secret");
-  const authHeader = req.headers.get("authorization");
-  const effective = authHeader || (xCronSecret ? `Bearer ${xCronSecret}` : null);
-  return !verifyInternalAuth(effective, "cron");
-}
-
 export async function GET(req: NextRequest) {
-  if (unauthorized(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const guard = await guardCronRequest(req, "blog-cleanup");
+  if (!guard.ok) return guard.response;
   return runCleanup();
 }
 
 export async function POST(req: NextRequest) {
-  if (unauthorized(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const guard = await guardCronRequest(req, "blog-cleanup");
+  if (!guard.ok) return guard.response;
   return runCleanup();
 }
 

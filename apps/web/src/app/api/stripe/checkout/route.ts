@@ -32,6 +32,10 @@ import {
   TERMS_VERSION,
 } from "@/lib/shared-billing";
 import { captureMessage } from "@/lib/sentry";
+import {
+  isMobileAppClient,
+  mobileExternalBillingNotAllowedResponse,
+} from "@/lib/mobile-external-billing-guard";
 import Stripe from "stripe";
 
 function normalizeBillingIntervalInput(input: unknown, legacyCycle: unknown): StripeBillingInterval {
@@ -41,9 +45,22 @@ function normalizeBillingIntervalInput(input: unknown, legacyCycle: unknown): St
   return "MONTH";
 }
 
+const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
+  "ACTIVE",
+  "TRIALING",
+  "CANCEL_AT_PERIOD_END",
+  "GRACE_PERIOD",
+  "PAST_DUE",
+  "PENDING_VALIDATION",
+]);
+
 // POST /api/stripe/checkout — Create a Stripe Checkout session for plan upgrade
 export async function POST(request: NextRequest) {
   try {
+    if (isMobileAppClient(request)) {
+      return mobileExternalBillingNotAllowedResponse();
+    }
+
     const stripeSecretKey = requireStripeSecretKeyForMutation(
       await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
     );
@@ -160,6 +177,7 @@ export async function POST(request: NextRequest) {
         provider: true,
         accessType: true,
         stripeSubscriptionId: true,
+        platform: true,
       },
     });
     const hasRealStripeSubscription =
@@ -179,6 +197,19 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { code: "ALREADY_ACTIVE", error: "Your annual plan is active." },
+        { status: 409 },
+      );
+    }
+    const hasActiveStoreSubscription =
+      (existingSubscription?.provider === "APP_STORE" || existingSubscription?.provider === "PLAY_STORE") &&
+      existingSubscription?.accessType !== "FREE_ACCESS" &&
+      MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(existingSubscription?.status || "");
+    if (hasActiveStoreSubscription) {
+      return NextResponse.json(
+        {
+          code: "SUBSCRIPTION_MANAGED_ELSEWHERE",
+          error: "Your subscription is managed by the app store.",
+        },
         { status: 409 },
       );
     }

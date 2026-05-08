@@ -31,6 +31,7 @@
  */
 
 import { z } from "zod";
+import { redactAuditPayload } from "@locateflow/shared";
 import type { AdminSession } from "./auth";
 import { prisma } from "./db";
 
@@ -90,7 +91,7 @@ function buildChangesPayload(
   if (parsed.before !== undefined) changes.before = parsed.before;
   if (parsed.after !== undefined) changes.after = parsed.after;
   if (parsed.metadata !== undefined) changes.metadata = parsed.metadata;
-  return JSON.stringify(changes);
+  return JSON.stringify(redactAuditPayload(changes));
 }
 
 export async function writeAdminAudit(

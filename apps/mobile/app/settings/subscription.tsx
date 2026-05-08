@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Linking,
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -24,10 +23,12 @@ import { useAppTheme, type Theme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { Badge as UiBadge } from "@/components/ui/Badge";
+import { isMobileStorePurchasesEnabledForPlatform } from "@/lib/billing-flags";
 import { hapticError, hapticSuccess } from "@/lib/haptics";
 import {
   closeConnection,
   fetchSubscriptionProducts,
+  IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE,
   IAP_PURCHASE_FAILED_MESSAGE,
   IAP_STORE_UNAVAILABLE_MESSAGE,
   IAP_VERIFICATION_ERROR_MESSAGE,
@@ -35,6 +36,7 @@ import {
   purchaseSubscription,
   restorePurchases,
 } from "@/lib/iap";
+import { selectAndroidSubscriptionOffer } from "@/lib/iap-offers";
 import {
   BILLING_PLAN_DEFINITIONS,
   BILLING_PLAN_ORDER,
@@ -94,6 +96,15 @@ type IapProductsResponse = {
 };
 
 type Cycle = "monthly" | "yearly";
+
+const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
+  "ACTIVE",
+  "TRIALING",
+  "CANCEL_AT_PERIOD_END",
+  "GRACE_PERIOD",
+  "PAST_DUE",
+  "PENDING_VALIDATION",
+]);
 
 function resolveSkuFromResponse(
   iapProducts: IapProductsResponse | null,
@@ -174,6 +185,8 @@ function LegacySubscriptionScreen() {
   const [iapProducts, setIapProducts] = useState<IapProductsResponse | null>(null);
   const [localizedMonthlyPrice, setLocalizedMonthlyPrice] = useState<string | null>(null);
   const [localizedYearlyPrice, setLocalizedYearlyPrice] = useState<string | null>(null);
+  const [monthlyOfferToken, setMonthlyOfferToken] = useState<string | null>(null);
+  const [yearlyOfferToken, setYearlyOfferToken] = useState<string | null>(null);
   const [annualOffer, setAnnualOffer] = useState<PublicCampaignSummary | null>(null);
   const [monthlyOffer, setMonthlyOffer] = useState<PublicCampaignSummary | null>(null);
 
@@ -185,6 +198,10 @@ function LegacySubscriptionScreen() {
   }, []);
 
   const fetchIapProducts = useCallback(async () => {
+    if (!isMobileStorePurchasesEnabledForPlatform() || (Platform.OS !== "ios" && Platform.OS !== "android")) {
+      setIapProducts(null);
+      return;
+    }
     const res = await api.get<IapProductsResponse>("/api/mobile/iap/products");
     if (res.data) setIapProducts(res.data);
   }, []);
@@ -200,14 +217,19 @@ function LegacySubscriptionScreen() {
   const monthlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "monthly"), [iapProducts]);
   const yearlySku = useMemo(() => resolveSkuFromResponse(iapProducts, "yearly"), [iapProducts]);
   const iapAvailable = Boolean(monthlySku || yearlySku);
+  const isNativeStorePlatform = Platform.OS === "ios" || Platform.OS === "android";
+  const mobileStorePurchasesEnabled = isMobileStorePurchasesEnabledForPlatform();
+  const canUseNativePurchases = isNativeStorePlatform && mobileStorePurchasesEnabled && iapAvailable;
 
   // Pull localized prices for both SKUs in a single fetchProducts call so
   // StoreKit/Play return one batch instead of two round-trips.
   useEffect(() => {
     const skus = [monthlySku, yearlySku].filter((sku): sku is string => Boolean(sku));
-    if (!iapAvailable || skus.length === 0) {
+    if (!canUseNativePurchases || skus.length === 0) {
       setLocalizedMonthlyPrice(null);
       setLocalizedYearlyPrice(null);
+      setMonthlyOfferToken(null);
+      setYearlyOfferToken(null);
       return;
     }
     let cancelled = false;
@@ -216,13 +238,17 @@ function LegacySubscriptionScreen() {
       if (cancelled) return;
       const monthly = products.find((p) => p.id === monthlySku);
       const yearly = products.find((p) => p.id === yearlySku);
+      const monthlyAndroidOffer = monthly ? selectAndroidSubscriptionOffer(monthly, "monthly") : null;
+      const yearlyAndroidOffer = yearly ? selectAndroidSubscriptionOffer(yearly, "yearly") : null;
       setLocalizedMonthlyPrice(monthly?.displayPrice || null);
       setLocalizedYearlyPrice(yearly?.displayPrice || null);
+      setMonthlyOfferToken(monthlyAndroidOffer?.offerToken || null);
+      setYearlyOfferToken(yearlyAndroidOffer?.offerToken || null);
     })();
     return () => {
       cancelled = true;
     };
-  }, [iapAvailable, monthlySku, yearlySku]);
+  }, [canUseNativePurchases, monthlySku, yearlySku]);
 
   useEffect(() => () => {
     // Release StoreKit connection on unmount.
@@ -254,23 +280,47 @@ function LegacySubscriptionScreen() {
   );
   const trialEndLabel = formatDateLabel(subscription?.trialEndsAt);
   const isStoreManaged = currentProvider === "APP_STORE" || currentProvider === "PLAY_STORE";
-  const canManageBilling = !!subscription?.stripeCustomerId && !isStoreManaged;
+  const isStripeManaged = currentProvider === "STRIPE" || Boolean(subscription?.stripeCustomerId);
+  const currentPlatformStoreProvider =
+    Platform.OS === "ios" ? "APP_STORE" : Platform.OS === "android" ? "PLAY_STORE" : null;
+  const isCurrentPlatformStoreManaged =
+    Boolean(currentPlatformStoreProvider) && currentProvider === currentPlatformStoreProvider;
+  const isOtherPlatformStoreManaged = isStoreManaged && !isCurrentPlatformStoreManaged;
+  const managedSubscriptionBlocksPurchase =
+    currentPlanKey === "INDIVIDUAL" &&
+    MANAGED_SUBSCRIPTION_BLOCKING_STATUSES.has(currentStatus) &&
+    (isStripeManaged || isOtherPlatformStoreManaged);
+  const canStartNativePurchase = canUseNativePurchases && !managedSubscriptionBlocksPurchase;
+  const canManageBilling =
+    (isCurrentPlatformStoreManaged && canUseNativePurchases) ||
+    (!isNativeStorePlatform && Boolean(subscription?.stripeCustomerId) && !isStoreManaged);
 
-  const openExternalUrl = useCallback(async (url: string) => {
-    const canOpen = await Linking.canOpenURL(url);
-    if (!canOpen) {
-      hapticError();
-      Alert.alert(t("settings.subscription_unavailable"), t("settings.subscription_linkUnavailable"));
-      return;
-    }
-
-    await Linking.openURL(url);
-  }, [t]);
+  const managedElsewhereMessage = isStripeManaged
+    ? t("settings.subscription_webManagedReadOnly")
+    : currentProvider === "APP_STORE"
+      ? t("settings.subscription_appStoreManagedReadOnly", {
+          defaultValue: "Your subscription is managed in the App Store. You can continue using your account here.",
+        })
+      : currentProvider === "PLAY_STORE"
+        ? t("settings.subscription_playStoreManagedReadOnly", {
+            defaultValue: "Your subscription is managed in Google Play. You can continue using your account here.",
+          })
+        : t("settings.subscription_mobilePurchasesUnavailable");
 
   const getLocalizedIapError = useCallback((message?: string) => {
     if (message === IAP_PURCHASE_FAILED_MESSAGE) return t("settings.subscription_purchaseFailed");
     if (message === IAP_VERIFICATION_ERROR_MESSAGE) return t("settings.subscription_verificationError");
     if (message === IAP_STORE_UNAVAILABLE_MESSAGE) return t("settings.subscription_storeUnavailable");
+    if (message === IAP_ANDROID_OFFER_TOKEN_MISSING_MESSAGE) {
+      return t("settings.subscription_androidOfferMissing", {
+        defaultValue: "Google Play subscription offer is not configured. Please try again later.",
+      });
+    }
+    if (message === "ACTIVE_SUBSCRIPTION_MANAGED_ELSEWHERE") {
+      return t("settings.subscription_activeManagedElsewhere", {
+        defaultValue: "This account already has an active subscription managed elsewhere. You can continue using LocateFlow here.",
+      });
+    }
     return message || t("toast.networkError");
   }, [t]);
 
@@ -283,12 +333,24 @@ function LegacySubscriptionScreen() {
     const processingKey = `${planKey}_${cycle}`;
     setProcessingPlan(processingKey);
 
-    // Disclosure gate runs before BOTH paths (IAP and Stripe). Apple's
+    if (!canStartNativePurchase) {
+      setProcessingPlan(null);
+      hapticError();
+      Alert.alert(
+        t("settings.subscription_billingUnavailable"),
+        managedSubscriptionBlocksPurchase
+          ? managedElsewhereMessage
+          : t("settings.subscription_mobilePurchasesUnavailable"),
+      );
+      return;
+    }
+
+    // Disclosure gate runs before the native store purchase path. Apple's
     // in-app paywall and Google Play's billing UI cover their own
     // legal copy, but they do not surface the campaign-specific trial
     // terms (length, first-charge date, cancel-by date) the admin
-    // configured. Showing the campaign disclosure on every checkout
-    // path keeps mobile parity with web.
+    // configured. Showing the campaign disclosure before native purchase
+    // keeps mobile parity with web while the store purchase flag is enabled.
     const targetCampaign = cycle === "yearly" ? annualOffer : monthlyOffer;
     const localizedPrice = cycle === "yearly" ? localizedYearlyPrice : localizedMonthlyPrice;
     const disclosureBody =
@@ -324,8 +386,13 @@ function LegacySubscriptionScreen() {
     // Pick the SKU matching the user-chosen cycle. Fall back to monthly when
     // the yearly SKU is not configured so a single-SKU build keeps working.
     const targetSku = cycle === "yearly" ? (yearlySku || monthlySku) : monthlySku;
-    if (iapAvailable && targetSku) {
-      const result = await purchaseSubscription({ productId: targetSku });
+    const targetOfferToken = Platform.OS === "android"
+      ? cycle === "yearly" && yearlySku
+        ? yearlyOfferToken
+        : monthlyOfferToken
+      : undefined;
+    if (targetSku) {
+      const result = await purchaseSubscription({ productId: targetSku, offerToken: targetOfferToken });
       setProcessingPlan(null);
 
       if (result.status === "cancelled") return;
@@ -339,34 +406,17 @@ function LegacySubscriptionScreen() {
       return;
     }
 
-    if (Platform.OS === "ios" || Platform.OS === "android") {
-      setProcessingPlan(null);
-      hapticError();
-      Alert.alert(t("settings.subscription_billingUnavailable"), t("settings.subscription_storeUnavailable"));
-      return;
-    }
-
-    const res = await api.post<any>("/api/stripe/checkout", {
-      plan: planKey,
-      billingInterval: cycle === "yearly" ? "YEAR" : "MONTH",
-      acceptedSubscriptionTerms: true,
-      ...(targetCampaign?.campaignCode ? { campaignCode: targetCampaign.campaignCode } : {}),
-    });
     setProcessingPlan(null);
-
-    if (res.error || !res.data?.url) {
-      hapticError();
-      Alert.alert(t("common.retry"), res.error || t("toast.networkError"));
-      return;
-    }
-
-    hapticSuccess();
-    await openExternalUrl(res.data.url);
+    hapticError();
+    Alert.alert(t("settings.subscription_billingUnavailable"), t("settings.subscription_storeUnavailable"));
   }, [
-    openExternalUrl,
-    iapAvailable,
+    canStartNativePurchase,
+    managedSubscriptionBlocksPurchase,
+    managedElsewhereMessage,
     monthlySku,
     yearlySku,
+    monthlyOfferToken,
+    yearlyOfferToken,
     fetchSubscription,
     t,
     annualOffer,
@@ -380,7 +430,7 @@ function LegacySubscriptionScreen() {
     setProcessingPlan("MANAGE");
 
     // Store-managed subscriptions: send the user to the native management page.
-    if (isStoreManaged) {
+    if (isCurrentPlatformStoreManaged && canUseNativePurchases) {
       setProcessingPlan(null);
       await openNativeSubscriptionSettings(
         subscription?.billingProductId || monthlySku || yearlySku || undefined,
@@ -388,21 +438,28 @@ function LegacySubscriptionScreen() {
       return;
     }
 
-    const res = await api.post<any>("/api/stripe/portal", {});
     setProcessingPlan(null);
-
-    if (res.error || !res.data?.url) {
-      hapticError();
-      Alert.alert(t("settings.subscription_billingUnavailable"), res.error || t("settings.subscription_billingPortalFailed"));
-      return;
-    }
-
-    hapticSuccess();
-    await openExternalUrl(res.data.url);
-  }, [openExternalUrl, isStoreManaged, subscription?.billingProductId, monthlySku, yearlySku, t]);
+    hapticError();
+    Alert.alert(
+      t("settings.subscription_billingUnavailable"),
+      isStripeManaged || isOtherPlatformStoreManaged
+        ? managedElsewhereMessage
+        : t("settings.subscription_mobilePurchasesUnavailable"),
+    );
+  }, [
+    canUseNativePurchases,
+    isCurrentPlatformStoreManaged,
+    isOtherPlatformStoreManaged,
+    isStripeManaged,
+    managedElsewhereMessage,
+    subscription?.billingProductId,
+    monthlySku,
+    yearlySku,
+    t,
+  ]);
 
   const handleRestore = useCallback(async () => {
-    if (!iapAvailable) return;
+    if (!canUseNativePurchases || managedSubscriptionBlocksPurchase) return;
     setProcessingPlan("RESTORE");
     const results = await restorePurchases();
     setProcessingPlan(null);
@@ -415,7 +472,7 @@ function LegacySubscriptionScreen() {
       hapticError();
       Alert.alert(t("settings.subscription_nothingToRestore"), t("settings.subscription_nothingToRestoreDescription"));
     }
-  }, [iapAvailable, fetchSubscription, t]);
+  }, [canUseNativePurchases, managedSubscriptionBlocksPurchase, fetchSubscription, t]);
 
   if (loading) {
     return (
@@ -476,6 +533,16 @@ function LegacySubscriptionScreen() {
           />
         </View>
 
+        {isNativeStorePlatform && (isStripeManaged || isOtherPlatformStoreManaged || !canUseNativePurchases) && (
+          <View style={styles.mobileBillingNotice}>
+            <Text style={styles.mobileBillingNoticeText}>
+              {isStripeManaged || isOtherPlatformStoreManaged
+                ? managedElsewhereMessage
+                : t("settings.subscription_mobilePurchasesUnavailable")}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.heroBox}>
           <Crown size={32} color={theme.colors.amber.text} />
           <Text style={styles.heroTitle}>{t("pricing.title")}</Text>
@@ -492,6 +559,7 @@ function LegacySubscriptionScreen() {
           const showSplitCtas =
             plan.key === "INDIVIDUAL" &&
             plan.key !== currentPlanKey &&
+            canStartNativePurchase &&
             Boolean(yearlySku) &&
             Boolean(monthlySku);
           const monthlyDisplayPrice =
@@ -566,6 +634,14 @@ function LegacySubscriptionScreen() {
               <TouchableOpacity style={styles.currentBtn} disabled accessibilityRole="button" accessibilityLabel={t("settings.subscription_a11yTrial")} accessibilityState={{ disabled: true }}>
                 <Text style={styles.currentBtnText}>{t("pricing.cta_trial")}</Text>
               </TouchableOpacity>
+            ) : isNativeStorePlatform && !canStartNativePurchase ? (
+              <View style={styles.disabledPurchaseNotice}>
+                <Text style={styles.disabledPurchaseText}>
+                  {managedSubscriptionBlocksPurchase
+                    ? managedElsewhereMessage
+                    : t("settings.subscription_mobilePurchasesUnavailable")}
+                </Text>
+              </View>
             ) : showSplitCtas ? (
               <View style={styles.splitCtaWrap}>
                 <TouchableOpacity
@@ -658,7 +734,7 @@ function LegacySubscriptionScreen() {
           </Card>
           );
         })}
-        {iapAvailable && (
+        {canUseNativePurchases && !managedSubscriptionBlocksPurchase && (
           <TouchableOpacity
             style={styles.restoreBtn}
             activeOpacity={0.7}
@@ -678,7 +754,11 @@ function LegacySubscriptionScreen() {
         )}
 
         <Text style={styles.footer}>
-          {t("settings.subscription_manage")}
+          {isNativeStorePlatform && managedSubscriptionBlocksPurchase
+            ? managedElsewhereMessage
+            : isNativeStorePlatform && !canUseNativePurchases
+            ? t("settings.subscription_mobilePurchasesUnavailable")
+            : t("settings.subscription_manage")}
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -721,6 +801,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   currentPlanTitle: { fontSize: 16, fontWeight: "700", color: theme.colors.text },
   currentPlanMeta: { fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 },
+  mobileBillingNotice: {
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: 14,
+    marginTop: 12,
+  },
+  mobileBillingNoticeText: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: theme.colors.textSecondary,
+  },
   heroBox: { alignItems: "center", paddingVertical: 24, gap: 8 },
   heroTitle: { fontSize: 22, fontWeight: "800", color: theme.colors.text },
   heroDesc: { fontSize: 14, color: theme.colors.textTertiary, textAlign: "center", maxWidth: 280 },
@@ -732,6 +825,22 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   featureList: { marginTop: 16, gap: 8 },
   featureRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   featureText: { fontSize: 13, color: theme.colors.textSecondary },
+  disabledPurchaseNotice: {
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginTop: 16,
+  },
+  disabledPurchaseText: {
+    fontSize: 13,
+    lineHeight: 18,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    fontWeight: "600",
+  },
   upgradeBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     backgroundColor: theme.colors.primary, borderRadius: theme.radius.lg,

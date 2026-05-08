@@ -57,7 +57,7 @@ export default function SignInScreen() {
     setLoading(true);
     setError("");
     const res = await api.post<{ token?: string; user?: any; requiresMfa?: boolean; error?: string }>(
-      "/api/auth/login",
+      "/api/mobile/auth/login",
       {
         email: email.trim(),
         password,

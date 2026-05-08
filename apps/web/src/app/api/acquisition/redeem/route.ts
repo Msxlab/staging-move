@@ -67,6 +67,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Idempotency for the (user, campaign) pair: a duplicate POST from a
+    // double-click or retry must not create a second redemption row or
+    // overwrite the user's existing subscription. Schema doesn't have a
+    // unique index on (userId, campaignId) yet — we check at the start
+    // and again inside the transaction below.
+    if (campaign.id) {
+      const existingForCampaign = await (prisma as any).acquisitionRedemption.findFirst({
+        where: { userId, campaignId: campaign.id },
+        select: { id: true, subscriptionId: true },
+      });
+      if (existingForCampaign) {
+        return NextResponse.json(
+          { code: "ALREADY_REDEEMED", error: "You already used this offer." },
+          { status: 409 },
+        );
+      }
+    }
+
     const now = new Date();
     const freeAccessEndsAt = new Date(now);
     freeAccessEndsAt.setUTCDate(freeAccessEndsAt.getUTCDate() + campaign.freeAccessDays);
@@ -144,14 +162,22 @@ export async function POST(request: NextRequest) {
         // check above can pass for two parallel requests when only one
         // slot remains. We re-issue the increment as a conditional
         // updateMany so the database resolves the race — the row only
-        // updates if redemptionCount is still below maxRedemptions at
-        // commit time. count === 0 means the cap closed in the gap;
+        // updates if status, time window, and cap all still hold at
+        // commit time. count === 0 means the campaign closed in the gap;
         // throw to roll back the subscription + redemption rows.
         const cap = typeof campaign.maxRedemptions === "number" ? campaign.maxRedemptions : null;
         const updated = await tx.acquisitionCampaign.updateMany({
           where: {
             id: campaign.id,
             status: "ACTIVE",
+            // Re-check the time window inside the transaction. The
+            // application-side check above can race with an admin
+            // ending the campaign, or with the system clock crossing
+            // `endsAt` between assertCampaignAvailable and this update.
+            AND: [
+              { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+              { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+            ],
             ...(cap !== null ? { redemptionCount: { lt: cap } } : {}),
           },
           data: { redemptionCount: { increment: 1 } },

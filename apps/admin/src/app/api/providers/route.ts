@@ -35,6 +35,7 @@ function parseIncomingProvider(raw: Record<string, unknown>) {
 
 async function loadComparableProviders() {
   return prisma.serviceProvider.findMany({
+    where: { deletedAt: null },
     select: {
       id: true,
       name: true,
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
     const scoreMax = searchParams.get("scoreMax") || "";
     const tags = (searchParams.get("tags") || "").trim().slice(0, 64);
 
-    const where: any = {};
+    const where: any = { deletedAt: null };
     if (search) {
       where.OR = [
         { name: { contains: search } },

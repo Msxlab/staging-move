@@ -95,7 +95,7 @@ export function UpcomingBills() {
                     <p className="text-sm font-medium text-foreground truncate">{bill.providerName}</p>
                     <p className="text-[10px] text-foreground/35">
                       {td("bills_day", { day: bill.billingDay })}
-                      {bill.address && ` Â· ${bill.address.nickname || bill.address.city}`}
+                      {bill.address && ` · ${bill.address.nickname || bill.address.city}`}
                     </p>
                   </div>
                   <div className="text-right shrink-0">

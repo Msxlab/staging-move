@@ -52,6 +52,24 @@ export const ADMIN_RESOURCES = [
 
 export type AdminResource = (typeof ADMIN_RESOURCES)[number];
 
+/**
+ * Closed enum of admin role values. Used by team-management and user-
+ * detail endpoints to reject arbitrary role strings before they hit the
+ * permission matrix or hierarchy lookup. Order is irrelevant — the
+ * privilege ordering lives in `ADMIN_ROLE_HIERARCHY`.
+ */
+export const ADMIN_ROLE_VALUES = [
+  "VIEWER",
+  "MODERATOR",
+  "ADMIN",
+  "SUPER_ADMIN",
+] as const;
+export type AdminRoleValue = (typeof ADMIN_ROLE_VALUES)[number];
+
+export function isValidAdminRole(value: unknown): value is AdminRoleValue {
+  return typeof value === "string" && (ADMIN_ROLE_VALUES as readonly string[]).includes(value);
+}
+
 export interface PermissionFlags {
   canRead: boolean;
   canCreate: boolean;

@@ -1,14 +1,15 @@
-import { db, withSoftDelete } from "../../../../packages/db/src/index";
+import { db, dbUnsafe } from "../../../../packages/db/src/index";
 
 /**
  * User-facing Prisma client.
  *
- * Applies the `withSoftDelete` extension globally so read queries
- * (`findMany`, `findUnique`, `findFirst`, `count`) on the models listed
- * in `SOFT_DELETE_MODELS` — User, Address, Service, MovingPlan,
- * Budget, ServiceProvider — automatically exclude rows
- * with `deletedAt != null`. Write-path `delete` / `deleteMany` calls on
- * those models are rewritten into `update`s that stamp `deletedAt`.
+ * The default `db` exported from `@locateflow/db` ships with the
+ * `withSoftDelete` extension applied: read queries
+ * (`findMany`, `findUnique`, `findFirst`, `count`, `aggregate`,
+ * `groupBy`) on the models listed in `SOFT_DELETE_MODELS` automatically
+ * exclude rows with `deletedAt != null`. Write-path `delete` /
+ * `deleteMany` calls on those models are rewritten into `update`s that
+ * stamp `deletedAt`.
  *
  * Route handlers under `apps/web/src/app/api/*` should import this as
  * the default — user code should never see a soft-deleted row without
@@ -16,13 +17,17 @@ import { db, withSoftDelete } from "../../../../packages/db/src/index";
  * retention cron that hard-deletes after a grace window, or an admin
  * "restore deleted" flow), import `rawPrisma` instead.
  */
-export const prisma = db.$extends(withSoftDelete);
+export const prisma = db;
 
 /**
- * Raw Prisma client — no extensions. Use ONLY when you need to see or
- * hard-delete soft-deleted rows. Callers: data-retention cron,
- * admin-adjacent restore flows, backup export.
+ * Raw, un-extended Prisma client — no soft-delete filtering.
+ *
+ * Use ONLY when you need to see or hard-delete soft-deleted rows.
+ * Documented callers: data-retention cron (final purge after grace
+ * window), admin-adjacent restore flows that explicitly target
+ * `deletedAt: { not: null }` rows, backup export (must include deleted
+ * rows for completeness).
  */
-export const rawPrisma = db;
+export const rawPrisma = dbUnsafe;
 
 export { db };
