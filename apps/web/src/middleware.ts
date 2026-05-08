@@ -239,9 +239,53 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
 async function applyRateLimit(req: NextRequest): Promise<NextResponse | null> {
   const pathname = req.nextUrl?.pathname || "";
   if (!pathname.startsWith("/api/")) return null;
-  if (pathname.startsWith("/api/internal/")) return null;
   if (pathname.startsWith("/api/webhooks/")) return null;
-  if (pathname.startsWith("/api/cron/")) return null;
+
+  // Cron and internal routes have their own auth (CRON_SECRET /
+  // INTERNAL_WEBHOOK_SECRET) inside the route handler, but a leaked
+  // secret should not let an attacker hammer them. Apply a coarse limit
+  // here BEFORE the route handler runs.
+  if (pathname.startsWith("/api/cron/")) {
+    const cronKey = `rl:cron:${pathname}`;
+    const cronResult = await rateLimit(cronKey, { limit: 1, windowSeconds: 60 });
+    if (!cronResult.success) {
+      return NextResponse.json(
+        {
+          code: "RATE_LIMITED",
+          error: "Too many requests. Please try again later.",
+          retryAfterSeconds: Math.ceil((cronResult.resetAt - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((cronResult.resetAt - Date.now()) / 1000)),
+          },
+        },
+      );
+    }
+    return null;
+  }
+
+  if (pathname.startsWith("/api/internal/")) {
+    const internalKey = `rl:internal:${pathname}`;
+    const internalResult = await rateLimit(internalKey, { limit: 60, windowSeconds: 60 });
+    if (!internalResult.success) {
+      return NextResponse.json(
+        {
+          code: "RATE_LIMITED",
+          error: "Too many requests. Please try again later.",
+          retryAfterSeconds: Math.ceil((internalResult.resetAt - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((internalResult.resetAt - Date.now()) / 1000)),
+          },
+        },
+      );
+    }
+    return null;
+  }
 
   const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
   const isOptionalAuthMe =

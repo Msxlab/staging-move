@@ -79,15 +79,20 @@ describe("mfa confirm route", () => {
     const response = await POST(makeRequest());
 
     expect(response.status).toBe(200);
-    expect(rateLimitMock).toHaveBeenCalledWith(
-      expect.stringContaining("rl:mfa_verify:user:"),
-      { limit: 5, windowSeconds: 5 * 60, failClosed: true },
+    expect(enforceRateLimitPolicyMock).toHaveBeenCalledWith(
+      expect.anything(),
+      "mfa_verify",
+      expect.objectContaining({ userId: "user_1", routeId: "mfa_confirm" }),
     );
     expect(JSON.stringify(recordUserSecurityAuditMock.mock.calls)).not.toContain("123456");
   });
 
   it("returns 429 when the MFA limit is exceeded", async () => {
-    rateLimitMock.mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
+    enforceRateLimitPolicyMock.mockResolvedValueOnce({
+      success: false,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+    });
 
     const response = await POST(makeRequest());
 
