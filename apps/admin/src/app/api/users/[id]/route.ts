@@ -9,8 +9,19 @@ import { maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
 // route. Free-form VarChar in the schema means we enforce the allowlist
 // at the API boundary or risk drift the rest of the app can't safely
 // read (`normalizeMovingPlanStatus` style workarounds).
-const SUBSCRIPTION_PLAN_VALUES = ["INDIVIDUAL", "FAMILY", "BUSINESS", "FREE_TRIAL"] as const;
+//
+// FAMILY/BUSINESS were previously listed but have no entry in
+// BILLING_PLAN_DEFINITIONS — writes that landed silently downgraded to
+// FREE_TRIAL on read. Removed from the allowlist; the user-detail UI
+// no longer surfaces them either.
+const SUBSCRIPTION_PLAN_VALUES = ["INDIVIDUAL", "FREE_TRIAL"] as const;
+// FREE_ACCESS / FREE_ACCESS_EXPIRED were missing from the allowlist
+// even though the system writes them as the default and the user-detail
+// dropdown offers them. Admins picking those values previously got a
+// 400 from the API — round-trip the dropdown.
 const SUBSCRIPTION_STATUS_VALUES = [
+  "FREE_ACCESS",
+  "FREE_ACCESS_EXPIRED",
   "ACTIVE",
   "TRIALING",
   "TRIAL_CANCELED",
@@ -28,6 +39,14 @@ const SUBSCRIPTION_ACCESS_TYPE_VALUES = [
   "FREE_ACCESS",
   "FREE_TRIAL",
   "PAID",
+] as const;
+const SUBSCRIPTION_PROVIDER_VALUES = [
+  "TRIAL",
+  "ADMIN",
+  "STRIPE",
+  "APP_STORE",
+  "PLAY_STORE",
+  "UNKNOWN",
 ] as const;
 
 // Accept either a full ISO timestamp with offset OR a YYYY-MM-DD date.
@@ -54,6 +73,7 @@ const updateUserSchema = z
     plan: z.enum(SUBSCRIPTION_PLAN_VALUES).optional(),
     subscriptionStatus: z.enum(SUBSCRIPTION_STATUS_VALUES).optional(),
     accessType: z.enum(SUBSCRIPTION_ACCESS_TYPE_VALUES).nullable().optional(),
+    provider: z.enum(SUBSCRIPTION_PROVIDER_VALUES).optional(),
     premiumUntil: isoDateString.optional(),
     trialEndsAt: isoDateString.optional(),
     freeAccessEndsAt: isoDateString.optional(),
@@ -62,6 +82,62 @@ const updateUserSchema = z
     premiumNote: z.string().max(2000).nullable().optional(),
   })
   .strict();
+
+/**
+ * Validate that the requested subscription field combination is internally
+ * consistent against whatever the row already contains. Returns null on
+ * success; on failure returns the user-facing error string.
+ */
+function validateBillingCombination(
+  body: z.infer<typeof updateUserSchema>,
+  existing: { plan?: string | null; status?: string | null; accessType?: string | null; provider?: string | null } | null | undefined,
+): string | null {
+  const status = body.subscriptionStatus ?? existing?.status ?? null;
+  const accessType =
+    body.accessType !== undefined ? body.accessType : (existing?.accessType ?? null);
+  const provider = body.provider ?? existing?.provider ?? null;
+
+  // autoRenew and cancelAtPeriodEnd encode the same fact — they must not
+  // disagree. Webhooks and subscription-actions always set them in lockstep;
+  // admin PATCH must as well.
+  if (body.autoRenew === true && body.cancelAtPeriodEnd === true) {
+    return "autoRenew and cancelAtPeriodEnd cannot both be true.";
+  }
+
+  // accessType=PAID is the marker for "real payment provider backed access."
+  // It must not be set against the TRIAL or ADMIN providers — those are
+  // unpaid sources.
+  if (accessType === "PAID" && (provider === "TRIAL" || provider === "ADMIN")) {
+    return "accessType=PAID requires a real payment provider (Stripe / App Store / Play Store).";
+  }
+
+  // TRIALING without trialEndsAt is a misconfigured row — entitlement code
+  // can't reason about expiry without the timestamp.
+  const willHaveTrialEnd =
+    body.trialEndsAt !== undefined ? Boolean(body.trialEndsAt) : true;
+  if (status === "TRIALING" && body.trialEndsAt === null) {
+    return "status=TRIALING requires a trialEndsAt date.";
+  }
+  if (status === "TRIALING" && body.trialEndsAt === undefined && !willHaveTrialEnd) {
+    return "status=TRIALING requires a trialEndsAt date.";
+  }
+
+  // FREE_ACCESS without freeAccessEndsAt produces "free forever" silently.
+  // Manual admin grants use premiumUntil instead, so we only enforce this
+  // when the row is NOT a manual admin grant.
+  if (status === "FREE_ACCESS" && body.freeAccessEndsAt === null && provider !== "ADMIN") {
+    return "status=FREE_ACCESS requires a freeAccessEndsAt date.";
+  }
+
+  // status=ACTIVE on the ADMIN provider is a manual premium grant — it
+  // must carry a premiumUntil. Don't allow admins to set "permanent
+  // active manual premium" by clearing the date.
+  if (status === "ACTIVE" && provider === "ADMIN" && body.premiumUntil === null) {
+    return "Admin manual premium (status=ACTIVE, provider=ADMIN) requires a premiumUntil date.";
+  }
+
+  return null;
+}
 
 const RESTORABLE_GDPR_DELETE_SOURCES = new Set(["admin", "admin_bulk"]);
 
@@ -644,6 +720,7 @@ export async function PATCH(
       body.trialEndsAt !== undefined ||
       body.freeAccessEndsAt !== undefined ||
       body.accessType !== undefined ||
+      body.provider !== undefined ||
       body.cancelAtPeriodEnd !== undefined ||
       body.autoRenew !== undefined ||
       body.premiumNote !== undefined;
@@ -659,6 +736,14 @@ export async function PATCH(
         return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
       }
 
+      // Validate the cross-field combination before any write so the API
+      // rejects nonsensical states (e.g. accessType=PAID with provider=ADMIN,
+      // status=ACTIVE on the ADMIN provider with no premiumUntil, etc.).
+      const combinationError = validateBillingCombination(body, user.subscription);
+      if (combinationError) {
+        return NextResponse.json({ error: combinationError, code: "INVALID_BILLING_COMBINATION" }, { status: 400 });
+      }
+
       const subData: any = {};
       if (body.plan) {
         changes.plan = { from: user.subscription?.plan, to: body.plan };
@@ -667,6 +752,10 @@ export async function PATCH(
       if (body.subscriptionStatus) {
         changes.status = { from: user.subscription?.status, to: body.subscriptionStatus };
         subData.status = body.subscriptionStatus;
+      }
+      if (body.provider !== undefined) {
+        changes.provider = { from: user.subscription?.provider, to: body.provider };
+        subData.provider = body.provider;
       }
       if (body.premiumUntil !== undefined) {
         changes.premiumUntil = { from: user.subscription?.premiumUntil, to: body.premiumUntil };
@@ -689,13 +778,23 @@ export async function PATCH(
         changes.accessType = { from: user.subscription?.accessType, to: body.accessType };
         subData.accessType = body.accessType || null;
       }
+      // autoRenew and cancelAtPeriodEnd are derived from each other. Whichever
+      // the admin sets, we mirror to the other so the row never lands in a
+      // state where the two booleans disagree (cross-field validator above
+      // already rejected the only way they can both be true).
       if (body.cancelAtPeriodEnd !== undefined) {
         changes.cancelAtPeriodEnd = { from: user.subscription?.cancelAtPeriodEnd, to: body.cancelAtPeriodEnd };
         subData.cancelAtPeriodEnd = Boolean(body.cancelAtPeriodEnd);
+        if (body.autoRenew === undefined) {
+          subData.autoRenew = !Boolean(body.cancelAtPeriodEnd);
+        }
       }
       if (body.autoRenew !== undefined) {
         changes.autoRenew = { from: user.subscription?.autoRenew, to: body.autoRenew };
         subData.autoRenew = Boolean(body.autoRenew);
+        if (body.cancelAtPeriodEnd === undefined) {
+          subData.cancelAtPeriodEnd = !Boolean(body.autoRenew);
+        }
       }
 
       if (user.subscription) {

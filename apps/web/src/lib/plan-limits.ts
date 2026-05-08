@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
-import { isActiveSubscriptionStatus } from "@/lib/shared-billing";
+import { getEffectiveEntitlement } from "@/lib/shared-billing";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 /**
@@ -52,44 +52,66 @@ export interface PlanLimitCheck {
 
 /**
  * Get the current user's plan and limits.
+ *
+ * Delegates to getEffectiveEntitlement so plan-limit gating, /api/profile,
+ * and admin display all interpret the same Subscription row identically.
+ *
+ * Special case: a missing Subscription row is treated as active default
+ * Free Access. ensureSubscriptionDefaults runs at every register/OAuth
+ * path, so a missing row should only happen for legacy data — denying
+ * access there would lock those users out of the setup-grace path.
  */
 export async function getUserPlan(userId: string): Promise<UserPlan> {
   const subscription = await prisma.subscription.findUnique({
     where: { userId },
   });
 
-  const plan = subscription?.plan || "FREE_TRIAL";
-  const status = subscription?.status || "FREE_ACCESS";
-  const accessType = subscription?.accessType || (!subscription ? "FREE_ACCESS" : null);
-  const effectivePlan =
-    accessType === "FREE_ACCESS" || accessType === "FREE_TRIAL"
-      ? "FREE_TRIAL"
-      : plan;
-
-  // Check if trial expired
-  let isTrialExpired = false;
-  if (accessType === "FREE_ACCESS") {
-    const freeAccessEndsAt = (subscription as any)?.freeAccessEndsAt as Date | null | undefined;
-    isTrialExpired = subscription ? !freeAccessEndsAt || new Date() > freeAccessEndsAt : false;
-  } else if (accessType === "FREE_TRIAL") {
-    isTrialExpired = subscription
-      ? !subscription.trialEndsAt || new Date() > subscription.trialEndsAt
-      : false;
-  } else if (plan === "FREE_TRIAL") {
-    isTrialExpired = subscription
-      ? !subscription.trialEndsAt || new Date() > subscription.trialEndsAt
-      : false;
+  if (!subscription) {
+    return {
+      plan: "FREE_TRIAL",
+      status: "FREE_ACCESS",
+      isActive: true,
+      isTrialExpired: false,
+      limits: PLAN_LIMITS.FREE_TRIAL,
+    };
   }
 
-  // Use the canonical helper so CANCEL_AT_PERIOD_END and GRACE_PERIOD users
-  // keep their entitlement until the period actually ends. The literal list
-  // here previously dropped them straight to FREE_TRIAL limits the moment
-  // they clicked "cancel renewal" — punishing users who had paid for the
-  // remainder of the period.
-  const isActive = isActiveSubscriptionStatus(status) && !isTrialExpired;
+  const effective = getEffectiveEntitlement(subscription);
+  const status = subscription.status || "FREE_ACCESS";
+  const accessType = subscription.accessType;
+
+  // Free Access and Free Trial keep users on FREE_TRIAL feature limits
+  // even when the underlying plan tier is INDIVIDUAL — the trial is a
+  // taste of premium with metered limits. Manual admin premium overrides
+  // that and grants Individual limits, since the whole point of the
+  // grant is full access. Provider-paid ACTIVE users get the plan tier
+  // on their row. Everyone else is held to FREE_TRIAL limits even when
+  // they keep read-only access.
+  let effectivePlan: PlanName;
+  if (effective.isManualOverride && effective.hasPremium) {
+    effectivePlan = "INDIVIDUAL";
+  } else if (accessType === "FREE_TRIAL" || accessType === "FREE_ACCESS") {
+    effectivePlan = "FREE_TRIAL";
+  } else if (effective.hasPremium && effective.effectivePlan === "INDIVIDUAL") {
+    effectivePlan = "INDIVIDUAL";
+  } else {
+    effectivePlan = "FREE_TRIAL";
+  }
+
+  const isTrialExpired =
+    effective.effectiveStatus === "FREE_ACCESS_EXPIRED" ||
+    effective.effectiveStatus === "PROVIDER_TRIAL_EXPIRED" ||
+    effective.effectiveStatus === "MANUAL_PREMIUM_EXPIRED";
+
   const limits = PLAN_LIMITS[effectivePlan] || PLAN_LIMITS.FREE_TRIAL;
 
-  return { plan: effectivePlan, status, isActive, isTrialExpired, limits };
+  return {
+    plan: effectivePlan,
+    status,
+    isActive: effective.hasAccess,
+    isTrialExpired,
+    limits,
+  };
 }
 
 async function isInSetupGrace(userId: string): Promise<boolean> {

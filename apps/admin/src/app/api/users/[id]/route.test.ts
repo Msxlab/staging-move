@@ -350,4 +350,121 @@ describe("admin user detail billing updates", () => {
       }),
     });
   });
+
+  it("rejects unsupported plan values", async () => {
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          plan: "FAMILY",
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
+  });
+
+  it("accepts FREE_ACCESS as a valid status (round-trips the dropdown)", async () => {
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          subscriptionStatus: "FREE_ACCESS",
+          freeAccessEndsAt: "2026-12-01",
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionUpdate).toHaveBeenCalled();
+  });
+
+  it("rejects accessType=PAID against provider=ADMIN", async () => {
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          accessType: "PAID",
+          provider: "ADMIN",
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("INVALID_BILLING_COMBINATION");
+    expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects status=ACTIVE on provider=ADMIN without premiumUntil", async () => {
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          subscriptionStatus: "ACTIVE",
+          provider: "ADMIN",
+          premiumUntil: null,
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("INVALID_BILLING_COMBINATION");
+  });
+
+  it("rejects autoRenew=true and cancelAtPeriodEnd=true together", async () => {
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          autoRenew: true,
+          cancelAtPeriodEnd: true,
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("INVALID_BILLING_COMBINATION");
+  });
+
+  it("derives autoRenew when admin sets cancelAtPeriodEnd alone", async () => {
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          cancelAtPeriodEnd: true,
+          confirmPassword: "admin-password",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
+      where: { userId: "user_1" },
+      data: expect.objectContaining({
+        cancelAtPeriodEnd: true,
+        autoRenew: false,
+      }),
+    });
+  });
 });

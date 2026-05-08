@@ -19,13 +19,18 @@ const grantPremiumSchema = z
   .object({
     userId: z.string().min(1).max(40).optional(),
     email: z.string().email().max(254).optional(),
-    plan: z.enum(["INDIVIDUAL", "FAMILY"]).optional(),
+    // FAMILY/BUSINESS are not real billing tiers — only INDIVIDUAL is in
+    // BILLING_PLAN_DEFINITIONS. Allowing them here would write a value
+    // the read side silently downgrades to FREE_TRIAL.
+    plan: z.literal("INDIVIDUAL").optional(),
+    // durationDays is required: an admin manual premium grant must always
+    // have an explicit expiration. premiumUntil is the entitlement gate;
+    // a null expiration grants permanent premium silently.
     durationDays: z
       .number()
       .int()
       .min(1)
-      .max(GRANT_PREMIUM_MAX_DURATION_DAYS)
-      .optional(),
+      .max(GRANT_PREMIUM_MAX_DURATION_DAYS),
     // Reason is required so the audit row carries operator intent —
     // "why did this user get a free year" must always be answerable.
     note: z.string().min(3).max(500),
@@ -308,28 +313,102 @@ export async function POST(request: NextRequest) {
       }
       if (!targetUserId) return NextResponse.json({ error: "userId or email required" }, { status: 400 });
 
-      const premiumUntil = durationDays
-        ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
-        : null;
+      // Refuse the manual grant if a real provider subscription is currently
+      // billing the user. Issuing premium on top of a live Stripe / App Store
+      // / Play Store sub creates a confusing dual-source state and the next
+      // webhook delivery would overwrite the local grant. The admin must
+      // cancel the provider subscription first.
+      const existing = await prisma.subscription.findUnique({
+        where: { userId: targetUserId },
+        select: {
+          provider: true,
+          status: true,
+          stripeSubscriptionId: true,
+          originalTransactionId: true,
+          purchaseTokenHash: true,
+        },
+      });
+      const liveProviderStatuses = new Set([
+        "ACTIVE",
+        "TRIALING",
+        "CANCEL_AT_PERIOD_END",
+        "PAST_DUE",
+        "GRACE_PERIOD",
+        "PENDING_VALIDATION",
+      ]);
+      const hasLiveProvider =
+        existing &&
+        (existing.provider === "STRIPE" ||
+          existing.provider === "APP_STORE" ||
+          existing.provider === "PLAY_STORE") &&
+        liveProviderStatuses.has(existing.status || "") &&
+        Boolean(
+          existing.stripeSubscriptionId ||
+            existing.originalTransactionId ||
+            existing.purchaseTokenHash,
+        );
+      if (hasLiveProvider) {
+        return NextResponse.json(
+          {
+            error:
+              "User has an active Stripe or store subscription. Cancel the provider subscription first, then grant manual premium.",
+            code: "PROVIDER_SUBSCRIPTION_ACTIVE",
+            provider: existing!.provider,
+          },
+          { status: 409 },
+        );
+      }
 
+      const premiumUntil = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+      const grantedAt = new Date();
+
+      // Clear any stale provider identifiers when switching to ADMIN. The
+      // user no longer has a Stripe/IAP subscription (we just confirmed
+      // none is live), so leaving the IDs around lets the nightly Stripe
+      // reconcile cron treat the row as drifted and overwrite the grant.
       const sub = await prisma.subscription.upsert({
         where: { userId: targetUserId },
         create: {
           userId: targetUserId,
           plan: plan || "INDIVIDUAL",
           status: "ACTIVE",
+          provider: "ADMIN",
+          platform: "web",
+          accessType: "FREE_ACCESS",
           premiumUntil,
           premiumGrantedBy: session.adminId,
-          premiumGrantedAt: new Date(),
-          premiumNote: note || null,
+          premiumGrantedAt: grantedAt,
+          premiumNote: note,
+          autoRenew: false,
+          cancelAtPeriodEnd: false,
         },
         update: {
           plan: plan || "INDIVIDUAL",
           status: "ACTIVE",
+          provider: "ADMIN",
+          accessType: "FREE_ACCESS",
           premiumUntil,
           premiumGrantedBy: session.adminId,
-          premiumGrantedAt: new Date(),
-          premiumNote: note || null,
+          premiumGrantedAt: grantedAt,
+          premiumNote: note,
+          autoRenew: false,
+          cancelAtPeriodEnd: false,
+          // Stale Stripe / store identifiers — must be cleared so the
+          // reconcile cron and provider webhooks do not later overwrite
+          // this admin grant. We only reach this line when no live
+          // provider sub was found, so the IDs are dead anyway.
+          stripeSubscriptionId: null,
+          stripePriceId: null,
+          stripeCurrentPeriodEnd: null,
+          billingProductId: null,
+          originalTransactionId: null,
+          latestTransactionId: null,
+          purchaseToken: null,
+          purchaseTokenHash: null,
+          appStoreEnvironment: null,
+          gracePeriodEndsAt: null,
+          trialEndsAt: null,
+          canceledAt: null,
         },
       });
 

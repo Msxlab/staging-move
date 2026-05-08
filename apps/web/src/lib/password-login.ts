@@ -8,13 +8,17 @@ import {
   generateFingerprint,
   generateMobileFingerprint,
 } from "@/lib/user-auth";
-import { rateLimit, getRateLimitKey, resolveClientIP } from "@/lib/rate-limit";
+import { resolveClientIP } from "@/lib/rate-limit";
 import {
   isLoginLocked,
   recordLoginFailure,
   clearLoginFailures,
 } from "@/lib/login-lockout";
-import { stableRateLimitHash } from "@/lib/rate-limit-policy";
+import {
+  buildPolicyRateLimitKey,
+  enforceRateLimitPolicy,
+  stableRateLimitHash,
+} from "@/lib/rate-limit-policy";
 import { emitSecurityEvent } from "@/lib/security-events";
 import { decrypt } from "@/lib/shared-encryption";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
@@ -57,10 +61,6 @@ function sha256(value: string | null | undefined): string {
   return createHash("sha256").update(value || "none").digest("hex");
 }
 
-function buildLoginLockKey(email: string, ip: string, ua: string): string {
-  return `email:${sha256(email.trim().toLowerCase())}:ip:${sha256(ip)}:ua:${sha256(ua)}`;
-}
-
 function emitLoginLockout(reason: string, lockKey: string, retryAfterSec: number) {
   emitSecurityEvent({
     type: "LOCKOUT_STARTED",
@@ -80,12 +80,16 @@ export async function handlePasswordLogin(
   request: NextRequest,
   options: PasswordLoginOptions,
 ) {
-  const ipKey = getRateLimitKey(request, "auth:login:ip");
-  const ipRl = await rateLimit(ipKey, { limit: 10, windowSeconds: 15 * 60, failClosed: true });
+  // Coarse per-IP burst limit before parsing — absorbs scripted floods
+  // without punishing per-user lockout.
+  const ipRl = await enforceRateLimitPolicy(request, "public_read", {
+    routeId: "auth-login-preparse",
+    clientType: options.clientType,
+  });
   if (!ipRl.success) {
     return NextResponse.json(
       { error: "Too many login attempts. Please wait and try again." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil((ipRl.resetAt - Date.now()) / 1000)) } },
+      { status: 429, headers: { "Retry-After": String(ipRl.retryAfterSeconds) } },
     );
   }
 
@@ -104,7 +108,26 @@ export async function handlePasswordLogin(
   const { email, password, mfaCode, backupCode } = parsed.data;
   const ip = resolveClientIP(request);
   const ua = request.headers.get("user-agent") || "";
-  const lockKey = buildLoginLockKey(email, ip, ua);
+
+  // Per-(email,IP,UA) login attempt rate-limit. Distinct from the IP burst
+  // limit above; this one drives lockout decisions.
+  const loginIdentity = {
+    email,
+    routeId: options.clientType === "mobile" ? "mobile-login" : "password",
+    clientType: options.clientType,
+  } as const;
+  const loginRl = await enforceRateLimitPolicy(request, "auth_login", loginIdentity);
+  if (!loginRl.success) {
+    return NextResponse.json(
+      {
+        code: loginRl.policy.userFacingErrorCode,
+        error: "Too many login attempts. Please wait and try again.",
+      },
+      { status: 429, headers: { "Retry-After": String(loginRl.retryAfterSeconds) } },
+    );
+  }
+
+  const lockKey = buildPolicyRateLimitKey(request, "auth_login", loginIdentity);
 
   const lockState = await isLoginLocked(lockKey);
   if (lockState.locked) {
@@ -160,6 +183,26 @@ export async function handlePasswordLogin(
       return NextResponse.json(
         { requiresMfa: true, message: "MFA verification required. Provide mfaCode or backupCode." },
         { status: 403 },
+      );
+    }
+
+    // Per-(user, method) MFA verification limit. Distinct from the
+    // login attempt limiter so legitimate password retries aren't
+    // counted against MFA. The policy maps to userFacingErrorCode
+    // "MFA_RATE_LIMITED".
+    const mfaRl = await enforceRateLimitPolicy(request, "mfa_verify", {
+      email,
+      userId: user.id,
+      routeId: backupCode ? "login_backup_code" : "login_totp",
+      clientType: options.clientType,
+    });
+    if (!mfaRl.success) {
+      return NextResponse.json(
+        {
+          code: mfaRl.policy.userFacingErrorCode,
+          error: "Too many verification attempts. Please wait and try again.",
+        },
+        { status: 429, headers: { "Retry-After": String(mfaRl.retryAfterSeconds) } },
       );
     }
 

@@ -3,8 +3,7 @@ import {
   createFallbackEntitlementSnapshot,
   DEFAULT_BILLING_PLAN,
   DEFAULT_SUBSCRIPTION_STATUS,
-  deriveUserSubscriptionState,
-  isActiveSubscriptionStatus,
+  getEffectiveEntitlement,
   TRIAL_DURATION_DAYS,
   type BillingPlan,
   type BillingProvider,
@@ -96,10 +95,22 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
     });
   }
 
+  // Backfill provider for legacy rows that have a Stripe customer but no
+  // provider set, then delegate to the canonical effective entitlement
+  // resolver. Every read path (admin, mobile, web settings, plan-limits)
+  // goes through getEffectiveEntitlement so the answers stay in lockstep.
+  const inferredProvider =
+    subscription.provider || (subscription.stripeCustomerId ? "STRIPE" : "TRIAL");
+  const effective = getEffectiveEntitlement({
+    ...subscription,
+    provider: inferredProvider,
+  });
+
   const plan = (subscription.plan || DEFAULT_BILLING_PLAN) as BillingPlan;
   const status = subscription.status || DEFAULT_SUBSCRIPTION_STATUS;
-  const provider = (subscription.provider || (subscription.stripeCustomerId ? "STRIPE" : "TRIAL")) as BillingProvider;
-  const accessType = subscription.accessType || (provider === "STRIPE" && subscription.trialEndsAt ? "FREE_TRIAL" : null);
+  const provider = inferredProvider as BillingProvider;
+  const accessType =
+    effective.accessType || (plan === "INDIVIDUAL" ? "PAID" : null);
   const trialEndsAt = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
   const freeAccessEndsAt = subscription.freeAccessEndsAt ? new Date(subscription.freeAccessEndsAt) : null;
   const firstChargeAt = subscription.firstChargeAt ? new Date(subscription.firstChargeAt) : null;
@@ -110,32 +121,21 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
       : subscription.premiumUntil
         ? new Date(subscription.premiumUntil)
         : null;
-
-  const trialExpired =
-    plan === "FREE_TRIAL" &&
-    accessType !== "FREE_ACCESS" &&
-    (!trialEndsAt || Date.now() > trialEndsAt.getTime());
-  const freeAccessExpired =
-    accessType === "FREE_ACCESS" &&
-    (!freeAccessEndsAt || Date.now() > freeAccessEndsAt.getTime());
-  const derivedState = deriveUserSubscriptionState(subscription);
-  const isActive =
-    isActiveSubscriptionStatus(status) &&
-    !trialExpired &&
-    !freeAccessExpired &&
-    !["FREE_ACCESS_EXPIRED", "CANCELED", "PAST_DUE", "REFUNDED", "UNKNOWN"].includes(derivedState);
-  const managementKind = provider === "STRIPE" ? "stripe" : provider === "APP_STORE" || provider === "PLAY_STORE" ? "store" : "none";
+  const managementKind =
+    effective.managementKind === "admin" ? "none" : effective.managementKind;
 
   return {
     plan,
     status,
     provider,
     platform: subscription.platform || null,
-    accessType: accessType || (plan === "INDIVIDUAL" ? "PAID" : null),
-    isActive,
-    isTrial: accessType === "FREE_TRIAL" || (plan === "FREE_TRIAL" && accessType !== "FREE_ACCESS"),
-    autoRenew: Boolean(subscription.autoRenew ?? (provider === "STRIPE" && !subscription.cancelAtPeriodEnd)),
-    cancelAtPeriodEnd: Boolean(subscription.cancelAtPeriodEnd),
+    accessType,
+    isActive: effective.hasAccess,
+    isTrial:
+      effective.effectiveStatus === "PROVIDER_TRIAL_ACTIVE" ||
+      effective.effectiveStatus === "PROVIDER_TRIAL_CANCELED",
+    autoRenew: effective.autoRenew,
+    cancelAtPeriodEnd: effective.cancelAtPeriodEnd,
     managementKind,
     trialEndsAt: trialEndsAt?.toISOString() || null,
     freeAccessEndsAt: freeAccessEndsAt?.toISOString() || null,

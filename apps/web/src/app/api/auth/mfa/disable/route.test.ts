@@ -62,15 +62,19 @@ describe("mfa disable rate limits", () => {
   });
 
   it("returns 429 when the per-user disable limit is exceeded", async () => {
-    (rateLimit as unknown as Mock)
-      .mockResolvedValueOnce({ success: false, resetAt: Date.now() + 60_000 });
+    enforceRateLimitPolicyMock.mockResolvedValueOnce({
+      success: false,
+      retryAfterSeconds: 60,
+      policy: { userFacingErrorCode: "MFA_RATE_LIMITED" },
+    });
 
     const response = await POST(request());
 
     expect(response.status).toBe(429);
-    expect(rateLimit).toHaveBeenCalledWith(
-      expect.stringContaining("rl:mfa_verify:user:"),
-      expect.objectContaining({ limit: 5, windowSeconds: 5 * 60, failClosed: true }),
+    expect(enforceRateLimitPolicyMock).toHaveBeenCalledWith(
+      expect.anything(),
+      "mfa_verify",
+      expect.objectContaining({ userId: "user_1" }),
     );
   });
 

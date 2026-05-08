@@ -51,6 +51,7 @@ import { verifyPassword, createUserSession } from "@/lib/user-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordLoginFailure } from "@/lib/login-lockout";
 import { verifyBackupCode } from "@/lib/totp";
+import { createAuditLog } from "@/lib/audit";
 import { POST } from "./route";
 import { POST as MOBILE_POST } from "../../mobile/auth/login/route";
 
@@ -61,6 +62,7 @@ const createUserSessionMock = createUserSession as unknown as Mock;
 const rateLimitMock = rateLimit as unknown as Mock;
 const recordLoginFailureMock = recordLoginFailure as unknown as Mock;
 const verifyBackupCodeMock = verifyBackupCode as unknown as Mock;
+const createAuditLogMock = createAuditLog as unknown as Mock;
 
 function makeRequest(body: unknown) {
   return new NextRequest("https://locateflow.com/api/auth/login", {

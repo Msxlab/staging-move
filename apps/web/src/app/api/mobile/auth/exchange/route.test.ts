@@ -5,7 +5,13 @@ const mocks = vi.hoisted(() => ({
   consumeMobileOAuthExchangeCode: vi.fn(),
   createUserSession: vi.fn(() => Promise.resolve("mobile-session-token")),
   generateMobileFingerprint: vi.fn(() => Promise.resolve("mobile-fingerprint")),
-  rateLimit: vi.fn(() => Promise.resolve({ success: true })),
+  rateLimit: vi.fn(() =>
+    Promise.resolve({
+      success: true,
+      retryAfterSeconds: 0,
+      policy: { userFacingErrorCode: "MOBILE_OAUTH_RATE_LIMITED" },
+    }),
+  ),
 }));
 
 vi.mock("@/lib/mobile-oauth", () => ({
@@ -74,8 +80,9 @@ describe("mobile OAuth exchange route", () => {
     });
     expect(mocks.rateLimit).toHaveBeenCalledTimes(2);
     expect(mocks.rateLimit).toHaveBeenCalledWith(
-      expect.stringContaining("rl:mobile_oauth_exchange"),
-      expect.objectContaining({ limit: 60, windowSeconds: 60, failClosed: true }),
+      expect.anything(),
+      "mobile_oauth_exchange",
+      expect.objectContaining({ clientType: "mobile" }),
     );
   });
 
@@ -87,7 +94,11 @@ describe("mobile OAuth exchange route", () => {
   });
 
   it("blocks abusive mobile OAuth exchange bursts", async () => {
-    (mocks.rateLimit as any).mockResolvedValueOnce({ success: false, resetAt: Date.now() + 45_000 });
+    (mocks.rateLimit as any).mockResolvedValueOnce({
+      success: false,
+      retryAfterSeconds: 45,
+      policy: { userFacingErrorCode: "MOBILE_OAUTH_RATE_LIMITED" },
+    });
 
     const response = await POST(request({ code: "a".repeat(32) }));
     const body = await response.json();

@@ -92,7 +92,15 @@ export async function POST(request: NextRequest) {
       billingInterval: string | null;
       canceledAt: Date | null;
     }> = await rawPrisma.subscription.findMany({
-      where: { stripeSubscriptionId: { not: null } },
+      where: {
+        stripeSubscriptionId: { not: null },
+        // Defensive: skip rows whose provider is ADMIN. Admin manual grants
+        // clear stripeSubscriptionId on write, but legacy rows may still
+        // carry stale IDs. Those IDs may resolve to canceled Stripe subs,
+        // which would flip the ADMIN row's status to CANCELED and silently
+        // revoke the manual premium.
+        provider: { not: "ADMIN" },
+      },
       orderBy: { id: "asc" },
       take: PAGE_SIZE,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
