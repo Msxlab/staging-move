@@ -149,6 +149,10 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   if (pathname.startsWith("/api/webhooks/")) return null;
   // Apple OAuth callback is a cross-site form_post — exempt it.
   if (pathname === "/api/auth/oauth/apple/callback") return null;
+  // Explicit exemption: callbacks are intentionally non-CSRF protected. Today
+  // the route is GET so the check would short-circuit anyway, but pinning the
+  // exemption prevents a future GET→POST change from silently 403ing.
+  if (pathname === "/api/auth/oauth/google/callback") return null;
 
   const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
   if (!isMutation) return null;
