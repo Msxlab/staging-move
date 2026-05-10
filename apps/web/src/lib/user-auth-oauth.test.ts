@@ -3,7 +3,14 @@ import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 const mocks = vi.hoisted(() => ({
   oauthFindUnique: vi.fn(),
   oauthCreate: vi.fn(),
+  // userFindUnique: the soft-delete-extended client (`prisma`). Used by
+  // user-auth.ts for active-user lookups (e.g. canonical session user).
   userFindUnique: vi.fn(),
+  // rawUserFindUnique: the un-extended client (`rawPrisma`). Used by the
+  // OAuth email-lookup gate so soft-deleted rows stay visible — the
+  // extension would otherwise hide them and the code would fall through
+  // to user.create and trip the email-unique constraint.
+  rawUserFindUnique: vi.fn(),
   userCreate: vi.fn(),
   userUpdate: vi.fn(),
 }));
@@ -23,6 +30,11 @@ vi.mock("@/lib/db", () => ({
       create: vi.fn(),
       updateMany: vi.fn(),
       findFirst: vi.fn(),
+    },
+  },
+  rawPrisma: {
+    user: {
+      findUnique: (...args: unknown[]) => mocks.rawUserFindUnique(...args),
     },
   },
 }));
@@ -59,6 +71,7 @@ describe("OAuth user linking", () => {
     vi.clearAllMocks();
     mocks.oauthFindUnique.mockResolvedValue(null);
     mocks.userFindUnique.mockResolvedValue(null);
+    mocks.rawUserFindUnique.mockResolvedValue(null);
     mocks.userCreate.mockResolvedValue({ id: "created-user" });
   });
 
@@ -114,7 +127,7 @@ describe("OAuth user linking", () => {
   });
 
   it("does not link a provider to a soft-deleted user with the same email", async () => {
-    mocks.userFindUnique.mockResolvedValue({
+    mocks.rawUserFindUnique.mockResolvedValue({
       id: "deleted-user",
       emailVerifiedAt: new Date("2026-04-01T00:00:00Z"),
       deletedAt: new Date("2026-04-02T00:00:00Z"),
@@ -139,8 +152,41 @@ describe("OAuth user linking", () => {
     });
   });
 
+  it(
+    "uses rawPrisma for the email lookup so soft-deleted rows are still seen " +
+      "even when the soft-delete client extension hides them from prisma",
+    async () => {
+      // Simulate the production soft-delete extension behavior: the
+      // wrapped `prisma` client returns null for soft-deleted rows on
+      // findUnique. The raw client still returns the row.
+      mocks.userFindUnique.mockResolvedValue(null);
+      mocks.rawUserFindUnique.mockResolvedValue({
+        id: "deleted-user",
+        emailVerifiedAt: new Date("2026-04-01T00:00:00Z"),
+        deletedAt: new Date("2026-04-02T00:00:00Z"),
+      });
+
+      await expect(
+        findOrLinkOAuthUserWithStatus({
+          provider: "google",
+          providerId: "google-sub",
+          email: "deleted@example.com",
+          allowNewAccount: true,
+        }),
+      ).rejects.toThrow("OAUTH_EXISTING_DELETED_USER_BLOCKED");
+      // Regression: without the rawPrisma swap this fell through to
+      // user.create and threw OAUTH_ACCOUNT_CREATE_FAILED instead.
+      expect(mocks.userCreate).not.toHaveBeenCalled();
+      expect(mocks.oauthCreate).not.toHaveBeenCalled();
+      expect(mocks.rawUserFindUnique).toHaveBeenCalledWith({
+        where: { email: "deleted@example.com" },
+        select: { id: true, emailVerifiedAt: true, deletedAt: true },
+      });
+    },
+  );
+
   it("links a verified provider to an active password user and marks email verified", async () => {
-    mocks.userFindUnique.mockResolvedValue({
+    mocks.rawUserFindUnique.mockResolvedValue({
       id: "password-user",
       emailVerifiedAt: null,
       deletedAt: null,

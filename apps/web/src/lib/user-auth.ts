@@ -745,7 +745,14 @@ export async function findOrLinkOAuthUserWithStatus(input: {
   }
 
   // 2) Existing user by email → link
-  const userByEmail = await prisma.user.findUnique({
+  //
+  // Use rawPrisma here: the soft-delete client extension hides
+  // deletedAt != null rows from findUnique, which would silently mask a
+  // re-signup attempt by a previously soft-deleted user and force us
+  // into the user.create branch — where the email-unique constraint
+  // then throws OAUTH_ACCOUNT_CREATE_FAILED. We need to *see* the
+  // deleted row so we can return OAUTH_EXISTING_DELETED_USER_BLOCKED.
+  const userByEmail = await rawPrisma.user.findUnique({
     where: { email: input.email.toLowerCase() },
     select: { id: true, emailVerifiedAt: true, deletedAt: true },
   });
