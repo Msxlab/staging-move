@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { prisma, rawPrisma } from "@/lib/db";
 import {
   hashPassword,
   validatePasswordPolicy,
@@ -71,7 +71,14 @@ export async function POST(request: NextRequest) {
   }
 
   // Is email taken?
-  const existing = await prisma.user.findUnique({
+  //
+  // Use rawPrisma here: the soft-delete client extension hides
+  // deletedAt != null rows from findUnique. Without the raw client we
+  // would miss the soft-deleted row, fall through to user.create, and
+  // trip the email-unique constraint with an unhandled 500. The intent
+  // (per the comment below) is to block re-signup for soft-deleted
+  // emails, so we need the raw client to *see* the deleted row.
+  const existing = await rawPrisma.user.findUnique({
     where: { email },
     select: { id: true, deletedAt: true },
   });
