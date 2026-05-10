@@ -90,11 +90,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, ignored: "no recipient in payload" });
   }
 
+  // Soft-deleted users are hidden by the prisma soft-delete extension,
+  // so a deleted account presents identically to an unknown recipient
+  // (both null). One ignore branch covers both.
   const user = await prisma.user.findUnique({
     where: { email: recipient },
-    select: { id: true, deletedAt: true },
+    select: { id: true },
   });
-  if (!user || user.deletedAt) {
+  if (!user) {
     return NextResponse.json({ ok: true, ignored: "no active user" });
   }
 

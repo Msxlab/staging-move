@@ -157,11 +157,14 @@ async function sendIapLifecycleEmail(opts: {
   const previousStatus = opts.previousStatus as SubscriptionStatus | null | undefined;
   if (previousStatus === opts.state.status) return;
 
+  // Soft-deleted users are hidden by the prisma soft-delete extension,
+  // so a deleted account returns null from findUnique. The `!user`
+  // guard covers both unknown-id and soft-deleted cases.
   const user = await prisma.user.findUnique({
     where: { id: opts.userId },
-    select: { email: true, firstName: true, preferredLocale: true, deletedAt: true },
+    select: { email: true, firstName: true, preferredLocale: true },
   });
-  if (!user?.email || user.deletedAt) return;
+  if (!user?.email) return;
 
   const dedupeBase = `iap:${opts.state.provider}:${opts.state.originalTransactionId}:${opts.state.latestTransactionId || opts.state.productId}:${opts.state.status}`;
   const metadata = {

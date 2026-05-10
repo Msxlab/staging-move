@@ -110,15 +110,11 @@ describe("password reset request route", () => {
   });
 
   it("returns generic success and sends nothing for a deleted user", async () => {
-    userMock.findUnique.mockResolvedValue({
-      id: "user-deleted",
-      email: "deleted@example.com",
-      firstName: "Deleted",
-      passwordHash: "hash",
-      emailVerifiedAt: new Date("2026-04-26T12:00:00Z"),
-      deletedAt: new Date("2026-04-26T12:01:00Z"),
-      oauthAccounts: [],
-    });
+    // Under the soft-delete client extension, a soft-deleted row is
+    // hidden from `prisma.user.findUnique` and returns null — same shape
+    // as an unknown email. Both branches are intentionally
+    // indistinguishable in the response to avoid account enumeration.
+    userMock.findUnique.mockResolvedValue(null);
 
     const response = await POST(makeRequest({ email: "deleted@example.com" }));
 
