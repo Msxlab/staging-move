@@ -76,11 +76,11 @@ export default function PrivacyPage() {
     loadSecurityState();
   }, []);
 
-  // â”€â”€ Password â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Password
   const [pwForm, setPwForm] = useState({ current: "", next: "", confirm: "" });
   const [savingPw, setSavingPw] = useState(false);
 
-  // â”€â”€ MFA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // MFA
   const [mfaPassword, setMfaPassword] = useState("");
   const [mfaSetup, setMfaSetup] = useState<{
     uri: string;
@@ -92,7 +92,7 @@ export default function PrivacyPage() {
   const [mfaBusy, setMfaBusy] = useState(false);
   const [disablePw, setDisablePw] = useState("");
 
-  // â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Delete
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const handlePasswordChange = async () => {

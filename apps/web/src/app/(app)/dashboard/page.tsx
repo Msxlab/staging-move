@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/db";
 import { getUserSession } from "@/lib/auth";
+import { loadUserPreferences } from "@/lib/user-preferences";
 import DashboardClient, { type DashboardWidgetPrefs } from "./dashboard-client";
 
 export const dynamic = "force-dynamic";
@@ -8,10 +8,7 @@ async function loadWidgetPrefs(): Promise<DashboardWidgetPrefs | null> {
   const session = await getUserSession();
   if (!session) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: { dashboardWidgetPrefs: true },
-  });
+  const user = await loadUserPreferences(session.userId);
 
   const raw = user?.dashboardWidgetPrefs;
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;

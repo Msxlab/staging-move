@@ -118,7 +118,7 @@ export default function HelpCenterPage() {
                   <td className="px-4 py-3"><p className="font-medium text-foreground">{a.title}</p><p className="text-xs text-muted-foreground">{a.slug}</p></td>
                   <td className="px-4 py-3"><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{a.category}</span></td>
                   <td className="px-4 py-3 text-muted-foreground">{a.viewCount}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{a.helpfulYes} ðŸ‘ {a.helpfulNo} ðŸ‘Ž</td>
+                  <td className="px-4 py-3 text-muted-foreground">{a.helpfulYes} 👍 {a.helpfulNo} 👎</td>
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${a.isPublished ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-honey-bg text-tone-honey-fg"}`}>{a.isPublished ? "Published" : "Draft"}</span></td>
                   <td className="px-4 py-3 flex gap-1">
                     <button onClick={() => togglePublish(a, "article")} className="rounded p-1 text-muted-foreground hover:bg-accent">{a.isPublished ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>

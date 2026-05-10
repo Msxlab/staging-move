@@ -47,7 +47,7 @@
   --au-gap: 16px;
 
   position: relative;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
 }
 
 /* Light theme — drives off next-themes' absence of `.dark` on <html>. */
@@ -244,7 +244,7 @@ html:not(.dark) .adm-aurora .au-card.au-card--reflex::before {
   font-family: var(--font-display, Fraunces, Georgia, serif);
   font-weight: 400;
   font-variation-settings: "opsz" 96, "SOFT" 30;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
   color: var(--au-ink);
 }
 .adm-aurora .au-display em {
@@ -590,7 +590,7 @@ html:not(.dark) .adm-aurora .kpi-foil {
   font-family: var(--font-sans);
   font-weight: 600;
   font-size: 1.75rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--au-ink);
 }
 .adm-aurora .kpi-foil .kpi-label {

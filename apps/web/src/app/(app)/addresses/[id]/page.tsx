@@ -15,28 +15,28 @@ import { toast } from "sonner";
 import { ServiceLogoMark } from "@/components/services/service-logo-mark";
 
 const CATEGORY_META: Record<string, { label: string; icon: string }> = {
-  GOVERNMENT_POSTAL: { label: "Mail & Postal", icon: "ðŸ“¬" }, GOVERNMENT_TAX: { label: "Tax (IRS)", icon: "ðŸ§¾" },
-  GOVERNMENT_DMV: { label: "DMV", icon: "ðŸªª" }, GOVERNMENT_BENEFITS: { label: "Benefits", icon: "ðŸ›ï¸" },
-  GOVERNMENT_VOTER: { label: "Voter Registration", icon: "ðŸ—³ï¸" }, GOVERNMENT_ID: { label: "Passport / ID", icon: "ðŸªª" },
-  GOVERNMENT_HEALTH: { label: "Healthcare.gov", icon: "ðŸ¥" }, GOVERNMENT_EDUCATION: { label: "Education / FAFSA", icon: "ðŸŽ“" },
-  GOVERNMENT_IMMIGRATION: { label: "Immigration", icon: "ðŸŒ" }, GOVERNMENT_HOUSING: { label: "Housing (HUD)", icon: "ðŸ˜ï¸" },
-  GOVERNMENT_EMERGENCY: { label: "Emergency (FEMA)", icon: "ðŸš¨" }, GOVERNMENT_OTHER: { label: "Gov. Other", icon: "ðŸ›ï¸" },
-  UTILITY_ELECTRIC: { label: "Electric", icon: "⚡" }, UTILITY_GAS: { label: "Gas", icon: "ðŸ”¥" },
-  UTILITY_WATER: { label: "Water", icon: "ðŸ’§" }, UTILITY_INTERNET: { label: "Internet", icon: "ðŸŒ" },
-  UTILITY_PHONE: { label: "Phone", icon: "ðŸ“±" }, UTILITY_CABLE: { label: "Cable / TV", icon: "ðŸ“º" },
-  UTILITY_TRASH: { label: "Trash & Waste", icon: "ðŸ—‘ï¸" }, UTILITY_SEWER: { label: "Sewer", icon: "ðŸš°" },
-  FINANCIAL_BANK: { label: "Banks", icon: "ðŸ¦" }, FINANCIAL_CREDIT_CARD: { label: "Credit Cards", icon: "ðŸ’³" },
-  FINANCIAL_INSURANCE_AUTO: { label: "Auto Insurance", icon: "ðŸš—" }, FINANCIAL_INSURANCE_HOME: { label: "Home Insurance", icon: "ðŸ " },
-  FINANCIAL_INSURANCE_HEALTH: { label: "Health Insurance", icon: "ðŸ¥" }, FINANCIAL_MORTGAGE: { label: "Mortgage", icon: "ðŸ”‘" },
-  FINANCIAL_LOAN: { label: "Loans", icon: "ðŸ’°" }, HOUSING_RENT: { label: "Rent / Mortgage", icon: "ðŸ˜ï¸" },
-  HOUSING_STORAGE: { label: "Storage", icon: "ðŸ“¦" }, HOUSING_HOA: { label: "HOA", icon: "ðŸ¢" },
-  HOUSING_LAWN_CARE: { label: "Lawn Care", icon: "ðŸŒ¿" }, HOUSING_PEST_CONTROL: { label: "Pest Control", icon: "ðŸ›" },
-  HEALTHCARE_DOCTORS: { label: "Doctors", icon: "ðŸ©º" },
-  HEALTHCARE_DENTIST: { label: "Dentist", icon: "ðŸ¦·" }, HEALTHCARE_PHARMACY: { label: "Pharmacy", icon: "ðŸ’Š" },
-  HEALTHCARE_VET: { label: "Veterinary", icon: "ðŸ¾" }, TRANSPORTATION_TOLL: { label: "Toll Pass", icon: "ðŸ›£ï¸" },
-  TRANSPORTATION_TRANSIT: { label: "Transit", icon: "ðŸšŒ" }, KIDS_SCHOOL: { label: "Schools", icon: "ðŸ«" },
-  KIDS_DAYCARE: { label: "Daycare", icon: "ðŸ‘¶" }, FITNESS_GYM: { label: "Fitness & Gym", icon: "ðŸ’ª" },
-  SHOPPING_SUBSCRIPTION: { label: "Subscriptions", icon: "ðŸ“¦" }, SHOPPING_RETAIL: { label: "Shopping", icon: "ðŸ›’" },
+  GOVERNMENT_POSTAL: { label: "Mail & Postal", icon: "📬" }, GOVERNMENT_TAX: { label: "Tax (IRS)", icon: "🧾" },
+  GOVERNMENT_DMV: { label: "DMV", icon: "🪪" }, GOVERNMENT_BENEFITS: { label: "Benefits", icon: "🏛️" },
+  GOVERNMENT_VOTER: { label: "Voter Registration", icon: "🗳️" }, GOVERNMENT_ID: { label: "Passport / ID", icon: "🪪" },
+  GOVERNMENT_HEALTH: { label: "Healthcare.gov", icon: "🏥" }, GOVERNMENT_EDUCATION: { label: "Education / FAFSA", icon: "🎓" },
+  GOVERNMENT_IMMIGRATION: { label: "Immigration", icon: "🌍" }, GOVERNMENT_HOUSING: { label: "Housing (HUD)", icon: "🏘️" },
+  GOVERNMENT_EMERGENCY: { label: "Emergency (FEMA)", icon: "🚨" }, GOVERNMENT_OTHER: { label: "Gov. Other", icon: "🏛️" },
+  UTILITY_ELECTRIC: { label: "Electric", icon: "⚡" }, UTILITY_GAS: { label: "Gas", icon: "🔥" },
+  UTILITY_WATER: { label: "Water", icon: "💧" }, UTILITY_INTERNET: { label: "Internet", icon: "🌐" },
+  UTILITY_PHONE: { label: "Phone", icon: "📱" }, UTILITY_CABLE: { label: "Cable / TV", icon: "📺" },
+  UTILITY_TRASH: { label: "Trash & Waste", icon: "🗑️" }, UTILITY_SEWER: { label: "Sewer", icon: "🚰" },
+  FINANCIAL_BANK: { label: "Banks", icon: "🏦" }, FINANCIAL_CREDIT_CARD: { label: "Credit Cards", icon: "💳" },
+  FINANCIAL_INSURANCE_AUTO: { label: "Auto Insurance", icon: "🚗" }, FINANCIAL_INSURANCE_HOME: { label: "Home Insurance", icon: "🏠" },
+  FINANCIAL_INSURANCE_HEALTH: { label: "Health Insurance", icon: "🏥" }, FINANCIAL_MORTGAGE: { label: "Mortgage", icon: "🔑" },
+  FINANCIAL_LOAN: { label: "Loans", icon: "💰" }, HOUSING_RENT: { label: "Rent / Mortgage", icon: "🏘️" },
+  HOUSING_STORAGE: { label: "Storage", icon: "📦" }, HOUSING_HOA: { label: "HOA", icon: "🏢" },
+  HOUSING_LAWN_CARE: { label: "Lawn Care", icon: "🌿" }, HOUSING_PEST_CONTROL: { label: "Pest Control", icon: "🐛" },
+  HEALTHCARE_DOCTORS: { label: "Doctors", icon: "🩺" },
+  HEALTHCARE_DENTIST: { label: "Dentist", icon: "🦷" }, HEALTHCARE_PHARMACY: { label: "Pharmacy", icon: "💊" },
+  HEALTHCARE_VET: { label: "Veterinary", icon: "🐾" }, TRANSPORTATION_TOLL: { label: "Toll Pass", icon: "🛣️" },
+  TRANSPORTATION_TRANSIT: { label: "Transit", icon: "🚌" }, KIDS_SCHOOL: { label: "Schools", icon: "🏫" },
+  KIDS_DAYCARE: { label: "Daycare", icon: "👶" }, FITNESS_GYM: { label: "Fitness & Gym", icon: "💪" },
+  SHOPPING_SUBSCRIPTION: { label: "Subscriptions", icon: "📦" }, SHOPPING_RETAIL: { label: "Shopping", icon: "🛒" },
 };
 
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
@@ -259,8 +259,8 @@ export default function AddressDetailPage() {
     SHOPPING: t("detail_group_shopping"),
   };
   const groupIcons: Record<string, string> = {
-    GOVERNMENT: "ðŸ›ï¸", UTILITY: "⚡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
-    TRANSPORTATION: "ðŸš—", KIDS: "ðŸ‘¶", FITNESS: "ðŸ’ª", SHOPPING: "ðŸ›’",
+    GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
+    TRANSPORTATION: "🚗", KIDS: "👶", FITNESS: "💪", SHOPPING: "🛒",
   };
 
   return (
@@ -398,7 +398,7 @@ export default function AddressDetailPage() {
               return (
                 <div key={prefix} className="space-y-1.5">
                   <div className="flex items-center gap-2 px-1">
-                    <span className="text-base">{groupIcons[prefix] || "ðŸ“‹"}</span>
+                    <span className="text-base">{groupIcons[prefix] || "📋"}</span>
                     <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{groupLabels[prefix] || prefix}</h3>
                     <span className="text-[10px] text-foreground/30">{items.length}</span>
                   </div>

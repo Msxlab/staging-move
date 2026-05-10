@@ -189,11 +189,16 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3 {
+    font-family: var(--font-sans);
+    font-weight: inherit;
+    letter-spacing: 0;
+  }
+  .h1, .h2, .h3 {
     font-family: var(--font-display);
     font-weight: 400;
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
-  h1 em, h2 em, h3 em {
+  .h1 em, .h2 em, .h3 em {
     font-style: italic;
     background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
     -webkit-background-clip: text;
@@ -445,7 +450,7 @@
   font-family: var(--font-display), Didot, Georgia, serif;
   font-weight: 300;
   font-size: 2rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   font-variation-settings: "opsz" 48, "SOFT" 30;
 }
 .kpi-foil .kpi-label {

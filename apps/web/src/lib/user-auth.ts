@@ -461,7 +461,6 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
           userId: true,
           expiresAt: true,
           userAgent: true,
-          impersonatedByAdminId: true,
         },
       })
       .catch(() => null);
@@ -563,7 +562,10 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
           ? (payload.fpMode as SessionClientType)
           : undefined,
       sessionId: record.id,
-      impersonatedByAdminId: record.impersonatedByAdminId ?? null,
+      impersonatedByAdminId:
+        typeof payload.impersonatedByAdminId === "string"
+          ? payload.impersonatedByAdminId
+          : null,
       user,
     };
   } catch {

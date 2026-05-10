@@ -194,8 +194,8 @@
   --lh-normal:  1.45;
   --lh-relaxed: 1.7;
 
-  --tracking-tightest: -0.035em;
-  --tracking-tight:    -0.02em;
+  --tracking-tightest: 0;
+  --tracking-tight:    0;
   --tracking-normal:   0;
   --tracking-wide:     0.04em;
   --tracking-mono:     0.14em;
@@ -415,15 +415,20 @@
     font-weight: var(--fw-regular);
   }
   /* Display headings — Fraunces variable, light + italic for personality */
-  h1, .h1 {
+  h1, h2, h3 {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+    font-variation-settings: normal;
+  }
+  .h1 {
     font-family: var(--font-display);
     font-weight: var(--fw-light);
-    font-size: clamp(40px, 6vw, var(--fs-display-lg));
-    letter-spacing: var(--tracking-tight);
+    font-size: var(--fs-display-lg);
+    letter-spacing: 0;
     line-height: var(--lh-tight);
     font-variation-settings: var(--fv-display-hero);
   }
-  h1 em, .h1 em {
+  .h1 em {
     font-style: italic;
     font-weight: var(--fw-regular);
     background: linear-gradient(135deg, var(--foil-a) 0%, var(--foil-b) 50%, var(--foil-c) 100%);
@@ -431,24 +436,24 @@
     background-clip: text;
     color: transparent;
   }
-  h2, .h2 {
+  .h2 {
     font-family: var(--font-display);
     font-weight: var(--fw-regular);
     font-size: var(--fs-4xl);
-    letter-spacing: var(--tracking-tight);
+    letter-spacing: 0;
     line-height: var(--lh-snug);
     font-variation-settings: var(--fv-display-h2);
   }
-  h2 em, .h2 em {
+  .h2 em {
     font-style: italic;
     font-weight: var(--fw-light);
     color: var(--foil-b);
   }
-  h3, .h3 {
+  .h3 {
     font-family: var(--font-display);
     font-weight: var(--fw-regular);
     font-size: var(--fs-2xl);
-    letter-spacing: -0.015em;
+    letter-spacing: 0;
     line-height: var(--lh-snug);
     font-variation-settings: var(--fv-display-h3);
   }
@@ -524,7 +529,7 @@
     font-family: var(--font-display);
     font-weight: var(--fw-light);
     font-size: var(--fs-3xl);
-    letter-spacing: var(--tracking-tight);
+    letter-spacing: 0;
     line-height: 1;
     font-variation-settings: var(--fv-display-h2);
   }
@@ -982,7 +987,7 @@
   font-family: var(--font-display, Fraunces, Georgia, serif);
   font-weight: 300;
   font-size: 38px;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
   line-height: 1.05;
   margin: 0 0 12px;
   color: #ECF1F8;
@@ -1088,7 +1093,7 @@
 
 .blog-prose :where(h2, h3, h4) {
   font-family: var(--font-fraunces, "Fraunces"), Didot, Georgia, serif;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
 }
 
 .blog-prose :where(h2) {

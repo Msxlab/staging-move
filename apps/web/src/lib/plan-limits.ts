@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
 import { activeTrackedServiceWhere } from "@/lib/service-active";
+import { findSubscriptionForEntitlement } from "@/lib/billing";
 import { getEffectiveEntitlement } from "@/lib/shared-billing";
 export { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
@@ -62,9 +63,7 @@ export interface PlanLimitCheck {
  * access there would lock those users out of the setup-grace path.
  */
 export async function getUserPlan(userId: string): Promise<UserPlan> {
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId },
-  });
+  const subscription = await findSubscriptionForEntitlement(userId);
 
   if (!subscription) {
     return {
@@ -78,7 +77,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
 
   const effective = getEffectiveEntitlement(subscription);
   const status = subscription.status || "FREE_ACCESS";
-  const accessType = subscription.accessType;
+  const accessType = (subscription as { accessType?: string | null }).accessType;
 
   // Free Access and Free Trial keep users on FREE_TRIAL feature limits
   // even when the underlying plan tier is INDIVIDUAL — the trial is a

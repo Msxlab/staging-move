@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import {
+  loadUserPreferences,
+  saveDashboardWidgetPrefs,
+  saveShowBudgetPreference,
+} from "@/lib/user-preferences";
 
 const widgetPrefsSchema = z
   .object({
@@ -23,14 +27,7 @@ const uiPrefsPatchSchema = z
 export async function GET() {
   try {
     const userId = await requireDbUserId();
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { dashboardWidgetPrefs: true, showBudget: true },
-    });
-    return NextResponse.json({
-      dashboardWidgetPrefs: user?.dashboardWidgetPrefs ?? null,
-      showBudget: user?.showBudget ?? true,
-    });
+    return NextResponse.json(await loadUserPreferences(userId));
   } catch (error: any) {
     if (error?.message?.toLowerCase().includes("unauthorized") || error?.status === 401) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -77,12 +74,10 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: parsed.data,
-      select: { showBudget: true },
-    });
-    return NextResponse.json({ showBudget: updated.showBudget });
+    if (typeof parsed.data.showBudget === "boolean") {
+      return NextResponse.json(await saveShowBudgetPreference(userId, parsed.data.showBudget));
+    }
+    return NextResponse.json({ ok: true });
   } catch (error: any) {
     console.error("[USER_PREFERENCES PATCH] Failed:", error?.message);
     return NextResponse.json({ error: "Failed to save preferences" }, { status: 500 });
@@ -115,11 +110,7 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    await prisma.user.update({
-      where: { id: userId },
-      data: { dashboardWidgetPrefs: parsed.data },
-    });
-    return NextResponse.json({ dashboardWidgetPrefs: parsed.data });
+    return NextResponse.json(await saveDashboardWidgetPrefs(userId, parsed.data));
   } catch (error: any) {
     console.error("[USER_PREFERENCES PUT] Failed:", error?.message);
     return NextResponse.json({ error: "Failed to save preferences" }, { status: 500 });

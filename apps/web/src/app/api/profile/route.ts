@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
-import { buildUnifiedEntitlementSnapshot } from "@/lib/billing";
+import {
+  buildUnifiedEntitlementSnapshot,
+  findSubscriptionForEntitlement,
+} from "@/lib/billing";
 import { profileSchema } from "@/lib/validators";
 import { LEGAL_CONSENT_EVENT, getDefaultLegalConsents, hasRequiredLegalConsents } from "@/lib/legal";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
@@ -32,11 +35,12 @@ export async function GET() {
   try {
     const userId = await requireDbUserId();
 
-    const [user, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
+    const [user, subscription, consentEvents, addressCount, serviceCount, movingPlanCount, onboardingEvents] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        include: { profile: true, subscription: true },
+        include: { profile: true },
       }),
+      findSubscriptionForEntitlement(userId),
       prisma.userEvent.findMany({
         where: { userId, event: LEGAL_CONSENT_EVENT },
         orderBy: { createdAt: "desc" },
@@ -76,7 +80,7 @@ export async function GET() {
       movingPlanCount,
       ...summarizeOnboardingEvents(onboardingEvents),
     });
-    const entitlement = buildUnifiedEntitlementSnapshot(user.subscription);
+    const entitlement = buildUnifiedEntitlementSnapshot(subscription);
 
     return NextResponse.json({
       user: {
@@ -86,7 +90,7 @@ export async function GET() {
         lastName: user.lastName,
       },
       profile: user.profile,
-      subscription: user.subscription,
+      subscription,
       entitlement,
       legalConsents,
       onboardingCompleted: onboardingProgress.completed,
