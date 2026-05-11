@@ -219,6 +219,7 @@ describe("IAP normalization", () => {
           { purchaseToken: "purchase-token" },
         ],
       },
+      select: { id: true, userId: true },
     });
   });
 

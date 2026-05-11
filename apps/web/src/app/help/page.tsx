@@ -2,10 +2,10 @@ import { AppShell } from "@/components/layout/app-shell";
 import { HelpCenterContent } from "@/components/help/help-center-content";
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
-import { prisma } from "@/lib/db";
 import { getHelpContent } from "@/lib/help-content";
 import { createPublicPageMetadata } from "@/lib/seo";
 import { getUserSession } from "@/lib/user-auth";
+import { loadShowBudgetPreference } from "@/lib/user-preferences";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +20,7 @@ async function getLoggedInShellState() {
   const session = await getUserSession().catch(() => null);
   if (!session?.userId) return null;
 
-  const userPrefs = await prisma.user
-    .findUnique({
-      where: { id: session.userId },
-      select: { showBudget: true },
-    })
-    .catch(() => null);
-
-  return { showBudget: userPrefs?.showBudget ?? true };
+  return { showBudget: await loadShowBudgetPreference(session.userId).catch(() => true) };
 }
 
 export default async function HelpPage() {

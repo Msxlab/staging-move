@@ -10,6 +10,10 @@ import {
   type UnifiedEntitlementSnapshot,
 } from "@/lib/shared-billing";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
+import {
+  isMissingDbColumnError,
+  warnSchemaCompatibilityFallback,
+} from "@/lib/db-schema-compat";
 
 export function createTrialEndsAt() {
   return new Date(Date.now() + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000);
@@ -144,21 +148,115 @@ export function buildUnifiedEntitlementSnapshot(subscription: any): UnifiedEntit
   };
 }
 
+const SUBSCRIPTION_ENTITLEMENT_SELECT = {
+  id: true,
+  userId: true,
+  plan: true,
+  status: true,
+  provider: true,
+  platform: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
+  stripePriceId: true,
+  stripeCurrentPeriodEnd: true,
+  billingProductId: true,
+  originalTransactionId: true,
+  latestTransactionId: true,
+  purchaseToken: true,
+  appStoreEnvironment: true,
+  currentPeriodEndsAt: true,
+  gracePeriodEndsAt: true,
+  lastValidatedAt: true,
+  lastSyncedAt: true,
+  accessType: true,
+  billingInterval: true,
+  freeAccessEndsAt: true,
+  cancelAtPeriodEnd: true,
+  firstChargeAt: true,
+  firstChargeAmount: true,
+  autoRenew: true,
+  trialEndsAt: true,
+  canceledAt: true,
+  premiumUntil: true,
+  premiumGrantedBy: true,
+  premiumGrantedAt: true,
+  premiumNote: true,
+  version: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const SUBSCRIPTION_LEGACY_SELECT = {
+  id: true,
+  userId: true,
+  plan: true,
+  status: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
+  stripePriceId: true,
+  stripeCurrentPeriodEnd: true,
+  trialEndsAt: true,
+  canceledAt: true,
+  premiumUntil: true,
+  premiumGrantedBy: true,
+  premiumGrantedAt: true,
+  premiumNote: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+export async function findSubscriptionForEntitlement(userId: string) {
+  try {
+    return await prisma.subscription.findUnique({
+      where: { userId },
+      select: SUBSCRIPTION_ENTITLEMENT_SELECT,
+    });
+  } catch (error) {
+    if (!isMissingDbColumnError(error)) throw error;
+    warnSchemaCompatibilityFallback("subscription:entitlement-read", error);
+    try {
+      return await prisma.subscription.findUnique({
+        where: { userId },
+        select: SUBSCRIPTION_LEGACY_SELECT,
+      });
+    } catch (legacyError) {
+      if (!isMissingDbColumnError(legacyError)) throw legacyError;
+      warnSchemaCompatibilityFallback("subscription:legacy-read", legacyError);
+      return null;
+    }
+  }
+}
+
 export async function ensureSubscriptionDefaults(
   userId: string,
   options: { platform?: string | null; trialEndsAt?: Date } = {},
 ) {
-  return prisma.subscription.upsert({
-    where: { userId },
-    update: {},
-    create: {
-      userId,
-      plan: DEFAULT_BILLING_PLAN,
-      status: DEFAULT_SUBSCRIPTION_STATUS,
-      provider: "TRIAL",
-      platform: options.platform || "web",
-      accessType: "FREE_ACCESS",
-      freeAccessEndsAt: options.trialEndsAt || createTrialEndsAt(),
-    },
-  });
+  try {
+    return await prisma.subscription.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        plan: DEFAULT_BILLING_PLAN,
+        status: DEFAULT_SUBSCRIPTION_STATUS,
+        provider: "TRIAL",
+        platform: options.platform || "web",
+        accessType: "FREE_ACCESS",
+        freeAccessEndsAt: options.trialEndsAt || createTrialEndsAt(),
+      },
+    });
+  } catch (error) {
+    if (!isMissingDbColumnError(error)) throw error;
+    warnSchemaCompatibilityFallback("subscription:ensure-defaults", error);
+    return prisma.subscription.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        plan: DEFAULT_BILLING_PLAN,
+        status: "TRIALING",
+        trialEndsAt: options.trialEndsAt || createTrialEndsAt(),
+      },
+    });
+  }
 }

@@ -4,6 +4,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashSessionToken, shouldUseSecureSessionCookies } from "@/lib/user-auth";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
+import {
+  isMissingDbColumnError,
+  warnSchemaCompatibilityFallback,
+} from "@/lib/db-schema-compat";
 
 export const runtime = "nodejs";
 
@@ -39,21 +43,44 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
   }
 
   const tokenHash = await hashSessionToken(token);
-  const session = await prisma.userLoginSession.findFirst({
-    where: {
-      tokenHash,
-      isActive: true,
-      impersonatedByAdminId: { not: null },
-    },
-    select: {
-      id: true,
-      userId: true,
-      expiresAt: true,
-      impersonatedByAdminId: true,
-    },
-  });
+  const adminId = payload.impersonatedByAdminId;
+  let session: {
+    id: string;
+    userId: string;
+    expiresAt: Date;
+    impersonatedByAdminId?: string | null;
+  } | null = null;
+  try {
+    session = await prisma.userLoginSession.findFirst({
+      where: {
+        tokenHash,
+        isActive: true,
+        impersonatedByAdminId: { not: null },
+      },
+      select: {
+        id: true,
+        userId: true,
+        expiresAt: true,
+        impersonatedByAdminId: true,
+      },
+    });
+  } catch (error) {
+    if (!isMissingDbColumnError(error, "impersonatedByAdminId")) throw error;
+    warnSchemaCompatibilityFallback("impersonation-handoff:session-read", error);
+    session = await prisma.userLoginSession.findFirst({
+      where: { tokenHash, isActive: true },
+      select: {
+        id: true,
+        userId: true,
+        expiresAt: true,
+      },
+    });
+    if (session) {
+      session.impersonatedByAdminId = adminId;
+    }
+  }
 
-  if (!session) {
+  if (!session || session.userId !== payload.userId) {
     return NextResponse.redirect(
       new URL("/sign-in?err=impersonation-session-missing", request.url),
     );

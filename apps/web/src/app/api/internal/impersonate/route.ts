@@ -6,6 +6,10 @@ import { hashSessionToken } from "@/lib/user-auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { getUserJwtSecretKey } from "@/lib/user-jwt-secret";
+import {
+  isMissingDbColumnError,
+  warnSchemaCompatibilityFallback,
+} from "@/lib/db-schema-compat";
 
 export const runtime = "nodejs";
 
@@ -74,20 +78,27 @@ export async function POST(request: NextRequest) {
   const tokenHash = await hashSessionToken(token);
   const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
 
-  await prisma.userLoginSession.create({
-    data: {
-      userId: user.id,
-      tokenHash,
-      expiresAt,
-      impersonatedByAdminId: adminId,
-      deviceType: "IMPERSONATION",
-      ipAddress: (request.headers.get("x-forwarded-for") || "internal")
-        .split(",")[0]
-        .trim(),
-      userAgent: `admin-impersonation/${adminId}`,
-      isActive: true,
-    },
-  });
+  const sessionData = {
+    userId: user.id,
+    tokenHash,
+    expiresAt,
+    impersonatedByAdminId: adminId,
+    deviceType: "IMPERSONATION",
+    ipAddress: (request.headers.get("x-forwarded-for") || "internal")
+      .split(",")[0]
+      .trim(),
+    userAgent: `admin-impersonation/${adminId}`,
+    isActive: true,
+  };
+
+  try {
+    await prisma.userLoginSession.create({ data: sessionData });
+  } catch (error) {
+    if (!isMissingDbColumnError(error, "impersonatedByAdminId")) throw error;
+    warnSchemaCompatibilityFallback("impersonation-session:create", error);
+    const { impersonatedByAdminId: _impersonatedByAdminId, ...legacySessionData } = sessionData;
+    await prisma.userLoginSession.create({ data: legacySessionData });
+  }
 
   const appUrl =
     (await getRuntimeConfigValue("NEXT_PUBLIC_APP_URL")) ||

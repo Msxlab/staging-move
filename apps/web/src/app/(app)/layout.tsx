@@ -3,9 +3,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { destroyUserSession, requireDbUserId } from "@/lib/auth";
-import { prisma } from "@/lib/db";
 import { getPostAuthUserState, resolvePostAuthRedirect } from "@/lib/post-auth-redirect";
 import { normalizeAppRedirectPath } from "@/lib/safe-redirect";
+import { loadShowBudgetPreference } from "@/lib/user-preferences";
 
 async function getCurrentAppPath() {
   const headerStore = await headers();
@@ -51,15 +51,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect(gate.redirectTo);
   }
 
-  const userPrefs = await prisma.user
-    .findUnique({
-      where: { id: gate.userId },
-      select: { showBudget: true },
-    })
-    .catch(() => null);
+  const showBudget = await loadShowBudgetPreference(gate.userId).catch(() => true);
 
   return (
-    <AppShell showBudget={userPrefs?.showBudget ?? true}>
+    <AppShell showBudget={showBudget}>
       {children}
     </AppShell>
   );

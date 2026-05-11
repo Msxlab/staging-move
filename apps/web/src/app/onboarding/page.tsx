@@ -844,10 +844,10 @@ export default function OnboardingPage() {
               <label className={labelCls}>Move Type</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { value: "PERSONAL", label: "ðŸ  Personal" },
-                  { value: "BUSINESS", label: "ðŸ’¼ Business" },
-                  { value: "VACATION", label: "ðŸŒ´ Vacation" },
-                  { value: "MILITARY", label: "ðŸŽ–ï¸ Military" },
+                  { value: "PERSONAL", label: "🏠 Personal" },
+                  { value: "BUSINESS", label: "💼 Business" },
+                  { value: "VACATION", label: "🌴 Vacation" },
+                  { value: "MILITARY", label: "🎖️ Military" },
                 ].map((opt) => (
                   <button
                     key={opt.value}
@@ -882,7 +882,7 @@ export default function OnboardingPage() {
                       checked={profile.isImmigrant}
                       onChange={(e) => setProfile({ ...profile, isImmigrant: e.target.checked, immigrationStatus: e.target.checked ? profile.immigrationStatus : "" })}
                     />
-                    ðŸŒ Immigrant / Visa Holder
+                    🌍 Immigrant / Visa Holder
                   </label>
                   {profile.isImmigrant && (
                     <select className={selectCls} value={profile.immigrationStatus} onChange={(e) => setProfile({ ...profile, immigrationStatus: e.target.value })}>
@@ -909,7 +909,7 @@ export default function OnboardingPage() {
                     checked={profile.isBusinessOwner}
                     onChange={(e) => setProfile({ ...profile, isBusinessOwner: e.target.checked, businessType: e.target.checked ? profile.businessType : "" })}
                   />
-                  ðŸ¢ Business Owner
+                  🏢 Business Owner
                 </label>
                 {profile.isBusinessOwner && (
                   <select className={selectCls} value={profile.businessType} onChange={(e) => setProfile({ ...profile, businessType: e.target.value })}>

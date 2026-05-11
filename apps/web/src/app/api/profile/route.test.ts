@@ -36,6 +36,7 @@ vi.mock("@/lib/rate-limit", () => ({
 
 vi.mock("@/lib/billing", () => ({
   buildUnifiedEntitlementSnapshot: vi.fn(() => ({ isActive: true })),
+  findSubscriptionForEntitlement: vi.fn(() => Promise.resolve(null)),
 }));
 
 import { prisma } from "@/lib/db";

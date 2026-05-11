@@ -6,13 +6,34 @@ import { getMergedDisplayCategoryIcon } from "@/lib/recommendation-engine";
 export interface LogoServiceItem {
   category: string;
   providerName: string;
-  provider?: { name?: string | null; logoUrl?: string | null } | null;
+  website?: string | null;
+  provider?: { name?: string | null; logoUrl?: string | null; website?: string | null } | null;
+  customProvider?: { id?: string; name?: string | null; website?: string | null } | null;
   providerLogoUrl?: string | null;
   logoUrl?: string | null;
 }
 
+function faviconUrlForWebsite(website: string | null | undefined): string | null {
+  const raw = website?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    const host = url.hostname.replace(/^www\./, "");
+    return host ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64` : null;
+  } catch {
+    return null;
+  }
+}
+
 export function resolveServiceLogoUrl(service: LogoServiceItem): string | null {
-  return service.provider?.logoUrl || service.providerLogoUrl || service.logoUrl || null;
+  return (
+    service.provider?.logoUrl ||
+    service.providerLogoUrl ||
+    service.logoUrl ||
+    faviconUrlForWebsite(service.website) ||
+    faviconUrlForWebsite(service.provider?.website) ||
+    faviconUrlForWebsite(service.customProvider?.website)
+  );
 }
 
 export function shouldShowServiceLogo(

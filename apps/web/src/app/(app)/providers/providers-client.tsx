@@ -114,8 +114,21 @@ function trustFor(provider: ProviderItem | ScoredProvider): ProviderTrustSummary
 type ProviderLogoSource = {
   name: string;
   category: string;
+  website?: string | null;
   logoUrl?: string | null;
 };
+
+function faviconUrlForWebsite(website: string | null | undefined): string | null {
+  const raw = website?.trim();
+  if (!raw) return null;
+  try {
+    const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    const host = url.hostname.replace(/^www\./, "");
+    return host ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64` : null;
+  } catch {
+    return null;
+  }
+}
 
 export function shouldShowProviderLogo(logoUrl: string | null | undefined, failedLogoUrl: string | null): logoUrl is string {
   return Boolean(logoUrl && logoUrl !== failedLogoUrl);
@@ -131,7 +144,7 @@ export function ProviderLogoMark({
   fallbackClassName: string;
 }) {
   const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
-  const logoUrl = provider.logoUrl;
+  const logoUrl = provider.logoUrl || faviconUrlForWebsite(provider.website);
   const showLogo = shouldShowProviderLogo(logoUrl, failedLogoUrl);
 
   return (

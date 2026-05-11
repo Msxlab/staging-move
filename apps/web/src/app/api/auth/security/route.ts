@@ -86,7 +86,6 @@ async function loadSecurityState(userId: string, currentSessionId?: string) {
           expiresAt: true,
           lastActivity: true,
           createdAt: true,
-          impersonatedByAdminId: true,
         },
       }),
       prisma.emailVerificationToken.findFirst({

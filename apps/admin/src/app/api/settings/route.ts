@@ -15,6 +15,25 @@ import {
 // grant later.
 const GRANT_PREMIUM_MAX_DURATION_DAYS = 365;
 
+function isPurchaseTokenHashCompatError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || "");
+  const code = (error as { code?: string })?.code;
+  const meta = (error as { meta?: { column?: string; field_name?: string; target?: unknown } })?.meta;
+  const metaText = [
+    meta?.column,
+    meta?.field_name,
+    Array.isArray(meta?.target) ? meta?.target.join(" ") : meta?.target,
+  ].filter(Boolean).join(" ");
+  return (
+    (code === "P2022" && metaText.includes("purchaseTokenHash")) ||
+    (message.includes("purchaseTokenHash") &&
+      (message.includes("Unknown argument") ||
+        message.includes("Unknown arg") ||
+        message.includes("Unknown column") ||
+        message.includes("does not exist")))
+  );
+}
+
 const grantPremiumSchema = z
   .object({
     userId: z.string().min(1).max(40).optional(),
@@ -325,7 +344,7 @@ export async function POST(request: NextRequest) {
           status: true,
           stripeSubscriptionId: true,
           originalTransactionId: true,
-          purchaseTokenHash: true,
+          purchaseToken: true,
         },
       });
       const liveProviderStatuses = new Set([
@@ -345,7 +364,7 @@ export async function POST(request: NextRequest) {
         Boolean(
           existing.stripeSubscriptionId ||
             existing.originalTransactionId ||
-            existing.purchaseTokenHash,
+            existing.purchaseToken,
         );
       if (hasLiveProvider) {
         return NextResponse.json(
@@ -404,13 +423,23 @@ export async function POST(request: NextRequest) {
           originalTransactionId: null,
           latestTransactionId: null,
           purchaseToken: null,
-          purchaseTokenHash: null,
           appStoreEnvironment: null,
           gracePeriodEndsAt: null,
           trialEndsAt: null,
           canceledAt: null,
         },
       });
+
+      await (prisma.subscription as any)
+        .update({
+          where: { userId: targetUserId },
+          data: { purchaseTokenHash: null },
+        })
+        .catch((error: unknown) => {
+          if (!isPurchaseTokenHashCompatError(error)) {
+            console.warn("[settings] failed to clear purchaseTokenHash", error);
+          }
+        });
 
       await prisma.adminAuditLog.create({
         data: {

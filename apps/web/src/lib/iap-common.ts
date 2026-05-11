@@ -27,6 +27,10 @@ import {
 } from "@/lib/email-service";
 import type { BillingPlan, SubscriptionStatus } from "@/lib/shared-billing";
 import { isBillingProductionLike } from "@/lib/billing-config";
+import {
+  isMissingDbColumnError,
+  warnSchemaCompatibilityFallback,
+} from "@/lib/db-schema-compat";
 
 export type IapPlatform = "ios" | "android";
 export type IapBillingInterval = "MONTH" | "YEAR";
@@ -79,6 +83,50 @@ export function hashPurchaseToken(purchaseToken: string | null | undefined): str
   const normalized = purchaseToken?.trim();
   if (!normalized) return null;
   return createHash("sha256").update(normalized).digest("hex");
+}
+
+function isPurchaseTokenHashCompatError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || "");
+  return (
+    isMissingDbColumnError(error, "purchaseTokenHash") ||
+    message.includes("Unknown argument `purchaseTokenHash`") ||
+    message.includes("Unknown arg `purchaseTokenHash`")
+  );
+}
+
+function withoutPurchaseTokenHash<T extends { purchaseTokenHash?: unknown }>(data: T) {
+  const { purchaseTokenHash: _purchaseTokenHash, ...legacyData } = data;
+  return legacyData;
+}
+
+async function findSubscriptionByPurchaseTokenIdentifiers(
+  purchaseTokenHash: string | null,
+  purchaseToken: string | null,
+): Promise<{ id: string; userId: string } | null> {
+  if (!purchaseTokenHash && !purchaseToken) return null;
+
+  if (purchaseTokenHash) {
+    try {
+      return await (prisma.subscription as any).findFirst({
+        where: {
+          OR: [
+            { purchaseTokenHash },
+            ...(purchaseToken ? [{ purchaseToken }] : []),
+          ],
+        },
+        select: { id: true, userId: true },
+      });
+    } catch (error) {
+      if (!isPurchaseTokenHashCompatError(error)) throw error;
+      warnSchemaCompatibilityFallback("iap:purchase-token-hash-read", error);
+    }
+  }
+
+  if (!purchaseToken) return null;
+  return prisma.subscription.findFirst({
+    where: { purchaseToken },
+    select: { id: true, userId: true },
+  });
 }
 
 function formatDateForEmail(date: Date | null | undefined, locale: string | null | undefined) {
@@ -351,16 +399,10 @@ export async function applyIapStateToUser(opts: {
   if (existingByTxn && existingByTxn.userId !== userId) {
     throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
   }
-  const existingByPurchaseToken = purchaseTokenHash
-    ? await prisma.subscription.findFirst({
-        where: {
-          OR: [
-            { purchaseTokenHash },
-            { purchaseToken: state.purchaseToken },
-          ],
-        },
-      })
-    : null;
+  const existingByPurchaseToken = await findSubscriptionByPurchaseTokenIdentifiers(
+    purchaseTokenHash,
+    state.purchaseToken,
+  );
   if (existingByPurchaseToken && existingByPurchaseToken.userId !== userId) {
     throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
   }
@@ -445,6 +487,24 @@ export async function applyIapStateToUser(opts: {
     ) {
       throw new Error("IAP_TXN_OWNED_BY_ANOTHER_USER");
     }
+    if (isPurchaseTokenHashCompatError(error)) {
+      warnSchemaCompatibilityFallback("iap:purchase-token-hash-write", error);
+      const legacyData = withoutPurchaseTokenHash(data);
+      const subscription = await prisma.subscription.upsert({
+        where: { userId },
+        create: { userId, ...legacyData },
+        update: legacyData,
+      });
+      await sendIapLifecycleEmail({
+        userId,
+        subscriptionId: subscription.id,
+        state,
+        previousStatus: existingByUser?.status,
+      }).catch((err) => {
+        console.error("[IAP] lifecycle email lookup failed:", err);
+      });
+      return subscription;
+    }
     throw error;
   }
 }
@@ -466,15 +526,10 @@ export async function findUserByIapIdentifier(opts: {
   }
   const purchaseTokenHash = hashPurchaseToken(opts.purchaseToken);
   if (purchaseTokenHash || opts.purchaseToken) {
-    const row = await prisma.subscription.findFirst({
-      where: {
-        OR: [
-          ...(purchaseTokenHash ? [{ purchaseTokenHash }] : []),
-          ...(opts.purchaseToken ? [{ purchaseToken: opts.purchaseToken }] : []),
-        ],
-      },
-      select: { id: true, userId: true },
-    });
+    const row = await findSubscriptionByPurchaseTokenIdentifiers(
+      purchaseTokenHash,
+      opts.purchaseToken || null,
+    );
     if (row) return row;
   }
   return null;

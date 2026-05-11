@@ -31,16 +31,16 @@ export {
 // filterGroups mapping — labels are keys to be translated
 // Use getFilterGroups(t) to get translated version in the component
 const FILTER_GROUPS_KEYS = [
-  { label: "filterGroups.all", value: "", icon: "ðŸ“‹" },
-  { label: "filterGroups.government", value: "GOVERNMENT", icon: "ðŸ›ï¸" },
+  { label: "filterGroups.all", value: "", icon: "📋" },
+  { label: "filterGroups.government", value: "GOVERNMENT", icon: "🏛️" },
   { label: "filterGroups.utilities", value: "UTILITY", icon: "⚡" },
-  { label: "filterGroups.financial", value: "FINANCIAL", icon: "ðŸ’³" },
-  { label: "filterGroups.housing", value: "HOUSING", icon: "ðŸ " },
-  { label: "filterGroups.healthcare", value: "HEALTHCARE", icon: "ðŸ¥" },
-  { label: "filterGroups.transport", value: "TRANSPORTATION", icon: "ðŸš—" },
-  { label: "filterGroups.kids", value: "KIDS", icon: "ðŸ‘¶" },
-  { label: "filterGroups.fitness", value: "FITNESS", icon: "ðŸ’ª" },
-  { label: "filterGroups.shopping", value: "SHOPPING", icon: "ðŸ›’" },
+  { label: "filterGroups.financial", value: "FINANCIAL", icon: "💳" },
+  { label: "filterGroups.housing", value: "HOUSING", icon: "🏠" },
+  { label: "filterGroups.healthcare", value: "HEALTHCARE", icon: "🏥" },
+  { label: "filterGroups.transport", value: "TRANSPORTATION", icon: "🚗" },
+  { label: "filterGroups.kids", value: "KIDS", icon: "👶" },
+  { label: "filterGroups.fitness", value: "FITNESS", icon: "💪" },
+  { label: "filterGroups.shopping", value: "SHOPPING", icon: "🛒" },
 ];
 
 const GROUP_LABELS_KEYS: Record<string, string> = {
@@ -55,8 +55,8 @@ const GROUP_LABELS_KEYS: Record<string, string> = {
   SHOPPING: "groupLabels.shopping",
 };
 const groupIcons: Record<string, string> = {
-  GOVERNMENT: "ðŸ›ï¸", UTILITY: "⚡", FINANCIAL: "ðŸ’³", HOUSING: "ðŸ ", HEALTHCARE: "ðŸ¥",
-  TRANSPORTATION: "ðŸš—", KIDS: "ðŸ‘¶", FITNESS: "ðŸ’ª", SHOPPING: "ðŸ›’",
+  GOVERNMENT: "🏛️", UTILITY: "⚡", FINANCIAL: "💳", HOUSING: "🏠", HEALTHCARE: "🏥",
+  TRANSPORTATION: "🚗", KIDS: "👶", FITNESS: "💪", SHOPPING: "🛒",
 };
 const typeIcons: Record<string, React.ElementType> = { HOME: Home, WORK: Briefcase, VACATION: Palmtree };
 
@@ -71,7 +71,8 @@ export interface ServicesItem {
   monthlyCost: number; billingDay?: number | null; isActive?: boolean;
   addressId: string;
   address?: { nickname?: string; city?: string; state?: string };
-  provider?: { id?: string; name?: string | null; logoUrl?: string | null } | null;
+  provider?: { id?: string; name?: string | null; logoUrl?: string | null; website?: string | null } | null;
+  customProvider?: { id?: string; name?: string | null; website?: string | null } | null;
   providerLogoUrl?: string | null;
   logoUrl?: string | null;
   createdAt?: string;

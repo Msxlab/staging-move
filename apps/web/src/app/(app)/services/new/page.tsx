@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -39,7 +39,7 @@ const CUSTOM_PROVIDER_CATEGORY_OPTIONS = [
   ...PROVIDER_CATEGORY_OPTIONS,
 ].sort((a, b) => a.order - b.order || a.label.localeCompare(b.label));
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Types
 
 interface AddressOption {
   id: string; nickname?: string; street: string; city: string; state: string; zip: string;
@@ -47,7 +47,7 @@ interface AddressOption {
   services?: { id: string }[];
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Component
 
 export default function NewServicePage() {
   const router = useRouter();
@@ -150,7 +150,7 @@ export default function NewServicePage() {
 
   const addr = addresses.find((a) => a.id === selectedAddress);
 
-  // â”€â”€ Filtering & grouping â”€â”€
+  // Filtering and grouping
   const recommended = getRecommendedProviders(allProviders, 12);
 
   const filteredProviders = allProviders.filter((p: ScoredProvider) => {
@@ -371,7 +371,7 @@ export default function NewServicePage() {
     return data?.error || fallback;
   };
 
-  // â”€â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Render
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-32">
@@ -407,7 +407,7 @@ export default function NewServicePage() {
         </div>
       )}
 
-      {/* â”€â”€ Address Selection â”€â”€ */}
+      {/* Address Selection */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -466,7 +466,7 @@ export default function NewServicePage() {
         )}
       </div>
 
-      {/* â”€â”€ Provider section (only when address selected) â”€â”€ */}
+      {/* Provider section (only when address selected) */}
       {selectedAddress && (
         <div className="space-y-4">
           {/* Header with selected count */}
@@ -762,7 +762,7 @@ export default function NewServicePage() {
         </div>
       )}
 
-      {/* â”€â”€ Floating bottom bar â”€â”€ */}
+      {/* Floating bottom bar */}
       {selectedCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-popover/95 text-popover-foreground shadow-2xl backdrop-blur-xl">
           <div className="mx-auto max-w-4xl space-y-3 p-3 sm:p-4">

@@ -518,7 +518,7 @@ export default function DashboardClient({ initialPrefs }: { initialPrefs: Dashbo
                   <div key={key} className="rounded-2xl border border-tone-orange-br bg-gradient-to-br from-primary0/5 to-transparent p-5 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{phaseInfo?.icon || "ðŸšš"}</span>
+                        <span className="text-xl">{phaseInfo?.icon || "🚚"}</span>
                         <div>
                           <h3 className="text-sm font-bold text-foreground">{td("section_moving")}</h3>
                           <p className="text-xs text-muted-foreground">
