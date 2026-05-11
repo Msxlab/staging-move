@@ -22,7 +22,7 @@
     "@tiptap/pm": "^3.22.5",
     "@tiptap/react": "^3.22.5",
     "@tiptap/starter-kit": "^3.22.5",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "html-to-text": "^10.0.0",
@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
-    "@types/bcryptjs": "^2.4.6",
+    "@types/bcryptjs": "^3.0.0",
     "@types/html-to-text": "^9.0.4",
     "@types/node": "^25.6.0",
     "@types/qrcode": "^1.5.5",
