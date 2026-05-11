@@ -463,7 +463,17 @@ export async function getUserSession(options: { diagnostics?: UserAuthDiagnostic
           userAgent: true,
         },
       })
-      .catch(() => null);
+      .catch((error: unknown) => {
+        // Swallow → null so callers (route handlers, middleware) keep
+        // working when the DB momentarily blips, but emit a structured
+        // log line so ops can alert on sustained lookup failures. A
+        // silent catch hides incidents like a missing column from
+        // unapplied migrations (see e.g. impersonatedByAdminId drift).
+        const name = (error as { name?: string } | null)?.name ?? "Error";
+        const code = (error as { code?: string } | null)?.code;
+        console.warn("[auth] session_lookup_failed", { name, code });
+        return null;
+      });
 
     if (!record) {
       if (diagnostics) diagnostics.dbSessionFound = false;
