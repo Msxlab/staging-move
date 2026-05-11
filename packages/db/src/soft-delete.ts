@@ -42,6 +42,35 @@ function applyDeletedAtFilter(args: any) {
   return { ...args, where: { ...where, deletedAt: null } };
 }
 
+function selectNeedsDeletedAt(select: unknown): select is Record<string, unknown> {
+  return !!select && typeof select === "object" && (select as any).deletedAt !== true;
+}
+
+function withDeletedAtSelected(args: any) {
+  if (!selectNeedsDeletedAt(args?.select)) return args;
+  return {
+    ...args,
+    select: {
+      ...args.select,
+      deletedAt: true,
+    },
+  };
+}
+
+function removeSyntheticDeletedAt<T>(row: T, shouldRemove: boolean): T {
+  if (!shouldRemove || !row || typeof row !== "object") return row;
+  const copy = { ...(row as Record<string, unknown>) };
+  delete copy.deletedAt;
+  return copy as T;
+}
+
+function isSoftDeletedRow(row: unknown): boolean {
+  return !!row &&
+    typeof row === "object" &&
+    "deletedAt" in row &&
+    (row as { deletedAt?: Date | string | null }).deletedAt !== null;
+}
+
 export const withSoftDelete = Prisma.defineExtension({
   name: "softDelete",
   query: {
@@ -59,40 +88,12 @@ export const withSoftDelete = Prisma.defineExtension({
         return query(applyDeletedAtFilter(args));
       },
       async findUnique({ args, query, model }) {
-        // findUnique can't take a compound filter so we have to handle
-        // both "implicit select" and "caller-supplied select" cases.
-        //
-        // Implicit (no `select`/`include`): the query returns the full
-        // row including `deletedAt`, so a post-check works.
-        //
-        // Explicit `select` that omits `deletedAt`: the post-check sees
-        // the row but cannot tell if it was soft-deleted, so the bug was
-        // that deleted rows would leak through. Re-fetch via `findFirst`
-        // with the same `where` plus `deletedAt: null` to make the gate
-        // atomic for that case.
         if (!isSoftDeleteModel(model)) return query(args);
-
         const a = args as any;
-        const callerSelect = a?.select;
-        const callerInclude = a?.include;
-        const selectOmitsDeletedAt =
-          callerSelect && typeof callerSelect === "object" && !callerSelect.deletedAt;
-
-        if (selectOmitsDeletedAt || callerInclude) {
-          // Re-issue as `findFirst` with a compound filter so deletedAt
-          // is enforced at the SQL boundary. Caller's select/include is
-          // preserved unchanged.
-          const fallback = await (this as any)[model!].findFirst({
-            where: { ...(a?.where || {}), deletedAt: null },
-            ...(callerSelect ? { select: callerSelect } : {}),
-            ...(callerInclude ? { include: callerInclude } : {}),
-          });
-          return fallback;
-        }
-
-        const row = (await query(args)) as any;
-        if (row && row.deletedAt !== null) return null;
-        return row;
+        const shouldRemoveDeletedAt = selectNeedsDeletedAt(a?.select);
+        const row = (await query(withDeletedAtSelected(a))) as any;
+        if (isSoftDeletedRow(row)) return null;
+        return removeSyntheticDeletedAt(row, shouldRemoveDeletedAt);
       },
       async findUniqueOrThrow({ args, query, model }) {
         // Same pattern as findUnique — and the symmetric throw if the
@@ -100,23 +101,13 @@ export const withSoftDelete = Prisma.defineExtension({
         // variants.
         if (!isSoftDeleteModel(model)) return query(args);
         const a = args as any;
-        const callerSelect = a?.select;
-        const callerInclude = a?.include;
-        const selectOmitsDeletedAt =
-          callerSelect && typeof callerSelect === "object" && !callerSelect.deletedAt;
-        if (selectOmitsDeletedAt || callerInclude) {
-          return (this as any)[model!].findFirstOrThrow({
-            where: { ...(a?.where || {}), deletedAt: null },
-            ...(callerSelect ? { select: callerSelect } : {}),
-            ...(callerInclude ? { include: callerInclude } : {}),
-          });
-        }
-        const row = (await query(args)) as any;
-        if (row && row.deletedAt !== null) {
+        const shouldRemoveDeletedAt = selectNeedsDeletedAt(a?.select);
+        const row = (await query(withDeletedAtSelected(a))) as any;
+        if (isSoftDeletedRow(row)) {
           // Match Prisma's runtime "no result" error shape.
           throw new Error(`No ${model} found`);
         }
-        return row;
+        return removeSyntheticDeletedAt(row, shouldRemoveDeletedAt);
       },
       async aggregate({ args, query, model }) {
         if (!isSoftDeleteModel(model)) return query(args);
