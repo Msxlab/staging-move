@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
-import { maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
+import { maskEmail, maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // Closed enums for the subscription columns admins can mutate from this
 // route. Free-form VarChar in the schema means we enforce the allowlist
@@ -70,6 +71,8 @@ const updateUserSchema = z
     firstName: z.string().trim().min(1).max(100).optional(),
     lastName: z.string().trim().min(1).max(100).optional(),
     confirmPassword: z.string().max(256).optional(),
+    mfaCode: z.string().trim().max(16).optional(),
+    backupCode: z.string().trim().max(64).optional(),
     plan: z.enum(SUBSCRIPTION_PLAN_VALUES).optional(),
     subscriptionStatus: z.enum(SUBSCRIPTION_STATUS_VALUES).optional(),
     accessType: z.enum(SUBSCRIPTION_ACCESS_TYPE_VALUES).nullable().optional(),
@@ -152,7 +155,7 @@ function parseGdprRequestData(raw: string | null | undefined): Record<string, an
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -424,6 +427,17 @@ export async function GET(
       },
       session.role,
     );
+    await writeAdminAudit(session, {
+      action: "USER_DETAIL_VIEWED",
+      entityType: "User",
+      entityId: id,
+      metadata: {
+        operation: "user_detail_view",
+        status: "success",
+        role: session.role,
+      },
+      request: getAuditRequestMeta(request),
+    });
     return NextResponse.json(redacted);
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
@@ -447,13 +461,33 @@ export async function POST(
 
     if (body?.action === "restore_user") {
       const session = await requirePermission("users", "canDelete", { minimumRole: "SUPER_ADMIN" });
+      const requestMeta = getAuditRequestMeta(request);
       const confirm = await requirePasswordConfirm(
         session,
         typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
-        { operation: "admin_user_restore" },
+        {
+          operation: "admin_user_restore",
+          requireMfa: true,
+          mfaCode: typeof body.mfaCode === "string" ? body.mfaCode : undefined,
+          backupCode: typeof body.backupCode === "string" ? body.backupCode : undefined,
+          ipAddress: requestMeta.ipAddress,
+          userAgent: requestMeta.userAgent,
+        },
       );
       if (!confirm.confirmed) {
-        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+        await writeAdminAudit(session, {
+          action: "USER_RESTORE_FAILED",
+          entityType: "User",
+          entityId: id,
+          metadata: {
+            operation: "admin_user_restore",
+            status: "failed",
+            reason: "step_up_failed",
+            requiresMfa: Boolean(confirm.requiresMfa),
+          },
+          request: requestMeta,
+        });
+        return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
       }
 
       // Restore needs to see soft-deleted rows — use the raw client.
@@ -542,25 +576,22 @@ export async function POST(
           });
         }
 
-        await tx.adminAuditLog.create({
-          data: {
-            adminUserId: session.adminId,
-            action: "RESTORE_USER",
-            entityType: "User",
-            entityId: id,
-            changes: JSON.stringify({
-              email: user.email,
-              previousDeletedAt: previousDeletedAt.toISOString(),
-              restoredAt: now.toISOString(),
-              gdprRequestId: rejectedRequest?.id || null,
-              gdprRequestStatus: rejectedRequest?.status || null,
-              sessionsRemainRevoked: true,
-            }),
-            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-          },
-        });
-
         return rejectedRequest;
+      });
+
+      await writeAdminAudit(session, {
+        action: "USER_RESTORED",
+        entityType: "User",
+        entityId: id,
+        metadata: {
+          operation: "admin_user_restore",
+          status: "success",
+          maskedEmail: maskEmail(user.email),
+          gdprRequestId: restoredRequest?.id || null,
+          gdprRequestStatus: restoredRequest?.status || null,
+          sessionsRemainRevoked: true,
+        },
+        request: requestMeta,
       });
 
       return NextResponse.json({
@@ -572,6 +603,7 @@ export async function POST(
     }
 
     const session = await requirePermission("users", "canUpdate", { minimumRole: "ADMIN" });
+    const requestMeta = getAuditRequestMeta(request);
     const user = await prisma.user.findUnique({ where: { id }, select: { id: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -586,19 +618,21 @@ export async function POST(
         return NextResponse.json({ error: "Note is too long" }, { status: 400 });
       }
 
-      const entry = await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "USER_INTERNAL_NOTE",
-          entityType: "User",
-          entityId: id,
-          changes: JSON.stringify({ note }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      const entry = await writeAdminAudit(session, {
+        action: "USER_INTERNAL_NOTE",
+        entityType: "User",
+        entityId: id,
+        metadata: {
+          operation: "user_internal_note",
+          status: "success",
+          noteLength: note.length,
+          noteRedacted: true,
         },
+        request: requestMeta,
       });
 
       const created = await prisma.adminAuditLog.findUnique({
-        where: { id: entry.id },
+        where: { id: entry?.id || "" },
         include: {
           adminUser: {
             select: {
@@ -610,13 +644,41 @@ export async function POST(
         },
       });
 
-      return NextResponse.json({ note: created }, { status: 201 });
+      return NextResponse.json({ note: created || { changes: JSON.stringify({ note: "[REDACTED]" }) } }, { status: 201 });
     }
 
     if (body?.action === "revoke_login_session") {
       const sessionId = typeof body.sessionId === "string" ? body.sessionId : "";
       if (!sessionId) {
         return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+      }
+      const confirm = await requirePasswordConfirm(
+        session,
+        typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+        {
+          operation: "admin_user_session_revoke",
+          requireMfa: true,
+          mfaCode: typeof body.mfaCode === "string" ? body.mfaCode : undefined,
+          backupCode: typeof body.backupCode === "string" ? body.backupCode : undefined,
+          ipAddress: requestMeta.ipAddress,
+          userAgent: requestMeta.userAgent,
+        },
+      );
+      if (!confirm.confirmed) {
+        await writeAdminAudit(session, {
+          action: "USER_SESSION_REVOKE_FAILED",
+          entityType: "UserLoginSession",
+          entityId: sessionId,
+          metadata: {
+            operation: "admin_user_session_revoke",
+            status: "failed",
+            targetUserId: id,
+            reason: "step_up_failed",
+            requiresMfa: Boolean(confirm.requiresMfa),
+          },
+          request: requestMeta,
+        });
+        return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
       }
 
       const result = await prisma.userLoginSession.updateMany({
@@ -628,35 +690,66 @@ export async function POST(
         return NextResponse.json({ error: "Session not found or already inactive" }, { status: 404 });
       }
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "REVOKE_LOGIN",
-          entityType: "UserLoginSession",
-          entityId: sessionId,
-          changes: JSON.stringify({ userId: id, mode: "single" }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      await writeAdminAudit(session, {
+        action: "USER_SESSION_REVOKED",
+        entityType: "UserLoginSession",
+        entityId: sessionId,
+        metadata: {
+          operation: "admin_user_session_revoke",
+          status: "success",
+          targetUserId: id,
+          mode: "single",
         },
+        request: requestMeta,
       });
 
       return NextResponse.json({ success: true, revoked: result.count });
     }
 
     if (body?.action === "revoke_all_login_sessions") {
+      const confirm = await requirePasswordConfirm(
+        session,
+        typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
+        {
+          operation: "admin_user_session_revoke_all",
+          requireMfa: true,
+          mfaCode: typeof body.mfaCode === "string" ? body.mfaCode : undefined,
+          backupCode: typeof body.backupCode === "string" ? body.backupCode : undefined,
+          ipAddress: requestMeta.ipAddress,
+          userAgent: requestMeta.userAgent,
+        },
+      );
+      if (!confirm.confirmed) {
+        await writeAdminAudit(session, {
+          action: "USER_SESSION_REVOKE_FAILED",
+          entityType: "User",
+          entityId: id,
+          metadata: {
+            operation: "admin_user_session_revoke_all",
+            status: "failed",
+            reason: "step_up_failed",
+            requiresMfa: Boolean(confirm.requiresMfa),
+          },
+          request: requestMeta,
+        });
+        return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
+      }
       const result = await prisma.userLoginSession.updateMany({
         where: { userId: id, isActive: true },
         data: { isActive: false, lastActivity: new Date() },
       });
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "REVOKE_LOGIN",
-          entityType: "User",
-          entityId: id,
-          changes: JSON.stringify({ mode: "all", revoked: result.count }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      await writeAdminAudit(session, {
+        action: "USER_SESSION_REVOKED",
+        entityType: "User",
+        entityId: id,
+        metadata: {
+          operation: "admin_user_session_revoke_all",
+          status: "success",
+          mode: "all",
+          revoked: result.count,
         },
+        request: requestMeta,
       });
 
       return NextResponse.json({ success: true, revoked: result.count });
@@ -704,15 +797,8 @@ export async function PATCH(
     }
 
     const changes: Record<string, any> = {};
-
-    // Update name
-    if (body.firstName !== undefined || body.lastName !== undefined) {
-      const updateData: any = {};
-      if (body.firstName !== undefined) { updateData.firstName = body.firstName; changes.firstName = { from: user.firstName, to: body.firstName }; }
-      if (body.lastName !== undefined) { updateData.lastName = body.lastName; changes.lastName = { from: user.lastName, to: body.lastName }; }
-      await prisma.user.update({ where: { id }, data: updateData });
-    }
-
+    const requestMeta = getAuditRequestMeta(request);
+    const hasProfileChange = body.firstName !== undefined || body.lastName !== undefined;
     const hasBillingChange =
       body.plan ||
       body.premiumUntil !== undefined ||
@@ -724,18 +810,49 @@ export async function PATCH(
       body.cancelAtPeriodEnd !== undefined ||
       body.autoRenew !== undefined ||
       body.premiumNote !== undefined;
-
-    // Update subscription plan + premium management
     if (hasBillingChange) {
+      await requirePermission("subscriptions", "canUpdate", { minimumRole: "ADMIN" });
+    }
+    if (hasProfileChange || hasBillingChange) {
       const confirm = await requirePasswordConfirm(
         session,
         typeof body.confirmPassword === "string" ? body.confirmPassword : undefined,
-        { operation: "billing_subscription_update" },
+        {
+          operation: hasBillingChange ? "billing_subscription_update" : "admin_user_profile_update",
+          requireMfa: true,
+          mfaCode: body.mfaCode,
+          backupCode: body.backupCode,
+          ipAddress: requestMeta.ipAddress,
+          userAgent: requestMeta.userAgent,
+        },
       );
       if (!confirm.confirmed) {
-        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+        await writeAdminAudit(session, {
+          action: hasBillingChange ? "USER_BILLING_UPDATE_FAILED" : "USER_UPDATE_FAILED",
+          entityType: "User",
+          entityId: id,
+          metadata: {
+            operation: hasBillingChange ? "billing_subscription_update" : "admin_user_profile_update",
+            status: "failed",
+            reason: "step_up_failed",
+            requiresMfa: Boolean(confirm.requiresMfa),
+          },
+          request: requestMeta,
+        });
+        return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
       }
+    }
 
+    // Update name
+    if (body.firstName !== undefined || body.lastName !== undefined) {
+      const updateData: any = {};
+      if (body.firstName !== undefined) { updateData.firstName = body.firstName; changes.firstName = { from: user.firstName, to: body.firstName }; }
+      if (body.lastName !== undefined) { updateData.lastName = body.lastName; changes.lastName = { from: user.lastName, to: body.lastName }; }
+      await prisma.user.update({ where: { id }, data: updateData });
+    }
+
+    // Update subscription plan + premium management
+    if (hasBillingChange) {
       // Validate the cross-field combination before any write so the API
       // rejects nonsensical states (e.g. accessType=PAID with provider=ADMIN,
       // status=ACTIVE on the ADMIN provider with no premiumUntil, etc.).
@@ -804,16 +921,17 @@ export async function PATCH(
       }
     }
 
-    // Audit log
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "UPDATE_USER",
-        entityType: "User",
-        entityId: id,
-        changes: JSON.stringify(changes),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+    await writeAdminAudit(session, {
+      action: hasBillingChange ? "USER_BILLING_UPDATED" : "USER_UPDATED",
+      entityType: "User",
+      entityId: id,
+      metadata: {
+        operation: hasBillingChange ? "billing_subscription_update" : "admin_user_update",
+        status: "success",
+        fields: Object.keys(changes),
+        billingChanged: Boolean(hasBillingChange),
       },
+      request: requestMeta,
     });
 
     // GDPR / transparency: notify the user about changes an admin made on
@@ -850,13 +968,37 @@ export async function DELETE(
 
     // Step-up auth: user deletion is destructive
     let confirmPassword: string | undefined;
+    let mfaCode: string | undefined;
+    let backupCode: string | undefined;
     try {
       const body = await request.json();
       confirmPassword = body?.confirmPassword;
+      mfaCode = typeof body?.mfaCode === "string" ? body.mfaCode : undefined;
+      backupCode = typeof body?.backupCode === "string" ? body.backupCode : undefined;
     } catch { /* no body is fine, password will be required */ }
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "admin_user_delete" });
+    const requestMeta = getAuditRequestMeta(request);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "admin_user_delete",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      await writeAdminAudit(session, {
+        action: "USER_DELETE_FAILED",
+        entityType: "User",
+        entityId: id,
+        metadata: {
+          operation: "admin_user_delete",
+          status: "failed",
+          reason: "step_up_failed",
+          requiresMfa: Boolean(confirm.requiresMfa),
+        },
+        request: requestMeta,
+      });
+      return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
     // Need to see deletedAt to detect already-deleted state, so use the
@@ -864,9 +1006,6 @@ export async function DELETE(
     const user = await prismaUnsafe.user.findUnique({ where: { id }, include: { subscription: true } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-    if (id === session.adminId) {
-      return NextResponse.json({ error: "Self-delete is not allowed from this screen" }, { status: 400 });
     }
     if (user.deletedAt) {
       return NextResponse.json({ error: "User is already deleted", skippedReason: "already_deleted" }, { status: 409 });
@@ -935,23 +1074,21 @@ export async function DELETE(
         },
       });
 
-      await tx.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "DELETE_USER",
-          entityType: "User",
-          entityId: id,
-          changes: JSON.stringify({
-            email: user.email,
-            softDeletedAt: now.toISOString(),
-            gdprRequestStatus: requestRecord.status,
-            queuedCleanup: !existingRequest,
-          }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-        },
-      });
-
       return requestRecord;
+    });
+
+    await writeAdminAudit(session, {
+      action: "USER_DELETED",
+      entityType: "User",
+      entityId: id,
+      metadata: {
+        operation: "admin_user_delete",
+        status: "success",
+        maskedEmail: maskEmail(user.email),
+        gdprRequestStatus: deleteRequest.status,
+        queuedCleanup: !existingRequest,
+      },
+      request: requestMeta,
     });
 
     return NextResponse.json(

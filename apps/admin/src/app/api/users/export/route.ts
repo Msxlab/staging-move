@@ -3,6 +3,7 @@ import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { buildCsv } from "@/lib/csv-safety";
 import { maskEmail } from "@/lib/privacy";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 /**
  * Admin user CSV export.
@@ -28,13 +29,33 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requirePermission("users", "canRead", { minimumRole: "ADMIN" });
     const body = await request.json().catch(() => ({}));
+    const requestMeta = getAuditRequestMeta(request);
     const confirm = await requirePasswordConfirm(
       session,
       typeof body?.confirmPassword === "string" ? body.confirmPassword : undefined,
-      { operation: "users_export" },
+      {
+        operation: "users_export",
+        requireMfa: true,
+        mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : undefined,
+        backupCode: typeof body?.backupCode === "string" ? body.backupCode : undefined,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+      },
     );
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      await writeAdminAudit(session, {
+        action: "USER_EXPORT_FAILED",
+        entityType: "User",
+        entityId: "bulk",
+        metadata: {
+          operation: "users_export",
+          status: "failed",
+          reason: "step_up_failed",
+          requiresMfa: Boolean(confirm.requiresMfa),
+        },
+        request: requestMeta,
+      });
+      return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
     const includeDeleted = Boolean(body?.includeDeleted);
@@ -80,20 +101,19 @@ export async function POST(request: NextRequest) {
 
     const csv = buildCsv(header, rows);
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "USERS_CSV_EXPORT",
-        entityType: "User",
-        entityId: "bulk",
-        changes: JSON.stringify({
-          rowCount: rows.length,
-          includeDeleted,
-          unmaskedEmail,
-          truncated: rows.length >= MAX_EXPORT_ROWS,
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+    await writeAdminAudit(session, {
+      action: "USER_EXPORT_CREATED",
+      entityType: "User",
+      entityId: "bulk",
+      metadata: {
+        operation: "users_export",
+        status: "success",
+        rowCount: rows.length,
+        includeDeleted,
+        unmaskedEmail,
+        truncated: rows.length >= MAX_EXPORT_ROWS,
       },
+      request: requestMeta,
     });
 
     const filename = `users-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.csv`;

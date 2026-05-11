@@ -129,6 +129,9 @@ interface VerifyCheck {
 
 interface VerifyResult {
   success: boolean;
+  readable: boolean;
+  structurallyValid: boolean;
+  restoreReady: boolean;
   verdict: "PASS" | "WARN" | "FAIL";
   message: string;
   checks: VerifyCheck[];
@@ -155,11 +158,18 @@ interface ImportResult {
   };
 }
 
-interface PasswordPromptState {
+interface StepUpPromptState {
   open: boolean;
   title: string;
   description: string;
   actionLabel: string;
+  requireMfa: boolean;
+}
+
+interface StepUpValues {
+  confirmPassword: string;
+  mfaCode?: string;
+  backupCode?: string;
 }
 
 const BACKUP_TYPES = [
@@ -204,6 +214,8 @@ const STATUS_FILTERS = [
   "PENDING",
 ] as const;
 const OFFSITE_FILTERS = ["ALL", "stored", "failed", "disabled"] as const;
+
+export const MAX_BACKUP_UI_UPLOAD_BYTES = 25 * 1024 * 1024;
 
 const statusToneClasses: Record<string, string> = {
   COMPLETED: "bg-tone-sage-bg text-tone-sage-fg border-tone-sage-br",
@@ -369,6 +381,29 @@ export function buildRestoreImportPayload(input: {
   };
 }
 
+export function buildDryRunImportPayload(input: {
+  importPayload: Record<string, unknown>;
+  tables: string[];
+}): Record<string, unknown> {
+  return {
+    ...input.importPayload,
+    tables: input.tables,
+    mode: "DRY_RUN",
+  };
+}
+
+export function buildStepUpPayload(
+  payload: Record<string, unknown>,
+  stepUp: StepUpValues,
+): Record<string, unknown> {
+  return {
+    ...payload,
+    confirmPassword: stepUp.confirmPassword,
+    ...(stepUp.mfaCode ? { mfaCode: stepUp.mfaCode } : {}),
+    ...(stepUp.backupCode ? { backupCode: stepUp.backupCode } : {}),
+  };
+}
+
 function downloadFile(
   content: BlobPart | Blob,
   fileName: string,
@@ -417,17 +452,20 @@ function buildToneClass(
 
 export function BackupControlPlane() {
   const router = useRouter();
-  const passwordResolverRef = useRef<((value: string | null) => void) | null>(
+  const stepUpResolverRef = useRef<((value: StepUpValues | null) => void) | null>(
     null,
   );
   const hasLoadedBackupsRef = useRef(false);
-  const [passwordPrompt, setPasswordPrompt] = useState<PasswordPromptState>({
+  const [stepUpPrompt, setStepUpPrompt] = useState<StepUpPromptState>({
     open: false,
     title: "",
     description: "",
     actionLabel: "Continue",
+    requireMfa: false,
   });
-  const [passwordValue, setPasswordValue] = useState("");
+  const [stepUpPasswordValue, setStepUpPasswordValue] = useState("");
+  const [stepUpMfaValue, setStepUpMfaValue] = useState("");
+  const [stepUpBackupCodeValue, setStepUpBackupCodeValue] = useState("");
   const [backups, setBackups] = useState<BackupRecord[]>([]);
   const [stats, setStats] = useState<Record<string, number>>({});
   const [tableMap, setTableMap] = useState<Record<string, BackupTableConfig>>(
@@ -694,27 +732,32 @@ export function BackupControlPlane() {
     }
   }, [backups, selectedBackupId]);
 
-  async function requestPassword(
+  async function requestStepUp(
     title: string,
     description: string,
     actionLabel: string,
+    requireMfa = false,
   ) {
-    return new Promise<string | null>((resolve) => {
-      passwordResolverRef.current = resolve;
-      setPasswordValue("");
-      setPasswordPrompt({ open: true, title, description, actionLabel });
+    return new Promise<StepUpValues | null>((resolve) => {
+      stepUpResolverRef.current = resolve;
+      setStepUpPasswordValue("");
+      setStepUpMfaValue("");
+      setStepUpBackupCodeValue("");
+      setStepUpPrompt({ open: true, title, description, actionLabel, requireMfa });
     });
   }
 
-  function resolvePasswordPrompt(value: string | null) {
-    const resolver = passwordResolverRef.current;
-    passwordResolverRef.current = null;
-    setPasswordPrompt((current) => ({ ...current, open: false }));
-    setPasswordValue("");
+  function resolveStepUpPrompt(value: StepUpValues | null) {
+    const resolver = stepUpResolverRef.current;
+    stepUpResolverRef.current = null;
+    setStepUpPrompt((current) => ({ ...current, open: false }));
+    setStepUpPasswordValue("");
+    setStepUpMfaValue("");
+    setStepUpBackupCodeValue("");
     resolver?.(value);
   }
 
-  async function submitWithPassword(
+  async function submitWithStepUp(
     url: string,
     payload: Record<string, unknown>,
     options: {
@@ -722,11 +765,12 @@ export function BackupControlPlane() {
       description: string;
       actionLabel?: string;
       errorMessage: string;
+      requireMfa?: boolean;
     },
   ) {
     let requestBody: Record<string, unknown> = payload;
 
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -740,18 +784,73 @@ export function BackupControlPlane() {
 
       if (
         response.status === 403 &&
-        data?.requiresPassword &&
-        !requestBody.confirmPassword
+        (data?.requiresPassword || data?.requiresMfa)
       ) {
-        const confirmedPassword = await requestPassword(
+        const stepUp = await requestStepUp(
           options.title,
           options.description,
           options.actionLabel || "Confirm",
+          Boolean(options.requireMfa || data?.requiresMfa),
         );
-        if (!confirmedPassword) {
-          throw new Error(data?.error || "Password confirmation required.");
+        if (!stepUp) {
+          throw new Error(data?.error || "Step-up confirmation required.");
         }
-        requestBody = { ...payload, confirmPassword: confirmedPassword };
+        requestBody = buildStepUpPayload(payload, stepUp);
+        continue;
+      }
+
+      throw new Error(data?.error || options.errorMessage);
+    }
+
+    throw new Error(options.errorMessage);
+  }
+
+  async function submitBlobWithStepUp(
+    url: string,
+    payload: Record<string, unknown>,
+    options: {
+      title: string;
+      description: string;
+      actionLabel?: string;
+      errorMessage: string;
+      requireMfa?: boolean;
+    },
+  ) {
+    let requestBody: Record<string, unknown> = payload;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        return response.blob();
+      }
+
+      const text = await response.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: text };
+      }
+
+      if (
+        response.status === 403 &&
+        (data?.requiresPassword || data?.requiresMfa)
+      ) {
+        const stepUp = await requestStepUp(
+          options.title,
+          options.description,
+          options.actionLabel || "Confirm",
+          Boolean(options.requireMfa || data?.requiresMfa),
+        );
+        if (!stepUp) {
+          throw new Error(data?.error || "Step-up confirmation required.");
+        }
+        requestBody = buildStepUpPayload(payload, stepUp);
         continue;
       }
 
@@ -802,7 +901,7 @@ export function BackupControlPlane() {
   async function createBackup() {
     setCreating(true);
     try {
-      const data = await submitWithPassword(
+      const data = await submitWithStepUp(
         "/api/backup",
         {
           type: selectedType,
@@ -812,9 +911,10 @@ export function BackupControlPlane() {
         {
           title: "Create encrypted backup",
           description:
-            "Confirm your admin password to export system data and issue an encrypted archive.",
+            "Confirm your admin password and MFA to export system data and issue an encrypted archive.",
           actionLabel: "Create backup",
           errorMessage: "Failed to create backup",
+          requireMfa: true,
         },
       );
 
@@ -841,29 +941,18 @@ export function BackupControlPlane() {
   async function handleHistoricalDownload(backup: BackupRecord) {
     setDownloadingBackupId(backup.id);
     try {
-      const confirmedPassword = await requestPassword(
-        "Download backup archive",
-        "Confirm your admin password before downloading this retained backup archive.",
-        "Download archive",
+      const blob = await submitBlobWithStepUp(
+        `/api/backup/${backup.id}/download`,
+        {},
+        {
+          title: "Download backup archive",
+          description:
+            "Confirm your admin password and MFA before downloading this retained backup archive.",
+          actionLabel: "Download archive",
+          errorMessage: "Failed to download backup archive",
+          requireMfa: true,
+        },
       );
-      if (!confirmedPassword) return;
-
-      const response = await fetch(`/api/backup/${backup.id}/download`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword: confirmedPassword }),
-      });
-      const blob = await response.blob();
-      if (!response.ok) {
-        let message = "Failed to download backup archive";
-        try {
-          const parsed = JSON.parse(await blob.text());
-          message = parsed.error || message;
-        } catch {
-          message = (await blob.text()) || message;
-        }
-        throw new Error(message);
-      }
 
       downloadFile(
         blob,
@@ -880,6 +969,11 @@ export function BackupControlPlane() {
 
   async function handleImportFile(file: File) {
     try {
+      if (file.size > MAX_BACKUP_UI_UPLOAD_BYTES) {
+        throw new Error(
+          `Backup archive is larger than ${formatBytes(MAX_BACKUP_UI_UPLOAD_BYTES)}.`,
+        );
+      }
       const parsed = JSON.parse(await file.text());
       const previewState = extractImportPreview(parsed);
       setImportFile(file);
@@ -895,7 +989,7 @@ export function BackupControlPlane() {
       setDryRunResult(null);
       setImportResult(null);
       toast.success("Backup archive loaded");
-    } catch {
+    } catch (error: any) {
       setImportFile(null);
       setImportPayload(null);
       setImportPreview(null);
@@ -908,7 +1002,7 @@ export function BackupControlPlane() {
       setVerificationResult(null);
       setDryRunResult(null);
       setImportResult(null);
-      toast.error("Invalid backup file");
+      toast.error(error?.message || "Invalid backup file");
     }
   }
 
@@ -957,19 +1051,18 @@ export function BackupControlPlane() {
     if (!importPayload || importTables.length === 0) return;
     setDryRunning(true);
     try {
-      const response = await fetch("/api/backup/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...importPayload,
-          tables: importTables,
-          mode: "DRY_RUN",
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Dry run failed");
-      }
+      const data = await submitWithStepUp(
+        "/api/backup/import",
+        buildDryRunImportPayload({ importPayload, tables: importTables }),
+        {
+          title: "Preview restore impact",
+          description:
+            "Confirm your admin password and MFA before inspecting this backup archive.",
+          actionLabel: "Run dry run",
+          errorMessage: "Dry run failed",
+          requireMfa: true,
+        },
+      );
       setDryRunResult(data);
       toast.success("Restore impact analysis completed");
     } catch (error: any) {
@@ -986,7 +1079,7 @@ export function BackupControlPlane() {
       if (!restoreConfirmationReady) {
         throw new Error("Restore target confirmation is required.");
       }
-      const result = await submitWithPassword(
+      const result = await submitWithStepUp(
         "/api/backup/import",
         buildRestoreImportPayload({
           importPayload,
@@ -1003,10 +1096,11 @@ export function BackupControlPlane() {
               : "Run merge restore",
           description:
             importMode === "REPLACE"
-              ? "Confirm your admin password to replace selected tables with archive data. The route performs an all-or-nothing transaction."
-              : "Confirm your admin password to merge the selected archive data into the live database.",
+              ? "Confirm your admin password and MFA to replace selected tables with archive data. The route performs an all-or-nothing transaction."
+              : "Confirm your admin password and MFA to merge the selected archive data into the live database.",
           actionLabel: importMode === "REPLACE" ? "Replace data" : "Run merge",
           errorMessage: "Import failed",
+          requireMfa: true,
         },
       );
       setImportResult(result);
@@ -2249,20 +2343,20 @@ export function BackupControlPlane() {
         </div>
       </div>
 
-      {passwordPrompt.open ? (
+      {stepUpPrompt.open ? (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-lg font-semibold text-foreground">
-                  {passwordPrompt.title}
+                  {stepUpPrompt.title}
                 </p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {passwordPrompt.description}
+                  {stepUpPrompt.description}
                 </p>
               </div>
               <button
-                onClick={() => resolvePasswordPrompt(null)}
+                onClick={() => resolveStepUpPrompt(null)}
                 className="rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -2272,9 +2366,16 @@ export function BackupControlPlane() {
               className="mt-5 space-y-4"
               onSubmit={(event: FormEvent<HTMLFormElement>) => {
                 event.preventDefault();
-                resolvePasswordPrompt(
-                  passwordValue.trim() ? passwordValue : null,
-                );
+                const confirmPassword = stepUpPasswordValue.trim();
+                if (!confirmPassword) {
+                  resolveStepUpPrompt(null);
+                  return;
+                }
+                resolveStepUpPrompt({
+                  confirmPassword,
+                  mfaCode: stepUpMfaValue.trim() || undefined,
+                  backupCode: stepUpBackupCodeValue.trim() || undefined,
+                });
               }}
             >
               <div>
@@ -2286,26 +2387,59 @@ export function BackupControlPlane() {
                   <input
                     type="password"
                     autoFocus
-                    value={passwordValue}
-                    onChange={(event) => setPasswordValue(event.target.value)}
+                    value={stepUpPasswordValue}
+                    onChange={(event) =>
+                      setStepUpPasswordValue(event.target.value)
+                    }
                     className="w-full bg-transparent text-sm text-foreground outline-none"
                     placeholder="Enter your password"
                   />
                 </div>
               </div>
+              {stepUpPrompt.requireMfa ? (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      MFA code
+                    </label>
+                    <input
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      value={stepUpMfaValue}
+                      onChange={(event) => setStepUpMfaValue(event.target.value)}
+                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+                      placeholder="123456"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Backup code
+                    </label>
+                    <input
+                      value={stepUpBackupCodeValue}
+                      onChange={(event) =>
+                        setStepUpBackupCodeValue(event.target.value)
+                      }
+                      className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground outline-none"
+                      placeholder="Recovery code"
+                    />
+                  </div>
+                </div>
+              ) : null}
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => resolvePasswordPrompt(null)}
+                  onClick={() => resolveStepUpPrompt(null)}
                   className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  disabled={!stepUpPasswordValue.trim()}
                   className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
-                  {passwordPrompt.actionLabel}
+                  {stepUpPrompt.actionLabel}
                 </button>
               </div>
             </form>

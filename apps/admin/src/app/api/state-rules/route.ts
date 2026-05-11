@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -22,6 +22,12 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requirePermission("state_rules", "canCreate", { minimumRole: "ADMIN" });
     const body = await request.json();
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
+      operation: "state_rule_mutation",
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
 
     if (!body.stateCode || !body.stateName) {
       return NextResponse.json({ error: "stateCode and stateName are required" }, { status: 400 });

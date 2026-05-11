@@ -3,6 +3,7 @@ import { decrypt, encrypt } from "@/lib/shared-encryption";
 import {
   getRuntimeConfigDefinition,
   getRuntimeConfigEnvValue,
+  isProductionLikeRuntimeConfigEnv,
   isRuntimeConfigDbBackedKeyAllowed,
   normalizeRuntimeConfigValue,
   RUNTIME_CONFIG_DEFINITIONS,
@@ -188,7 +189,9 @@ export async function listRuntimeConfigCatalog(): Promise<RuntimeConfigCatalogIt
  * Throws `INVALID_RUNTIME_CONFIG_VALUE:<reason>` on rejection.
  */
 function assertRuntimeConfigValueShape(key: string, value: string): void {
-  const sharedValidation = validateRuntimeConfigValueShape(key, value);
+  const sharedValidation = validateRuntimeConfigValueShape(key, value, {
+    productionLike: isProductionLikeRuntimeConfigEnv(process.env),
+  });
   if (!sharedValidation.ok && sharedValidation.reason && sharedValidation.reason !== "missing") {
     throw new Error(`INVALID_RUNTIME_CONFIG_VALUE:${sharedValidation.reason}`);
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
 
@@ -25,13 +26,32 @@ export async function POST(req: NextRequest) {
 
   const { token, platform, deviceName } = parsed.data;
 
-  const device = await prisma.pushDevice.upsert({
+  const existing = await prisma.pushDevice.findUnique({
     where: { token },
-    update: { userId, platform, deviceName, lastSeenAt: new Date() },
-    create: { userId, token, platform, deviceName },
+    select: { id: true, userId: true },
   });
 
-  return NextResponse.json({ id: device.id });
+  if (existing && existing.userId !== userId) {
+    return NextResponse.json({ error: "Push token already registered" }, { status: 409 });
+  }
+
+  try {
+    const device = existing
+      ? await prisma.pushDevice.update({
+        where: { id: existing.id },
+        data: { platform, deviceName, lastSeenAt: new Date() },
+      })
+      : await prisma.pushDevice.create({
+        data: { userId, token, platform, deviceName },
+      });
+
+    return NextResponse.json({ id: device.id });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return NextResponse.json({ error: "Push token already registered" }, { status: 409 });
+    }
+    throw error;
+  }
 }
 
 export async function DELETE(req: NextRequest) {

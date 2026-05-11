@@ -41,7 +41,7 @@ export interface AuditRequestMeta {
 }
 
 export interface WriteAdminAuditInput {
-  /** Short verb describing the operation. Capped at 20 chars by schema. */
+  /** Short verb describing the operation. Capped at 64 chars by schema. */
   action: string;
   /** Prisma model or domain entity name. Capped at 50 chars by schema. */
   entityType: string;
@@ -62,7 +62,7 @@ export interface WriteAdminAuditInput {
 }
 
 const inputSchema = z.object({
-  action: z.string().trim().min(1).max(20),
+  action: z.string().trim().min(1).max(64),
   entityType: z.string().trim().min(1).max(50),
   entityId: z.string().trim().min(1).max(30),
   before: z.unknown().optional(),
@@ -97,7 +97,7 @@ function buildChangesPayload(
 export async function writeAdminAudit(
   session: AdminSession,
   input: WriteAdminAuditInput,
-): Promise<void> {
+): Promise<{ id: string } | null> {
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) {
     // Fail loud in development so a bad call site is caught early; in
@@ -115,10 +115,10 @@ export async function writeAdminAudit(
   const data = parsed.success ? parsed.data : (input as z.infer<typeof inputSchema>);
 
   try {
-    await prisma.adminAuditLog.create({
+    return await prisma.adminAuditLog.create({
       data: {
         adminUserId: session.adminId,
-        action: String(data.action ?? "UNKNOWN").slice(0, 20),
+        action: String(data.action ?? "UNKNOWN").slice(0, 64),
         entityType: String(data.entityType ?? "Unknown").slice(0, 50),
         entityId: String(data.entityId ?? "unknown").slice(0, 30),
         changes: buildChangesPayload(session, data),
@@ -132,6 +132,7 @@ export async function writeAdminAudit(
     // op. Log loudly so the gap is visible in error reporting.
     console.error("[audit] writeAdminAudit failed:", err);
   }
+  return null;
 }
 
 /**

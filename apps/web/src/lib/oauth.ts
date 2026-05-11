@@ -253,6 +253,7 @@ export function appleAuthorizeUrl(opts: {
   clientId: string;
   redirectUri: string;
   state: string;
+  nonce?: string;
 }): string {
   const params = new URLSearchParams({
     client_id: opts.clientId,
@@ -262,6 +263,7 @@ export function appleAuthorizeUrl(opts: {
     state: opts.state,
     response_mode: "form_post", // Apple requires form_post when scope is requested
   });
+  if (opts.nonce) params.set("nonce", opts.nonce);
   return `https://appleid.apple.com/auth/authorize?${params.toString()}`;
 }
 

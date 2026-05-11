@@ -24,6 +24,12 @@ import { listRuntimeConfigCatalog, upsertRuntimeConfigEntry } from "@/lib/runtim
 
 describe("upsertRuntimeConfigEntry value validation", () => {
   const baseInput = { adminId: "admin_1", note: null as string | null };
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env = { ...originalEnv, NODE_ENV: "test" };
+  });
 
   it("rejects an unknown key", async () => {
     await expect(
@@ -45,6 +51,27 @@ describe("upsertRuntimeConfigEntry value validation", () => {
         value: "rk_live_thisisrestricted",
       }),
     ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:stripe_secret_prefix/);
+  });
+
+  it("rejects a Stripe test secret in production-like environments", async () => {
+    process.env = { ...originalEnv, NODE_ENV: "production" };
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "STRIPE_SECRET_KEY",
+        value: "sk_test_abcdef0123456789",
+      }),
+    ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:stripe_live_secret_required/);
+  });
+
+  it("rejects masked display values", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "RESEND_API_KEY",
+        value: "re***1234",
+      }),
+    ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:masked_value/);
   });
 
   it("rejects a hex key that is not 64 chars", async () => {
@@ -98,6 +125,36 @@ describe("upsertRuntimeConfigEntry value validation", () => {
         value: "not_a_webhook_secret_payload",
       }),
     ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:stripe_webhook_prefix/);
+  });
+
+  it("rejects Stripe price IDs without price_ prefix", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "STRIPE_PRICE_INDIVIDUAL_MONTHLY",
+        value: "prod_123",
+      }),
+    ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:stripe_price_prefix/);
+  });
+
+  it("rejects unsupported backup storage providers", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "BACKUP_STORAGE_PROVIDER",
+        value: "ftp",
+      }),
+    ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:storage_provider/);
+  });
+
+  it("rejects malformed private keys", async () => {
+    await expect(
+      upsertRuntimeConfigEntry({
+        ...baseInput,
+        key: "APPLE_OAUTH_PRIVATE_KEY",
+        value: "not-a-pem-private-key",
+      }),
+    ).rejects.toThrow(/INVALID_RUNTIME_CONFIG_VALUE:private_key_pem_required/);
   });
 
   it("accepts a well-formed Stripe webhook secret", async () => {

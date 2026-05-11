@@ -35,6 +35,35 @@ function hasMissingStoreIdentifier(subscription: any) {
   return false;
 }
 
+function redactDeletedBillingUser(user: any) {
+  if (!user) return null;
+  if (user.deletedAt) {
+    return {
+      id: user.id,
+      email: null,
+      firstName: null,
+      lastName: null,
+      createdAt: user.createdAt,
+      deleted: true,
+    };
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    createdAt: user.createdAt,
+  };
+}
+
+function sanitizeBillingSubscription(subscription: any) {
+  return {
+    ...subscription,
+    user: redactDeletedBillingUser(subscription.user),
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     await requirePermission("subscriptions", "canRead", { minimumRole: "ADMIN" });
@@ -46,7 +75,7 @@ export async function GET(req: NextRequest) {
     const staleValidationThreshold = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     const allSubs = await prisma.subscription.findMany({
-      include: { user: { select: { id: true, email: true, firstName: true, lastName: true, createdAt: true } } },
+      include: { user: { select: { id: true, email: true, firstName: true, lastName: true, createdAt: true, deletedAt: true } } },
     }) as any[];
 
     const activeSubs = allSubs.filter((s) => ["ACTIVE", "TRIALING"].includes(s.status));
@@ -134,8 +163,11 @@ export async function GET(req: NextRequest) {
       statusDistribution,
       providerDistribution,
       platformDistribution,
-      trialExpiring: trialExpiring.map((s) => ({ ...s, daysLeft: Math.ceil((new Date(s.trialEndsAt!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) })),
-      recentCancellations,
+      trialExpiring: trialExpiring.map((s) => ({
+        ...sanitizeBillingSubscription(s),
+        daysLeft: Math.ceil((new Date(s.trialEndsAt!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+      })),
+      recentCancellations: recentCancellations.map(sanitizeBillingSubscription),
       dailyRevenue,
       mobileOps: {
         totalSubscriptions: mobileSubs.length,
@@ -156,7 +188,7 @@ export async function GET(req: NextRequest) {
         .slice(0, 10)
         .map((s) => ({
           id: s.id,
-          user: s.user,
+          user: redactDeletedBillingUser(s.user),
           provider: s.provider,
           platform: s.platform,
           plan: s.plan,

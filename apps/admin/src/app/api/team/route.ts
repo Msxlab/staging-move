@@ -3,6 +3,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import {
   ADMIN_ROLE_VALUES,
   buildDefaultPermissionMatrix,
@@ -22,6 +23,8 @@ const createAdminSchema = z
     // confirmPassword is optional at the schema layer — the missing
     // case is what triggers the 403 step-up prompt, not a 400 from zod.
     confirmPassword: z.string().max(256).optional(),
+    mfaCode: z.string().trim().max(16).optional(),
+    backupCode: z.string().trim().max(64).optional(),
   })
   .strict();
 
@@ -126,12 +129,31 @@ export async function POST(request: NextRequest) {
       );
     }
     const body = parsed.data;
+    const requestMeta = getAuditRequestMeta(request);
 
     const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
       operation: "admin_user_create",
+      requireMfa: true,
+      mfaCode: body.mfaCode,
+      backupCode: body.backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
     });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      await writeAdminAudit(session, {
+        action: "ADMIN_CREATE_FAILED",
+        entityType: "AdminUser",
+        entityId: "new",
+        metadata: {
+          operation: "admin_user_create",
+          status: "failed",
+          reason: "step_up_failed",
+          targetRole: body.role,
+          requiresMfa: Boolean(confirm.requiresMfa),
+        },
+        request: requestMeta,
+      });
+      return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
     // SEC-009: complexity requirement is separate from zod min(12) so we
@@ -173,15 +195,17 @@ export async function POST(request: NextRequest) {
       })),
     });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "CREATE_ADMIN",
-        entityType: "AdminUser",
-        entityId: admin.id,
-        changes: JSON.stringify({ email: admin.email, role: admin.role }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+    await writeAdminAudit(session, {
+      action: "ADMIN_CREATED",
+      entityType: "AdminUser",
+      entityId: admin.id,
+      metadata: {
+        operation: "admin_user_create",
+        status: "success",
+        targetRole: admin.role,
+        emailDomain: admin.email.split("@")[1] || null,
       },
+      request: requestMeta,
     });
 
     return NextResponse.json({

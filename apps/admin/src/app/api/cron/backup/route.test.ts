@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   backupRecordUpdate: vi.fn(),
   backupRecordUpdateMany: vi.fn(),
   backupRecordDeleteMany: vi.fn(),
+  auditCreate: vi.fn(),
+  safeUserFindMany: vi.fn(),
+  unsafeUserFindMany: vi.fn(),
   requireBackupCrypto: vi.fn(),
   encryptBackup: vi.fn(),
   signBackup: vi.fn(),
@@ -25,7 +28,30 @@ vi.mock("@/lib/db", () => ({
       updateMany: mocks.backupRecordUpdateMany,
       deleteMany: mocks.backupRecordDeleteMany,
     },
-    user: { findMany: vi.fn().mockResolvedValue([]) },
+    adminAuditLog: { create: mocks.auditCreate },
+    user: { findMany: mocks.safeUserFindMany },
+    oAuthAccount: { findMany: vi.fn().mockResolvedValue([]) },
+    profile: { findMany: vi.fn().mockResolvedValue([]) },
+    dataConsent: { findMany: vi.fn().mockResolvedValue([]) },
+    serviceProvider: { findMany: vi.fn().mockResolvedValue([]) },
+    serviceProviderCoverage: { findMany: vi.fn().mockResolvedValue([]) },
+    address: { findMany: vi.fn().mockResolvedValue([]) },
+    service: { findMany: vi.fn().mockResolvedValue([]) },
+    movingPlan: { findMany: vi.fn().mockResolvedValue([]) },
+    userCustomProvider: { findMany: vi.fn().mockResolvedValue([]) },
+    moveTask: { findMany: vi.fn().mockResolvedValue([]) },
+    budget: { findMany: vi.fn().mockResolvedValue([]) },
+    subscription: { findMany: vi.fn().mockResolvedValue([]) },
+    notification: { findMany: vi.fn().mockResolvedValue([]) },
+    emailLog: { findMany: vi.fn().mockResolvedValue([]) },
+    auditLog: { findMany: vi.fn().mockResolvedValue([]) },
+    providerGovernanceIssue: { findMany: vi.fn().mockResolvedValue([]) },
+    adminUser: { findMany: vi.fn().mockResolvedValue([]) },
+    adminPermission: { findMany: vi.fn().mockResolvedValue([]) },
+    adminLoginLog: { findMany: vi.fn().mockResolvedValue([]) },
+  },
+  prismaUnsafe: {
+    user: { findMany: mocks.unsafeUserFindMany },
     oAuthAccount: { findMany: vi.fn().mockResolvedValue([]) },
     profile: { findMany: vi.fn().mockResolvedValue([]) },
     dataConsent: { findMany: vi.fn().mockResolvedValue([]) },
@@ -46,6 +72,11 @@ vi.mock("@/lib/db", () => ({
     adminPermission: { findMany: vi.fn().mockResolvedValue([]) },
     adminLoginLog: { findMany: vi.fn().mockResolvedValue([]) },
     adminAuditLog: { findMany: vi.fn().mockResolvedValue([]) },
+    acquisitionCampaign: { findMany: vi.fn().mockResolvedValue([]) },
+    acquisitionRedemption: { findMany: vi.fn().mockResolvedValue([]) },
+    blogCategory: { findMany: vi.fn().mockResolvedValue([]) },
+    blogTag: { findMany: vi.fn().mockResolvedValue([]) },
+    blogPost: { findMany: vi.fn().mockResolvedValue([]) },
   },
 }));
 
@@ -56,9 +87,10 @@ vi.mock("@/lib/alert-dispatcher", () => ({
   dispatchAlert: mocks.dispatchAlert,
 }));
 vi.mock("@/lib/backup-archive", () => ({
-  createBackupArchive: vi.fn(),
+  createBackupArchive: vi.fn((input) => ({ version: 1, ...input })),
 }));
 vi.mock("@/lib/backup-storage", () => ({
+  parseBackupRecordMetadata: vi.fn(() => ({})),
   serializeBackupRecordMetadata: vi.fn((metadata) => JSON.stringify(metadata)),
   uploadBackupArchive: mocks.uploadBackupArchive,
 }));
@@ -106,6 +138,8 @@ describe("cron backup safety policy", () => {
     vi.stubEnv("FIELD_ENCRYPTION_KEY", "");
     mocks.dispatchAlert.mockResolvedValue(undefined);
     mocks.verifyInternalAuth.mockReturnValue(true);
+    mocks.requireBackupCrypto.mockReset();
+    mocks.requireBackupCrypto.mockImplementation(() => undefined);
     mocks.backupRecordFindFirst.mockResolvedValue(null);
     mocks.backupRecordCreate.mockResolvedValue({
       id: "backup_cron_1",
@@ -116,6 +150,9 @@ describe("cron backup safety policy", () => {
     mocks.backupRecordUpdateMany.mockResolvedValue({ count: 0 });
     mocks.backupRecordUpdate.mockResolvedValue({});
     mocks.backupRecordDeleteMany.mockResolvedValue({ count: 0 });
+    mocks.auditCreate.mockResolvedValue({});
+    mocks.safeUserFindMany.mockResolvedValue([]);
+    mocks.unsafeUserFindMany.mockResolvedValue([{ id: "soft_deleted_user" }]);
     mocks.encryptBackup.mockReturnValue("encrypted");
     mocks.signBackup.mockReturnValue("signature");
     mocks.uploadBackupArchive.mockResolvedValue({ status: "stored" });
@@ -165,6 +202,24 @@ describe("cron backup safety policy", () => {
       "CRITICAL",
       "cron",
       expect.stringContaining("crypto missing"),
+    );
+  });
+
+  it("exports cron backup data through prismaUnsafe so soft-deleted rows are included", async () => {
+    vi.stubEnv("FIELD_ENCRYPTION_KEY", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+
+    const { POST } = await import("./route");
+    const response = await POST(cronRequest());
+
+    expect(response.status).toBe(200);
+    expect(mocks.unsafeUserFindMany).toHaveBeenCalled();
+    expect(mocks.safeUserFindMany).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "BACKUP_CRON_SUCCESS",
+        }),
+      }),
     );
   });
 });

@@ -6,10 +6,21 @@ import { budgetSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { calculateBudgetPlan } from "@/lib/budget-planning";
 
-function monthDateFromInput(month: string): Date {
+const GLOBAL_BUDGET_SCOPE_KEY = "__global__";
+
+function monthDateFromInput(month: string): Date | null {
   const parsed = new Date(month);
-  if (!Number.isFinite(parsed.getTime())) return new Date();
-  return new Date(parsed.getUTCFullYear(), parsed.getUTCMonth(), 1);
+  if (!Number.isFinite(parsed.getTime())) return null;
+  return new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), 1));
+}
+
+function currentUtcMonth(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}
+
+function budgetScopeKey(addressId: string | null | undefined): string {
+  return addressId || GLOBAL_BUDGET_SCOPE_KEY;
 }
 
 async function calculateProjectedExpenses(userId: string, month: Date, addressId?: string | null): Promise<number> {
@@ -48,7 +59,13 @@ export async function GET(request: NextRequest) {
     const where: any = { userId, deletedAt: null };
     if (id) where.id = id;
     if (addressId) where.addressId = addressId;
-    if (month) where.month = new Date(month);
+    if (month) {
+      const budgetMonth = monthDateFromInput(month);
+      if (!budgetMonth) {
+        return NextResponse.json({ error: "Invalid month" }, { status: 400 });
+      }
+      where.month = budgetMonth;
+    }
 
     const budgets = await prisma.budget.findMany({
       where,
@@ -56,7 +73,9 @@ export async function GET(request: NextRequest) {
     });
 
     const selectedBudget = id ? budgets[0] : null;
-    const summaryMonth = month ? monthDateFromInput(month) : (selectedBudget?.month || new Date());
+    const summaryMonth = month
+      ? monthDateFromInput(month)!
+      : (selectedBudget?.month || currentUtcMonth());
     const summaryAddressId = addressId || selectedBudget?.addressId || null;
     const services = await prisma.service.findMany({
       where: {
@@ -118,7 +137,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = budgetSchema.parse(body);
     const budgetMonth = monthDateFromInput(validated.month);
+    if (!budgetMonth) {
+      return NextResponse.json({ error: "Invalid month" }, { status: 400 });
+    }
     const addressId = validated.addressId || null;
+    const scopeKey = budgetScopeKey(addressId);
 
     if (addressId) {
       const address = await prisma.address.findUnique({ where: { id: addressId } });
@@ -138,16 +161,9 @@ export async function POST(request: NextRequest) {
           : undefined;
     const projectedExpenses = validated.actualExpenses ?? (await calculateProjectedExpenses(userId, budgetMonth, addressId));
 
-    const existingBudget = await prisma.budget.findFirst({
-      where: {
-        userId,
-        addressId,
-        month: budgetMonth,
-      },
-    });
-
     const budgetData = {
       addressId,
+      scopeKey,
       month: budgetMonth,
       year: validated.year,
       plannedIncome: validated.plannedIncome ?? null,
@@ -156,19 +172,31 @@ export async function POST(request: NextRequest) {
       actualExpenses: projectedExpenses,
       categoryBreakdown: categoryBreakdown ?? null,
       notes: validated.notes ?? null,
+      deletedAt: null,
     };
 
-    const budget = existingBudget
-      ? await prisma.budget.update({
-        where: { id: existingBudget.id },
-        data: budgetData,
-      })
-      : await prisma.budget.create({
+    const budget = await (prisma.budget as any).upsert({
+      where: {
+        userId_scopeKey_month: {
+          userId,
+          scopeKey,
+          month: budgetMonth,
+        },
+      },
+      update: budgetData,
+      create: {
+        userId,
+        ...budgetData,
+      },
+    }).catch(async (error: any) => {
+      if (error?.code !== "P2025") throw error;
+      return prisma.budget.create({
         data: {
           userId,
           ...budgetData,
         },
       });
+    });
 
     return NextResponse.json({ budget }, { status: 201 });
   } catch (error: any) {

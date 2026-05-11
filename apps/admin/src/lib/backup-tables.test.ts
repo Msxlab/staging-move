@@ -25,6 +25,7 @@ const INTENTIONALLY_EXCLUDED_MODELS: ReadonlySet<string> = new Set([
   "PasswordResetToken", // already-issued reset tokens — never restore live tokens
   "EmailVerificationToken", // same as above
   "MobileOAuthCode", // single-use OAuth exchange codes
+  "OAuthState", // short-lived OAuth state/nonce replay guard
   "ProcessedWebhookEvent", // dedupe ledger; safe to rebuild
   "RateLimitLog", // observability table, low value at restore time
   "UserEvent", // analytics events; rebuild via re-instrumentation

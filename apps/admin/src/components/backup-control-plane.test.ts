@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildRestoreImportPayload } from "./backup-control-plane";
+import {
+  MAX_BACKUP_UI_UPLOAD_BYTES,
+  buildDryRunImportPayload,
+  buildRestoreImportPayload,
+  buildStepUpPayload,
+} from "./backup-control-plane";
 
 describe("backup restore UI payload", () => {
   it("sends the target environment confirmation for MERGE restores", () => {
@@ -36,5 +41,40 @@ describe("backup restore UI payload", () => {
       productionRestoreConfirmation: "RESTORE PRODUCTION abcdef123456",
     });
   });
-});
 
+  it("sends MFA and backup code fields with step-up payloads", () => {
+    const payload = buildStepUpPayload(
+      { mode: "MERGE", tables: ["users"] },
+      {
+        confirmPassword: "correct horse",
+        mfaCode: "123456",
+        backupCode: "backup-code-1",
+      },
+    );
+
+    expect(payload).toMatchObject({
+      mode: "MERGE",
+      tables: ["users"],
+      confirmPassword: "correct horse",
+      mfaCode: "123456",
+      backupCode: "backup-code-1",
+    });
+  });
+
+  it("builds dry-run import payloads through the shared restore step-up flow", () => {
+    expect(
+      buildDryRunImportPayload({
+        importPayload: { archive: { version: 1 } },
+        tables: ["users"],
+      }),
+    ).toMatchObject({
+      archive: { version: 1 },
+      tables: ["users"],
+      mode: "DRY_RUN",
+    });
+  });
+
+  it("keeps browser import reads under the synchronous upload limit", () => {
+    expect(MAX_BACKUP_UI_UPLOAD_BYTES).toBeLessThanOrEqual(25 * 1024 * 1024);
+  });
+});

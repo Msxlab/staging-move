@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildCspHeader, isPublicStaticPath } from "./middleware";
+import { buildCspHeader, isPublicPath, isPublicStaticPath } from "./middleware";
 
 const ORIGINAL_R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
 
@@ -70,5 +70,14 @@ describe("admin service worker", () => {
     expect(fetchHandler).toContain("if (url.origin !== self.location.origin) return;");
     expect(fetchHandler).not.toContain("respondWith");
     expect(sw).not.toContain("assets.locateflow.com");
+  });
+});
+
+describe("admin middleware public auth paths", () => {
+  it("does not treat login-prefixed protected API routes as public", () => {
+    expect(isPublicPath("/login")).toBe(true);
+    expect(isPublicPath("/api/auth/login")).toBe(true);
+    expect(isPublicPath("/api/auth/login-history")).toBe(false);
+    expect(isPublicPath("/api/auth/login/extra")).toBe(false);
   });
 });

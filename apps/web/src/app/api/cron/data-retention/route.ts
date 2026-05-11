@@ -13,7 +13,7 @@ import { LEGAL_CONSENT_EVENT, ONBOARDING_COMPLETED_EVENT } from "@/lib/legal";
  * Secured with CRON_SECRET header check.
  * Recommended schedule: daily at 3:00 AM UTC.
  */
-export async function POST(request: NextRequest) {
+async function handleCron(request: NextRequest) {
   // Cron-secret check + per-route rate limit. Heavy retention sweep — keep
   // the limit low so a leaked secret can't trigger repeated mass deletes.
   const guard = await guardCronRequest(request, "data-retention", { limit: 2 });
@@ -71,4 +71,12 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json({ error: "Cleanup failed" }, { status: 500 });
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleCron(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleCron(request);
 }

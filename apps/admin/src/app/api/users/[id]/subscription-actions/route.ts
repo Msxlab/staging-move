@@ -3,6 +3,7 @@ import { z } from "zod";
 import Stripe from "stripe";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
 
 const SUBSCRIPTION_ACTIONS = [
@@ -16,6 +17,8 @@ const subscriptionActionSchema = z
   .object({
     action: z.enum(SUBSCRIPTION_ACTIONS),
     confirmPassword: z.string().max(256).optional(),
+    mfaCode: z.string().trim().max(16).optional(),
+    backupCode: z.string().trim().max(64).optional(),
   })
   .strict();
 
@@ -50,16 +53,35 @@ export async function POST(
         { status: 400 },
       );
     }
-    const { action, confirmPassword } = parsed.data;
+    const { action, confirmPassword, mfaCode, backupCode } = parsed.data;
+    const { id: userId } = await params;
+    const requestMeta = getAuditRequestMeta(request);
 
     const confirm = await requirePasswordConfirm(session, confirmPassword, {
       operation: "billing_subscription_action",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
     });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      await writeAdminAudit(session, {
+        action: "USER_BILLING_UPDATE_FAILED",
+        entityType: "User",
+        entityId: userId,
+        metadata: {
+          operation: "billing_subscription_action",
+          status: "failed",
+          reason: "step_up_failed",
+          action,
+          requiresMfa: Boolean(confirm.requiresMfa),
+        },
+        request: requestMeta,
+      });
+      return NextResponse.json({ error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined }, { status: 403 });
     }
 
-    const { id: userId } = await params;
     const subscription = await prisma.subscription.findUnique({ where: { userId } });
     if (!subscription?.stripeSubscriptionId) {
       return NextResponse.json({ error: "User does not have a Stripe subscription." }, { status: 400 });
@@ -87,21 +109,20 @@ export async function POST(
         type: stripeError?.type || null,
         code: stripeError?.code || null,
       });
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "SUBSCRIPTION_ACTION_FAILED",
-          entityType: "Subscription",
-          entityId: subscription.id,
-          changes: JSON.stringify({
-            action,
-            userId,
-            stripeSubscriptionId: subscription.stripeSubscriptionId,
-            errorType: stripeError?.type || null,
-            errorCode: stripeError?.code || null,
-          }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      await writeAdminAudit(session, {
+        action: "USER_BILLING_UPDATE_FAILED",
+        entityType: "Subscription",
+        entityId: subscription.id,
+        metadata: {
+          operation: "billing_subscription_action",
+          status: "failed",
+          reason: "stripe_update_failed",
+          action,
+          targetUserId: userId,
+          errorType: stripeError?.type || null,
+          errorCode: stripeError?.code || null,
         },
+        request: requestMeta,
       }).catch(() => null);
       return NextResponse.json(
         { error: "Failed to update subscription with the billing provider. Please try again." },
@@ -134,20 +155,18 @@ export async function POST(
       },
     });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "UPDATE",
-        entityType: "Subscription",
-        entityId: updated.id,
-        changes: JSON.stringify({
-          action,
-          userId,
-          stripeSubscriptionId: subscription.stripeSubscriptionId,
-          status: nextStatus,
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+    await writeAdminAudit(session, {
+      action: "USER_BILLING_UPDATED",
+      entityType: "Subscription",
+      entityId: updated.id,
+      metadata: {
+        operation: "billing_subscription_action",
+        status: "success",
+        action,
+        targetUserId: userId,
+        nextStatus,
       },
+      request: requestMeta,
     });
 
     return NextResponse.json({ subscription: updated });

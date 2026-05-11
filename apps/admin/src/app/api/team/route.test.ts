@@ -81,7 +81,24 @@ describe("admin team create", () => {
     expect(response.status).toBe(403);
     expect(body.requiresPassword).toBe(true);
     expect(mocks.adminCreate).not.toHaveBeenCalled();
-    expect(mocks.auditCreate).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "ADMIN_CREATE_FAILED",
+        entityType: "AdminUser",
+        entityId: "new",
+      }),
+    });
+  });
+
+  it("blocks non-SUPER_ADMIN callers through the permission gate", async () => {
+    mocks.requirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const response = await POST(request({ ...validBody, confirmPassword: "admin-password", mfaCode: "123456" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.error).toBe("FORBIDDEN");
+    expect(mocks.adminCreate).not.toHaveBeenCalled();
   });
 
   it("creates and audits a new admin after password confirmation", async () => {
@@ -94,7 +111,7 @@ describe("admin team create", () => {
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
       { adminId: "admin_1" },
       "admin-password",
-      { operation: "admin_user_create" },
+      expect.objectContaining({ operation: "admin_user_create", requireMfa: true }),
     );
     expect(mocks.adminCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -105,7 +122,7 @@ describe("admin team create", () => {
     });
     expect(mocks.auditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        action: "CREATE_ADMIN",
+        action: "ADMIN_CREATED",
         entityType: "AdminUser",
         entityId: "admin_2",
       }),

@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   auditCreate: vi.fn(),
   parseBackupRecordMetadata: vi.fn(),
   downloadBackupArchive: vi.fn(),
+  isValidBackupObjectKey: vi.fn(),
+  sanitizeBackupFileName: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -29,6 +31,8 @@ vi.mock("@/lib/db", () => ({
 vi.mock("@/lib/backup-storage", () => ({
   parseBackupRecordMetadata: (...args: unknown[]) => mocks.parseBackupRecordMetadata(...args),
   downloadBackupArchive: (...args: unknown[]) => mocks.downloadBackupArchive(...args),
+  isValidBackupObjectKey: (...args: unknown[]) => mocks.isValidBackupObjectKey(...args),
+  sanitizeBackupFileName: (...args: unknown[]) => mocks.sanitizeBackupFileName(...args),
 }));
 
 import { GET, POST } from "./route";
@@ -58,9 +62,11 @@ describe("backup archive download", () => {
     mocks.parseBackupRecordMetadata.mockReturnValue({
       offsite: {
         status: "stored",
-        objectKey: "backups/backup_1/backup.json",
+        objectKey: "backups/2026-04-24/backup_1/backup.json",
       },
     });
+    mocks.isValidBackupObjectKey.mockReturnValue(true);
+    mocks.sanitizeBackupFileName.mockImplementation((value: string) => value || "backup.json");
     mocks.downloadBackupArchive.mockResolvedValue({
       content: "{\"ok\":true}",
       contentType: "application/json",
@@ -89,7 +95,12 @@ describe("backup archive download", () => {
     expect(response.status).toBe(403);
     expect(body.requiresPassword).toBe(true);
     expect(mocks.downloadBackupArchive).not.toHaveBeenCalled();
-    expect(mocks.auditCreate).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: "backup_1",
+      }),
+    });
   });
 
   it("downloads and audits the archive after password confirmation", async () => {
@@ -102,15 +113,33 @@ describe("backup archive download", () => {
     expect(await response.text()).toBe("{\"ok\":true}");
     expect(mocks.downloadBackupArchive).toHaveBeenCalledWith({
       status: "stored",
-      objectKey: "backups/backup_1/backup.json",
+      objectKey: "backups/2026-04-24/backup_1/backup.json",
     });
     expect(mocks.auditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         adminUserId: "admin_1",
-        action: "BACKUP_DOWNLOAD",
+        action: "BACKUP_DOWNLOAD_SUCCESS",
         entityType: "BackupRecord",
         entityId: "backup_1",
         ipAddress: "203.0.113.10",
+      }),
+    });
+  });
+
+  it("rejects invalid offsite object keys before downloading", async () => {
+    mocks.isValidBackupObjectKey.mockReturnValue(false);
+
+    const response = await POST(
+      request({ confirmPassword: "admin-password", mfaCode: "123456" }),
+      { params: Promise.resolve({ id: "backup_1" }) },
+    );
+
+    expect(response.status).toBe(409);
+    expect(mocks.downloadBackupArchive).not.toHaveBeenCalled();
+    expect(mocks.auditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: "backup_1",
       }),
     });
   });

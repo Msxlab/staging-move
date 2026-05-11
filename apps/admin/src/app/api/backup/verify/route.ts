@@ -4,7 +4,15 @@ import { parseBackupArchive } from "@/lib/backup-archive";
 import { BACKUP_TABLES } from "@/lib/backup-tables";
 import { requirePermission } from "@/lib/auth";
 import { decryptBackup, verifyBackupSignature } from "@/lib/shared-encryption";
-import { redactBackupSecretText } from "@/lib/backup-metadata";
+import {
+  getBackupCompatibilityMetadata,
+  redactBackupSecretText,
+} from "@/lib/backup-metadata";
+import {
+  MAX_BACKUP_VERIFY_BYTES,
+  requestBodyTooLarge,
+} from "@/lib/backup-policy";
+import { writeBackupAudit } from "@/lib/backup-audit";
 
 const ALLOWED_TABLES = new Set(Object.keys(BACKUP_TABLES));
 
@@ -43,8 +51,23 @@ function normalizeBackupData(input: unknown): Record<string, any[]> {
 // POST /api/backup/verify — verify backup integrity without importing
 // Checks: JSON structure, HMAC signature, encryption, table counts, schema compatibility
 export async function POST(request: NextRequest) {
+  let session: Awaited<ReturnType<typeof requirePermission>> | null = null;
   try {
-    await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+    session = await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+    if (requestBodyTooLarge(request, MAX_BACKUP_VERIFY_BYTES)) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_VERIFY_FAILED",
+        entityId: "verify",
+        request,
+        metadata: { maxBytes: MAX_BACKUP_VERIFY_BYTES },
+        error: "backup verify payload too large",
+      });
+      return NextResponse.json(
+        { error: "Backup archive is too large to verify synchronously." },
+        { status: 413 },
+      );
+    }
     const body = await request.json();
     const archive = parseBackupArchive(body.archive ?? body);
     const legacySignature = typeof body.signature === "string" ? body.signature : undefined;
@@ -54,6 +77,8 @@ export async function POST(request: NextRequest) {
     const legacyAuthTag = typeof body.authTag === "string" ? body.authTag : undefined;
 
     const checks: Array<{ name: string; status: "pass" | "fail" | "warn"; detail: string }> = [];
+    let readable = false;
+    let signatureValid = false;
 
     // ── Check 1: Decryption (if encrypted) ─────────────────
     let backupData: Record<string, any[]> | null = null;
@@ -69,19 +94,37 @@ export async function POST(request: NextRequest) {
             const parsed = JSON.parse(decrypted);
             backupData = normalizeBackupData(parsed?.data ?? parsed);
             rawContent = decrypted;
+            readable = true;
             checks.push({ name: "Archive Format", status: "pass", detail: `Version 1 archive (${archive.payload.type}) parsed successfully` });
             checks.push({ name: "Decryption", status: "pass", detail: "Backup decrypted successfully" });
           } else {
             checks.push({ name: "Decryption", status: "fail", detail: "Decryption returned null. Check FIELD_ENCRYPTION_KEY." });
-            return NextResponse.json({ success: false, checks });
+            await writeBackupAudit({
+              session,
+              action: "BACKUP_VERIFY_FAILED",
+              entityId: "verify",
+              request,
+              metadata: { readable: false, structurallyValid: false, restoreReady: false },
+              error: "decryption failed",
+            });
+            return NextResponse.json({ success: false, readable: false, structurallyValid: false, restoreReady: false, checks });
           }
         } catch {
           checks.push({ name: "Decryption", status: "fail", detail: "Decryption failed. Key mismatch or corrupted data." });
-          return NextResponse.json({ success: false, checks });
+          await writeBackupAudit({
+            session,
+            action: "BACKUP_VERIFY_FAILED",
+            entityId: "verify",
+            request,
+            metadata: { readable: false, structurallyValid: false, restoreReady: false },
+            error: "decryption failed",
+          });
+          return NextResponse.json({ success: false, readable: false, structurallyValid: false, restoreReady: false, checks });
         }
       } else {
         backupData = normalizeBackupData(archive.payload.data);
         rawContent = archive.payload.rawContent;
+        readable = true;
         checks.push({ name: "Archive Format", status: "pass", detail: `Version 1 archive (${archive.payload.type}) parsed successfully` });
         checks.push({ name: "Decryption", status: "warn", detail: "Backup archive is plaintext" });
       }
@@ -92,37 +135,64 @@ export async function POST(request: NextRequest) {
           const parsed = JSON.parse(decrypted);
           backupData = normalizeBackupData(parsed?.data ?? parsed);
           rawContent = decrypted;
+          readable = true;
           checks.push({ name: "Decryption", status: "pass", detail: "Backup decrypted successfully" });
         } else {
           checks.push({ name: "Decryption", status: "fail", detail: "Decryption returned null. Check FIELD_ENCRYPTION_KEY." });
-          return NextResponse.json({ success: false, checks });
+          await writeBackupAudit({
+            session,
+            action: "BACKUP_VERIFY_FAILED",
+            entityId: "verify",
+            request,
+            metadata: { readable: false, structurallyValid: false, restoreReady: false },
+            error: "decryption failed",
+          });
+          return NextResponse.json({ success: false, readable: false, structurallyValid: false, restoreReady: false, checks });
         }
       } catch {
         checks.push({ name: "Decryption", status: "fail", detail: "Decryption failed. Key mismatch or corrupted data." });
-        return NextResponse.json({ success: false, checks });
+        await writeBackupAudit({
+          session,
+          action: "BACKUP_VERIFY_FAILED",
+          entityId: "verify",
+          request,
+          metadata: { readable: false, structurallyValid: false, restoreReady: false },
+          error: "decryption failed",
+        });
+        return NextResponse.json({ success: false, readable: false, structurallyValid: false, restoreReady: false, checks });
       }
     } else {
       backupData = normalizeBackupData(body.data ?? body);
+      readable = true;
       checks.push({ name: "Decryption", status: "warn", detail: "Backup is not encrypted (plaintext)" });
     }
 
     // ── Check 2: JSON Structure ─────────────────────────────
     if (!backupData || typeof backupData !== "object") {
       checks.push({ name: "JSON Structure", status: "fail", detail: "Invalid backup data. Expected an object with table names as keys." });
-      return NextResponse.json({ success: false, checks });
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_VERIFY_FAILED",
+        entityId: "verify",
+        request,
+        metadata: { readable, structurallyValid: false, restoreReady: false },
+        error: "invalid backup JSON structure",
+      });
+      return NextResponse.json({ success: false, readable, structurallyValid: false, restoreReady: false, checks });
     }
     checks.push({ name: "JSON Structure", status: "pass", detail: "Valid JSON object" });
 
     // ── Check 3: HMAC Signature ─────────────────────────────
     if (signature && rawContent) {
       const valid = verifyBackupSignature(rawContent, signature);
+      signatureValid = valid;
       checks.push({
         name: "HMAC Signature",
         status: valid ? "pass" : "fail",
         detail: valid ? "Signature verified — data integrity confirmed" : "Signature mismatch — data may be tampered",
       });
     } else {
-      checks.push({ name: "HMAC Signature", status: "warn", detail: "No signature provided. Cannot verify integrity." });
+      checks.push({ name: "HMAC Signature", status: "fail", detail: "No signature provided. Restore-ready verification requires integrity protection." });
     }
 
     // ── Check 4: Table Validation ───────────────────────────
@@ -237,12 +307,62 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const currentCompatibility = getBackupCompatibilityMetadata();
+    const archiveCompatibility = archive?.metadata.compatibility || null;
+    if (archiveCompatibility) {
+      const schemaMatches =
+        archiveCompatibility.schemaHash === currentCompatibility.schemaHash;
+      const catalogMatches =
+        archiveCompatibility.backupTableCatalogHash ===
+        currentCompatibility.backupTableCatalogHash;
+      checks.push({
+        name: "Schema Compatibility",
+        status: schemaMatches && catalogMatches ? "pass" : "fail",
+        detail:
+          schemaMatches && catalogMatches
+            ? "Archive schema/catalog metadata matches this build."
+            : "Archive schema/catalog metadata differs from this build.",
+      });
+    } else {
+      checks.push({
+        name: "Schema Compatibility",
+        status: "warn",
+        detail:
+          "Archive does not include schema/catalog compatibility metadata.",
+      });
+    }
+
     // ── Overall verdict ─────────────────────────────────────
     const hasFail = checks.some((c) => c.status === "fail");
     const hasWarn = checks.some((c) => c.status === "warn");
+    const structurallyValid = Boolean(
+      backupData &&
+        typeof backupData === "object" &&
+        validTables.length > 0 &&
+        duplicateIds === 0,
+    );
+    const restoreReady = readable && structurallyValid && signatureValid && !hasFail;
+    await writeBackupAudit({
+      session,
+      action: restoreReady ? "BACKUP_VERIFY_SUCCESS" : "BACKUP_VERIFY_FAILED",
+      entityId: "verify",
+      request,
+      metadata: {
+        readable,
+        structurallyValid,
+        restoreReady,
+        totalRecords,
+        tableCount: validTables.length,
+        verdict: hasFail ? "FAIL" : hasWarn ? "WARN" : "PASS",
+      },
+      error: restoreReady ? undefined : "backup verification is not restore-ready",
+    });
 
     return NextResponse.json({
-      success: !hasFail,
+      success: restoreReady,
+      readable,
+      structurallyValid,
+      restoreReady,
       verdict: hasFail ? "FAIL" : hasWarn ? "WARN" : "PASS",
       message: hasFail
         ? "Backup verification failed. Do NOT import this backup."
@@ -254,6 +374,15 @@ export async function POST(request: NextRequest) {
       totalRecords,
     });
   } catch (error: any) {
+    if (session) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_VERIFY_FAILED",
+        entityId: "verify",
+        request,
+        error,
+      });
+    }
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     console.error(`Backup verify failed: ${redactBackupSecretText(error)}`);

@@ -2,9 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 import { listRuntimeConfigCatalog, resetRuntimeConfigEntry, upsertRuntimeConfigEntry } from "@/lib/runtime-config";
-import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { requireAdmin, requirePasswordConfirm, requirePermission, type AdminSession } from "@/lib/auth";
 
 // Cap value length so a malicious admin cannot wedge a multi-MB blob
 // into the encrypted column. Real-world keys/URLs are well under 16 KB;
@@ -68,9 +68,129 @@ function invalidValueMessage(reason: string): string {
       return "Value must be production, staging, or preview.";
     case "stripe_publishable_prefix":
       return "Stripe publishable key must start with pk_test_ or pk_live_.";
+    case "stripe_live_secret_required":
+      return "Production-like deployments must use a live Stripe secret key.";
+    case "stripe_live_publishable_required":
+      return "Production-like deployments must use a live Stripe publishable key.";
+    case "stripe_price_prefix":
+      return "Stripe price IDs must start with price_.";
+    case "masked_value":
+      return "Masked or redacted display values cannot be saved. Paste the real value instead.";
+    case "value_too_short":
+      return "Value is too short for this key.";
+    case "invalid_identifier":
+      return "Identifier format is invalid for this key.";
+    case "storage_provider":
+      return "Backup storage provider must be one of: s3, s3-compatible, aws-s3, r2, cloudflare-r2.";
+    case "bucket_name_pattern":
+      return "Bucket name format is invalid.";
+    case "region_pattern":
+      return "Region format is invalid.";
+    case "access_key_pattern":
+      return "Access key format is invalid.";
+    case "private_key_pem_required":
+      return "Private key must be PEM formatted, including BEGIN/END PRIVATE KEY lines.";
+    case "apple_team_id_pattern":
+      return "Apple Team ID must be a 10-character uppercase identifier.";
+    case "apple_key_id_pattern":
+      return "Apple Key ID must be a 10-character uppercase identifier.";
+    case "apple_environment":
+      return "Apple environment must be Sandbox or Production.";
+    case "product_id_pattern":
+      return "Product ID format is invalid.";
+    case "android_package_pattern":
+      return "Google Play package name must look like an Android package name.";
+    case "service_account_email_required":
+      return "Google Play service account email must be an iam.gserviceaccount.com address.";
     default:
       return "Value does not match the format required for this key.";
   }
+}
+
+function safeAuditEntityId(key: string | null | undefined) {
+  return (key || "runtime-config").slice(0, 30);
+}
+
+function safeStringField(raw: unknown, field: string): string | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = (raw as Record<string, unknown>)[field];
+  return typeof value === "string" ? value : null;
+}
+
+function safeLength(value: string | null | undefined) {
+  return typeof value === "string" ? value.length : undefined;
+}
+
+function stepUpFailureReason(confirm: { error?: string; requiresMfa?: boolean; rateLimited?: boolean }) {
+  if (confirm.rateLimited) return "step_up_rate_limited";
+  if (confirm.requiresMfa) return "mfa_required_or_invalid";
+  if (confirm.error?.toLowerCase().includes("password confirmation required")) return "missing_password";
+  if (confirm.error?.toLowerCase().includes("incorrect password")) return "failed_password";
+  return "step_up_failed";
+}
+
+async function getAuditActor() {
+  try {
+    return await requireAdmin();
+  } catch {
+    return null;
+  }
+}
+
+async function writeRuntimeConfigAudit(
+  session: AdminSession | null,
+  req: NextRequest,
+  action: "RUNTIME_CONFIG_UPDATE_SUCCESS" | "RUNTIME_CONFIG_UPDATE_FAILED" | "RUNTIME_CONFIG_DELETE_SUCCESS" | "RUNTIME_CONFIG_DELETE_FAILED",
+  key: string | null | undefined,
+  metadata: Record<string, unknown>,
+) {
+  if (!session) return;
+  await writeAdminAudit(session, {
+    action,
+    entityType: "RuntimeConfig",
+    entityId: safeAuditEntityId(key),
+    metadata,
+    request: getAuditRequestMeta(req),
+  });
+}
+
+interface RuntimeConfigErrorResponse {
+  status: number;
+  body: { error: string };
+  reason: string;
+  validationErrorCode?: string;
+}
+
+function runtimeConfigErrorResponse(error: unknown): RuntimeConfigErrorResponse {
+  const message = error instanceof Error ? error.message : String((error as any)?.message || "");
+  if (message === "UNAUTHORIZED") return { status: 401, body: { error: "Unauthorized" }, reason: "unauthorized" };
+  if (message === "FORBIDDEN") return { status: 403, body: { error: "Forbidden" }, reason: "forbidden" };
+  if (message === "UNKNOWN_RUNTIME_CONFIG_KEY") {
+    return { status: 400, body: { error: "Unsupported config key" }, reason: "unknown_key" };
+  }
+  if (message === "EMPTY_RUNTIME_CONFIG_VALUE") {
+    return { status: 400, body: { error: "Config value cannot be empty" }, reason: "empty_value" };
+  }
+  if (message === "RUNTIME_CONFIG_NOT_EDITABLE") {
+    return {
+      status: 403,
+      body: {
+        error:
+          "This key is deployment-only and cannot be set via Runtime Config. Update it in DigitalOcean (or your deployment env) and redeploy.",
+      },
+      reason: "deployment_only",
+    };
+  }
+  if (message.startsWith("INVALID_RUNTIME_CONFIG_VALUE:")) {
+    const validationErrorCode = message.slice("INVALID_RUNTIME_CONFIG_VALUE:".length);
+    return {
+      status: 400,
+      body: { error: invalidValueMessage(validationErrorCode) },
+      reason: "invalid_value",
+      validationErrorCode,
+    };
+  }
+  return { status: 500, body: { error: "Internal error" }, reason: "unexpected_exception" };
 }
 
 export async function GET() {
@@ -86,17 +206,38 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  let auditSession: AdminSession | null = null;
+  let keyForAudit: string | null = null;
+  let valueLength: number | undefined;
+  let noteLength: number | undefined;
   try {
+    auditSession = await getAuditActor();
     const session = await requirePermission("settings", "canUpdate", { minimumRole: "SUPER_ADMIN" });
+    auditSession = session;
     const raw = await req.json().catch(() => null);
+    keyForAudit = safeStringField(raw, "key");
+    valueLength = safeLength(safeStringField(raw, "value"));
+    noteLength = safeLength(safeStringField(raw, "note"));
     const parsed = runtimeConfigPutSchema.safeParse(raw);
     if (!parsed.success) {
+      await writeRuntimeConfigAudit(auditSession, req, "RUNTIME_CONFIG_UPDATE_FAILED", keyForAudit, {
+        operation: "runtime_config_update",
+        key: keyForAudit,
+        keyName: keyForAudit,
+        reason: "invalid_body",
+        status: "failed",
+        valueLength,
+        noteLength,
+      });
       return NextResponse.json(
         { error: "Invalid request body" },
         { status: 400 },
       );
     }
     const { key, value, note, confirmPassword, mfaCode, backupCode } = parsed.data;
+    keyForAudit = key;
+    valueLength = value.length;
+    noteLength = note?.length ?? 0;
 
     // Runtime-config holds secrets (Stripe, Resend, encryption keys,
     // Redis tokens). Treat the write path as "key rotation level": require
@@ -107,9 +248,24 @@ export async function PUT(req: NextRequest) {
       requireMfa: true,
       mfaCode,
       backupCode,
+      ipAddress: getAuditRequestMeta(req).ipAddress,
+      userAgent: getAuditRequestMeta(req).userAgent,
     });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      await writeRuntimeConfigAudit(auditSession, req, "RUNTIME_CONFIG_UPDATE_FAILED", key, {
+        operation: "runtime_config_update",
+        key,
+        keyName: key,
+        reason: stepUpFailureReason(confirm),
+        status: "failed",
+        requiresMfa: Boolean(confirm.requiresMfa),
+        valueLength,
+        noteLength,
+      });
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+        { status: 403 },
+      );
     }
 
     const entry = await upsertRuntimeConfigEntry({
@@ -122,19 +278,15 @@ export async function PUT(req: NextRequest) {
     // Audit log records ONLY metadata — never the value or any portion
     // of it. Secret values are encrypted at rest in
     // RuntimeConfigEntry.valueEncrypted; the audit log is not.
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "UPDATE",
-        entityType: "RuntimeConfig",
-        entityId: entry.id,
-        changes: JSON.stringify({
-          key,
-          note: note || null,
-          valueLength: value.length,
-        }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeRuntimeConfigAudit(session, req, "RUNTIME_CONFIG_UPDATE_SUCCESS", key, {
+      operation: "runtime_config_update",
+      key,
+      keyName: key,
+      valueLength: value.length,
+      noteLength: note?.length ?? 0,
+      source: "runtime_config_db",
+      validationResult: entry.lastValidationStatus || "CONFIGURED",
+      status: "success",
     });
 
     // Response intentionally returns only `{ success: true }` — never
@@ -143,68 +295,92 @@ export async function PUT(req: NextRequest) {
     // it. The catalog endpoint surfaces a masked summary on next load.
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    if (e?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (e?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    if (e?.message === "UNKNOWN_RUNTIME_CONFIG_KEY") return NextResponse.json({ error: "Unsupported config key" }, { status: 400 });
-    if (e?.message === "EMPTY_RUNTIME_CONFIG_VALUE") return NextResponse.json({ error: "Config value cannot be empty" }, { status: 400 });
-    if (e?.message === "RUNTIME_CONFIG_NOT_EDITABLE") {
-      return NextResponse.json(
-        {
-          error:
-            "This key is deployment-only and cannot be set via Runtime Config. Update it in DigitalOcean (or your deployment env) and redeploy.",
-        },
-        { status: 403 },
-      );
-    }
-    if (typeof e?.message === "string" && e.message.startsWith("INVALID_RUNTIME_CONFIG_VALUE:")) {
-      const reason = e.message.slice("INVALID_RUNTIME_CONFIG_VALUE:".length);
-      return NextResponse.json({ error: invalidValueMessage(reason) }, { status: 400 });
-    }
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    const mapped = runtimeConfigErrorResponse(e);
+    await writeRuntimeConfigAudit(auditSession, req, "RUNTIME_CONFIG_UPDATE_FAILED", keyForAudit, {
+      operation: "runtime_config_update",
+      key: keyForAudit,
+      keyName: keyForAudit,
+      reason: mapped.reason,
+      status: "failed",
+      validationErrorCode: mapped.validationErrorCode,
+      valueLength,
+      noteLength,
+    });
+    return NextResponse.json(mapped.body, { status: mapped.status });
   }
 }
 
 export async function DELETE(req: NextRequest) {
+  let auditSession: AdminSession | null = null;
+  let keyForAudit: string | null = null;
   try {
+    auditSession = await getAuditActor();
     const session = await requirePermission("settings", "canDelete", { minimumRole: "SUPER_ADMIN" });
+    auditSession = session;
     const raw = await req.json().catch(() => null);
+    keyForAudit = safeStringField(raw, "key");
     const parsed = runtimeConfigDeleteSchema.safeParse(raw);
     if (!parsed.success) {
+      await writeRuntimeConfigAudit(auditSession, req, "RUNTIME_CONFIG_DELETE_FAILED", keyForAudit, {
+        operation: "runtime_config_delete",
+        key: keyForAudit,
+        keyName: keyForAudit,
+        reason: "invalid_body",
+        status: "failed",
+      });
       return NextResponse.json(
         { error: "Invalid request body" },
         { status: 400 },
       );
     }
     const { key, confirmPassword, mfaCode, backupCode } = parsed.data;
+    keyForAudit = key;
 
     const confirm = await requirePasswordConfirm(session, confirmPassword, {
       operation: "runtime_config",
       requireMfa: true,
       mfaCode,
       backupCode,
+      ipAddress: getAuditRequestMeta(req).ipAddress,
+      userAgent: getAuditRequestMeta(req).userAgent,
     });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      await writeRuntimeConfigAudit(auditSession, req, "RUNTIME_CONFIG_DELETE_FAILED", key, {
+        operation: "runtime_config_delete",
+        key,
+        keyName: key,
+        reason: stepUpFailureReason(confirm),
+        status: "failed",
+        requiresMfa: Boolean(confirm.requiresMfa),
+      });
+      return NextResponse.json(
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+        { status: 403 },
+      );
     }
 
     const entry = await resetRuntimeConfigEntry(key, session.adminId);
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "DELETE",
-        entityType: "RuntimeConfig",
-        entityId: entry?.id || key.slice(0, 30),
-        changes: JSON.stringify({ key, source: "ENV" }),
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeRuntimeConfigAudit(session, req, "RUNTIME_CONFIG_DELETE_SUCCESS", key, {
+      operation: "runtime_config_delete",
+      key,
+      keyName: key,
+      fallbackStatus: entry?.lastValidationStatus || "NO_DB_OVERRIDE",
+      source: "env_fallback",
+      status: "success",
     });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    if (e?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (e?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    if (e?.message === "UNKNOWN_RUNTIME_CONFIG_KEY") return NextResponse.json({ error: "Unsupported config key" }, { status: 400 });
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    const mapped = runtimeConfigErrorResponse(e);
+    await writeRuntimeConfigAudit(auditSession, req, "RUNTIME_CONFIG_DELETE_FAILED", keyForAudit, {
+      operation: "runtime_config_delete",
+      key: keyForAudit,
+      keyName: keyForAudit,
+      reason: mapped.reason,
+      status: "failed",
+      validationErrorCode: mapped.validationErrorCode,
+    });
+    return NextResponse.json(mapped.body, { status: mapped.status });
   }
 }

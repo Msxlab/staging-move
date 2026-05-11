@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, prismaUnsafe } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { parsePaginationParams } from "@/lib/pagination";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { maskEmail } from "@/lib/privacy";
 
 export async function GET(request: NextRequest) {
   try {
-    await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
+    const session = await requirePermission("users", "canRead", { minimumRole: "VIEWER" });
     const { searchParams } = new URL(request.url);
     const { page, perPage, skip } = parsePaginationParams(searchParams, {
       defaultPerPage: 20,
@@ -113,6 +115,7 @@ export async function GET(request: NextRequest) {
       prisma.subscription.groupBy({ by: ["plan"], _count: { id: true } }),
     ]);
 
+    const canSeeRawEmail = session.role === "SUPER_ADMIN" || session.role === "ADMIN";
     const usersWithReviewCounts = users.map((user: any) => {
       const reviewCount = user.services.filter((service: any) =>
         Boolean(service.personalReview),
@@ -121,6 +124,7 @@ export async function GET(request: NextRequest) {
       const lastActivityAt = loginSessions?.[0]?.lastActivity ?? null;
       return {
         ...rest,
+        email: canSeeRawEmail ? rest.email : maskEmail(rest.email),
         lastActivityAt,
         _count: {
           ...rest._count,
@@ -135,6 +139,22 @@ export async function GET(request: NextRequest) {
     const weeklyTrend = newPrevWeek > 0
       ? Math.round(((newThisWeek - newPrevWeek) / newPrevWeek) * 100)
       : newThisWeek > 0 ? 100 : 0;
+
+    await writeAdminAudit(session, {
+      action: "USER_LIST_VIEWED",
+      entityType: "User",
+      entityId: "bulk",
+      metadata: {
+        operation: "user_list",
+        status: "success",
+        page,
+        perPage,
+        total,
+        deletedScope,
+        rawEmail: canSeeRawEmail,
+      },
+      request: getAuditRequestMeta(request),
+    });
 
     return NextResponse.json({
       users: usersWithReviewCounts, total, page, perPage,
@@ -155,7 +175,7 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const session = await requirePermission("users", "canDelete", { minimumRole: "ADMIN" });
-    const { ids, confirmPassword } = await request.json();
+    const { ids, confirmPassword, mfaCode, backupCode } = await request.json();
     const requestedIds = Array.isArray(ids)
       ? Array.from(new Set(ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0)))
       : [];
@@ -164,10 +184,31 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Step-up auth: bulk user deletion is the highest-blast-radius admin action.
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "admin_user_bulk_delete" });
+    const requestMeta = getAuditRequestMeta(request);
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "admin_user_bulk_delete",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
     if (!confirm.confirmed) {
+      await writeAdminAudit(session, {
+        action: "USER_DELETE_FAILED",
+        entityType: "User",
+        entityId: "bulk",
+        metadata: {
+          operation: "admin_user_bulk_delete",
+          status: "failed",
+          reason: "step_up_failed",
+          selectedCount: requestedIds.length,
+          requiresMfa: Boolean(confirm.requiresMfa),
+        },
+        request: requestMeta,
+      });
       return NextResponse.json(
-        { error: confirm.error, requiresPassword: true },
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
         { status: 403 },
       );
     }
@@ -184,13 +225,9 @@ export async function DELETE(request: NextRequest) {
     let skippedProcessing = 0;
     const skipped: Array<{ id: string; reason: string }> = [];
     const deletedIds: string[] = [];
+    const deletedAuditTargets: Array<{ id: string; maskedEmail: string }> = [];
 
     for (const id of requestedIds) {
-      if (id === session.adminId) {
-        skipped.push({ id, reason: "Self-delete is not allowed from this screen" });
-        continue;
-      }
-
       const user = usersById.get(id);
       if (!user) {
         skipped.push({ id, reason: "User not found" });
@@ -260,28 +297,29 @@ export async function DELETE(request: NextRequest) {
             },
           });
         }
-
-        await tx.adminAuditLog.create({
-          data: {
-            adminUserId: session.adminId,
-            action: "BULK_DELETE_USER",
-            entityType: "User",
-            entityId: user.id,
-            changes: JSON.stringify({
-              email: user.email,
-              softDeletedAt: now.toISOString(),
-              gdprRequestStatus: existingRequest?.status || "PENDING",
-              queuedCleanup: !existingRequest,
-            }),
-            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-          },
-        });
       });
 
       deleted += 1;
       deletedIds.push(user.id);
+      deletedAuditTargets.push({ id: user.id, maskedEmail: maskEmail(user.email) });
       if (existingRequest) alreadyQueued += 1;
       else queued += 1;
+    }
+
+    for (const target of deletedAuditTargets) {
+      await writeAdminAudit(session, {
+        action: "USER_DELETED",
+        entityType: "User",
+        entityId: target.id,
+        metadata: {
+          operation: "admin_user_bulk_delete",
+          status: "success",
+          mode: "bulk",
+          maskedEmail: target.maskedEmail,
+          selectedCount: requestedIds.length,
+        },
+        request: requestMeta,
+      });
     }
 
     return NextResponse.json({

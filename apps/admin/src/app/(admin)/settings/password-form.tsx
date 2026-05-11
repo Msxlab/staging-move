@@ -14,8 +14,8 @@ export function PasswordChangeForm() {
       toast.error("New passwords do not match");
       return;
     }
-    if (form.newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (form.newPassword.length < 12) {
+      toast.error("Password must be at least 12 characters");
       return;
     }
     setSaving(true);
@@ -56,7 +56,7 @@ export function PasswordChangeForm() {
             value={form.newPassword}
             onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
             required
-            minLength={6}
+            minLength={12}
             className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
@@ -67,7 +67,7 @@ export function PasswordChangeForm() {
             value={form.confirmPassword}
             onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
             required
-            minLength={6}
+            minLength={12}
             className="w-full rounded-lg border border-input bg-background px-4 py-2.5 text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>

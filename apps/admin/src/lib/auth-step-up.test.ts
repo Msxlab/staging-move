@@ -23,6 +23,10 @@ vi.mock("./security-monitor", () => ({
   trackSensitiveOp: vi.fn(),
 }));
 
+vi.mock("./audit", () => ({
+  writeAdminAudit: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock("./shared-encryption", () => ({
   decrypt: vi.fn(() => "totp-secret"),
 }));
@@ -34,6 +38,8 @@ vi.mock("./totp", () => ({
 
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
+import { writeAdminAudit } from "./audit";
+import { trackFailedPasswordConfirm, trackSensitiveOp } from "./security-monitor";
 import {
   clearAdminStepUpStateForTests,
   requirePasswordConfirm,
@@ -42,6 +48,9 @@ import {
 
 const compareMock = bcrypt.compare as unknown as Mock;
 const adminUserMock = prisma.adminUser as unknown as { findUnique: Mock };
+const writeAdminAuditMock = writeAdminAudit as unknown as Mock;
+const trackFailedPasswordConfirmMock = trackFailedPasswordConfirm as unknown as Mock;
+const trackSensitiveOpMock = trackSensitiveOp as unknown as Mock;
 
 const session: AdminSession = {
   adminId: "admin_1",
@@ -101,5 +110,43 @@ describe("admin scoped step-up", () => {
     expect(result.confirmed).toBe(false);
     expect(result.rateLimited).toBe(true);
     expect(result.retryAfterSec).toBeGreaterThan(0);
+  });
+
+  it("passes real IP metadata to step-up monitor and writes durable step-up audits", async () => {
+    await expect(
+      requirePasswordConfirm(session, "Password-2026!", {
+        operation: "runtime_config",
+        ipAddress: "203.0.113.44",
+        userAgent: "Vitest Browser",
+      }),
+    ).resolves.toEqual({ confirmed: true });
+
+    expect(trackSensitiveOpMock).toHaveBeenCalledWith("admin_1", "203.0.113.44", "runtime_config");
+    expect(writeAdminAuditMock).toHaveBeenCalledWith(
+      session,
+      expect.objectContaining({
+        action: "STEP_UP_SUCCESS",
+        metadata: expect.objectContaining({ operation: "runtime_config" }),
+        request: { ipAddress: "203.0.113.44", userAgent: "Vitest Browser" },
+      }),
+    );
+
+    compareMock.mockResolvedValue(false);
+    const failed = await requirePasswordConfirm(session, "wrong", {
+      operation: "backup_download",
+      ipAddress: "203.0.113.55",
+      userAgent: "Vitest Browser",
+    });
+
+    expect(failed.confirmed).toBe(false);
+    expect(trackFailedPasswordConfirmMock).toHaveBeenCalledWith("admin_1", "203.0.113.55");
+    expect(writeAdminAuditMock).toHaveBeenCalledWith(
+      session,
+      expect.objectContaining({
+        action: "STEP_UP_FAILED",
+        metadata: expect.objectContaining({ operation: "backup_download", reason: "invalid_password" }),
+        request: { ipAddress: "203.0.113.55", userAgent: "Vitest Browser" },
+      }),
+    );
   });
 });

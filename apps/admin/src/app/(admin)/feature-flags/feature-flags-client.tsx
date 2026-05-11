@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { Flag, Plus, Trash2, ToggleLeft, ToggleRight, Edit2 } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 
 interface FeatureFlag { id: string; name: string; description: string | null; enabled: boolean; targetType: string; targetValue: string | null; createdAt: string }
 const TARGET_TYPES = ["ALL", "PERCENTAGE", "USER_LIST", "PLAN"];
+interface StepUpRequest { title: string; description: string; confirmLabel: string; run: (confirmPassword: string) => Promise<boolean> }
 
 export default function FeatureFlagsClient() {
   const [flags, setFlags] = useState<FeatureFlag[]>([]);
@@ -13,9 +15,51 @@ export default function FeatureFlagsClient() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<FeatureFlag | null>(null);
   const [form, setForm] = useState({ name: "", description: "", enabled: false, targetType: "ALL", targetValue: "" });
+  const [stepUp, setStepUp] = useState<StepUpRequest | null>(null);
+  const [stepUpBusy, setStepUpBusy] = useState(false);
+  const [stepUpError, setStepUpError] = useState<string | null>(null);
 
   const load = () => { fetch("/api/feature-flags").then(r => r.json()).then(d => setFlags(d.flags || [])).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
+
+  const requestStepUp = (request: StepUpRequest) => { setStepUp(request); setStepUpError(null); };
+  const closeStepUp = () => { if (!stepUpBusy) { setStepUp(null); setStepUpError(null); } };
+  const confirmStepUp = async (confirmPassword: string) => {
+    if (!stepUp) return;
+    setStepUpBusy(true);
+    setStepUpError(null);
+    try {
+      const ok = await stepUp.run(confirmPassword);
+      if (ok) setStepUp(null);
+    } finally {
+      setStepUpBusy(false);
+    }
+  };
+
+  const sendMutation = async (
+    method: "POST" | "PUT" | "DELETE",
+    payload: Record<string, unknown>,
+    confirmPassword: string,
+    successMessage: string,
+    afterSuccess?: () => void,
+  ) => {
+    const res = await fetch("/api/feature-flags", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...payload, confirmPassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const message = data.error || "Failed";
+      if (data.requiresPassword || res.status === 401 || res.status === 403) setStepUpError(message);
+      toast.error(message);
+      return false;
+    }
+    toast.success(successMessage);
+    afterSuccess?.();
+    load();
+    return true;
+  };
 
   const save = async () => {
     if (!form.name && !editing) { toast.error("Name required"); return; }
@@ -26,19 +70,31 @@ export default function FeatureFlagsClient() {
     else if (form.targetType === "PLAN" && form.targetValue) tv = { plans: form.targetValue.split(",").map(s => s.trim()) };
 
     const payload = editing ? { id: editing.id, enabled: form.enabled, description: form.description, targetType: form.targetType, targetValue: tv } : { ...form, targetValue: tv };
-    const res = await fetch("/api/feature-flags", { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    if (res.ok) { toast.success(editing ? "Updated" : "Created"); reset(); load(); } else { const d = await res.json(); toast.error(d.error || "Failed"); }
+    requestStepUp({
+      title: editing ? "Confirm feature flag update" : "Confirm feature flag creation",
+      description: "Enter your admin password before changing feature flag behavior.",
+      confirmLabel: editing ? "Update flag" : "Create flag",
+      run: (confirmPassword) => sendMutation(method, payload, confirmPassword, editing ? "Updated" : "Created", reset),
+    });
   };
 
   const toggle = async (flag: FeatureFlag) => {
-    const res = await fetch("/api/feature-flags", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: flag.id, enabled: !flag.enabled }) });
-    if (res.ok) { toast.success(`${flag.name} ${!flag.enabled ? "enabled" : "disabled"}`); load(); }
+    requestStepUp({
+      title: `${!flag.enabled ? "Enable" : "Disable"} feature flag`,
+      description: "Enter your admin password before changing feature flag rollout.",
+      confirmLabel: !flag.enabled ? "Enable flag" : "Disable flag",
+      run: (confirmPassword) => sendMutation("PUT", { id: flag.id, enabled: !flag.enabled }, confirmPassword, `${flag.name} ${!flag.enabled ? "enabled" : "disabled"}`),
+    });
   };
 
   const remove = async (id: string) => {
     if (!confirm("Delete this flag?")) return;
-    const res = await fetch("/api/feature-flags", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
-    if (res.ok) { toast.success("Deleted"); load(); }
+    requestStepUp({
+      title: "Confirm feature flag deletion",
+      description: "Enter your admin password before deleting this feature flag.",
+      confirmLabel: "Delete flag",
+      run: (confirmPassword) => sendMutation("DELETE", { id }, confirmPassword, "Deleted"),
+    });
   };
 
   const startEdit = (f: FeatureFlag) => {
@@ -53,6 +109,17 @@ export default function FeatureFlagsClient() {
 
   return (
     <div className="space-y-6">
+      <PasswordConfirmModal
+        open={Boolean(stepUp)}
+        title={stepUp?.title || "Confirm action"}
+        description={stepUp?.description || "Enter your admin password to continue."}
+        confirmLabel={stepUp?.confirmLabel || "Confirm"}
+        busy={stepUpBusy}
+        error={stepUpError}
+        onClose={closeStepUp}
+        onConfirm={confirmStepUp}
+      />
+
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold text-foreground">Feature Flags</h1><p className="mt-1 text-muted-foreground">Toggle features and manage rollouts</p></div>
         <button onClick={() => { reset(); setShowForm(true); }} className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /> New Flag</button>

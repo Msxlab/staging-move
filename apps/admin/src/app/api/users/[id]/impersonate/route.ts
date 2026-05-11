@@ -4,6 +4,8 @@ import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
 import { getInternalCallerSecret } from "@/lib/internal-secrets";
 import { getAdminRuntimeConfigValue } from "@/lib/runtime-config";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { maskEmail } from "@/lib/privacy";
 
 export const runtime = "nodejs";
 
@@ -39,18 +41,42 @@ export async function POST(
 
     // Step-up auth — impersonation is privileged.
     let confirmPassword: string | undefined;
+    let mfaCode: string | undefined;
+    let backupCode: string | undefined;
     let reason: string | undefined;
+    const requestMeta = getAuditRequestMeta(request);
     try {
       const body = await request.json();
       confirmPassword = body?.confirmPassword;
+      mfaCode = typeof body?.mfaCode === "string" ? body.mfaCode : undefined;
+      backupCode = typeof body?.backupCode === "string" ? body.backupCode : undefined;
       reason = typeof body?.reason === "string" ? body.reason.slice(0, 500) : undefined;
     } catch {
       /* no body is fine — confirm will fail below */
     }
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "user_impersonation" });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "user_impersonation",
+      requireMfa: true,
+      mfaCode,
+      backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
     if (!confirm.confirmed) {
+      await writeAdminAudit(session, {
+        action: "USER_IMPERSONATION_FAILED",
+        entityType: "User",
+        entityId: userId,
+        metadata: {
+          operation: "user_impersonation",
+          status: "failed",
+          reason: "step_up_failed",
+          requiresMfa: Boolean(confirm.requiresMfa),
+        },
+        request: requestMeta,
+      });
       return NextResponse.json(
-        { error: confirm.error, requiresPassword: true },
+        { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
         { status: 403 },
       );
     }
@@ -60,6 +86,17 @@ export async function POST(
       select: { id: true, email: true, firstName: true },
     });
     if (!user) {
+      await writeAdminAudit(session, {
+        action: "USER_IMPERSONATION_FAILED",
+        entityType: "User",
+        entityId: userId,
+        metadata: {
+          operation: "user_impersonation",
+          status: "failed",
+          reason: "target_not_found_or_deleted",
+        },
+        request: requestMeta,
+      });
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -75,6 +112,18 @@ export async function POST(
       "http://web:3000";
     const handoffSecret = getInternalCallerSecret("impersonation");
     if (!handoffSecret) {
+      await writeAdminAudit(session, {
+        action: "USER_IMPERSONATION_FAILED",
+        entityType: "User",
+        entityId: user.id,
+        metadata: {
+          operation: "user_impersonation",
+          status: "failed",
+          reason: "handoff_secret_missing",
+          maskedEmail: maskEmail(user.email),
+        },
+        request: requestMeta,
+      });
       return NextResponse.json(
         {
           error:
@@ -101,6 +150,19 @@ export async function POST(
 
     if (!internalRes.ok) {
       const detail = await internalRes.text().catch(() => "");
+      await writeAdminAudit(session, {
+        action: "USER_IMPERSONATION_FAILED",
+        entityType: "User",
+        entityId: user.id,
+        metadata: {
+          operation: "user_impersonation",
+          status: "failed",
+          reason: "handoff_failed",
+          handoffStatus: internalRes.status,
+          maskedEmail: maskEmail(user.email),
+        },
+        request: requestMeta,
+      });
       return NextResponse.json(
         { error: "Failed to start impersonation session", detail: detail.slice(0, 300) },
         { status: 502 },
@@ -113,19 +175,18 @@ export async function POST(
     };
 
     // Audit trail — who impersonated whom, when, and why.
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "IMPERSONATION_START",
-        entityType: "User",
-        entityId: user.id,
-        changes: JSON.stringify({
-          targetEmail: user.email,
-          expiresAt: handoff.expiresAt,
-          reason: reason || null,
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+    await writeAdminAudit(session, {
+      action: "USER_IMPERSONATION_STARTED",
+      entityType: "User",
+      entityId: user.id,
+      metadata: {
+        operation: "user_impersonation",
+        status: "success",
+        maskedEmail: maskEmail(user.email),
+        expiresAt: handoff.expiresAt,
+        reasonLength: reason?.length || 0,
       },
+      request: requestMeta,
     });
 
     // Transparency to the user (GDPR-aligned). Uses the same helper that

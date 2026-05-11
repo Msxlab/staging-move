@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   BackupRunLockError,
   acquireBackupRunLock,
+  acquireRestoreRunLock,
   markBackupRunFailed,
 } from "./backup-lock";
 
@@ -99,5 +100,37 @@ describe("backup run lock", () => {
     const update = prisma.backupRecord.update.mock.calls[0]?.[0];
     expect(update.data.errorMessage).not.toContain("secret-pass");
     expect(update.data.errorMessage).toContain("mysql://[redacted]@");
+  });
+
+  it("rejects overlapping restore locks with the active restore id", async () => {
+    const prisma = prismaMock();
+    prisma.backupRecord.create.mockResolvedValue({
+      id: "restore_candidate",
+      createdAt: new Date("2026-04-24T00:00:01.000Z"),
+    });
+    prisma.backupRecord.findMany.mockResolvedValue([
+      { id: "restore_active", createdAt: new Date("2026-04-24T00:00:00.000Z") },
+      { id: "restore_candidate", createdAt: new Date("2026-04-24T00:00:01.000Z") },
+    ]);
+
+    await expect(
+      acquireRestoreRunLock({
+        prismaClient: prisma,
+        adminId: "admin_1",
+        mode: "MERGE",
+        tables: ["users"],
+        now: new Date("2026-04-24T00:00:01.000Z"),
+      }),
+    ).rejects.toMatchObject({
+      name: "RestoreRunLockError",
+      activeRestoreId: "restore_active",
+    });
+
+    expect(prisma.backupRecord.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "restore_candidate" },
+        data: expect.objectContaining({ status: "FAILED" }),
+      }),
+    );
   });
 });

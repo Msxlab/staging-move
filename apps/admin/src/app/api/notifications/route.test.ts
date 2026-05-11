@@ -11,17 +11,20 @@ const mocks = vi.hoisted(() => ({
     },
     user: {
       findMany: vi.fn(),
+      count: vi.fn(),
     },
     adminAuditLog: {
       create: vi.fn(),
     },
   },
   requirePermission: vi.fn(),
+  requirePasswordConfirm: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
 vi.mock("@/lib/auth", () => ({
   requirePermission: mocks.requirePermission,
+  requirePasswordConfirm: mocks.requirePasswordConfirm,
 }));
 
 function jsonRequest(body: unknown) {
@@ -36,6 +39,8 @@ describe("admin notification send boundaries", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
+    mocks.requirePasswordConfirm.mockResolvedValue({ confirmed: true });
+    mocks.prisma.user.count.mockResolvedValue(1);
   });
 
   it("rejects unsupported delivery channels before creating records", async () => {
@@ -74,6 +79,31 @@ describe("admin notification send boundaries", () => {
       error: expect.stringContaining("Scheduled notification delivery is not enabled"),
     });
     expect(mocks.prisma.notification.create).not.toHaveBeenCalled();
+    expect(mocks.prisma.notificationQueue.create).not.toHaveBeenCalled();
+  });
+
+  it("requires password step-up before high-blast broadcast sends", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "Confirm your password before broadcasting notifications.",
+    });
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      title: "Broadcast",
+      body: "Important announcement.",
+      channel: "IN_APP",
+      broadcast: true,
+    }));
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body).toMatchObject({ requiresPassword: true });
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      { adminId: "admin_1" },
+      undefined,
+      { operation: "notification_broadcast" },
+    );
+    expect(mocks.prisma.notification.createMany).not.toHaveBeenCalled();
     expect(mocks.prisma.notificationQueue.create).not.toHaveBeenCalled();
   });
 });

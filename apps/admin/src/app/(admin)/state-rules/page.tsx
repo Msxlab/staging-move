@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 
 const US_STATES: Record<string, string> = {
   AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",
@@ -31,6 +32,7 @@ const emptyForm = {
   stateCode: "", stateName: "", dmvRules: "", voterRegistration: "",
   utilityInfo: "", taxInfo: "", insuranceRules: "", commonProviders: "",
 };
+interface StepUpRequest { title: string; description: string; confirmLabel: string; run: (confirmPassword: string) => Promise<boolean> }
 
 export default function StateRulesPage() {
   const [rules, setRules] = useState<StateRule[]>([]);
@@ -42,6 +44,9 @@ export default function StateRulesPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; code: string } | null>(null);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [stepUp, setStepUp] = useState<StepUpRequest | null>(null);
+  const [stepUpBusy, setStepUpBusy] = useState(false);
+  const [stepUpError, setStepUpError] = useState<string | null>(null);
 
   useEffect(() => { fetchRules(); }, []);
 
@@ -72,22 +77,67 @@ export default function StateRulesPage() {
     setShowForm(true);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function requestStepUp(request: StepUpRequest) {
+    setStepUp(request);
+    setStepUpError(null);
+  }
+
+  function closeStepUp() {
+    if (stepUpBusy) return;
+    setStepUp(null);
+    setStepUpError(null);
+  }
+
+  async function confirmStepUp(confirmPassword: string) {
+    if (!stepUp) return;
+    setStepUpBusy(true);
+    setStepUpError(null);
+    try {
+      const ok = await stepUp.run(confirmPassword);
+      if (ok) setStepUp(null);
+    } finally {
+      setStepUpBusy(false);
+    }
+  }
+
+  async function saveStateRule(payload: typeof form, confirmPassword: string, targetEditingId: string | null): Promise<boolean> {
     setSaving(true);
     try {
-      const url = editingId ? `/api/state-rules/${editingId}` : "/api/state-rules";
-      const method = editingId ? "PATCH" : "POST";
+      const url = targetEditingId ? `/api/state-rules/${targetEditingId}` : "/api/state-rules";
+      const method = targetEditingId ? "PATCH" : "POST";
       const res = await fetch(url, {
         method, headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...payload, confirmPassword }),
       });
-      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Failed"); return; }
-      toast.success(editingId ? "State rule updated" : "State rule created");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error || "Failed";
+        if (data.requiresPassword || res.status === 401 || res.status === 403) setStepUpError(message);
+        toast.error(message);
+        return false;
+      }
+      toast.success(targetEditingId ? "State rule updated" : "State rule created");
       setShowForm(false);
       fetchRules();
-    } catch { toast.error("Failed"); }
-    finally { setSaving(false); }
+      return true;
+    } catch {
+      toast.error("Failed");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const payload = { ...form };
+    const targetEditingId = editingId;
+    requestStepUp({
+      title: targetEditingId ? "Confirm state rule update" : "Confirm state rule creation",
+      description: "Enter your admin password before changing state rules.",
+      confirmLabel: targetEditingId ? "Update rule" : "Create rule",
+      run: (confirmPassword) => saveStateRule(payload, confirmPassword, targetEditingId),
+    });
   }
 
   function handleDelete(id: string, code: string) {
@@ -97,20 +147,55 @@ export default function StateRulesPage() {
 
   async function confirmDelete() {
     if (!deleteTarget || deleteConfirmation !== deleteTarget.code) return;
+    const target = { ...deleteTarget };
+    requestStepUp({
+      title: "Confirm state rule deletion",
+      description: "Enter your admin password before deleting this state rule.",
+      confirmLabel: "Delete rule",
+      run: (confirmPassword) => deleteStateRule(target, confirmPassword),
+    });
+  }
+
+  async function deleteStateRule(target: { id: string; code: string }, confirmPassword: string): Promise<boolean> {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/state-rules/${deleteTarget.id}`, { method: "DELETE" });
-      if (!res.ok) { toast.error("Failed to delete"); return; }
+      const res = await fetch(`/api/state-rules/${target.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = data.error || "Failed to delete";
+        if (data.requiresPassword || res.status === 401 || res.status === 403) setStepUpError(message);
+        toast.error(message);
+        return false;
+      }
       toast.success("State rule deleted");
       setDeleteTarget(null);
       setDeleteConfirmation("");
       fetchRules();
-    } catch { toast.error("Failed"); }
+      return true;
+    } catch {
+      toast.error("Failed");
+      return false;
+    }
     finally { setDeleting(false); }
   }
 
   return (
     <div className="space-y-6">
+      <PasswordConfirmModal
+        open={Boolean(stepUp)}
+        title={stepUp?.title || "Confirm action"}
+        description={stepUp?.description || "Enter your admin password to continue."}
+        confirmLabel={stepUp?.confirmLabel || "Confirm"}
+        busy={stepUpBusy || saving || deleting}
+        error={stepUpError}
+        onClose={closeStepUp}
+        onConfirm={confirmStepUp}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">State Rules</h1>

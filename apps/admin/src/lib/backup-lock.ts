@@ -14,6 +14,17 @@ export class BackupRunLockError extends Error {
   }
 }
 
+export class RestoreRunLockError extends Error {
+  constructor(
+    message: string,
+    public readonly activeRestoreId?: string,
+    public readonly candidateRestoreId?: string,
+  ) {
+    super(message);
+    this.name = "RestoreRunLockError";
+  }
+}
+
 interface BackupRecordClient {
   backupRecord: {
     updateMany: (args: any) => Promise<any>;
@@ -28,6 +39,7 @@ export async function acquireBackupRunLock(input: {
   data: Record<string, unknown>;
   now?: Date;
   staleMs?: number;
+  ignoreActiveBackupIds?: string[];
 }) {
   const now = input.now || new Date();
   const staleMs = input.staleMs ?? BACKUP_LOCK_STALE_MS;
@@ -59,7 +71,8 @@ export async function acquireBackupRunLock(input: {
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     select: { id: true, createdAt: true, createdBy: true, type: true },
   });
-  const activeBackup = activeBackups[0];
+  const ignored = new Set(input.ignoreActiveBackupIds || []);
+  const activeBackup = activeBackups.find((backup) => !ignored.has(backup.id));
 
   if (activeBackup && activeBackup.id !== backup.id) {
     await input.prismaClient.backupRecord
@@ -85,6 +98,99 @@ export async function acquireBackupRunLock(input: {
   return backup;
 }
 
+export async function acquireRestoreRunLock(input: {
+  prismaClient: BackupRecordClient;
+  adminId: string;
+  mode: "MERGE" | "REPLACE";
+  tables: string[];
+  metadata?: Record<string, unknown>;
+  now?: Date;
+  staleMs?: number;
+}) {
+  const now = input.now || new Date();
+  try {
+    return await acquireBackupRunLock({
+      prismaClient: input.prismaClient,
+      now,
+      staleMs: input.staleMs,
+      data: {
+        type: `RESTORE_${input.mode}`,
+        status: "IN_PROGRESS",
+        format: "JSON",
+        tables: JSON.stringify(input.tables),
+        createdBy: input.adminId,
+        errorMessage: serializeBackupRecordMetadata({
+          error: null,
+          archive: null,
+          offsite: null,
+          restore: {
+            mode: input.mode,
+            adminId: input.adminId,
+            startedAt: now.toISOString(),
+            ...(input.metadata || {}),
+          } as any,
+        } as any),
+      },
+    });
+  } catch (error) {
+    if (error instanceof BackupRunLockError) {
+      throw new RestoreRunLockError(
+        "Another backup or restore job is already running.",
+        error.activeBackupId,
+        error.candidateBackupId,
+      );
+    }
+    throw error;
+  }
+}
+
+export async function releaseRestoreRunLock(input: {
+  prismaClient: BackupRecordClient;
+  restoreId: string;
+  metadata?: Record<string, unknown>;
+}) {
+  await input.prismaClient.backupRecord
+    .update({
+      where: { id: input.restoreId },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        errorMessage: serializeBackupRecordMetadata({
+          error: null,
+          restore: {
+            completedAt: new Date().toISOString(),
+            ...(input.metadata || {}),
+          } as any,
+        } as any),
+      },
+    })
+    .catch(() => null);
+}
+
+export async function markRestoreRunLockFailed(input: {
+  prismaClient: BackupRecordClient;
+  restoreId: string;
+  error: unknown;
+  metadata?: Record<string, unknown>;
+}) {
+  await input.prismaClient.backupRecord
+    .update({
+      where: { id: input.restoreId },
+      data: {
+        status: "FAILED",
+        completedAt: new Date(),
+        errorMessage: serializeBackupRecordMetadata({
+          error: redactBackupSecretText(input.error),
+          restore: {
+            failedAt: new Date().toISOString(),
+            ...(input.metadata || {}),
+          } as any,
+        } as any),
+      },
+    })
+    .catch(() => null);
+}
+
 export async function markBackupRunFailed(input: {
   prismaClient: BackupRecordClient;
   backupId: string;
@@ -103,4 +209,3 @@ export async function markBackupRunFailed(input: {
     })
     .catch(() => null);
 }
-

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta } from "@/lib/audit";
 import { isEncrypted, reEncrypt, validateKeyFormat } from "@/lib/shared-encryption";
 
 // Encrypted field map: table → model name → encrypted column names
@@ -36,6 +37,8 @@ export async function POST(request: NextRequest) {
       requireMfa: true,
       mfaCode: typeof mfaCode === "string" ? mfaCode : undefined,
       backupCode: typeof backupCode === "string" ? backupCode : undefined,
+      ipAddress: getAuditRequestMeta(request).ipAddress,
+      userAgent: getAuditRequestMeta(request).userAgent,
     });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });

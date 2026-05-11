@@ -50,7 +50,7 @@ interface ReconcileReport {
   }>;
 }
 
-export async function POST(request: NextRequest) {
+async function handleCron(request: NextRequest) {
   // Stripe reconcile is heavy (hits Stripe + writes to DB for every sub).
   // Cap at 2/min so a leaked secret cannot trigger thousands of API calls.
   const guard = await guardCronRequest(request, "stripe-reconcile", { limit: 2 });
@@ -266,6 +266,14 @@ export async function POST(request: NextRequest) {
   void prisma;
 
   return NextResponse.json({ success: true, ...report });
+}
+
+export async function GET(request: NextRequest) {
+  return handleCron(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleCron(request);
 }
 
 function mapStripeSubscriptionStatus(stripeStatus: string): string {

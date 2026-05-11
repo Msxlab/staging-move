@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin, refreshSessionCookie } from "@/lib/auth";
 import { verifyTOTP } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // POST /api/auth/mfa/verify — verify TOTP code to complete MFA setup
 export async function POST(request: NextRequest) {
@@ -47,14 +48,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "MFA_ENABLED",
-        entityType: "AdminUser",
-        entityId: session.adminId,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "MFA_ENABLED",
+      entityType: "AdminUser",
+      entityId: session.adminId,
+      metadata: { operation: "admin_mfa_verify" },
+      request: getAuditRequestMeta(request),
     });
 
     // Re-issue the session JWT with `mfaEnabled: true` so the middleware

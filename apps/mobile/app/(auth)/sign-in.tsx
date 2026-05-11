@@ -80,6 +80,7 @@ export default function SignInScreen() {
 
     await setSession(res.data.token, res.data.user);
     hapticSuccess();
+    void registerForPushNotifications().catch(() => null);
     router.replace("/(tabs)");
   };
 

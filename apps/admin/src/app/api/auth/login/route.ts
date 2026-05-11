@@ -8,6 +8,7 @@ import { trackFailedLogin, trackSuccessfulLogin } from "@/lib/security-monitor";
 import { verifyTOTP, verifyBackupCode } from "@/lib/totp";
 import { decrypt } from "@/lib/shared-encryption";
 import { getAdminRuntimeConfigValues } from "@/lib/runtime-config";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // Body validation. The password length cap is bcrypt's effective input
 // limit (72 bytes) — anything longer is silently truncated by bcrypt
@@ -110,49 +111,25 @@ const ADMIN_MFA_RATE_LIMIT: AdminRateLimitPolicy = {
 interface LoginAttempt { count: number; resetAt: number; lockedUntil: number; }
 const loginAttempts = new Map<string, LoginAttempt>();
 
-async function resolveAuditActorAdminId(email: string): Promise<string | null> {
-  try {
-    const matchedAdmin = await prisma.adminUser.findUnique({
-      where: { email },
-      select: { id: true },
-    }).catch(() => null);
-    if (matchedAdmin?.id) return matchedAdmin.id;
-
-    const systemAdmin = await prisma.adminUser.findFirst({
-      where: { isActive: true, role: "SUPER_ADMIN" },
-      orderBy: { createdAt: "asc" },
-      select: { id: true },
-    }).catch(() => null);
-    if (systemAdmin?.id) return systemAdmin.id;
-
-    const fallbackAdmin = await prisma.adminUser.findFirst({
-      where: { isActive: true },
-      orderBy: { createdAt: "asc" },
-      select: { id: true },
-    }).catch(() => null);
-    return fallbackAdmin?.id || null;
-  } catch {
-    return null;
-  }
-}
-
 async function writeLoginAuditLog(input: {
-  action: "LOGIN_FAILED" | "LOGIN_BLOCKED";
+  action: "LOGIN_FAILED" | "LOGIN_BLOCKED" | "MFA_REQUIRED";
   email: string;
   ip: string;
+  ua?: string;
   reason: string;
   adminId?: string;
 }) {
-  const auditAdminId = input.adminId || await resolveAuditActorAdminId(input.email);
-  if (!auditAdminId) return;
-
   await prisma.adminAuditLog.create({
     data: {
-      adminUserId: auditAdminId,
+      adminUserId: input.adminId || null,
       action: input.action,
       entityType: "AdminAuth",
       entityId: input.adminId || "login",
-      changes: JSON.stringify({ email: input.email, reason: input.reason }),
+      changes: JSON.stringify({
+        email: input.email,
+        reason: input.reason,
+        actor: input.adminId ? { adminId: input.adminId, userAgent: input.ua || null } : null,
+      }),
       ipAddress: input.ip,
     },
   }).catch(() => null);
@@ -186,12 +163,12 @@ function stableRateKeyHash(value: string | null | undefined): string {
   return (hash >>> 0).toString(36);
 }
 
-function buildAdminLoginRateKey(email: string, ip: string, userAgent: string): string {
-  return `email:${stableRateKeyHash(email.trim().toLowerCase())}:ip:${stableRateKeyHash(ip)}:ua:${stableRateKeyHash(userAgent)}`;
+function buildAdminLoginRateKey(email: string, ip: string): string {
+  return `email:${stableRateKeyHash(email.trim().toLowerCase())}:ip:${stableRateKeyHash(ip)}`;
 }
 
-function buildAdminMfaRateKey(adminId: string, ip: string, userAgent: string): string {
-  return `admin:${stableRateKeyHash(adminId)}:ip:${stableRateKeyHash(ip)}:ua:${stableRateKeyHash(userAgent)}`;
+function buildAdminMfaRateKey(adminId: string, ip: string): string {
+  return `admin:${stableRateKeyHash(adminId)}:ip:${stableRateKeyHash(ip)}`;
 }
 
 async function checkLoginRateLimitRedis(
@@ -300,7 +277,7 @@ export async function POST(request: NextRequest) {
     // SEC-005: Rate limiting
     const ip = resolveClientIP(request);
     const ua = request.headers.get("user-agent") || "unknown";
-    const loginRateKey = buildAdminLoginRateKey(email, ip, ua);
+    const loginRateKey = buildAdminLoginRateKey(email, ip);
     const rateCheck = await checkLoginRateLimitRedis(loginRateKey);
     if (!rateCheck.allowed) {
       await prisma.rateLimitLog.create({
@@ -317,6 +294,7 @@ export async function POST(request: NextRequest) {
         action: "LOGIN_BLOCKED",
         email,
         ip,
+        ua,
         reason: rateCheck.unavailable ? "RATE_LIMIT_UNAVAILABLE" : "RATE_LIMIT_BLOCKED",
       });
       return NextResponse.json(
@@ -338,7 +316,7 @@ export async function POST(request: NextRequest) {
     if (!admin || !admin.isActive) {
       trackFailedLogin(email, ip);
       const reason = admin ? "INACTIVE_ADMIN" : "UNKNOWN_EMAIL";
-      await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, reason, adminId: admin?.id });
+      await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, ua, reason, adminId: admin?.id });
       await writeLoginLog({ adminUserId: admin?.id, email, success: false, failReason: reason, ip, ua });
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
@@ -346,7 +324,7 @@ export async function POST(request: NextRequest) {
     const valid = await bcrypt.compare(password, admin.password);
     if (!valid) {
       trackFailedLogin(email, ip);
-      await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, reason: "INVALID_PASSWORD", adminId: admin.id });
+      await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, ua, reason: "INVALID_PASSWORD", adminId: admin.id });
       await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "INVALID_PASSWORD", ip, ua });
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
@@ -354,12 +332,13 @@ export async function POST(request: NextRequest) {
     // MFA check — if enabled, require TOTP code or backup code
     if ((admin as any).mfaEnabled && (admin as any).mfaSecret) {
       if (!mfaCode && !backupCode) {
+        await writeLoginAuditLog({ action: "MFA_REQUIRED", email, ip, ua, reason: "MFA_REQUIRED", adminId: admin.id });
         await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "MFA_REQUIRED", ip, ua, mfaUsed: true, mfaMethod: null });
-        return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+        return NextResponse.json({ error: "MFA required", requiresMfa: true }, { status: 403 });
       }
 
       const mfaRateCheck = await checkLoginRateLimitRedis(
-        buildAdminMfaRateKey(admin.id, ip, ua),
+        buildAdminMfaRateKey(admin.id, ip),
         ADMIN_MFA_RATE_LIMIT,
       );
       if (!mfaRateCheck.allowed) {
@@ -367,6 +346,7 @@ export async function POST(request: NextRequest) {
           action: "LOGIN_BLOCKED",
           email,
           ip,
+          ua,
           reason: "MFA_RATE_LIMIT_BLOCKED",
           adminId: admin.id,
         });
@@ -423,9 +403,25 @@ export async function POST(request: NextRequest) {
 
       if (!mfaValid) {
         trackFailedLogin(email, ip);
-        await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, reason: "INVALID_MFA", adminId: admin.id });
+        await writeLoginAuditLog({ action: "LOGIN_FAILED", email, ip, ua, reason: "INVALID_MFA", adminId: admin.id });
         await writeLoginLog({ adminUserId: admin.id, email, success: false, failReason: "INVALID_MFA", ip, ua, mfaUsed: true, mfaMethod: mfaCode ? "TOTP" : "BACKUP_CODE" });
         return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      }
+      if (backupCode) {
+        await writeAdminAudit(
+          {
+            adminId: admin.id,
+            email: admin.email,
+            role: admin.role,
+          },
+          {
+            action: "BACKUP_CODE_USED",
+            entityType: "AdminAuth",
+            entityId: admin.id,
+            metadata: { operation: "admin_login", method: "BACKUP_CODE" },
+            request: getAuditRequestMeta(request),
+          },
+        );
       }
     }
 
@@ -474,14 +470,19 @@ export async function POST(request: NextRequest) {
     // Track successful login for anomaly detection
     trackSuccessfulLogin(admin.email, ip, admin.id);
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: admin.id,
-        action: "LOGIN",
-        entityType: "AdminUser",
-        entityId: admin.id,
-        ipAddress: ip,
+    await writeAdminAudit({
+      adminId: admin.id,
+      email: admin.email,
+      role: admin.role,
+    }, {
+      action: "LOGIN_SUCCESS",
+      entityType: "AdminUser",
+      entityId: admin.id,
+      metadata: {
+        mfaUsed: mfaWasUsed,
+        mfaMethod: mfaCode ? "TOTP" : backupCode ? "BACKUP_CODE" : null,
       },
+      request: getAuditRequestMeta(request),
     });
 
     // Write login log

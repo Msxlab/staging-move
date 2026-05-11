@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin, requirePasswordConfirm } from "@/lib/auth";
 import { generateSecret, generateProvisioningURI, generateBackupCodes } from "@/lib/totp";
 import { encrypt } from "@/lib/shared-encryption";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // POST /api/auth/mfa/setup — initiate MFA setup (returns QR URI + backup codes)
 export async function POST(request: NextRequest) {
@@ -12,7 +13,12 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Require password confirmation to set up MFA
-    const confirm = await requirePasswordConfirm(session, body.confirmPassword, { operation: "admin_mfa_setup" });
+    const requestMeta = getAuditRequestMeta(request);
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
+      operation: "admin_mfa_setup",
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }
@@ -55,14 +61,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "MFA_SETUP_INIT",
-        entityType: "AdminUser",
-        entityId: session.adminId,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "MFA_SETUP_STARTED",
+      entityType: "AdminUser",
+      entityId: session.adminId,
+      metadata: { operation: "admin_mfa_setup" },
+      request: requestMeta,
     });
 
     return NextResponse.json({

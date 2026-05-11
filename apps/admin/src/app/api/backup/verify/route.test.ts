@@ -23,7 +23,10 @@ const mocks = vi.hoisted(() => {
     adminUser: { count: vi.fn().mockResolvedValue(1) },
     adminPermission: { count: vi.fn().mockResolvedValue(2) },
     adminLoginLog: { count: vi.fn().mockResolvedValue(9) },
-    adminAuditLog: { count: vi.fn().mockResolvedValue(10) },
+    adminAuditLog: {
+      count: vi.fn().mockResolvedValue(10),
+      create: vi.fn().mockResolvedValue({}),
+    },
   };
 
   return {
@@ -55,24 +58,33 @@ function jsonRequest(body: unknown) {
   }) as any;
 }
 
+function signedBody(data: Record<string, unknown>) {
+  return {
+    data,
+    rawContent: JSON.stringify({ data }),
+    signature: "good",
+  };
+}
+
 describe("backup verify catalog validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requirePermission.mockResolvedValue({ adminId: "admin_1" });
     mocks.parseBackupArchive.mockReturnValue(null);
+    mocks.verifyBackupSignature.mockReturnValue(true);
   });
 
   it("recognizes providerCoverages from the canonical backup catalog", async () => {
     const { POST } = await import("./route");
     const res = await POST(
-      jsonRequest({
-        data: {
+      jsonRequest(
+        signedBody({
           providerCoverages: [
             { id: "coverage_1", providerId: "provider_1", state: "CA" },
             { id: "coverage_2", providerId: "provider_2", state: "TX" },
           ],
-        },
-      }),
+        }),
+      ),
     );
 
     expect(res.status).toBe(200);
@@ -95,11 +107,11 @@ describe("backup verify catalog validation", () => {
     const { POST } = await import("./route");
     const res = await POST(
       jsonRequest({
-        data: {
+        ...signedBody({
           customProviders: [{ id: "custom_1", userId: "user_1", name: "Dentist" }],
           moveTasks: [{ id: "task_1", userId: "user_1", movingPlanId: "move_1" }],
           providerGovernanceIssues: [{ id: "issue_1", issueType: "MISSING_PHONE" }],
-        },
+        }),
       }),
     );
 
@@ -115,7 +127,7 @@ describe("backup verify catalog validation", () => {
     const { POST } = await import("./route");
     const res = await POST(
       jsonRequest({
-        data: {
+        ...signedBody({
           adminUsers: [{ id: "admin_1", email: "admin@example.com" }],
           adminPermissions: [{ id: "perm_1", adminUserId: "admin_1" }],
           adminLoginLogs: [{ id: "login_1", email: "admin@example.com" }],
@@ -123,7 +135,7 @@ describe("backup verify catalog validation", () => {
           dataConsents: [{ id: "consent_1", userId: "user_1" }],
           emailLogs: [{ id: "email_1", to: "user@example.com" }],
           oauthAccounts: [{ id: "oauth_1", userId: "user_1", provider: "google" }],
-        },
+        }),
       }),
     );
 
@@ -137,5 +149,41 @@ describe("backup verify catalog validation", () => {
     expect(body.tableStats.dataConsents).toMatchObject({ count: 1, dbCount: 6 });
     expect(body.tableStats.emailLogs).toMatchObject({ count: 1, dbCount: 8 });
     expect(body.tableStats.oauthAccounts).toMatchObject({ count: 1, dbCount: 4 });
+  });
+
+  it("does not mark unsigned plaintext archives as restore-ready", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        data: { users: [{ id: "user_1" }] },
+      }),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.restoreReady).toBe(false);
+    expect(
+      body.checks.some(
+        (check: { name: string; status: string }) =>
+          check.name === "HMAC Signature" && check.status === "fail",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects oversized verify requests before parsing", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/backup/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": `${26 * 1024 * 1024}`,
+        },
+        body: "{}",
+      }) as any,
+    );
+
+    expect(res.status).toBe(413);
   });
 });

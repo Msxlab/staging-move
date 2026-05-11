@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { prisma } from "@/lib/db";
 import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
-import { downloadBackupArchive, parseBackupRecordMetadata } from "@/lib/backup-storage";
+import {
+  downloadBackupArchive,
+  isValidBackupObjectKey,
+  parseBackupRecordMetadata,
+  sanitizeBackupFileName,
+} from "@/lib/backup-storage";
 import { redactBackupSecretText } from "@/lib/backup-metadata";
+import { writeBackupAudit } from "@/lib/backup-audit";
+import { MAX_BACKUP_DOWNLOAD_BYTES } from "@/lib/backup-policy";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 export async function GET() {
   return NextResponse.json(
@@ -16,14 +24,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session: Awaited<ReturnType<typeof requirePermission>> | null = null;
+  let backupId: string | null = null;
   try {
     // Backup archives carry every encrypted/PII field in the DB. Force the
     // download gate to SUPER_ADMIN — a regular ADMIN with `settings.canRead`
     // can browse the backup list (metadata-only) but cannot pull the
     // archive bytes. Step-up below also requires MFA for SUPER_ADMINs that
     // have it enabled (which is mandatory for that role).
-    const session = await requirePermission("settings", "canRead", { minimumRole: "SUPER_ADMIN", fallbackResources: ["audit_logs"] });
+    session = await requirePermission("settings", "canRead", { minimumRole: "SUPER_ADMIN", fallbackResources: ["audit_logs"] });
     const { id } = await params;
+    backupId = id;
     const body = await request.json().catch(() => ({}));
     const confirm = await requirePasswordConfirm(
       session,
@@ -33,41 +44,105 @@ export async function POST(
         requireMfa: true,
         mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : undefined,
         backupCode: typeof body?.backupCode === "string" ? body.backupCode : undefined,
+        ipAddress: getAuditRequestMeta(request).ipAddress,
+        userAgent: getAuditRequestMeta(request).userAgent,
       },
     );
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: id,
+        request,
+        error: confirm.error || "step-up failed",
+      });
+      return NextResponse.json(
+        {
+          error: confirm.error,
+          requiresPassword: true,
+          requiresMfa: confirm.requiresMfa,
+        },
+        { status: 403 },
+      );
     }
 
     const backup = await prisma.backupRecord.findUnique({ where: { id } });
     if (!backup) {
       return NextResponse.json({ error: "Backup not found" }, { status: 404 });
     }
+    if (backup.fileSize && backup.fileSize > MAX_BACKUP_DOWNLOAD_BYTES) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: backup.id,
+        request,
+        metadata: {
+          fileSize: backup.fileSize,
+          maxBytes: MAX_BACKUP_DOWNLOAD_BYTES,
+        },
+        error: "backup archive exceeds synchronous download limit",
+      });
+      return NextResponse.json(
+        { error: "Backup archive is too large to download synchronously." },
+        { status: 413 },
+      );
+    }
 
     const metadata = parseBackupRecordMetadata(backup.errorMessage);
     if (!metadata.offsite || metadata.offsite.status !== "stored" || !metadata.offsite.objectKey) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: backup.id,
+        request,
+        error: "offsite archive unavailable",
+      });
       return NextResponse.json({ error: "This backup archive is not available from offsite storage." }, { status: 409 });
+    }
+    if (!isValidBackupObjectKey(metadata.offsite.objectKey, backup.id)) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: backup.id,
+        request,
+        metadata: { objectKeyRejected: true },
+        error: "invalid offsite object key",
+      });
+      return NextResponse.json({ error: "Backup archive storage key is invalid." }, { status: 409 });
     }
 
     const archive = await downloadBackupArchive(metadata.offsite);
-    const fileName = backup.fileName || `backup-${backup.id}.json`;
+    const fileName = sanitizeBackupFileName(
+      backup.fileName,
+      `backup-${backup.id}.json`,
+    );
     const fileSize = Buffer.byteLength(archive.content, "utf8");
+    if (fileSize > MAX_BACKUP_DOWNLOAD_BYTES) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: backup.id,
+        request,
+        metadata: { fileSize, maxBytes: MAX_BACKUP_DOWNLOAD_BYTES },
+        error: "downloaded archive exceeds synchronous download limit",
+      });
+      return NextResponse.json(
+        { error: "Backup archive is too large to download synchronously." },
+        { status: 413 },
+      );
+    }
     const contentHash = createHash("sha256").update(archive.content).digest("hex");
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "BACKUP_DOWNLOAD",
-        entityType: "BackupRecord",
-        entityId: backup.id,
-        changes: JSON.stringify({
-          fileName,
-          fileSize,
-          contentHash,
-          offsiteStatus: metadata.offsite.status,
-          userAgent: request.headers.get("user-agent") || "unknown",
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+    await writeBackupAudit({
+      session,
+      action: "BACKUP_DOWNLOAD_SUCCESS",
+      entityId: backup.id,
+      request,
+      metadata: {
+        fileName,
+        fileSize,
+        contentHash,
+        offsiteStatus: metadata.offsite.status,
       },
     });
 
@@ -80,6 +155,15 @@ export async function POST(
       },
     });
   } catch (error: any) {
+    if (session) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_DOWNLOAD_FAILED",
+        entityId: backupId || "download",
+        request,
+        error,
+      });
+    }
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

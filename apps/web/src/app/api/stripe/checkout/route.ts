@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
       let previousTrialRedemption: { id: string } | null = null;
       try {
         previousTrialRedemption = await (prisma as any).acquisitionRedemption.findFirst({
-          where: { userId, accessType: "FREE_TRIAL" },
+          where: { userId, accessType: "FREE_TRIAL", status: "REDEEMED" },
           select: { id: true },
         });
       } catch {

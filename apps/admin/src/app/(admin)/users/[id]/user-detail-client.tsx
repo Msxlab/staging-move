@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { maskEmail } from "@/lib/privacy";
 import {
   accessSourceLabel,
@@ -48,6 +48,8 @@ export default function UserDetailClient() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showProfileConfirm, setShowProfileConfirm] = useState(false);
+  const [profileConfirmError, setProfileConfirmError] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ firstName: "", lastName: "", plan: "" });
   const [changingPlan, setChangingPlan] = useState(false);
   const [premiumForm, setPremiumForm] = useState({
@@ -58,6 +60,8 @@ export default function UserDetailClient() {
   const [newAdminNote, setNewAdminNote] = useState("");
   const [savingAdminNote, setSavingAdminNote] = useState(false);
   const [revokingLoginSessions, setRevokingLoginSessions] = useState(false);
+  const [pendingLoginSessionRevoke, setPendingLoginSessionRevoke] = useState<{ sessionId?: string } | null>(null);
+  const [loginSessionRevokeError, setLoginSessionRevokeError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -117,7 +121,7 @@ export default function UserDetailClient() {
     setShowDeleteConfirm(true);
   }
 
-  async function confirmDelete(confirmPassword: string) {
+  async function confirmDelete(_confirmPassword: string, stepUp: StepUpValues) {
     if (!user) return;
     setDeleteBusy(true);
     setDeleteError(null);
@@ -125,7 +129,7 @@ export default function UserDetailClient() {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword }),
+        body: JSON.stringify(stepUp),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -151,7 +155,7 @@ export default function UserDetailClient() {
     setShowRestoreConfirm(true);
   }
 
-  async function confirmRestore(confirmPassword: string) {
+  async function confirmRestore(_confirmPassword: string, stepUp: StepUpValues) {
     if (!user) return;
     setRestoreBusy(true);
     setRestoreError(null);
@@ -159,7 +163,7 @@ export default function UserDetailClient() {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "restore_user", confirmPassword }),
+        body: JSON.stringify({ action: "restore_user", ...stepUp }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -188,7 +192,7 @@ export default function UserDetailClient() {
     }
   }
 
-  async function confirmPlanChange(confirmPassword: string) {
+  async function confirmPlanChange(_confirmPassword: string, stepUp: StepUpValues) {
     if (!user || !pendingPlan) return;
     setChangingPlan(true);
     setPlanConfirmError(null);
@@ -196,7 +200,7 @@ export default function UserDetailClient() {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: pendingPlan, confirmPassword }),
+        body: JSON.stringify({ plan: pendingPlan, ...stepUp }),
       });
       if (res.ok) {
         setEditForm({ ...editForm, plan: pendingPlan });
@@ -216,7 +220,7 @@ export default function UserDetailClient() {
     }
   }
 
-  async function confirmSubscriptionAction(confirmPassword: string) {
+  async function confirmSubscriptionAction(_confirmPassword: string, stepUp: StepUpValues) {
     if (!user || !pendingSubscriptionAction) return;
     setSubscriptionActionBusy(true);
     setSubscriptionActionError(null);
@@ -224,7 +228,7 @@ export default function UserDetailClient() {
       const res = await fetch(`/api/users/${params.id}/subscription-actions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: pendingSubscriptionAction, confirmPassword }),
+        body: JSON.stringify({ action: pendingSubscriptionAction, ...stepUp }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -250,7 +254,7 @@ export default function UserDetailClient() {
     }
   }
 
-  async function confirmPremiumUpdate(confirmPassword: string) {
+  async function confirmPremiumUpdate(_confirmPassword: string, stepUp: StepUpValues) {
     if (!user) return;
     setSavingPremium(true);
     setPremiumError(null);
@@ -262,7 +266,7 @@ export default function UserDetailClient() {
         cancelAtPeriodEnd: premiumForm.cancelAtPeriodEnd,
         autoRenew: premiumForm.autoRenew,
         premiumNote: premiumForm.premiumNote,
-        confirmPassword,
+        ...stepUp,
       };
       if (premiumForm.premiumUntil) payload.premiumUntil = premiumForm.premiumUntil;
       else payload.premiumUntil = null;
@@ -308,6 +312,38 @@ export default function UserDetailClient() {
     }
   }
 
+  async function confirmProfileUpdate(_confirmPassword: string, stepUp: StepUpValues) {
+    if (!user) return;
+    setSaving(true);
+    setProfileConfirmError(null);
+    try {
+      const res = await fetch(`/api/users/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: editForm.firstName,
+          lastName: editForm.lastName,
+          ...stepUp,
+        }),
+      });
+      if (res.ok) {
+        setUser({ ...user, firstName: editForm.firstName, lastName: editForm.lastName });
+        toast.success("User updated");
+        setEditing(false);
+        setShowProfileConfirm(false);
+      } else {
+        const message = await readAdminApiError(res, "Failed to update user.");
+        setProfileConfirmError(message);
+        toast.error(message);
+      }
+    } catch {
+      setProfileConfirmError("Failed to update user.");
+      toast.error("Failed to update user.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleAddAdminNote() {
     if (!newAdminNote.trim()) {
       toast.error("Enter a note before saving.");
@@ -337,20 +373,29 @@ export default function UserDetailClient() {
   }
 
   async function handleRevokeLoginSessions(sessionId?: string) {
+    setLoginSessionRevokeError(null);
+    setPendingLoginSessionRevoke({ sessionId });
+  }
+
+  async function confirmRevokeLoginSessions(_confirmPassword: string, stepUp: StepUpValues) {
+    const sessionId = pendingLoginSessionRevoke?.sessionId;
     setRevokingLoginSessions(true);
+    setLoginSessionRevokeError(null);
     try {
       const res = await fetch(`/api/users/${params.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           sessionId
-            ? { action: "revoke_login_session", sessionId }
-            : { action: "revoke_all_login_sessions" },
+            ? { action: "revoke_login_session", sessionId, ...stepUp }
+            : { action: "revoke_all_login_sessions", ...stepUp },
         ),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || "Failed to revoke login session.");
+        const message = data.error || "Failed to revoke login session.";
+        setLoginSessionRevokeError(message);
+        toast.error(message);
         return;
       }
       setLoginSessions((prev) =>
@@ -363,7 +408,9 @@ export default function UserDetailClient() {
       toast.success(
         sessionId ? "Login session revoked." : `${data.revoked || 0} login sessions revoked.`,
       );
+      setPendingLoginSessionRevoke(null);
     } catch {
+      setLoginSessionRevokeError("Failed to revoke login sessions.");
       toast.error("Failed to revoke login sessions.");
     } finally {
       setRevokingLoginSessions(false);
@@ -494,25 +541,9 @@ export default function UserDetailClient() {
                 placeholder="Last name"
               />
               <button
-                onClick={async () => {
-                  setSaving(true);
-                  try {
-                    const res = await fetch(`/api/users/${params.id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ firstName: editForm.firstName, lastName: editForm.lastName }),
-                    });
-                    if (res.ok) {
-                      setUser({ ...user, firstName: editForm.firstName, lastName: editForm.lastName });
-                      toast.success("User updated");
-                      setEditing(false);
-                    } else {
-                      toast.error(await readAdminApiError(res, "Failed to update user."));
-                    }
-                  } catch {
-                    toast.error("Failed to update user.");
-                  }
-                  setSaving(false);
+                onClick={() => {
+                  setProfileConfirmError(null);
+                  setShowProfileConfirm(true);
                 }}
                 disabled={saving}
                 className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
@@ -1589,6 +1620,36 @@ export default function UserDetailClient() {
           </div>
         </div>
       )}
+      <PasswordConfirmModal
+        open={showProfileConfirm}
+        title="Update user profile"
+        description={`Enter your admin password and MFA code or backup code to update profile PII for ${maskEmail(user.email)}.`}
+        confirmLabel="Save Profile"
+        busy={saving}
+        error={profileConfirmError}
+        onClose={() => {
+          if (!saving) {
+            setShowProfileConfirm(false);
+            setProfileConfirmError(null);
+          }
+        }}
+        onConfirm={confirmProfileUpdate}
+      />
+      <PasswordConfirmModal
+        open={Boolean(pendingLoginSessionRevoke)}
+        title={pendingLoginSessionRevoke?.sessionId ? "Revoke login session" : "Revoke all login sessions"}
+        description={`Enter your admin password and MFA code or backup code to revoke ${pendingLoginSessionRevoke?.sessionId ? "this login session" : "all active login sessions"} for ${maskEmail(user.email)}.`}
+        confirmLabel="Revoke"
+        busy={revokingLoginSessions}
+        error={loginSessionRevokeError}
+        onClose={() => {
+          if (!revokingLoginSessions) {
+            setPendingLoginSessionRevoke(null);
+            setLoginSessionRevokeError(null);
+          }
+        }}
+        onConfirm={confirmRevokeLoginSessions}
+      />
       <PasswordConfirmModal
         open={showDeleteConfirm}
         title="Delete user"

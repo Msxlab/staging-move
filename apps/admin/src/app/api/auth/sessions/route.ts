@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin, requireRole } from "@/lib/auth";
+import { expireAdminSessionCookies, requireAdmin, requirePasswordConfirm, requireRole } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // GET /api/auth/sessions — list active admin sessions
 export async function GET(request: NextRequest) {
@@ -66,7 +67,34 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAdmin();
-    const { action, sessionId, revokeAll } = await request.json();
+    const requestMeta = getAuditRequestMeta(request);
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    const { action, sessionId, revokeAll, confirmPassword, mfaCode, backupCode } = body || {};
+
+    const requireSessionStepUp = async (operation: string) => {
+      const confirm = await requirePasswordConfirm(session, confirmPassword, {
+        operation,
+        requireMfa: true,
+        mfaCode,
+        backupCode,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+      });
+      if (confirm.confirmed) return null;
+      return NextResponse.json(
+        {
+          error: confirm.error || "Password and MFA confirmation required",
+          requiresPassword: true,
+          requiresMfa: confirm.requiresMfa || undefined,
+        },
+        { status: confirm.rateLimited ? 429 : 403 },
+      );
+    };
 
         if (action === "revoke" && sessionId) {
       const target = await prisma.adminSession.findUnique({ where: { id: sessionId } });
@@ -77,6 +105,8 @@ export async function POST(request: NextRequest) {
         try { await requireRole("SUPER_ADMIN"); } catch {
           return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
+        const stepUpFailure = await requireSessionStepUp("admin_session_revoke_other");
+        if (stepUpFailure) return stepUpFailure;
       }
 
       await prisma.adminSession.update({
@@ -84,18 +114,23 @@ export async function POST(request: NextRequest) {
         data: { isActive: false },
       });
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "SESSION_REVOKE",
-          entityType: "AdminSession",
-          entityId: sessionId,
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-          changes: JSON.stringify({ targetAdminId: target.adminUserId }),
+      const currentSessionRevoked = sessionId === session.sessionId;
+      await writeAdminAudit(session, {
+        action: "SESSION_REVOKED",
+        entityType: "AdminSession",
+        entityId: sessionId,
+        metadata: {
+          operation: target.adminUserId === session.adminId ? "admin_session_revoke_self" : "admin_session_revoke_other",
+          targetAdminId: target.adminUserId,
+          currentSessionRevoked,
         },
+        request: requestMeta,
       });
 
-      return NextResponse.json({ success: true });
+      const response = NextResponse.json({ success: true });
+      return currentSessionRevoked
+        ? expireAdminSessionCookies(response, request.headers.get("host"))
+        : response;
     }
 
     if (action === "revoke_all") {
@@ -106,6 +141,8 @@ export async function POST(request: NextRequest) {
         try { await requireRole("SUPER_ADMIN"); } catch {
           return NextResponse.json({ error: "Forbidden" }, { status: 403 });
         }
+        const stepUpFailure = await requireSessionStepUp("admin_session_revoke_all");
+        if (stepUpFailure) return stepUpFailure;
       }
 
       const where: any = { isActive: true };
@@ -116,18 +153,24 @@ export async function POST(request: NextRequest) {
         data: { isActive: false },
       });
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "SESSION_REVOKE_ALL",
-          entityType: "AdminSession",
-          entityId: session.adminId,
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-          changes: JSON.stringify({ scope: revokeAll || "self", count: result.count }),
+      const currentSessionRevoked = revokeAll === "all" || targetAdminId === session.adminId;
+      await writeAdminAudit(session, {
+        action: "ALL_SESSIONS_REVOKED",
+        entityType: "AdminSession",
+        entityId: session.adminId,
+        metadata: {
+          operation: revokeAll === "all" ? "admin_session_revoke_all" : "admin_session_revoke_self",
+          scope: revokeAll || "self",
+          count: result.count,
+          currentSessionRevoked,
         },
+        request: requestMeta,
       });
 
-      return NextResponse.json({ success: true, revoked: result.count });
+      const response = NextResponse.json({ success: true, revoked: result.count });
+      return currentSessionRevoked
+        ? expireAdminSessionCookies(response, request.headers.get("host"))
+        : response;
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });

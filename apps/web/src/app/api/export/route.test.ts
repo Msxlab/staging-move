@@ -247,7 +247,7 @@ describe("export route", () => {
     expect(data.customProviders[0].notes).toBeNull();
     expect(data.moveTasks[0].notes).toBeNull();
     expect(mockPrisma.userCustomProvider.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: "user-1" } }),
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
     );
     expect(mockPrisma.moveTask.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
@@ -322,6 +322,30 @@ describe("export route", () => {
     expect(response.status).toBe(200);
     expect(data.addresses).toHaveLength(1);
     expect(mockPrisma.subscription.findUnique).not.toHaveBeenCalled();
+    expect(mockPrisma.address.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
+    );
+  });
+
+  it("explicitly excludes soft-deleted user data from full exports", async () => {
+    const response = await POST(makeRequest({ type: "full", format: "json" }));
+
+    expect(response.status).toBe(200);
+    expect(mockPrisma.address.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
+    );
+    expect(mockPrisma.service.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
+    );
+    expect(mockPrisma.userCustomProvider.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
+    );
+    expect(mockPrisma.budget.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
+    );
+    expect(mockPrisma.movingPlan.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: "user-1", deletedAt: null } }),
+    );
   });
 
   it("requires server-side step-up before exporting data", async () => {

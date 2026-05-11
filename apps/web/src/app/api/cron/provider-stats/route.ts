@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { guardCronRequest } from "@/lib/cron-guard";
 
-// POST /api/cron/provider-stats
+// /api/cron/provider-stats
 // Daily cron: recalculate userCount for all providers
-export async function POST(request: NextRequest) {
+async function handleCron(request: NextRequest) {
   try {
     const guard = await guardCronRequest(request, "provider-stats");
     if (!guard.ok) return guard.response;
@@ -44,4 +44,12 @@ export async function POST(request: NextRequest) {
     console.error("Provider stats cron failed:", error);
     return NextResponse.json({ error: "Cron job failed" }, { status: 500 });
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleCron(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleCron(request);
 }
