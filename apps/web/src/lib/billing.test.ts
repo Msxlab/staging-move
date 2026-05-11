@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getRuntimeConfigValue: vi.fn(),
+  subscriptionUpsert: vi.fn(),
+  queryRawUnsafe: vi.fn(),
+  executeRawUnsafe: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -9,8 +12,10 @@ vi.mock("@/lib/db", () => ({
     subscription: {
       findUnique: vi.fn(),
       create: vi.fn(),
-      upsert: vi.fn(),
+      upsert: (...args: unknown[]) => mocks.subscriptionUpsert(...args),
     },
+    $queryRawUnsafe: (...args: unknown[]) => mocks.queryRawUnsafe(...args),
+    $executeRawUnsafe: (...args: unknown[]) => mocks.executeRawUnsafe(...args),
   },
 }));
 
@@ -20,11 +25,34 @@ vi.mock("@/lib/runtime-config", () => ({
 
 import {
   buildUnifiedEntitlementSnapshot,
+  ensureSubscriptionDefaults,
   getStripeAnnualTrialDays,
   getStripePriceIdForPlan,
   getStripePriceIdForPlanAndInterval,
   mapStripePriceIdToPlanAndInterval,
 } from "./billing";
+
+const fallbackColumns = [
+  "id",
+  "userId",
+  "plan",
+  "status",
+  "provider",
+  "platform",
+  "accessType",
+  "freeAccessEndsAt",
+  "trialEndsAt",
+  "createdAt",
+  "updatedAt",
+].map((COLUMN_NAME) => ({ COLUMN_NAME }));
+
+function missingColumnError(column = "defaultdb.Subscription.purchaseTokenHash") {
+  return Object.assign(new Error(`The column \`${column}\` does not exist in the current database.`), {
+    name: "PrismaClientKnownRequestError",
+    code: "P2022",
+    meta: { column },
+  });
+}
 
 describe("billing helpers", () => {
   beforeEach(() => {
@@ -178,5 +206,53 @@ describe("billing helpers", () => {
       isActive: false,
       isTrial: false,
     });
+  });
+
+  it("uses the normal Prisma upsert when ensuring subscription defaults against a current schema", async () => {
+    mocks.subscriptionUpsert.mockResolvedValue({ id: "sub-1", userId: "user-1" });
+
+    await expect(ensureSubscriptionDefaults("user-1")).resolves.toEqual({
+      id: "sub-1",
+      userId: "user-1",
+    });
+
+    expect(mocks.subscriptionUpsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { userId: "user-1" },
+    }));
+    expect(mocks.executeRawUnsafe).not.toHaveBeenCalled();
+  });
+
+  it("returns an existing row through the schema-compat fallback", async () => {
+    mocks.subscriptionUpsert.mockRejectedValue(missingColumnError());
+    mocks.queryRawUnsafe
+      .mockResolvedValueOnce(fallbackColumns)
+      .mockResolvedValueOnce([{ id: "sub-existing", userId: "user-1" }]);
+
+    await expect(ensureSubscriptionDefaults("user-1")).resolves.toEqual({
+      id: "sub-existing",
+      userId: "user-1",
+    });
+
+    expect(mocks.executeRawUnsafe).not.toHaveBeenCalled();
+  });
+
+  it("creates defaults without referencing missing newer columns", async () => {
+    mocks.subscriptionUpsert.mockRejectedValue(missingColumnError());
+    mocks.queryRawUnsafe
+      .mockResolvedValueOnce(fallbackColumns)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: "sub-created", userId: "user-1" }]);
+
+    await expect(ensureSubscriptionDefaults("user-1")).resolves.toEqual({
+      id: "sub-created",
+      userId: "user-1",
+    });
+
+    const [sql, ...values] = mocks.executeRawUnsafe.mock.calls[0];
+    expect(sql).toContain("INSERT INTO `Subscription`");
+    expect(sql).not.toContain("purchaseTokenHash");
+    expect(values).toContain("user-1");
+    expect(values).toContain("FREE_TRIAL");
+    expect(values).toContain("FREE_ACCESS");
   });
 });

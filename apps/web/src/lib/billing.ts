@@ -14,6 +14,7 @@ import {
   isMissingDbColumnError,
   warnSchemaCompatibilityFallback,
 } from "@/lib/db-schema-compat";
+import { randomBytes } from "node:crypto";
 
 export function createTrialEndsAt() {
   return new Date(Date.now() + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000);
@@ -248,15 +249,120 @@ export async function ensureSubscriptionDefaults(
   } catch (error) {
     if (!isMissingDbColumnError(error)) throw error;
     warnSchemaCompatibilityFallback("subscription:ensure-defaults", error);
-    return prisma.subscription.upsert({
-      where: { userId },
-      update: {},
-      create: {
-        userId,
-        plan: DEFAULT_BILLING_PLAN,
-        status: "TRIALING",
-        trialEndsAt: options.trialEndsAt || createTrialEndsAt(),
-      },
-    });
+    return ensureSubscriptionDefaultsSchemaCompat(userId, options);
   }
+}
+
+const SUBSCRIPTION_FALLBACK_SELECT_COLUMNS = [
+  "id",
+  "userId",
+  "plan",
+  "status",
+  "provider",
+  "platform",
+  "accessType",
+  "freeAccessEndsAt",
+  "trialEndsAt",
+  "createdAt",
+  "updatedAt",
+] as const;
+
+const SUBSCRIPTION_FALLBACK_INSERT_COLUMNS = [
+  "id",
+  "userId",
+  "plan",
+  "status",
+  "provider",
+  "platform",
+  "accessType",
+  "freeAccessEndsAt",
+  "trialEndsAt",
+  "createdAt",
+  "updatedAt",
+] as const;
+
+function quoteIdentifier(identifier: string) {
+  return `\`${identifier}\``;
+}
+
+function fallbackSubscriptionId() {
+  return `sub_${randomBytes(12).toString("hex")}`;
+}
+
+async function getSubscriptionColumns() {
+  const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?",
+    "Subscription",
+  );
+  return new Set(
+    rows
+      .map((row) => row.COLUMN_NAME ?? row.column_name)
+      .filter((value): value is string => typeof value === "string"),
+  );
+}
+
+async function selectFallbackSubscription(userId: string, columns: Set<string>) {
+  const selectColumns = SUBSCRIPTION_FALLBACK_SELECT_COLUMNS.filter((column) => columns.has(column));
+  if (!selectColumns.includes("id") || !selectColumns.includes("userId")) {
+    throw new Error("Subscription table is missing required id/userId columns.");
+  }
+
+  const rows = await prisma.$queryRawUnsafe<Array<Record<string, unknown>>>(
+    `SELECT ${selectColumns.map(quoteIdentifier).join(", ")} FROM \`Subscription\` WHERE \`userId\` = ? LIMIT 1`,
+    userId,
+  );
+  return rows[0] ?? null;
+}
+
+async function ensureSubscriptionDefaultsSchemaCompat(
+  userId: string,
+  options: { platform?: string | null; trialEndsAt?: Date } = {},
+) {
+  const columns = await getSubscriptionColumns();
+  const existing = await selectFallbackSubscription(userId, columns);
+  if (existing) return existing;
+
+  const now = new Date();
+  const trialEndsAt = options.trialEndsAt || createTrialEndsAt();
+  const insertValues = new Map<string, unknown>([
+    ["id", fallbackSubscriptionId()],
+    ["userId", userId],
+    ["plan", DEFAULT_BILLING_PLAN],
+    ["status", DEFAULT_SUBSCRIPTION_STATUS],
+    ["provider", "TRIAL"],
+    ["platform", options.platform || "web"],
+    ["accessType", "FREE_ACCESS"],
+    ["freeAccessEndsAt", trialEndsAt],
+    ["trialEndsAt", trialEndsAt],
+    ["createdAt", now],
+    ["updatedAt", now],
+  ]);
+  const insertColumns = SUBSCRIPTION_FALLBACK_INSERT_COLUMNS.filter(
+    (column) => columns.has(column) && insertValues.has(column),
+  );
+
+  if (!insertColumns.includes("id") || !insertColumns.includes("userId")) {
+    throw new Error("Subscription table is missing required id/userId columns.");
+  }
+
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO \`Subscription\` (${insertColumns.map(quoteIdentifier).join(", ")}) ` +
+      `VALUES (${insertColumns.map(() => "?").join(", ")}) ` +
+      "ON DUPLICATE KEY UPDATE `userId` = `userId`",
+    ...insertColumns.map((column) => insertValues.get(column)),
+  );
+
+  return await selectFallbackSubscription(userId, columns) ?? {
+    id: insertValues.get("id"),
+    userId,
+    plan: DEFAULT_BILLING_PLAN,
+    status: DEFAULT_SUBSCRIPTION_STATUS,
+    provider: columns.has("provider") ? "TRIAL" : undefined,
+    platform: columns.has("platform") ? options.platform || "web" : undefined,
+    accessType: columns.has("accessType") ? "FREE_ACCESS" : undefined,
+    freeAccessEndsAt: columns.has("freeAccessEndsAt") ? trialEndsAt : undefined,
+    trialEndsAt: columns.has("trialEndsAt") ? trialEndsAt : undefined,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
