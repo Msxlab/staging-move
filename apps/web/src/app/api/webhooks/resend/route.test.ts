@@ -86,7 +86,7 @@ describe("POST /api/webhooks/resend", () => {
     expect(response.status).toBe(200);
     expect(userMock.findUnique).toHaveBeenCalledWith({
       where: { email: "user@example.com" },
-      select: { id: true, deletedAt: true },
+      select: { id: true },
     });
     // upsert called for MARKETING and REMINDER (kind: "all")
     expect(prefMock.upsert).toHaveBeenCalledTimes(2);
@@ -159,7 +159,10 @@ describe("POST /api/webhooks/resend", () => {
   });
 
   it("ignores events for soft-deleted users", async () => {
-    userMock.findUnique.mockResolvedValue({ id: "user_1", deletedAt: new Date() });
+    // Under the soft-delete client extension, a soft-deleted row is
+    // hidden from `prisma.user.findUnique` and returns null — same
+    // shape as an unknown recipient. One ignore branch covers both.
+    userMock.findUnique.mockResolvedValue(null);
     const id = "msg_7";
     const ts = String(Math.floor(Date.now() / 1000));
     const body = JSON.stringify({ type: "email.bounced", data: { email: "user@example.com" } });

@@ -107,9 +107,10 @@ function isTrustedOAuthHost(host: string | null, configuredOrigin: string): bool
   const configuredHostname = hostnameFromOrigin(configuredOrigin);
   if (configuredHostname && hostname === configuredHostname) return true;
 
+  // Canonical production domain is locateflow.com. Preview/staging
+  // DigitalOcean app instances live on *.ondigitalocean.app. Any other
+  // host must explicitly match the configured NEXT_PUBLIC_APP_URL above.
   return (
-    hostname === "locateflow.app" ||
-    hostname.endsWith(".locateflow.app") ||
     hostname === "locateflow.com" ||
     hostname.endsWith(".locateflow.com") ||
     (hostname.startsWith("locateflow-") && hostname.endsWith(".ondigitalocean.app"))

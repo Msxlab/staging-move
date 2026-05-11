@@ -45,6 +45,10 @@ export async function POST(request: NextRequest) {
     return genericResponse();
   }
 
+  // Soft-deleted users are hidden by the prisma soft-delete extension,
+  // so a deleted account presents identically to an unknown email here
+  // — both return null. Both branches are intentionally indistinguishable
+  // in the response to avoid account enumeration.
   const user = await prisma.user.findUnique({
     where: { email: parsed.data.email },
     select: {
@@ -53,7 +57,6 @@ export async function POST(request: NextRequest) {
       firstName: true,
       passwordHash: true,
       emailVerifiedAt: true,
-      deletedAt: true,
       preferredLocale: true,
       oauthAccounts: { select: { id: true, provider: true } },
     },
@@ -61,14 +64,7 @@ export async function POST(request: NextRequest) {
 
   // Always respond success; never reveal whether the account exists.
   if (!user) {
-    console.info("[AUTH] password reset skipped", { reason: "unknown_email" });
-    return genericResponse();
-  }
-  if (user.deletedAt) {
-    console.info("[AUTH] password reset skipped", {
-      reason: "deleted_user",
-      userId: user.id,
-    });
+    console.info("[AUTH] password reset skipped", { reason: "unknown_email_or_deleted" });
     return genericResponse();
   }
 
