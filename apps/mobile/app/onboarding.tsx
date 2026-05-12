@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -46,6 +47,11 @@ import { LegalConsentPanel } from "@/components/legal/LegalConsentPanel";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { applyAddressAutocompleteResult, clearAddressAutocompleteMetadata, type AddressAutocompleteResult } from "@/lib/address-autocomplete";
 import { hapticLight, hapticSuccess, hapticError } from "@/lib/haptics";
+import {
+  getPushSoftPromptDecision,
+  registerForPushNotifications,
+  setPushSoftPromptDecision,
+} from "@/lib/push";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   createAcceptedLegalConsents,
@@ -512,6 +518,11 @@ export default function OnboardingScreen() {
         throw new Error(t("onboarding.error_onboardingIncomplete"));
       }
       hapticSuccess();
+      // Surface the push notification soft-prompt at end of onboarding (before
+      // routing into the app). Apple HIG asks us to explain WHY notifications
+      // matter before triggering the one-shot OS prompt; declining here just
+      // defers the OS prompt — the user can enable later from Settings.
+      await maybeOfferPushSoftPrompt();
       if (typeof planId === "string") {
         router.replace({ pathname: "/moving/[id]", params: { id: planId } });
       } else {
@@ -522,6 +533,44 @@ export default function OnboardingScreen() {
       setError(e?.message || t("onboarding.error_completeOnboarding"));
       return false;
     } finally { setSaving(false); }
+  };
+
+  const maybeOfferPushSoftPrompt = async () => {
+    try {
+      const decision = await getPushSoftPromptDecision();
+      if (decision !== null) return; // already answered
+      await new Promise<void>((resolve) => {
+        Alert.alert(
+          t("onboarding.pushPromptTitle", { defaultValue: "Stay on top of your move" }),
+          t("onboarding.pushPromptBody", {
+            defaultValue:
+              "LocateFlow can send reminders for moving tasks, provider replies, and billing notices. You can change this any time in Settings.",
+          }),
+          [
+            {
+              text: t("onboarding.pushPromptDecline", { defaultValue: "Not now" }),
+              style: "cancel",
+              onPress: async () => {
+                await setPushSoftPromptDecision("deferred");
+                resolve();
+              },
+            },
+            {
+              text: t("onboarding.pushPromptAccept", { defaultValue: "Enable notifications" }),
+              onPress: async () => {
+                await setPushSoftPromptDecision("accepted");
+                // The native OS prompt fires from registerForPushNotifications.
+                void registerForPushNotifications().catch(() => null);
+                resolve();
+              },
+            },
+          ],
+          { cancelable: true, onDismiss: () => resolve() },
+        );
+      });
+    } catch {
+      /* best effort */
+    }
   };
 
   const next = async () => {

@@ -9,7 +9,7 @@ export type UserStepUpFailureCode =
   | "STEP_UP_METHOD_UNAVAILABLE";
 
 export type UserStepUpResult =
-  | { ok: true; method: "password" | "mfa" | "backup_code" }
+  | { ok: true; method: "password" | "mfa" | "backup_code" | "oauth_only_account_deletion" }
   | { ok: false; code: UserStepUpFailureCode; message: string };
 
 export async function verifyUserStepUp(input: {
@@ -17,6 +17,15 @@ export async function verifyUserStepUp(input: {
   confirmPassword?: string | null;
   mfaCode?: string | null;
   backupCode?: string | null;
+  /**
+   * Set true ONLY for the in-app account-deletion flow when the user has no
+   * password set and no MFA configured (i.e. OAuth-only accounts). Apple and
+   * Google Play both require in-app account deletion; forcing a password
+   * set-up before deletion blocks compliance. Identity is already proven by
+   * the authenticated bearer token, and the calling route additionally
+   * requires the user to type "DELETE" / "ELIMINAR" as an intent gate.
+   */
+  confirmAccountDeletion?: boolean | null;
 }): Promise<UserStepUpResult> {
   const user = await prisma.user.findUnique({
     where: { id: input.userId },
@@ -66,6 +75,18 @@ export async function verifyUserStepUp(input: {
         return { ok: true, method: "backup_code" };
       }
     }
+  }
+
+  // OAuth-only account deletion bypass: the user has no password set and no
+  // MFA, the bearer token has already authenticated them, and they explicitly
+  // confirmed the deletion intent. Allow step-up to succeed so Apple/Play
+  // in-app deletion requirements are satisfied for OAuth-only users.
+  if (
+    input.confirmAccountDeletion === true &&
+    !user.passwordHash &&
+    !user.mfaEnabled
+  ) {
+    return { ok: true, method: "oauth_only_account_deletion" };
   }
 
   if (!confirmPassword && !mfaCode && !backupCode) {

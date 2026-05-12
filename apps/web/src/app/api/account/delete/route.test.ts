@@ -127,6 +127,7 @@ describe("account deletion route", () => {
       confirmPassword: "correct-password",
       mfaCode: null,
       backupCode: null,
+      confirmAccountDeletion: false,
     });
     expect(mocks.createAccountDeletionRequest).toHaveBeenCalledWith({
       userId: "user-1",

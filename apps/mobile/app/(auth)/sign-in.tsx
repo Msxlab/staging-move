@@ -15,6 +15,7 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { registerForPushNotifications } from "@/lib/push";
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
+import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -41,11 +42,23 @@ export default function SignInScreen() {
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState("");
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+  const [nativeAppleAvailable, setNativeAppleAvailable] = useState(false);
 
   useEffect(() => {
     api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
       .then((res) => setOauthProviders(res.data?.providers || null))
       .catch(() => setOauthProviders(null));
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    let cancelled = false;
+    void isNativeAppleSignInAvailable().then((available) => {
+      if (!cancelled) setNativeAppleAvailable(available);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const googleReady = oauthProviders?.google?.configured === true;
@@ -80,6 +93,9 @@ export default function SignInScreen() {
 
     await setSession(res.data.token, res.data.user);
     hapticSuccess();
+    // Push registration is gated by the soft-prompt decision; this call is a
+    // no-op until the user accepts the in-app pre-prompt from onboarding /
+    // settings. Kept here so previously-opted-in devices re-register on login.
     void registerForPushNotifications().catch(() => null);
     router.replace("/(tabs)");
   };
@@ -88,6 +104,29 @@ export default function SignInScreen() {
     setOauthLoading(provider);
     setError("");
     try {
+      // iOS: prefer the native Sign in with Apple sheet when available.
+      // This satisfies Apple HIG / Login Services guidance for any app that
+      // offers third-party login. Falls back to the server-mediated OAuth
+      // flow (still Sign in with Apple via Safari View Controller) when
+      // unavailable (e.g. simulator, deprovisioned capability).
+      if (provider === "apple" && Platform.OS === "ios" && nativeAppleAvailable) {
+        const native = await signInWithAppleNative();
+        if (native.status === "cancelled") return;
+        if (native.status === "ok" && native.token && native.user) {
+          await setSession(native.token, native.user);
+          hapticSuccess();
+          void registerForPushNotifications().catch(() => null);
+          router.replace("/onboarding");
+          return;
+        }
+        if (native.status === "error") {
+          setError(native.error || t("auth.invalid"));
+          hapticError();
+          return;
+        }
+        // status === "unavailable" → fall through to the web flow.
+      }
+
       const result = await startMobileOAuthSession(provider, setSession);
       if (result.cancelled) {
         return;

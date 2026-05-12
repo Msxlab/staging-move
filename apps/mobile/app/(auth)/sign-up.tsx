@@ -21,6 +21,7 @@ import {
   setPendingLegalConsents,
 } from "@/lib/legal";
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
+import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
 
 interface OAuthProviderStatus {
   configured: boolean;
@@ -49,11 +50,23 @@ export default function SignUpScreen() {
   const [done, setDone] = useState(false);
   const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
+  const [nativeAppleAvailable, setNativeAppleAvailable] = useState(false);
 
   useEffect(() => {
     api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
       .then((res) => setOauthProviders(res.data?.providers || null))
       .catch(() => setOauthProviders(null));
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    let cancelled = false;
+    void isNativeAppleSignInAvailable().then((available) => {
+      if (!cancelled) setNativeAppleAvailable(available);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const googleReady = oauthProviders?.google?.configured === true;
@@ -101,6 +114,31 @@ export default function SignUpScreen() {
     const acceptedLegalConsents = createAcceptedLegalConsents(legalConsents);
     try {
       await setPendingLegalConsents(acceptedLegalConsents);
+
+      if (provider === "apple" && Platform.OS === "ios" && nativeAppleAvailable) {
+        const native = await signInWithAppleNative();
+        if (native.status === "cancelled") {
+          await setPendingLegalConsents(null);
+          return;
+        }
+        if (native.status === "ok" && native.token && native.user) {
+          await setSession(native.token, native.user);
+          // The backend should persist pending legal consents during the
+          // /api/mobile/auth/apple/native handoff; clear local state on success.
+          await setPendingLegalConsents(null);
+          hapticSuccess();
+          router.replace("/onboarding");
+          return;
+        }
+        if (native.status === "error") {
+          await setPendingLegalConsents(null);
+          setError(native.error || t("auth.invalid"));
+          hapticError();
+          return;
+        }
+        // status === "unavailable" → fall through to the web flow.
+      }
+
       const result = await startMobileOAuthSession(provider, setSession);
       if (result.cancelled) {
         await setPendingLegalConsents(null);

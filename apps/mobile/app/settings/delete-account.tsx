@@ -35,7 +35,6 @@ export default function DeleteAccountScreen() {
   const [confirmText, setConfirmText] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [hasPasswordLogin, setHasPasswordLogin] = useState<boolean | null>(null);
-  const [passwordSetupBusy, setPasswordSetupBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // The confirmation phrase has to match ONE of the localized strings so
   // Spanish users can type ELIMINAR and English users can type DELETE.
@@ -47,32 +46,28 @@ export default function DeleteAccountScreen() {
       .catch(() => setHasPasswordLogin(null));
   }, []);
 
-  const requestSetPasswordEmail = async () => {
-    setPasswordSetupBusy(true);
-    const res = await api.post<any>("/api/auth/security", { action: "request_set_password" });
-    setPasswordSetupBusy(false);
-    if (res.error) {
-      hapticError();
-      Alert.alert(t("settings.passwordSetupTitle"), t("settings.privacyLoadFailed"));
-      return;
-    }
-    hapticSuccess();
-    Alert.alert(t("settings.passwordSetupTitle"), t("settings.passwordSetupSent"));
-  };
-
   const handleDelete = async () => {
-    if (hasPasswordLogin === false) {
-      Alert.alert(t("settings.passwordRequiredTitle"), t("settings.passwordRequiredDeleteAlert"));
+    const oauthOnly = hasPasswordLogin === false;
+    if (!confirmPhrases.includes(confirmText)) {
+      Alert.alert(t("settings.delete_confirmTitle"), t("settings.delete_confirmDescription"));
       return;
     }
-    if (!confirmPhrases.includes(confirmText) || !confirmPassword) {
+    if (!oauthOnly && !confirmPassword) {
       Alert.alert(t("settings.delete_confirmTitle"), t("settings.delete_confirmDescription"));
       return;
     }
 
     hapticWarning();
     setDeleting(true);
-    const res = await api.post("/api/account/delete", { confirmPassword });
+    // OAuth-only accounts (no password set) cannot satisfy the password-based
+    // step-up gate. The current bearer token already proves the user signed
+    // in via their identity provider; pair that with the typed "DELETE"
+    // intent and pass `confirmAccountDeletion: true` so the backend can
+    // accept the request without a password.
+    const payload: Record<string, unknown> = oauthOnly
+      ? { confirmAccountDeletion: true }
+      : { confirmPassword };
+    const res = await api.post("/api/account/delete", payload);
     setDeleting(false);
 
     if (res.error) {
@@ -117,26 +112,6 @@ export default function DeleteAccountScreen() {
           </View>
         </View>
 
-        {hasPasswordLogin === false && (
-          <View style={styles.passwordRequiredCard}>
-            <Text style={styles.warningTitle}>{t("settings.passwordRequiredTitle")}</Text>
-            <Text style={styles.warningText}>
-              {t("settings.passwordRequiredDeleteBody")}
-            </Text>
-            <TouchableOpacity
-              style={styles.secondaryBtn}
-              onPress={requestSetPasswordEmail}
-              disabled={passwordSetupBusy}
-            >
-              {passwordSetupBusy ? (
-                <ActivityIndicator color={theme.colors.primary} />
-              ) : (
-                <Text style={styles.secondaryBtnText}>{t("settings.emailSetupLink")}</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-
         <Text style={styles.sectionTitle}>{t("common.confirm")}</Text>
         <Text style={styles.bodyText}>
           {t("settings.delete_confirmDescription")} <Text style={styles.strong}>{t("settings.delete_confirmInput")}</Text>
@@ -152,37 +127,46 @@ export default function DeleteAccountScreen() {
           accessibilityHint={t("settings.deleteConfirmHint")}
         />
 
-        <Input
-          containerStyle={{ marginTop: 12 }}
-          placeholder={t("auth.password")}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          isPassword
-          autoCapitalize="none"
-          autoCorrect={false}
-          accessibilityLabel={t("settings.currentPasswordA11y")}
-          accessibilityHint={t("settings.currentPasswordHint")}
-        />
+        {hasPasswordLogin !== false && (
+          <Input
+            containerStyle={{ marginTop: 12 }}
+            placeholder={t("auth.password")}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            isPassword
+            autoCapitalize="none"
+            autoCorrect={false}
+            accessibilityLabel={t("settings.currentPasswordA11y")}
+            accessibilityHint={t("settings.currentPasswordHint")}
+          />
+        )}
 
-        <TouchableOpacity
-          style={[styles.deleteBtn, (!confirmPhrases.includes(confirmText) || !confirmPassword || deleting || hasPasswordLogin === false) && { opacity: 0.6 }]}
-          onPress={handleDelete}
-          disabled={!confirmPhrases.includes(confirmText) || !confirmPassword || deleting || hasPasswordLogin === false}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={t("settings.deletePermanentlyA11y")}
-          accessibilityHint={t("settings.deletePermanentlyHint")}
-          accessibilityState={{ disabled: !confirmPhrases.includes(confirmText) || !confirmPassword || deleting || hasPasswordLogin === false }}
-        >
-          {deleting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Trash2 size={18} color="#fff" />
-              <Text style={styles.deleteBtnText}>{t("settings.delete_button")}</Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {(() => {
+          const oauthOnly = hasPasswordLogin === false;
+          const phraseOk = confirmPhrases.includes(confirmText);
+          const blocked = !phraseOk || deleting || (!oauthOnly && !confirmPassword);
+          return (
+            <TouchableOpacity
+              style={[styles.deleteBtn, blocked && { opacity: 0.6 }]}
+              onPress={handleDelete}
+              disabled={blocked}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t("settings.deletePermanentlyA11y")}
+              accessibilityHint={t("settings.deletePermanentlyHint")}
+              accessibilityState={{ disabled: blocked }}
+            >
+              {deleting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Trash2 size={18} color="#fff" />
+                  <Text style={styles.deleteBtnText}>{t("settings.delete_button")}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          );
+        })()}
       </ScrollView>
     </SafeAreaView>
   );

@@ -10,10 +10,39 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { api } from "./api";
 
 let registrationInFlight: Promise<boolean> | null = null;
+
+const SOFT_PROMPT_DECISION_KEY = "locateflow.pushSoftPromptDecision";
+
+export type PushSoftPromptDecision = "accepted" | "deferred" | "declined";
+
+/**
+ * Persist the user's response to the in-app pre-prompt. Apple's HIG asks
+ * us to explain the value of notifications BEFORE we trigger the OS prompt
+ * (the OS prompt can only be presented once per install). The deferred /
+ * declined value is read by the settings screen to render the right CTA.
+ */
+export async function setPushSoftPromptDecision(value: PushSoftPromptDecision): Promise<void> {
+  try {
+    await AsyncStorage.setItem(SOFT_PROMPT_DECISION_KEY, value);
+  } catch {
+    /* best effort */
+  }
+}
+
+export async function getPushSoftPromptDecision(): Promise<PushSoftPromptDecision | null> {
+  try {
+    const raw = await AsyncStorage.getItem(SOFT_PROMPT_DECISION_KEY);
+    if (raw === "accepted" || raw === "deferred" || raw === "declined") return raw;
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -62,15 +91,37 @@ async function ensureAndroidNotificationChannels() {
   ]);
 }
 
-export async function registerForPushNotifications(): Promise<boolean> {
+/**
+ * Register the device for push notifications.
+ *
+ * Behavior:
+ *   - If `requireSoftPrompt: true` (default), the function only proceeds when
+ *     the user has previously accepted the in-app pre-prompt. This satisfies
+ *     Apple's HIG recommendation that an explanation precede the one-shot
+ *     OS prompt.
+ *   - If the OS already granted permission previously, registration proceeds
+ *     and (best-effort) updates the persisted decision to "accepted".
+ */
+export async function registerForPushNotifications(opts?: {
+  requireSoftPrompt?: boolean;
+}): Promise<boolean> {
+  const requireSoftPrompt = opts?.requireSoftPrompt ?? true;
   if (registrationInFlight) return registrationInFlight;
 
   registrationInFlight = (async () => {
     try {
       if (!Device.isDevice) return false;
 
-      const granted = await ensurePermission();
-      if (!granted) return false;
+      const existing = await Notifications.getPermissionsAsync();
+      if (existing.status !== "granted") {
+        if (requireSoftPrompt) {
+          const decision = await getPushSoftPromptDecision();
+          if (decision !== "accepted") return false;
+        }
+        const granted = await ensurePermission();
+        if (!granted) return false;
+      }
+      await setPushSoftPromptDecision("accepted");
 
       await ensureAndroidNotificationChannels();
 
