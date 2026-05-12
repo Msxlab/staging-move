@@ -98,6 +98,66 @@ describe("admin users API", () => {
     }));
   });
 
+  it("redacts email server-side for viewer and moderator roles", async () => {
+    mocks.requirePermission.mockResolvedValue({ adminId: "viewer_1", role: "VIEWER" });
+    mocks.userFindMany.mockResolvedValue([
+      {
+        id: "user_1",
+        email: "person@example.com",
+        firstName: "Person",
+        lastName: "Example",
+        createdAt: new Date("2026-05-01T00:00:00Z"),
+        deletedAt: null,
+        subscription: null,
+        profile: null,
+        loginSessions: [],
+        _count: { addresses: 0, services: 0, movingPlans: 0 },
+        services: [],
+      },
+    ]);
+    mocks.userCount.mockResolvedValue(1);
+    mocks.subscriptionCount.mockResolvedValue(0);
+    mocks.subscriptionGroupBy.mockResolvedValue([]);
+
+    const response = await GET(
+      new NextRequest("https://admin.locateflow.com/api/users", { method: "GET" }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.users[0].email).toBe("pe***@example.com");
+  });
+
+  it("returns raw email only to admin and super admin roles", async () => {
+    mocks.requirePermission.mockResolvedValue({ adminId: "admin_1", role: "ADMIN" });
+    mocks.userFindMany.mockResolvedValue([
+      {
+        id: "user_1",
+        email: "person@example.com",
+        firstName: "Person",
+        lastName: "Example",
+        createdAt: new Date("2026-05-01T00:00:00Z"),
+        deletedAt: null,
+        subscription: null,
+        profile: null,
+        loginSessions: [],
+        _count: { addresses: 0, services: 0, movingPlans: 0 },
+        services: [],
+      },
+    ]);
+    mocks.userCount.mockResolvedValue(1);
+    mocks.subscriptionCount.mockResolvedValue(0);
+    mocks.subscriptionGroupBy.mockResolvedValue([]);
+
+    const response = await GET(
+      new NextRequest("https://admin.locateflow.com/api/users", { method: "GET" }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.users[0].email).toBe("person@example.com");
+  });
+
   it("lists deleted users with the deleted account-state filter", async () => {
     mocks.userFindMany.mockResolvedValue([]);
     mocks.userCount.mockResolvedValue(0);
@@ -175,6 +235,12 @@ describe("admin users API", () => {
 
     expect(response.status).toBe(403);
     expect(mocks.transaction).not.toHaveBeenCalled();
-    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "USER_DELETE_FAILED",
+        entityType: "User",
+        entityId: "bulk",
+      }),
+    });
   });
 });

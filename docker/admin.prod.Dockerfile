@@ -88,10 +88,10 @@ USER nextjs
 
 EXPOSE 3001
 
-# Healthcheck targets /api/auth/me which returns 401/200 quickly without
-# touching DB on the unauth path. Hitting /login can succeed even when
-# the API/DB layer is broken because /login is a static page.
+# Healthcheck targets a public liveness endpoint. Authenticated operational
+# endpoints such as /api/auth/me stay protected and are unsuitable for Docker
+# health probes.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD wget -q --spider http://localhost:3001/api/auth/me || exit 1
+  CMD wget -q --spider http://localhost:3001/api/healthz || exit 1
 
 CMD ["node", "apps/admin/server.js"]

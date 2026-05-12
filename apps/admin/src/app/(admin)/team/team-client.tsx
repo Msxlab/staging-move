@@ -18,7 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { ADMIN_RESOURCES } from "@/lib/admin-permissions";
-import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 interface PermissionRow {
   resource: string;
@@ -125,7 +125,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [editAdmin, setEditAdmin] = useState<AdminUser | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<AdminUser | null>(null);
-  const [archivePassword, setArchivePassword] = useState("");
+  const [archiveError, setArchiveError] = useState<string | null>(null);
   const [activeToggleTarget, setActiveToggleTarget] = useState<AdminUser | null>(null);
   const [activeToggleBusy, setActiveToggleBusy] = useState(false);
   const [activeToggleError, setActiveToggleError] = useState<string | null>(null);
@@ -136,6 +136,8 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
     role: "",
     newPassword: "",
     confirmPassword: "",
+    mfaCode: "",
+    backupCode: "",
     permissions: emptyPermissionMatrix as PermissionRow[],
   });
   const [form, setForm] = useState({
@@ -145,6 +147,8 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
     lastName: "",
     role: "MODERATOR",
     confirmPassword: "",
+    mfaCode: "",
+    backupCode: "",
   });
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -187,6 +191,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Failed to create admin");
+        setForm((prev) => ({ ...prev, confirmPassword: "", mfaCode: "", backupCode: "" }));
         return;
       }
       toast.success(`Admin ${data.admin.email} created`);
@@ -198,6 +203,8 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         lastName: "",
         role: "MODERATOR",
         confirmPassword: "",
+        mfaCode: "",
+        backupCode: "",
       });
       await fetchAdmins();
     } catch {
@@ -216,6 +223,8 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
       role: admin.role,
       newPassword: "",
       confirmPassword: "",
+      mfaCode: "",
+      backupCode: "",
       permissions: sortPermissions(expandPermissions(admin.permissions)),
     });
   }
@@ -242,6 +251,8 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         currentAdminRole === "SUPER_ADMIN";
       if (isSensitiveChange) {
         body.confirmPassword = editForm.confirmPassword;
+        body.mfaCode = editForm.mfaCode;
+        body.backupCode = editForm.backupCode;
       }
 
       const res = await fetch(`/api/team/${editAdmin.id}`, {
@@ -252,6 +263,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Failed to update admin");
+        setEditForm((prev) => ({ ...prev, confirmPassword: "", mfaCode: "", backupCode: "" }));
         return;
       }
       toast.success("Admin updated");
@@ -269,7 +281,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
     setActiveToggleError(null);
   }
 
-  async function confirmToggleActive(confirmPassword: string) {
+  async function confirmToggleActive(_confirmPassword: string, stepUp: StepUpValues) {
     if (!activeToggleTarget) return;
     const admin = activeToggleTarget;
     setActiveToggleBusy(true);
@@ -278,7 +290,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
       const res = await fetch(`/api/team/${admin.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !admin.isActive, confirmPassword }),
+        body: JSON.stringify({ isActive: !admin.isActive, ...stepUp }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -298,30 +310,28 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
     }
   }
 
-  async function handleArchive() {
+  async function confirmArchive(_confirmPassword: string, stepUp: StepUpValues) {
     if (!archiveTarget) return;
-    if (!archivePassword) {
-      toast.error("Confirm your password to archive this admin.");
-      return;
-    }
-
     setArchiving(true);
+    setArchiveError(null);
     try {
       const res = await fetch(`/api/team/${archiveTarget.id}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword: archivePassword }),
+        body: JSON.stringify(stepUp),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || "Failed to archive admin");
+        const message = data.error || "Failed to archive admin";
+        setArchiveError(message);
+        toast.error(message);
         return;
       }
       toast.success("Admin archived. Audit history was preserved.");
       setArchiveTarget(null);
-      setArchivePassword("");
       await fetchAdmins();
     } catch {
+      setArchiveError("Failed to archive admin");
       toast.error("Failed to archive admin");
     } finally {
       setArchiving(false);
@@ -472,6 +482,25 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
             className={inputCls}
             autoComplete="current-password"
           />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="MFA code"
+              value={form.mfaCode}
+              onChange={(e) => setForm({ ...form, mfaCode: e.target.value })}
+              className={inputCls}
+              autoComplete="one-time-code"
+            />
+            <input
+              type="text"
+              placeholder="Backup code"
+              value={form.backupCode}
+              onChange={(e) => setForm({ ...form, backupCode: e.target.value })}
+              className={inputCls}
+              autoComplete="one-time-code"
+            />
+          </div>
           <div className="flex gap-2">
             <button
               type="submit"
@@ -621,7 +650,7 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
                       <button
                         onClick={() => {
                           setArchiveTarget(admin);
-                          setArchivePassword("");
+                          setArchiveError(null);
                         }}
                         className="rounded-lg border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
                       >
@@ -790,20 +819,47 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
               </div>
 
               {currentAdminRole === "SUPER_ADMIN" && (
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Confirm your admin password for sensitive changes
-                  </label>
-                  <input
-                    type="password"
-                    value={editForm.confirmPassword}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, confirmPassword: e.target.value })
-                    }
-                    className={inputCls}
-                    autoComplete="current-password"
-                    placeholder="Required when role, permissions, status, or password changes"
-                  />
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Confirm your admin password
+                    </label>
+                    <input
+                      type="password"
+                      value={editForm.confirmPassword}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, confirmPassword: e.target.value })
+                      }
+                      className={inputCls}
+                      autoComplete="current-password"
+                      placeholder="Required for sensitive changes"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      MFA code
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={editForm.mfaCode}
+                      onChange={(e) => setEditForm({ ...editForm, mfaCode: e.target.value })}
+                      className={inputCls}
+                      autoComplete="one-time-code"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Backup code
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.backupCode}
+                      onChange={(e) => setEditForm({ ...editForm, backupCode: e.target.value })}
+                      className={inputCls}
+                      autoComplete="one-time-code"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -882,65 +938,32 @@ export default function TeamClient({ currentAdminRole }: TeamClientProps) {
         </div>
       )}
 
-      {archiveTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4"
-          onClick={() => {
+      <PasswordConfirmModal
+        open={Boolean(archiveTarget)}
+        title="Archive Admin"
+        description={
+          archiveTarget
+            ? `Enter your admin password and MFA code or backup code to archive ${archiveTarget.email}. This revokes sessions and retires the login identity.`
+            : "Enter your admin password and MFA code or backup code to archive this admin."
+        }
+        confirmLabel="Archive Admin"
+        busy={archiving}
+        error={archiveError}
+        onClose={() => {
+          if (!archiving) {
             setArchiveTarget(null);
-            setArchivePassword("");
-          }}
-        >
-          <div
-            className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-foreground">Archive Admin</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                This preserves historical audit logs, revokes every active session, removes
-                runtime access, and retires the login identity for {archiveTarget.email}.
-              </p>
-            </div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Confirm your password
-            </label>
-            <input
-              type="password"
-              value={archivePassword}
-              onChange={(e) => setArchivePassword(e.target.value)}
-              className={inputCls}
-              placeholder="Required"
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setArchiveTarget(null);
-                  setArchivePassword("");
-                }}
-                className="rounded-lg border border-border px-4 py-2 text-xs font-medium text-muted-foreground hover:bg-accent"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleArchive()}
-                disabled={archiving}
-                className="rounded-lg bg-destructive px-4 py-2 text-xs font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
-              >
-                {archiving ? "Archiving..." : "Archive Admin"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            setArchiveError(null);
+          }
+        }}
+        onConfirm={confirmArchive}
+      />
       <PasswordConfirmModal
         open={Boolean(activeToggleTarget)}
         title={activeToggleTarget?.isActive ? "Deactivate admin" : "Reactivate admin"}
         description={
           activeToggleTarget
-            ? `Enter your admin password to ${activeToggleTarget.isActive ? "deactivate" : "reactivate"} ${activeToggleTarget.email}.`
-            : "Enter your admin password to update this admin."
+            ? `Enter your admin password and MFA code or backup code to ${activeToggleTarget.isActive ? "deactivate" : "reactivate"} ${activeToggleTarget.email}.`
+            : "Enter your admin password and MFA code or backup code to update this admin."
         }
         confirmLabel={activeToggleTarget?.isActive ? "Deactivate" : "Reactivate"}
         busy={activeToggleBusy}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { jwtVerify } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { hashSessionToken, shouldUseSecureSessionCookies } from "@/lib/user-auth";
@@ -91,9 +91,69 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
     );
   }
 
-  // Audit breadcrumb — one row per successful handoff. The admin app already
-  // logs the "impersonate started" event at ticket-creation time; this row
-  // confirms the cookie was actually exchanged into a browser session.
+  // Consume the short-lived handoff row before minting a browser session so
+  // the handoff token cannot be replayed for its full JWT TTL.
+  const now = new Date();
+  const consumed = await prisma.userLoginSession.updateMany({
+    where: {
+      id: session.id,
+      isActive: true,
+      expiresAt: { gt: now },
+    },
+    data: {
+      isActive: false,
+      lastActivity: now,
+    },
+  });
+  if (consumed.count !== 1) {
+    return NextResponse.redirect(
+      new URL("/sign-in?err=impersonation-session-consumed", request.url),
+    );
+  }
+
+  const maxAgeSec = Math.max(
+    1,
+    Math.floor((session.expiresAt.getTime() - now.getTime()) / 1000),
+  );
+  const browserToken = await new SignJWT({
+    userId: session.userId,
+    email: typeof payload.email === "string" ? payload.email : undefined,
+    impersonatedByAdminId: session.impersonatedByAdminId || adminId,
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${maxAgeSec}s`)
+    .sign(getUserJwtSecretKey());
+  const browserTokenHash = await hashSessionToken(browserToken);
+  const sessionIpAddress = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+  const sessionUserAgent = request.headers.get("user-agent")?.trim() || "unknown";
+  try {
+    await prisma.userLoginSession.create({
+      data: {
+        userId: session.userId,
+        tokenHash: browserTokenHash,
+        ipAddress: sessionIpAddress,
+        userAgent: sessionUserAgent,
+        expiresAt: session.expiresAt,
+        impersonatedByAdminId: session.impersonatedByAdminId || adminId,
+      },
+    });
+  } catch (error) {
+    if (!isMissingDbColumnError(error, "impersonatedByAdminId")) throw error;
+    warnSchemaCompatibilityFallback("impersonation-handoff:session-create", error);
+    await prisma.userLoginSession.create({
+      data: {
+        userId: session.userId,
+        tokenHash: browserTokenHash,
+        ipAddress: sessionIpAddress,
+        userAgent: sessionUserAgent,
+        expiresAt: session.expiresAt,
+      },
+    });
+  }
+
+  // Audit breadcrumb for successful exchanges. The admin app logs ticket
+  // creation; this confirms the browser cookie was actually issued.
   if (session.impersonatedByAdminId) {
     const ipAddress = (request.headers.get("x-forwarded-for") || "")
       .split(",")[0]
@@ -116,11 +176,7 @@ async function exchangeImpersonationToken(request: NextRequest, token: string) {
   }
 
   const response = NextResponse.redirect(new URL("/dashboard", request.url));
-  const maxAgeSec = Math.max(
-    1,
-    Math.floor((session.expiresAt.getTime() - Date.now()) / 1000),
-  );
-  response.cookies.set("user_session", token, {
+  response.cookies.set("user_session", browserToken, {
     httpOnly: true,
     secure: shouldUseSecureSessionCookies(),
     sameSite: "lax",

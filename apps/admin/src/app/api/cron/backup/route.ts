@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, prismaUnsafe } from "@/lib/db";
 import { createBackupArchive } from "@/lib/backup-archive";
 import {
   BACKUP_TABLE_ORDER,
   fetchAllRecords,
   MAX_BACKUP_ROWS_PER_TABLE,
 } from "@/lib/backup-tables";
-import { serializeBackupRecordMetadata, uploadBackupArchive } from "@/lib/backup-storage";
+import {
+  parseBackupRecordMetadata,
+  serializeBackupRecordMetadata,
+  uploadBackupArchive,
+} from "@/lib/backup-storage";
 import { encryptBackup, signBackup } from "@/lib/shared-encryption";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { dispatchAlert } from "@/lib/alert-dispatcher";
@@ -27,6 +31,7 @@ import {
   getBackupRuntimeMetadata,
   redactBackupSecretText,
 } from "@/lib/backup-metadata";
+import { writeBackupAudit } from "@/lib/backup-audit";
 
 const STALE_BACKUP_ALERT_MS = 24 * 60 * 60 * 1000;
 
@@ -88,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     for (const tableName of selectedTables) {
       try {
-        const result = await fetchAllRecords(prisma as any, tableName);
+        const result = await fetchAllRecords(prismaUnsafe as any, tableName);
         backupData[tableName] = result.records;
         tableCounts[tableName] = result.fetched;
         totalRecords += result.fetched;
@@ -224,11 +229,44 @@ export async function POST(request: NextRequest) {
 
     // Run retention cleanup
     const retentionCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const cleaned = await prisma.backupRecord.deleteMany({
+    const retentionCandidates = await prisma.backupRecord.findMany({
       where: {
         status: "COMPLETED",
         createdAt: { lt: retentionCutoff },
         createdBy: "CRON",
+      },
+      select: { id: true, errorMessage: true },
+    });
+    const retentionDeleteIds = retentionCandidates
+      .filter((record) => {
+        const metadata = parseBackupRecordMetadata(record.errorMessage);
+        return !(metadata.offsite?.status === "stored" && metadata.offsite.objectKey);
+      })
+      .map((record) => record.id);
+    const cleaned =
+      retentionDeleteIds.length > 0
+        ? await prisma.backupRecord.deleteMany({
+            where: { id: { in: retentionDeleteIds } },
+          })
+        : { count: 0 };
+    const retentionPreservedOffsite =
+      retentionCandidates.length - retentionDeleteIds.length;
+
+    await writeBackupAudit({
+      session: null,
+      action: "BACKUP_CRON_SUCCESS",
+      entityId: backup.id,
+      request,
+      metadata: {
+        operation: "cron_backup",
+        backupId: backup.id,
+        totalRecords,
+        fileSize,
+        selectedTables,
+        failedTables,
+        truncatedTables,
+        retentionCleaned: cleaned.count,
+        retentionPreservedOffsite,
       },
     });
 
@@ -247,7 +285,7 @@ export async function POST(request: NextRequest) {
         failedTables,
         truncatedTables,
       },
-      retention: { cleaned: cleaned.count },
+      retention: { cleaned: cleaned.count, preservedOffsite: retentionPreservedOffsite },
     });
   } catch (error) {
     if (backupId) {
@@ -257,6 +295,14 @@ export async function POST(request: NextRequest) {
         error,
       });
     }
+    await writeBackupAudit({
+      session: null,
+      action: "BACKUP_CRON_FAILED",
+      entityId: backupId ?? "cron",
+      request,
+      metadata: { operation: "cron_backup", backupId },
+      error,
+    });
     if (error instanceof BackupRunLockError) {
       return NextResponse.json(
         {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Lock, Shield, Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Globe, FileText, CheckCircle2, CircleHelp, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 
 interface IPRule { id: string; ipAddress: string; type: string; reason: string | null; isActive: boolean; expiresAt: string | null; createdAt: string }
 interface RateLimitLog { id: string; ipAddress: string; endpoint: string; count: number; blocked: boolean; windowStart: string; createdAt: string }
@@ -17,6 +18,7 @@ interface SecurityReadiness {
   lastBackup: { createdAt: string; fileName: string | null; recordCount: number | null; type: string } | null;
   groups: SecurityReadinessGroup[];
 }
+interface StepUpRequest { title: string; description: string; confirmLabel: string; run: (confirmPassword: string) => Promise<boolean> }
 
 export default function SecurityClient() {
   const [ipRules, setIpRules] = useState<IPRule[]>([]);
@@ -28,6 +30,9 @@ export default function SecurityClient() {
   const [tab, setTab] = useState<"ip" | "ratelimit" | "gdpr">("ip");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "" });
+  const [stepUp, setStepUp] = useState<StepUpRequest | null>(null);
+  const [stepUpBusy, setStepUpBusy] = useState(false);
+  const [stepUpError, setStepUpError] = useState<string | null>(null);
 
   const load = () => {
     fetch("/api/security").then(r => r.json()).then(d => {
@@ -51,32 +56,88 @@ export default function SecurityClient() {
     unknown: "bg-tone-slate-bg text-muted-foreground",
   };
 
+  const requestStepUp = (request: StepUpRequest) => { setStepUp(request); setStepUpError(null); };
+  const closeStepUp = () => { if (!stepUpBusy) { setStepUp(null); setStepUpError(null); } };
+  const confirmStepUp = async (confirmPassword: string) => {
+    if (!stepUp) return;
+    setStepUpBusy(true);
+    setStepUpError(null);
+    try {
+      const ok = await stepUp.run(confirmPassword);
+      if (ok) setStepUp(null);
+    } finally {
+      setStepUpBusy(false);
+    }
+  };
+
+  const runSecurityMutation = async (
+    requestBody: Record<string, unknown>,
+    confirmPassword: string,
+    successMessage: string | null,
+    afterSuccess?: () => void,
+  ) => {
+    const res = await fetch("/api/security", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...requestBody, confirmPassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const message = data.error || "Failed";
+      if (data.requiresPassword || res.status === 401 || res.status === 403) setStepUpError(message);
+      toast.error(message);
+      return false;
+    }
+    if (successMessage) toast.success(successMessage);
+    afterSuccess?.();
+    load();
+    return true;
+  };
+
   const addIPRule = async () => {
     if (!form.ipAddress) { toast.error("IP address required"); return; }
-    const res = await fetch("/api/security", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "add_ip_rule", ...form }) });
-    if (res.ok) { toast.success("IP rule added"); setShowForm(false); setForm({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "" }); load(); }
-    else { const d = await res.json(); toast.error(d.error || "Failed"); }
+    const payload = { action: "add_ip_rule", ...form };
+    requestStepUp({
+      title: "Confirm IP rule change",
+      description: "Enter your admin password before adding an IP rule.",
+      confirmLabel: "Add IP rule",
+      run: (confirmPassword) => runSecurityMutation(payload, confirmPassword, "IP rule added", () => {
+        setShowForm(false);
+        setForm({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "" });
+      }),
+    });
   };
 
   const deleteIPRule = async (id: string) => {
     if (!confirm("Delete this rule?")) return;
-    await fetch("/api/security", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete_ip_rule", id }) });
-    toast.success("Deleted"); load();
+    requestStepUp({
+      title: "Confirm IP rule deletion",
+      description: "Enter your admin password before deleting this IP rule.",
+      confirmLabel: "Delete rule",
+      run: (confirmPassword) => runSecurityMutation({ action: "delete_ip_rule", id }, confirmPassword, "Deleted"),
+    });
   };
 
   const toggleIPRule = async (id: string) => {
-    await fetch("/api/security", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "toggle_ip_rule", id }) });
-    load();
+    requestStepUp({
+      title: "Confirm IP rule toggle",
+      description: "Enter your admin password before changing this IP rule status.",
+      confirmLabel: "Update rule",
+      run: (confirmPassword) => runSecurityMutation({ action: "toggle_ip_rule", id }, confirmPassword, null),
+    });
   };
 
   const updateGDPR = async (id: string, status: string) => {
-    const res = await fetch("/api/security", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "update_gdpr", id, status }) });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast.error(data.error || "Failed to update GDPR request");
-      return;
-    }
-    toast.success(`GDPR request ${status.toLowerCase()}`); load();
+    requestStepUp({
+      title: "Confirm GDPR status change",
+      description: "Enter your admin password before updating this GDPR request.",
+      confirmLabel: "Update request",
+      run: (confirmPassword) => runSecurityMutation(
+        { action: "update_gdpr", id, status },
+        confirmPassword,
+        `GDPR request ${status.toLowerCase()}`,
+      ),
+    });
   };
 
   const statCards = [
@@ -89,6 +150,17 @@ export default function SecurityClient() {
 
   return (
     <div className="space-y-6">
+      <PasswordConfirmModal
+        open={Boolean(stepUp)}
+        title={stepUp?.title || "Confirm action"}
+        description={stepUp?.description || "Enter your admin password to continue."}
+        confirmLabel={stepUp?.confirmLabel || "Confirm"}
+        busy={stepUpBusy}
+        error={stepUpError}
+        onClose={closeStepUp}
+        onConfirm={confirmStepUp}
+      />
+
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Security & Compliance</h1>

@@ -3,6 +3,26 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { parsePaginationParams } from "@/lib/pagination";
 
+function redactDeletedSubscriptionUser(user: any) {
+  if (!user) return null;
+  if (user.deletedAt) {
+    return {
+      id: user.id,
+      email: null,
+      firstName: null,
+      lastName: null,
+      deleted: true,
+    };
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
@@ -60,7 +80,7 @@ export async function GET(request: NextRequest) {
       prisma.subscription.findMany({
         where,
         include: {
-          user: { select: { id: true, email: true, firstName: true, lastName: true } },
+          user: { select: { id: true, email: true, firstName: true, lastName: true, deletedAt: true } },
         },
         orderBy: { createdAt: "desc" },
         take: perPage,
@@ -94,8 +114,13 @@ export async function GET(request: NextRequest) {
     const accessTypeMap: Record<string, number> = {};
     accessTypeCounts.forEach((a: any) => { accessTypeMap[a.accessType || "none"] = a._count.id; });
 
+    const sanitizedSubscriptions = subscriptions.map((subscription: any) => ({
+      ...subscription,
+      user: redactDeletedSubscriptionUser(subscription.user),
+    }));
+
     return NextResponse.json({
-      subscriptions, total, page, perPage,
+      subscriptions: sanitizedSubscriptions, total, page, perPage,
       stats: { totalAll, activeCount, trialingCount, canceledCount, newThisMonth, planMap, statusMap, providerMap, platformMap, accessTypeMap },
     });
   } catch (error: any) {

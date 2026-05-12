@@ -419,18 +419,6 @@ export async function POST(request: NextRequest) {
         },
       });
       console.error("Stripe webhook signature verification failed:", err);
-      emitSecurityEvent({
-        type: "WEBHOOK_SIG_FAILURE",
-        severity: "warn",
-        group: "webhook",
-        context: {
-          provider: "stripe",
-          // Length-only — never log raw signatures or bodies.
-          signatureLength: signature.length,
-          bodyLength: Buffer.byteLength(body, "utf8"),
-          reason: err instanceof Error ? err.message.slice(0, 200) : "constructEvent threw",
-        },
-      });
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
@@ -880,6 +868,7 @@ export async function POST(request: NextRequest) {
         const charge = event.data.object as Stripe.Charge;
         const stripeCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
         if (stripeCustomerId) {
+          const metadataUserId = typeof charge.metadata?.userId === "string" ? charge.metadata.userId : null;
           // Resolve the underlying subscription via the charge's invoice when
           // possible — refunding one charge should not REFUND every sub on
           // the customer if they have more than one.
@@ -901,8 +890,8 @@ export async function POST(request: NextRequest) {
 
           await prisma.subscription.updateMany({
             where: stripeSubscriptionId
-              ? { stripeCustomerId, stripeSubscriptionId, provider: { not: "ADMIN" } }
-              : { stripeCustomerId, provider: { not: "ADMIN" } },
+              ? { stripeCustomerId, stripeSubscriptionId, ...(metadataUserId ? { userId: metadataUserId } : {}), provider: { not: "ADMIN" } }
+              : { stripeCustomerId, ...(metadataUserId ? { userId: metadataUserId } : {}), provider: { not: "ADMIN" } },
             data: {
               status: "REFUNDED",
               provider: "STRIPE",

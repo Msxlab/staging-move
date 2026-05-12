@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useBulkSelection } from "@/hooks/use-bulk-selection";
 import { useColumnVisibility } from "@/hooks/use-column-visibility";
 import { ColumnSettingsMenu } from "@/components/column-settings-menu";
-import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 import { TierStamp } from "@/components/premium/tier-stamp";
 import { HealthPill } from "@/components/premium/health-pill";
 import { computeUserHealth } from "@/lib/user-health";
@@ -149,7 +149,7 @@ export default function UsersPage() {
     setPendingDelete({ type: "bulk", count: bulk.count });
   }
 
-  async function confirmDelete(confirmPassword: string) {
+  async function confirmDelete(_confirmPassword: string, stepUp: StepUpValues) {
     if (!pendingDelete) return;
     setDeleteBusy(true);
     setDeleteError(null);
@@ -159,12 +159,12 @@ export default function UsersPage() {
           ? await fetch(`/api/users/${pendingDelete.userId}`, {
               method: "DELETE",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ confirmPassword }),
+              body: JSON.stringify(stepUp),
             })
           : await fetch("/api/users", {
               method: "DELETE",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ids: bulk.selectedIds, confirmPassword }),
+              body: JSON.stringify({ ids: bulk.selectedIds, ...stepUp }),
             });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -197,7 +197,7 @@ export default function UsersPage() {
     setExportOpen(true);
   }
 
-  async function confirmExport(password: string) {
+  async function confirmExport(_password: string, stepUp: StepUpValues) {
     // Server-side export at /api/users/export — handles permission,
     // step-up password confirm, email masking (full email only for
     // SUPER_ADMIN), CSV-injection escaping, audit logging, and the
@@ -210,7 +210,7 @@ export default function UsersPage() {
       const res = await fetch("/api/users/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword: password }),
+        body: JSON.stringify(stepUp),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);

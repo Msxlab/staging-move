@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
+export interface StepUpValues {
+  confirmPassword: string;
+  mfaCode?: string;
+  backupCode?: string;
+}
+
 export function PasswordConfirmModal({
   open,
   title,
@@ -20,12 +26,18 @@ export function PasswordConfirmModal({
   busy?: boolean;
   error?: string | null;
   onClose: () => void;
-  onConfirm: (password: string) => void | Promise<void>;
+  onConfirm: (password: string, values: StepUpValues) => void | Promise<void>;
 }) {
   const [password, setPassword] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [backupCode, setBackupCode] = useState("");
 
   useEffect(() => {
-    if (!open) setPassword("");
+    if (!open) {
+      setPassword("");
+      setMfaCode("");
+      setBackupCode("");
+    }
   }, [open]);
 
   if (!open) return null;
@@ -70,7 +82,17 @@ export function PasswordConfirmModal({
           onSubmit={async (event) => {
             event.preventDefault();
             if (!password.trim() || busy) return;
-            await onConfirm(password);
+            try {
+              await onConfirm(password, {
+                confirmPassword: password,
+                mfaCode: mfaCode.trim() || undefined,
+                backupCode: backupCode.trim() || undefined,
+              });
+            } finally {
+              setPassword("");
+              setMfaCode("");
+              setBackupCode("");
+            }
           }}
         >
           <div>
@@ -86,6 +108,37 @@ export function PasswordConfirmModal({
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               autoFocus
             />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="admin-mfa-confirm" className="mb-1 block text-xs font-medium text-muted-foreground">
+                MFA code
+              </label>
+              <input
+                id="admin-mfa-confirm"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={mfaCode}
+                onChange={(event) => setMfaCode(event.target.value)}
+                disabled={busy}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+            </div>
+            <div>
+              <label htmlFor="admin-backup-code-confirm" className="mb-1 block text-xs font-medium text-muted-foreground">
+                Backup code
+              </label>
+              <input
+                id="admin-backup-code-confirm"
+                type="text"
+                autoComplete="one-time-code"
+                value={backupCode}
+                onChange={(event) => setBackupCode(event.target.value)}
+                disabled={busy}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
+            </div>
           </div>
 
           {error ? (

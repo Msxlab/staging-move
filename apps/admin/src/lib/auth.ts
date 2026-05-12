@@ -8,6 +8,7 @@ import { trackFailedPasswordConfirm, trackSensitiveOp } from "./security-monitor
 import { generateAdminSessionFingerprint } from "./session-fingerprint";
 import { decrypt } from "./shared-encryption";
 import { verifyBackupCode, verifyTOTP } from "./totp";
+import { writeAdminAudit } from "./audit";
 import {
   clearFailures as clearStepUpFailures,
   clearStepUpStateForTests as clearStepUpStoreForTests,
@@ -376,6 +377,8 @@ export interface AdminStepUpOptions {
   backupCode?: string | null;
   requireMfa?: boolean;
   maxAgeMs?: number;
+  ipAddress?: string | null;
+  userAgent?: string | null;
 }
 
 function normalizeStepUpOperation(operation: string | undefined): string {
@@ -414,6 +417,29 @@ export function clearAdminStepUpStateForTests() {
   clearStepUpStoreForTests();
 }
 
+async function writeStepUpAudit(
+  session: AdminSession,
+  action: "STEP_UP_SUCCESS" | "STEP_UP_FAILED",
+  operation: string,
+  options: AdminStepUpOptions,
+  metadata: Record<string, unknown> = {},
+) {
+  await writeAdminAudit(session, {
+    action,
+    entityType: "AdminAuth",
+    entityId: session.adminId,
+    metadata: {
+      operation,
+      requireMfa: Boolean(options.requireMfa),
+      ...metadata,
+    },
+    request: {
+      ipAddress: options.ipAddress || "unknown",
+      userAgent: options.userAgent || null,
+    },
+  });
+}
+
 export async function requirePasswordConfirm(
   session: AdminSession,
   password: string | undefined,
@@ -427,12 +453,17 @@ export async function requirePasswordConfirm(
   if (graceMs > 0) {
     const recent = await hasRecentStepUpConfirm(cacheKey, graceMs);
     if (recent) {
+      await writeStepUpAudit(session, "STEP_UP_SUCCESS", operation, options, { cached: true });
       return { confirmed: true };
     }
   }
 
   const failureLimit = await checkStepUpFailureLimit(failureKey);
   if (!failureLimit.allowed) {
+    await writeStepUpAudit(session, "STEP_UP_FAILED", operation, options, {
+      reason: "rate_limited",
+      retryAfterSec: failureLimit.retryAfterSec,
+    });
     return {
       confirmed: false,
       error: "Too many confirmation attempts. Please wait and try again.",
@@ -442,6 +473,7 @@ export async function requirePasswordConfirm(
   }
 
   if (!password) {
+    await writeStepUpAudit(session, "STEP_UP_FAILED", operation, options, { reason: "missing_password" });
     return { confirmed: false, error: "Password confirmation required for this operation." };
   }
 
@@ -457,13 +489,20 @@ export async function requirePasswordConfirm(
   });
 
   if (!admin || !admin.isActive) {
+    await writeStepUpAudit(session, "STEP_UP_FAILED", operation, options, { reason: "admin_inactive" });
     return { confirmed: false, error: "Admin account not found or inactive." };
   }
 
   const valid = await bcrypt.compare(password, admin.password);
   if (!valid) {
     const lock = await recordStepUpFailure(failureKey);
-    trackFailedPasswordConfirm(session.adminId, operation);
+    const ipAddress = options.ipAddress || "unknown";
+    trackFailedPasswordConfirm(session.adminId, ipAddress);
+    await writeStepUpAudit(session, "STEP_UP_FAILED", operation, options, {
+      reason: "invalid_password",
+      rateLimited: lock.locked,
+      retryAfterSec: lock.retryAfterSec || undefined,
+    });
     return {
       confirmed: false,
       error: lock.locked ? "Too many confirmation attempts. Please wait and try again." : "Incorrect password.",
@@ -502,7 +541,14 @@ export async function requirePasswordConfirm(
 
     if (!mfaValid) {
       const lock = await recordStepUpFailure(failureKey);
-      trackFailedPasswordConfirm(session.adminId, operation);
+      const ipAddress = options.ipAddress || "unknown";
+      trackFailedPasswordConfirm(session.adminId, ipAddress);
+      await writeStepUpAudit(session, "STEP_UP_FAILED", operation, options, {
+        reason: "invalid_mfa",
+        requiresMfa: true,
+        rateLimited: lock.locked,
+        retryAfterSec: lock.retryAfterSec || undefined,
+      });
       return {
         confirmed: false,
         error: lock.locked
@@ -522,7 +568,9 @@ export async function requirePasswordConfirm(
   const ttlSec = Math.max(60, Math.ceil(graceMs / 1000));
   await rememberStepUpConfirm(cacheKey, ttlSec);
   await clearStepUpFailures(failureKey);
-  trackSensitiveOp(session.adminId, operation, "password_confirm");
+  const ipAddress = options.ipAddress || "unknown";
+  trackSensitiveOp(session.adminId, ipAddress, operation);
+  await writeStepUpAudit(session, "STEP_UP_SUCCESS", operation, options, { cached: false });
   return { confirmed: true };
 }
 

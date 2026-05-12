@@ -4,6 +4,8 @@ import { SignJWT } from "jose";
 
 const mocks = vi.hoisted(() => ({
   userLoginSessionFindFirst: vi.fn() as any,
+  userLoginSessionUpdateMany: vi.fn() as any,
+  userLoginSessionCreate: vi.fn() as any,
   adminAuditLogCreate: vi.fn().mockResolvedValue({}) as any,
   hashSessionToken: vi.fn().mockResolvedValue("token-hash") as any,
   shouldUseSecureSessionCookies: vi.fn().mockReturnValue(false) as any,
@@ -13,6 +15,8 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     userLoginSession: {
       findFirst: (args: any) => mocks.userLoginSessionFindFirst(args),
+      updateMany: (args: any) => mocks.userLoginSessionUpdateMany(args),
+      create: (args: any) => mocks.userLoginSessionCreate(args),
     },
     adminAuditLog: {
       create: (args: any) => mocks.adminAuditLogCreate(args),
@@ -61,9 +65,11 @@ describe("/api/auth/impersonate-handoff", () => {
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       impersonatedByAdminId: "admin_42",
     });
+    mocks.userLoginSessionUpdateMany.mockResolvedValue({ count: 1 });
+    mocks.userLoginSessionCreate.mockResolvedValue({ id: "browser_session_1" });
   });
 
-  it("writes an AdminAuditLog row when a handoff completes successfully", async () => {
+  it("consumes the handoff session and writes an AdminAuditLog row when exchange succeeds", async () => {
     const token = await makeJwt({
       userId: "user_1",
       email: "user@example.com",
@@ -73,6 +79,22 @@ describe("/api/auth/impersonate-handoff", () => {
     const response = await POST(makeRequest({ token }));
 
     expect(response.status).toBe(307); // redirect
+    expect(mocks.userLoginSessionUpdateMany).toHaveBeenCalledWith({
+      where: {
+        id: "session_1",
+        isActive: true,
+        expiresAt: expect.objectContaining({ gt: expect.any(Date) }),
+      },
+      data: expect.objectContaining({ isActive: false, lastActivity: expect.any(Date) }),
+    });
+    expect(mocks.userLoginSessionCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user_1",
+        ipAddress: "203.0.113.10",
+        userAgent: "unknown",
+        impersonatedByAdminId: "admin_42",
+      }),
+    });
     expect(mocks.adminAuditLogCreate).toHaveBeenCalledTimes(1);
     const call = mocks.adminAuditLogCreate.mock.calls[0][0] as unknown as { data: any };
     expect(call.data).toMatchObject({
@@ -86,7 +108,26 @@ describe("/api/auth/impersonate-handoff", () => {
     expect(changes).toMatchObject({ sessionId: "session_1" });
   });
 
-  it("does not write audit when the impersonation session is missing", async () => {
+  it("fails a second exchange when the handoff token was already consumed", async () => {
+    mocks.userLoginSessionUpdateMany
+      .mockResolvedValueOnce({ count: 1 })
+      .mockResolvedValueOnce({ count: 0 });
+    const token = await makeJwt({
+      userId: "user_1",
+      email: "user@example.com",
+      impersonatedByAdminId: "admin_42",
+    });
+
+    const first = await POST(makeRequest({ token }));
+    const second = await POST(makeRequest({ token }));
+
+    expect(first.headers.get("location")).toBe("https://locateflow.com/dashboard");
+    expect(second.headers.get("location")).toContain("impersonation-session-consumed");
+    expect(mocks.userLoginSessionCreate).toHaveBeenCalledTimes(1);
+    expect(mocks.adminAuditLogCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not write audit when the impersonation session is inactive or missing", async () => {
     mocks.userLoginSessionFindFirst.mockResolvedValueOnce(null);
     const token = await makeJwt({
       userId: "user_1",
@@ -98,5 +139,26 @@ describe("/api/auth/impersonate-handoff", () => {
 
     expect(response.status).toBe(307);
     expect(mocks.adminAuditLogCreate).not.toHaveBeenCalled();
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+  });
+
+  it("rejects expired handoff sessions", async () => {
+    mocks.userLoginSessionFindFirst.mockResolvedValueOnce({
+      id: "session_1",
+      userId: "user_1",
+      expiresAt: new Date(Date.now() - 1000),
+      impersonatedByAdminId: "admin_42",
+    });
+    const token = await makeJwt({
+      userId: "user_1",
+      email: "user@example.com",
+      impersonatedByAdminId: "admin_42",
+    });
+
+    const response = await POST(makeRequest({ token }));
+
+    expect(response.headers.get("location")).toContain("impersonation-expired");
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.userLoginSessionCreate).not.toHaveBeenCalled();
   });
 });

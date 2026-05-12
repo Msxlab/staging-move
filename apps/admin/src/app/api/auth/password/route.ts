@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { expireAdminSessionCookies, requireAdmin } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -40,15 +41,12 @@ export async function PATCH(request: NextRequest) {
       data: { isActive: false, lastActivity: new Date() },
     });
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "PASSWORD_CHANGE",
-        entityType: "AdminUser",
-        entityId: session.adminId,
-        changes: "Password changed",
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+    await writeAdminAudit(session, {
+      action: "PASSWORD_CHANGED",
+      entityType: "AdminUser",
+      entityId: session.adminId,
+      metadata: { operation: "admin_password_change", sessionsRevoked: true },
+      request: getAuditRequestMeta(request),
     });
 
     const response = NextResponse.json(

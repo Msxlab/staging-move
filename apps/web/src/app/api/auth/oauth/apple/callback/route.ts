@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import {
   exchangeAppleCode,
@@ -40,6 +41,11 @@ export const runtime = "nodejs";
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_JWKS = createRemoteJWKSet(new URL("https://appleid.apple.com/auth/keys"));
 const LEGACY_OAUTH_LEGAL_ACCEPTANCE_COOKIE = "oauth_legal_acceptance";
+const APPLE_OAUTH_NONCE_COOKIE = "oauth_nonce_apple";
+
+function hashOAuthValue(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 const appleUserFieldSchema = z.object({
   name: z
@@ -53,6 +59,7 @@ const appleUserFieldSchema = z.object({
 
 function clearAppleOAuthCookies(response: NextResponse) {
   response.cookies.delete("oauth_state_apple");
+  response.cookies.delete(APPLE_OAUTH_NONCE_COOKIE);
   response.cookies.delete("oauth_redirect_uri_apple");
   response.cookies.delete("oauth_redirect");
   response.cookies.delete(MOBILE_OAUTH_CLIENT_COOKIE);
@@ -115,9 +122,24 @@ export async function POST(request: NextRequest) {
   }
 
   const cookieState = request.cookies.get("oauth_state_apple")?.value;
+  const cookieNonce = request.cookies.get(APPLE_OAUTH_NONCE_COOKIE)?.value;
   const cookieRedirectUri = request.cookies.get("oauth_redirect_uri_apple")?.value;
   const redirectPath = normalizeOAuthRedirectPath(request.cookies.get("oauth_redirect")?.value);
-  if (!cookieState || cookieState !== state) {
+  if (!cookieState || cookieState !== state || !cookieNonce) {
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=state-mismatch");
+  }
+
+  const consumedState = await prisma.oAuthState.updateMany({
+    where: {
+      provider: "apple",
+      stateHash: hashOAuthValue(state),
+      nonceHash: hashOAuthValue(cookieNonce),
+      consumedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    data: { consumedAt: new Date() },
+  });
+  if (consumedState.count !== 1) {
     return redirectWithClearedAppleCookies(request, "/sign-in?error=state-mismatch");
   }
 
@@ -130,7 +152,7 @@ export async function POST(request: NextRequest) {
     return redirectWithClearedAppleCookies(request, "/sign-in?error=token-exchange-failed");
   }
 
-  let payload: { sub: string; email?: string; email_verified?: boolean | string };
+  let payload: { sub: string; email?: string; email_verified?: boolean | string; nonce?: string };
   try {
     const { payload: verified } = await jwtVerify(tokens.idToken, APPLE_JWKS, {
       issuer: APPLE_ISSUER,
@@ -140,6 +162,10 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error("[OAUTH] apple id_token verify failed:", err);
     return redirectWithClearedAppleCookies(request, "/sign-in?error=invalid-token");
+  }
+
+  if (payload.nonce !== cookieNonce) {
+    return redirectWithClearedAppleCookies(request, "/sign-in?error=invalid-nonce");
   }
 
   if (!payload.email) {

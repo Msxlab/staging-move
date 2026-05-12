@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash, randomBytes } from "crypto";
 import {
   appleAuthorizeUrl,
   generateState,
@@ -6,6 +7,7 @@ import {
   getOAuthRedirectUri,
   normalizeOAuthRedirectPath,
 } from "@/lib/oauth";
+import { prisma } from "@/lib/db";
 import { shouldUseSecureSessionCookies } from "@/lib/user-auth";
 import {
   MOBILE_OAUTH_CLIENT_COOKIE,
@@ -19,6 +21,12 @@ import {
 } from "@/lib/mobile-oauth";
 
 export const runtime = "nodejs";
+const APPLE_OAUTH_NONCE_COOKIE = "oauth_nonce_apple";
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+
+function hashOAuthValue(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 /**
  * GET /api/auth/oauth/apple — initiate Sign in with Apple.
@@ -31,6 +39,7 @@ export async function GET(request: NextRequest) {
   }
 
   const state = generateState();
+  const nonce = randomBytes(16).toString("base64url");
   const redirectUri = await getOAuthRedirectUri(request, "/api/auth/oauth/apple/callback");
 
   const rawRedirect = request.nextUrl.searchParams.get("redirect") || "/dashboard";
@@ -58,7 +67,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Invalid mobile OAuth state." }, { status: 400 });
   }
 
-  const url = appleAuthorizeUrl({ clientId, redirectUri, state });
+  await prisma.oAuthState.create({
+    data: {
+      provider: "apple",
+      stateHash: hashOAuthValue(state),
+      nonceHash: hashOAuthValue(nonce),
+      redirectUri,
+      expiresAt: new Date(Date.now() + OAUTH_STATE_TTL_MS),
+    },
+  });
+
+  const url = appleAuthorizeUrl({ clientId, redirectUri, state, nonce });
 
   const res = NextResponse.redirect(url);
   const secureCookie = shouldUseSecureSessionCookies();
@@ -73,6 +92,7 @@ export async function GET(request: NextRequest) {
     maxAge: 10 * 60,
   };
   res.cookies.set("oauth_state_apple", state, cookieOpts);
+  res.cookies.set(APPLE_OAUTH_NONCE_COOKIE, nonce, cookieOpts);
   res.cookies.set("oauth_redirect_uri_apple", redirectUri, cookieOpts);
   res.cookies.set("oauth_redirect", safeRedirect, cookieOpts);
   if (mobileRedirectUri) {

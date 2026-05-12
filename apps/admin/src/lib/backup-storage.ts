@@ -68,6 +68,8 @@ export interface BackupStorageSummary {
   unsupportedProvider: boolean;
 }
 
+const SAFE_BACKUP_FILENAME = /^[a-zA-Z0-9._-]+$/;
+
 interface BackupStorageConfig {
   provider: string | null;
   bucket: string | null;
@@ -223,6 +225,45 @@ function createOffsiteMetadata(
     reason: null,
     ...overrides,
   };
+}
+
+export function sanitizeBackupFileName(
+  fileName: string | null | undefined,
+  fallback: string,
+) {
+  const base = (fileName || fallback).split(/[\\/]/).pop() || fallback;
+  const sanitized = base.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 180);
+  return SAFE_BACKUP_FILENAME.test(sanitized) && sanitized.length > 0
+    ? sanitized
+    : fallback;
+}
+
+export function isValidBackupObjectKey(
+  objectKey: string | null | undefined,
+  backupId: string,
+) {
+  if (!objectKey || !backupId) return false;
+  if (objectKey.includes("\\") || objectKey.startsWith("/")) return false;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(objectKey);
+  } catch {
+    return false;
+  }
+  if (
+    decoded.includes("..") ||
+    decoded.includes("//") ||
+    decoded.includes("\0")
+  ) {
+    return false;
+  }
+  const parts = decoded.split("/");
+  return (
+    parts.length >= 4 &&
+    parts[0] === "backups" &&
+    parts.includes(backupId) &&
+    parts.every(Boolean)
+  );
 }
 
 function normalizeOffsiteMetadata(input: any): BackupOffsiteMetadata | null {
@@ -417,7 +458,8 @@ export async function uploadBackupArchive(input: {
   }
 
   const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const objectKey = `backups/${dateStamp}/${input.backupId}/${input.fileName}`;
+  const fileName = sanitizeBackupFileName(input.fileName, "backup.json");
+  const objectKey = `backups/${dateStamp}/${input.backupId}/${fileName}`;
   const payload = Buffer.isBuffer(input.archiveBody)
     ? input.archiveBody
     : Buffer.from(input.archiveBody, "utf-8");

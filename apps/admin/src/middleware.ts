@@ -16,11 +16,19 @@ if (!adminJwtSecret || adminJwtSecret.length < 32) {
 
 const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+const PUBLIC_EXACT_PATHS = new Set(["/login", "/api/auth/login", "/api/healthz"]);
+const PUBLIC_PREFIX_PATHS: string[] = [];
 const PUBLIC_STATIC_PATHS = ["/sw.js", "/robots.txt"];
 
 export function isPublicStaticPath(pathname: string): boolean {
   return PUBLIC_STATIC_PATHS.includes(pathname);
+}
+
+export function isPublicPath(pathname: string): boolean {
+  return (
+    PUBLIC_EXACT_PATHS.has(pathname) ||
+    PUBLIC_PREFIX_PATHS.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+  );
 }
 
 function resolveClientIP(request: NextRequest): string {
@@ -430,7 +438,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Allow public paths
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (isPublicPath(pathname)) {
     return seedLocaleCookie(request, nextWithCsp(request));
   }
 

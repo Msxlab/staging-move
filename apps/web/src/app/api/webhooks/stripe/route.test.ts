@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   captureMessage: vi.fn(),
   constructEvent: vi.fn(),
   subscriptionsRetrieve: vi.fn(),
+  invoicesRetrieve: vi.fn(),
   stripeConstructor: vi.fn(),
   sendSubscriptionActivatedEmail: vi.fn(),
   sendSubscriptionCanceledEmail: vi.fn(),
@@ -20,6 +21,13 @@ const mocks = vi.hoisted(() => ({
     subscription: {
       updateMany: vi.fn(),
       findFirst: vi.fn(),
+    },
+    acquisitionRedemption: {
+      findFirst: vi.fn(),
+      updateMany: vi.fn(),
+    },
+    acquisitionCampaign: {
+      update: vi.fn(),
     },
   },
 }));
@@ -53,6 +61,11 @@ const subscriptionMock = mocks.prisma.subscription as {
   updateMany: Mock;
   findFirst: Mock;
 };
+const redemptionMock = mocks.prisma.acquisitionRedemption as {
+  findFirst: Mock;
+  updateMany: Mock;
+};
+const campaignMock = mocks.prisma.acquisitionCampaign as { update: Mock };
 
 function request() {
   return new Request("https://app.locateflow.com/api/webhooks/stripe", {
@@ -126,6 +139,24 @@ function checkoutCompletedEvent(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function chargeRefundedEvent(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "evt_refund_1",
+    type: "charge.refunded",
+    created: Math.floor(Date.now() / 1000),
+    livemode: false,
+    data: {
+      object: {
+        id: "ch_1",
+        customer: "cus_1",
+        invoice: "in_1",
+        metadata: { userId: "user_1" },
+      },
+    },
+    ...overrides,
+  };
+}
+
 function invoiceEvent(type = "invoice.paid", overrides: Record<string, unknown> = {}) {
   return {
     id: `evt_${type.replace(/\./g, "_")}`,
@@ -187,6 +218,7 @@ describe("Stripe webhook idempotency and livemode", () => {
       return {
       webhooks: { constructEvent: mocks.constructEvent },
       subscriptions: { retrieve: mocks.subscriptionsRetrieve },
+      invoices: { retrieve: mocks.invoicesRetrieve },
       };
     });
     mocks.constructEvent.mockReturnValue(subscriptionUpdatedEvent());
@@ -198,7 +230,11 @@ describe("Stripe webhook idempotency and livemode", () => {
     processedMock.create.mockResolvedValue({});
     subscriptionMock.updateMany.mockResolvedValue({ count: 1 });
     subscriptionMock.findFirst.mockResolvedValue(localSubscription());
+    redemptionMock.findFirst.mockResolvedValue(null);
+    redemptionMock.updateMany.mockResolvedValue({ count: 0 });
+    campaignMock.update.mockResolvedValue({});
     mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());
+    mocks.invoicesRetrieve.mockResolvedValue({ id: "in_1", subscription: "sub_trial_1" });
     mocks.sendSubscriptionActivatedEmail.mockResolvedValue({});
     mocks.sendSubscriptionCanceledEmail.mockResolvedValue({});
     mocks.sendPaymentFailedEmail.mockResolvedValue({});
@@ -221,6 +257,7 @@ describe("Stripe webhook idempotency and livemode", () => {
         bodyLength: 2,
       }),
     }));
+    expect(mocks.emitSecurityEvent).toHaveBeenCalledTimes(1);
     expect(processedMock.create).not.toHaveBeenCalled();
   });
 
@@ -234,6 +271,52 @@ describe("Stripe webhook idempotency and livemode", () => {
     await expect(second.json()).resolves.toMatchObject({ duplicate: true });
     expect(subscriptionMock.updateMany).toHaveBeenCalledTimes(1);
     expect(processedMock.create).toHaveBeenCalledTimes(1);
+  });
+
+  it("marks pending checkout trial redemption as redeemed after completed Checkout", async () => {
+    mocks.constructEvent.mockReturnValue(checkoutCompletedEvent());
+    mocks.subscriptionsRetrieve.mockResolvedValue(trialingStripeSubscription());
+    redemptionMock.findFirst.mockResolvedValue({ id: "redemption_1", campaignId: "camp_1" });
+    redemptionMock.updateMany.mockResolvedValue({ count: 1 });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(redemptionMock.findFirst).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1",
+        accessType: "FREE_TRIAL",
+        status: "PENDING_CHECKOUT",
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, campaignId: true },
+    });
+    expect(redemptionMock.updateMany).toHaveBeenCalledWith({
+      where: { id: "redemption_1", status: "PENDING_CHECKOUT" },
+      data: { status: "REDEEMED" },
+    });
+    expect(campaignMock.update).toHaveBeenCalledWith({
+      where: { id: "camp_1" },
+      data: { redemptionCount: { increment: 1 } },
+    });
+  });
+
+  it("scopes charge.refunded updates by invoice subscription and metadata user id when present", async () => {
+    mocks.constructEvent.mockReturnValue(chargeRefundedEvent());
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(200);
+    expect(mocks.invoicesRetrieve).toHaveBeenCalledWith("in_1");
+    expect(subscriptionMock.updateMany).toHaveBeenCalledWith({
+      where: {
+        stripeCustomerId: "cus_1",
+        stripeSubscriptionId: "sub_trial_1",
+        userId: "user_1",
+        provider: { not: "ADMIN" },
+      },
+      data: expect.objectContaining({ status: "REFUNDED" }),
+    });
   });
 
   it("updates local state to TRIALING for completed subscription checkout", async () => {

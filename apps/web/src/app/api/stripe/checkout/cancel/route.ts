@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const subscription = await prisma.subscription.findUnique({
       where: { userId },
       select: {
+        id: true,
         status: true,
         accessType: true,
         freeAccessEndsAt: true,
@@ -33,15 +34,33 @@ export async function GET(request: NextRequest) {
             : "FREE_ACCESS_EXPIRED"
           : "CANCELED";
 
-      await prisma.subscription.update({
-        where: { userId },
-        data: {
-          status: restoredStatus,
-          autoRenew: false,
-          cancelAtPeriodEnd: false,
-          lastSyncedAt: now,
-        },
-      });
+      const mutations: any[] = [
+        prisma.subscription.update({
+          where: { userId },
+          data: {
+            status: restoredStatus,
+            autoRenew: false,
+            cancelAtPeriodEnd: false,
+            lastSyncedAt: now,
+          },
+        }),
+      ];
+      const redemptionDelegate = (prisma as any).acquisitionRedemption;
+      if (subscription.id && redemptionDelegate?.updateMany) {
+        mutations.push(redemptionDelegate.updateMany({
+          where: {
+            userId,
+            subscriptionId: subscription.id,
+            status: "PENDING_CHECKOUT",
+          },
+          data: { status: "CANCELED" },
+        }));
+      }
+      if (typeof (prisma as any).$transaction === "function") {
+        await (prisma as any).$transaction(mutations);
+      } else {
+        await Promise.all(mutations);
+      }
     }
   } catch {
     // The user still needs to land back on the subscription page even if the

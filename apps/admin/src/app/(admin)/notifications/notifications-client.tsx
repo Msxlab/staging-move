@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PasswordConfirmModal } from "@/components/password-confirm-modal";
 
 interface NotificationItem {
   id: string;
@@ -59,6 +60,13 @@ interface UserSearchResult {
   lastName: string | null;
 }
 
+interface StepUpRequest {
+  title: string;
+  description: string;
+  confirmLabel: string;
+  run: (confirmPassword: string) => Promise<boolean>;
+}
+
 const TYPES = [
   "SYSTEM",
   "ANNOUNCEMENT",
@@ -100,6 +108,9 @@ export default function NotificationsClient() {
   const [recipientLoading, setRecipientLoading] = useState(false);
   const [selectedRecipient, setSelectedRecipient] =
     useState<UserSearchResult | null>(null);
+  const [stepUp, setStepUp] = useState<StepUpRequest | null>(null);
+  const [stepUpBusy, setStepUpBusy] = useState(false);
+  const [stepUpError, setStepUpError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -193,6 +204,63 @@ export default function NotificationsClient() {
     });
   }
 
+  function requestStepUp(request: StepUpRequest) {
+    setStepUp(request);
+    setStepUpError(null);
+  }
+
+  async function confirmStepUp(confirmPassword: string) {
+    if (!stepUp) return;
+    setStepUpBusy(true);
+    setStepUpError(null);
+    try {
+      const ok = await stepUp.run(confirmPassword);
+      if (ok) setStepUp(null);
+    } finally {
+      setStepUpBusy(false);
+    }
+  }
+
+  function closeStepUp() {
+    if (stepUpBusy) return;
+    setStepUp(null);
+    setStepUpError(null);
+  }
+
+  async function sendPayload(payload: typeof form & { confirmPassword?: string }): Promise<boolean> {
+    const response = await fetch("/api/notifications", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const message = data.error || "Failed to send notification";
+      if (data.requiresPassword || response.status === 401 || response.status === 403) {
+        setStepUpError(message);
+      }
+      toast.error(message);
+      return false;
+    }
+
+    const channelExtra =
+      payload.channel === "EMAIL"
+        ? ` · email delivered ${data.emailDelivered ?? 0}, skipped ${data.emailSkipped ?? 0}`
+        : payload.channel === "PUSH"
+          ? ` · push delivered ${data.pushDelivered ?? 0}, skipped ${data.pushSkipped ?? 0}`
+          : "";
+
+    toast.success(
+      payload.broadcast
+        ? `Broadcast sent to ${data.count} users${channelExtra}`
+        : `Notification sent${channelExtra}`,
+    );
+    resetForm();
+    load();
+    return true;
+  }
+
   async function send() {
     if (!form.title || !form.body) {
       toast.error("Title and body required");
@@ -203,32 +271,18 @@ export default function NotificationsClient() {
       return;
     }
 
-    const response = await fetch("/api/notifications", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      toast.error(data.error || "Failed to send notification");
+    const payload = { ...form };
+    if (payload.broadcast) {
+      requestStepUp({
+        title: "Confirm broadcast",
+        description: "Enter your admin password before broadcasting this notification.",
+        confirmLabel: "Send broadcast",
+        run: (confirmPassword) => sendPayload({ ...payload, confirmPassword }),
+      });
       return;
     }
 
-    const channelExtra =
-      form.channel === "EMAIL"
-        ? ` · email delivered ${data.emailDelivered ?? 0}, skipped ${data.emailSkipped ?? 0}`
-        : form.channel === "PUSH"
-          ? ` · push delivered ${data.pushDelivered ?? 0}, skipped ${data.pushSkipped ?? 0}`
-          : "";
-
-    toast.success(
-      form.broadcast
-        ? `Broadcast sent to ${data.count} users${channelExtra}`
-        : `Notification sent${channelExtra}`,
-    );
-    resetForm();
-    load();
+    await sendPayload(payload);
   }
 
   function selectRecipient(user: UserSearchResult) {
@@ -275,6 +329,17 @@ export default function NotificationsClient() {
 
   return (
     <div className="space-y-6">
+      <PasswordConfirmModal
+        open={Boolean(stepUp)}
+        title={stepUp?.title || "Confirm action"}
+        description={stepUp?.description || "Enter your admin password to continue."}
+        confirmLabel={stepUp?.confirmLabel || "Confirm"}
+        busy={stepUpBusy}
+        error={stepUpError}
+        onClose={closeStepUp}
+        onConfirm={confirmStepUp}
+      />
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Notifications</h1>

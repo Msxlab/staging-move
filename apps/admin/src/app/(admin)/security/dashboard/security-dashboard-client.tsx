@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 
 type Tab = "sessions" | "login-history" | "events";
+type PendingSessionAction =
+  | { type: "revoke"; sessionId: string; currentSession: boolean; requiresStepUp: boolean }
+  | { type: "revoke_all"; scope: string; currentSession: boolean; requiresStepUp: boolean };
 
 function relativeTime(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -38,6 +41,9 @@ export default function SecurityDashboardClient() {
   const [loginTotal, setLoginTotal] = useState(0);
   const [showAll, setShowAll] = useState(true);
   const [successFilter, setSuccessFilter] = useState("");
+  const [pendingSessionAction, setPendingSessionAction] = useState<PendingSessionAction | null>(null);
+  const [sessionStepUp, setSessionStepUp] = useState({ confirmPassword: "", mfaCode: "", backupCode: "" });
+  const [sessionStepUpHint, setSessionStepUpHint] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -75,39 +81,76 @@ export default function SecurityDashboardClient() {
     Promise.all([loadSessions(), loadLoginHistory(), loadSecurityEvents()]).finally(() => setLoading(false));
   }, [loadSessions, loadLoginHistory, loadSecurityEvents]);
 
-  async function revokeSession(sessionId: string) {
-    if (!confirm("Revoke this session? The admin will be signed out.")) return;
+  async function submitSessionAction(action: PendingSessionAction) {
+    const stepUpPayload = action.requiresStepUp
+      ? {
+          confirmPassword: sessionStepUp.confirmPassword,
+          mfaCode: sessionStepUp.mfaCode.trim() || undefined,
+          backupCode: sessionStepUp.backupCode.trim() || undefined,
+        }
+      : {};
     try {
       const res = await fetch("/api/auth/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revoke", sessionId }),
+        body: JSON.stringify(
+          action.type === "revoke"
+            ? { action: "revoke", sessionId: action.sessionId, ...stepUpPayload }
+            : { action: "revoke_all", revokeAll: action.scope, ...stepUpPayload },
+        ),
       });
       if (res.ok) {
-        toast.success("Session revoked");
+        const data = await res.json();
+        toast.success(action.type === "revoke_all" ? `${data.revoked || 0} sessions revoked` : "Session revoked");
+        setPendingSessionAction(null);
+        setSessionStepUp({ confirmPassword: "", mfaCode: "", backupCode: "" });
+        setSessionStepUpHint(null);
+        if (action.currentSession) {
+          window.location.assign("/login");
+          return;
+        }
         loadSessions();
       } else {
         const data = await res.json();
+        if (data.requiresMfa) setSessionStepUpHint("Enter an authenticator code or backup code for this session action.");
+        setSessionStepUp({ confirmPassword: "", mfaCode: "", backupCode: "" });
         toast.error(data.error || "Failed to revoke");
       }
     } catch { toast.error("Failed to revoke session"); }
   }
 
+  async function revokeSession(target: any) {
+    if (!confirm("Revoke this session? The admin will be signed out.")) return;
+    const requiresStepUp = target.adminUser?.id && target.adminUser.id !== currentAdminId;
+    const action: PendingSessionAction = {
+      type: "revoke",
+      sessionId: target.id,
+      currentSession: Boolean(target.isCurrent),
+      requiresStepUp: Boolean(requiresStepUp),
+    };
+    if (action.requiresStepUp) {
+      setPendingSessionAction(action);
+      setSessionStepUpHint("Password and MFA or backup code are required to revoke another admin's session.");
+      return;
+    }
+    await submitSessionAction(action);
+  }
+
   async function revokeAllSessions(scope: string) {
     const msg = scope === "all" ? "Revoke ALL admin sessions? Everyone will be signed out." : "Revoke all your sessions?";
     if (!confirm(msg)) return;
-    try {
-      const res = await fetch("/api/auth/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "revoke_all", revokeAll: scope }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        toast.success(`${data.revoked || 0} sessions revoked`);
-        loadSessions();
-      }
-    } catch { toast.error("Failed"); }
+    const action: PendingSessionAction = {
+      type: "revoke_all",
+      scope,
+      currentSession: true,
+      requiresStepUp: scope === "all",
+    };
+    if (action.requiresStepUp) {
+      setPendingSessionAction(action);
+      setSessionStepUpHint("Password and MFA or backup code are required to revoke all admin sessions.");
+      return;
+    }
+    await submitSessionAction(action);
   }
 
   const activeSessions = sessions.filter((s) => s.isActive);
@@ -237,7 +280,7 @@ export default function SecurityDashboardClient() {
                         </div>
                       </div>
                     </div>
-                    <button onClick={() => revokeSession(s.id)}
+                    <button onClick={() => revokeSession(s)}
                       className="rounded-lg border border-destructive/30 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
                       <Power className="h-3.5 w-3.5" />
                     </button>
@@ -246,6 +289,62 @@ export default function SecurityDashboardClient() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {pendingSessionAction && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-background/80 p-4">
+          <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-xl">
+            <h2 className="text-lg font-semibold text-foreground">Confirm session action</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Enter your password and an authenticator or backup code.
+            </p>
+            <div className="mt-4 space-y-3">
+              <input
+                type="password"
+                value={sessionStepUp.confirmPassword}
+                onChange={(event) => setSessionStepUp((prev) => ({ ...prev, confirmPassword: event.target.value }))}
+                placeholder="Password"
+                className={inputCls}
+              />
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={sessionStepUp.mfaCode}
+                onChange={(event) => setSessionStepUp((prev) => ({ ...prev, mfaCode: event.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                placeholder="Authenticator code"
+                className={inputCls}
+              />
+              <input
+                type="text"
+                maxLength={16}
+                value={sessionStepUp.backupCode}
+                onChange={(event) => setSessionStepUp((prev) => ({ ...prev, backupCode: event.target.value.toUpperCase().slice(0, 16) }))}
+                placeholder="Backup code"
+                className={inputCls}
+              />
+              {sessionStepUpHint && <p className="text-xs text-tone-honey-fg">{sessionStepUpHint}</p>}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setPendingSessionAction(null);
+                  setSessionStepUp({ confirmPassword: "", mfaCode: "", backupCode: "" });
+                  setSessionStepUpHint(null);
+                }}
+                className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => submitSessionAction(pendingSessionAction)}
+                className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

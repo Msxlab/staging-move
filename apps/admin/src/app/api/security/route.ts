@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { getSecurityReadinessSnapshot } from "@/lib/security-readiness";
 
 export async function GET() {
@@ -38,9 +38,18 @@ export async function POST(req: NextRequest) {
     const { action, ...data } = await req.json();
     const session = action === "add_ip_rule"
       ? await requirePermission("settings", "canCreate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] })
-      : action === "delete_ip_rule"
-        ? await requirePermission("settings", "canDelete", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] })
-        : await requirePermission("settings", "canUpdate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+        : action === "delete_ip_rule"
+          ? await requirePermission("settings", "canDelete", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] })
+          : await requirePermission("settings", "canUpdate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+
+    if (["add_ip_rule", "delete_ip_rule", "toggle_ip_rule", "update_gdpr"].includes(action)) {
+      const confirm = await requirePasswordConfirm(session, data.confirmPassword, {
+        operation: "security_rule_mutation",
+      });
+      if (!confirm.confirmed) {
+        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      }
+    }
 
     if (action === "add_ip_rule") {
       if (!data.ipAddress || !data.type) return NextResponse.json({ error: "IP and type required" }, { status: 400 });

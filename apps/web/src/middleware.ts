@@ -49,6 +49,7 @@ const PUBLIC_PATHS = [
 ];
 const PUBLIC_API_PREFIXES = [
   "/api/internal/",
+  "/api/cron/",
   "/api/health",
   "/api/help",
   "/api/auth/oauth/",
@@ -68,6 +69,10 @@ const PUBLIC_API_EXACT = [
   "/api/auth/password/reset/confirm",
   "/api/mobile/auth/login",
   "/api/mobile/auth/exchange",
+  "/api/mobile/iap/products",
+  "/api/ready",
+  "/api/unsubscribe",
+  "/api/waitlist",
   // Impersonation handoff is the only path by which a SUPER_ADMIN-initiated
   // session cookie enters the browser. The route validates a short-lived
   // HMAC-signed token delivered by POST body, not by URL query string.
@@ -145,8 +150,10 @@ function applyCsrfCheck(req: NextRequest): NextResponse | null {
   const pathname = req.nextUrl?.pathname || "";
   if (!pathname.startsWith("/api/")) return null;
   if (pathname.startsWith("/api/internal/")) return null;
+  if (pathname.startsWith("/api/cron/")) return null;
   if (pathname.startsWith("/api/health")) return null;
   if (pathname.startsWith("/api/webhooks/")) return null;
+  if (pathname === "/api/unsubscribe") return null;
   // Apple OAuth callback is a cross-site form_post — exempt it.
   if (pathname === "/api/auth/oauth/apple/callback") return null;
   // Explicit exemption: callbacks are intentionally non-CSRF protected. Today

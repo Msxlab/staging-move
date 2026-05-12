@@ -34,10 +34,11 @@ interface CleanupReport {
   restoredFreeAccess: number;
   restoredFreeAccessExpired: number;
   restoredCanceled: number;
+  expiredRedemptions: number;
   errors: number;
 }
 
-export async function POST(request: NextRequest) {
+async function handleCron(request: NextRequest) {
   const guard = await guardCronRequest(request, "checkout-cleanup");
   if (!guard.ok) return guard.response;
 
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
     restoredFreeAccess: 0,
     restoredFreeAccessExpired: 0,
     restoredCanceled: 0,
+    expiredRedemptions: 0,
     errors: 0,
   };
 
@@ -77,16 +79,34 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await prisma.subscription.update({
-        where: { id: sub.id },
-        data: {
-          status: restoredStatus,
-          autoRenew: false,
-          cancelAtPeriodEnd: false,
-          lastSyncedAt: now,
-          version: { increment: 1 },
-        },
-      });
+      const mutations: any[] = [
+        prisma.subscription.update({
+          where: { id: sub.id },
+          data: {
+            status: restoredStatus,
+            autoRenew: false,
+            cancelAtPeriodEnd: false,
+            lastSyncedAt: now,
+            version: { increment: 1 },
+          },
+        }),
+      ];
+      const redemptionDelegate = (prisma as any).acquisitionRedemption;
+      if (redemptionDelegate?.updateMany) {
+        mutations.push(redemptionDelegate.updateMany({
+          where: {
+            userId: sub.userId,
+            subscriptionId: sub.id,
+            status: "PENDING_CHECKOUT",
+          },
+          data: { status: "EXPIRED" },
+        }));
+      }
+      const results = typeof (prisma as any).$transaction === "function"
+        ? await (prisma as any).$transaction(mutations)
+        : await Promise.all(mutations);
+      const redemptionResult = results[1] as { count?: number } | undefined;
+      report.expiredRedemptions += redemptionResult?.count || 0;
       if (restoredStatus === "ACTIVE") report.restoredFreeAccess += 1;
       else if (restoredStatus === "FREE_ACCESS_EXPIRED") report.restoredFreeAccessExpired += 1;
       else report.restoredCanceled += 1;
@@ -102,4 +122,12 @@ export async function POST(request: NextRequest) {
   logger.info("checkout-cleanup completed", { action: "CHECKOUT_CLEANUP", ...report });
 
   return NextResponse.json({ success: true, ...report });
+}
+
+export async function GET(request: NextRequest) {
+  return handleCron(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleCron(request);
 }

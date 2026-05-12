@@ -7,9 +7,13 @@ vi.mock("@/lib/auth", () => ({
 
 vi.mock("@/lib/db", () => ({
   prisma: {
+    $transaction: vi.fn((mutations: Promise<unknown>[]) => Promise.all(mutations)),
     subscription: {
       findUnique: vi.fn(),
       update: vi.fn(),
+    },
+    acquisitionRedemption: {
+      updateMany: vi.fn(),
     },
   },
 }));
@@ -23,6 +27,7 @@ const mockSubscription = prisma.subscription as unknown as {
   findUnique: Mock;
   update: Mock;
 };
+const mockAcquisitionRedemption = (prisma as any).acquisitionRedemption as { updateMany: Mock };
 
 function cancelRequest() {
   return new NextRequest("https://locateflow.com/api/stripe/checkout/cancel");
@@ -33,10 +38,12 @@ describe("Stripe checkout cancel route", () => {
     vi.clearAllMocks();
     mockRequireDbUserId.mockResolvedValue("user_1");
     mockSubscription.update.mockResolvedValue({});
+    mockAcquisitionRedemption.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it("restores pending Free Access checkout back to active Free Access", async () => {
     mockSubscription.findUnique.mockResolvedValue({
+      id: "sub_row_1",
       status: "PENDING_CHECKOUT",
       accessType: "FREE_ACCESS",
       freeAccessEndsAt: new Date(Date.now() + 7 * 86_400_000),
@@ -55,11 +62,20 @@ describe("Stripe checkout cancel route", () => {
         }),
       }),
     );
+    expect(mockAcquisitionRedemption.updateMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user_1",
+        subscriptionId: "sub_row_1",
+        status: "PENDING_CHECKOUT",
+      },
+      data: { status: "CANCELED" },
+    });
     expect(response.headers.get("location")).toBe("https://locateflow.com/settings/subscription?canceled=true");
   });
 
   it("does not reset rows that already have a Stripe subscription id", async () => {
     mockSubscription.findUnique.mockResolvedValue({
+      id: "sub_row_1",
       status: "PENDING_CHECKOUT",
       accessType: "FREE_TRIAL",
       freeAccessEndsAt: null,
@@ -69,6 +85,7 @@ describe("Stripe checkout cancel route", () => {
     const response = await GET(cancelRequest());
 
     expect(mockSubscription.update).not.toHaveBeenCalled();
+    expect(mockAcquisitionRedemption.updateMany).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe("https://locateflow.com/settings/subscription?canceled=true");
   });
 });

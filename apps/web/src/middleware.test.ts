@@ -302,7 +302,7 @@ describe("web middleware auth boundaries", () => {
     expect(response.status).toBe(200);
   });
 
-  it("rate limits cron routes before auth", async () => {
+  it("lets cron routes reach their route-level CRON_SECRET guard after coarse rate limiting", async () => {
     mocks.rateLimitMock.mockClear();
     const response = await middleware(
       request("https://locateflow.com/api/cron/expire-trials", {
@@ -315,7 +315,57 @@ describe("web middleware auth boundaries", () => {
       expect.stringContaining("rl:cron:"),
       expect.objectContaining({ limit: 1, windowSeconds: 60 }),
     );
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("lets a valid scheduler cron request reach the route handler", async () => {
+    const response = await middleware(
+      request("https://locateflow.com/api/cron/bill-reminders", {
+        method: "GET",
+        headers: { authorization: "Bearer cron-secret" },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("lets anonymous unsubscribe GET and RFC8058 form POST reach token validation", async () => {
+    const getResponse = await middleware(
+      request("https://locateflow.com/api/unsubscribe?t=token.kind"),
+    );
+    const postResponse = await middleware(
+      request("https://locateflow.com/api/unsubscribe?t=token.kind", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: "List-Unsubscribe=One-Click",
+      }),
+    );
+
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.headers.get("x-middleware-next")).toBe("1");
+    expect(postResponse.status).toBe(200);
+    expect(postResponse.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("keeps intended public route contracts aligned without a session", async () => {
+    const products = await middleware(request("https://locateflow.com/api/mobile/iap/products"));
+    const ready = await middleware(request("https://locateflow.com/api/ready"));
+    const waitlist = await middleware(
+      request("https://locateflow.com/api/waitlist", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "user@example.com", target: "MOBILE_ANY" }),
+      }),
+    );
+
+    expect(products.status).toBe(200);
+    expect(products.headers.get("x-middleware-next")).toBe("1");
+    expect(ready.status).toBe(200);
+    expect(ready.headers.get("x-middleware-next")).toBe("1");
+    expect(waitlist.status).toBe(200);
+    expect(waitlist.headers.get("x-middleware-next")).toBe("1");
   });
 
   it("rate limits internal routes while keeping them publicly routable to secret checks", async () => {

@@ -3,90 +3,175 @@ import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
 import { verifyInternalAuth } from "@/lib/internal-secrets";
 import { redactBackupSecretText } from "@/lib/backup-metadata";
+import { parseBackupRecordMetadata } from "@/lib/backup-storage";
+import { writeBackupAudit } from "@/lib/backup-audit";
 
-// Default retention: 30 days for completed backups, 7 days for failed
+// Default retention: 30 days for completed backups, 7 days for failed.
 const RETENTION_DAYS_COMPLETED = 30;
 const RETENTION_DAYS_FAILED = 7;
-const MAX_BACKUPS_KEEP = 50; // Keep at most 50 recent backups regardless of age
+const MAX_BACKUPS_KEEP = 50;
 
-// POST /api/backup/retention — run retention cleanup (manual or cron)
+async function splitRetentionCandidates(
+  records: Array<{ id: string; errorMessage: string | null }>,
+) {
+  const deletableIds: string[] = [];
+  const preservedOffsiteIds: string[] = [];
+
+  for (const record of records) {
+    const metadata = parseBackupRecordMetadata(record.errorMessage);
+    if (metadata.offsite?.status === "stored" && metadata.offsite.objectKey) {
+      preservedOffsiteIds.push(record.id);
+    } else {
+      deletableIds.push(record.id);
+    }
+  }
+
+  return { deletableIds, preservedOffsiteIds };
+}
+
+async function collectRetentionCandidates(where: any) {
+  const records = await prisma.backupRecord.findMany({
+    where,
+    select: { id: true, errorMessage: true },
+  });
+  return splitRetentionCandidates(records);
+}
+
+// POST /api/backup/retention - run retention cleanup (manual or cron).
 export async function POST(request: NextRequest) {
+  let session: Awaited<ReturnType<typeof requirePermission>> | null = null;
+  let isCron = false;
+  let dryRun = false;
+
   try {
-    // Allow both admin-triggered and cron-triggered.
-    const isCron = verifyInternalAuth(request.headers.get("authorization"), "cron");
+    isCron = verifyInternalAuth(request.headers.get("authorization"), "cron");
     if (!isCron) {
-      await requirePermission("settings", "canDelete", { minimumRole: "SUPER_ADMIN" });
+      session = await requirePermission("settings", "canDelete", {
+        minimumRole: "SUPER_ADMIN",
+      });
     }
 
+    const body = await request.json().catch(() => ({}));
+    dryRun =
+      body?.dryRun === true ||
+      request.nextUrl.searchParams.get("dryRun") === "true" ||
+      request.nextUrl.searchParams.get("dryRun") === "1";
+
     const now = new Date();
-    const completedCutoff = new Date(now.getTime() - RETENTION_DAYS_COMPLETED * 24 * 60 * 60 * 1000);
-    const failedCutoff = new Date(now.getTime() - RETENTION_DAYS_FAILED * 24 * 60 * 60 * 1000);
+    const completedCutoff = new Date(
+      now.getTime() - RETENTION_DAYS_COMPLETED * 24 * 60 * 60 * 1000,
+    );
+    const failedCutoff = new Date(
+      now.getTime() - RETENTION_DAYS_FAILED * 24 * 60 * 60 * 1000,
+    );
 
-    // Delete old completed backups
-    const deletedCompleted = await prisma.backupRecord.deleteMany({
-      where: {
-        status: "COMPLETED",
-        createdAt: { lt: completedCutoff },
-      },
+    const completedCandidates = await collectRetentionCandidates({
+      status: "COMPLETED",
+      createdAt: { lt: completedCutoff },
+    });
+    const failedCandidates = await collectRetentionCandidates({
+      status: "FAILED",
+      createdAt: { lt: failedCutoff },
     });
 
-    // Delete old failed backups
-    const deletedFailed = await prisma.backupRecord.deleteMany({
-      where: {
-        status: "FAILED",
-        createdAt: { lt: failedCutoff },
-      },
-    });
+    let completedDeleted = 0;
+    let failedDeleted = 0;
+    if (!dryRun && completedCandidates.deletableIds.length > 0) {
+      completedDeleted = (
+        await prisma.backupRecord.deleteMany({
+          where: { id: { in: completedCandidates.deletableIds } },
+        })
+      ).count;
+    }
+    if (!dryRun && failedCandidates.deletableIds.length > 0) {
+      failedDeleted = (
+        await prisma.backupRecord.deleteMany({
+          where: { id: { in: failedCandidates.deletableIds } },
+        })
+      ).count;
+    }
 
-    // Enforce max backup count — keep only the most recent N
     const totalBackups = await prisma.backupRecord.count();
-    let deletedOverflow = 0;
+    let overflowDeleted = 0;
+    let overflowCandidates = {
+      deletableIds: [] as string[],
+      preservedOffsiteIds: [] as string[],
+    };
     if (totalBackups > MAX_BACKUPS_KEEP) {
       const oldestToKeep = await prisma.backupRecord.findMany({
         orderBy: { createdAt: "desc" },
         skip: MAX_BACKUPS_KEEP,
-        select: { id: true },
+        select: { id: true, errorMessage: true },
       });
-      if (oldestToKeep.length > 0) {
-        const result = await prisma.backupRecord.deleteMany({
-          where: { id: { in: oldestToKeep.map((b: any) => b.id) } },
-        });
-        deletedOverflow = result.count;
+      overflowCandidates = await splitRetentionCandidates(oldestToKeep);
+      if (!dryRun && overflowCandidates.deletableIds.length > 0) {
+        overflowDeleted = (
+          await prisma.backupRecord.deleteMany({
+            where: { id: { in: overflowCandidates.deletableIds } },
+          })
+        ).count;
       }
     }
 
-    // Clean up old processed webhook events (older than 7 days)
-    const webhookCutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const deletedWebhooks = await prisma.processedWebhookEvent.deleteMany({
-      where: { processedAt: { lt: webhookCutoff } },
-    }).catch(() => ({ count: 0 }));
-
-    return NextResponse.json({
-      success: true,
-      retention: {
-        completedDeleted: deletedCompleted.count,
-        failedDeleted: deletedFailed.count,
-        overflowDeleted: deletedOverflow,
-        webhookEventsDeleted: deletedWebhooks.count,
-        retentionPolicy: {
-          completedDays: RETENTION_DAYS_COMPLETED,
-          failedDays: RETENTION_DAYS_FAILED,
-          maxBackups: MAX_BACKUPS_KEEP,
-        },
+    const retention = {
+      dryRun,
+      completedDeleted,
+      failedDeleted,
+      overflowDeleted,
+      completedCandidates: completedCandidates.deletableIds.length,
+      failedCandidates: failedCandidates.deletableIds.length,
+      overflowCandidates: overflowCandidates.deletableIds.length,
+      offsiteRecordsPreserved:
+        completedCandidates.preservedOffsiteIds.length +
+        failedCandidates.preservedOffsiteIds.length +
+        overflowCandidates.preservedOffsiteIds.length,
+      offsiteCleanup: "not_implemented_metadata_preserved",
+      retentionPolicy: {
+        completedDays: RETENTION_DAYS_COMPLETED,
+        failedDays: RETENTION_DAYS_FAILED,
+        maxBackups: MAX_BACKUPS_KEEP,
       },
+    };
+
+    await writeBackupAudit({
+      session,
+      action: "BACKUP_RETENTION_SUCCESS",
+      entityId: "retention",
+      request,
+      metadata: { trigger: isCron ? "cron" : "manual", ...retention },
     });
+
+    return NextResponse.json({ success: true, retention });
   } catch (error: any) {
-    if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error?.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    await writeBackupAudit({
+      session,
+      action: "BACKUP_RETENTION_FAILED",
+      entityId: "retention",
+      request,
+      metadata: { trigger: isCron ? "cron" : "manual", dryRun },
+      error,
+    });
     console.error(`Backup retention failed: ${redactBackupSecretText(error)}`);
-    return NextResponse.json({ error: "Retention cleanup failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Retention cleanup failed" },
+      { status: 500 },
+    );
   }
 }
 
-// GET /api/backup/retention — get retention stats
+// GET /api/backup/retention - get retention stats.
 export async function GET() {
   try {
-    await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+    await requirePermission("settings", "canRead", {
+      minimumRole: "ADMIN",
+      fallbackResources: ["audit_logs"],
+    });
 
     const [total, completed, failed, inProgress] = await Promise.all([
       prisma.backupRecord.count(),
@@ -121,8 +206,15 @@ export async function GET() {
       },
     });
   } catch (error: any) {
-    if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    return NextResponse.json({ error: "Failed to get retention stats" }, { status: 500 });
+    if (error?.message === "UNAUTHORIZED") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error?.message === "FORBIDDEN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    return NextResponse.json(
+      { error: "Failed to get retention stats" },
+      { status: 500 },
+    );
   }
 }

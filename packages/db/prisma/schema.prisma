@@ -153,6 +153,20 @@ model UserLoginSession {
   @@index([impersonatedByAdminId])
 }
 
+model OAuthState {
+  id          String    @id @default(cuid()) @db.VarChar(30)
+  provider    String    @db.VarChar(20)
+  stateHash   String    @unique @db.VarChar(64)
+  nonceHash   String    @db.VarChar(64)
+  redirectUri String?   @db.VarChar(500)
+  expiresAt   DateTime
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([provider, expiresAt])
+  @@index([provider, consumedAt])
+}
+
 model PasswordResetToken {
   id        String    @id @default(cuid()) @db.VarChar(30)
   userId    String    @db.VarChar(30)
@@ -546,6 +560,7 @@ model Budget {
 
   addressId String?  @db.VarChar(30)
   address   Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  scopeKey  String   @db.VarChar(64)
 
   month DateTime
   year  Int
@@ -565,8 +580,9 @@ model Budget {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, addressId, month])
+  @@unique([userId, scopeKey, month])
   @@index([userId])
+  @@index([scopeKey])
   @@index([month])
   @@index([deletedAt])
 }
@@ -1066,7 +1082,7 @@ model AdminAuditLog {
   adminUserId String?    @db.VarChar(30)
   adminUser   AdminUser? @relation(fields: [adminUserId], references: [id], onDelete: SetNull)
 
-  action     String  @db.VarChar(20)
+  action     String  @db.VarChar(64)
   entityType String  @db.VarChar(50)
   entityId   String  @db.VarChar(30)
   changes    String? @db.Text

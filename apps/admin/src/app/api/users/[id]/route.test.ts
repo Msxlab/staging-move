@@ -121,7 +121,7 @@ describe("admin user detail delete", () => {
     expect(mocks.gdprCreate).toHaveBeenCalledTimes(1);
     expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        action: "DELETE_USER",
+        action: "USER_DELETED",
         entityType: "User",
         entityId: "user_1",
       }),
@@ -142,7 +142,13 @@ describe("admin user detail delete", () => {
     expect(response.status).toBe(403);
     expect(mocks.userFindUnique).not.toHaveBeenCalled();
     expect(mocks.transaction).not.toHaveBeenCalled();
-    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "USER_DELETE_FAILED",
+        entityType: "User",
+        entityId: "user_1",
+      }),
+    });
   });
 
   it("skips users with a processing GDPR delete request", async () => {
@@ -213,7 +219,7 @@ describe("admin user detail delete", () => {
     expect(mocks.userSessionUpdateMany).not.toHaveBeenCalled();
     expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        action: "RESTORE_USER",
+        action: "USER_RESTORED",
         entityType: "User",
         entityId: "user_1",
       }),
@@ -238,7 +244,13 @@ describe("admin user detail delete", () => {
     expect(response.status).toBe(403);
     expect(mocks.userFindUnique).not.toHaveBeenCalled();
     expect(mocks.transaction).not.toHaveBeenCalled();
-    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "USER_RESTORE_FAILED",
+        entityType: "User",
+        entityId: "user_1",
+      }),
+    });
   });
 
   it("does not restore when GDPR deletion cleanup is already processing", async () => {
@@ -263,6 +275,35 @@ describe("admin user detail delete", () => {
     expect(body.skippedReason).toBe("processing_gdpr_request");
     expect(mocks.transaction).not.toHaveBeenCalled();
     expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+  });
+
+  it("requires MFA step-up before revoking user login sessions", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "MFA verification required for this operation.",
+      requiresMfa: true,
+    });
+
+    const response = await POST(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "revoke_login_session", sessionId: "login_1", confirmPassword: "pw" }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(body.requiresMfa).toBe(true);
+    expect(mocks.userLoginSessionUpdateMany).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "USER_SESSION_REVOKE_FAILED",
+        entityType: "UserLoginSession",
+        entityId: "login_1",
+      }),
+    });
   });
 });
 
@@ -306,7 +347,33 @@ describe("admin user detail billing updates", () => {
     expect(response.status).toBe(403);
     expect(body.requiresPassword).toBe(true);
     expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
-    expect(mocks.adminAuditCreate).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "USER_BILLING_UPDATE_FAILED",
+        entityType: "User",
+        entityId: "user_1",
+      }),
+    });
+  });
+
+  it("requires subscriptions.canUpdate for billing field PATCH even when users.canUpdate passes", async () => {
+    mocks.requirePermission.mockImplementation((resource: string) => {
+      if (resource === "users") return Promise.resolve({ adminId: "admin_1" });
+      return Promise.reject(new Error("FORBIDDEN"));
+    });
+
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan: "INDIVIDUAL", confirmPassword: "admin-password", mfaCode: "123456" }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
+    expect(mocks.requirePasswordConfirm).not.toHaveBeenCalled();
   });
 
   it("audits admin subscription and premium edits after password confirmation", async () => {
@@ -328,7 +395,7 @@ describe("admin user detail billing updates", () => {
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
       { adminId: "admin_1" },
       "admin-password",
-      { operation: "billing_subscription_update" },
+      expect.objectContaining({ operation: "billing_subscription_update", requireMfa: true }),
     );
     expect(mocks.subscriptionUpdate).toHaveBeenCalledWith({
       where: { userId: "user_1" },
@@ -343,7 +410,7 @@ describe("admin user detail billing updates", () => {
     expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         adminUserId: "admin_1",
-        action: "UPDATE_USER",
+        action: "USER_BILLING_UPDATED",
         entityType: "User",
         entityId: "user_1",
         ipAddress: "203.0.113.10",

@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
 
     if (type === "addresses" || type === "full") {
       data.addresses = await prisma.address.findMany({
-        where: { userId },
+        where: { userId, deletedAt: null },
         select: {
           nickname: true,
           type: true,
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
 
     if (type === "services" || type === "full") {
       const rawServices = await prisma.service.findMany({
-        where: { userId },
+        where: { userId, deletedAt: null },
         select: {
           category: true,
           providerName: true,
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
     if (type === "customProviders" || type === "full") {
       data.customProviders = (
         await prisma.userCustomProvider.findMany({
-          where: { userId },
+          where: { userId, deletedAt: null },
           select: {
             name: true,
             category: true,
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
 
     if (type === "budget" || type === "full") {
       data.budgets = await prisma.budget.findMany({
-        where: { userId },
+        where: { userId, deletedAt: null },
         select: {
           month: true,
           year: true,
@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
 
     if (type === "moving" || type === "full") {
       data.movingPlans = await prisma.movingPlan.findMany({
-        where: { userId },
+        where: { userId, deletedAt: null },
         include: {
           fromAddress: { select: { city: true, state: true } },
           toAddress: { select: { city: true, state: true } },

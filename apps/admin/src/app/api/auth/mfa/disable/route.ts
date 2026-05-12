@@ -1,16 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin, requirePasswordConfirm } from "@/lib/auth";
+import { expireAdminSessionCookies, requireAdmin, requirePasswordConfirm } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // POST /api/auth/mfa/disable — disable MFA for current admin
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAdmin();
     const body = await request.json();
+    const requestMeta = getAuditRequestMeta(request);
 
-    const confirm = await requirePasswordConfirm(session, body.confirmPassword, { operation: "admin_mfa_disable" });
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
+      operation: "admin_mfa_disable",
+      requireMfa: true,
+      mfaCode: body.mfaCode,
+      backupCode: body.backupCode,
+      ipAddress: requestMeta.ipAddress,
+      userAgent: requestMeta.userAgent,
+    });
     if (!confirm.confirmed) {
-      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      return NextResponse.json(
+        {
+          error: confirm.error,
+          requiresPassword: true,
+          requiresMfa: confirm.requiresMfa || undefined,
+        },
+        { status: confirm.rateLimited ? 429 : 403 },
+      );
     }
 
     const admin = await prisma.adminUser.findUnique({
@@ -35,18 +51,30 @@ export async function POST(request: NextRequest) {
         mfaVerifiedAt: null,
       },
     });
-
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "MFA_DISABLED",
-        entityType: "AdminUser",
-        entityId: session.adminId,
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
+    await prisma.adminSession.updateMany({
+      where: { adminUserId: session.adminId, isActive: true },
+      data: { isActive: false, lastActivity: new Date() },
     });
 
-    return NextResponse.json({ success: true, message: "MFA has been disabled." });
+    await writeAdminAudit(session, {
+      action: "MFA_DISABLED",
+      entityType: "AdminUser",
+      entityId: session.adminId,
+      metadata: { operation: "admin_mfa_disable", sessionsRevoked: true },
+      request: requestMeta,
+    });
+
+    const response = NextResponse.json(
+      { success: true, message: "MFA has been disabled. Please sign in again." },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      },
+    );
+    return expireAdminSessionCookies(response, request.headers.get("host"));
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     console.error("MFA disable failed:", error);

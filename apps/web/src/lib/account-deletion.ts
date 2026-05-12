@@ -1,5 +1,8 @@
 import Stripe from "stripe";
+import { requireStripeSecretKeyForMutation } from "@/lib/billing-config";
 import { prisma, rawPrisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { destroyAllUserSessions } from "@/lib/user-auth";
 
 export interface AccountDeletionRequestData {
@@ -134,14 +137,21 @@ export async function processAccountDeletionRequest(requestId: string) {
 
   if (!stripeCanceled && stripeSubscriptionId) {
     try {
-      if (!process.env.STRIPE_SECRET_KEY) {
-        throw new Error("STRIPE_NOT_CONFIGURED");
-      }
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" });
-      await stripe.subscriptions.cancel(stripeSubscriptionId).catch(() => {});
+      const stripeSecretKey = requireStripeSecretKeyForMutation(
+        await getRuntimeConfigValue("STRIPE_SECRET_KEY"),
+        process.env,
+      );
+      const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
+      await stripe.subscriptions.cancel(stripeSubscriptionId);
       stripeCanceled = true;
     } catch (error) {
       lastError = (error as Error)?.message || "STRIPE_CANCEL_FAILED";
+      logger.error("account_deletion_stripe_cancel_failed", {
+        requestId: request.id,
+        userId: request.userId,
+        stripeSubscriptionId,
+        error,
+      });
     }
   }
 

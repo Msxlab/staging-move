@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => ({
   customersCreate: vi.fn(),
   sessionsCreate: vi.fn(),
   stripeConstructor: vi.fn(),
+  acquisitionRedemptionFindFirst: vi.fn(),
+  acquisitionRedemptionCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -29,6 +31,10 @@ vi.mock("@/lib/db", () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+    },
+    acquisitionRedemption: {
+      findFirst: mocks.acquisitionRedemptionFindFirst,
+      create: mocks.acquisitionRedemptionCreate,
     },
   },
 }));
@@ -104,6 +110,8 @@ describe("stripe checkout route", () => {
       status: "PENDING_CHECKOUT",
     });
     subscriptionMock.update.mockResolvedValue({});
+    mocks.acquisitionRedemptionFindFirst.mockResolvedValue(null);
+    mocks.acquisitionRedemptionCreate.mockResolvedValue({ id: "redemption_1" });
     mocks.getStripePriceIdForPlanAndInterval.mockImplementation(async (_plan: string, interval: string) =>
       interval === "YEAR" ? "price_yearly" : "price_monthly",
     );
@@ -585,6 +593,36 @@ describe("stripe checkout route", () => {
 
     expect(response.status).toBe(409);
     expect(body).toMatchObject({ code: "ALREADY_TRIALING" });
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it("does not consume the annual trial when only a pending checkout redemption exists", async () => {
+    mocks.acquisitionRedemptionFindFirst.mockImplementation(async (args: any) =>
+      args.where.status === "REDEEMED" ? null : { id: "pending_redemption" },
+    );
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.acquisitionRedemptionFindFirst).toHaveBeenCalledWith({
+      where: { userId: "user_1", accessType: "FREE_TRIAL", status: "REDEEMED" },
+      select: { id: true },
+    });
+    expect(mocks.sessionsCreate).toHaveBeenCalled();
+  });
+
+  it("blocks the annual trial after a completed redeemed trial", async () => {
+    mocks.acquisitionRedemptionFindFirst.mockResolvedValue({ id: "redeemed_redemption" });
+
+    const response = await POST(
+      checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body).toMatchObject({ code: "TRIAL_ALREADY_REDEEMED" });
     expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
 });

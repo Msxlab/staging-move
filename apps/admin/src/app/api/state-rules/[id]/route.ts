@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 
 export async function GET(
   _request: NextRequest,
@@ -27,6 +27,12 @@ export async function PATCH(
     const session = await requirePermission("state_rules", "canUpdate", { minimumRole: "ADMIN" });
     const { id } = await params;
     const body = await request.json();
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
+      operation: "state_rule_mutation",
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
 
     const existing = await prisma.stateRule.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -65,6 +71,13 @@ export async function DELETE(
   try {
     const session = await requirePermission("state_rules", "canDelete", { minimumRole: "ADMIN" });
     const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
+      operation: "state_rule_mutation",
+    });
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
 
     const rule = await prisma.stateRule.findUnique({ where: { id } });
     if (!rule) return NextResponse.json({ error: "Not found" }, { status: 404 });

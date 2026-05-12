@@ -48,7 +48,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
+vi.mock("@/lib/db", () => ({ prisma: mocks.prisma, prismaUnsafe: mocks.prisma }));
 vi.mock("@/lib/auth", () => ({
   requirePermission: mocks.requirePermission,
   requirePasswordConfirm: mocks.requirePasswordConfirm,
@@ -123,6 +123,78 @@ describe("backup creation safety policy", () => {
       uploadedAt: "2026-04-24T00:00:00.000Z",
       reason: null,
     });
+  });
+
+  it("blocks backup creation when the caller is not SUPER_ADMIN", async () => {
+    mocks.requirePermission.mockRejectedValue(new Error("FORBIDDEN"));
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        type: "FULL",
+        tables: ["users"],
+        confirmPassword: "correct horse",
+      }),
+    );
+
+    expect(res.status).toBe(403);
+    expect(mocks.requirePermission).toHaveBeenCalledWith(
+      "settings",
+      "canCreate",
+      { minimumRole: "SUPER_ADMIN" },
+    );
+    expect(mocks.requirePasswordConfirm).not.toHaveBeenCalled();
+    expect(mocks.prisma.backupRecord.create).not.toHaveBeenCalled();
+  });
+
+  it("requires MFA step-up before creating a full database backup", async () => {
+    mocks.requirePasswordConfirm.mockResolvedValue({
+      confirmed: false,
+      error: "MFA verification required for this operation.",
+      requiresMfa: true,
+    });
+
+    const { POST } = await import("./route");
+    const res = await POST(
+      jsonRequest({
+        type: "FULL",
+        tables: ["users"],
+        confirmPassword: "correct horse",
+      }),
+    );
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toMatchObject({
+      requiresPassword: true,
+      requiresMfa: true,
+    });
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.anything(),
+      "correct horse",
+      expect.objectContaining({
+        operation: "backup_create",
+        requireMfa: true,
+      }),
+    );
+    expect(mocks.prisma.backupRecord.create).not.toHaveBeenCalled();
+  });
+
+  it("does not allow audit_logs fallback permission to create backups", async () => {
+    const { POST } = await import("./route");
+    await POST(
+      jsonRequest({
+        type: "FULL",
+        tables: ["users"],
+        confirmPassword: "correct horse",
+        mfaCode: "123456",
+      }),
+    );
+
+    expect(mocks.requirePermission).toHaveBeenCalledWith(
+      "settings",
+      "canCreate",
+      { minimumRole: "SUPER_ADMIN" },
+    );
   });
 
   it("fails closed in production when FIELD_ENCRYPTION_KEY is missing", async () => {

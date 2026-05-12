@@ -10,6 +10,7 @@ type RuntimeConfigCatalogStatus =
   | "Missing"
   | "Invalid"
   | "Conflict"
+  | "Needs review"
   | "Not required in this environment"
   | "Build-time only"
   | "Manual console action required";
@@ -23,7 +24,7 @@ type RuntimeConfigCatalogSource =
   | "Missing"
   | "Default";
 
-interface RuntimeConfigCatalogItem {
+export interface RuntimeConfigCatalogItem {
   key: string;
   label: string;
   description: string;
@@ -54,6 +55,7 @@ const STATUS_TONE: Record<RuntimeConfigCatalogStatus, "success" | "warning" | "d
   "Missing": "danger",
   "Invalid": "danger",
   "Conflict": "warning",
+  "Needs review": "warning",
   "Not required in this environment": "neutral",
   "Build-time only": "neutral",
   "Manual console action required": "warning",
@@ -65,12 +67,67 @@ const EDITABLE_LABEL: Record<RuntimeConfigCatalogEditable, string> = {
   No: "Deployment env only",
 };
 
+export interface RuntimeConfigStepUpForm {
+  value: string;
+  note: string;
+  confirmPassword: string;
+  mfaCode: string;
+  backupCode: string;
+}
+
+const EMPTY_FORM: RuntimeConfigStepUpForm = {
+  value: "",
+  note: "",
+  confirmPassword: "",
+  mfaCode: "",
+  backupCode: "",
+};
+
+function optionalStepUpValue(value: string) {
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+export function clearRuntimeConfigStepUp(form: RuntimeConfigStepUpForm): RuntimeConfigStepUpForm {
+  return {
+    ...form,
+    confirmPassword: "",
+    mfaCode: "",
+    backupCode: "",
+  };
+}
+
+export function buildRuntimeConfigUpdatePayload(key: string, form: RuntimeConfigStepUpForm) {
+  return {
+    key,
+    value: form.value,
+    note: form.note,
+    confirmPassword: form.confirmPassword,
+    mfaCode: optionalStepUpValue(form.mfaCode),
+    backupCode: optionalStepUpValue(form.backupCode),
+  };
+}
+
+export function buildRuntimeConfigDeletePayload(key: string, form: RuntimeConfigStepUpForm) {
+  return {
+    key,
+    confirmPassword: form.confirmPassword,
+    mfaCode: optionalStepUpValue(form.mfaCode),
+    backupCode: optionalStepUpValue(form.backupCode),
+  };
+}
+
+export function getRuntimeConfigDisplayValue(item: Pick<RuntimeConfigCatalogItem, "maskedValue">) {
+  return item.maskedValue || "Not configured";
+}
+
 export default function RuntimeConfigClient() {
   const [configs, setConfigs] = useState<RuntimeConfigCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [savingKey, setSavingKey] = useState<string | null>(null);
-  const [form, setForm] = useState({ value: "", note: "", confirmPassword: "" });
+  const [form, setForm] = useState<RuntimeConfigStepUpForm>(EMPTY_FORM);
+  const [stepUpHint, setStepUpHint] = useState<string | null>(null);
 
   const grouped = useMemo(() => {
     return configs.reduce<Record<string, RuntimeConfigCatalogItem[]>>((acc, item) => {
@@ -100,32 +157,40 @@ export default function RuntimeConfigClient() {
   }, []);
 
   async function save(key: string) {
+    if (savingKey) return;
     setSavingKey(key);
     try {
       const res = await fetch("/api/runtime-config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key, ...form }),
+        body: JSON.stringify(buildRuntimeConfigUpdatePayload(key, form)),
       });
       const data = await res.json();
+      if (!res.ok && data.requiresMfa) {
+        setStepUpHint("MFA code or backup code is required for this change.");
+      }
       if (!res.ok) throw new Error(data.error || "Failed to save config");
       toast.success("Runtime config updated");
       setEditingKey(null);
-      setForm({ value: "", note: "", confirmPassword: "" });
+      setStepUpHint(null);
+      setForm({ ...EMPTY_FORM });
       await load();
     } catch (error: any) {
       toast.error(error?.message || "Failed to save config");
+      setForm((prev) => clearRuntimeConfigStepUp(prev));
     } finally {
       setSavingKey(null);
     }
   }
 
   async function reset(key: string) {
+    if (savingKey) return;
     const confirmAction = window.confirm("Reset this key to ENV fallback?");
     if (!confirmAction) return;
 
     if (!form.confirmPassword) {
       toast.error("Password confirmation required");
+      setForm((prev) => clearRuntimeConfigStepUp(prev));
       return;
     }
 
@@ -134,16 +199,21 @@ export default function RuntimeConfigClient() {
       const res = await fetch("/api/runtime-config", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key, confirmPassword: form.confirmPassword }),
+        body: JSON.stringify(buildRuntimeConfigDeletePayload(key, form)),
       });
       const data = await res.json();
+      if (!res.ok && data.requiresMfa) {
+        setStepUpHint("MFA code or backup code is required for this reset.");
+      }
       if (!res.ok) throw new Error(data.error || "Failed to reset config");
       toast.success("Runtime config reset to ENV fallback");
       setEditingKey(null);
-      setForm({ value: "", note: "", confirmPassword: "" });
+      setStepUpHint(null);
+      setForm({ ...EMPTY_FORM });
       await load();
     } catch (error: any) {
       toast.error(error?.message || "Failed to reset config");
+      setForm((prev) => clearRuntimeConfigStepUp(prev));
     } finally {
       setSavingKey(null);
     }
@@ -223,7 +293,7 @@ export default function RuntimeConfigClient() {
                             <div><span className="font-medium text-foreground">Key:</span> <span className="font-mono">{item.key}</span></div>
                             <div><span className="font-medium text-foreground">Scope:</span> {item.scope}</div>
                             <div><span className="font-medium text-foreground">Source:</span> {item.source === "Missing" ? "—" : item.source}</div>
-                            <div><span className="font-medium text-foreground">Value:</span> {item.maskedValue || "Not configured"}</div>
+                            <div><span className="font-medium text-foreground">Value:</span> {getRuntimeConfigDisplayValue(item)}</div>
                             {item.validation ? (
                               <div><span className="font-medium text-foreground">Validation:</span> {item.validation}</div>
                             ) : null}
@@ -239,7 +309,8 @@ export default function RuntimeConfigClient() {
                             onClick={() => {
                               if (editLocked) return;
                               setEditingKey(item.key);
-                              setForm({ value: "", note: "", confirmPassword: "" });
+                              setStepUpHint(null);
+                              setForm({ ...EMPTY_FORM });
                             }}
                             className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
                             title={editLocked ? "Deployment-only key — update in DigitalOcean env." : undefined}
@@ -251,6 +322,11 @@ export default function RuntimeConfigClient() {
 
                       {isEditing && (
                         <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-border bg-background/50 p-4 lg:grid-cols-2">
+                          {stepUpHint ? (
+                            <div className="lg:col-span-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+                              {stepUpHint}
+                            </div>
+                          ) : null}
                           <div className="lg:col-span-2">
                             <label className="mb-1 block text-sm font-medium text-muted-foreground">New value</label>
                             <textarea
@@ -279,17 +355,39 @@ export default function RuntimeConfigClient() {
                               placeholder="Required"
                             />
                           </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-muted-foreground">MFA code</label>
+                            <input
+                              inputMode="numeric"
+                              autoComplete="one-time-code"
+                              value={form.mfaCode}
+                              onChange={(event) => setForm((prev) => ({ ...prev, mfaCode: event.target.value }))}
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              placeholder="Authenticator code"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-sm font-medium text-muted-foreground">Backup code</label>
+                            <input
+                              type="password"
+                              autoComplete="one-time-code"
+                              value={form.backupCode}
+                              onChange={(event) => setForm((prev) => ({ ...prev, backupCode: event.target.value }))}
+                              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                              placeholder="Recovery code"
+                            />
+                          </div>
                           <div className="lg:col-span-2 flex flex-wrap gap-2">
                             <button
                               onClick={() => void save(item.key)}
-                              disabled={savingKey === item.key}
+                              disabled={Boolean(savingKey)}
                               className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                             >
                               <Save className="h-4 w-4" /> {savingKey === item.key ? "Saving..." : "Save Override"}
                             </button>
                             <button
                               onClick={() => void reset(item.key)}
-                              disabled={savingKey === item.key}
+                              disabled={Boolean(savingKey)}
                               className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
                             >
                               <EyeOff className="h-4 w-4" /> Reset to ENV
@@ -297,7 +395,8 @@ export default function RuntimeConfigClient() {
                             <button
                               onClick={() => {
                                 setEditingKey(null);
-                                setForm({ value: "", note: "", confirmPassword: "" });
+                                setStepUpHint(null);
+                                setForm({ ...EMPTY_FORM });
                               }}
                               className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-accent"
                             >

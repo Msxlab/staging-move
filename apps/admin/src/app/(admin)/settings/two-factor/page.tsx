@@ -31,6 +31,9 @@ export default function TwoFactorPage() {
   const [loading, setLoading] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
+  const [disableMfaCode, setDisableMfaCode] = useState("");
+  const [disableBackupCode, setDisableBackupCode] = useState("");
+  const [disableStepUpHint, setDisableStepUpHint] = useState<string | null>(null);
   const [disabling, setDisabling] = useState(false);
   const [showDisable, setShowDisable] = useState(false);
 
@@ -94,18 +97,32 @@ export default function TwoFactorPage() {
       const res = await fetch("/api/auth/mfa/disable", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword: disablePassword }),
+        body: JSON.stringify({
+          confirmPassword: disablePassword,
+          mfaCode: disableMfaCode.trim() || undefined,
+          backupCode: disableBackupCode.trim() || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (data.requiresMfa) {
+          setDisableStepUpHint("Enter an authenticator code or a backup code to disable 2FA.");
+        }
+        setDisablePassword("");
+        setDisableMfaCode("");
+        setDisableBackupCode("");
         toast.error(data.error || "Failed to disable");
         return;
       }
       setStatus("disabled");
       setShowDisable(false);
       setDisablePassword("");
+      setDisableMfaCode("");
+      setDisableBackupCode("");
+      setDisableStepUpHint(null);
       setSetupStep("idle");
-      toast.success("Two-factor authentication disabled");
+      toast.success("Two-factor authentication disabled. Sign in again.");
+      window.location.assign("/login");
     } catch { toast.error("Failed to disable MFA"); }
     finally { setDisabling(false); }
   }
@@ -399,6 +416,26 @@ export default function TwoFactorPage() {
                 className={inputCls}
                 onKeyDown={(e) => e.key === "Enter" && handleDisable()}
               />
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={disableMfaCode}
+                onChange={(e) => setDisableMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="Authenticator code"
+                className={inputCls}
+              />
+              <input
+                type="text"
+                maxLength={16}
+                value={disableBackupCode}
+                onChange={(e) => setDisableBackupCode(e.target.value.toUpperCase().slice(0, 16))}
+                placeholder="Backup code"
+                className={inputCls}
+              />
+              {disableStepUpHint && (
+                <p className="text-xs text-tone-honey-fg">{disableStepUpHint}</p>
+              )}
               <div className="flex gap-2">
                 <button onClick={handleDisable} disabled={disabling || !disablePassword}
                   className="flex items-center gap-2 rounded-lg bg-destructive px-5 py-2.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50">

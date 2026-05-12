@@ -93,8 +93,7 @@
       ],
       "permissions": [
         "INTERNET",
-        "VIBRATE",
-        "RECEIVE_BOOT_COMPLETED"
+        "VIBRATE"
       ],
       "blockedPermissions": [
         "android.permission.CAMERA",

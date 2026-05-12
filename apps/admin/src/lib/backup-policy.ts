@@ -24,6 +24,9 @@ export interface BackupArchivePolicy {
 
 export const BACKUP_ARCHIVE_WARN_BYTES = 500 * 1024 * 1024;
 export const BACKUP_ARCHIVE_MAX_BYTES = 1024 * 1024 * 1024;
+export const MAX_BACKUP_IMPORT_BYTES = 25 * 1024 * 1024;
+export const MAX_BACKUP_VERIFY_BYTES = 25 * 1024 * 1024;
+export const MAX_BACKUP_DOWNLOAD_BYTES = 50 * 1024 * 1024;
 
 function normalizeEnvValue(value: string | undefined): string {
   return typeof value === "string" ? value.trim() : "";
@@ -118,4 +121,14 @@ export function evaluateBackupArchiveSize(bytes: number): {
   }
 
   return { ok: true, warning: null };
+}
+
+export function requestBodyTooLarge(
+  request: { headers: Headers },
+  maxBytes: number,
+): boolean {
+  const raw = request.headers.get("content-length");
+  if (!raw) return false;
+  const bytes = Number(raw);
+  return Number.isFinite(bytes) && bytes > maxBytes;
 }

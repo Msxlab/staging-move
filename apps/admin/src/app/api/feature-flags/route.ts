@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -19,8 +19,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canCreate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { name, description, enabled, targetType, targetValue } = await req.json();
+    const { name, description, enabled, targetType, targetValue, confirmPassword } = await req.json();
     if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write" });
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
 
     const existing = await prisma.featureFlag.findUnique({ where: { name } });
     if (existing) return NextResponse.json({ error: "Flag already exists" }, { status: 409 });
@@ -53,8 +57,12 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canUpdate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { id, enabled, description, targetType, targetValue } = await req.json();
+    const { id, enabled, description, targetType, targetValue, confirmPassword } = await req.json();
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write" });
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
     const existing = await prisma.featureFlag.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Flag not found" }, { status: 404 });
 
@@ -94,7 +102,11 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canDelete", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
-    const { id } = await req.json();
+    const { id, confirmPassword } = await req.json();
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write" });
+    if (!confirm.confirmed) {
+      return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+    }
     const existing = await prisma.featureFlag.findUnique({ where: { id } });
     if (!existing) return NextResponse.json({ error: "Flag not found" }, { status: 404 });
     await prisma.featureFlag.delete({ where: { id } });

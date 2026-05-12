@@ -7,6 +7,7 @@ vi.mock("@/lib/db", () => ({
       findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      upsert: vi.fn(),
     },
     service: {
       findMany: vi.fn(),
@@ -36,13 +37,15 @@ vi.mock("@/lib/rate-limit", () => ({
 
 import { prisma } from "@/lib/db";
 import { requireAppMutationUser } from "@/lib/api-gates";
-import { POST } from "./route";
+import { GET, POST } from "./route";
 
 const requireAppMutationUserMock = requireAppMutationUser as unknown as Mock;
 const budgetMock = prisma.budget as unknown as {
+  findMany: Mock;
   findFirst: Mock;
   create: Mock;
   update: Mock;
+  upsert: Mock;
 };
 const serviceMock = prisma.service as unknown as { findMany: Mock };
 
@@ -52,6 +55,8 @@ describe("budget route", () => {
     requireAppMutationUserMock.mockResolvedValue("user-1");
     budgetMock.findFirst.mockResolvedValue(null);
     budgetMock.create.mockImplementation(({ data }) => Promise.resolve({ id: "budget-1", ...data }));
+    budgetMock.findMany.mockResolvedValue([]);
+    budgetMock.upsert.mockImplementation(({ create, update }) => Promise.resolve({ id: "budget-1", ...create, ...update }));
     serviceMock.findMany.mockResolvedValue([
       {
         id: "monthly",
@@ -103,12 +108,20 @@ describe("budget route", () => {
 
     expect(response.status).toBe(201);
     expect(body.budget.actualExpenses).toBe(250);
-    expect(budgetMock.create).toHaveBeenCalledWith(
+    expect(budgetMock.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
+        where: {
+          userId_scopeKey_month: {
+            userId: "user-1",
+            scopeKey: "__global__",
+            month: new Date("2026-04-01T00:00:00.000Z"),
+          },
+        },
+        create: expect.objectContaining({
           plannedExpenses: 300,
           actualExpenses: 250,
           categoryBreakdown: JSON.stringify({ Utilities: 150 }),
+          scopeKey: "__global__",
         }),
       }),
     );
@@ -137,6 +150,71 @@ describe("budget route", () => {
 
     expect(response.status).toBe(status);
     expect(body.code).toBe(code);
-    expect(budgetMock.create).not.toHaveBeenCalled();
+    expect(budgetMock.upsert).not.toHaveBeenCalled();
+  });
+
+  it("normalizes different timestamps in the same UTC month to one budget scope", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          month: "2026-04-20T23:59:59.000Z",
+          year: 2026,
+          plannedExpenses: 300,
+        }),
+      }) as any,
+    );
+
+    expect(response.status).toBe(201);
+    expect(budgetMock.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        userId_scopeKey_month: {
+          userId: "user-1",
+          scopeKey: "__global__",
+          month: new Date("2026-04-01T00:00:00.000Z"),
+        },
+      },
+    }));
+  });
+
+  it("uses address-specific scope keys separately from global budgets", async () => {
+    (prisma.address.findUnique as Mock).mockResolvedValue({ id: "addr-1", userId: "user-1" });
+
+    const response = await POST(
+      new Request("http://localhost/api/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          addressId: "addr-1",
+          month: "2026-04-01",
+          year: 2026,
+          plannedExpenses: 300,
+        }),
+      }) as any,
+    );
+
+    expect(response.status).toBe(201);
+    expect(budgetMock.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: {
+        userId_scopeKey_month: {
+          userId: "user-1",
+          scopeKey: "addr-1",
+          month: new Date("2026-04-01T00:00:00.000Z"),
+        },
+      },
+    }));
+  });
+
+  it("rejects invalid GET month filters instead of querying a mismatched date", async () => {
+    const { requireDbUserId } = await import("@/lib/auth");
+    (requireDbUserId as unknown as Mock).mockResolvedValue("user-1");
+
+    const response = await GET(new Request("http://localhost/api/budget?month=not-a-month") as any);
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toBe("Invalid month");
+    expect(budgetMock.findMany).not.toHaveBeenCalled();
   });
 });

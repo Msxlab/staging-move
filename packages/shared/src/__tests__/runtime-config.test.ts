@@ -8,6 +8,8 @@ import {
   isRuntimeConfigDbOverrideEnabled,
   maskRuntimeConfigValue,
   RUNTIME_CONFIG_DEFINITIONS,
+  validateRuntimeConfigValueShape,
+  resolveRuntimeConfigResolution,
   shouldPreferEnvRuntimeConfigValue,
 } from "../runtime-config";
 
@@ -183,5 +185,150 @@ describe("RUNTIME_CONFIG_DEFINITIONS catalog hygiene", () => {
       expect(def, `definition missing for ${key}`).not.toBeNull();
       expect(def?.runtimeEditable, `${key} should be runtimeEditable=false`).toBe(false);
     }
+  });
+});
+
+describe("validateRuntimeConfigValueShape hardening", () => {
+  it("rejects Stripe test secret keys in production-like environments", () => {
+    expect(
+      validateRuntimeConfigValueShape("STRIPE_SECRET_KEY", "sk_test_1234567890", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "stripe_live_secret_required" });
+  });
+
+  it("rejects weak placeholder values for prefixed Stripe and email secrets", () => {
+    const cases = [
+      ["STRIPE_SECRET_KEY", "sk_live_secret"],
+      ["STRIPE_SECRET_KEY", "sk_test_secret"],
+      ["NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_live_secret"],
+      ["NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_secret"],
+      ["STRIPE_WEBHOOK_SECRET", "whsec_secret"],
+      ["STRIPE_WEBHOOK_SECRET", "whsec_secret_secret_secret"],
+      ["RESEND_API_KEY", "re_secret"],
+      ["RESEND_API_KEY", "re_test"],
+      ["RESEND_WEBHOOK_SECRET", "secret"],
+      ["RESEND_WEBHOOK_SECRET", "changeme"],
+      ["RESEND_WEBHOOK_SECRET", "password"],
+      ["RESEND_WEBHOOK_SECRET", "123456"],
+    ] as const;
+
+    for (const [key, value] of cases) {
+      expect(
+        validateRuntimeConfigValueShape(key, value, { productionLike: false }),
+        `${key}=${value} should be rejected`,
+      ).toMatchObject({ ok: false });
+    }
+  });
+
+  it("keeps non-placeholder prefixed values syntactically valid outside production-like environments", () => {
+    expect(
+      validateRuntimeConfigValueShape("STRIPE_SECRET_KEY", "sk_test_1234567890", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_1234567890", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("STRIPE_WEBHOOK_SECRET", "whsec_abcdefghijklmnopqrstuvwxyz", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("RESEND_API_KEY", "re_abcdef012345", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+  });
+
+  it("rejects Stripe test publishable keys in production-like environments", () => {
+    expect(
+      validateRuntimeConfigValueShape("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_1234567890", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "stripe_live_publishable_required" });
+  });
+
+  it("allows Stripe test keys outside production-like environments", () => {
+    expect(
+      validateRuntimeConfigValueShape("STRIPE_SECRET_KEY", "sk_test_1234567890", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+    expect(
+      validateRuntimeConfigValueShape("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", "pk_test_1234567890", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: true });
+  });
+
+  it("requires Stripe price IDs to use the price_ prefix", () => {
+    expect(
+      validateRuntimeConfigValueShape("STRIPE_PRICE_INDIVIDUAL_MONTHLY", "prod_123", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "stripe_price_prefix" });
+    expect(
+      validateRuntimeConfigValueShape("STRIPE_PRICE_INDIVIDUAL_MONTHLY", "price_123", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: true });
+  });
+
+  it("rejects invalid storage providers and unsafe storage endpoints", () => {
+    expect(
+      validateRuntimeConfigValueShape("BACKUP_STORAGE_PROVIDER", "ftp", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "storage_provider" });
+    expect(
+      validateRuntimeConfigValueShape("BACKUP_STORAGE_ENDPOINT", "https://localhost", {
+        productionLike: true,
+      }),
+    ).toMatchObject({ ok: false, reason: "internal_or_loopback_host" });
+  });
+
+  it("rejects masked display values and malformed private keys", () => {
+    expect(
+      validateRuntimeConfigValueShape("RESEND_API_KEY", "re***1234", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "masked_value" });
+    expect(
+      validateRuntimeConfigValueShape("APPLE_OAUTH_PRIVATE_KEY", "not-a-pem-private-key", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "private_key_pem_required" });
+  });
+
+  it("requires Google Play service account-like email addresses", () => {
+    expect(
+      validateRuntimeConfigValueShape("GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL", "ops@example.com", {
+        productionLike: false,
+      }),
+    ).toMatchObject({ ok: false, reason: "service_account_email_required" });
+    expect(
+      validateRuntimeConfigValueShape(
+        "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
+        "billing-bot@project.iam.gserviceaccount.com",
+        { productionLike: false },
+      ),
+    ).toMatchObject({ ok: true });
+  });
+
+  it("marks weakly-validated generic IDs as needs review instead of verified", () => {
+    const resolution = resolveRuntimeConfigResolution({
+      definition: getRuntimeConfigDefinition("GOOGLE_OAUTH_CLIENT_ID")!,
+      dbValue: "google-client-id",
+      env: {},
+      productionLike: false,
+    });
+
+    expect(resolution.configured).toBe(true);
+    expect(resolution.status).toBe("Needs review");
+    expect(resolution.validation).toBe("present_but_not_fully_verified");
   });
 });

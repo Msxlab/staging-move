@@ -1,0 +1,1 @@
+ALTER TABLE `AdminAuditLog` MODIFY `action` VARCHAR(64) NOT NULL;

@@ -37,6 +37,10 @@ EXPO_PUBLIC_APP_URL=http://YOUR_LOCAL_IP:3000
 
 ## Building
 
+Run EAS from `apps/mobile` so it uses this app's `app.json`, `eas.json`,
+bundle identifier, package name, and EAS project ID. From the monorepo root,
+use the `pnpm mobile:*` scripts or `pnpm --dir apps/mobile ...`.
+
 ```bash
 # Android APK (for testing)
 eas build -p android --profile staging-preview

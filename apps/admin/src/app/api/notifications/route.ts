@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requirePermission } from "@/lib/auth";
+import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { parsePaginationParams } from "@/lib/pagination";
 import { writeAdminAudit, getAuditRequestMeta } from "@/lib/audit";
 import { dispatchEmailBatch, dispatchPushBatch } from "@/lib/notify-dispatch";
@@ -52,6 +52,7 @@ const notificationCreateSchema = z
     channel: z.enum(SUPPORTED_ADMIN_SEND_CHANNELS).optional(),
     userId: z.string().trim().min(1).max(60).optional(),
     broadcast: z.boolean().optional(),
+    confirmPassword: z.string().max(256).optional(),
     sendAt: z
       .string()
       .datetime({ offset: true })
@@ -133,7 +134,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    const { type, title, body: msgBody, href, broadcast, sendAt, userId } = parsed.data;
+    const { type, title, body: msgBody, href, broadcast, sendAt, userId, confirmPassword } = parsed.data;
     const channel: SupportedChannel = parsed.data.channel ?? "IN_APP";
     const resolvedType = type ?? "SYSTEM";
 
@@ -160,6 +161,13 @@ export async function POST(req: NextRequest) {
     const deliveredAt = new Date();
 
     if (broadcast) {
+      const confirm = await requirePasswordConfirm(session, confirmPassword, {
+        operation: "notification_broadcast",
+      });
+      if (!confirm.confirmed) {
+        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      }
+
       // Hard cap on audience size — synchronous fan-out at request time
       // is not a substitute for a worker. Above the cap the operator
       // must use a dedicated batch job (not yet implemented). Step-up

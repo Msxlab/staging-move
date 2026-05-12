@@ -7,6 +7,7 @@ import { prisma, prismaUnsafe } from "@/lib/db";
 import { parseBackupArchive } from "@/lib/backup-archive";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import {
+  BACKUP_TABLE_ORDER,
   BACKUP_TABLES,
   getBackupDependencyWarnings,
   getReplaceSafetyIssues,
@@ -18,6 +19,19 @@ import {
   assertRestoreTargetAllowed,
 } from "@/lib/backup-restore-guard";
 import { redactBackupSecretText } from "@/lib/backup-metadata";
+import {
+  MAX_BACKUP_IMPORT_BYTES,
+  requestBodyTooLarge,
+} from "@/lib/backup-policy";
+import {
+  RestoreRunLockError,
+  acquireRestoreRunLock,
+  markRestoreRunLockFailed,
+  releaseRestoreRunLock,
+} from "@/lib/backup-lock";
+import { createBackupJob } from "@/lib/backup-job";
+import { writeBackupAudit } from "@/lib/backup-audit";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 const IMPORT_MODEL_OPS = {
   users: {
@@ -292,16 +306,131 @@ function cleanImportRecord(tableName: keyof typeof BACKUP_TABLES, record: any) {
   return cleanRecord;
 }
 
+const ADMIN_IDENTITY_TABLES = new Set(["adminUsers", "adminPermissions"]);
+const ADMIN_RELATED_TABLES = new Set([
+  "adminUsers",
+  "adminPermissions",
+  "adminLoginLogs",
+  "adminAuditLogs",
+]);
+
+async function assertAdminRestorePreflight(input: {
+  mode: "MERGE" | "REPLACE" | "DRY_RUN";
+  selectedTables: string[];
+  data: Record<string, any[]>;
+  currentAdminId: string;
+}) {
+  const touchesAdminTables = input.selectedTables.some((table) =>
+    ADMIN_RELATED_TABLES.has(table),
+  );
+  if (!touchesAdminTables || input.mode === "DRY_RUN") return;
+
+  const breakGlass = process.env.ALLOW_ADMIN_TABLE_RESTORE === "true";
+  const replacingIdentity =
+    input.mode === "REPLACE" &&
+    input.selectedTables.some((table) => ADMIN_IDENTITY_TABLES.has(table));
+
+  if (replacingIdentity && !breakGlass) {
+    throw new RestoreTargetGuardError(
+      "ADMIN_IDENTITY_RESTORE_BLOCKED",
+      "REPLACE restore of admin users or permissions requires the offline break-glass runbook.",
+      403,
+      { tables: input.selectedTables.filter((table) => ADMIN_IDENTITY_TABLES.has(table)) },
+    );
+  }
+
+  const archiveAdminUsers = Array.isArray(input.data.adminUsers)
+    ? input.data.adminUsers
+    : null;
+  const activeSuperAdminInArchive = archiveAdminUsers?.some(
+    (admin: any) => admin?.role === "SUPER_ADMIN" && admin?.isActive !== false,
+  );
+  const currentAdminInArchive = archiveAdminUsers?.find(
+    (admin: any) => admin?.id === input.currentAdminId,
+  );
+
+  if (archiveAdminUsers && !activeSuperAdminInArchive) {
+    throw new RestoreTargetGuardError(
+      "ADMIN_SUPER_ADMIN_MISSING_AFTER_RESTORE",
+      "Admin table restore would leave the target without an active SUPER_ADMIN.",
+      403,
+    );
+  }
+
+  if (
+    archiveAdminUsers &&
+    (!currentAdminInArchive ||
+      currentAdminInArchive.role !== "SUPER_ADMIN" ||
+      currentAdminInArchive.isActive === false) &&
+    !breakGlass
+  ) {
+    throw new RestoreTargetGuardError(
+      "CURRENT_ADMIN_RESTORE_BLOCKED",
+      "Admin table restore would delete, deactivate, or downgrade the current admin.",
+      403,
+    );
+  }
+
+  if (!archiveAdminUsers) {
+    const activeSuperAdmin = await prisma.adminUser.count({
+      where: { role: "SUPER_ADMIN", isActive: true },
+    });
+    if (activeSuperAdmin < 1) {
+      throw new RestoreTargetGuardError(
+        "ADMIN_SUPER_ADMIN_MISSING",
+        "No active SUPER_ADMIN exists before admin-related restore.",
+        403,
+      );
+    }
+  }
+}
+
+function getImportAuditAction(mode: string, success: boolean) {
+  if (mode === "DRY_RUN") {
+    return success
+      ? "BACKUP_IMPORT_DRY_RUN_SUCCESS"
+      : "BACKUP_IMPORT_DRY_RUN_FAILED";
+  }
+  if (mode === "REPLACE") {
+    return success
+      ? "BACKUP_RESTORE_REPLACE_SUCCESS"
+      : "BACKUP_RESTORE_REPLACE_FAILED";
+  }
+  return success
+    ? "BACKUP_RESTORE_MERGE_SUCCESS"
+    : "BACKUP_RESTORE_MERGE_FAILED";
+}
+
 // POST /api/backup/import — import data from a backup JSON
 // Supports modes: MERGE (default), REPLACE, DRY_RUN
 // Requires HMAC signature verification for integrity
 export async function POST(request: NextRequest) {
+  let session: Awaited<ReturnType<typeof requirePermission>> | null = null;
+  let restoreLock: any = null;
+  let safetyBackupId: string | null = null;
+  let selectedTablesForAudit: string[] = [];
+  let modeForAudit = "MERGE";
   try {
-    const session = await requirePermission("settings", "canUpdate", {
+    session = await requirePermission("settings", "canUpdate", {
       minimumRole: "SUPER_ADMIN",
     });
+    if (requestBodyTooLarge(request, MAX_BACKUP_IMPORT_BYTES)) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_IMPORT_DRY_RUN_FAILED",
+        entityId: "import",
+        request,
+        metadata: { maxBytes: MAX_BACKUP_IMPORT_BYTES },
+        error: "backup import payload too large",
+      });
+      return NextResponse.json(
+        { error: "Backup archive is too large to import synchronously." },
+        { status: 413 },
+      );
+    }
     const body = await request.json();
     const { tables, mode = "MERGE", confirmPassword, mfaCode, backupCode } = body;
+    modeForAudit = mode;
     const { data, signature, rawContent, encryptedArchive, metadata: archiveMetadata } =
       resolveImportPayload(body);
 
@@ -310,14 +439,29 @@ export async function POST(request: NextRequest) {
     // too, scoped under a separate operation so a confirmed dry-run does
     // not silently authorize a follow-up REPLACE.
     const stepUpOperation = mode === "DRY_RUN" ? "backup_import_dry_run" : "backup_import";
-    const requireMfaForOp = mode === "REPLACE" || mode === "MERGE";
+    const requireMfaForOp = true;
     const confirm = await requirePasswordConfirm(session, confirmPassword, {
       operation: stepUpOperation,
       requireMfa: requireMfaForOp,
       mfaCode: typeof mfaCode === "string" ? mfaCode : undefined,
       backupCode: typeof backupCode === "string" ? backupCode : undefined,
+      ipAddress: getAuditRequestMeta(request).ipAddress,
+      userAgent: getAuditRequestMeta(request).userAgent,
     });
     if (!confirm.confirmed) {
+      await writeBackupAudit({
+        session,
+        action:
+          mode === "DRY_RUN"
+            ? "BACKUP_IMPORT_DRY_RUN_FAILED"
+            : mode === "REPLACE"
+              ? "BACKUP_RESTORE_REPLACE_FAILED"
+              : "BACKUP_RESTORE_MERGE_FAILED",
+        entityId: "import",
+        request,
+        metadata: { mode },
+        error: confirm.error || "step-up failed",
+      });
       return NextResponse.json(
         { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa },
         { status: 403 },
@@ -325,6 +469,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!data || typeof data !== "object") {
+      await writeBackupAudit({
+        session,
+        action: getImportAuditAction(mode, false),
+        entityId: "import",
+        request,
+        metadata: { mode },
+        error: "invalid backup data",
+      });
       return NextResponse.json(
         {
           error:
@@ -335,6 +487,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (!["MERGE", "REPLACE", "DRY_RUN"].includes(mode)) {
+      await writeBackupAudit({
+        session,
+        action: getImportAuditAction(mode, false),
+        entityId: "import",
+        request,
+        metadata: { mode },
+        error: "invalid import mode",
+      });
       return NextResponse.json(
         { error: "Invalid mode. Must be MERGE, REPLACE, or DRY_RUN." },
         { status: 400 },
@@ -342,6 +502,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (mode === "REPLACE" && !signature) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_RESTORE_REPLACE_FAILED",
+        entityId: "import",
+        request,
+        metadata: { mode },
+        error: "missing backup signature",
+      });
       return NextResponse.json(
         {
           error:
@@ -351,6 +519,14 @@ export async function POST(request: NextRequest) {
       );
     }
     if ((mode === "MERGE" || mode === "REPLACE") && (!signature || !rawContent)) {
+      await writeBackupAudit({
+        session,
+        action: getImportAuditAction(mode, false),
+        entityId: "import",
+        request,
+        metadata: { mode },
+        error: "missing signed raw content",
+      });
       return NextResponse.json(
         {
           error:
@@ -363,6 +539,14 @@ export async function POST(request: NextRequest) {
     if (signature && rawContent) {
       const isValid = verifyBackupSignature(rawContent, signature);
       if (!isValid) {
+        await writeBackupAudit({
+          session,
+          action: getImportAuditAction(mode, false),
+          entityId: "import",
+          request,
+          metadata: { mode },
+          error: "signature verification failed",
+        });
         return NextResponse.json(
           {
             error:
@@ -383,8 +567,17 @@ export async function POST(request: NextRequest) {
     const requestedTables =
       Array.isArray(tables) && tables.length > 0 ? tables : Object.keys(data);
     const selectedTables = normalizeBackupTables(requestedTables);
+    selectedTablesForAudit = selectedTables;
 
     if (selectedTables.length === 0) {
+      await writeBackupAudit({
+        session,
+        action: getImportAuditAction(mode, false),
+        entityId: "import",
+        request,
+        metadata: { mode },
+        error: "no valid tables",
+      });
       return NextResponse.json(
         { error: "No valid tables found in backup data." },
         { status: 400 },
@@ -395,6 +588,14 @@ export async function POST(request: NextRequest) {
     if (mode === "REPLACE") {
       const replaceSafetyIssues = getReplaceSafetyIssues(selectedTables);
       if (replaceSafetyIssues.length > 0) {
+        await writeBackupAudit({
+          session,
+          action: "BACKUP_RESTORE_REPLACE_FAILED",
+          entityId: "import",
+          request,
+          metadata: { mode, selectedTables, replaceSafetyIssues },
+          error: "unsafe replace table selection",
+        });
         return NextResponse.json(
           {
             error:
@@ -406,6 +607,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    await assertAdminRestorePreflight({
+      mode: mode as "MERGE" | "REPLACE" | "DRY_RUN",
+      selectedTables,
+      data,
+      currentAdminId: session.adminId,
+    });
+
     const results: Record<
       string,
       { imported: number; skipped: number; errors: number; deleted?: number }
@@ -413,6 +621,85 @@ export async function POST(request: NextRequest) {
     let totalImported = 0;
     let totalSkipped = 0;
     let totalErrors = 0;
+
+    if (mode === "MERGE" || mode === "REPLACE") {
+      try {
+        restoreLock = await acquireRestoreRunLock({
+          prismaClient: prisma as any,
+          adminId: session.adminId,
+          mode,
+          tables: selectedTables,
+          metadata: {
+            targetEnvironment:
+              typeof body.targetEnvironment === "string"
+                ? body.targetEnvironment
+                : null,
+          },
+        });
+      } catch (lockError) {
+        await writeBackupAudit({
+          session,
+          action: "BACKUP_RESTORE_LOCK_REJECTED",
+          entityId: "restore-lock",
+          request,
+          metadata: { mode, selectedTables },
+          error: lockError,
+        });
+        if (lockError instanceof RestoreRunLockError) {
+          return NextResponse.json(
+            {
+              error: lockError.message,
+              code: "RESTORE_ALREADY_RUNNING",
+              activeRestoreId: lockError.activeRestoreId,
+            },
+            { status: 409 },
+          );
+        }
+        throw lockError;
+      }
+
+      try {
+        const safety = await createBackupJob({
+          actor: { adminId: session.adminId, email: session.email },
+          type: `PRE_RESTORE_${mode}`,
+          tables: BACKUP_TABLE_ORDER,
+          format: "JSON",
+          request,
+          lockIgnoreActiveIds: [restoreLock.id],
+        });
+        safetyBackupId = safety.backup.id;
+      } catch (safetyError) {
+        await markRestoreRunLockFailed({
+          prismaClient: prisma as any,
+          restoreId: restoreLock.id,
+          error: safetyError,
+          metadata: { mode, selectedTables },
+        });
+        await writeBackupAudit({
+          session,
+          action:
+            mode === "REPLACE"
+              ? "BACKUP_RESTORE_REPLACE_FAILED"
+              : "BACKUP_RESTORE_MERGE_FAILED",
+          entityId: restoreLock.id,
+          request,
+          metadata: { mode, selectedTables, safetyBackupId },
+          error: safetyError,
+        });
+        if (process.env.ALLOW_RESTORE_WITHOUT_SAFETY_BACKUP === "true") {
+          safetyBackupId = null;
+        } else {
+          return NextResponse.json(
+            {
+              error:
+                "Pre-restore safety backup failed. Restore was blocked before mutating data.",
+              detail: redactBackupSecretText(safetyError).slice(0, 500),
+            },
+            { status: 503 },
+          );
+        }
+      }
+    }
 
     if (mode === "DRY_RUN") {
       for (const tableName of selectedTables) {
@@ -452,23 +739,20 @@ export async function POST(request: NextRequest) {
         totalSkipped += wouldSkip;
       }
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "IMPORT_BACKUP_DRY_RUN",
-          entityType: "BackupRecord",
-          entityId: "import",
-          changes: JSON.stringify({
-            mode,
-            tables: selectedTables,
-            totalImported,
-            totalSkipped,
-            signatureVerified,
-            encryptedArchive,
-            dependencyWarnings,
-            restoreWarnings: restoreGuard.warnings,
-          }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_IMPORT_DRY_RUN_SUCCESS",
+        entityId: "import",
+        request,
+        metadata: {
+          mode,
+          selectedTables,
+          totalImported,
+          totalSkipped,
+          signatureVerified,
+          encryptedArchive,
+          dependencyWarnings,
+          restoreWarnings: restoreGuard.warnings,
         },
       });
 
@@ -525,19 +809,21 @@ export async function POST(request: NextRequest) {
           { timeout: 120000 },
         );
       } catch (txError: any) {
-        await prisma.adminAuditLog.create({
-          data: {
-            adminUserId: session.adminId,
-            action: "IMPORT_BACKUP_FAILED",
-            entityType: "BackupRecord",
-            entityId: "import",
-            changes: JSON.stringify({
-              mode,
-              tables: selectedTables,
-              error: redactBackupSecretText(txError).slice(0, 500),
-            }),
-            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-          },
+        if (restoreLock) {
+          await markRestoreRunLockFailed({
+            prismaClient: prisma as any,
+            restoreId: restoreLock.id,
+            error: txError,
+            metadata: { mode, selectedTables, safetyBackupId },
+          });
+        }
+        await writeBackupAudit({
+          session,
+          action: "BACKUP_RESTORE_REPLACE_FAILED",
+          entityId: restoreLock?.id ?? "import",
+          request,
+          metadata: { mode, selectedTables, safetyBackupId },
+          error: txError,
         });
         return NextResponse.json(
           {
@@ -601,19 +887,21 @@ export async function POST(request: NextRequest) {
           { timeout: 120000 },
         );
       } catch (txError: any) {
-        await prisma.adminAuditLog.create({
-          data: {
-            adminUserId: session.adminId,
-            action: "IMPORT_BACKUP_FAILED",
-            entityType: "BackupRecord",
-            entityId: "import",
-            changes: JSON.stringify({
-              mode,
-              tables: selectedTables,
-              error: redactBackupSecretText(txError).slice(0, 500),
-            }),
-            ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-          },
+        if (restoreLock) {
+          await markRestoreRunLockFailed({
+            prismaClient: prisma as any,
+            restoreId: restoreLock.id,
+            error: txError,
+            metadata: { mode, selectedTables, safetyBackupId },
+          });
+        }
+        await writeBackupAudit({
+          session,
+          action: "BACKUP_RESTORE_MERGE_FAILED",
+          entityId: restoreLock?.id ?? "import",
+          request,
+          metadata: { mode, selectedTables, safetyBackupId },
+          error: txError,
         });
         return NextResponse.json(
           {
@@ -626,24 +914,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "IMPORT_BACKUP",
-        entityType: "BackupRecord",
-        entityId: "import",
-        changes: JSON.stringify({
+    if (restoreLock) {
+      await releaseRestoreRunLock({
+        prismaClient: prisma as any,
+        restoreId: restoreLock.id,
+        metadata: {
           mode,
-          tables: selectedTables,
+          selectedTables,
+          safetyBackupId,
           totalImported,
           totalSkipped,
           totalErrors,
-          signatureVerified,
-          encryptedArchive,
-          dependencyWarnings,
-          restoreWarnings: restoreGuard.warnings,
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
+        },
+      });
+    }
+
+    await writeBackupAudit({
+      session,
+      action: getImportAuditAction(mode, true),
+      entityId: restoreLock?.id ?? "import",
+      request,
+      metadata: {
+        mode,
+        selectedTables,
+        safetyBackupId,
+        totalImported,
+        totalSkipped,
+        totalErrors,
+        signatureVerified,
+        encryptedArchive,
+        dependencyWarnings,
+        restoreWarnings: restoreGuard.warnings,
       },
     });
 
@@ -658,6 +959,32 @@ export async function POST(request: NextRequest) {
       summary: { totalImported, totalSkipped, totalErrors },
     });
   } catch (error: any) {
+    if (restoreLock) {
+      await markRestoreRunLockFailed({
+        prismaClient: prisma as any,
+        restoreId: restoreLock.id,
+        error,
+        metadata: {
+          mode: modeForAudit,
+          selectedTables: selectedTablesForAudit,
+          safetyBackupId,
+        },
+      }).catch(() => null);
+    }
+    if (session) {
+      await writeBackupAudit({
+        session,
+        action: getImportAuditAction(modeForAudit, false),
+        entityId: restoreLock?.id ?? "import",
+        request,
+        metadata: {
+          mode: modeForAudit,
+          selectedTables: selectedTablesForAudit,
+          safetyBackupId,
+        },
+        error,
+      });
+    }
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

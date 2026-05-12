@@ -8,6 +8,15 @@ import {
 } from "@/lib/backup-restore-guard";
 
 const mocks = vi.hoisted(() => {
+  class RestoreRunLockError extends Error {
+    activeRestoreId: string;
+    constructor(activeRestoreId: string, message = "Restore already running") {
+      super(message);
+      this.activeRestoreId = activeRestoreId;
+      this.name = "RestoreRunLockError";
+    }
+  }
+
   const prisma = {
     user: {
       count: vi.fn(),
@@ -27,6 +36,8 @@ const mocks = vi.hoisted(() => {
     notification: { count: vi.fn(), findUnique: vi.fn(), create: vi.fn() },
     auditLog: { count: vi.fn(), findUnique: vi.fn(), create: vi.fn() },
     providerGovernanceIssue: { count: vi.fn(), findUnique: vi.fn(), create: vi.fn() },
+    adminUser: { count: vi.fn(), findUnique: vi.fn(), create: vi.fn() },
+    adminPermission: { count: vi.fn(), findUnique: vi.fn(), create: vi.fn() },
     adminAuditLog: {
       create: vi.fn(),
     },
@@ -39,6 +50,11 @@ const mocks = vi.hoisted(() => {
     requirePasswordConfirm: vi.fn(),
     parseBackupArchive: vi.fn(),
     verifyBackupSignature: vi.fn(),
+    RestoreRunLockError,
+    acquireRestoreRunLock: vi.fn(),
+    releaseRestoreRunLock: vi.fn(),
+    markRestoreRunLockFailed: vi.fn(),
+    createBackupJob: vi.fn(),
   };
 });
 
@@ -58,16 +74,35 @@ vi.mock("@/lib/backup-archive", () => ({
   parseBackupArchive: mocks.parseBackupArchive,
 }));
 vi.mock("@/lib/backup-tables", () => ({
+  BACKUP_TABLE_ORDER: ["users", "adminUsers", "adminPermissions"],
   BACKUP_TABLES: {
     users: { model: "user" },
+    adminUsers: { model: "adminUser" },
+    adminPermissions: { model: "adminPermission" },
   },
   getBackupDependencyWarnings: vi.fn(() => []),
   getReplaceSafetyIssues: vi.fn(() => []),
-  normalizeBackupTables: vi.fn((tables: string[]) => tables.filter((table) => table === "users")),
+  normalizeBackupTables: vi.fn((tables: string[]) =>
+    tables.filter((table) =>
+      ["users", "adminUsers", "adminPermissions"].includes(table),
+    ),
+  ),
 }));
 vi.mock("@/lib/shared-encryption", () => ({
   decryptBackup: vi.fn(),
   verifyBackupSignature: mocks.verifyBackupSignature,
+}));
+vi.mock("@/lib/backup-lock", () => ({
+  RestoreRunLockError: mocks.RestoreRunLockError,
+  acquireRestoreRunLock: (...args: unknown[]) =>
+    mocks.acquireRestoreRunLock(...args),
+  releaseRestoreRunLock: (...args: unknown[]) =>
+    mocks.releaseRestoreRunLock(...args),
+  markRestoreRunLockFailed: (...args: unknown[]) =>
+    mocks.markRestoreRunLockFailed(...args),
+}));
+vi.mock("@/lib/backup-job", () => ({
+  createBackupJob: (...args: unknown[]) => mocks.createBackupJob(...args),
 }));
 
 function jsonRequest(body: unknown) {
@@ -88,6 +123,11 @@ describe("backup import signature enforcement", () => {
     mocks.verifyBackupSignature.mockReturnValue(true);
     mocks.prisma.user.count.mockResolvedValue(0);
     mocks.prisma.user.findUnique.mockResolvedValue(null);
+    mocks.prisma.adminUser.count.mockResolvedValue(1);
+    mocks.acquireRestoreRunLock.mockResolvedValue({ id: "restore_1" });
+    mocks.releaseRestoreRunLock.mockResolvedValue({});
+    mocks.markRestoreRunLockFailed.mockResolvedValue({});
+    mocks.createBackupJob.mockResolvedValue({ backup: { id: "safety_1" } });
   });
 
   it("rejects unsigned MERGE imports", async () => {
@@ -125,6 +165,8 @@ describe("backup import signature enforcement", () => {
     const { POST } = await import("./route");
     const res = await POST(jsonRequest({
       mode: "DRY_RUN",
+      confirmPassword: "correct horse",
+      mfaCode: "123456",
       data: { users: [{ id: "user_1" }] },
     }));
 
@@ -133,6 +175,133 @@ describe("backup import signature enforcement", () => {
       mode: "DRY_RUN",
       signatureVerified: false,
     });
+    expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
+      expect.anything(),
+      "correct horse",
+      expect.objectContaining({
+        operation: "backup_import_dry_run",
+        requireMfa: true,
+        mfaCode: "123456",
+      }),
+    );
+  });
+
+  it("rejects oversized import requests before parsing the archive", async () => {
+    const { POST } = await import("./route");
+    const res = await POST(
+      new Request("http://localhost/api/backup/import", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": `${26 * 1024 * 1024}`,
+        },
+        body: "{}",
+      }) as any,
+    );
+
+    expect(res.status).toBe(413);
+    expect(mocks.parseBackupArchive).not.toHaveBeenCalled();
+  });
+
+  it("returns 409 when a concurrent MERGE restore is already running", async () => {
+    mocks.acquireRestoreRunLock.mockRejectedValue(
+      new mocks.RestoreRunLockError("restore_active"),
+    );
+    const { POST } = await import("./route");
+    const target = getCurrentBackupEnvironmentMetadata();
+    const rawContent = JSON.stringify({
+      metadata: {
+        environment: {
+          name: target.name,
+          databaseFingerprint: target.databaseFingerprint,
+        },
+      },
+      data: { users: [{ id: "user_1" }] },
+    });
+    const res = await POST(jsonRequest({
+      mode: "MERGE",
+      confirmPassword: "correct horse",
+      targetEnvironment: target.name,
+      signature: "good",
+      rawContent,
+    }));
+
+    expect(res.status).toBe(409);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "RESTORE_ALREADY_RUNNING",
+      activeRestoreId: "restore_active",
+    });
+    expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("blocks REPLACE of admin identity tables by default", async () => {
+    const target = getCurrentBackupEnvironmentMetadata();
+    const rawContent = JSON.stringify({
+      metadata: {
+        environment: {
+          name: target.name,
+          databaseFingerprint: target.databaseFingerprint,
+        },
+      },
+      data: {
+        adminUsers: [
+          { id: "admin_1", role: "SUPER_ADMIN", isActive: true },
+        ],
+      },
+    });
+
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      mode: "REPLACE",
+      confirmPassword: "correct horse",
+      targetEnvironment: target.name,
+      replaceConfirmation: getReplaceConfirmationPhrase(target),
+      signature: "good",
+      rawContent,
+    }));
+
+    expect(res.status).toBe(403);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "ADMIN_IDENTITY_RESTORE_BLOCKED",
+    });
+    expect(mocks.acquireRestoreRunLock).not.toHaveBeenCalled();
+  });
+
+  it("blocks mutating restore when the pre-restore safety backup fails", async () => {
+    mocks.createBackupJob.mockRejectedValue(new Error("safety backup failed"));
+    const { POST } = await import("./route");
+    const target = getCurrentBackupEnvironmentMetadata();
+    const rawContent = JSON.stringify({
+      metadata: {
+        environment: {
+          name: target.name,
+          databaseFingerprint: target.databaseFingerprint,
+        },
+      },
+      data: { users: [{ id: "user_1" }] },
+    });
+    const res = await POST(jsonRequest({
+      mode: "MERGE",
+      confirmPassword: "correct horse",
+      targetEnvironment: target.name,
+      signature: "good",
+      rawContent,
+    }));
+
+    expect(res.status).toBe(503);
+    expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
+    expect(mocks.markRestoreRunLockFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        restoreId: "restore_1",
+      }),
+    );
+    expect(mocks.prisma.adminAuditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "BACKUP_RESTORE_MERGE_FAILED",
+        }),
+      }),
+    );
   });
 
   it("rejects signed MERGE restore into the wrong target environment", async () => {

@@ -29,6 +29,7 @@ export type RuntimeConfigStatus =
   | "Missing"
   | "Invalid"
   | "Conflict"
+  | "Needs review"
   | "Not required in this environment"
   | "Build-time only"
   | "Manual console action required";
@@ -1052,6 +1053,8 @@ export function isRuntimeConfigRequired(
 export interface RuntimeConfigValidationResult {
   ok: boolean;
   reason: string | null;
+  confidence?: "strong" | "weak";
+  warning?: string | null;
 }
 
 function validEmailAddress(value: string): boolean {
@@ -1094,22 +1097,152 @@ function validateUrl(value: string, options: { requireHttps?: boolean; allowData
   return null;
 }
 
+export interface RuntimeConfigValidationOptions {
+  productionLike?: boolean;
+}
+
+function valid(value: Partial<RuntimeConfigValidationResult> = {}): RuntimeConfigValidationResult {
+  return { ok: true, reason: null, confidence: "strong", ...value };
+}
+
+function invalid(reason: string): RuntimeConfigValidationResult {
+  return { ok: false, reason, confidence: "strong" };
+}
+
+function needsReview(reason: string): RuntimeConfigValidationResult {
+  return {
+    ok: true,
+    reason: null,
+    confidence: "weak",
+    warning: reason,
+  };
+}
+
+function looksLikeMaskedRuntimeConfigValue(value: string): boolean {
+  const trimmed = value.trim();
+  if (/^\[REDACTED\]$/i.test(trimmed)) return true;
+  if (/^\*{4,}[A-Za-z0-9_-]{1,12}$/.test(trimmed)) return true;
+  if (/^[A-Za-z0-9_-]{1,8}\*{3,}[A-Za-z0-9_-]{1,12}$/.test(trimmed)) return true;
+  if (/^[A-Za-z0-9_-]{1,8}\.\.\.[A-Za-z0-9_-]{1,12}$/.test(trimmed)) return true;
+  return false;
+}
+
+function containsPlaceholderSecret(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (
+    [
+      "test",
+      "secret",
+      "changeme",
+      "change_me",
+      "change-me",
+      "password",
+      "123456",
+      "dummy",
+      "example",
+      "placeholder",
+      "replace_me",
+      "replace-me",
+      "your_secret",
+      "your-secret",
+    ].includes(normalized)
+  ) {
+    return true;
+  }
+  return /(^|[_\-.])(test|secret|changeme|change_me|change-me|replace_me|replace-me|placeholder|dummy|example|password|123456)([_\-.]|$)/i.test(value) ||
+    /(changeme|change_me|replace_me|placeholder|dummy_secret|your_secret|password123)/i.test(value);
+}
+
+function validateSecretStrength(value: string, minLength = 24): RuntimeConfigValidationResult | null {
+  if (looksLikeMaskedRuntimeConfigValue(value)) return invalid("masked_value");
+  if (containsPlaceholderSecret(value)) return invalid("placeholder_secret");
+  if (value.length < minLength) return invalid("secret_too_short");
+  return null;
+}
+
+function validatePrefixedSecretPayload(
+  value: string,
+  prefix: RegExp,
+  minPayloadLength = 8,
+): RuntimeConfigValidationResult | null {
+  if (looksLikeMaskedRuntimeConfigValue(value)) return invalid("masked_value");
+  const payload = value.replace(prefix, "");
+  if (containsPlaceholderSecret(payload)) return invalid("placeholder_secret");
+  if (payload.length < minPayloadLength) return invalid("secret_too_short");
+  return null;
+}
+
+function validateSafeToken(
+  value: string,
+  options: { minLength?: number; pattern?: RegExp; reason?: string } = {},
+): RuntimeConfigValidationResult | null {
+  if (looksLikeMaskedRuntimeConfigValue(value)) return invalid("masked_value");
+  if (value.length < (options.minLength ?? 3)) return invalid("value_too_short");
+  if (options.pattern && !options.pattern.test(value)) return invalid(options.reason || "invalid_identifier");
+  return null;
+}
+
+function looksLikePemPrivateKey(value: string): boolean {
+  const normalized = value.replace(/\\n/g, "\n").trim();
+  return /^-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----\n[\s\S]+\n-----END [A-Z0-9 ]*PRIVATE KEY-----$/.test(normalized);
+}
+
+function validateProductId(value: string): RuntimeConfigValidationResult | null {
+  return validateSafeToken(value, {
+    minLength: 3,
+    pattern: /^[a-zA-Z0-9][a-zA-Z0-9._-]{2,127}$/,
+    reason: "product_id_pattern",
+  });
+}
+
+function validateBucketName(value: string): RuntimeConfigValidationResult | null {
+  return validateSafeToken(value, {
+    minLength: 3,
+    pattern: /^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/,
+    reason: "bucket_name_pattern",
+  });
+}
+
+function validateRegion(value: string): RuntimeConfigValidationResult | null {
+  return validateSafeToken(value, {
+    minLength: 2,
+    pattern: /^[a-z]{2}(?:-[a-z]+)+-\d$|^auto$|^global$/,
+    reason: "region_pattern",
+  });
+}
+
+function validateServiceAccountEmail(value: string): RuntimeConfigValidationResult | null {
+  const email = extractEmailAddress(value);
+  if (!validEmailAddress(email)) return invalid("email_required");
+  if (!/@[A-Za-z0-9.-]+\.iam\.gserviceaccount\.com$/i.test(email)) {
+    return invalid("service_account_email_required");
+  }
+  return null;
+}
+
 export function validateRuntimeConfigValueShape(
   key: string,
   rawValue: string | null | undefined,
+  options: RuntimeConfigValidationOptions = {},
 ): RuntimeConfigValidationResult {
   const value = normalizeRuntimeConfigValue(rawValue);
-  if (!value) return { ok: false, reason: "missing" };
+  if (!value) return invalid("missing");
+  const productionLike = options.productionLike ?? isProductionLikeRuntimeConfigEnv();
+  const definition = getRuntimeConfigDefinition(key);
+
+  if (looksLikeMaskedRuntimeConfigValue(value)) {
+    return invalid("masked_value");
+  }
 
   if (key === "NODE_ENV" && value !== "production") {
-    return { ok: false, reason: "production_required" };
+    return invalid("production_required");
   }
   if (key === "APP_ENV" && !["production", "staging", "preview"].includes(value.toLowerCase())) {
-    return { ok: false, reason: "production_like_required" };
+    return invalid("production_like_required");
   }
   if (key === "DATABASE_URL") {
     const reason = validateUrl(value, { allowDatabaseScheme: true });
-    return reason ? { ok: false, reason } : { ok: true, reason: null };
+    return reason ? invalid(reason) : valid();
   }
 
   const HTTPS_URL_KEYS = new Set([
@@ -1126,6 +1259,7 @@ export function validateRuntimeConfigValueShape(
     "NEXT_PUBLIC_IMGPROXY_URL",
     "STRIPE_PORTAL_RETURN_URL",
     "GOOGLE_PLAY_RTDN_AUDIENCE",
+    "SLACK_WEBHOOK_URL",
   ]);
   const URL_KEYS = new Set([
     ...HTTPS_URL_KEYS,
@@ -1135,13 +1269,13 @@ export function validateRuntimeConfigValueShape(
   ]);
   if (URL_KEYS.has(key)) {
     const reason = validateUrl(value, { requireHttps: HTTPS_URL_KEYS.has(key) });
-    return reason ? { ok: false, reason } : { ok: true, reason: null };
+    return reason ? invalid(reason) : valid();
   }
 
   if (key === "FIELD_ENCRYPTION_KEY" || key === "IMGPROXY_KEY" || key === "IMGPROXY_SALT") {
     return /^[0-9a-fA-F]{64}$/.test(value)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "hex_64_required" };
+      ? valid()
+      : invalid("hex_64_required");
   }
 
   const MIN_SECRET_LEN: Record<string, number> = {
@@ -1155,32 +1289,41 @@ export function validateRuntimeConfigValueShape(
   };
   if (MIN_SECRET_LEN[key]) {
     if (value.includes("REPLACE") || /^(test|dev|dummy|changeme)/i.test(value)) {
-      return { ok: false, reason: "placeholder_secret" };
+      return invalid("placeholder_secret");
     }
     return value.length >= MIN_SECRET_LEN[key]
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "secret_too_short" };
+      ? valid()
+      : invalid("secret_too_short");
   }
 
   if (key === "STRIPE_SECRET_KEY") {
-    return /^sk_(test|live)_[A-Za-z0-9]+$/.test(value)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "stripe_secret_prefix" };
+    if (!/^sk_(test|live)_[A-Za-z0-9]+$/.test(value)) return invalid("stripe_secret_prefix");
+    const weak = validatePrefixedSecretPayload(value, /^sk_(test|live)_/);
+    if (weak) return weak;
+    if (productionLike && !value.startsWith("sk_live_")) return invalid("stripe_live_secret_required");
+    return valid();
   }
   if (key === "STRIPE_WEBHOOK_SECRET") {
-    return /^whsec_[A-Za-z0-9_-]+$/.test(value)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "stripe_webhook_prefix" };
+    if (!/^whsec_[A-Za-z0-9_-]{16,}$/.test(value)) return invalid("stripe_webhook_prefix");
+    const weak = validatePrefixedSecretPayload(value, /^whsec_/, 12);
+    return weak || valid();
   }
   if (key === "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY") {
-    return /^pk_(test|live)_[A-Za-z0-9]+$/.test(value)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "stripe_publishable_prefix" };
+    if (!/^pk_(test|live)_[A-Za-z0-9]+$/.test(value)) return invalid("stripe_publishable_prefix");
+    const weak = validatePrefixedSecretPayload(value, /^pk_(test|live)_/);
+    if (weak) return weak;
+    if (productionLike && !value.startsWith("pk_live_")) return invalid("stripe_live_publishable_required");
+    return valid();
+  }
+  if (key.startsWith("STRIPE_PRICE_")) {
+    return /^price_[A-Za-z0-9]+$/.test(value)
+      ? valid()
+      : invalid("stripe_price_prefix");
   }
   if (key === "RESEND_API_KEY") {
-    return /^re_[A-Za-z0-9_-]+$/.test(value)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "resend_prefix" };
+    if (!/^re_[A-Za-z0-9_-]+$/.test(value)) return invalid("resend_prefix");
+    const weak = validatePrefixedSecretPayload(value, /^re_/, 6);
+    return weak || valid();
   }
 
   const BOOLEAN_KEYS = new Set([
@@ -1193,8 +1336,8 @@ export function validateRuntimeConfigValueShape(
   ]);
   if (BOOLEAN_KEYS.has(key)) {
     return value === "true" || value === "false"
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "boolean_required" };
+      ? valid()
+      : invalid("boolean_required");
   }
 
   const INTEGER_KEYS = new Set([
@@ -1206,13 +1349,13 @@ export function validateRuntimeConfigValueShape(
   ]);
   if (INTEGER_KEYS.has(key)) {
     return /^[1-9]\d*$/.test(value)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "positive_integer_required" };
+      ? valid()
+      : invalid("positive_integer_required");
   }
   if (key === "STRIPE_ANNUAL_TRIAL_DAYS") {
     return /^(0|[1-9]\d*)$/.test(value)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "non_negative_integer_required" };
+      ? valid()
+      : invalid("non_negative_integer_required");
   }
 
   const EMAIL_KEYS = new Set([
@@ -1222,19 +1365,87 @@ export function validateRuntimeConfigValueShape(
     "ALERT_EMAIL_TO",
     "ADMIN_ALERT_EMAIL",
     "SUPPORT_EMAIL",
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL",
-    "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL",
   ]);
   if (EMAIL_KEYS.has(key)) {
     const emails = key === "ALERT_EMAIL_TO"
       ? value.split(",").map((email) => email.trim()).filter(Boolean)
       : [extractEmailAddress(value)];
     return emails.length > 0 && emails.every(validEmailAddress)
-      ? { ok: true, reason: null }
-      : { ok: false, reason: "email_required" };
+      ? valid()
+      : invalid("email_required");
   }
 
-  return { ok: true, reason: null };
+  if (key === "BACKUP_STORAGE_PROVIDER") {
+    return ["s3", "s3-compatible", "aws-s3", "r2", "cloudflare-r2"].includes(value.toLowerCase())
+      ? valid()
+      : invalid("storage_provider");
+  }
+  if (key === "BACKUP_STORAGE_BUCKET" || key === "R2_BUCKET") {
+    return validateBucketName(value) || valid();
+  }
+  if (key === "BACKUP_STORAGE_REGION" || key === "R2_REGION") {
+    return validateRegion(value) || valid();
+  }
+  if (key === "BACKUP_STORAGE_ACCESS_KEY_ID" || key === "R2_ACCESS_KEY_ID") {
+    return validateSafeToken(value, {
+      minLength: 8,
+      pattern: /^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/,
+      reason: "access_key_pattern",
+    }) || valid();
+  }
+  if (key === "BACKUP_STORAGE_SECRET_ACCESS_KEY" || key === "R2_SECRET_ACCESS_KEY") {
+    return validateSecretStrength(value, 24) || valid();
+  }
+
+  if (
+    key === "APPLE_OAUTH_PRIVATE_KEY" ||
+    key === "APPLE_APP_STORE_PRIVATE_KEY" ||
+    key === "GOOGLE_PLAY_SERVICE_ACCOUNT_PRIVATE_KEY" ||
+    key === "APPLE_IAP_PRIVATE_KEY"
+  ) {
+    const secretProblem = validateSecretStrength(value, 48);
+    if (secretProblem && secretProblem.reason !== "secret_too_short") return secretProblem;
+    if (!looksLikePemPrivateKey(value)) return invalid("private_key_pem_required");
+    return secretProblem || valid();
+  }
+  if (key === "APPLE_OAUTH_TEAM_ID") {
+    return /^[A-Z0-9]{10}$/.test(value) ? valid() : invalid("apple_team_id_pattern");
+  }
+  if (key === "APPLE_OAUTH_KEY_ID" || key === "APPLE_APP_STORE_KEY_ID") {
+    return /^[A-Z0-9]{10}$/.test(value) ? valid() : invalid("apple_key_id_pattern");
+  }
+  if (key === "APPLE_APP_STORE_ENVIRONMENT") {
+    return ["sandbox", "production"].includes(value.toLowerCase())
+      ? valid()
+      : invalid("apple_environment");
+  }
+  if (
+    key === "APPLE_BUNDLE_ID" ||
+    key === "APPLE_OAUTH_CLIENT_ID" ||
+    key === "MOBILE_IOS_PRODUCT_INDIVIDUAL" ||
+    key === "MOBILE_IOS_PRODUCT_INDIVIDUAL_YEARLY" ||
+    key === "MOBILE_ANDROID_PRODUCT_INDIVIDUAL" ||
+    key === "MOBILE_ANDROID_PRODUCT_INDIVIDUAL_YEARLY"
+  ) {
+    return validateProductId(value) || valid();
+  }
+  if (key === "GOOGLE_PLAY_PACKAGE_NAME") {
+    return /^[a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*){1,}$/.test(value)
+      ? valid()
+      : invalid("android_package_pattern");
+  }
+  if (key === "GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL" || key === "EXPECTED_PLAYSTORE_WEBHOOK_SERVICE_ACCOUNT_EMAIL") {
+    return validateServiceAccountEmail(value) || valid();
+  }
+
+  if (definition?.isSecret) {
+    return validateSecretStrength(value, 24) || needsReview("present_but_not_fully_verified");
+  }
+  if (definition && definition.maskStrategy === "id") {
+    return validateSafeToken(value, { minLength: 3 }) || needsReview("present_but_not_fully_verified");
+  }
+
+  return valid();
 }
 
 export interface RuntimeConfigResolution {
@@ -1287,7 +1498,7 @@ export function resolveRuntimeConfigResolution(input: {
       ? dbValue
       : null;
   const validation = effectiveValue
-    ? validateRuntimeConfigValueShape(definition.key, effectiveValue)
+    ? validateRuntimeConfigValueShape(definition.key, effectiveValue, { productionLike })
     : { ok: false, reason: "missing" };
   const dbOverrideIgnored = Boolean(hasEnv && hasDb && (!overrideEnabled || !dbAllowed));
   const conflict = Boolean(hasEnv && hasDb && !overrideEnabled);
@@ -1306,6 +1517,8 @@ export function resolveRuntimeConfigResolution(input: {
         : "Not required in this environment";
   } else if (!validation.ok) {
     status = "Invalid";
+  } else if (validation.confidence === "weak") {
+    status = "Needs review";
   } else if (conflict) {
     status = "Conflict";
   } else if (definition.buildTimeOnly) {
@@ -1325,7 +1538,7 @@ export function resolveRuntimeConfigResolution(input: {
         ? maskRuntimeConfigValue(dbValue, definition.maskStrategy)
         : null,
     editable,
-    validation: validation.ok ? "Valid" : validation.reason || "Invalid",
+    validation: validation.ok ? validation.warning || "Valid" : validation.reason || "Invalid",
     dbOverrideIgnored,
     conflict,
     notes,

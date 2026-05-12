@@ -1,44 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, prismaUnsafe } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
-import { createBackupArchive } from "@/lib/backup-archive";
 import {
   BACKUP_TABLE_ORDER,
   BACKUP_TABLES,
-  fetchAllRecords,
-  MAX_BACKUP_ROWS_PER_TABLE,
-  normalizeBackupTables,
 } from "@/lib/backup-tables";
 import {
   getBackupStorageSummary,
   parseBackupRecordMetadata,
-  serializeBackupRecordMetadata,
-  uploadBackupArchive,
 } from "@/lib/backup-storage";
 import {
   BackupPolicyError,
-  evaluateBackupArchiveSize,
   getBackupArchivePolicy,
-  requireArchiveProtected,
-  requireBackupCrypto,
-  requireOffsiteStored,
-  shouldReturnBrowserDownloadFallback,
 } from "@/lib/backup-policy";
-import { encryptBackup, signBackup } from "@/lib/shared-encryption";
-import {
-  BackupRunLockError,
-  acquireBackupRunLock,
-  markBackupRunFailed,
-} from "@/lib/backup-lock";
+import { BackupRunLockError } from "@/lib/backup-lock";
 import {
   getCurrentBackupEnvironmentMetadata,
-  getBackupRuntimeMetadata,
   redactBackupSecretText,
 } from "@/lib/backup-metadata";
 import {
   getProductionRestoreConfirmationPhrase,
   getReplaceConfirmationPhrase,
 } from "@/lib/backup-restore-guard";
+import { createBackupJob } from "@/lib/backup-job";
+import { writeBackupAudit } from "@/lib/backup-audit";
+import { getAuditRequestMeta } from "@/lib/audit";
 
 // Per-table count helpers. Record fetching is centralized in
 // `fetchAllRecords` from backup-tables.ts so the manual and cron paths
@@ -83,12 +69,14 @@ function normalizeBackupRecord(backup: any, createdByLabel?: string) {
 
 // GET /api/backup - list backup records
 export async function GET() {
+  let session: Awaited<ReturnType<typeof requirePermission>> | null = null;
   try {
-    await requirePermission("settings", "canRead", {
+    session = await requirePermission("settings", "canRead", {
       minimumRole: "ADMIN",
       fallbackResources: ["audit_logs"],
     });
     const backups = await prisma.backupRecord.findMany({
+      where: { NOT: { type: { startsWith: "RESTORE_" } } },
       orderBy: { createdAt: "desc" },
       take: 50,
     });
@@ -132,7 +120,7 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
+    const responseBody = {
       backups: backups.map((backup: any) =>
         normalizeBackupRecord(
           backup,
@@ -163,8 +151,23 @@ export async function GET() {
             getProductionRestoreConfirmationPhrase(restoreEnvironment),
         },
       },
+    };
+    await writeBackupAudit({
+      session,
+      action: "BACKUP_LIST",
+      entityId: "list",
+      metadata: { count: backups.length },
     });
+    return NextResponse.json(responseBody);
   } catch (error: any) {
+    if (session) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_LIST",
+        entityId: "list",
+        error,
+      });
+    }
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -181,11 +184,10 @@ export async function GET() {
 
 // POST /api/backup - create a new backup
 export async function POST(request: NextRequest) {
-  let backupId: string | null = null;
+  let session: Awaited<ReturnType<typeof requirePermission>> | null = null;
   try {
-    const session = await requirePermission("settings", "canCreate", {
-      minimumRole: "ADMIN",
-      fallbackResources: ["audit_logs"],
+    session = await requirePermission("settings", "canCreate", {
+      minimumRole: "SUPER_ADMIN",
     });
     const body = await request.json();
     const {
@@ -193,248 +195,90 @@ export async function POST(request: NextRequest) {
       tables = [],
       format = "JSON",
       confirmPassword,
+      mfaCode,
+      backupCode,
     } = body;
-    const archivePolicy = getBackupArchivePolicy();
 
-    const requestedTables =
-      Array.isArray(tables) && tables.length > 0 ? tables : BACKUP_TABLE_ORDER;
-    const selectedTables = normalizeBackupTables(requestedTables);
-    if (selectedTables.length === 0) {
-      return NextResponse.json(
-        { error: "No valid tables were selected for backup." },
-        { status: 400 },
-      );
-    }
-
-    // Step-up auth: backup contains all system data
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "backup_create" });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, {
+      operation: "backup_create",
+      requireMfa: true,
+      mfaCode: typeof mfaCode === "string" ? mfaCode : undefined,
+      backupCode: typeof backupCode === "string" ? backupCode : undefined,
+      ipAddress: getAuditRequestMeta(request).ipAddress,
+      userAgent: getAuditRequestMeta(request).userAgent,
+    });
     if (!confirm.confirmed) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_CREATE_FAILED",
+        entityId: "create",
+        request,
+        metadata: { type, tables },
+        error: confirm.error || "step-up failed",
+      });
       return NextResponse.json(
-        { error: confirm.error, requiresPassword: true },
+        {
+          error: confirm.error,
+          requiresPassword: true,
+          requiresMfa: confirm.requiresMfa,
+        },
         { status: 403 },
       );
     }
 
-    // Create the BackupRecord as the shared manual/cron lock. A second
-    // backup run loses this DB-backed race and exits before reading data.
-    const backup = await acquireBackupRunLock({
-      prismaClient: prisma as any,
-      data: {
-        type,
-        status: "IN_PROGRESS",
-        format,
-        tables: JSON.stringify(selectedTables),
-        createdBy: session.adminId,
-      },
+    const result = await createBackupJob({
+      actor: { adminId: session.adminId, email: session.email },
+      type,
+      tables,
+      format,
+      request,
     });
-    backupId = backup.id;
-    requireBackupCrypto(archivePolicy);
-
-    // Collect data via the central paginated fetcher. Any table that
-    // hits the per-table ceiling is recorded in `truncatedTables` so
-    // the resulting BackupRecord can be flagged PARTIAL — silent
-    // truncation past 50k rows was the bug this fixes.
-    const backupData: Record<string, any[]> = {};
-    const tableCounts: Record<string, number> = {};
-    const failedTables: string[] = [];
-    const truncatedTables: string[] = [];
-    let totalRecords = 0;
-
-    for (const tableName of selectedTables) {
-      try {
-        // Backup must include soft-deleted rows so a restore is a true
-        // point-in-time snapshot. Use the raw client.
-        const result = await fetchAllRecords(prismaUnsafe as any, tableName);
-        backupData[tableName] = result.records;
-        tableCounts[tableName] = result.fetched;
-        totalRecords += result.fetched;
-        if (result.truncated) truncatedTables.push(tableName);
-      } catch (err) {
-        console.error(
-          `Failed to backup table ${tableName}: ${redactBackupSecretText(err)}`,
-        );
-        backupData[tableName] = [];
-        tableCounts[tableName] = 0;
-        failedTables.push(tableName);
-      }
-    }
-    // If any table was truncated by the per-table ceiling, downgrade
-    // the type label so the operator sees PARTIAL instead of FULL.
-    const effectiveType =
-      truncatedTables.length > 0 || failedTables.length > 0
-        ? "PARTIAL"
-        : type;
-    const runtimeMetadata = getBackupRuntimeMetadata();
-
-    // Create JSON content. The archive metadata reflects the EFFECTIVE
-    // type — if any table was truncated by the per-table ceiling, the
-    // archive must label itself PARTIAL so a downstream restore drill
-    // can't be misled by the "FULL" in the filename.
-    const createdAt = new Date();
-    const createdAtIso = createdAt.toISOString();
-    const content = JSON.stringify(
-      {
-        metadata: {
-          createdAt: createdAtIso,
-          createdBy: session.email,
-          type: effectiveType,
-          requestedType: type,
-          format,
-          tables: selectedTables,
-          tableCount: selectedTables.length,
-          totalRecords,
-          truncatedTables,
-          failedTables,
-          maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
-          environment: runtimeMetadata.environment,
-          compatibility: runtimeMetadata.compatibility,
-        },
-        data: backupData,
-      },
-      null,
-      2,
-    );
-
-    const fileName = `backup-${effectiveType.toLowerCase()}-${createdAtIso.slice(0, 10)}-${backup.id}.json`;
-
-    // Encrypt backup data with AES-256-GCM
-    const encrypted = encryptBackup(content);
-    const signature = signBackup(content);
-    requireArchiveProtected({
-      policy: archivePolicy,
-      encrypted: Boolean(encrypted),
-      signed: Boolean(signature),
-    });
-    const archive = createBackupArchive({
+    await writeBackupAudit({
+      session,
+      action: "BACKUP_CREATE_SUCCESS",
+      entityId: result.backup.id,
+      request,
       metadata: {
-        backupId: backup.id,
-        fileName,
-        createdAt: createdAtIso,
-        createdBy: session.email,
-        type: effectiveType,
-        format,
-        tables: selectedTables,
-        tableCount: selectedTables.length,
-        totalRecords,
-        tableCounts,
-        truncatedTables,
-        failedTables,
-        maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
-        environment: runtimeMetadata.environment,
-        compatibility: runtimeMetadata.compatibility,
+        type: result.backup.type,
+        requestedType: type,
+        truncatedTables: result.truncatedTables,
+        failedTables: result.failedTables,
+        tables: result.selectedTables,
+        recordCount: result.totalRecords,
+        fileSize: result.fileSize,
+        isEncrypted: result.encrypted,
+        signature: result.signature,
+        offsiteStatus: result.offsite.status,
+        offsiteLocation: result.offsite.location,
+        archiveSizeWarning: result.archiveSizeWarning,
       },
-      rawContent: content,
-      signature,
-      encrypted,
-    });
-    const downloadData = JSON.stringify(archive, null, 2);
-    const fileSize = Buffer.byteLength(downloadData, "utf-8");
-    const sizeEvaluation = evaluateBackupArchiveSize(fileSize);
-    const offsite = await uploadBackupArchive({
-      backupId: backup.id,
-      fileName,
-      archiveBody: downloadData,
-    });
-    requireOffsiteStored({ policy: archivePolicy, offsite });
-    const completedAt = new Date();
-    const metadata = serializeBackupRecordMetadata({
-      offsite,
-      archive: {
-        encrypted: Boolean(encrypted),
-        signature: Boolean(signature),
-        totalRecords,
-        tableCounts,
-        tableCount: selectedTables.length,
-        archiveSizeWarning: sizeEvaluation.warning,
-        truncatedTables: truncatedTables.length > 0 ? truncatedTables : undefined,
-        failedTables: failedTables.length > 0 ? failedTables : undefined,
-        maxRowsPerTable: MAX_BACKUP_ROWS_PER_TABLE,
-        environment: runtimeMetadata.environment,
-        compatibility: runtimeMetadata.compatibility,
-      },
-    });
-
-    // Update backup record. The `type` column is rewritten to the
-    // effective value so a list of historical backups doesn't show a
-    // truncated archive as "FULL".
-    await prisma.backupRecord.update({
-      where: { id: backup.id },
-      data: {
-        type: effectiveType,
-        status: "COMPLETED",
-        fileName,
-        fileSize,
-        recordCount: totalRecords,
-        completedAt,
-        errorMessage: metadata,
-      },
-    });
-
-    // Audit log
-    await prisma.adminAuditLog.create({
-      data: {
-        adminUserId: session.adminId,
-        action: "CREATE_BACKUP",
-        entityType: "BackupRecord",
-        entityId: backup.id,
-        changes: JSON.stringify({
-          type: effectiveType,
-          requestedType: type,
-          truncatedTables,
-          failedTables,
-          tables: selectedTables,
-          recordCount: totalRecords,
-          fileSize,
-          isEncrypted: !!encrypted,
-          signature: !!signature,
-          offsiteStatus: offsite.status,
-          offsiteLocation: offsite.location,
-          archiveSizeWarning: sizeEvaluation.warning,
-        }),
-        ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-      },
-    });
-
-    const browserDownloadFallback = shouldReturnBrowserDownloadFallback({
-      policy: archivePolicy,
-      offsite,
     });
 
     return NextResponse.json(
       {
-        backup: normalizeBackupRecord(
-          {
-            ...backup,
-            type: effectiveType,
-            status: "COMPLETED",
-            fileName,
-            fileSize,
-            recordCount: totalRecords,
-            completedAt,
-            errorMessage: metadata,
-          },
-          session.email,
-        ),
+        backup: normalizeBackupRecord(result.backup, session.email),
         downloadUrl:
-          offsite.status === "stored"
-            ? `/api/backup/${backup.id}/download`
+          result.offsite.status === "stored"
+            ? `/api/backup/${result.backup.id}/download`
             : undefined,
-        downloadData: browserDownloadFallback ? downloadData : undefined,
-        archivePolicy,
-        isEncrypted: !!encrypted,
-        offsite,
-        archiveSizeWarning: sizeEvaluation.warning,
-        truncatedTables,
-        failedTables,
-        partial: truncatedTables.length > 0 || failedTables.length > 0,
+        downloadData: result.downloadData,
+        archivePolicy: result.archivePolicy,
+        isEncrypted: result.encrypted,
+        offsite: result.offsite,
+        archiveSizeWarning: result.archiveSizeWarning,
+        truncatedTables: result.truncatedTables,
+        failedTables: result.failedTables,
+        partial: result.partial,
       },
       { status: 201 },
     );
   } catch (error: any) {
-    if (backupId) {
-      await markBackupRunFailed({
-        prismaClient: prisma as any,
-        backupId,
+    if (session) {
+      await writeBackupAudit({
+        session,
+        action: "BACKUP_CREATE_FAILED",
+        entityId: "create",
+        request,
         error,
       });
     }
@@ -458,6 +302,12 @@ export async function POST(request: NextRequest) {
           activeBackupId: error.activeBackupId,
         },
         { status: 409 },
+      );
+    }
+    if (error?.message === "BACKUP_NO_VALID_TABLES") {
+      return NextResponse.json(
+        { error: "No valid tables were selected for backup." },
+        { status: 400 },
       );
     }
     console.error(`Failed to create backup: ${redactBackupSecretText(error)}`);
