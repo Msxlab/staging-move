@@ -4,6 +4,32 @@ import { requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { maskEmail, maskIpAddress } from "@/lib/privacy";
 
+interface DailyActivityRow {
+  date: string;
+  count: number;
+}
+
+/**
+ * SQL-side bucket of `AdminAuditLog` rows by UTC day. Returns rows in
+ * ascending date order. We rely on `$queryRaw` against MySQL because
+ * Prisma `groupBy` cannot date-truncate. The window is parameterised
+ * to keep the query plan stable.
+ */
+async function loadDailyAdminActivity(since: Date): Promise<DailyActivityRow[]> {
+  const rows = await prisma.$queryRaw<Array<{ day: Date | string; total: bigint | number }>>`
+    SELECT DATE(\`createdAt\`) AS day, COUNT(*) AS total
+    FROM \`AdminAuditLog\`
+    WHERE \`createdAt\` >= ${since}
+    GROUP BY DATE(\`createdAt\`)
+    ORDER BY day ASC
+  `;
+  return rows.map((r) => {
+    const day = r.day instanceof Date ? r.day.toISOString().split("T")[0] : String(r.day).slice(0, 10);
+    const total = typeof r.total === "bigint" ? Number(r.total) : Number(r.total ?? 0);
+    return { date: day, count: total };
+  });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await requirePermission("audit_logs", "canRead", { minimumRole: "ADMIN" });
@@ -74,19 +100,10 @@ export async function GET(request: NextRequest) {
     });
 
     // ── Daily admin activity (last 30d) ─────────────────────
-    const logs = await prisma.adminAuditLog.findMany({
-      where: { createdAt: { gte: day30 } },
-      select: { createdAt: true },
-    });
-
-    const dailyMap: Record<string, number> = {};
-    for (const log of logs) {
-      const day = log.createdAt.toISOString().split("T")[0];
-      dailyMap[day] = (dailyMap[day] || 0) + 1;
-    }
-    const dailyActivity = Object.entries(dailyMap)
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    // Bucket in SQL instead of loading every audit row. The previous
+    // findMany-then-reduce path scanned the entire 30d window into the
+    // Node heap on every dashboard load and would OOM on busy installs.
+    const dailyActivity = await loadDailyAdminActivity(day30);
 
     // ── Total stats ─────────────────────────────────────────
     const [total30d, total7d, totalAll] = await Promise.all([
