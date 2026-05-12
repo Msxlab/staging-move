@@ -62,11 +62,25 @@ describe("admin middleware CSP", () => {
 
 describe("admin middleware RSC navigation", () => {
   it("detects App Router flight requests so middleware does not override router headers", () => {
-    const rscHeaders = new Headers({ rsc: "1", "next-router-state-tree": "[tree]" });
-    const htmlHeaders = new Headers({ accept: "text/html" });
+    const rscByHeader = {
+      headers: new Headers({ rsc: "1", "next-router-state-tree": "[tree]" }),
+      nextUrl: new URL("https://admin.example.com/users/1"),
+      url: "https://admin.example.com/users/1",
+    };
+    const rscBySearchParam = {
+      headers: new Headers({ accept: "*/*" }),
+      nextUrl: new URL("https://admin.example.com/users/1?_rsc=abc123"),
+      url: "https://admin.example.com/users/1?_rsc=abc123",
+    };
+    const htmlRequest = {
+      headers: new Headers({ accept: "text/html" }),
+      nextUrl: new URL("https://admin.example.com/users/1"),
+      url: "https://admin.example.com/users/1",
+    };
 
-    expect(isRscRequest({ headers: rscHeaders })).toBe(true);
-    expect(isRscRequest({ headers: htmlHeaders })).toBe(false);
+    expect(isRscRequest(rscByHeader)).toBe(true);
+    expect(isRscRequest(rscBySearchParam)).toBe(true);
+    expect(isRscRequest(htmlRequest)).toBe(false);
   });
 });
 

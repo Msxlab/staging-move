@@ -206,8 +206,16 @@ export function buildCspHeader(nonce: string, isDev: boolean): string {
   ].join("; ");
 }
 
-export function isRscRequest(request: Pick<NextRequest, "headers">): boolean {
-  return request.headers.get("rsc") === "1";
+export function isRscRequest(request: {
+  headers: Pick<Headers, "get">;
+  nextUrl: { searchParams: URLSearchParams };
+  url: string;
+}): boolean {
+  return (
+    request.headers.get("rsc") === "1" ||
+    request.nextUrl.searchParams.has("_rsc") ||
+    request.url.includes("_rsc=")
+  );
 }
 
 const STRICT_NO_SCRIPT_CSP = [
