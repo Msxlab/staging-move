@@ -14,6 +14,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     subscription: {
       findUnique: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
@@ -34,6 +35,7 @@ import { POST } from "./route";
 
 const subscriptionMock = prisma.subscription as unknown as {
   findUnique: Mock;
+  update: Mock;
 };
 
 function portalRequest(headers?: Record<string, string>) {
@@ -61,6 +63,7 @@ describe("stripe portal route", () => {
       userId: "user_1",
       stripeCustomerId: "cus_123",
     });
+    subscriptionMock.update.mockResolvedValue({});
     mocks.portalSessionsCreate.mockResolvedValue({
       url: "https://billing.stripe.test/session",
     });
@@ -107,6 +110,27 @@ describe("stripe portal route", () => {
     expect(body).toMatchObject({ code: "MOBILE_EXTERNAL_BILLING_NOT_ALLOWED" });
     expect(mocks.requireDbUserId).not.toHaveBeenCalled();
     expect(mocks.stripeConstructor).not.toHaveBeenCalled();
+  });
+
+  it("clears a stale Stripe customer ID and returns 404 when Stripe says the customer is missing", async () => {
+    mocks.portalSessionsCreate.mockRejectedValueOnce({
+      code: "resource_missing",
+      param: "customer",
+      raw: { code: "resource_missing", param: "customer" },
+      statusCode: 404,
+    });
+
+    const response = await POST(portalRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(404);
+    expect(body).toMatchObject({ code: "STRIPE_CUSTOMER_MISSING" });
+    expect(subscriptionMock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        data: expect.objectContaining({ stripeCustomerId: null }),
+      }),
+    );
   });
 });
 
