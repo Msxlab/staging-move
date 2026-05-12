@@ -85,6 +85,11 @@ export async function POST(request: NextRequest) {
       confirmPassword: typeof body?.confirmPassword === "string" ? body.confirmPassword : null,
       mfaCode: typeof body?.mfaCode === "string" ? body.mfaCode : null,
       backupCode: typeof body?.backupCode === "string" ? body.backupCode : null,
+      // OAuth-only mobile/web clients pass this boolean when the user has
+      // no password set. The step-up helper only honors it if the account
+      // truly has no password AND no MFA, so this cannot weaken security
+      // for accounts that have either factor configured.
+      confirmAccountDeletion: body?.confirmAccountDeletion === true,
     });
     if (!stepUp.ok) {
       await createAuditLog({
