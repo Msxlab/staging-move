@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const SITE_NAME = "LocateFlow";
-export const SITE_TITLE = "LocateFlow - Track every provider tied to your addresses";
+export const SITE_TITLE = "LocateFlow | Moving Checklist, Utility Setup & Provider Tracker";
 export const SITE_DESCRIPTION =
-  "Keep a living list of every utility, bank, insurance, and subscription tied to your homes. Never lose track of who has your address again.";
+  "Plan your move, track every provider tied to your address, organize utilities, subscriptions, documents, reminders, and know what to update before moving day.";
 export const DEFAULT_OG_IMAGE = "/opengraph-image";
 
 const DEFAULT_PUBLIC_SITE_URL = "https://locateflow.com";

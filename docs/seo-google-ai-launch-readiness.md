@@ -1,6 +1,6 @@
 # LocateFlow SEO, Google, Analytics, and AI Discovery Setup
 
-Last updated: 2026-05-01
+Last updated: 2026-05-12
 
 This checklist covers manual setup steps that cannot be completed from the
 repository without production Google account access.
@@ -30,6 +30,9 @@ running with staging flags:
 curl -I https://locateflow.com/ | grep -i x-robots-tag
 curl https://locateflow.com/robots.txt
 curl https://locateflow.com/sitemap.xml
+curl https://locateflow.com/llms.txt
+curl https://locateflow.com/llms-full.txt
+node scripts/check-public-seo.mjs https://locateflow.com
 ```
 
 Expected production result: no `X-Robots-Tag: noindex` header on public pages,
@@ -52,7 +55,7 @@ Deployments -> Force rebuild and deploy** for the web component that serves
 3. Deploy production with the canonical URL env vars set.
 4. Confirm `https://<host>/robots.txt` references `https://<host>/sitemap.xml`.
 5. Submit `https://<host>/sitemap.xml`.
-6. Use URL Inspection for `/`, `/pricing`, `/faq`, `/blog`, one published `/blog/<slug>`, `/robots.txt`, `/sitemap.xml`, and `/llms.txt`.
+6. Use URL Inspection for `/`, `/pricing`, `/faq`, `/blog`, one published `/blog/<slug>`, `/robots.txt`, `/sitemap.xml`, `/llms.txt`, and `/llms-full.txt`.
 7. Check Page Indexing, Enhancements, Manual Actions, and Security Issues.
 8. Link the Search Console property to GA4 after GA4 is created.
 
@@ -67,10 +70,10 @@ Deployments -> Force rebuild and deploy** for the web component that serves
 
 ## AI Crawler Policy
 
-- `OAI-SearchBot`, `ChatGPT-User`, `PerplexityBot`, and `ClaudeBot` may crawl public pages.
-- `GPTBot`, `Google-Extended`, `CCBot`, and `Bytespider` are disallowed by explicit robots rules.
-- Authenticated app pages, the current signed-in Help Center (`/help`), admin routes, token routes, previews, and APIs are not listed in `llms.txt`.
-- `llms.txt` is a curated discovery file, not a security boundary.
+- `OAI-SearchBot`, `ChatGPT-User`, `PerplexityBot`, `ClaudeBot`, `GPTBot`, `Google-Extended`, `CCBot`, and `Bytespider` may crawl public pages under the current robots policy.
+- Operator action required: confirm the product/legal preference for GPTBot, Google-Extended, CCBot, and Bytespider training access. Change `robots.txt` only after that decision is made.
+- Authenticated app pages, admin routes, dashboard routes, account routes, auth routes, billing/session routes, token routes, previews, staging hosts, and APIs are not listed in `llms.txt` or `llms-full.txt`.
+- `llms.txt` and `llms-full.txt` are curated discovery files, not security boundaries.
 - `/about`, `/provider-coverage`, and `/data-deletion` are public explanation pages intended to improve entity clarity and answer-engine citation quality without inventing local/provider claims.
 
 ## Public Help Center Follow-Up

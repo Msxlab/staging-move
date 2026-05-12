@@ -6,7 +6,13 @@ Current active domains:
 - www app alias: `https://www.locateflow.com`
 - Admin app: `https://admin.locateflow.com`
 
-The temporary `https://locateflow-staging-owew7.ondigitalocean.app` URL is a legacy starter URL only. Do not use it for active OAuth, billing, email, mobile, or QA configuration after the real domains are routed.
+Operator-only domain state:
+
+- `locateflow.com` should be the DigitalOcean primary domain.
+- `www.locateflow.com` should be non-primary and should permanently redirect to `https://locateflow.com`.
+- `admin.locateflow.com` should route only to the admin component and remain noindex/private.
+
+The temporary `https://locateflow-staging-owew7.ondigitalocean.app` URL is a legacy starter URL only. Do not use it for active OAuth, billing, email, mobile, QA, or public canonical URL configuration after the real domains are routed.
 
 The old `https://locateflow-staging-owew7.ondigitalocean.app/move-main/login` admin path is deprecated and temporary. Admin must run at root `/` on `admin.locateflow.com` so its `/_next/static/...` assets are served by the admin component instead of colliding with the web component.
 
@@ -26,7 +32,7 @@ DigitalOcean App Platform settings:
 - Source directory: repository root
 - HTTP port: `8080`
 - Build command: empty
-- Run command: empty, unless DigitalOcean requires an explicit command; then use `sh -c 'export DATABASE_URL="${DATABASE_URL:-$MYSQL_DATABASE_URL}"; exec node apps/web/server.js'`
+- Run command: empty uses the image `CMD`. To bypass inline migrations, the operator can set `sh -c 'export DATABASE_URL="${DATABASE_URL:-$MYSQL_DATABASE_URL}"; exec node apps/web/server.js'` only after a separate migration step exists and has been verified.
 - Runtime env: keep the existing web env values. `DATABASE_URL` should be set to the managed MySQL connection string; the image also falls back to `MYSQL_DATABASE_URL` when `DATABASE_URL` is absent.
 
 Docker build args, if overriding the defaults:
@@ -50,8 +56,12 @@ pnpm --filter @locateflow/web build
 ```
 
 It copies the Next standalone server, `apps/web/.next/static`, and
-`apps/web/public` into the runtime image. The runtime command does not run
-migrations.
+`apps/web/public` into the runtime image. The current Dockerfile default `CMD`
+exports `DATABASE_URL`, runs `prisma migrate deploy`, and then starts
+`apps/web/server.js`. If DigitalOcean uses an empty run command, this inline
+migration path is active and a database or migration failure can block web boot.
+Operator action required: verify whether production uses the Dockerfile `CMD`
+or an explicit run command before treating migration risk as resolved.
 
 ## Web Buildpack Option
 
@@ -66,6 +76,11 @@ Run command:
 ```bash
 DATABASE_URL="$MYSQL_DATABASE_URL" pnpm db:migrate:deploy && DATABASE_URL="$MYSQL_DATABASE_URL" HOSTNAME=0.0.0.0 PORT=$PORT node apps/web/.next/standalone/apps/web/server.js
 ```
+
+This buildpack run command also runs migrations inline before the web server
+boots. Prefer a separate deploy-phase migration job when available; otherwise
+monitor deployment logs closely because a migration failure can surface as a
+public 5xx until the app is redeployed with a healthy runtime.
 
 Required public URL env:
 
@@ -172,7 +187,9 @@ Component routing rule:
 - Domain: `www.locateflow.com`
 - Path: `/`
 - Preserve full path
-- Target: `web-staging`
+- Target: `web-staging` only if DigitalOcean must verify the domain before the
+  Cloudflare redirect is applied. In steady state, `www.locateflow.com` should
+  permanently redirect to `https://locateflow.com` and should not be primary.
 
 Component routing rule:
 
@@ -214,6 +231,16 @@ APP_ENV=production
 - Google Play RTDN audience: `https://locateflow.com/api/webhooks/playstore`
 - Email and app links: `https://locateflow.com`
 
+Legacy mobile transition note: native iOS/Android app-link config and mobile
+OAuth compatibility code still allow `app.locateflow.com` for already-shipped
+or review-bound builds. New production mobile/API values should use
+`https://locateflow.com` and `https://locateflow.com/api`. Do not remove
+`app.locateflow.com` from allowlists until the operator confirms no released
+native build, app review configuration, OAuth dashboard entry, universal link,
+or password-reset/app-link flow still depends on it. If compatibility is still
+needed, restore a controlled redirect or supported DNS route as an operator
+action rather than using it as a public canonical URL.
+
 ## Verification
 
 After web build, confirm:
@@ -247,6 +274,7 @@ After deploy, smoke test:
 - `https://locateflow.com/sitemap.xml` contains the public marketing/legal URLs
 - `curl -I https://locateflow.com/` does not return `X-Robots-Tag: noindex`
 - `https://locateflow.com/llms.txt` starts with `# LocateFlow`, not `# Not indexed`
+- `https://locateflow.com/llms-full.txt` starts with `# LocateFlow`, not `# Not indexed`
 
 Exact SEO verification commands:
 
@@ -255,6 +283,8 @@ curl -I https://locateflow.com/
 curl https://locateflow.com/robots.txt
 curl https://locateflow.com/sitemap.xml
 curl https://locateflow.com/llms.txt
+curl https://locateflow.com/llms-full.txt
+node scripts/check-public-seo.mjs https://locateflow.com
 
 curl -A "Googlebot" -I https://locateflow.com/
 curl -A "Bingbot" -I https://locateflow.com/
@@ -272,6 +302,7 @@ Expected results:
 - `robots.txt` includes `Sitemap: https://locateflow.com/sitemap.xml`.
 - `sitemap.xml` includes `https://locateflow.com`, `/pricing`, `/faq`, `/blog`, `/privacy`, `/terms`, and trust/legal pages.
 - `llms.txt` contains the public page map and excludes admin, auth, account, app, and API routes.
+- `llms-full.txt` contains the expanded public AI-search summary and excludes admin, auth, account, app, and API routes.
 - Raw homepage and pricing HTML include title, description, canonical, Open Graph, Twitter card, one visible `h1`, and primary content.
 
 ## First Admin Bootstrap

@@ -236,9 +236,9 @@ describe("production SEO launch surfaces", () => {
     const text = await response.text();
 
     expect(text).toContain("# LocateFlow");
-    expect(text).toContain("LocateFlow is a web app");
-    expect(text).toContain("$39.99/year");
-    expect(text).toContain("90-day free trial");
+    expect(text).toContain("LocateFlow is a web and mobile app");
+    expect(text).toContain("Full LLM summary: https://locateflow.com/llms-full.txt");
+    expect(text).toContain("Provider coverage note:");
     expect(text).toContain("https://locateflow.com/about");
     expect(text).toContain("https://locateflow.com/pricing");
     expect(text).toContain("https://locateflow.com/help");
@@ -247,5 +247,40 @@ describe("production SEO launch surfaces", () => {
     expect(text).not.toContain("# Not indexed");
     expect(text).not.toContain("/dashboard");
     expect(text).not.toContain("/api/");
+  });
+
+  it("serves a safe production llms-full.txt with public-only canonical surfaces", async () => {
+    productionEnv();
+    mockRequestHost("locateflow.com");
+    mockBlogPosts([]);
+    const { GET } = await import("./llms-full.txt/route");
+
+    const response = await GET();
+    const text = await response.text();
+
+    expect(response.headers.get("content-type")).toContain("text/plain");
+    expect(text).toContain("# LocateFlow");
+    expect(text).toContain("Canonical site: https://locateflow.com");
+    expect(text).toContain("Provider suggestions are confidence guidance, not guarantees.");
+    expect(text).toContain("https://locateflow.com/provider-coverage");
+    expect(text).toContain("https://locateflow.com/blog/feed.xml");
+    expect(text).not.toContain("# Not indexed");
+    expect(text).not.toContain("https://www.locateflow.com");
+    expect(text).not.toContain("https://admin.locateflow.com");
+    expect(text).not.toContain("/dashboard");
+    expect(text).not.toContain("/api/");
+    expect(text).not.toContain("ondigitalocean.app/");
+  });
+
+  it("returns the noindex placeholder for llms-full.txt on staging-like hosts", async () => {
+    productionEnv();
+    mockRequestHost("locateflow-staging-owew7.ondigitalocean.app");
+    mockBlogPosts([]);
+    const { GET } = await import("./llms-full.txt/route");
+
+    const response = await GET();
+
+    await expect(response.text()).resolves.toBe("# Not indexed\n");
+    expect(response.headers.get("cache-control")).toBe("no-store");
   });
 });

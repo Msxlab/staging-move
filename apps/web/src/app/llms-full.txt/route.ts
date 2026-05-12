@@ -1,23 +1,8 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { SITE_URL, isNoIndexEnvironment, shouldBlockForRequestHosts } from "@/lib/seo";
-import { buildLlmsTxt, listLlmsBlogPosts } from "@/lib/public-ai-discovery";
+import { buildLlmsFullTxt } from "@/lib/public-ai-discovery";
 
-/**
- * `/llms.txt` - emerging-standard discovery file for AI crawlers.
- *
- * The convention (https://llmstxt.org) gives answer-engines a curated,
- * machine-friendly map of the site so they don't have to spider every
- * route. We emit:
- *   - top-level marketing/info pages (what the product is)
- *   - the most recent N PUBLISHED blog posts (what's fresh)
- * with stable, minimal markdown so the file diffs cleanly when posts
- * publish.
- *
- * Cached at the edge for an hour because it's a low-velocity surface;
- * the publish webhook calls `revalidatePath('/llms.txt')` on demand
- * when an editor publishes so freshness never lags more than seconds.
- */
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
@@ -37,9 +22,6 @@ async function requestHostShouldBlockIndexing() {
 
 export async function GET() {
   if (BLOCK_INDEXING || (await requestHostShouldBlockIndexing())) {
-    // Staging/preview: emit a deliberately empty file so accidental
-    // crawls of these hosts don't pull synthetic content into model
-    // training datasets.
     return new NextResponse("# Not indexed\n", {
       headers: {
         "content-type": "text/plain; charset=utf-8",
@@ -48,13 +30,11 @@ export async function GET() {
     });
   }
 
-  const posts = await listLlmsBlogPosts();
-  const body = buildLlmsTxt({ appUrl: APP_URL, posts });
-
-  return new NextResponse(body, {
+  return new NextResponse(buildLlmsFullTxt({ appUrl: APP_URL }), {
     headers: {
       "content-type": "text/plain; charset=utf-8",
       "cache-control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
     },
   });
 }
+

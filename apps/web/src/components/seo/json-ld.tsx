@@ -8,7 +8,7 @@
  * `<script>` tag and inject a real `<script>` after it.
  *
  * Reference: Google's structured-data guidelines + OWASP XSS
- * Prevention Cheat Sheet "RULE #3.1 — JavaScript escapes".
+ * Prevention Cheat Sheet "RULE #3.1 - JavaScript escapes".
  */
 import type { ReactElement } from "react";
 import { headers } from "next/headers";
