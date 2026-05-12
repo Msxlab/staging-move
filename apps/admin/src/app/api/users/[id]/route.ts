@@ -1000,10 +1000,24 @@ export async function PATCH(
     }
 
     // Update subscription plan + premium management
+    let providerAutoFlipped = false;
     if (hasBillingChange) {
-      // Validate the cross-field combination before any write so the API
-      // rejects nonsensical states (e.g. accessType=PAID with provider=ADMIN,
-      // status=ACTIVE on the ADMIN provider with no premiumUntil, etc.).
+      // Auto-flip provider to ADMIN when this is a manual premium grant.
+      // The entitlement resolver only honours `premiumUntil` when
+      // `provider === "ADMIN"` ([entitlement.ts]); without this,
+      // setting `premiumUntil` on a former Stripe row was a silent
+      // no-op (audit P1-8). We only auto-flip when:
+      //   - the admin is setting a non-null premiumUntil this request,
+      //   - they did NOT explicitly send a different provider, and
+      //   - the row is not already on the ADMIN provider.
+      // Status defaults to ACTIVE so the manual branch resolves cleanly.
+      const settingPremiumUntil = body.premiumUntil !== undefined && body.premiumUntil !== null;
+      const existingProvider = user.subscription?.provider ?? null;
+      if (settingPremiumUntil && body.provider === undefined && existingProvider !== "ADMIN") {
+        body.provider = "ADMIN";
+        providerAutoFlipped = true;
+        if (body.subscriptionStatus === undefined) body.subscriptionStatus = "ACTIVE";
+      }
       const combinationError = validateBillingCombination(body, user.subscription);
       if (combinationError) {
         const providerBackedStateError = combinationError === "Invalid provider-backed entitlement state";
@@ -1119,6 +1133,7 @@ export async function PATCH(
         status: "success",
         fields: Object.keys(changes),
         billingChanged: Boolean(hasBillingChange),
+        ...(providerAutoFlipped ? { providerAutoFlippedToAdmin: true } : {}),
       },
       request: requestMeta,
     });
