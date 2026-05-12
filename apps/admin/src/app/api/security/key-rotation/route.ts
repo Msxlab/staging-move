@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { isEncrypted, reEncrypt, validateKeyFormat } from "@/lib/shared-encryption";
+import { acquireLock, type LockResult } from "@/lib/distributed-lock";
 
 const ENCRYPTED_FIELDS: Record<string, { fields: string[] }> = {
   services: {
@@ -14,8 +15,10 @@ const ENCRYPTED_FIELDS: Record<string, { fields: string[] }> = {
 };
 
 const BATCH_SIZE = 100;
-
-let keyRotationInProgress = false;
+// Worst-case rotation should complete inside this window. The lock auto-
+// expires after the TTL so a crashed handler doesn't wedge rotations
+// forever, but the value should comfortably exceed any expected scan.
+const KEY_ROTATION_LOCK_TTL_SEC = 30 * 60;
 
 type RotationStats = Record<string, { total: number; rotated: number; skipped: number; errors: number }>;
 
@@ -156,7 +159,7 @@ async function scanAndRotateEncryptedFields(oldKey: string, dryRun: boolean): Pr
 export async function POST(request: NextRequest) {
   const requestMeta = getAuditRequestMeta(request);
   let session: any = null;
-  let lockAcquired = false;
+  let lockHandle: LockResult | null = null;
   let dryRun = false;
   let started = false;
   let mutationStarted = false;
@@ -236,19 +239,30 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    if (keyRotationInProgress) {
+    // Distributed single-writer lock. The previous module-scope
+    // boolean only protected one Node process; a multi-instance deploy
+    // could run two concurrent rotations and corrupt mid-flight rows
+    // (audit P0-3). Backed by Redis when configured, with a memory
+    // fallback for dev/test/single-instance.
+    lockHandle = await acquireLock("key-rotation", { ttlSec: KEY_ROTATION_LOCK_TTL_SEC });
+    if (!lockHandle.acquired) {
       await writeAdminAudit(session, {
         action: "KEY_ROTATION_FAILED",
         entityType: "Encryption",
         entityId: "FIELD_ENCRYPTION_KEY",
-        metadata: { status: "failed", dryRun, reasonCode: "rotation_already_in_progress" },
+        metadata: {
+          status: "failed",
+          dryRun,
+          reasonCode: "rotation_already_in_progress",
+          retryAfterSec: lockHandle.retryAfterSec,
+        },
         request: requestMeta,
       });
-      return NextResponse.json({ error: "Key rotation is already in progress" }, { status: 409 });
+      return NextResponse.json(
+        { error: "Key rotation is already in progress", retryAfterSec: lockHandle.retryAfterSec },
+        { status: 409, headers: { "Retry-After": String(lockHandle.retryAfterSec) } },
+      );
     }
-
-    keyRotationInProgress = true;
-    lockAcquired = true;
 
     await writeAdminAudit(session, {
       action: "KEY_ROTATION_STARTED",
@@ -318,6 +332,8 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   } finally {
-    if (lockAcquired) keyRotationInProgress = false;
+    if (lockHandle && lockHandle.acquired) {
+      await lockHandle.release().catch(() => undefined);
+    }
   }
 }
