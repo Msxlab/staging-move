@@ -141,6 +141,7 @@ export default function SubscriptionManagementPage() {
   const justUpgradedTier = planToStickerTier(justUpgradedPlan);
   const [revealOpen, setRevealOpen] = useState(false);
   const activationTrackedRef = useRef(false);
+  const stuckCheckoutRecoveryRef = useRef(false);
 
   async function load() {
     setError(null);
@@ -207,6 +208,29 @@ export default function SubscriptionManagementPage() {
       cancelled = true;
     };
   }, [successFlag]);
+
+  // If the user lands here with a PENDING_CHECKOUT row but no `?success=true`
+  // (e.g. they hit the browser back button from Stripe Checkout — Stripe does
+  // not fire its `cancel_url` in that path), reset the stuck row immediately
+  // instead of leaving the page on "Activating checkout…" for up to 30 min
+  // until the cron sweeper runs.
+  useEffect(() => {
+    if (loading) return;
+    if (successFlag) return;
+    if (waitingForActivation) return;
+    if (stuckCheckoutRecoveryRef.current) return;
+    if (subscription?.status !== "PENDING_CHECKOUT") return;
+    if (subscription?.stripeSubscriptionId) return;
+    stuckCheckoutRecoveryRef.current = true;
+    void (async () => {
+      try {
+        await fetch("/api/stripe/checkout/cancel", { method: "POST" });
+      } catch {
+        // best-effort; the cron sweep will catch it within 30 min
+      }
+      await load();
+    })();
+  }, [loading, successFlag, waitingForActivation, subscription?.status, subscription?.stripeSubscriptionId]);
 
   useEffect(() => {
     if (!justUpgradedTier) return;

@@ -20,7 +20,7 @@ vi.mock("@/lib/db", () => ({
 
 import { requireDbUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { GET } from "./route";
+import { GET, POST } from "./route";
 
 const mockRequireDbUserId = requireDbUserId as unknown as Mock;
 const mockSubscription = prisma.subscription as unknown as {
@@ -87,5 +87,42 @@ describe("Stripe checkout cancel route", () => {
     expect(mockSubscription.update).not.toHaveBeenCalled();
     expect(mockAcquisitionRedemption.updateMany).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe("https://locateflow.com/settings/subscription?canceled=true");
+  });
+
+  it("POST resets stuck PENDING_CHECKOUT and reports reset=true", async () => {
+    mockSubscription.findUnique.mockResolvedValue({
+      id: "sub_row_1",
+      status: "PENDING_CHECKOUT",
+      accessType: "FREE_TRIAL",
+      freeAccessEndsAt: null,
+      stripeSubscriptionId: null,
+    });
+
+    const response = await POST();
+    const body = await response.json();
+
+    expect(mockSubscription.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        data: expect.objectContaining({ status: "CANCELED" }),
+      }),
+    );
+    expect(body).toEqual({ reset: true });
+  });
+
+  it("POST reports reset=false when there is nothing to reset", async () => {
+    mockSubscription.findUnique.mockResolvedValue({
+      id: "sub_row_1",
+      status: "ACTIVE",
+      accessType: "PAID",
+      freeAccessEndsAt: null,
+      stripeSubscriptionId: "sub_live_123",
+    });
+
+    const response = await POST();
+    const body = await response.json();
+
+    expect(mockSubscription.update).not.toHaveBeenCalled();
+    expect(body).toEqual({ reset: false });
   });
 });
