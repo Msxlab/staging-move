@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { X, KeyRound } from "lucide-react";
 
 export interface StepUpValues {
   confirmPassword: string;
@@ -16,6 +16,17 @@ export function PasswordConfirmModal({
   confirmLabel = "Confirm",
   busy = false,
   error,
+  /**
+   * When true, the server has signalled that an MFA code (or backup
+   * code) is mandatory for this operation — usually because the
+   * admin's account has MFA enabled and step-up `requireMfa` is set.
+   * The submit button is disabled until one of the two fields has a
+   * value, the MFA field is auto-focused, and a hint is shown so the
+   * operator knows which field is the missing piece. Without this,
+   * the previous UX cleared all fields on every 403 and operators
+   * couldn't tell whether to re-type the password or add an MFA code.
+   */
+  requiresMfa = false,
   onClose,
   onConfirm,
 }: {
@@ -25,12 +36,14 @@ export function PasswordConfirmModal({
   confirmLabel?: string;
   busy?: boolean;
   error?: string | null;
+  requiresMfa?: boolean;
   onClose: () => void;
   onConfirm: (password: string, values: StepUpValues) => void | Promise<void>;
 }) {
   const [password, setPassword] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [backupCode, setBackupCode] = useState("");
+  const mfaInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -40,7 +53,16 @@ export function PasswordConfirmModal({
     }
   }, [open]);
 
+  // When the server signals that MFA was the missing piece, focus the
+  // MFA field so the operator can fix it without hunting for the cursor.
+  useEffect(() => {
+    if (open && requiresMfa) mfaInputRef.current?.focus();
+  }, [open, requiresMfa]);
+
   if (!open) return null;
+
+  const hasMfaCredential = Boolean(mfaCode.trim() || backupCode.trim());
+  const submitDisabled = busy || !password.trim() || (requiresMfa && !hasMfaCredential);
 
   return (
     <div
@@ -81,7 +103,7 @@ export function PasswordConfirmModal({
           className="mt-5 space-y-4"
           onSubmit={async (event) => {
             event.preventDefault();
-            if (!password.trim() || busy) return;
+            if (submitDisabled) return;
             try {
               await onConfirm(password, {
                 confirmPassword: password,
@@ -89,7 +111,10 @@ export function PasswordConfirmModal({
                 backupCode: backupCode.trim() || undefined,
               });
             } finally {
-              setPassword("");
+              // Clear the one-time MFA + backup codes (re-using a code
+              // that was rejected once won't ever succeed) but keep the
+              // password so the operator only has to add the missing
+              // MFA piece on retry instead of starting from zero.
               setMfaCode("");
               setBackupCode("");
             }
@@ -112,17 +137,21 @@ export function PasswordConfirmModal({
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="admin-mfa-confirm" className="mb-1 block text-xs font-medium text-muted-foreground">
-                MFA code
+                MFA code{requiresMfa ? <span className="ml-1 text-destructive">*</span> : null}
               </label>
               <input
                 id="admin-mfa-confirm"
+                ref={mfaInputRef}
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 value={mfaCode}
                 onChange={(event) => setMfaCode(event.target.value)}
                 disabled={busy}
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                aria-required={requiresMfa || undefined}
+                className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 ${
+                  requiresMfa ? "border-destructive/40 focus:border-destructive" : "border-input focus:border-primary"
+                }`}
               />
             </div>
             <div>
@@ -140,11 +169,20 @@ export function PasswordConfirmModal({
               />
             </div>
           </div>
-          <p className="text-[11px] text-muted-foreground">
-            Most destructive actions require a current authenticator code or
-            an unused backup code in addition to your password. Leave both
-            blank only if the action explicitly says password is enough.
-          </p>
+          {requiresMfa ? (
+            <div role="status" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+              <KeyRound className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+              <span>
+                MFA is required for this operation. Enter a current authenticator code <em>or</em> an unused backup code in addition to your password.
+              </span>
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">
+              Most destructive actions require a current authenticator code or
+              an unused backup code in addition to your password. Leave both
+              blank only if the action explicitly says password is enough.
+            </p>
+          )}
 
           {error ? (
             <div role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -163,7 +201,7 @@ export function PasswordConfirmModal({
             </button>
             <button
               type="submit"
-              disabled={busy || !password.trim()}
+              disabled={submitDisabled}
               className="rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
             >
               {busy ? "Confirming..." : confirmLabel}

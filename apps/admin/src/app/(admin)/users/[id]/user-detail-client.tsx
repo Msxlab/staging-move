@@ -13,23 +13,42 @@ import {
   getEffectiveEntitlement,
 } from "@/lib/shared-billing";
 
-async function readAdminApiError(response: Response, fallback: string) {
+interface AdminApiError {
+  message: string;
+  requiresMfa: boolean;
+}
+
+async function readAdminApiError(response: Response, fallback: string): Promise<AdminApiError> {
   const data = await response.json().catch(() => ({}));
-  const message = typeof data?.error === "string" ? data.error : fallback;
+  const requiresMfa = Boolean((data as any)?.requiresMfa);
+  const rawMessage = typeof (data as any)?.error === "string" ? (data as any).error : fallback;
 
   if (response.status === 401) {
-    return "Admin session expired. Please sign in again.";
+    return { message: "Admin session expired. Please sign in again.", requiresMfa };
   }
 
-  if (response.status === 403 && /origin|referer/i.test(message)) {
-    return "Request blocked by admin security checks. Refresh the admin page and retry from the same host.";
+  if (response.status === 403 && /origin|referer/i.test(rawMessage)) {
+    return {
+      message: "Request blocked by admin security checks. Refresh the admin page and retry from the same host.",
+      requiresMfa,
+    };
   }
 
-  if (response.status === 403 && message === "Forbidden") {
-    return "Your admin account does not have permission to perform this action.";
+  if (response.status === 403 && rawMessage === "Forbidden") {
+    return {
+      message: "Your admin account does not have permission to perform this action.",
+      requiresMfa,
+    };
   }
 
-  return message;
+  if (requiresMfa && response.status === 403) {
+    return {
+      message: "MFA is required for this operation. Add an authenticator code or backup code and retry.",
+      requiresMfa,
+    };
+  }
+
+  return { message: rawMessage, requiresMfa };
 }
 
 function hasRawProviderIdentifier(value: string | null | undefined) {
@@ -79,6 +98,24 @@ export default function UserDetailClient() {
   const [subscriptionActionBusy, setSubscriptionActionBusy] = useState(false);
   const [showPremiumConfirm, setShowPremiumConfirm] = useState(false);
   const [premiumConfirmError, setPremiumConfirmError] = useState<string | null>(null);
+  const [currentAdminRole, setCurrentAdminRole] = useState<string | null>(null);
+  // Per-modal flag: server returned `requiresMfa: true` last attempt, so
+  // the PasswordConfirmModal should mark the MFA field as required and
+  // refuse to submit until the operator fills one of MFA / backup code.
+  const [profileRequiresMfa, setProfileRequiresMfa] = useState(false);
+  const [loginSessionRevokeRequiresMfa, setLoginSessionRevokeRequiresMfa] = useState(false);
+  const [deleteRequiresMfa, setDeleteRequiresMfa] = useState(false);
+  const [restoreRequiresMfa, setRestoreRequiresMfa] = useState(false);
+  const [planRequiresMfa, setPlanRequiresMfa] = useState(false);
+  const [subscriptionActionRequiresMfa, setSubscriptionActionRequiresMfa] = useState(false);
+  const [premiumRequiresMfa, setPremiumRequiresMfa] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => setCurrentAdminRole(typeof data?.admin?.role === "string" ? data.admin.role : null))
+      .catch(() => null);
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -135,15 +172,17 @@ export default function UserDetailClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(stepUp),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const message = data.error || "Failed to delete";
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to delete");
         setDeleteError(message);
+        setDeleteRequiresMfa(requiresMfa);
         toast.error(message);
         return;
       }
+      const data = await res.json().catch(() => ({}));
       toast.success(data.message || "User deleted");
       setShowDeleteConfirm(false);
+      setDeleteRequiresMfa(false);
       router.push("/users");
     } catch {
       setDeleteError("Failed to delete user");
@@ -169,13 +208,14 @@ export default function UserDetailClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "restore_user", ...stepUp }),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const message = data.error || "Failed to restore user";
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to restore user");
         setRestoreError(message);
+        setRestoreRequiresMfa(requiresMfa);
         toast.error(message);
         return;
       }
+      const data = await res.json().catch(() => ({}));
       setUser({ ...user, deletedAt: null });
       if (data.requestId) {
         setGdprRequests((prev) =>
@@ -187,6 +227,7 @@ export default function UserDetailClient() {
         );
       }
       setShowRestoreConfirm(false);
+      setRestoreRequiresMfa(false);
       toast.success(data.message || "User restored");
     } catch {
       setRestoreError("Failed to restore user");
@@ -211,9 +252,11 @@ export default function UserDetailClient() {
         setUser({ ...user, subscription: { ...user.subscription, plan: pendingPlan } });
         toast.success(`Plan changed to ${pendingPlan}`);
         setPendingPlan(null);
+        setPlanRequiresMfa(false);
       } else {
-        const message = await readAdminApiError(res, "Failed to change plan.");
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to change plan.");
         setPlanConfirmError(message);
+        setPlanRequiresMfa(requiresMfa);
         toast.error(message);
       }
     } catch {
@@ -234,13 +277,14 @@ export default function UserDetailClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: pendingSubscriptionAction, ...stepUp }),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const message = data.error || "Failed to update subscription.";
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to update subscription.");
         setSubscriptionActionError(message);
+        setSubscriptionActionRequiresMfa(requiresMfa);
         toast.error(message);
         return;
       }
+      const data = await res.json().catch(() => ({}));
       setUser({ ...user, subscription: data.subscription });
       setPremiumForm({
         ...premiumForm,
@@ -249,6 +293,7 @@ export default function UserDetailClient() {
         autoRenew: Boolean(data.subscription?.autoRenew),
       });
       setPendingSubscriptionAction(null);
+      setSubscriptionActionRequiresMfa(false);
       toast.success("Subscription action completed.");
     } catch {
       setSubscriptionActionError("Failed to update subscription.");
@@ -300,11 +345,13 @@ export default function UserDetailClient() {
           },
         });
         setShowPremiumConfirm(false);
+        setPremiumRequiresMfa(false);
         toast.success("Premium settings updated");
       } else {
-        const message = await readAdminApiError(res, "Failed to update premium settings.");
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to update premium settings.");
         setPremiumError(message);
         setPremiumConfirmError(message);
+        setPremiumRequiresMfa(requiresMfa);
         toast.error(message);
       }
     } catch {
@@ -335,9 +382,11 @@ export default function UserDetailClient() {
         toast.success("User updated");
         setEditing(false);
         setShowProfileConfirm(false);
+        setProfileRequiresMfa(false);
       } else {
-        const message = await readAdminApiError(res, "Failed to update user.");
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to update user.");
         setProfileConfirmError(message);
+        setProfileRequiresMfa(requiresMfa);
         toast.error(message);
       }
     } catch {
@@ -395,13 +444,14 @@ export default function UserDetailClient() {
             : { action: "revoke_all_login_sessions", ...stepUp },
         ),
       });
-      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const message = data.error || "Failed to revoke login session.";
+        const { message, requiresMfa } = await readAdminApiError(res, "Failed to revoke login session.");
         setLoginSessionRevokeError(message);
+        setLoginSessionRevokeRequiresMfa(requiresMfa);
         toast.error(message);
         return;
       }
+      const data = await res.json().catch(() => ({}));
       setLoginSessions((prev) =>
         prev.map((session: any) =>
           !sessionId || session.id === sessionId
@@ -413,6 +463,7 @@ export default function UserDetailClient() {
         sessionId ? "Login session revoked." : `${data.revoked || 0} login sessions revoked.`,
       );
       setPendingLoginSessionRevoke(null);
+      setLoginSessionRevokeRequiresMfa(false);
     } catch {
       setLoginSessionRevokeError("Failed to revoke login sessions.");
       toast.error("Failed to revoke login sessions.");
@@ -601,9 +652,18 @@ export default function UserDetailClient() {
             </select>
           </div>
           {isDeleted ? (
-            <button onClick={handleRestore} className="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
-              <RotateCcw className="h-4 w-4" /> Restore / Unblock
-            </button>
+            currentAdminRole === "SUPER_ADMIN" ? (
+              <button onClick={handleRestore} className="flex items-center gap-2 rounded-lg border border-primary/30 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10">
+                <RotateCcw className="h-4 w-4" /> Restore / Unblock
+              </button>
+            ) : (
+              <span
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground"
+                title="Restoring a deleted user requires SUPER_ADMIN."
+              >
+                <RotateCcw className="h-4 w-4 opacity-60" /> SUPER_ADMIN only
+              </span>
+            )
           ) : (
             <button onClick={handleDelete} className="flex items-center gap-2 rounded-lg border border-destructive/30 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10">
               <Trash2 className="h-4 w-4" /> Delete
@@ -1634,10 +1694,12 @@ export default function UserDetailClient() {
         confirmLabel="Save Profile"
         busy={saving}
         error={profileConfirmError}
+        requiresMfa={profileRequiresMfa}
         onClose={() => {
           if (!saving) {
             setShowProfileConfirm(false);
             setProfileConfirmError(null);
+            setProfileRequiresMfa(false);
           }
         }}
         onConfirm={confirmProfileUpdate}
@@ -1649,10 +1711,12 @@ export default function UserDetailClient() {
         confirmLabel="Revoke"
         busy={revokingLoginSessions}
         error={loginSessionRevokeError}
+        requiresMfa={loginSessionRevokeRequiresMfa}
         onClose={() => {
           if (!revokingLoginSessions) {
             setPendingLoginSessionRevoke(null);
             setLoginSessionRevokeError(null);
+            setLoginSessionRevokeRequiresMfa(false);
           }
         }}
         onConfirm={confirmRevokeLoginSessions}
@@ -1664,10 +1728,12 @@ export default function UserDetailClient() {
         confirmLabel="Delete"
         busy={deleteBusy}
         error={deleteError}
+        requiresMfa={deleteRequiresMfa}
         onClose={() => {
           if (!deleteBusy) {
             setShowDeleteConfirm(false);
             setDeleteError(null);
+            setDeleteRequiresMfa(false);
           }
         }}
         onConfirm={confirmDelete}
@@ -1679,10 +1745,12 @@ export default function UserDetailClient() {
         confirmLabel="Restore / Unblock"
         busy={restoreBusy}
         error={restoreError}
+        requiresMfa={restoreRequiresMfa}
         onClose={() => {
           if (!restoreBusy) {
             setShowRestoreConfirm(false);
             setRestoreError(null);
+            setRestoreRequiresMfa(false);
           }
         }}
         onConfirm={confirmRestore}
@@ -1694,10 +1762,12 @@ export default function UserDetailClient() {
         confirmLabel="Change Plan"
         busy={changingPlan}
         error={planConfirmError}
+        requiresMfa={planRequiresMfa}
         onClose={() => {
           if (!changingPlan) {
             setPendingPlan(null);
             setPlanConfirmError(null);
+            setPlanRequiresMfa(false);
           }
         }}
         onConfirm={confirmPlanChange}
@@ -1721,10 +1791,12 @@ export default function UserDetailClient() {
         }
         busy={subscriptionActionBusy}
         error={subscriptionActionError}
+        requiresMfa={subscriptionActionRequiresMfa}
         onClose={() => {
           if (!subscriptionActionBusy) {
             setPendingSubscriptionAction(null);
             setSubscriptionActionError(null);
+            setSubscriptionActionRequiresMfa(false);
           }
         }}
         onConfirm={confirmSubscriptionAction}
@@ -1736,10 +1808,12 @@ export default function UserDetailClient() {
         confirmLabel="Save Entitlements"
         busy={savingPremium}
         error={premiumConfirmError}
+        requiresMfa={premiumRequiresMfa}
         onClose={() => {
           if (!savingPremium) {
             setShowPremiumConfirm(false);
             setPremiumConfirmError(null);
+            setPremiumRequiresMfa(false);
           }
         }}
         onConfirm={confirmPremiumUpdate}
