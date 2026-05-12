@@ -5,6 +5,7 @@ vi.mock("@/lib/db", () => ({
     userCustomProvider: {
       findMany: vi.fn(),
       create: vi.fn(),
+      count: vi.fn(),
     },
     serviceProvider: {
       findMany: vi.fn(),
@@ -53,6 +54,7 @@ const mockCanCreateCustomProvider = canCreateCustomProvider as unknown as Mock;
 const mockCustomProvider = prisma.userCustomProvider as unknown as {
   findMany: Mock;
   create: Mock;
+  count: Mock;
 };
 const mockServiceProvider = prisma.serviceProvider as unknown as {
   findMany: Mock;
@@ -76,12 +78,17 @@ describe("custom providers route", () => {
     mockRequireAppMutationUser.mockResolvedValue("user-1");
     mockCanCreateCustomProvider.mockResolvedValue({ allowed: true });
     mockCustomProvider.findMany.mockResolvedValue([]);
-    mockCustomProvider.create.mockResolvedValue({
-      id: "custom-new",
-      name: "Corner Gym",
-      category: "FITNESS_GYM",
-      providerType: "GYM",
-    });
+    mockCustomProvider.count.mockResolvedValue(0);
+    mockCustomProvider.create.mockImplementation(({ data }: any) =>
+      Promise.resolve({
+        id: "custom-new",
+        name: data.name,
+        category: data.category,
+        providerType: data.providerType,
+        state: data.state ?? null,
+        adminReviewStatus: data.adminReviewStatus,
+      }),
+    );
     mockServiceProvider.findMany.mockResolvedValue([]);
     mockUserEvent.create.mockResolvedValue({});
   });
@@ -158,6 +165,103 @@ describe("custom providers route", () => {
 
     expect(response.status).toBe(status);
     expect(body.code).toBe(code);
+    expect(mockCustomProvider.create).not.toHaveBeenCalled();
+  });
+
+  it("LOCAL coverage stays NOT_REVIEWED even if client tries to flag for review", async () => {
+    const response = await POST(
+      makeRequest({
+        name: "Corner Plumber",
+        category: "OTHER",
+        coverage: "LOCAL",
+        // Client trying to force itself onto the admin queue — must be ignored.
+        submitForGlobalReview: true,
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(mockCustomProvider.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ adminReviewStatus: "NOT_REVIEWED" }),
+      }),
+    );
+    // No NEEDS_REVIEW means no pending-cap check fires.
+    expect(mockCustomProvider.count).not.toHaveBeenCalled();
+  });
+
+  it("STATEWIDE coverage without a state returns 400", async () => {
+    const response = await POST(
+      makeRequest({
+        name: "State Provider",
+        category: "OTHER",
+        coverage: "STATEWIDE",
+        // No state — server must refuse.
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/state/i);
+    expect(mockCustomProvider.create).not.toHaveBeenCalled();
+  });
+
+  it("STATEWIDE coverage stores state and flags for review", async () => {
+    const response = await POST(
+      makeRequest({
+        name: "Maryland MVA",
+        category: "GOVERNMENT_DMV",
+        coverage: "STATEWIDE",
+        state: "MD",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(mockCustomProvider.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          state: "MD",
+          adminReviewStatus: "NEEDS_REVIEW",
+        }),
+      }),
+    );
+  });
+
+  it("NATIONWIDE coverage clears the state field even if one is sent", async () => {
+    const response = await POST(
+      makeRequest({
+        name: "T-Mobile",
+        category: "UTILITY_MOBILE",
+        coverage: "NATIONWIDE",
+        // State must be stripped server-side for nationwide entries.
+        state: "MD",
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(mockCustomProvider.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          state: null,
+          adminReviewStatus: "NEEDS_REVIEW",
+        }),
+      }),
+    );
+  });
+
+  it("refuses submission when user has too many pending reviews", async () => {
+    mockCustomProvider.count.mockResolvedValueOnce(10);
+
+    const response = await POST(
+      makeRequest({
+        name: "Another Suggestion",
+        category: "OTHER",
+        coverage: "NATIONWIDE",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(429);
+    expect(body.code).toBe("TOO_MANY_PENDING_REVIEWS");
     expect(mockCustomProvider.create).not.toHaveBeenCalled();
   });
 

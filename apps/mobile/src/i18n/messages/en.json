@@ -247,7 +247,15 @@
     "suggestProviderDescription": "Can't find your provider in our directory? Add it manually — our team will review and add it to the system if valid.",
     "suggestBannerTitle": "Suggest a provider for our directory",
     "suggestBannerBody": "Fill in the provider name, website, and phone. Our team will review and add it to the listed directory if valid. This still creates a tracked service for you now.",
-    "suggestSuccessToast": "Submitted for review — we'll verify and add it to the directory."
+    "suggestSuccessToast": "Submitted for review — we'll verify and add it to the directory.",
+    "coverageLabel": "Coverage",
+    "coverageLocal": "Local",
+    "coverageStatewide": "Statewide",
+    "coverageNationwide": "Nationwide",
+    "coverageLocalHelp": "Stays in your private records only.",
+    "coverageStatewideHelp": "We'll review and may add it to the directory for this state.",
+    "coverageNationwideHelp": "We'll review and may add it as a nationwide directory entry.",
+    "coverageStateRequired": "Statewide coverage needs an address with a state. Switch coverage or pick another address."
   },
   "providers": {
     "title": "Providers",

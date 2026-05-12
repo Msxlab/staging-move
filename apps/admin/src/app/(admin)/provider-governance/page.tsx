@@ -34,6 +34,12 @@ const REVIEW_STATUS_BADGE: Record<string, { label: string; className: string }> 
   LINKED_TO_GLOBAL_PROVIDER: { label: "Promoted", className: "bg-tone-emerald-bg text-tone-emerald-fg border-tone-emerald-br" },
 };
 
+const COVERAGE_BADGE: Record<string, { label: string; icon: string; className: string }> = {
+  LOCAL: { label: "Local", icon: "🏠", className: "bg-foreground/5 text-muted-foreground border-border" },
+  STATEWIDE: { label: "Statewide", icon: "🗺️", className: "bg-tone-cyan-bg text-tone-cyan-fg border-tone-cyan-br" },
+  NATIONWIDE: { label: "Nationwide", icon: "🌐", className: "bg-tone-foil-bg text-tone-foil-fg border-tone-foil-br" },
+};
+
 export default function ProviderGovernancePage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -159,12 +165,19 @@ export default function ProviderGovernancePage() {
                   const provider = item.provider;
                   const customId = isCustomQueue && provider?.id ? provider.id : null;
                   const reviewBadge = customId ? REVIEW_STATUS_BADGE[provider.adminReviewStatus] : null;
+                  const coverageBadge = customId && provider?.coverage ? COVERAGE_BADGE[provider.coverage] : null;
                   return (
                     <div key={`${key}-${provider?.id || index}-${item.warning?.code}`} className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="truncate text-sm font-medium">{provider?.name || "Unknown provider"}</p>
+                            {coverageBadge && (
+                              <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${coverageBadge.className}`}>
+                                <span aria-hidden>{coverageBadge.icon}</span>
+                                {coverageBadge.label}
+                              </span>
+                            )}
                             {reviewBadge && (
                               <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${reviewBadge.className}`}>
                                 {reviewBadge.label}

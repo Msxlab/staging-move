@@ -77,10 +77,21 @@ export default function NewServicePage() {
   const [error, setError] = useState<string | null>(null);
   const [serviceLimit, setServiceLimit] = useState<ServiceLimitDetails | null>(null);
   const [showCustomProvider, setShowCustomProvider] = useState(suggestMode);
-  const [customProvider, setCustomProvider] = useState({
+  const [customProvider, setCustomProvider] = useState<{
+    name: string;
+    category: string;
+    coverage: "LOCAL" | "STATEWIDE" | "NATIONWIDE";
+    website: string;
+    phone: string;
+    email: string;
+    notes: string;
+  }>({
     name: suggestName || "",
-    category: prefillCategory || "OTHER",
-    providerType: "OTHER",
+    // Force user to pick a category — no silent "OTHER" default.
+    category: prefillCategory || "",
+    // Suggest mode means user just searched and missed it — most likely a
+    // statewide or nationwide provider missing from the directory.
+    coverage: suggestMode ? "STATEWIDE" : "LOCAL",
     website: "",
     phone: "",
     email: "",
@@ -298,25 +309,37 @@ export default function NewServicePage() {
   const handleAddCustomProvider = async () => {
     if (!selectedAddress) { setError("Please select an address."); return; }
     if (!customProvider.name.trim()) { setError("Provider name is required."); return; }
+    if (!customProvider.category) { setError("Please choose a category."); return; }
+    if (customProvider.coverage === "STATEWIDE") {
+      const addr = addresses.find((a) => a.id === selectedAddress);
+      if (!addr?.state) {
+        setError("Statewide coverage needs an address with a state. Please switch the selected address or pick another coverage option.");
+        return;
+      }
+    }
     setSaving(true);
     setError(null);
     try {
       const selectedAddr = addresses.find((a) => a.id === selectedAddress);
+      // Coverage drives what the API records — server is authoritative and
+      // ignores any client-supplied submitForGlobalReview flag.
+      const cityForRequest = customProvider.coverage !== "NATIONWIDE" ? selectedAddr?.city || "" : "";
+      const stateForRequest = customProvider.coverage === "STATEWIDE" ? selectedAddr?.state || "" : "";
+      const zipForRequest = customProvider.coverage === "LOCAL" ? selectedAddr?.zip || "" : "";
       const providerRes = await fetch("/api/custom-providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...customProvider,
-          // When the user lands here via "suggest", flag the record so admin governance
-          // surfaces it as a verify-and-promote request instead of a private record.
-          ...(suggestMode
-            ? {
-                submitForGlobalReview: true,
-                city: selectedAddr?.city || "",
-                state: selectedAddr?.state || "",
-                zipCode: selectedAddr?.zip || "",
-              }
-            : {}),
+          name: customProvider.name,
+          category: customProvider.category,
+          website: customProvider.website,
+          phone: customProvider.phone,
+          email: customProvider.email,
+          notes: customProvider.notes,
+          coverage: customProvider.coverage,
+          city: cityForRequest,
+          state: stateForRequest,
+          zipCode: zipForRequest,
         }),
       });
       const providerData = await providerRes.json();
@@ -339,9 +362,9 @@ export default function NewServicePage() {
       const serviceData = await serviceRes.json();
       if (!serviceRes.ok) throw new Error(resolveServiceMutationError(serviceData, "Failed to attach custom provider"));
       toast.success(
-        suggestMode
-          ? "Submitted for review — we'll verify and add it to the directory."
-          : "Custom provider added for local tracking",
+        customProvider.coverage === "LOCAL"
+          ? "Custom provider added for local tracking"
+          : "Submitted for review — we'll verify and add it to the directory.",
       );
       router.push("/services");
     } catch (error: any) {
@@ -569,24 +592,67 @@ export default function NewServicePage() {
                   value={customProvider.name}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, name: e.target.value }))}
                 />
-                <select className="rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground"
+                <select
+                  className="rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground"
                   value={customProvider.category}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, category: e.target.value }))}
+                  aria-label="Provider category"
                 >
+                  <option value="" disabled>
+                    Select a category…
+                  </option>
                   {CUSTOM_PROVIDER_CATEGORY_OPTIONS.map((category) => (
                     <option key={category.value} value={category.value}>
                       {category.icon ? `${category.icon} ` : ""}{category.label}
                     </option>
                   ))}
                 </select>
-                <select className="rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground"
-                  value={customProvider.providerType}
-                  onChange={(e) => setCustomProvider((prev) => ({ ...prev, providerType: e.target.value }))}
-                >
-                  {["OTHER", "LOCAL_BUSINESS", "PROFESSIONAL_SERVICE", "HEALTHCARE", "LEGAL", "DENTAL", "PHYSICAL_THERAPY", "GYM"].map((type) => (
-                    <option key={type} value={type}>{type.replace(/_/g, " ")}</option>
-                  ))}
-                </select>
+                <div className="sm:col-span-2 space-y-2">
+                  <p className="text-xs font-semibold text-foreground/80">Coverage</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {([
+                      {
+                        value: "LOCAL",
+                        icon: "🏠",
+                        title: "Local",
+                        desc: "Only at this address. Stays in your private records.",
+                      },
+                      {
+                        value: "STATEWIDE",
+                        icon: "🗺️",
+                        title: "Statewide",
+                        desc: "Serves this state. We'll review and may add it to the directory.",
+                      },
+                      {
+                        value: "NATIONWIDE",
+                        icon: "🌐",
+                        title: "Nationwide",
+                        desc: "Serves the whole country. We'll review and may add it to the directory.",
+                      },
+                    ] as const).map((option) => {
+                      const selected = customProvider.coverage === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setCustomProvider((prev) => ({ ...prev, coverage: option.value }))}
+                          aria-pressed={selected}
+                          className={`text-left p-3 rounded-xl border transition-all ${
+                            selected
+                              ? "border-tone-orange-br bg-tone-orange-bg ring-1 ring-tone-orange-fg/30"
+                              : "border-border bg-foreground/[0.02] hover:bg-foreground/5"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{option.icon}</span>
+                            <span className="text-sm font-semibold text-foreground">{option.title}</span>
+                          </div>
+                          <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{option.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <input className="rounded-xl border border-border bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/40" placeholder="Phone"
                   value={customProvider.phone}
                   onChange={(e) => setCustomProvider((prev) => ({ ...prev, phone: e.target.value }))}

@@ -135,7 +135,16 @@ export default function NewServiceScreen() {
   const prefillCategory = Array.isArray(params.category) ? params.category[0] : params.category || "";
 
   // Manual form state
-  const [manualForm, setManualForm] = useState({
+  const [manualForm, setManualForm] = useState<{
+    category: string;
+    providerName: string;
+    monthlyCost: string;
+    phone: string;
+    website: string;
+    billingCycle: string;
+    notes: string;
+    coverage: "LOCAL" | "STATEWIDE" | "NATIONWIDE";
+  }>({
     category: prefillCategory || "",
     providerName: prefillProviderName || "",
     monthlyCost: "",
@@ -143,6 +152,10 @@ export default function NewServiceScreen() {
     website: "",
     billingCycle: "MONTHLY",
     notes: "",
+    // Suggest mode means the user couldn't find a directory provider — most
+    // likely a state- or country-level one. Default to STATEWIDE so the
+    // user's address-state fills in automatically.
+    coverage: suggestMode ? "STATEWIDE" : "LOCAL",
   });
 
   // Fetch addresses
@@ -270,23 +283,30 @@ export default function NewServiceScreen() {
       Alert.alert(t("common.retry"), t("validation.required"));
       return;
     }
-    setSaving(true);
     const currentAddress = addresses.find((a) => a.id === selectedAddress);
+    if (manualForm.coverage === "STATEWIDE" && !currentAddress?.state) {
+      Alert.alert(
+        t("common.retry"),
+        t("services.coverageStateRequired", {
+          defaultValue: "Statewide coverage needs an address with a state. Switch coverage or pick another address.",
+        }),
+      );
+      return;
+    }
+    setSaving(true);
+    const cityForRequest = manualForm.coverage !== "NATIONWIDE" ? currentAddress?.city || "" : "";
+    const stateForRequest = manualForm.coverage === "STATEWIDE" ? currentAddress?.state || "" : "";
+    const zipForRequest = manualForm.coverage === "LOCAL" ? currentAddress?.zip || "" : "";
     const providerRes = await api.post<any>("/api/custom-providers", {
       name: manualForm.providerName,
       category: manualForm.category,
       website: manualForm.website,
       phone: manualForm.phone,
       notes: manualForm.notes,
-      providerType: "OTHER",
-      ...(suggestMode
-        ? {
-            submitForGlobalReview: true,
-            city: currentAddress?.city || "",
-            state: currentAddress?.state || "",
-            zipCode: currentAddress?.zip || "",
-          }
-        : {}),
+      coverage: manualForm.coverage,
+      city: cityForRequest,
+      state: stateForRequest,
+      zipCode: zipForRequest,
     });
     if (providerRes.error || !providerRes.data?.provider?.id) {
       setSaving(false);
@@ -325,7 +345,7 @@ export default function NewServiceScreen() {
       Alert.alert(t("common.retry"), res.error);
     } else {
       hapticSuccess();
-      if (suggestMode) {
+      if (manualForm.coverage !== "LOCAL") {
         Alert.alert(
           t("services.suggestBannerTitle", { defaultValue: "Submitted for review" }),
           t("services.suggestSuccessToast", {
@@ -679,6 +699,57 @@ export default function NewServiceScreen() {
                 );
               })}
             </View>
+
+            <Text style={styles.sectionLabel}>{t("services.coverageLabel", { defaultValue: "Coverage" })} *</Text>
+            <View style={styles.chipRow}>
+              {([
+                {
+                  value: "LOCAL" as const,
+                  icon: "🏠",
+                  title: t("services.coverageLocal", { defaultValue: "Local" }),
+                },
+                {
+                  value: "STATEWIDE" as const,
+                  icon: "🗺️",
+                  title: t("services.coverageStatewide", { defaultValue: "Statewide" }),
+                },
+                {
+                  value: "NATIONWIDE" as const,
+                  icon: "🌐",
+                  title: t("services.coverageNationwide", { defaultValue: "Nationwide" }),
+                },
+              ]).map((option) => {
+                const selected = manualForm.coverage === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[styles.chip, selected && styles.chipActive]}
+                    onPress={() => setManualForm((prev) => ({ ...prev, coverage: option.value }))}
+                    accessibilityRole="button"
+                    accessibilityLabel={option.title}
+                    accessibilityState={{ selected }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text style={{ fontSize: 13 }}>{option.icon}</Text>
+                      <Text style={[styles.chipText, selected && styles.chipTextActive]}>{option.title}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={[styles.manualTrustText, { marginBottom: 8 }]}>
+              {manualForm.coverage === "LOCAL"
+                ? t("services.coverageLocalHelp", {
+                    defaultValue: "Stays in your private records only.",
+                  })
+                : manualForm.coverage === "STATEWIDE"
+                  ? t("services.coverageStatewideHelp", {
+                      defaultValue: "We'll review and may add it to the directory for this state.",
+                    })
+                  : t("services.coverageNationwideHelp", {
+                      defaultValue: "We'll review and may add it as a nationwide directory entry.",
+                    })}
+            </Text>
 
             <Text style={styles.label}>{t("services.providerName")} *</Text>
             <TextInput

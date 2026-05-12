@@ -247,7 +247,15 @@
     "suggestProviderDescription": "¿No encuentras tu proveedor en nuestro directorio? Agrégalo manualmente — nuestro equipo lo revisará y lo añadirá al sistema si es válido.",
     "suggestBannerTitle": "Sugerir un proveedor para nuestro directorio",
     "suggestBannerBody": "Completa el nombre, sitio web y teléfono del proveedor. Nuestro equipo lo revisará y lo añadirá al directorio si es válido. Esto crea un servicio rastreado para ti ahora mismo.",
-    "suggestSuccessToast": "Enviado para revisión — verificaremos y lo añadiremos al directorio."
+    "suggestSuccessToast": "Enviado para revisión — verificaremos y lo añadiremos al directorio.",
+    "coverageLabel": "Cobertura",
+    "coverageLocal": "Local",
+    "coverageStatewide": "Estatal",
+    "coverageNationwide": "Nacional",
+    "coverageLocalHelp": "Permanece solo en tus registros privados.",
+    "coverageStatewideHelp": "Lo revisaremos y podríamos añadirlo al directorio de este estado.",
+    "coverageNationwideHelp": "Lo revisaremos y podríamos añadirlo como entrada nacional del directorio.",
+    "coverageStateRequired": "La cobertura estatal requiere una dirección con estado. Cambia la cobertura o elige otra dirección."
   },
   "providers": {
     "title": "Proveedores",

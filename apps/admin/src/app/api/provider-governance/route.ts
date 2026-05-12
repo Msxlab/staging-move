@@ -137,8 +137,16 @@ export async function GET() {
     for (const provider of customProviders) {
       if (provider.adminReviewStatus !== "REVIEWED" && provider.adminReviewStatus !== "LINKED_TO_GLOBAL_PROVIDER") {
         const isUserSubmission = provider.adminReviewStatus === "NEEDS_REVIEW";
+        // Coverage is derived from the storage shape: NEEDS_REVIEW + state ⇒
+        // STATEWIDE, NEEDS_REVIEW + no state ⇒ NATIONWIDE, otherwise LOCAL.
+        // The POST route enforces these invariants at create time.
+        const coverage: "LOCAL" | "STATEWIDE" | "NATIONWIDE" = isUserSubmission
+          ? provider.state
+            ? "STATEWIDE"
+            : "NATIONWIDE"
+          : "LOCAL";
         queues.userCreatedProviderReview.push({
-          provider,
+          provider: { ...provider, coverage },
           warning: {
             code: isUserSubmission ? "user_submitted_for_review" : "user_custom_review",
             label: isUserSubmission
@@ -146,7 +154,7 @@ export async function GET() {
               : "User-created provider review",
             message: isUserSubmission
               ? "User asked us to verify and add this provider to the listed directory."
-              : "Private user-created provider needs support/governance review.",
+              : "Private user-created provider — kept for audit; no promotion requested.",
           },
         });
       }

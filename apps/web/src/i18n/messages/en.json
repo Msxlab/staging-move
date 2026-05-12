@@ -764,6 +764,17 @@
       "addService": "Add Service",
       "suggestProvider": "Add manually for review"
     },
+    "coverage": {
+      "label": "Coverage",
+      "selectCategory": "Select a category…",
+      "local": "Local",
+      "localDesc": "Only at this address. Stays in your private records.",
+      "statewide": "Statewide",
+      "statewideDesc": "Serves this state. We'll review and may add it to the directory.",
+      "nationwide": "Nationwide",
+      "nationwideDesc": "Serves the whole country. We'll review and may add it to the directory.",
+      "stateRequired": "Statewide coverage needs an address with a state. Switch the selected address or pick another coverage."
+    },
     "doIt": "Do it"
   },
   "providers": {

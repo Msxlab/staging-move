@@ -14,6 +14,28 @@ import {
 
 const CUSTOM_PROVIDER_CREATE_RATE_LIMIT = { limit: 90, windowSeconds: 300 } as const;
 
+// Max NEEDS_REVIEW submissions a single user can have pending at once.
+// Prevents a single account from flooding the admin promotion queue.
+const MAX_PENDING_REVIEW_PER_USER = 10;
+
+const US_STATE_RE = /^[A-Z]{2}$/;
+
+type CoverageChoice = "LOCAL" | "STATEWIDE" | "NATIONWIDE";
+
+function resolveCoverage(input: {
+  coverage?: CoverageChoice;
+  submitForGlobalReview?: boolean;
+  state: string | null;
+}): CoverageChoice {
+  if (input.coverage) return input.coverage;
+  // Legacy callers that only sent submitForGlobalReview map to a coverage
+  // implicitly so the server can apply consistent rules either way.
+  if (input.submitForGlobalReview === true) {
+    return input.state ? "STATEWIDE" : "NATIONWIDE";
+  }
+  return "LOCAL";
+}
+
 function cleanText(value: string | undefined): string | null {
   const trimmed = (value || "").trim();
   if (!trimmed) return null;
@@ -135,7 +157,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const submitForGlobalReview = validated.submitForGlobalReview === true;
+    const rawState = normalizeState(validated.state);
+    const coverage = resolveCoverage({
+      coverage: validated.coverage as CoverageChoice | undefined,
+      submitForGlobalReview: validated.submitForGlobalReview,
+      state: rawState,
+    });
+
+    // Server is authoritative on what the chosen coverage implies. The
+    // client's submitForGlobalReview flag and state field are sanitized below
+    // so an attacker cannot craft a request that bypasses these rules.
+    let finalState: string | null;
+    let submitForGlobalReview: boolean;
+    if (coverage === "STATEWIDE") {
+      if (!rawState || !US_STATE_RE.test(rawState)) {
+        return NextResponse.json(
+          { error: "A 2-letter US state is required for statewide coverage." },
+          { status: 400 },
+        );
+      }
+      finalState = rawState;
+      submitForGlobalReview = true;
+    } else if (coverage === "NATIONWIDE") {
+      finalState = null;
+      submitForGlobalReview = true;
+    } else {
+      finalState = rawState;
+      submitForGlobalReview = false;
+    }
+
+    if (submitForGlobalReview) {
+      const pending = await prisma.userCustomProvider.count({
+        where: {
+          userId,
+          adminReviewStatus: "NEEDS_REVIEW",
+          deletedAt: null,
+        },
+      });
+      if (pending >= MAX_PENDING_REVIEW_PER_USER) {
+        return NextResponse.json(
+          {
+            error:
+              "You have too many provider suggestions awaiting review. Please wait for our team to process the existing ones before submitting more.",
+            code: "TOO_MANY_PENDING_REVIEWS",
+            pending,
+            limit: MAX_PENDING_REVIEW_PER_USER,
+          },
+          { status: 429 },
+        );
+      }
+    }
+
     const provider = await prisma.userCustomProvider.create({
       data: {
         userId,
@@ -148,7 +220,7 @@ export async function POST(request: NextRequest) {
         addressLine1: cleanText(validated.addressLine1),
         addressLine2: cleanText(validated.addressLine2),
         city: cleanText(validated.city),
-        state: normalizeState(validated.state),
+        state: finalState,
         zipCode: cleanText(validated.zipCode),
         notes: cleanText(validated.notes),
         providerType: validated.providerType,
@@ -167,6 +239,7 @@ export async function POST(request: NextRequest) {
         name: provider.name,
         category: provider.category,
         providerType: provider.providerType,
+        coverage,
         submitForGlobalReview,
       },
       ...meta,
@@ -178,13 +251,17 @@ export async function POST(request: NextRequest) {
         customProviderId: provider.id,
         category: provider.category,
         providerType: provider.providerType,
+        coverage,
         localOnly: !submitForGlobalReview,
         privateToUser: !submitForGlobalReview,
         submitForGlobalReview,
       },
     );
 
-    return NextResponse.json({ provider: presentCustomProvider(provider) }, { status: 201 });
+    return NextResponse.json(
+      { provider: { ...presentCustomProvider(provider), coverage } },
+      { status: 201 },
+    );
   } catch (error: any) {
     const gateResponse = apiGateErrorResponse(error);
     if (gateResponse) return gateResponse;

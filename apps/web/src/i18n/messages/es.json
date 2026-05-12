@@ -764,6 +764,17 @@
       "addService": "Agregar Servicio",
       "suggestProvider": "Agregar manualmente para revisión"
     },
+    "coverage": {
+      "label": "Cobertura",
+      "selectCategory": "Selecciona una categoría…",
+      "local": "Local",
+      "localDesc": "Solo en esta dirección. Permanece en tus registros privados.",
+      "statewide": "Estatal",
+      "statewideDesc": "Cubre este estado. Lo revisaremos y podríamos añadirlo al directorio.",
+      "nationwide": "Nacional",
+      "nationwideDesc": "Cubre todo el país. Lo revisaremos y podríamos añadirlo al directorio.",
+      "stateRequired": "La cobertura estatal requiere una dirección con estado. Cambia la dirección seleccionada o elige otra cobertura."
+    },
     "doIt": "Hazlo"
   },
   "providers": {

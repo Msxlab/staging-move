@@ -104,6 +104,10 @@ export const customProviderSchema = z.strictObject({
     "GYM",
     "OTHER",
   ]).default("OTHER"),
+  // Server uses coverage as the authoritative signal for whether this provider
+  // should enter the admin promotion queue. The legacy submitForGlobalReview
+  // flag is honored only as a fallback when coverage is absent.
+  coverage: z.enum(["LOCAL", "STATEWIDE", "NATIONWIDE"]).optional(),
   submitForGlobalReview: z.boolean().optional(),
 });
 
