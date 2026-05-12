@@ -18,7 +18,7 @@ const JWT_SECRET = new TextEncoder().encode(adminJwtSecret);
 
 const PUBLIC_EXACT_PATHS = new Set(["/login", "/api/auth/login", "/api/healthz"]);
 const PUBLIC_PREFIX_PATHS: string[] = [];
-const PUBLIC_STATIC_PATHS = ["/sw.js", "/robots.txt"];
+const PUBLIC_STATIC_PATHS = ["/sw.js", "/register-sw.js", "/robots.txt"];
 
 /**
  * Paths that must reach the request handler even when an IP rule would
@@ -206,6 +206,10 @@ export function buildCspHeader(nonce: string, isDev: boolean): string {
   ].join("; ");
 }
 
+export function isRscRequest(request: Pick<NextRequest, "headers">): boolean {
+  return request.headers.get("rsc") === "1";
+}
+
 const STRICT_NO_SCRIPT_CSP = [
   "default-src 'none'",
   "base-uri 'none'",
@@ -230,6 +234,15 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 }
 
 function nextWithCsp(request: NextRequest): NextResponse {
+  if (isRscRequest(request)) {
+    // App Router soft navigations carry internal RSC headers
+    // (`next-router-state-tree`, prefetch markers, etc.). Do not override
+    // the request header bag here; Next uses those headers plus `_rsc` to
+    // validate and apply the flight response. The current document already
+    // owns the CSP, so a fresh nonce on the RSC fetch is unnecessary.
+    return applySecurityHeaders(NextResponse.next());
+  }
+
   const nonce = generateCspNonce();
   const isDev = process.env.NODE_ENV !== "production";
   const csp = buildCspHeader(nonce, isDev);

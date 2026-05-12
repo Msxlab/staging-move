@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { buildCspHeader, isPublicPath, isPublicStaticPath } from "./middleware";
+import { buildCspHeader, isPublicPath, isPublicStaticPath, isRscRequest } from "./middleware";
 
 const ORIGINAL_R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL;
 
@@ -29,6 +29,15 @@ describe("admin middleware CSP", () => {
     expect(imgSources).not.toContain("*");
   });
 
+  it("keeps route chunks loadable under production CSP", () => {
+    const scriptSrc = directive(buildCspHeader("test-nonce", false), "script-src");
+    const scriptSources = sources(scriptSrc);
+
+    expect(scriptSources).toContain("'self'");
+    expect(scriptSources).toContain("'nonce-test-nonce'");
+    expect(scriptSources).not.toContain("'strict-dynamic'");
+  });
+
   it("also allows the configured R2 public base URL origin", () => {
     process.env.R2_PUBLIC_BASE_URL = "https://cdn.example.com/provider-logo";
 
@@ -51,9 +60,20 @@ describe("admin middleware CSP", () => {
   });
 });
 
+describe("admin middleware RSC navigation", () => {
+  it("detects App Router flight requests so middleware does not override router headers", () => {
+    const rscHeaders = new Headers({ rsc: "1", "next-router-state-tree": "[tree]" });
+    const htmlHeaders = new Headers({ accept: "text/html" });
+
+    expect(isRscRequest({ headers: rscHeaders })).toBe(true);
+    expect(isRscRequest({ headers: htmlHeaders })).toBe(false);
+  });
+});
+
 describe("admin service worker", () => {
   it("serves the service worker path without requiring an admin session", () => {
     expect(isPublicStaticPath("/sw.js")).toBe(true);
+    expect(isPublicStaticPath("/register-sw.js")).toBe(true);
     expect(isPublicStaticPath("/robots.txt")).toBe(true);
     expect(isPublicStaticPath("/login")).toBe(false);
     expect(isPublicStaticPath("/api/providers")).toBe(false);
@@ -70,6 +90,20 @@ describe("admin service worker", () => {
     expect(fetchHandler).toContain("if (url.origin !== self.location.origin) return;");
     expect(fetchHandler).not.toContain("respondWith");
     expect(sw).not.toContain("assets.locateflow.com");
+  });
+
+  it("unregisters stale service workers from the admin shell", () => {
+    const register = readFileSync(join(process.cwd(), "public", "register-sw.js"), "utf8");
+    const layout = readFileSync(join(process.cwd(), "src", "app", "layout.tsx"), "utf8");
+    const nextConfig = readFileSync(join(process.cwd(), "next.config.js"), "utf8");
+
+    expect(register).toContain("navigator.serviceWorker.getRegistrations()");
+    expect(register).toContain("registration.unregister()");
+    expect(register).toContain('key.indexOf("locateflow-") === 0');
+    expect(register).not.toContain("navigator.serviceWorker.register");
+    expect(layout).toContain('<script src="/register-sw.js" defer nonce={nonce} />');
+    expect(nextConfig).toContain('source: "/register-sw.js"');
+    expect(nextConfig).toContain("no-store, no-cache, must-revalidate, proxy-revalidate");
   });
 });
 
