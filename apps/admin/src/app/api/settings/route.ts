@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
+import { requireAdmin, requirePasswordConfirm, requirePermission } from "@/lib/auth";
 import {
+  getAdminRuntimeConfigValue,
   listRuntimeConfigCatalog,
   type RuntimeConfigCatalogItem,
 } from "@/lib/runtime-config";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 
 // grant_premium is a manual subscription override — billing accounting
 // drifts from Stripe the moment we issue one, so we cap how far that
@@ -54,6 +56,8 @@ const grantPremiumSchema = z
     // "why did this user get a free year" must always be answerable.
     note: z.string().min(3).max(500),
     confirmPassword: z.string().min(1).max(200),
+    mfaCode: z.string().trim().max(16).optional(),
+    backupCode: z.string().trim().max(64).optional(),
   })
   .strict()
   .refine((value) => Boolean(value.userId || value.email), {
@@ -69,6 +73,85 @@ function detectDatabaseLabel(databaseUrl: string | undefined) {
   }
   if (databaseUrl.startsWith("file:")) return "SQLite (Prisma)";
   return "Managed Database (Prisma)";
+}
+
+function billingOperationEntityId(value: string | null | undefined) {
+  return value && value.length <= 30 ? value : "unknown";
+}
+
+async function writePremiumGrantAudit(
+  session: any,
+  request: NextRequest,
+  input: {
+    status: "success" | "failed";
+    reasonCode?: string;
+    targetUserId?: string | null;
+    subscriptionId?: string | null;
+    plan?: string | null;
+    durationDays?: number | null;
+    noteLength?: number | null;
+  },
+) {
+  await writeAdminAudit(session, {
+    action: input.status === "success" ? "PREMIUM_GRANTED" : "PREMIUM_GRANT_FAILED",
+    entityType: input.subscriptionId ? "Subscription" : "User",
+    entityId: billingOperationEntityId(input.subscriptionId || input.targetUserId),
+    metadata: {
+      operation: "premium_grant",
+      targetUserId: input.targetUserId || null,
+      plan: input.plan || null,
+      durationDays: input.durationDays ?? null,
+      noteLength: input.noteLength ?? null,
+      status: input.status,
+      reasonCode: input.reasonCode || null,
+    },
+    request: getAuditRequestMeta(request),
+  });
+}
+
+function getPremiumGrantAuditHints(data: any) {
+  return {
+    targetUserId: typeof data?.userId === "string" ? data.userId : null,
+    plan: typeof data?.plan === "string" ? data.plan : null,
+    durationDays: typeof data?.durationDays === "number" ? data.durationDays : null,
+    noteLength: typeof data?.note === "string" ? data.note.length : null,
+  };
+}
+
+async function requirePremiumGrantAuthority(request: NextRequest, data: any) {
+  const session = await requireAdmin();
+  const auditHints = getPremiumGrantAuditHints(data);
+
+  try {
+    await requirePermission("settings", "canUpdate", { minimumRole: "SUPER_ADMIN" });
+    return await requirePermission("subscriptions", "canUpdate", { minimumRole: "SUPER_ADMIN" });
+  } catch (error: any) {
+    if (error?.message === "FORBIDDEN") {
+      await writePremiumGrantAudit(session, request, {
+        status: "failed",
+        reasonCode: "forbidden",
+        ...auditHints,
+      });
+    }
+    throw error;
+  }
+}
+
+function isBillingProductionLike() {
+  const appEnv = (process.env.APP_ENV || process.env.VERCEL_ENV || "").toLowerCase();
+  if (["development", "dev", "test", "staging", "preview"].includes(appEnv)) return false;
+  return appEnv === "production" || (!appEnv && process.env.NODE_ENV === "production");
+}
+
+function validateStripeSecretKey(key: string | null | undefined) {
+  if (!key) return { ok: false as const, reasonCode: "stripe_secret_missing" };
+  if (isBillingProductionLike() && !key.startsWith("sk_live_")) {
+    return { ok: false as const, reasonCode: "stripe_secret_not_live" };
+  }
+  if (!isBillingProductionLike() && !key.startsWith("sk_test_") && !key.startsWith("sk_live_")) {
+    return { ok: false as const, reasonCode: "stripe_secret_invalid_prefix" };
+  }
+  return { ok: true as const, key };
 }
 
 function buildIntegrationStatus(
@@ -285,18 +368,33 @@ export async function GET(request: NextRequest) {
 // POST /api/settings — Admin can grant premium, update subscription via admin panel
 export async function POST(request: NextRequest) {
   try {
-    const session = await requirePermission("settings", "canUpdate", { minimumRole: "SUPER_ADMIN" });
-    const { action, ...data } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const { action, ...data } = body || {};
 
     if (action === "test_stripe") {
-      // Test Stripe connectivity
-      const stripeKey = process.env.STRIPE_SECRET_KEY;
-      if (!stripeKey) {
-        return NextResponse.json({ success: false, error: "STRIPE_SECRET_KEY not configured" });
+      const session = await requirePermission("settings", "canUpdate", { minimumRole: "SUPER_ADMIN" });
+      const stripeKey = await getAdminRuntimeConfigValue("STRIPE_SECRET_KEY");
+      const validatedKey = validateStripeSecretKey(stripeKey);
+      if (!validatedKey.ok) {
+        await writeAdminAudit(session, {
+          action: "BILLING_FIELD_UPDATE_FAILED",
+          entityType: "RuntimeConfig",
+          entityId: "STRIPE_SECRET_KEY",
+          metadata: {
+            operation: "test_stripe",
+            status: "failed",
+            reasonCode: validatedKey.reasonCode,
+          },
+          request: getAuditRequestMeta(request),
+        });
+        return NextResponse.json(
+          { success: false, error: "Stripe configuration is unavailable or invalid.", code: "STRIPE_CONFIG_INVALID" },
+          { status: 503 },
+        );
       }
       try {
         const Stripe = (await import("stripe")).default;
-        const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" });
+        const stripe = new Stripe(validatedKey.key, { apiVersion: "2024-06-20" });
         const balance = await stripe.balance.retrieve();
         return NextResponse.json({
           success: true,
@@ -304,33 +402,96 @@ export async function POST(request: NextRequest) {
           currency: balance.available?.[0]?.currency || "usd",
         });
       } catch (err: any) {
-        return NextResponse.json({ success: false, error: err?.message || "Stripe connection failed" });
+        await writeAdminAudit(session, {
+          action: "BILLING_FIELD_UPDATE_FAILED",
+          entityType: "RuntimeConfig",
+          entityId: "STRIPE_SECRET_KEY",
+          metadata: {
+            operation: "test_stripe",
+            status: "failed",
+            reasonCode: "stripe_connection_failed",
+            errorType: err?.type || null,
+            errorCode: err?.code || null,
+          },
+          request: getAuditRequestMeta(request),
+        });
+        return NextResponse.json(
+          { success: false, error: "Stripe connection failed.", code: "STRIPE_CONNECTION_FAILED" },
+          { status: 502 },
+        );
       }
     }
 
     if (action === "grant_premium") {
+      const session = await requirePremiumGrantAuthority(request, data);
+      let premiumGrantFailureAudited = false;
       const parsed = grantPremiumSchema.safeParse(data);
       if (!parsed.success) {
+        await writePremiumGrantAudit(session, request, {
+          status: "failed",
+          reasonCode: "validation_failed",
+          targetUserId: typeof data?.userId === "string" ? data.userId : null,
+          plan: typeof data?.plan === "string" ? data.plan : null,
+          durationDays: typeof data?.durationDays === "number" ? data.durationDays : null,
+          noteLength: typeof data?.note === "string" ? data.note.length : null,
+        });
         return NextResponse.json(
           { error: "Validation failed", details: parsed.error.errors },
           { status: 400 },
         );
       }
 
-      // Step-up auth: granting premium is a sensitive billing operation
-      const confirm = await requirePasswordConfirm(session, parsed.data.confirmPassword, { operation: "billing_premium_grant" });
+      try {
+      const requestMeta = getAuditRequestMeta(request);
+      const confirm = await requirePasswordConfirm(session, parsed.data.confirmPassword, {
+        operation: "billing_premium_grant",
+        requireMfa: true,
+        mfaCode: parsed.data.mfaCode,
+        backupCode: parsed.data.backupCode,
+        ipAddress: requestMeta.ipAddress,
+        userAgent: requestMeta.userAgent,
+      });
       if (!confirm.confirmed) {
-        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+        await writePremiumGrantAudit(session, request, {
+          status: "failed",
+          reasonCode: "step_up_failed",
+          targetUserId: parsed.data.userId || null,
+          plan: parsed.data.plan || "INDIVIDUAL",
+          durationDays: parsed.data.durationDays,
+          noteLength: parsed.data.note.length,
+        });
+        return NextResponse.json(
+          { error: confirm.error, requiresPassword: true, requiresMfa: confirm.requiresMfa || undefined },
+          { status: 403 },
+        );
       }
 
       const { userId, email, plan, durationDays, note } = parsed.data;
       let targetUserId = userId;
       if (!targetUserId && email) {
-        const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+        const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+        if (!user) {
+          await writePremiumGrantAudit(session, request, {
+            status: "failed",
+            reasonCode: "user_not_found",
+            plan: plan || "INDIVIDUAL",
+            durationDays,
+            noteLength: note.length,
+          });
+          return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
         targetUserId = user.id;
       }
-      if (!targetUserId) return NextResponse.json({ error: "userId or email required" }, { status: 400 });
+      if (!targetUserId) {
+        await writePremiumGrantAudit(session, request, {
+          status: "failed",
+          reasonCode: "target_user_missing",
+          plan: plan || "INDIVIDUAL",
+          durationDays,
+          noteLength: note.length,
+        });
+        return NextResponse.json({ error: "userId or email required" }, { status: 400 });
+      }
 
       // Refuse the manual grant if a real provider subscription is currently
       // billing the user. Issuing premium on top of a live Stripe / App Store
@@ -344,6 +505,7 @@ export async function POST(request: NextRequest) {
           status: true,
           stripeSubscriptionId: true,
           originalTransactionId: true,
+          latestTransactionId: true,
           purchaseToken: true,
         },
       });
@@ -364,9 +526,18 @@ export async function POST(request: NextRequest) {
         Boolean(
           existing.stripeSubscriptionId ||
             existing.originalTransactionId ||
+            existing.latestTransactionId ||
             existing.purchaseToken,
         );
       if (hasLiveProvider) {
+        await writePremiumGrantAudit(session, request, {
+          status: "failed",
+          reasonCode: "provider_subscription_active",
+          targetUserId,
+          plan: plan || "INDIVIDUAL",
+          durationDays,
+          noteLength: note.length,
+        });
         return NextResponse.json(
           {
             error:
@@ -385,7 +556,9 @@ export async function POST(request: NextRequest) {
       // user no longer has a Stripe/IAP subscription (we just confirmed
       // none is live), so leaving the IDs around lets the nightly Stripe
       // reconcile cron treat the row as drifted and overwrite the grant.
-      const sub = await prisma.subscription.upsert({
+      let sub: any;
+      try {
+        sub = await prisma.subscription.upsert({
         where: { userId: targetUserId },
         create: {
           userId: targetUserId,
@@ -428,7 +601,19 @@ export async function POST(request: NextRequest) {
           trialEndsAt: null,
           canceledAt: null,
         },
-      });
+        });
+      } catch (dbError) {
+        premiumGrantFailureAudited = true;
+        await writePremiumGrantAudit(session, request, {
+          status: "failed",
+          reasonCode: "db_error",
+          targetUserId,
+          plan: plan || "INDIVIDUAL",
+          durationDays,
+          noteLength: note.length,
+        });
+        throw dbError;
+      }
 
       await (prisma.subscription as any)
         .update({
@@ -441,25 +626,43 @@ export async function POST(request: NextRequest) {
           }
         });
 
-      await prisma.adminAuditLog.create({
-        data: {
-          adminUserId: session.adminId,
-          action: "GRANT_PREMIUM",
-          entityType: "Subscription",
-          entityId: sub.id,
-          changes: JSON.stringify({ targetUserId, plan: plan || "INDIVIDUAL", durationDays, note }),
-          ipAddress: request.headers.get("x-forwarded-for") || "unknown",
-        },
+      await writePremiumGrantAudit(session, request, {
+        status: "success",
+        targetUserId,
+        subscriptionId: sub.id,
+        plan: plan || "INDIVIDUAL",
+        durationDays,
+        noteLength: note.length,
       });
 
-      return NextResponse.json({ success: true, subscription: sub });
+      const safeSub = { ...sub };
+      delete safeSub.purchaseToken;
+      delete safeSub.purchaseTokenHash;
+      delete safeSub.premiumNote;
+      return NextResponse.json({ success: true, subscription: { ...safeSub, noteStored: Boolean(sub.premiumNote) } });
+      } catch (error) {
+        if (!premiumGrantFailureAudited) {
+          await writePremiumGrantAudit(session, request, {
+            status: "failed",
+            reasonCode: "unexpected_exception",
+            targetUserId: parsed.data.userId || null,
+            plan: parsed.data.plan || "INDIVIDUAL",
+            durationDays: parsed.data.durationDays,
+            noteLength: parsed.data.note.length,
+          });
+        }
+        throw error;
+      }
     }
 
+    await requirePermission("settings", "canUpdate", { minimumRole: "SUPER_ADMIN" });
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    console.error("Settings POST failed:", error);
+    console.error("Settings POST failed:", {
+      code: error?.code || null,
+    });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

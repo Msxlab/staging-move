@@ -22,7 +22,7 @@ interface Sub {
   stripeCurrentPeriodEnd: string | null;
   originalTransactionId: string | null;
   latestTransactionId: string | null;
-  purchaseToken: string | null;
+  purchaseTokenPresent: boolean;
   lastValidatedAt: string | null;
   lastSyncedAt: string | null;
   trialEndsAt: string | null;
@@ -34,6 +34,7 @@ interface Sub {
 
 function stripeDashboardUrl(stripeCustomerId: string | null) {
   if (!stripeCustomerId) return null;
+  if (stripeCustomerId.includes("****")) return null;
   // Live and test customer IDs share the cus_ prefix; the dashboard accepts
   // either and redirects to the correct mode. Test-mode admins can swap to
   // /test/customers if they prefer.
@@ -105,7 +106,7 @@ export default function SubscriptionsClient() {
       if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-tone-honey-bg text-tone-honey-fg" };
     }
     if (sub.provider === "PLAY_STORE") {
-      if (!sub.purchaseToken) return { label: "Missing token", cls: "bg-destructive/10 text-destructive" };
+      if (!sub.purchaseTokenPresent) return { label: "Missing token", cls: "bg-destructive/10 text-destructive" };
       if (!sub.lastValidatedAt) return { label: "Never validated", cls: "bg-tone-honey-bg text-tone-honey-fg" };
     }
     if (sub.lastValidatedAt && ["APP_STORE", "PLAY_STORE"].includes(sub.provider)) {

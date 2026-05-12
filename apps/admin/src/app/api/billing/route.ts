@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { BILLING_PLAN_DEFINITIONS } from "@/lib/shared-billing";
 
 const MOBILE_BILLING_PROVIDERS = new Set(["APP_STORE", "PLAY_STORE"]);
@@ -58,15 +59,21 @@ function redactDeletedBillingUser(user: any) {
 }
 
 function sanitizeBillingSubscription(subscription: any) {
+  const safeSubscription = { ...subscription };
+  delete safeSubscription.purchaseToken;
+  delete safeSubscription.campaignSnapshot;
+  delete safeSubscription.checkoutConsentSnapshot;
+  delete safeSubscription.premiumNote;
   return {
-    ...subscription,
+    ...safeSubscription,
+    purchaseTokenPresent: Boolean(subscription.purchaseToken),
     user: redactDeletedBillingUser(subscription.user),
   };
 }
 
 export async function GET(req: NextRequest) {
   try {
-    await requirePermission("subscriptions", "canRead", { minimumRole: "ADMIN" });
+    const session = await requirePermission("subscriptions", "canRead", { minimumRole: "ADMIN" });
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
@@ -75,7 +82,44 @@ export async function GET(req: NextRequest) {
     const staleValidationThreshold = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     const allSubs = await prisma.subscription.findMany({
-      include: { user: { select: { id: true, email: true, firstName: true, lastName: true, createdAt: true, deletedAt: true } } },
+      select: {
+        id: true,
+        userId: true,
+        plan: true,
+        status: true,
+        provider: true,
+        platform: true,
+        stripeCustomerId: true,
+        stripeSubscriptionId: true,
+        stripePriceId: true,
+        stripeCurrentPeriodEnd: true,
+        billingProductId: true,
+        originalTransactionId: true,
+        latestTransactionId: true,
+        purchaseToken: true,
+        currentPeriodEndsAt: true,
+        gracePeriodEndsAt: true,
+        lastValidatedAt: true,
+        lastSyncedAt: true,
+        accessType: true,
+        billingInterval: true,
+        freeAccessEndsAt: true,
+        cancelAtPeriodEnd: true,
+        firstChargeAt: true,
+        firstChargeAmount: true,
+        autoRenew: true,
+        campaignId: true,
+        campaignCode: true,
+        trialEndsAt: true,
+        canceledAt: true,
+        premiumUntil: true,
+        premiumGrantedBy: true,
+        premiumGrantedAt: true,
+        version: true,
+        createdAt: true,
+        updatedAt: true,
+        user: { select: { id: true, email: true, firstName: true, lastName: true, createdAt: true, deletedAt: true } },
+      },
     }) as any[];
 
     const activeSubs = allSubs.filter((s) => ["ACTIVE", "TRIALING"].includes(s.status));
@@ -149,6 +193,21 @@ export async function GET(req: NextRequest) {
       const subsOnDay = allSubs.filter((s) => new Date(s.createdAt) <= d && (s.status === "ACTIVE" || s.status === "TRIALING" || (s.canceledAt && new Date(s.canceledAt) > d)));
       dailyRevenue[key] = subsOnDay.reduce((sum, s) => sum + (monthlyEquivalent(s) / 30), 0);
     }
+
+    await writeAdminAudit(session, {
+      action: "BILLING_DASHBOARD_VIEWED",
+      entityType: "Subscription",
+      entityId: "dashboard",
+      metadata: {
+        operation: "billing_dashboard_view",
+        status: "success",
+        totalSubscriptions: allSubs.length,
+        activeSubscriptions: activeSubs.length,
+        mobileSubscriptions: mobileSubs.length,
+        staleMobileSubscriptions: staleMobileSubs.length,
+      },
+      request: getAuditRequestMeta(req),
+    });
 
     return NextResponse.json({
       mrr: Math.round(mrr * 100) / 100,

@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { parsePaginationParams } from "@/lib/pagination";
+import { maskEmail, maskProviderIdentifier } from "@/lib/privacy";
 
-function redactDeletedSubscriptionUser(user: any) {
+function canSeeRawBillingIds(role: string | null | undefined) {
+  return role === "ADMIN" || role === "SUPER_ADMIN";
+}
+
+function maskNullableProviderId(value: string | null | undefined) {
+  return value ? maskProviderIdentifier(value) : null;
+}
+
+function redactSubscriptionUser(user: any, showRawBillingIds: boolean) {
   if (!user) return null;
   if (user.deletedAt) {
     return {
@@ -17,15 +27,69 @@ function redactDeletedSubscriptionUser(user: any) {
 
   return {
     id: user.id,
-    email: user.email,
+    email: showRawBillingIds ? user.email : maskEmail(user.email),
     firstName: user.firstName,
     lastName: user.lastName,
   };
 }
 
+function redactSubscriptionRow(subscription: any, showRawBillingIds: boolean) {
+  return {
+    id: subscription.id,
+    userId: subscription.userId,
+    plan: subscription.plan,
+    status: subscription.status,
+    provider: subscription.provider,
+    platform: subscription.platform,
+    billingInterval: subscription.billingInterval,
+    accessType: subscription.accessType,
+    stripeCustomerId: showRawBillingIds
+      ? subscription.stripeCustomerId
+      : maskNullableProviderId(subscription.stripeCustomerId),
+    stripeSubscriptionId: showRawBillingIds
+      ? subscription.stripeSubscriptionId
+      : maskNullableProviderId(subscription.stripeSubscriptionId),
+    stripePriceId: showRawBillingIds
+      ? subscription.stripePriceId
+      : maskNullableProviderId(subscription.stripePriceId),
+    stripeCurrentPeriodEnd: subscription.stripeCurrentPeriodEnd,
+    billingProductId: showRawBillingIds
+      ? subscription.billingProductId
+      : maskNullableProviderId(subscription.billingProductId),
+    originalTransactionId: showRawBillingIds
+      ? subscription.originalTransactionId
+      : maskNullableProviderId(subscription.originalTransactionId),
+    latestTransactionId: showRawBillingIds
+      ? subscription.latestTransactionId
+      : maskNullableProviderId(subscription.latestTransactionId),
+    purchaseTokenPresent: Boolean(subscription.purchaseToken),
+    currentPeriodEndsAt: subscription.currentPeriodEndsAt,
+    gracePeriodEndsAt: subscription.gracePeriodEndsAt,
+    lastValidatedAt: subscription.lastValidatedAt,
+    lastSyncedAt: subscription.lastSyncedAt,
+    freeAccessEndsAt: subscription.freeAccessEndsAt,
+    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+    firstChargeAt: subscription.firstChargeAt,
+    firstChargeAmount: subscription.firstChargeAmount,
+    autoRenew: subscription.autoRenew,
+    campaignId: subscription.campaignId,
+    campaignCode: subscription.campaignCode,
+    trialEndsAt: subscription.trialEndsAt,
+    canceledAt: subscription.canceledAt,
+    premiumUntil: subscription.premiumUntil,
+    premiumGrantedBy: subscription.premiumGrantedBy,
+    premiumGrantedAt: subscription.premiumGrantedAt,
+    version: subscription.version,
+    createdAt: subscription.createdAt,
+    updatedAt: subscription.updatedAt,
+    user: redactSubscriptionUser(subscription.user, showRawBillingIds),
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
-    await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
+    const session = await requirePermission("subscriptions", "canRead", { minimumRole: "VIEWER" });
+    const showRawBillingIds = canSeeRawBillingIds(session.role);
     const { searchParams } = new URL(request.url);
     const { page, perPage, skip } = parsePaginationParams(searchParams, {
       defaultPerPage: 20,
@@ -79,7 +143,42 @@ export async function GET(request: NextRequest) {
     ] = await Promise.all([
       prisma.subscription.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          userId: true,
+          plan: true,
+          status: true,
+          provider: true,
+          platform: true,
+          stripeCustomerId: true,
+          stripeSubscriptionId: true,
+          stripePriceId: true,
+          stripeCurrentPeriodEnd: true,
+          billingProductId: true,
+          originalTransactionId: true,
+          latestTransactionId: true,
+          purchaseToken: true,
+          currentPeriodEndsAt: true,
+          gracePeriodEndsAt: true,
+          lastValidatedAt: true,
+          lastSyncedAt: true,
+          accessType: true,
+          billingInterval: true,
+          freeAccessEndsAt: true,
+          cancelAtPeriodEnd: true,
+          firstChargeAt: true,
+          firstChargeAmount: true,
+          autoRenew: true,
+          campaignId: true,
+          campaignCode: true,
+          trialEndsAt: true,
+          canceledAt: true,
+          premiumUntil: true,
+          premiumGrantedBy: true,
+          premiumGrantedAt: true,
+          version: true,
+          createdAt: true,
+          updatedAt: true,
           user: { select: { id: true, email: true, firstName: true, lastName: true, deletedAt: true } },
         },
         orderBy: { createdAt: "desc" },
@@ -114,10 +213,34 @@ export async function GET(request: NextRequest) {
     const accessTypeMap: Record<string, number> = {};
     accessTypeCounts.forEach((a: any) => { accessTypeMap[a.accessType || "none"] = a._count.id; });
 
-    const sanitizedSubscriptions = subscriptions.map((subscription: any) => ({
-      ...subscription,
-      user: redactDeletedSubscriptionUser(subscription.user),
-    }));
+    const sanitizedSubscriptions = subscriptions.map((subscription: any) =>
+      redactSubscriptionRow(subscription, showRawBillingIds),
+    );
+
+    await writeAdminAudit(session, {
+      action: "SUBSCRIPTIONS_LIST_VIEWED",
+      entityType: "Subscription",
+      entityId: "list",
+      metadata: {
+        operation: "subscriptions_list_view",
+        status: "success",
+        page,
+        perPage,
+        filters: {
+          searchPresent: Boolean(search),
+          plan: plan || null,
+          status: status || null,
+          provider: provider || null,
+          platform: platform || null,
+          accessType: accessType || null,
+          dateFrom: dateFrom || null,
+          dateTo: dateTo || null,
+        },
+        resultCount: sanitizedSubscriptions.length,
+        total,
+      },
+      request: getAuditRequestMeta(request),
+    });
 
     return NextResponse.json({
       subscriptions: sanitizedSubscriptions, total, page, perPage,

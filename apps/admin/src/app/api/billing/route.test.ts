@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   requirePermission: vi.fn(),
   subscriptionFindMany: vi.fn(),
+  auditCreate: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -13,6 +14,9 @@ vi.mock("@/lib/db", () => ({
   prisma: {
     subscription: {
       findMany: (...args: unknown[]) => mocks.subscriptionFindMany(...args),
+    },
+    adminAuditLog: {
+      create: (...args: unknown[]) => mocks.auditCreate(...args),
     },
   },
 }));
@@ -59,7 +63,8 @@ describe("admin billing response privacy", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-11T12:00:00.000Z"));
-    mocks.requirePermission.mockResolvedValue({ adminId: "admin-1" });
+    mocks.requirePermission.mockResolvedValue({ adminId: "admin-1", email: "admin@example.com", role: "ADMIN" });
+    mocks.auditCreate.mockResolvedValue({ id: "audit_1" });
   });
 
   afterEach(() => {
@@ -118,5 +123,28 @@ describe("admin billing response privacy", () => {
     });
     expect(body.recentCancellations[0].user.email).toBeNull();
     expect(body.staleMobileSubscriptions[0].user.email).toBeNull();
+  });
+
+  it("does not expose purchase tokens and audits dashboard reads", async () => {
+    mocks.subscriptionFindMany.mockResolvedValue([
+      subscription({
+        provider: "PLAY_STORE",
+        purchaseToken: "raw-play-token",
+        purchaseTokenHash: "hash-only",
+      }),
+    ]);
+
+    const { GET } = await import("./route");
+    const response = await GET(new Request("https://admin.locateflow.com/api/billing") as any);
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(serialized).not.toContain("raw-play-token");
+    expect(serialized).not.toContain("hash-only");
+    expect(serialized).not.toContain("purchaseTokenHash");
+    expect(mocks.auditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({ action: "BILLING_DASHBOARD_VIEWED", entityType: "Subscription" }),
+    });
   });
 });

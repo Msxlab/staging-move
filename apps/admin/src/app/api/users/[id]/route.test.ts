@@ -13,9 +13,17 @@ const mocks = vi.hoisted(() => ({
   userLoginSessionUpdateMany: vi.fn(),
   userSessionUpdateMany: vi.fn(),
   gdprFindFirst: vi.fn(),
+  gdprFindMany: vi.fn(),
   gdprCreate: vi.fn(),
   gdprUpdate: vi.fn(),
   adminAuditCreate: vi.fn(),
+  auditLogFindMany: vi.fn(),
+  userSessionFindMany: vi.fn(),
+  userEventFindMany: vi.fn(),
+  userEventGroupBy: vi.fn(),
+  pushDeviceFindMany: vi.fn(),
+  userLoginSessionFindMany: vi.fn(),
+  adminAuditFindMany: vi.fn(),
 }));
 
 vi.mock("@/lib/auth", () => ({
@@ -31,22 +39,36 @@ vi.mock("@/lib/db", () => {
       update: (...args: unknown[]) => mocks.userUpdate(...args),
       updateMany: (...args: unknown[]) => mocks.userUpdateMany(...args),
     },
+    auditLog: {
+      findMany: (...args: unknown[]) => mocks.auditLogFindMany(...args),
+    },
+    userSession: {
+      findMany: (...args: unknown[]) => mocks.userSessionFindMany(...args),
+      updateMany: (...args: unknown[]) => mocks.userSessionUpdateMany(...args),
+    },
+    userEvent: {
+      findMany: (...args: unknown[]) => mocks.userEventFindMany(...args),
+      groupBy: (...args: unknown[]) => mocks.userEventGroupBy(...args),
+    },
+    pushDevice: {
+      findMany: (...args: unknown[]) => mocks.pushDeviceFindMany(...args),
+    },
+    userLoginSession: {
+      findMany: (...args: unknown[]) => mocks.userLoginSessionFindMany(...args),
+      updateMany: (...args: unknown[]) => mocks.userLoginSessionUpdateMany(...args),
+    },
     subscription: {
       update: (...args: unknown[]) => mocks.subscriptionUpdate(...args),
       create: (...args: unknown[]) => mocks.subscriptionCreate(...args),
     },
-    userLoginSession: {
-      updateMany: (...args: unknown[]) => mocks.userLoginSessionUpdateMany(...args),
-    },
-    userSession: {
-      updateMany: (...args: unknown[]) => mocks.userSessionUpdateMany(...args),
-    },
     gDPRRequest: {
       findFirst: (...args: unknown[]) => mocks.gdprFindFirst(...args),
+      findMany: (...args: unknown[]) => mocks.gdprFindMany(...args),
       create: (...args: unknown[]) => mocks.gdprCreate(...args),
       update: (...args: unknown[]) => mocks.gdprUpdate(...args),
     },
     adminAuditLog: {
+      findMany: (...args: unknown[]) => mocks.adminAuditFindMany(...args),
       create: (...args: unknown[]) => mocks.adminAuditCreate(...args),
     },
   };
@@ -59,7 +81,7 @@ vi.mock("@/lib/user-notify", () => ({
   notifyUserOfAdminChange: vi.fn(),
 }));
 
-import { DELETE, PATCH, POST } from "./route";
+import { DELETE, GET, PATCH, POST } from "./route";
 
 function request(confirmPassword = "admin-password") {
   return new NextRequest("https://admin.locateflow.com/api/users/user_1", {
@@ -68,6 +90,128 @@ function request(confirmPassword = "admin-password") {
     body: JSON.stringify({ confirmPassword }),
   });
 }
+
+describe("admin user detail subscription redaction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.requirePermission.mockResolvedValue({ adminId: "admin_1", email: "viewer@example.com", role: "VIEWER" });
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user_1",
+      email: "person@example.com",
+      firstName: "Person",
+      lastName: "Example",
+      imageUrl: null,
+      passwordHash: "hash",
+      emailVerifiedAt: null,
+      mfaEnabled: false,
+      preferredLocale: "en",
+      dashboardWidgetPrefs: null,
+      showBudget: true,
+      createdAt: new Date("2026-05-01T00:00:00Z"),
+      updatedAt: new Date("2026-05-01T00:00:00Z"),
+      deletedAt: null,
+      subscription: {
+        id: "sub_1",
+        userId: "user_1",
+        plan: "INDIVIDUAL",
+        status: "ACTIVE",
+        provider: "STRIPE",
+        platform: "web",
+        stripeCustomerId: "cus_live_sensitive1234",
+        stripeSubscriptionId: "sub_live_sensitive5678",
+        stripePriceId: "price_live_sensitive9012",
+        stripeCurrentPeriodEnd: null,
+        billingProductId: "prod_live_sensitive3456",
+        originalTransactionId: "100000111122223333",
+        latestTransactionId: "100000111122224444",
+        currentPeriodEndsAt: null,
+        gracePeriodEndsAt: null,
+        lastValidatedAt: null,
+        lastSyncedAt: null,
+        accessType: "PAID",
+        billingInterval: "MONTH",
+        freeAccessEndsAt: null,
+        cancelAtPeriodEnd: false,
+        firstChargeAt: null,
+        firstChargeAmount: null,
+        autoRenew: true,
+        campaignId: "campaign_1",
+        campaignCode: "WELCOME",
+        campaignSnapshot: "{\"raw\":true}",
+        checkoutConsentSnapshot: "{\"rawConsent\":true}",
+        termsVersion: "2026-01",
+        subscriptionPolicyVersion: "2026-01",
+        refundPolicyVersion: "2026-01",
+        trialEndsAt: null,
+        canceledAt: null,
+        premiumUntil: null,
+        premiumGrantedBy: null,
+        premiumGrantedAt: null,
+        premiumNote: "raw operator note",
+        version: 1,
+        createdAt: new Date("2026-05-01T00:00:00Z"),
+        updatedAt: new Date("2026-05-01T00:00:00Z"),
+      },
+      profile: null,
+      addresses: [],
+      movingPlans: [],
+      customProviders: [],
+      moveTasks: [],
+      budgets: [],
+      supportTickets: [],
+      oauthAccounts: [],
+      dataConsents: [],
+      emailVerificationTokens: [],
+      passwordResetTokens: [],
+    });
+    mocks.auditLogFindMany.mockResolvedValue([]);
+    mocks.userSessionFindMany.mockResolvedValue([]);
+    mocks.userEventFindMany.mockResolvedValue([]);
+    mocks.userEventGroupBy.mockResolvedValue([]);
+    mocks.pushDeviceFindMany.mockResolvedValue([]);
+    mocks.userLoginSessionFindMany.mockResolvedValue([]);
+    mocks.gdprFindMany.mockResolvedValue([]);
+    mocks.adminAuditFindMany.mockResolvedValue([]);
+    mocks.adminAuditCreate.mockResolvedValue({});
+  });
+
+  it("redacts subscription provider IDs and premium notes for VIEWER", async () => {
+    const response = await GET(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1"),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+    const serialized = JSON.stringify(body);
+
+    expect(response.status).toBe(200);
+    expect(body.user.subscription.stripeCustomerId).toBe("cus_****1234");
+    expect(body.user.subscription.stripeSubscriptionId).toBe("sub_****5678");
+    expect(body.user.subscription.premiumNote).toBeNull();
+    expect(body.user.subscription.campaignSnapshot).toBeNull();
+    expect(body.user.subscription.checkoutConsentSnapshot).toBeNull();
+    expect(body.user.subscription).not.toHaveProperty("purchaseToken");
+    expect(serialized).not.toContain("cus_live_sensitive1234");
+    expect(serialized).not.toContain("sub_live_sensitive5678");
+    expect(serialized).not.toContain("raw operator note");
+  });
+
+  it("returns raw operational subscription IDs to ADMIN without purchase tokens", async () => {
+    mocks.requirePermission.mockResolvedValue({ adminId: "admin_1", email: "admin@example.com", role: "ADMIN" });
+
+    const response = await GET(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1"),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.user.subscription.stripeCustomerId).toBe("cus_live_sensitive1234");
+    expect(body.user.subscription.stripeSubscriptionId).toBe("sub_live_sensitive5678");
+    expect(body.user.subscription.premiumNote).toBe("raw operator note");
+    expect(body.user.subscription).not.toHaveProperty("purchaseToken");
+    expect(body.user.subscription).not.toHaveProperty("purchaseTokenHash");
+  });
+});
 
 describe("admin user detail delete", () => {
   beforeEach(() => {
@@ -349,7 +493,7 @@ describe("admin user detail billing updates", () => {
     expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
     expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        action: "USER_BILLING_UPDATE_FAILED",
+        action: "BILLING_FIELD_UPDATE_FAILED",
         entityType: "User",
         entityId: "user_1",
       }),
@@ -410,7 +554,7 @@ describe("admin user detail billing updates", () => {
     expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         adminUserId: "admin_1",
-        action: "USER_BILLING_UPDATED",
+        action: "BILLING_FIELD_UPDATED",
         entityType: "User",
         entityId: "user_1",
         ipAddress: "203.0.113.10",
@@ -510,6 +654,51 @@ describe("admin user detail billing updates", () => {
 
     expect(response.status).toBe(400);
     expect(body.code).toBe("INVALID_BILLING_COMBINATION");
+  });
+
+  it("rejects provider-paid ACTIVE states without provider identifiers", async () => {
+    mocks.userFindUnique.mockResolvedValue({
+      id: "user_1",
+      firstName: "Person",
+      lastName: "Example",
+      subscription: {
+        plan: "FREE_TRIAL",
+        status: "FREE_ACCESS",
+        provider: "TRIAL",
+        accessType: "FREE_ACCESS",
+        stripeSubscriptionId: null,
+        originalTransactionId: null,
+        latestTransactionId: null,
+        purchaseTokenHash: null,
+      },
+    });
+
+    const response = await PATCH(
+      new NextRequest("https://admin.locateflow.com/api/users/user_1", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "STRIPE",
+          accessType: "PAID",
+          subscriptionStatus: "ACTIVE",
+          confirmPassword: "admin-password",
+          mfaCode: "123456",
+        }),
+      }),
+      { params: Promise.resolve({ id: "user_1" }) },
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.code).toBe("INVALID_PROVIDER_BACKED_ENTITLEMENT_STATE");
+    expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
+    expect(mocks.adminAuditCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "BILLING_FIELD_UPDATE_FAILED",
+        entityType: "User",
+        entityId: "user_1",
+      }),
+    });
   });
 
   it("derives autoRenew when admin sets cancelAtPeriodEnd alone", async () => {

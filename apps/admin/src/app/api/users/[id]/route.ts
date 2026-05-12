@@ -49,6 +49,126 @@ const SUBSCRIPTION_PROVIDER_VALUES = [
   "PLAY_STORE",
   "UNKNOWN",
 ] as const;
+const PROVIDER_BACKED_ENTITLEMENT_STATUSES = new Set([
+  "ACTIVE",
+  "TRIALING",
+  "TRIAL_CANCELED",
+  "CANCEL_AT_PERIOD_END",
+  "PAST_DUE",
+  "GRACE_PERIOD",
+  "PENDING_VALIDATION",
+]);
+const PAYMENT_PROVIDER_VALUES = new Set(["STRIPE", "APP_STORE", "PLAY_STORE"]);
+
+const userDetailSubscriptionSelect = {
+  id: true,
+  userId: true,
+  plan: true,
+  status: true,
+  provider: true,
+  platform: true,
+  stripeCustomerId: true,
+  stripeSubscriptionId: true,
+  stripePriceId: true,
+  stripeCurrentPeriodEnd: true,
+  billingProductId: true,
+  originalTransactionId: true,
+  latestTransactionId: true,
+  currentPeriodEndsAt: true,
+  gracePeriodEndsAt: true,
+  lastValidatedAt: true,
+  lastSyncedAt: true,
+  accessType: true,
+  billingInterval: true,
+  freeAccessEndsAt: true,
+  cancelAtPeriodEnd: true,
+  firstChargeAt: true,
+  firstChargeAmount: true,
+  autoRenew: true,
+  campaignId: true,
+  campaignCode: true,
+  campaignSnapshot: true,
+  checkoutConsentSnapshot: true,
+  termsVersion: true,
+  subscriptionPolicyVersion: true,
+  refundPolicyVersion: true,
+  trialEndsAt: true,
+  canceledAt: true,
+  premiumUntil: true,
+  premiumGrantedBy: true,
+  premiumGrantedAt: true,
+  premiumNote: true,
+  version: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+function canSeeRawBillingIds(role: string | null | undefined) {
+  return role === "ADMIN" || role === "SUPER_ADMIN";
+}
+
+function maskNullableProviderId(value: string | null | undefined) {
+  return value ? maskProviderIdentifier(value) : null;
+}
+
+function redactUserDetailSubscription(subscription: any, role: string | null | undefined) {
+  if (!subscription) return null;
+  const showRawBillingIds = canSeeRawBillingIds(role);
+  return {
+    id: subscription.id,
+    userId: subscription.userId,
+    plan: subscription.plan,
+    status: subscription.status,
+    provider: subscription.provider,
+    platform: subscription.platform,
+    stripeCustomerId: showRawBillingIds
+      ? subscription.stripeCustomerId
+      : maskNullableProviderId(subscription.stripeCustomerId),
+    stripeSubscriptionId: showRawBillingIds
+      ? subscription.stripeSubscriptionId
+      : maskNullableProviderId(subscription.stripeSubscriptionId),
+    stripePriceId: showRawBillingIds
+      ? subscription.stripePriceId
+      : maskNullableProviderId(subscription.stripePriceId),
+    stripeCurrentPeriodEnd: subscription.stripeCurrentPeriodEnd,
+    billingProductId: showRawBillingIds
+      ? subscription.billingProductId
+      : maskNullableProviderId(subscription.billingProductId),
+    originalTransactionId: showRawBillingIds
+      ? subscription.originalTransactionId
+      : maskNullableProviderId(subscription.originalTransactionId),
+    latestTransactionId: showRawBillingIds
+      ? subscription.latestTransactionId
+      : maskNullableProviderId(subscription.latestTransactionId),
+    currentPeriodEndsAt: subscription.currentPeriodEndsAt,
+    gracePeriodEndsAt: subscription.gracePeriodEndsAt,
+    lastValidatedAt: subscription.lastValidatedAt,
+    lastSyncedAt: subscription.lastSyncedAt,
+    accessType: subscription.accessType,
+    billingInterval: subscription.billingInterval,
+    freeAccessEndsAt: subscription.freeAccessEndsAt,
+    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+    firstChargeAt: subscription.firstChargeAt,
+    firstChargeAmount: subscription.firstChargeAmount,
+    autoRenew: subscription.autoRenew,
+    campaignId: subscription.campaignId,
+    campaignCode: subscription.campaignCode,
+    campaignSnapshot: showRawBillingIds ? subscription.campaignSnapshot : null,
+    checkoutConsentSnapshot: showRawBillingIds ? subscription.checkoutConsentSnapshot : null,
+    termsVersion: subscription.termsVersion,
+    subscriptionPolicyVersion: subscription.subscriptionPolicyVersion,
+    refundPolicyVersion: subscription.refundPolicyVersion,
+    trialEndsAt: subscription.trialEndsAt,
+    canceledAt: subscription.canceledAt,
+    premiumUntil: subscription.premiumUntil,
+    premiumGrantedBy: subscription.premiumGrantedBy,
+    premiumGrantedAt: subscription.premiumGrantedAt,
+    premiumNote: showRawBillingIds ? subscription.premiumNote : null,
+    version: subscription.version,
+    createdAt: subscription.createdAt,
+    updatedAt: subscription.updatedAt,
+  };
+}
 
 // Accept either a full ISO timestamp with offset OR a YYYY-MM-DD date.
 // The upstream PATCH already wraps strings in `new Date(...)` so we
@@ -93,7 +213,16 @@ const updateUserSchema = z
  */
 function validateBillingCombination(
   body: z.infer<typeof updateUserSchema>,
-  existing: { plan?: string | null; status?: string | null; accessType?: string | null; provider?: string | null } | null | undefined,
+  existing: {
+    plan?: string | null;
+    status?: string | null;
+    accessType?: string | null;
+    provider?: string | null;
+    stripeSubscriptionId?: string | null;
+    originalTransactionId?: string | null;
+    latestTransactionId?: string | null;
+    purchaseTokenHash?: string | null;
+  } | null | undefined,
 ): string | null {
   const status = body.subscriptionStatus ?? existing?.status ?? null;
   const accessType =
@@ -139,6 +268,24 @@ function validateBillingCombination(
     return "Admin manual premium (status=ACTIVE, provider=ADMIN) requires a premiumUntil date.";
   }
 
+  if (
+    provider &&
+    PAYMENT_PROVIDER_VALUES.has(provider) &&
+    status &&
+    PROVIDER_BACKED_ENTITLEMENT_STATUSES.has(status) &&
+    accessType !== "FREE_ACCESS"
+  ) {
+    if (provider === "STRIPE" && !existing?.stripeSubscriptionId) {
+      return "Invalid provider-backed entitlement state";
+    }
+    if (provider === "APP_STORE" && !(existing?.originalTransactionId || existing?.latestTransactionId)) {
+      return "Invalid provider-backed entitlement state";
+    }
+    if (provider === "PLAY_STORE" && !existing?.purchaseTokenHash) {
+      return "Invalid provider-backed entitlement state";
+    }
+  }
+
   return null;
 }
 
@@ -181,7 +328,7 @@ export async function GET(
         createdAt: true,
         updatedAt: true,
         deletedAt: true,
-        subscription: true,
+        subscription: { select: userDetailSubscriptionSelect },
         profile: true,
         addresses: {
           include: {
@@ -315,6 +462,7 @@ export async function GET(
     } = userRecord as any;
     const user = {
       ...safeUserRecord,
+      subscription: redactUserDetailSubscription(safeUserRecord.subscription, session.role),
       hasPasswordLogin: Boolean(passwordHash),
       oauthAccounts: (oauthAccounts || []).map((account: any) => ({
         id: account.id,
@@ -446,7 +594,7 @@ export async function GET(
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("Failed to fetch user:", error);
+    console.error("Failed to fetch user:", { code: error?.code || null });
     return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 });
   }
 }
@@ -828,13 +976,13 @@ export async function PATCH(
       );
       if (!confirm.confirmed) {
         await writeAdminAudit(session, {
-          action: hasBillingChange ? "USER_BILLING_UPDATE_FAILED" : "USER_UPDATE_FAILED",
+          action: hasBillingChange ? "BILLING_FIELD_UPDATE_FAILED" : "USER_UPDATE_FAILED",
           entityType: "User",
           entityId: id,
           metadata: {
             operation: hasBillingChange ? "billing_subscription_update" : "admin_user_profile_update",
             status: "failed",
-            reason: "step_up_failed",
+            reasonCode: "step_up_failed",
             requiresMfa: Boolean(confirm.requiresMfa),
           },
           request: requestMeta,
@@ -858,7 +1006,32 @@ export async function PATCH(
       // status=ACTIVE on the ADMIN provider with no premiumUntil, etc.).
       const combinationError = validateBillingCombination(body, user.subscription);
       if (combinationError) {
-        return NextResponse.json({ error: combinationError, code: "INVALID_BILLING_COMBINATION" }, { status: 400 });
+        const providerBackedStateError = combinationError === "Invalid provider-backed entitlement state";
+        await writeAdminAudit(session, {
+          action: "BILLING_FIELD_UPDATE_FAILED",
+          entityType: "User",
+          entityId: id,
+          metadata: {
+            operation: "billing_subscription_update",
+            status: "failed",
+            reasonCode: providerBackedStateError
+              ? "invalid_provider_backed_entitlement_state"
+              : "invalid_billing_combination",
+            provider: body.provider ?? user.subscription?.provider ?? null,
+            subscriptionStatus: body.subscriptionStatus ?? user.subscription?.status ?? null,
+            accessType: body.accessType !== undefined ? body.accessType : user.subscription?.accessType ?? null,
+          },
+          request: requestMeta,
+        });
+        return NextResponse.json(
+          {
+            error: combinationError,
+            code: providerBackedStateError
+              ? "INVALID_PROVIDER_BACKED_ENTITLEMENT_STATE"
+              : "INVALID_BILLING_COMBINATION",
+          },
+          { status: providerBackedStateError ? 409 : 400 },
+        );
       }
 
       const subData: any = {};
@@ -914,15 +1087,31 @@ export async function PATCH(
         }
       }
 
-      if (user.subscription) {
-        await prisma.subscription.update({ where: { userId: id }, data: subData });
-      } else {
-        await prisma.subscription.create({ data: { userId: id, plan: body.plan || "FREE_TRIAL", status: body.subscriptionStatus || "ACTIVE", ...subData } });
+      try {
+        if (user.subscription) {
+          await prisma.subscription.update({ where: { userId: id }, data: subData });
+        } else {
+          await prisma.subscription.create({ data: { userId: id, plan: body.plan || "FREE_TRIAL", status: body.subscriptionStatus || "ACTIVE", ...subData } });
+        }
+      } catch (dbError) {
+        await writeAdminAudit(session, {
+          action: "BILLING_FIELD_UPDATE_FAILED",
+          entityType: "User",
+          entityId: id,
+          metadata: {
+            operation: "billing_subscription_update",
+            status: "failed",
+            reasonCode: "db_update_failed",
+            fields: Object.keys(changes),
+          },
+          request: requestMeta,
+        });
+        throw dbError;
       }
     }
 
     await writeAdminAudit(session, {
-      action: hasBillingChange ? "USER_BILLING_UPDATED" : "USER_UPDATED",
+      action: hasBillingChange ? "BILLING_FIELD_UPDATED" : "USER_UPDATED",
       entityType: "User",
       entityId: id,
       metadata: {
@@ -953,7 +1142,7 @@ export async function PATCH(
     if (error?.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    console.error("Failed to update user:", error);
+    console.error("Failed to update user:", { code: error?.code || null });
     return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
   }
 }

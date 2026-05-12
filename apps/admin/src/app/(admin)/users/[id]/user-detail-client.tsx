@@ -32,6 +32,10 @@ async function readAdminApiError(response: Response, fallback: string) {
   return message;
 }
 
+function hasRawProviderIdentifier(value: string | null | undefined) {
+  return Boolean(value && !value.includes("****"));
+}
+
 export default function UserDetailClient() {
   const router = useRouter();
   const params = useParams();
@@ -1115,9 +1119,9 @@ export default function UserDetailClient() {
             <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-foreground/80">{user.subscription.campaignSnapshot}</pre>
           </div>
         )}
-        {(user.subscription?.stripeCustomerId || user.subscription?.stripeSubscriptionId) && (
+        {(hasRawProviderIdentifier(user.subscription?.stripeCustomerId) || hasRawProviderIdentifier(user.subscription?.stripeSubscriptionId)) && (
           <div className="mb-4 flex flex-wrap gap-2 text-xs">
-            {user.subscription?.stripeCustomerId && (
+            {hasRawProviderIdentifier(user.subscription?.stripeCustomerId) && (
               <a
                 className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
                 href={`https://dashboard.stripe.com/customers/${user.subscription.stripeCustomerId}`}
@@ -1127,7 +1131,7 @@ export default function UserDetailClient() {
                 Open Stripe customer
               </a>
             )}
-            {user.subscription?.stripeSubscriptionId && (
+            {hasRawProviderIdentifier(user.subscription?.stripeSubscriptionId) && (
               <a
                 className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
                 href={`https://dashboard.stripe.com/subscriptions/${user.subscription.stripeSubscriptionId}`}
@@ -1137,27 +1141,30 @@ export default function UserDetailClient() {
                 Open Stripe subscription
               </a>
             )}
-            {user.subscription?.stripeSubscriptionId && user.subscription?.status === "TRIALING" && (
+            {hasRawProviderIdentifier(user.subscription?.stripeSubscriptionId) && user.subscription?.status === "TRIALING" && (
               <button
                 type="button"
+                disabled={subscriptionActionBusy}
                 className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
                 onClick={() => setPendingSubscriptionAction("cancel_trial")}
               >
                 Cancel trial
               </button>
             )}
-            {user.subscription?.stripeSubscriptionId && user.subscription?.status === "ACTIVE" && (
+            {hasRawProviderIdentifier(user.subscription?.stripeSubscriptionId) && user.subscription?.status === "ACTIVE" && (
               <button
                 type="button"
+                disabled={subscriptionActionBusy}
                 className="rounded-lg border border-border px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
                 onClick={() => setPendingSubscriptionAction("cancel_renewal")}
               >
                 Cancel renewal
               </button>
             )}
-            {user.subscription?.stripeSubscriptionId && ["TRIAL_CANCELED", "CANCEL_AT_PERIOD_END"].includes(user.subscription?.status) && (
+            {hasRawProviderIdentifier(user.subscription?.stripeSubscriptionId) && ["TRIAL_CANCELED", "CANCEL_AT_PERIOD_END"].includes(user.subscription?.status) && (
               <button
                 type="button"
+                disabled={subscriptionActionBusy}
                 className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-primary hover:bg-primary/20"
                 onClick={() => setPendingSubscriptionAction("resume_renewal")}
               >
@@ -1683,7 +1690,7 @@ export default function UserDetailClient() {
       <PasswordConfirmModal
         open={Boolean(pendingPlan)}
         title="Change user plan"
-        description={`Enter your admin password to change ${maskEmail(user.email)} from ${editForm.plan || "current plan"} to ${pendingPlan || "the selected plan"}.`}
+        description={`Enter your admin password and MFA code or backup code to change ${maskEmail(user.email)} from ${editForm.plan || "current plan"} to ${pendingPlan || "the selected plan"}.`}
         confirmLabel="Change Plan"
         busy={changingPlan}
         error={planConfirmError}
@@ -1698,7 +1705,7 @@ export default function UserDetailClient() {
       <PasswordConfirmModal
         open={Boolean(pendingSubscriptionAction)}
         title="Update Stripe renewal"
-        description={`Enter your admin password to ${
+        description={`Enter your admin password and MFA code or backup code to ${
           pendingSubscriptionAction === "resume_renewal"
             ? "resume renewal for"
             : pendingSubscriptionAction === "cancel_trial"
@@ -1725,7 +1732,7 @@ export default function UserDetailClient() {
       <PasswordConfirmModal
         open={showPremiumConfirm}
         title="Update billing entitlements"
-        description={`Enter your admin password to update subscription, premium, or trial entitlement fields for ${maskEmail(user.email)}.`}
+        description={`Enter your admin password and MFA code or backup code to update subscription, premium, or trial entitlement fields for ${maskEmail(user.email)}.`}
         confirmLabel="Save Entitlements"
         busy={savingPremium}
         error={premiumConfirmError}
