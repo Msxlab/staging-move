@@ -871,7 +871,7 @@ export function BackupControlPlane() {
       if (!response.ok) {
         if (data?.mfaSetupRequired) {
           toast.error("MFA setup is required before backups can be loaded.");
-          router.push("/settings/two-factor?required=1");
+          window.location.assign("/settings/two-factor?required=1");
           return;
         }
         throw new Error(data.error || "Failed to load backups");

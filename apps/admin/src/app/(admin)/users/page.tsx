@@ -517,7 +517,7 @@ export default function UsersPage() {
                   )}
                   <td className="px-3 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => router.push(`/users/${user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">
+                      <button onClick={() => window.location.assign(`/users/${user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">
                         <Eye className="h-4 w-4" />
                       </button>
                       {!user.deletedAt && (

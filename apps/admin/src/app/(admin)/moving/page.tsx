@@ -604,7 +604,7 @@ export default function MovingPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/users/${plan.user.id}`);
+                          window.location.assign(`/users/${plan.user.id}`);
                         }}
                         className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
                       >

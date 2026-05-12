@@ -121,7 +121,7 @@ export default function UserDetailClient() {
     async function load() {
       try {
         const res = await fetch(`/api/users/${params.id}`);
-        if (!res.ok) { toast.error("User not found"); router.push("/users"); return; }
+        if (!res.ok) { toast.error("User not found"); window.location.assign("/users"); return; }
         const data = await res.json();
         setUser(data.user);
         setAuditLogs(data.auditLogs || []);
@@ -183,7 +183,7 @@ export default function UserDetailClient() {
       toast.success(data.message || "User deleted");
       setShowDeleteConfirm(false);
       setDeleteRequiresMfa(false);
-      router.push("/users");
+      window.location.assign("/users");
     } catch {
       setDeleteError("Failed to delete user");
       toast.error("Failed to delete user");

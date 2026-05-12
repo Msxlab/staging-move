@@ -84,7 +84,7 @@ export default function ProvidersPage() {
       if (!res.ok) {
         if (data?.mfaSetupRequired) {
           toast.error("MFA setup is required before provider data can be loaded.");
-          router.push("/settings/two-factor?required=1");
+          window.location.assign("/settings/two-factor?required=1");
           return;
         }
         throw new Error(data?.error || "Failed to fetch providers");
@@ -299,7 +299,7 @@ export default function ProvidersPage() {
           <button onClick={handleExport} className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
             <Download className="h-4 w-4" /> Export
           </button>
-          <button onClick={() => router.push("/providers/needs-logo")}
+          <button onClick={() => window.location.assign("/providers/needs-logo")}
             className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
             <ImageOff className="h-4 w-4" /> Logo backfill
             {missingLogoCount > 0 && (
@@ -308,7 +308,7 @@ export default function ProvidersPage() {
               </span>
             )}
           </button>
-          <button onClick={() => router.push("/providers/new")}
+          <button onClick={() => window.location.assign("/providers/new")}
             className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Add Provider
           </button>
@@ -578,8 +578,8 @@ export default function ProvidersPage() {
                               </td>
                               <td className="px-3 py-2.5">
                                 <div className="flex items-center justify-end gap-0.5">
-                                  <button onClick={() => router.push(`/providers/${p.id}`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" title="View"><Eye className="h-3.5 w-3.5" /></button>
-                                  <button onClick={() => router.push(`/providers/${p.id}/edit`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                                  <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" title="View"><Eye className="h-3.5 w-3.5" /></button>
+                                  <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                                   <button onClick={() => handleDelete(p.id, p.name)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
                                 </div>
                               </td>
@@ -622,8 +622,8 @@ export default function ProvidersPage() {
                 <span className="font-bold text-foreground">{p.popularityScore}</span>
               </div>
               <div className="mt-3 flex items-center gap-1">
-                <button onClick={() => router.push(`/providers/${p.id}`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">View</button>
-                <button onClick={() => router.push(`/providers/${p.id}/edit`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">Edit</button>
+                <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">View</button>
+                <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="flex-1 rounded-lg bg-muted/50 py-1.5 text-xs text-muted-foreground hover:bg-accent">Edit</button>
                 <button onClick={() => handleDelete(p.id, p.name)} className="rounded-lg bg-muted/50 p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
               </div>
             </div>
@@ -666,8 +666,8 @@ export default function ProvidersPage() {
                     <td className="px-4 py-3 text-center text-sm font-bold text-foreground">{p.popularityScore}</td>
                     <td className="px-4 py-3 text-center"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>{p.isActive ? "Active" : "Inactive"}</span></td>
                     <td className="px-4 py-3 text-right"><div className="flex items-center justify-end gap-1">
-                      <button onClick={() => router.push(`/providers/${p.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"><Eye className="h-4 w-4" /></button>
-                      <button onClick={() => router.push(`/providers/${p.id}/edit`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"><Pencil className="h-4 w-4" /></button>
+                      <button onClick={() => window.location.assign(`/providers/${p.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"><Eye className="h-4 w-4" /></button>
+                      <button onClick={() => window.location.assign(`/providers/${p.id}/edit`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"><Pencil className="h-4 w-4" /></button>
                       <button onClick={() => handleDelete(p.id, p.name)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                     </div></td>
                   </tr>
@@ -701,4 +701,3 @@ export default function ProvidersPage() {
     </div>
   );
 }
-

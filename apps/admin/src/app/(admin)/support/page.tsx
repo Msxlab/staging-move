@@ -87,7 +87,7 @@ export default function AdminSupportPage() {
     if (!res.ok) {
       if (data?.mfaSetupRequired) {
         toast.error("MFA setup is required before support tickets can be loaded.");
-        router.push("/settings/two-factor?required=1");
+        window.location.assign("/settings/two-factor?required=1");
         return;
       }
       toast.error(data?.error || "Failed to load support tickets");

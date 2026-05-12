@@ -52,7 +52,7 @@ export default function EditProviderPage() {
       try {
         const res = await fetch(`/api/providers/${params.id}`);
         const data = await res.json();
-        if (!res.ok) { toast.error("Provider not found"); router.push("/providers"); return; }
+        if (!res.ok) { toast.error("Provider not found"); window.location.assign("/providers"); return; }
         const p = data.provider;
         let states: string[] = [];
         let zipCodes: string[] = [];
@@ -104,7 +104,7 @@ export default function EditProviderPage() {
         return;
       }
       toast.success("Provider updated");
-      router.push("/providers");
+      window.location.assign("/providers");
     } catch { toast.error("Failed to update provider"); }
     finally { setSaving(false); }
   }

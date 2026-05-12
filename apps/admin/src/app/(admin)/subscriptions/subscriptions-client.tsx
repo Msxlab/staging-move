@@ -357,7 +357,7 @@ export default function SubscriptionsClient() {
                       <button onClick={() => setDetail(sub)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View details">
                         <Eye className="h-4 w-4" />
                       </button>
-                      <button onClick={() => router.push(`/users/${sub.user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View user">
+                      <button onClick={() => window.location.assign(`/users/${sub.user.id}`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="View user">
                         <Users className="h-4 w-4" />
                       </button>
                     </div>
@@ -437,7 +437,7 @@ export default function SubscriptionsClient() {
                     Open in Stripe ↗
                   </a>
                 ) : null}
-                <button onClick={() => { setDetail(null); router.push(`/users/${detail.user.id}`); }}
+                <button onClick={() => { setDetail(null); window.location.assign(`/users/${detail.user.id}`); }}
                   className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
                   View User Profile
                 </button>

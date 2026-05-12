@@ -196,7 +196,7 @@ export default function NewProviderPage() {
         return;
       }
       toast.success("Provider created successfully!");
-      router.push("/providers");
+      window.location.assign("/providers");
     } catch {
       toast.error("Failed to create provider");
     } finally {

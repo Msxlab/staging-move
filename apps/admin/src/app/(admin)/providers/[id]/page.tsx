@@ -93,7 +93,7 @@ export default function ProviderDetailPage() {
         return;
       }
       toast.success("Provider deleted");
-      router.push("/providers");
+      window.location.assign("/providers");
     } catch {
       toast.error("Failed to delete provider");
     } finally {
@@ -137,14 +137,14 @@ export default function ProviderDetailPage() {
     <div className="max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <button
-          onClick={() => router.push("/providers")}
+          onClick={() => window.location.assign("/providers")}
           className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" /> Back to Providers
         </button>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push(`/providers/${id}/edit`)}
+            onClick={() => window.location.assign(`/providers/${id}/edit`)}
             className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent"
           >
             <Pencil className="h-4 w-4" /> Edit
