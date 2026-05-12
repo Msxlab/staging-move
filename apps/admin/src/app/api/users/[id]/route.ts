@@ -5,6 +5,7 @@ import { requirePermission, requirePasswordConfirm } from "@/lib/auth";
 import { notifyUserOfAdminChange } from "@/lib/user-notify";
 import { maskEmail, maskProviderIdentifier, redactUserDetail } from "@/lib/privacy";
 import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { ACTIVE_TRACKED_SERVICE_WHERE } from "@/lib/service-active";
 
 // Closed enums for the subscription columns admins can mutate from this
 // route. Free-form VarChar in the schema means we enforce the allowlist
@@ -333,6 +334,7 @@ export async function GET(
         addresses: {
           include: {
             services: {
+              where: ACTIVE_TRACKED_SERVICE_WHERE,
               include: {
                 provider: { select: { id: true, name: true, slug: true, scope: true } },
                 customProvider: {

@@ -5,6 +5,7 @@ import { ApiGateError, apiGateErrorResponse, requireAppMutationUser } from "@/li
 import { budgetSchema } from "@/lib/validators";
 import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
 import { calculateBudgetPlan } from "@/lib/budget-planning";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
 
 const GLOBAL_BUDGET_SCOPE_KEY = "__global__";
 
@@ -25,12 +26,7 @@ function budgetScopeKey(addressId: string | null | undefined): string {
 
 async function calculateProjectedExpenses(userId: string, month: Date, addressId?: string | null): Promise<number> {
   const services = await prisma.service.findMany({
-    where: {
-      userId,
-      deletedAt: null,
-      isActive: true,
-      ...(addressId ? { addressId } : {}),
-    },
+    where: activeTrackedServiceWhere(userId, addressId ? { addressId } : {}),
     select: {
       id: true,
       providerName: true,
@@ -78,12 +74,7 @@ export async function GET(request: NextRequest) {
       : (selectedBudget?.month || currentUtcMonth());
     const summaryAddressId = addressId || selectedBudget?.addressId || null;
     const services = await prisma.service.findMany({
-      where: {
-        userId,
-        deletedAt: null,
-        isActive: true,
-        ...(summaryAddressId ? { addressId: summaryAddressId } : {}),
-      },
+      where: activeTrackedServiceWhere(userId, summaryAddressId ? { addressId: summaryAddressId } : {}),
       select: {
         id: true,
         providerName: true,

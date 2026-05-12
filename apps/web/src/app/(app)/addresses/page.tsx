@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
 import { AddressesClient, type AddressItem } from "./addresses-client";
 
 export const dynamic = "force-dynamic";
@@ -10,7 +11,10 @@ export default async function AddressesPage() {
   const rows = await prisma.address.findMany({
     where: { userId, deletedAt: null },
     include: {
-      services: { select: { id: true, monthlyCost: true } },
+      services: {
+        where: activeTrackedServiceWhere(userId),
+        select: { id: true, monthlyCost: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });

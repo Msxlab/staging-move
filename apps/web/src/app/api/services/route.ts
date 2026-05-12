@@ -16,6 +16,7 @@ import {
   findDuplicateTrackedService,
 } from "@/lib/service-duplicate-guard";
 import { getPublicSubscriptionOffersViewModel } from "@/lib/acquisition-campaigns";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
 
 const VERIFY_EMAIL_REDIRECT = "/verify-email?redirect=%2Fservices";
 const SERVICE_CREATE_RATE_LIMIT = { limit: 120, windowSeconds: 300 } as const;
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category")?.slice(0, 50);
     const search = searchParams.get("search")?.slice(0, 200);
 
-    const where: any = { userId, deletedAt: null };
+    const where: any = activeTrackedServiceWhere(userId);
     if (addressId) where.addressId = addressId;
     if (category) where.category = category;
     if (search) {

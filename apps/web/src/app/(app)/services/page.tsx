@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireDbUserId } from "@/lib/auth";
+import { activeTrackedServiceWhere } from "@/lib/service-active";
 import { ServicesClient, type ServicesItem, type ServicesAddress } from "./services-client";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export default async function ServicesPage() {
 
   const [serviceRows, addressRows] = await Promise.all([
     prisma.service.findMany({
-      where: { userId, deletedAt: null },
+      where: activeTrackedServiceWhere(userId),
       include: {
         address: { select: { nickname: true, city: true, state: true } },
         provider: { select: { id: true, name: true, logoUrl: true } },
