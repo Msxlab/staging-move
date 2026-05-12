@@ -5,6 +5,7 @@ const nextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.resolve(__dirname, "../.."),
   transpilePackages: ["@locateflow/db", "@locateflow/shared"],
+  skipProxyUrlNormalize: true,
   // SEC-007: Security headers for admin panel.
   // Note: Content-Security-Policy is emitted per-request from
   // apps/admin/src/middleware.ts (nonce-based) so it is NOT set here.

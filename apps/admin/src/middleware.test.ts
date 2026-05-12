@@ -82,6 +82,12 @@ describe("admin middleware RSC navigation", () => {
     expect(isRscRequest(rscBySearchParam)).toBe(true);
     expect(isRscRequest(htmlRequest)).toBe(false);
   });
+
+  it("keeps the raw _rsc URL visible to middleware/proxy", () => {
+    const nextConfig = readFileSync(join(process.cwd(), "next.config.js"), "utf8");
+
+    expect(nextConfig).toContain("skipProxyUrlNormalize: true");
+  });
 });
 
 describe("admin service worker", () => {
