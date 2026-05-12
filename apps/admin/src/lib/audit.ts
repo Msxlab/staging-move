@@ -91,7 +91,16 @@ function buildChangesPayload(
   if (parsed.before !== undefined) changes.before = parsed.before;
   if (parsed.after !== undefined) changes.after = parsed.after;
   if (parsed.metadata !== undefined) changes.metadata = parsed.metadata;
-  return JSON.stringify(redactAuditPayload(changes));
+  // Preserve actor identity even though `email` is in the redaction
+  // exact-key set. The whole point of the actor snapshot is that it
+  // survives admin deletion (when the FK becomes null); redacting it
+  // here would defeat forensics. Role and email are not user PII —
+  // they identify the operator who took the action.
+  return JSON.stringify(
+    redactAuditPayload(changes, {
+      preservePaths: ["actor.email", "actor.role", "actor.adminId"],
+    }),
+  );
 }
 
 export async function writeAdminAudit(

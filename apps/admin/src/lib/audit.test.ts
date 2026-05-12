@@ -54,10 +54,14 @@ describe("writeAdminAudit", () => {
     expect(stored).not.toContain("mysql://");
     expect(stored).not.toContain("123456789");
     expect(stored).not.toContain("private operator note");
+    // The actor.* fields are explicitly preserved by writeAdminAudit so the
+    // snapshot stays useful after the AdminUser FK is set null on delete.
+    // Email and role are operator identity (not user PII) — redacting them
+    // would defeat the deletion-survival design (audit P0-4).
     expect(JSON.parse(stored)).toMatchObject({
       actor: {
         adminId: "admin-1",
-        email: "[REDACTED]",
+        email: "admin@example.com",
         role: "ADMIN",
         userAgent: "AdminBrowser/1.0",
       },

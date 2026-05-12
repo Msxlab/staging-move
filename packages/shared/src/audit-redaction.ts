@@ -7,13 +7,22 @@ export interface AuditRedactionOptions {
   maxObjectKeys?: number;
   maxArrayItems?: number;
   maxStringLength?: number;
+  /**
+   * Dotted-path keys (relative to the redacted root) that should be kept
+   * verbatim even when they would normally match a sensitive-key pattern.
+   * Used to preserve forensically critical fields — e.g. `actor.email`
+   * and `actor.role` on admin audit entries — without weakening the
+   * blanket redaction for unrelated occurrences of the same key name.
+   */
+  preservePaths?: ReadonlyArray<string>;
 }
 
-const DEFAULT_OPTIONS: Required<AuditRedactionOptions> = {
+const DEFAULT_OPTIONS: Required<Omit<AuditRedactionOptions, "preservePaths">> & { preservePaths: ReadonlyArray<string> } = {
   maxDepth: 6,
   maxObjectKeys: 50,
   maxArrayItems: 100,
   maxStringLength: 512,
+  preservePaths: [],
 };
 
 const EXACT_SENSITIVE_KEYS = new Set(
@@ -103,11 +112,24 @@ function truncateString(value: string, maxLength: number): string {
   return `${value.slice(0, maxLength)}...[TRUNCATED:${value.length}]`;
 }
 
+type ResolvedRedactionOptions = Required<Omit<AuditRedactionOptions, "preservePaths">> & {
+  preservedPathSet: ReadonlySet<string>;
+};
+
+function buildPreservedPathSet(paths: ReadonlyArray<string>): ReadonlySet<string> {
+  const out = new Set<string>();
+  for (const path of paths) {
+    if (typeof path === "string" && path.length > 0) out.add(path);
+  }
+  return out;
+}
+
 function redactValue(
   input: unknown,
-  options: Required<AuditRedactionOptions>,
+  options: ResolvedRedactionOptions,
   depth: number,
   seen: WeakSet<object>,
+  path: string,
 ): unknown {
   if (depth > options.maxDepth) return AUDIT_TRUNCATED_VALUE;
   if (input == null) return input;
@@ -124,7 +146,7 @@ function redactValue(
   if (Array.isArray(input)) {
     return input
       .slice(0, options.maxArrayItems)
-      .map((item) => redactValue(item, options, depth + 1, seen));
+      .map((item, index) => redactValue(item, options, depth + 1, seen, `${path}[${index}]`));
   }
 
   const out: Record<string, unknown> = {};
@@ -135,9 +157,13 @@ function redactValue(
       break;
     }
     count++;
-    out[key] = shouldRedactAuditKey(key)
-      ? AUDIT_REDACTED_VALUE
-      : redactValue(value, options, depth + 1, seen);
+    const childPath = path ? `${path}.${key}` : key;
+    const preserve = options.preservedPathSet.has(childPath);
+    if (!preserve && shouldRedactAuditKey(key)) {
+      out[key] = AUDIT_REDACTED_VALUE;
+    } else {
+      out[key] = redactValue(value, options, depth + 1, seen, childPath);
+    }
   }
   return out;
 }
@@ -146,6 +172,13 @@ export function redactAuditPayload(
   input: unknown,
   rawOptions: AuditRedactionOptions = {},
 ): unknown {
-  const options = { ...DEFAULT_OPTIONS, ...rawOptions };
-  return redactValue(input, options, 0, new WeakSet<object>());
+  const merged = { ...DEFAULT_OPTIONS, ...rawOptions };
+  const options: ResolvedRedactionOptions = {
+    maxDepth: merged.maxDepth,
+    maxObjectKeys: merged.maxObjectKeys,
+    maxArrayItems: merged.maxArrayItems,
+    maxStringLength: merged.maxStringLength,
+    preservedPathSet: buildPreservedPathSet(merged.preservePaths),
+  };
+  return redactValue(input, options, 0, new WeakSet<object>(), "");
 }
