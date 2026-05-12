@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   Search, ChevronLeft, ChevronRight, Eye, Trash2, Users, UserPlus,
   CreditCard, Filter, X, Download, ArrowUpDown,
@@ -67,7 +66,6 @@ const STATUS_COLORS: Record<string, string> = {
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export default function UsersPage() {
-  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<any>(null);

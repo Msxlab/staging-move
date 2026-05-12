@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { PROVIDER_CATEGORY_OPTIONS } from "@/lib/recommendation-engine";
@@ -35,7 +35,6 @@ type ProviderFormState = {
 };
 
 export default function EditProviderPage() {
-  const router = useRouter();
   const params = useParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -75,7 +74,7 @@ export default function EditProviderPage() {
       finally { setLoading(false); }
     }
     load();
-  }, [params.id, router]);
+  }, [params.id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -120,7 +119,7 @@ export default function EditProviderPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <button onClick={() => window.location.assign("/providers")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Back to Providers
       </button>
 
@@ -235,7 +234,7 @@ export default function EditProviderPage() {
           <button type="submit" disabled={saving} className="rounded-lg bg-primary px-8 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
             {saving ? "Saving..." : "Save Changes"}
           </button>
-          <button type="button" onClick={() => router.back()} className="rounded-lg border border-border px-8 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent">
+          <button type="button" onClick={() => window.location.assign("/providers")} className="rounded-lg border border-border px-8 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent">
             Cancel
           </button>
         </div>

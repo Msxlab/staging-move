@@ -6,7 +6,6 @@ import {
   ChevronDown, ChevronUp, Clock, FileText, ExternalLink, BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -37,7 +36,6 @@ function actionColor(action: string) {
 }
 
 export default function LogsPage() {
-  const router = useRouter();
   const [tab, setTab] = useState<"admin" | "user">("admin");
   const [logs, setLogs] = useState<any[]>([]);
   const [total, setTotal] = useState(0);

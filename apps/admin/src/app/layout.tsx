@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { AdminNavigationFallback } from "@/components/admin-navigation-fallback";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -68,6 +69,7 @@ export default async function RootLayout({
       <body className="min-h-screen bg-background font-sans">
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider nonce={nonce}>
+            <AdminNavigationFallback />
             {children}
             <Toaster position="top-right" richColors />
           </ThemeProvider>

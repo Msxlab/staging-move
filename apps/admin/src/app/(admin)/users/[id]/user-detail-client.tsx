@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail, Calendar, MapPin, Trash2, Shield, Edit, Save, X, CreditCard, Bell, Loader2, Monitor, Smartphone, Globe, MousePointer, Clock, LifeBuoy, KeyRound, Truck, AlertTriangle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
@@ -56,7 +56,6 @@ function hasRawProviderIdentifier(value: string | null | undefined) {
 }
 
 export default function UserDetailClient() {
-  const router = useRouter();
   const params = useParams();
   const [user, setUser] = useState<any>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -154,7 +153,7 @@ export default function UserDetailClient() {
       finally { setLoading(false); }
     }
     load();
-  }, [params.id, router]);
+  }, [params.id]);
 
   async function handleDelete() {
     if (!user) return;
@@ -574,7 +573,7 @@ export default function UserDetailClient() {
 
   return (
     <div className="space-y-6">
-      <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+      <button onClick={() => window.location.assign("/users")} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Back to Users
       </button>
 

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Loader2, MessageSquare, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -61,7 +60,6 @@ function getSlaLabel(sla?: Ticket["sla"]) {
 }
 
 export default function AdminSupportPage() {
-  const router = useRouter();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [stats, setStats] = useState({ open: 0, inProgress: 0, waitingUser: 0, urgent: 0, myTickets: 0 });
   const [loading, setLoading] = useState(true);
@@ -96,7 +94,7 @@ export default function AdminSupportPage() {
     setTickets(data.tickets || []);
     if (data.stats) setStats(data.stats);
     if (data.pagination) setPagination(data.pagination);
-  }, [assignmentFilter, categoryFilter, page, priorityFilter, router, search, statusFilter]);
+  }, [assignmentFilter, categoryFilter, page, priorityFilter, search, statusFilter]);
 
   useEffect(() => {
     setLoading(true);

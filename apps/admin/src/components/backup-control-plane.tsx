@@ -34,7 +34,6 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { cn, formatDateTime, truncate } from "@/lib/utils";
 
@@ -451,7 +450,6 @@ function buildToneClass(
 }
 
 export function BackupControlPlane() {
-  const router = useRouter();
   const stepUpResolverRef = useRef<((value: StepUpValues | null) => void) | null>(
     null,
   );
@@ -892,7 +890,7 @@ export function BackupControlPlane() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     void loadBackups();

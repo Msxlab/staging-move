@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   Search,
   Filter,
@@ -137,7 +136,6 @@ const US_STATES = [
 ];
 
 export default function MovingPage() {
-  const router = useRouter();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [stats, setStats] = useState<Stats>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);

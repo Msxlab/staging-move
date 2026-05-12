@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CalendarClock, Eye, Save, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -117,7 +116,6 @@ async function readError(res: Response): Promise<string> {
 const AUTOSAVE_INTERVAL_MS = 30_000;
 
 export function BlogPostEditorShell({ postId }: { postId?: string }) {
-  const router = useRouter();
   const [loading, setLoading] = useState(!!postId);
   const [saving, setSaving] = useState(false);
   const [autosaving, setAutosaving] = useState(false);
@@ -234,7 +232,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
       if (!res.ok) throw new Error(await readError(res));
       const created = (await res.json()) as { id: string };
       toast.success("Draft created");
-      router.replace(`/blog/${created.id}/edit`);
+      window.location.replace(`/blog/${created.id}/edit`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to create post");
     } finally {
@@ -375,7 +373,7 @@ export function BlogPostEditorShell({ postId }: { postId?: string }) {
       const res = await fetch(`/api/blog/posts/${postId}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await readError(res));
       toast.success("Post deleted");
-      router.replace("/blog");
+      window.location.replace("/blog");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     } finally {

@@ -127,6 +127,36 @@ describe("admin service worker", () => {
   });
 });
 
+describe("admin navigation fallback", () => {
+  it("forces same-origin admin links onto browser navigations", () => {
+    const fallback = readFileSync(join(process.cwd(), "src", "components", "admin-navigation-fallback.tsx"), "utf8");
+    const layout = readFileSync(join(process.cwd(), "src", "app", "layout.tsx"), "utf8");
+
+    expect(fallback).toContain('target !== "_self"');
+    expect(fallback).toContain("url.origin !== window.location.origin");
+    expect(fallback).toContain("window.location.assign(url.href)");
+    expect(layout).toContain("<AdminNavigationFallback />");
+  });
+
+  it("does not leave admin code on App Router programmatic navigation", () => {
+    const sourceFiles = [
+      join(process.cwd(), "src", "app", "login", "page.tsx"),
+      join(process.cwd(), "src", "components", "blog", "post-editor-shell.tsx"),
+      join(process.cwd(), "src", "app", "(admin)", "users", "[id]", "user-detail-client.tsx"),
+      join(process.cwd(), "src", "app", "(admin)", "providers", "new", "page.tsx"),
+      join(process.cwd(), "src", "app", "(admin)", "providers", "[id]", "edit", "page.tsx"),
+    ];
+
+    for (const file of sourceFiles) {
+      const source = readFileSync(file, "utf8");
+      expect(source).not.toContain("router.push(");
+      expect(source).not.toContain("router.replace(");
+      expect(source).not.toContain("router.back(");
+      expect(source).not.toContain("router.refresh(");
+    }
+  });
+});
+
 describe("admin middleware public auth paths", () => {
   it("does not treat login-prefixed protected API routes as public", () => {
     expect(isPublicPath("/login")).toBe(true);

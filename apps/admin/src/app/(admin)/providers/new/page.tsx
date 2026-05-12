@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -107,7 +106,6 @@ type ProviderFormState = {
 };
 
 export default function NewProviderPage() {
-  const router = useRouter();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [slugDup, setSlugDup] = useState(false);
@@ -223,7 +221,7 @@ export default function NewProviderPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <button
-        onClick={() => router.back()}
+        onClick={() => window.location.assign("/providers")}
         className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" /> Back to Providers
@@ -662,7 +660,7 @@ export default function NewProviderPage() {
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={() => (step > 0 ? setStep(step - 1) : router.back())}
+          onClick={() => (step > 0 ? setStep(step - 1) : window.location.assign("/providers"))}
           className="flex items-center gap-2 rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent"
         >
           <ArrowLeft className="h-4 w-4" /> {step > 0 ? "Previous" : "Cancel"}

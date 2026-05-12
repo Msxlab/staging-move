@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   Search, Plus, Pencil, Trash2, ChevronDown, ChevronRight,
   Filter, X, Download, ToggleLeft, ToggleRight, LayoutGrid, List, Layers,
@@ -27,7 +26,6 @@ interface CategoryStat { category: string; count: number; avgScore: number; }
 type ViewMode = "accordion" | "table" | "grid";
 
 export default function ProvidersPage() {
-  const router = useRouter();
   const [groups, setGroups] = useState<Record<string, Provider[]>>({});
   const [categoryStats, setCategoryStats] = useState<CategoryStat[]>([]);
   const [total, setTotal] = useState(0);
@@ -101,7 +99,7 @@ export default function ProvidersPage() {
       });
     } catch (error: any) { toast.error(error?.message || "Failed to fetch providers"); }
     finally { setLoading(false); }
-  }, [router, search, filterScope, filterStatus, filterCategory, filterState, scoreMin, scoreMax]);
+  }, [search, filterScope, filterStatus, filterCategory, filterState, scoreMin, scoreMax]);
 
   useEffect(() => { fetchProviders(); }, [fetchProviders]);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   ArrowLeft,
   AlertTriangle,
@@ -53,7 +53,6 @@ interface Provider {
 
 export default function ProviderDetailPage() {
   const { id } = useParams();
-  const router = useRouter();
   const [provider, setProvider] = useState<Provider | null>(null);
   const [coverageCount, setCoverageCount] = useState(0);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);

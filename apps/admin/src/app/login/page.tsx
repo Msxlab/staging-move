@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ShieldCheck, ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -9,7 +8,6 @@ import { AuroraBackground } from "@/components/aurora";
 import "../aurora.css";
 
 export default function LoginPage() {
-  const router = useRouter();
   const tLogin = useTranslations("login");
   const tCommon = useTranslations("common");
   const [email, setEmail] = useState("");
@@ -66,8 +64,7 @@ export default function LoginPage() {
       }
 
       toast.success(`${tLogin("title")} — ${data.admin.firstName}`);
-      router.push("/");
-      router.refresh();
+      window.location.assign("/");
     } catch {
       toast.error(tLogin("invalid"));
     } finally {
