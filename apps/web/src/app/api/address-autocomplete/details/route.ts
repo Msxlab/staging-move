@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireDbUserId } from "@/lib/auth";
-import { lookupAddressAutocomplete } from "@/lib/address-autocomplete";
+import {
+  isPlacesProviderConfigError,
+  lookupAddressAutocomplete,
+} from "@/lib/address-autocomplete";
 import { enforcePlacesCostControls, isPlacesAutocompleteEnabled } from "../cost-controls";
 
 async function readDetailsInput(request: NextRequest, source: "query" | "body") {
@@ -43,6 +46,14 @@ async function handleDetails(request: NextRequest, source: "query" | "body") {
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (isPlacesProviderConfigError(error)) {
+      console.warn("[PLACES] Address autocomplete details provider config rejected:", error?.message);
+      return NextResponse.json({
+        enabled: false,
+        result: null,
+        code: "PLACES_PROVIDER_CONFIG_ERROR",
+      });
     }
     console.error("Address autocomplete details failed:", error);
     return NextResponse.json({ error: "Failed to resolve address" }, { status: 500 });

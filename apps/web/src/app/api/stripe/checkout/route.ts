@@ -54,6 +54,28 @@ const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
   "PENDING_VALIDATION",
 ]);
 
+function isMissingStripeCustomerError(error: unknown) {
+  const stripeError = error as {
+    code?: string;
+    param?: string;
+    raw?: { code?: string; param?: string };
+  };
+  return (
+    (stripeError?.code === "resource_missing" ||
+      stripeError?.raw?.code === "resource_missing") &&
+    (stripeError?.param === "customer" || stripeError?.raw?.param === "customer")
+  );
+}
+
+async function createStripeCustomer(stripe: Stripe, user: { email: string }, userId: string) {
+  return stripe.customers.create({
+    email: user.email,
+    metadata: { userId },
+  }, {
+    idempotencyKey: buildStripeIdempotencyKey(["stripe-customer", userId]),
+  });
+}
+
 // POST /api/stripe/checkout — Create a Stripe Checkout session for plan upgrade
 export async function POST(request: NextRequest) {
   try {
@@ -252,14 +274,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Get or create Stripe customer
-    let stripeCustomerId = subscription?.stripeCustomerId;
-    if (!stripeCustomerId) {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: { userId },
-      }, {
-        idempotencyKey: buildStripeIdempotencyKey(["stripe-customer", userId]),
-      });
+    let stripeCustomerId = subscription?.stripeCustomerId ?? undefined;
+    let shouldCreateStripeCustomer = !stripeCustomerId;
+    if (stripeCustomerId) {
+      try {
+        const existingCustomer = await stripe.customers.retrieve(stripeCustomerId);
+        if ("deleted" in existingCustomer && existingCustomer.deleted) {
+          shouldCreateStripeCustomer = true;
+        }
+      } catch (error) {
+        if (!isMissingStripeCustomerError(error)) throw error;
+        shouldCreateStripeCustomer = true;
+        console.warn("[CHECKOUT] Stored Stripe customer was not found in configured mode; creating a replacement.", {
+          userId,
+          stripeCustomerId,
+        });
+      }
+    }
+    if (shouldCreateStripeCustomer) {
+      const customer = await createStripeCustomer(stripe, user, userId);
       stripeCustomerId = customer.id;
       const subscriptionPlatform = ((subscription as any)?.platform as string | undefined) || "web";
 

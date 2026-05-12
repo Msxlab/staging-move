@@ -73,12 +73,12 @@ describe("getRuntimeConfigEnvValue", () => {
     expect(getRuntimeConfigEnvValue("RESEND_API_KEY", {})).toBeNull();
   });
 
-  it("supports the GOOGLE_MAPS_API_KEY public alias fallback", () => {
+  it("does not use the public browser Maps key as the server-side Maps key", () => {
     expect(
       getRuntimeConfigEnvValue("GOOGLE_MAPS_API_KEY", {
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "AIzaPublic",
       }),
-    ).toBe("AIzaPublic");
+    ).toBeNull();
     expect(
       getRuntimeConfigEnvValue("GOOGLE_MAPS_API_KEY", {
         GOOGLE_MAPS_API_KEY: "AIzaPrivate",

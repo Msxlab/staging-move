@@ -8,6 +8,16 @@ import type {
 
 const GOOGLE_PLACES_AUTOCOMPLETE_URL = "https://maps.googleapis.com/maps/api/place/autocomplete/json";
 const GOOGLE_PLACES_DETAILS_URL = "https://maps.googleapis.com/maps/api/place/details/json";
+const PLACES_PROVIDER_CONFIG_STATUSES = new Set(["REQUEST_DENIED"]);
+
+export class PlacesProviderConfigError extends Error {
+  code = "PLACES_PROVIDER_CONFIG_ERROR";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "PlacesProviderConfigError";
+  }
+}
 
 interface GoogleAutocompletePrediction {
   description?: string;
@@ -87,7 +97,20 @@ function assertGoogleStatus(status: string | undefined, errorMessage?: string) {
   if (status === "OK" || status === "ZERO_RESULTS") {
     return;
   }
+  if (status && PLACES_PROVIDER_CONFIG_STATUSES.has(status)) {
+    throw new PlacesProviderConfigError(errorMessage || status);
+  }
   throw new Error(errorMessage || status || "GOOGLE_PLACES_REQUEST_FAILED");
+}
+
+export function isPlacesProviderConfigError(error: unknown) {
+  return (
+    error instanceof PlacesProviderConfigError ||
+    (typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: unknown }).code === "PLACES_PROVIDER_CONFIG_ERROR")
+  );
 }
 
 export async function searchAddressAutocomplete(input: {

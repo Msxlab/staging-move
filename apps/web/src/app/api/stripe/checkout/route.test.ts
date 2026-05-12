@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   campaignToSnapshotText: vi.fn(),
   getRequestHashSnapshot: vi.fn(),
   hashForSnapshot: vi.fn(),
+  customersRetrieve: vi.fn(),
   customersCreate: vi.fn(),
   sessionsCreate: vi.fn(),
   stripeConstructor: vi.fn(),
@@ -153,11 +154,12 @@ describe("stripe checkout route", () => {
     mocks.buildCheckoutConsentSnapshot.mockReturnValue("{\"checkoutDisclosureTextHash\":\"hash_1\"}");
     mocks.getRequestHashSnapshot.mockReturnValue({ consentIpHash: "ip_hash", consentUserAgentHash: "ua_hash" });
     mocks.hashForSnapshot.mockReturnValue("hash_1");
+    mocks.customersRetrieve.mockResolvedValue({ id: "cus_existing", deleted: false });
     mocks.customersCreate.mockResolvedValue({ id: "cus_123" });
     mocks.sessionsCreate.mockResolvedValue({ url: "https://checkout.stripe.test/session" });
     mocks.stripeConstructor.mockImplementation(function StripeMock() {
       return {
-      customers: { create: mocks.customersCreate },
+      customers: { retrieve: mocks.customersRetrieve, create: mocks.customersCreate },
       checkout: { sessions: { create: mocks.sessionsCreate } },
       };
     });
@@ -234,6 +236,65 @@ describe("stripe checkout route", () => {
       { email: "user@example.com", metadata: { userId: "user_1" } },
       { idempotencyKey: expect.stringMatching(/^locateflow:/) },
     );
+  });
+
+  it("replaces a stored Stripe customer ID that is missing in the configured mode", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_test_mode",
+      stripeSubscriptionId: null,
+      provider: "STRIPE",
+      accessType: "FREE_ACCESS",
+      status: "FREE_ACCESS",
+      platform: "web",
+    });
+    mocks.customersRetrieve.mockRejectedValueOnce({
+      code: "resource_missing",
+      param: "customer",
+      raw: { code: "resource_missing", param: "customer" },
+    });
+    mocks.customersCreate.mockResolvedValueOnce({ id: "cus_live_replacement" });
+
+    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.customersRetrieve).toHaveBeenCalledWith("cus_test_mode");
+    expect(mocks.customersCreate).toHaveBeenCalledWith(
+      { email: "user@example.com", metadata: { userId: "user_1" } },
+      { idempotencyKey: expect.stringMatching(/^locateflow:/) },
+    );
+    expect(subscriptionMock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: "user_1" },
+        data: expect.objectContaining({ stripeCustomerId: "cus_live_replacement" }),
+      }),
+    );
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: "cus_live_replacement" }),
+    );
+  });
+
+  it("does not replace a stored Stripe customer ID when Stripe returns a non-missing error", async () => {
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_existing",
+      stripeSubscriptionId: null,
+      provider: "STRIPE",
+      accessType: "FREE_ACCESS",
+      status: "FREE_ACCESS",
+      platform: "web",
+    });
+    mocks.customersRetrieve.mockRejectedValueOnce({
+      code: "api_error",
+      param: "customer",
+      raw: { code: "api_error", param: "customer" },
+    });
+
+    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }));
+
+    expect(response.status).toBe(500);
+    expect(mocks.customersCreate).not.toHaveBeenCalled();
+    expect(mocks.sessionsCreate).not.toHaveBeenCalled();
   });
 
   it("creates an annual trial Checkout session with payment method collection and snapshot metadata", async () => {

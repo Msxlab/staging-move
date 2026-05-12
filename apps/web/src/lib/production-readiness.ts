@@ -300,7 +300,7 @@ export function buildReadinessReport(
 
   const placesEnabled = (readConfig("PLACES_AUTOCOMPLETE_ENABLED") || "true").toLowerCase() !== "false";
   if (placesEnabled && !readConfig("GOOGLE_MAPS_API_KEY")) {
-    fail("GOOGLE_MAPS_API_KEY", "GOOGLE_MAPS_API_KEY must be configured when Places autocomplete is enabled.");
+    fail("GOOGLE_MAPS_API_KEY", "GOOGLE_MAPS_API_KEY must be configured with a server-side Places Web Service key when Places autocomplete is enabled.");
   }
   for (const key of [
     "PLACES_AUTOCOMPLETE_ENABLED",

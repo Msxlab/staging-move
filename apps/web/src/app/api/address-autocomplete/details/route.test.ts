@@ -23,6 +23,11 @@ vi.mock("@/lib/runtime-config", () => ({
 }));
 
 vi.mock("@/lib/address-autocomplete", () => ({
+  isPlacesProviderConfigError: (error: unknown) =>
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "PLACES_PROVIDER_CONFIG_ERROR",
   lookupAddressAutocomplete: (...args: unknown[]) => mocks.lookupAddressAutocomplete(...args),
 }));
 
@@ -89,5 +94,23 @@ describe("address autocomplete details route cost controls", () => {
       expect.stringContaining("places:details:daily:ip:203.0.113.10:"),
       expect.objectContaining({ windowSeconds: 24 * 60 * 60 }),
     );
+  });
+
+  it("returns details disabled when the Google Places key is rejected", async () => {
+    mocks.lookupAddressAutocomplete.mockRejectedValueOnce(
+      Object.assign(new Error("API keys with referer restrictions cannot be used with this API."), {
+        code: "PLACES_PROVIDER_CONFIG_ERROR",
+      }),
+    );
+
+    const response = await GET(request());
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({
+      enabled: false,
+      result: null,
+      code: "PLACES_PROVIDER_CONFIG_ERROR",
+    });
   });
 });

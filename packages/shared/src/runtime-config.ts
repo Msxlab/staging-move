@@ -108,9 +108,6 @@ export function getRuntimeConfigEnvValue(
   key: string,
   env: Record<string, string | undefined> = {},
 ): string | null {
-  if (key === "GOOGLE_MAPS_API_KEY") {
-    return env.GOOGLE_MAPS_API_KEY || env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || null;
-  }
   return env[key] || null;
 }
 
@@ -349,7 +346,7 @@ export const RUNTIME_CONFIG_DEFINITIONS: readonly RuntimeConfigDefinition[] = [
   {
     key: "GOOGLE_MAPS_API_KEY",
     label: "Google Maps API Key",
-    description: "Maps and Places API key for address autocomplete and location workflows.",
+    description: "Server-side Maps and Places Web Service API key for address autocomplete and details lookups. Use IP-address/application API restrictions, not HTTP referrers.",
     scope: "GLOBAL",
     category: "MAPS",
     isSecret: true,

@@ -58,6 +58,11 @@ export function AddressAutocompleteInput({
       setPredictions([]);
       return;
     }
+    if (!enabled) {
+      setPredictions([]);
+      setOpen(false);
+      return;
+    }
 
     const controller = new AbortController();
     const timeoutId = window.setTimeout(async () => {
@@ -91,7 +96,7 @@ export function AddressAutocompleteInput({
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [value]);
+  }, [value, enabled]);
 
   async function handleSelect(prediction: AddressAutocompletePrediction) {
     setLoading(true);
@@ -164,7 +169,9 @@ export function AddressAutocompleteInput({
           </div>
         ) : null}
       </div>
-      <p className="text-xs text-muted-foreground">{hint || "Start typing for address suggestions, or continue manually."}</p>
+      <p className="text-xs text-muted-foreground">
+        {hint || (enabled ? "Start typing for address suggestions, or continue manually." : "Address suggestions are unavailable. Continue manually.")}
+      </p>
     </div>
   );
 }
