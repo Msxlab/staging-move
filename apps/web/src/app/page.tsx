@@ -25,6 +25,7 @@ import {
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_TITLE,
+  SITE_URL,
   absoluteUrl,
 } from "@/lib/seo";
 import {
@@ -103,11 +104,13 @@ export default async function LandingPage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
+    "@id": `${SITE_URL}#software`,
     name: SITE_NAME,
-    applicationCategory: "BusinessApplication",
+    url: SITE_URL,
+    applicationCategory: "ProductivityApplication",
     operatingSystem: "Web, iOS, Android",
     description: SITE_DESCRIPTION,
-    url: absoluteUrl("/"),
+    publisher: { "@id": `${SITE_URL}#organization` },
     offers: [
       {
         "@type": "Offer",
@@ -121,6 +124,16 @@ export default async function LandingPage() {
         price: String(individualPlan.monthlyPriceUsd),
         priceCurrency: "USD",
       },
+      ...(individualPlan.yearlyPriceUsd
+        ? [
+            {
+              "@type": "Offer",
+              name: `${individualPlan.displayName} Annual`,
+              price: String(individualPlan.yearlyPriceUsd),
+              priceCurrency: "USD",
+            },
+          ]
+        : []),
     ],
   };
 
@@ -153,6 +166,9 @@ export default async function LandingPage() {
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-[36ch] leading-relaxed">
               {t("heroDescription")}
+            </p>
+            <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground/90 md:text-base">
+              {t("productDefinition")}
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href={primaryHref}>

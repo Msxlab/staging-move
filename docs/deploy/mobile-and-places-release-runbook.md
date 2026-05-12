@@ -57,6 +57,15 @@ EXPO_PUBLIC_APP_URL=https://locateflow.com
 EXPO_PUBLIC_SENTRY_DSN=<optional public DSN>
 ```
 
+Legacy `app.locateflow.com` note: native associated-domain, Android intent
+filter, and mobile OAuth allowlists may still include `app.locateflow.com` for
+compatibility with existing or app-review-bound builds. New production builds
+should use `https://locateflow.com` and `https://locateflow.com/api`. Before
+removing the legacy host, confirm no released build, OAuth dashboard allowlist,
+universal-link association, password-reset link, or mobile review flow still
+depends on it. If compatibility is required, handle DNS/redirect support as an
+operator action; do not use `app.locateflow.com` as a canonical public URL.
+
 Local physical-device testing:
 
 ```bash
