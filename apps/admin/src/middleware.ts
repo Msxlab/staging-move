@@ -177,9 +177,16 @@ function getImageCspSources(): string {
 export function buildCspHeader(nonce: string, isDev: boolean): string {
   // Dev needs `'unsafe-eval'` for HMR + Fast Refresh + React DevTools.
   // Prod drops it entirely — all runtime `eval` usage is a policy violation.
+  // `'strict-dynamic'` was removed: under CSP3 it makes the browser ignore
+  // `'self'`, so any Next.js framework chunk that arrives without a nonce
+  // (e.g. lazy-loaded route bundles or third-party widgets loaded after
+  // hydration) is blocked silently and every onClick on the page dies.
+  // Same-origin `_next/static/*` bundles are what we actually need to load,
+  // so plain `'self' + nonce` is both safer than `'unsafe-inline'` and
+  // restores hydration.
   const scriptSrc = isDev
-    ? `'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic'`
-    : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
+    ? `'self' 'nonce-${nonce}' 'unsafe-eval'`
+    : `'self' 'nonce-${nonce}'`;
   // Admin UI libraries emit small inline style blocks/attributes during
   // hydration. Keep scripts nonce-locked, but allow inline styles
   // explicitly so CSP3 browsers do not ignore the fallback because of a
