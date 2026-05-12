@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Fragment, useState, useEffect } from "react";
 import { Mail, Plus, Trash2, Edit2, Eye, Send, CheckCircle2, XCircle, X } from "lucide-react";

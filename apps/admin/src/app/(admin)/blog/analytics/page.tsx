@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin /blog/analytics — read-only telemetry dashboard.
  *
  * Three questions every editor asks first:

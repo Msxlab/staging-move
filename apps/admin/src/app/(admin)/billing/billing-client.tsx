@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { DollarSign, TrendingUp, TrendingDown, Users, CreditCard, AlertTriangle, ArrowUpRight, ArrowDownRight, Clock, Smartphone, ShieldAlert, Store } from "lucide-react";

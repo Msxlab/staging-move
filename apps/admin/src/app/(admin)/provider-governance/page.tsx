@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, Link2, RefreshCw, Rocket, ShieldAlert, X } from "lucide-react";

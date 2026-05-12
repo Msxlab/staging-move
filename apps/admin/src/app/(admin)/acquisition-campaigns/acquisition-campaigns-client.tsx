@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BarChart3, Calendar, ChevronLeft, ChevronRight, CheckCircle2, Copy, Pause, Pencil, Play, Plus, RefreshCw, Save, Search, Square, Ticket, Trash2, X } from "lucide-react";

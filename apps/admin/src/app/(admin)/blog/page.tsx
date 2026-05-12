@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin /blog — list + entry point.
  *
  * Server component reads the requested status / locale / search slice

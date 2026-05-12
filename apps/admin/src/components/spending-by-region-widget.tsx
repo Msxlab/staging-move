@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { DollarSign, MapPin, Tag, Loader2, Lock } from "lucide-react";

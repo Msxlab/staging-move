@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { Flag, Plus, Trash2, ToggleLeft, ToggleRight, Edit2 } from "lucide-react";
