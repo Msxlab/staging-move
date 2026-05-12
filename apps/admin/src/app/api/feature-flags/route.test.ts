@@ -73,7 +73,11 @@ describe("feature flag step-up", () => {
     expect(mocks.requirePasswordConfirm).toHaveBeenCalledWith(
       { adminId: "admin-1" },
       undefined,
-      { operation: "feature_flag_write" },
+      // Feature-flag step-up rides a one-hour grace so toggling a rollout
+      // back and forth during an incident doesn't paint the operator with
+      // password modals every ten minutes. See FEATURE_FLAG_STEP_UP_GRACE_MS
+      // in route.ts.
+      { operation: "feature_flag_write", maxAgeMs: 60 * 60 * 1000 },
     );
     expect(mocks.featureFlagUpdate).not.toHaveBeenCalled();
   });

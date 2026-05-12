@@ -368,8 +368,13 @@ export async function destroySession() {
 const DEFAULT_CONFIRM_GRACE_MS = 10 * 60 * 1000;
 const SECRET_ROTATION_GRACE_MS = 2 * 60 * 1000;
 const STEP_UP_FAILURE_WINDOW_MS = 5 * 60 * 1000;
-const STEP_UP_LOCKOUT_MS = 10 * 60 * 1000;
-const STEP_UP_MAX_FAILURES = 5;
+// Lockout was 10 min after 5 typos — easy to trigger on mobile during an
+// incident, after which every sensitive action 403s for the duration.
+// 5 min after 8 typos still resists brute force (8 attempts/5 min ≈ 1 / 37s,
+// well below any realistic password-guessing throughput) without making the
+// operator wait through an outage because of fat fingers.
+const STEP_UP_LOCKOUT_MS = 5 * 60 * 1000;
+const STEP_UP_MAX_FAILURES = 8;
 
 export interface AdminStepUpOptions {
   operation?: string;

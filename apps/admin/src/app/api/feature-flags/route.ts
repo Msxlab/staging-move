@@ -16,12 +16,19 @@ export async function GET() {
   }
 }
 
+// Feature flag changes are trivially reversible by the same operator
+// (flip the boolean back, re-PUT the rollout %), so a one-hour grace
+// window means an operator working through an incident enters their
+// password once instead of every ten minutes. Step-up is still REQUIRED
+// — only the cache TTL is wider than the 10-min default.
+const FEATURE_FLAG_STEP_UP_GRACE_MS = 60 * 60 * 1000;
+
 export async function POST(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canCreate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
     const { name, description, enabled, targetType, targetValue, confirmPassword } = await req.json();
     if (!name) return NextResponse.json({ error: "Name required" }, { status: 400 });
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write" });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write", maxAgeMs: FEATURE_FLAG_STEP_UP_GRACE_MS });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }
@@ -59,7 +66,7 @@ export async function PUT(req: NextRequest) {
     const session = await requirePermission("settings", "canUpdate", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
     const { id, enabled, description, targetType, targetValue, confirmPassword } = await req.json();
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write" });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write", maxAgeMs: FEATURE_FLAG_STEP_UP_GRACE_MS });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }
@@ -103,7 +110,7 @@ export async function DELETE(req: NextRequest) {
   try {
     const session = await requirePermission("settings", "canDelete", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
     const { id, confirmPassword } = await req.json();
-    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write" });
+    const confirm = await requirePasswordConfirm(session, confirmPassword, { operation: "feature_flag_write", maxAgeMs: FEATURE_FLAG_STEP_UP_GRACE_MS });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
     }

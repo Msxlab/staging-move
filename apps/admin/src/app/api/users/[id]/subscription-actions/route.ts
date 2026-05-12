@@ -136,9 +136,16 @@ export async function POST(
     const { id: userId } = await params;
     const requestMeta = getAuditRequestMeta(request);
 
+    // Stripe cancel paths burn money / immediately end access; renewal
+    // resume is fully reversible. Keep MFA on the destructive paths and
+    // drop it on resume so an operator restoring an accidental cancel
+    // is not blocked behind their authenticator.
+    const requiresMfaForAction = action !== "resume_renewal";
     const confirm = await requirePasswordConfirm(session, confirmPassword, {
-      operation: "billing_subscription_action",
-      requireMfa: true,
+      operation: requiresMfaForAction
+        ? "billing_subscription_action"
+        : "billing_subscription_resume",
+      requireMfa: requiresMfaForAction,
       mfaCode,
       backupCode,
       ipAddress: requestMeta.ipAddress,

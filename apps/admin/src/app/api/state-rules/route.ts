@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 
+// State-rule edits are bulk-editorial — an operator authoring DMV / tax /
+// voter text for a state often saves dozens of fields back-to-back. The
+// default 10-min step-up grace was making them re-type their password
+// mid-session. Step-up is still REQUIRED on the first save; this only
+// widens the freshness window the server accepts as proof.
+const STATE_RULE_STEP_UP_GRACE_MS = 60 * 60 * 1000;
+
 export async function GET() {
   try {
     await requirePermission("state_rules", "canRead", { minimumRole: "VIEWER" });
@@ -24,6 +31,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
       operation: "state_rule_mutation",
+      maxAgeMs: STATE_RULE_STEP_UP_GRACE_MS,
     });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });

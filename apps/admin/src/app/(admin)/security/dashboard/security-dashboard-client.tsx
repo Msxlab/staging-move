@@ -71,9 +71,17 @@ export default function SecurityDashboardClient() {
   const loadSecurityEvents = useCallback(async () => {
     try {
       const res = await fetch("/api/logs?tab=admin&action=SECURITY_ALERT&perPage=50&page=1");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || `Failed to load security events (${res.status})`);
+        setSecurityEvents([]);
+        return;
+      }
       const data = await res.json();
       setSecurityEvents(data.logs || []);
-    } catch {}
+    } catch {
+      toast.error("Failed to load security events");
+    }
   }, []);
 
   useEffect(() => {

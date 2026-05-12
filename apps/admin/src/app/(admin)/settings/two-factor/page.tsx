@@ -108,7 +108,9 @@ export default function TwoFactorPage() {
         if (data.requiresMfa) {
           setDisableStepUpHint("Enter an authenticator code or a backup code to disable 2FA.");
         }
-        setDisablePassword("");
+        // Keep typed values so the operator can correct a single field
+        // instead of starting over. Clear only the one-time codes — re-using
+        // a code that was rejected once will never succeed.
         setDisableMfaCode("");
         setDisableBackupCode("");
         toast.error(data.error || "Failed to disable");

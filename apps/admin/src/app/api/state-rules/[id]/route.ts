@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePasswordConfirm, requirePermission } from "@/lib/auth";
 
+// See route.ts in the parent — bulk editorial workflow needs a 1h grace.
+const STATE_RULE_STEP_UP_GRACE_MS = 60 * 60 * 1000;
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,6 +32,7 @@ export async function PATCH(
     const body = await request.json();
     const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
       operation: "state_rule_mutation",
+      maxAgeMs: STATE_RULE_STEP_UP_GRACE_MS,
     });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
@@ -74,6 +78,7 @@ export async function DELETE(
     const body = await request.json().catch(() => ({}));
     const confirm = await requirePasswordConfirm(session, body.confirmPassword, {
       operation: "state_rule_mutation",
+      maxAgeMs: STATE_RULE_STEP_UP_GRACE_MS,
     });
     if (!confirm.confirmed) {
       return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });

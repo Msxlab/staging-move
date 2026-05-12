@@ -140,6 +140,11 @@ export function PasswordConfirmModal({
               />
             </div>
           </div>
+          <p className="text-[11px] text-muted-foreground">
+            Most destructive actions require a current authenticator code or
+            an unused backup code in addition to your password. Leave both
+            blank only if the action explicitly says password is enough.
+          </p>
 
           {error ? (
             <div role="alert" className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">

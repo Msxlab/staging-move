@@ -102,8 +102,11 @@ describe("admin scoped step-up", () => {
   it("rate limits repeated bad confirmations", async () => {
     compareMock.mockResolvedValue(false);
 
+    // STEP_UP_MAX_FAILURES is currently 8 — eight wrong attempts in the
+    // window must trip the lockout. The threshold was raised from 5 after
+    // admins kept getting locked out by mobile typos during incidents.
     let result = await requirePasswordConfirm(session, "wrong", { operation: "provider_delete" });
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 7; i++) {
       result = await requirePasswordConfirm(session, "wrong", { operation: "provider_delete" });
     }
 

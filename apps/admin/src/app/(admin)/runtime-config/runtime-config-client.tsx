@@ -189,8 +189,8 @@ export default function RuntimeConfigClient() {
     if (!confirmAction) return;
 
     if (!form.confirmPassword) {
-      toast.error("Password confirmation required");
-      setForm((prev) => clearRuntimeConfigStepUp(prev));
+      toast.error("Enter your admin password in the form above before resetting this key.");
+      setStepUpHint("Password is required to reset this key. Type it into the Confirm password field, then click Reset to ENV again.");
       return;
     }
 

@@ -82,7 +82,7 @@ describe("admin notification send boundaries", () => {
     expect(mocks.prisma.notificationQueue.create).not.toHaveBeenCalled();
   });
 
-  it("requires password step-up before high-blast broadcast sends", async () => {
+  it("requires password step-up before irreversible EMAIL or PUSH broadcasts", async () => {
     mocks.requirePasswordConfirm.mockResolvedValue({
       confirmed: false,
       error: "Confirm your password before broadcasting notifications.",
@@ -91,7 +91,7 @@ describe("admin notification send boundaries", () => {
     const res = await POST(jsonRequest({
       title: "Broadcast",
       body: "Important announcement.",
-      channel: "IN_APP",
+      channel: "EMAIL",
       broadcast: true,
     }));
     const body = await res.json();
@@ -105,5 +105,29 @@ describe("admin notification send boundaries", () => {
     );
     expect(mocks.prisma.notification.createMany).not.toHaveBeenCalled();
     expect(mocks.prisma.notificationQueue.create).not.toHaveBeenCalled();
+  });
+
+  it("does not require step-up for IN_APP-only broadcasts (reversible feed writes)", async () => {
+    // Channel IN_APP just inserts rows in the user feed which an admin
+    // can soft-delete from the queue UI. Forcing a password modal every
+    // time turned the broadcast button into "operators avoid using it"
+    // — see the May 2026 admin-friction audit. Step-up still gates the
+    // EMAIL and PUSH channels (test above) where delivery is one-way.
+    mocks.prisma.user.findMany.mockResolvedValue([]);
+    mocks.prisma.user.count.mockResolvedValue(0);
+    mocks.prisma.notificationQueue.create.mockResolvedValue({ id: "q1" });
+    mocks.prisma.adminAuditLog.create.mockResolvedValue({ id: "a1" });
+
+    const { POST } = await import("./route");
+    const res = await POST(jsonRequest({
+      title: "Broadcast",
+      body: "Important announcement.",
+      channel: "IN_APP",
+      broadcast: true,
+    }));
+
+    expect(res.status).toBe(200);
+    expect(mocks.requirePasswordConfirm).not.toHaveBeenCalled();
+    expect(mocks.prisma.notificationQueue.create).toHaveBeenCalled();
   });
 });

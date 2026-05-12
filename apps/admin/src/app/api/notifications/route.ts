@@ -161,11 +161,19 @@ export async function POST(req: NextRequest) {
     const deliveredAt = new Date();
 
     if (broadcast) {
-      const confirm = await requirePasswordConfirm(session, confirmPassword, {
-        operation: "notification_broadcast",
-      });
-      if (!confirm.confirmed) {
-        return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+      // EMAIL/PUSH broadcasts are irreversible once they leave the
+      // worker (mail delivered, push fan-out persisted on devices) so
+      // they keep the step-up gate. IN_APP broadcasts only write feed
+      // rows that the operator can soft-delete, and the password modal
+      // for routine announcements was friction operators kept avoiding.
+      const requiresStepUpForBroadcast = channel === "EMAIL" || channel === "PUSH";
+      if (requiresStepUpForBroadcast) {
+        const confirm = await requirePasswordConfirm(session, confirmPassword, {
+          operation: "notification_broadcast",
+        });
+        if (!confirm.confirmed) {
+          return NextResponse.json({ error: confirm.error, requiresPassword: true }, { status: 403 });
+        }
       }
 
       // Hard cap on audience size — synchronous fan-out at request time
