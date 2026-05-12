@@ -242,7 +242,12 @@
     "billingCycle_yearly": "Anual",
     "empty": "Aún no hay servicios",
     "emptyDescription": "Rastrea cada servicio público, banco, seguro y suscripción vinculado a tu hogar.",
-    "emptyForAddress": "Aún no hay servicios vinculados a esta dirección."
+    "emptyForAddress": "Aún no hay servicios vinculados a esta dirección.",
+    "suggestProvider": "Agregar manualmente para revisión",
+    "suggestProviderDescription": "¿No encuentras tu proveedor en nuestro directorio? Agrégalo manualmente — nuestro equipo lo revisará y lo añadirá al sistema si es válido.",
+    "suggestBannerTitle": "Sugerir un proveedor para nuestro directorio",
+    "suggestBannerBody": "Completa el nombre, sitio web y teléfono del proveedor. Nuestro equipo lo revisará y lo añadirá al directorio si es válido. Esto crea un servicio rastreado para ti ahora mismo.",
+    "suggestSuccessToast": "Enviado para revisión — verificaremos y lo añadiremos al directorio."
   },
   "providers": {
     "title": "Proveedores",

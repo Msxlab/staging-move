@@ -55,6 +55,9 @@ export default function NewServicePage() {
   const fromServiceId = searchParams.get("fromServiceId") || "";
   const prefillProviderId = searchParams.get("providerId") || "";
   const prefillCategory = searchParams.get("category") || "";
+  const suggestMode = searchParams.get("suggest") === "1";
+  const suggestName = searchParams.get("suggestName") || "";
+  const suggestAddressId = searchParams.get("addressId") || "";
 
   // Address state
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
@@ -73,9 +76,9 @@ export default function NewServicePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [serviceLimit, setServiceLimit] = useState<ServiceLimitDetails | null>(null);
-  const [showCustomProvider, setShowCustomProvider] = useState(false);
+  const [showCustomProvider, setShowCustomProvider] = useState(suggestMode);
   const [customProvider, setCustomProvider] = useState({
-    name: "",
+    name: suggestName || "",
     category: prefillCategory || "OTHER",
     providerType: "OTHER",
     website: "",
@@ -108,12 +111,15 @@ export default function NewServicePage() {
         const addrs = d.addresses || [];
         setAddresses(addrs);
         if (addrs.length > 0) {
+          const requested = suggestAddressId
+            ? addrs.find((a: AddressOption) => a.id === suggestAddressId)
+            : null;
           const primary = addrs.find((a: AddressOption) => a.isPrimary);
-          setSelectedAddress(primary ? primary.id : addrs[0].id);
+          setSelectedAddress(requested ? requested.id : primary ? primary.id : addrs[0].id);
         }
       })
       .catch(() => {});
-  }, []);
+  }, [suggestAddressId]);
 
   // Fetch scored providers for selected address
   useEffect(() => {
@@ -295,10 +301,23 @@ export default function NewServicePage() {
     setSaving(true);
     setError(null);
     try {
+      const selectedAddr = addresses.find((a) => a.id === selectedAddress);
       const providerRes = await fetch("/api/custom-providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(customProvider),
+        body: JSON.stringify({
+          ...customProvider,
+          // When the user lands here via "suggest", flag the record so admin governance
+          // surfaces it as a verify-and-promote request instead of a private record.
+          ...(suggestMode
+            ? {
+                submitForGlobalReview: true,
+                city: selectedAddr?.city || "",
+                state: selectedAddr?.state || "",
+                zipCode: selectedAddr?.zip || "",
+              }
+            : {}),
+        }),
       });
       const providerData = await providerRes.json();
       if (!providerRes.ok) throw new Error(providerData.error || "Failed to add custom provider");
@@ -319,7 +338,11 @@ export default function NewServicePage() {
       });
       const serviceData = await serviceRes.json();
       if (!serviceRes.ok) throw new Error(resolveServiceMutationError(serviceData, "Failed to attach custom provider"));
-      toast.success("Custom provider added for local tracking");
+      toast.success(
+        suggestMode
+          ? "Submitted for review — we'll verify and add it to the directory."
+          : "Custom provider added for local tracking",
+      );
       router.push("/services");
     } catch (error: any) {
       setError(error?.message || "Failed to add custom provider");
@@ -404,6 +427,16 @@ export default function NewServicePage() {
         <div className="p-3 rounded-xl bg-destructive/10 border border-destructive text-destructive text-sm flex items-center justify-between">
           {error}
           <button onClick={() => setError(null)}><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
+      {suggestMode && (
+        <div className="rounded-xl border border-tone-cyan-br bg-tone-cyan-bg p-4">
+          <p className="text-sm font-semibold text-tone-cyan-fg">Suggest a provider for our directory</p>
+          <p className="mt-1 text-xs text-tone-cyan-fg/85">
+            Add the provider details below — name, website, phone, and the address it serves. Our team will review and, if valid, add it to the listed directory so other users can find it too.
+            In the meantime, this creates a tracked service for you right away.
+          </p>
         </div>
       )}
 

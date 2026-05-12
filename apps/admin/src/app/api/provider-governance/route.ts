@@ -4,7 +4,34 @@ import { requirePermission } from "@/lib/auth";
 import {
   getProviderQualityWarnings,
   normalizeProviderUrlDomain,
+  slugifyProviderName,
 } from "@locateflow/shared";
+
+const CUSTOM_REVIEW_PRIORITY: Record<string, number> = {
+  NEEDS_REVIEW: 0,
+  PROMOTION_CANDIDATE: 1,
+  NOT_REVIEWED: 2,
+  REJECTED: 3,
+  LINKED_TO_GLOBAL_PROVIDER: 4,
+  REVIEWED: 5,
+};
+
+async function uniqueProviderSlug(baseName: string): Promise<string> {
+  const base = slugifyProviderName(baseName) || "provider";
+  let candidate = base;
+  let suffix = 1;
+  // Cap iterations to avoid runaway loops on pathological input.
+  while (suffix < 50) {
+    const existing = await prisma.serviceProvider.findUnique({
+      where: { slug: candidate },
+      select: { id: true },
+    });
+    if (!existing) return candidate;
+    suffix += 1;
+    candidate = `${base}-${suffix}`;
+  }
+  return `${base}-${Date.now()}`;
+}
 
 function buildDomainCounts(providers: Array<{ website: string | null }>) {
   const counts = new Map<string, number>();
@@ -108,17 +135,31 @@ export async function GET() {
     }
 
     for (const provider of customProviders) {
-      if (provider.adminReviewStatus !== "REVIEWED") {
+      if (provider.adminReviewStatus !== "REVIEWED" && provider.adminReviewStatus !== "LINKED_TO_GLOBAL_PROVIDER") {
+        const isUserSubmission = provider.adminReviewStatus === "NEEDS_REVIEW";
         queues.userCreatedProviderReview.push({
           provider,
           warning: {
-            code: "user_custom_review",
-            label: "User-created provider review",
-            message: "Private user-created provider needs support/governance review.",
+            code: isUserSubmission ? "user_submitted_for_review" : "user_custom_review",
+            label: isUserSubmission
+              ? "User submitted for listed-directory review"
+              : "User-created provider review",
+            message: isUserSubmission
+              ? "User asked us to verify and add this provider to the listed directory."
+              : "Private user-created provider needs support/governance review.",
           },
         });
       }
     }
+
+    queues.userCreatedProviderReview.sort((a, b) => {
+      const aPriority = CUSTOM_REVIEW_PRIORITY[a.provider.adminReviewStatus] ?? 99;
+      const bPriority = CUSTOM_REVIEW_PRIORITY[b.provider.adminReviewStatus] ?? 99;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      const aDate = a.provider.createdAt ? new Date(a.provider.createdAt).getTime() : 0;
+      const bDate = b.provider.createdAt ? new Date(b.provider.createdAt).getTime() : 0;
+      return bDate - aDate;
+    });
 
     const summary = Object.fromEntries(
       Object.entries(queues).map(([key, value]) => [key, value.length]),
@@ -173,6 +214,86 @@ export async function PATCH(request: NextRequest) {
         data.adminReviewStatus = "LINKED_TO_GLOBAL_PROVIDER";
         data.linkedServiceProviderId = serviceProviderId;
       }
+
+      if (action === "promote_to_listed") {
+        // Promotes a user-submitted custom provider to a new listed ServiceProvider.
+        // Requires MODERATOR; reuses admin's overrides if present, falls back to
+        // the user's submission. Slug uniqueness is enforced via suffixing.
+        const overrideName = typeof body.name === "string" ? body.name.trim() : "";
+        const overrideCategory = typeof body.category === "string" ? body.category.trim() : "";
+        const overrideWebsite = typeof body.website === "string" ? body.website.trim() : "";
+        const overridePhone = typeof body.phone === "string" ? body.phone.trim() : "";
+        const overrideDescription = typeof body.description === "string" ? body.description.trim() : "";
+        const overrideScope = typeof body.scope === "string" ? body.scope.trim().toUpperCase() : "";
+        const overrideStatesRaw = Array.isArray(body.states) ? body.states : null;
+
+        const name = (overrideName || customProvider.name || "").slice(0, 200);
+        const category = (overrideCategory || customProvider.category || "OTHER").toUpperCase().slice(0, 50);
+        if (!name) {
+          return NextResponse.json({ error: "Provider name is required to promote" }, { status: 400 });
+        }
+
+        const website = overrideWebsite || customProvider.website || null;
+        if (website) {
+          try {
+            const parsed = new URL(website);
+            if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+              return NextResponse.json({ error: "Provider website must be http(s)" }, { status: 400 });
+            }
+          } catch {
+            return NextResponse.json({ error: "Provider website is not a valid URL" }, { status: 400 });
+          }
+        }
+
+        const stateFromSubmission = customProvider.state ? customProvider.state.toUpperCase() : null;
+        const states = overrideStatesRaw
+          ? overrideStatesRaw
+              .filter((value: unknown): value is string => typeof value === "string")
+              .map((value: string) => value.trim().toUpperCase())
+              .filter((value: string) => /^[A-Z]{2}$/.test(value))
+          : stateFromSubmission
+            ? [stateFromSubmission]
+            : [];
+        const scope = (overrideScope === "FEDERAL" || overrideScope === "STATE")
+          ? overrideScope
+          : (states.length > 0 ? "STATE" : "FEDERAL");
+
+        const slug = await uniqueProviderSlug(name);
+
+        const newProvider = await prisma.$transaction(async (tx) => {
+          const created = await tx.serviceProvider.create({
+            data: {
+              name: name.slice(0, 200),
+              slug,
+              category,
+              description: (overrideDescription || customProvider.description || "").slice(0, 2000) || null,
+              website: website ? website.slice(0, 500) : null,
+              phone: (overridePhone || customProvider.phone || "").slice(0, 20) || null,
+              scope,
+              states: JSON.stringify(states),
+              zipCodes: JSON.stringify([]),
+              isActive: true,
+              lastUpdatedBy: session.adminId,
+            },
+          });
+          await tx.userCustomProvider.update({
+            where: { id: customProvider.id },
+            data: {
+              adminReviewStatus: "LINKED_TO_GLOBAL_PROVIDER",
+              linkedServiceProviderId: created.id,
+            },
+          });
+          return created;
+        });
+
+        await writeAdminAudit(session.adminId, "GOV_PROMOTE", "UserCustomProvider", customProvider.id, {
+          action: "promote_to_listed",
+          newServiceProviderId: newProvider.id,
+          slug: newProvider.slug,
+        });
+        return NextResponse.json({ provider: newProvider, promoted: true });
+      }
+
       if (!Object.keys(data).length) {
         return NextResponse.json({ error: "Unsupported custom provider action" }, { status: 400 });
       }

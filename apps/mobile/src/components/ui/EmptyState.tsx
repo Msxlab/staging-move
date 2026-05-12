@@ -9,9 +9,19 @@ interface EmptyStateProps {
   description: string;
   actionLabel?: string;
   onAction?: () => void;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 }
 
-export function EmptyState({ icon, title, description, actionLabel, onAction }: EmptyStateProps) {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  secondaryActionLabel,
+  onSecondaryAction,
+}: EmptyStateProps) {
 
   // theme: hook-injected styles
 
@@ -31,6 +41,16 @@ export function EmptyState({ icon, title, description, actionLabel, onAction }: 
           size="md"
           style={{ marginTop: 16 }}
           accessibilityHint={`Activates ${actionLabel.toLowerCase()}`}
+        />
+      )}
+      {secondaryActionLabel && onSecondaryAction && (
+        <Button
+          title={secondaryActionLabel}
+          onPress={onSecondaryAction}
+          variant="secondary"
+          size="md"
+          style={{ marginTop: 10 }}
+          accessibilityHint={`Activates ${secondaryActionLabel.toLowerCase()}`}
         />
       )}
     </View>

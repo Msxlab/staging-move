@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const submitForGlobalReview = validated.submitForGlobalReview === true;
     const provider = await prisma.userCustomProvider.create({
       data: {
         userId,
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
         notes: cleanText(validated.notes),
         providerType: validated.providerType,
         trustStatus: "USER_CUSTOM",
-        adminReviewStatus: "NOT_REVIEWED",
+        adminReviewStatus: submitForGlobalReview ? "NEEDS_REVIEW" : "NOT_REVIEWED",
       },
     });
 
@@ -162,16 +163,26 @@ export async function POST(request: NextRequest) {
       action: "CREATE",
       entityType: "UserCustomProvider",
       entityId: provider.id,
-      changes: { name: provider.name, category: provider.category, providerType: provider.providerType },
+      changes: {
+        name: provider.name,
+        category: provider.category,
+        providerType: provider.providerType,
+        submitForGlobalReview,
+      },
       ...meta,
     });
-    await recordCustomProviderEvent(userId, "CUSTOM_PROVIDER_CREATED", {
-      customProviderId: provider.id,
-      category: provider.category,
-      providerType: provider.providerType,
-      localOnly: true,
-      privateToUser: true,
-    });
+    await recordCustomProviderEvent(
+      userId,
+      submitForGlobalReview ? "CUSTOM_PROVIDER_SUBMITTED_FOR_REVIEW" : "CUSTOM_PROVIDER_CREATED",
+      {
+        customProviderId: provider.id,
+        category: provider.category,
+        providerType: provider.providerType,
+        localOnly: !submitForGlobalReview,
+        privateToUser: !submitForGlobalReview,
+        submitForGlobalReview,
+      },
+    );
 
     return NextResponse.json({ provider: presentCustomProvider(provider) }, { status: 201 });
   } catch (error: any) {

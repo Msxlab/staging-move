@@ -104,6 +104,7 @@ export const customProviderSchema = z.strictObject({
     "GYM",
     "OTHER",
   ]).default("OTHER"),
+  submitForGlobalReview: z.boolean().optional(),
 });
 
 export type CustomProviderFormData = z.infer<typeof customProviderSchema>;

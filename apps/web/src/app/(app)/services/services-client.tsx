@@ -369,15 +369,25 @@ export function ServicesClient({
         </div>
       </div>
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={Zap}
-          title={services.length === 0 ? t("emptyStates.noServices") : t("emptyStates.noMatchingServices")}
-          description={services.length === 0 ? t("emptyStates.addFirstService") : t("emptyStates.tryDifferentFilter")}
-          actionLabel={services.length === 0 ? t("emptyStates.addService") : undefined}
-          actionHref={services.length === 0 ? "/services/new" : undefined}
-        />
-      ) : (
+      {filtered.length === 0 ? (() => {
+        const isFilteredEmpty = services.length > 0;
+        const suggestParams = new URLSearchParams({ suggest: "1" });
+        if (search.trim()) suggestParams.set("suggestName", search.trim().slice(0, 200));
+        if (categoryFilter) suggestParams.set("category", categoryFilter);
+        if (addressFilter) suggestParams.set("addressId", addressFilter);
+        const suggestHref = `/services/new?${suggestParams.toString()}`;
+        return (
+          <EmptyState
+            icon={Zap}
+            title={isFilteredEmpty ? t("emptyStates.noMatchingServices") : t("emptyStates.noServices")}
+            description={isFilteredEmpty ? t("emptyStates.tryDifferentFilter") : t("emptyStates.addFirstService")}
+            actionLabel={isFilteredEmpty ? t("emptyStates.suggestProvider") : t("emptyStates.addService")}
+            actionHref={isFilteredEmpty ? suggestHref : "/services/new"}
+            secondaryActionLabel={isFilteredEmpty ? t("emptyStates.addService") : undefined}
+            secondaryActionHref={isFilteredEmpty ? "/services/new" : undefined}
+          />
+        );
+      })() : (
         <div className="space-y-5">
           {sortedGroups.map((prefix) => {
             const items = grouped[prefix];

@@ -403,15 +403,52 @@ export default function ServicesScreen() {
 
         {error && services.length === 0 ? (
           <ErrorState message={error} onRetry={load} />
-        ) : filtered.length === 0 ? (
-          <EmptyState
-            icon={<Zap size={32} color={theme.colors.primary} />}
-            title={filterCat ? t("services.emptyCategory") : t("services.empty")}
-            description={t("services.emptyDescription")}
-            actionLabel={t("services.newTitle")}
-            onAction={() => router.push("/services/new")}
-          />
-        ) : (
+        ) : filtered.length === 0 ? (() => {
+          const isFiltered = Boolean(filterCat) || services.length > 0;
+          const suggestParams: Record<string, string> = { mode: "manual", suggest: "1" };
+          if (filterCat) suggestParams.category = filterCat;
+          if (selectedAddressId) suggestParams.addressId = selectedAddressId;
+          return (
+            <EmptyState
+              icon={<Zap size={32} color={theme.colors.primary} />}
+              title={filterCat ? t("services.emptyCategory") : t("services.empty")}
+              description={
+                isFiltered
+                  ? t("services.suggestProviderDescription", {
+                      defaultValue: "Can't find your provider? Add it manually — our team will review and add it to the system if valid.",
+                    })
+                  : t("services.emptyDescription")
+              }
+              actionLabel={
+                isFiltered
+                  ? t("services.suggestProvider", { defaultValue: "Add manually for review" })
+                  : t("services.newTitle")
+              }
+              onAction={() =>
+                router.push(
+                  isFiltered
+                    ? { pathname: "/services/new", params: suggestParams }
+                    : selectedAddressId
+                      ? { pathname: "/services/new", params: { addressId: selectedAddressId } }
+                      : "/services/new",
+                )
+              }
+              secondaryActionLabel={
+                isFiltered ? t("services.newTitle") : undefined
+              }
+              onSecondaryAction={
+                isFiltered
+                  ? () =>
+                      router.push(
+                        selectedAddressId
+                          ? { pathname: "/services/new", params: { addressId: selectedAddressId } }
+                          : "/services/new",
+                      )
+                  : undefined
+              }
+            />
+          );
+        })() : (
           <View style={styles.list}>
             {filtered.map((service: any) => {
               const logoUrl = service.provider?.logoUrl || service.providerLogoUrl || service.logoUrl || null;

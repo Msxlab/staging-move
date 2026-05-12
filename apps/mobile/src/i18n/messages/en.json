@@ -242,7 +242,12 @@
     "billingCycle_yearly": "Yearly",
     "empty": "No services yet",
     "emptyDescription": "Track every utility, bank, insurance, and subscription tied to your home.",
-    "emptyForAddress": "No services linked to this address yet."
+    "emptyForAddress": "No services linked to this address yet.",
+    "suggestProvider": "Add manually for review",
+    "suggestProviderDescription": "Can't find your provider in our directory? Add it manually — our team will review and add it to the system if valid.",
+    "suggestBannerTitle": "Suggest a provider for our directory",
+    "suggestBannerBody": "Fill in the provider name, website, and phone. Our team will review and add it to the listed directory if valid. This still creates a tracked service for you now.",
+    "suggestSuccessToast": "Submitted for review — we'll verify and add it to the directory."
   },
   "providers": {
     "title": "Providers",

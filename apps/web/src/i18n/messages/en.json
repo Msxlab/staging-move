@@ -760,8 +760,9 @@
       "noServices": "No services yet",
       "noMatchingServices": "No matching services",
       "addFirstService": "Add your first service to start tracking.",
-      "tryDifferentFilter": "Try a different search or filter.",
-      "addService": "Add Service"
+      "tryDifferentFilter": "Can't find your provider in our directory? Add it manually — we'll review and add it to the system if valid.",
+      "addService": "Add Service",
+      "suggestProvider": "Add manually for review"
     },
     "doIt": "Do it"
   },

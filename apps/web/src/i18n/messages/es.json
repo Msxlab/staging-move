@@ -760,8 +760,9 @@
       "noServices": "Sin servicios aún",
       "noMatchingServices": "Sin servicios coincidentes",
       "addFirstService": "Agrega tu primer servicio para comenzar a hacer seguimiento.",
-      "tryDifferentFilter": "Intenta con un filtro diferente o búsqueda.",
-      "addService": "Agregar Servicio"
+      "tryDifferentFilter": "¿No encuentras tu proveedor en nuestro directorio? Agrégalo manualmente — lo revisaremos y lo añadiremos al sistema si es válido.",
+      "addService": "Agregar Servicio",
+      "suggestProvider": "Agregar manualmente para revisión"
     },
     "doIt": "Hazlo"
   },

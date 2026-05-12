@@ -102,11 +102,18 @@ export default function NewServiceScreen() {
     providerId?: string | string[];
     category?: string | string[];
     mode?: string | string[];
+    suggest?: string | string[];
+    providerName?: string | string[];
   }>();
 
   // Mode: "browse" = provider list, "manual" = manual form
   const requestedMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
-  const [mode, setMode] = useState<"browse" | "manual">(requestedMode === "manual" ? "manual" : "browse");
+  const suggestParam = Array.isArray(params.suggest) ? params.suggest[0] : params.suggest;
+  const suggestMode = suggestParam === "1";
+  const prefillProviderName = Array.isArray(params.providerName) ? params.providerName[0] : params.providerName || "";
+  const [mode, setMode] = useState<"browse" | "manual">(
+    requestedMode === "manual" || suggestMode ? "manual" : "browse",
+  );
 
   // Address state
   const [addresses, setAddresses] = useState<AddressOption[]>([]);
@@ -130,7 +137,7 @@ export default function NewServiceScreen() {
   // Manual form state
   const [manualForm, setManualForm] = useState({
     category: prefillCategory || "",
-    providerName: "",
+    providerName: prefillProviderName || "",
     monthlyCost: "",
     phone: "",
     website: "",
@@ -264,6 +271,7 @@ export default function NewServiceScreen() {
       return;
     }
     setSaving(true);
+    const currentAddress = addresses.find((a) => a.id === selectedAddress);
     const providerRes = await api.post<any>("/api/custom-providers", {
       name: manualForm.providerName,
       category: manualForm.category,
@@ -271,6 +279,14 @@ export default function NewServiceScreen() {
       phone: manualForm.phone,
       notes: manualForm.notes,
       providerType: "OTHER",
+      ...(suggestMode
+        ? {
+            submitForGlobalReview: true,
+            city: currentAddress?.city || "",
+            state: currentAddress?.state || "",
+            zipCode: currentAddress?.zip || "",
+          }
+        : {}),
     });
     if (providerRes.error || !providerRes.data?.provider?.id) {
       setSaving(false);
@@ -309,6 +325,14 @@ export default function NewServiceScreen() {
       Alert.alert(t("common.retry"), res.error);
     } else {
       hapticSuccess();
+      if (suggestMode) {
+        Alert.alert(
+          t("services.suggestBannerTitle", { defaultValue: "Submitted for review" }),
+          t("services.suggestSuccessToast", {
+            defaultValue: "We'll verify and add it to the directory.",
+          }),
+        );
+      }
       router.back();
     }
   };
@@ -614,6 +638,18 @@ export default function NewServiceScreen() {
         {/* ═══════════════════════ MANUAL MODE ═══════════════════════ */}
         {mode === "manual" && (
           <View style={{ marginTop: 8 }}>
+            {suggestMode && (
+              <View style={[styles.manualTrustBox, { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryFaded }]}>
+                <Text style={[styles.manualTrustTitle, { color: theme.colors.text }]}>
+                  {t("services.suggestBannerTitle", { defaultValue: "Suggest a provider for our directory" })}
+                </Text>
+                <Text style={[styles.manualTrustText, { color: theme.colors.textSecondary }]}>
+                  {t("services.suggestBannerBody", {
+                    defaultValue: "Fill in the provider name, website, and phone. Our team will review and add it to the listed directory if valid. This still creates a tracked service for you now.",
+                  })}
+                </Text>
+              </View>
+            )}
             <View style={styles.manualTrustBox}>
               <Text style={styles.manualTrustTitle}>{t("customProviders.userAddedBadge")}</Text>
               <Text style={styles.manualTrustText}>
