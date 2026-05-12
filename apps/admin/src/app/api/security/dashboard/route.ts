@@ -1,20 +1,62 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { redactAuditPayload } from "@locateflow/shared";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { maskEmail, maskIpAddress } from "@/lib/privacy";
 import { getRecentSecurityEvents } from "@/lib/security-monitor";
 import { getSecurityReadinessSnapshot } from "@/lib/security-readiness";
 
-// GET /api/security/dashboard — comprehensive security overview & anomaly report
-export async function GET() {
+const SENSITIVE_OPERATION_ACTIONS = [
+  "DELETE_USER",
+  "GRANT_PREMIUM",
+  "KEY_ROTATION_STARTED",
+  "KEY_ROTATION_FAILED",
+  "KEY_ROTATION_COMPLETED",
+  "IMPORT_BACKUP",
+  "IMPORT_BACKUP_FAILED",
+  "CREATE_BACKUP",
+  "IP_RULE_CREATED",
+  "IP_RULE_FAILED",
+  "IP_RULE_DELETED",
+  "IP_RULE_TOGGLED",
+  "GDPR_STATUS_UPDATED",
+  "SECURITY_ACTION_FAILED",
+  "SECURITY_SESSION_REVOKED",
+  "ADD_IP_RULE",
+  "DELETE_IP_RULE",
+  "TOGGLE_IP_RULE",
+  "UPDATE_GDPR",
+  "KEY_ROTATION",
+];
+
+function safeJson(value: string | null | undefined): unknown {
+  if (!value) return null;
   try {
-    await requirePermission("settings", "canRead", { minimumRole: "ADMIN", fallbackResources: ["audit_logs"] });
+    return JSON.parse(value);
+  } catch {
+    return { parseError: true };
+  }
+}
+
+function redactAdminEmail(email: string | null | undefined, unmasked: boolean) {
+  return unmasked ? email || "Unknown" : maskEmail(email);
+}
+
+function redactIp(ip: string | null | undefined, unmasked: boolean) {
+  return unmasked ? ip || null : maskIpAddress(ip);
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await requirePermission("audit_logs", "canRead", { minimumRole: "ADMIN" });
+    const unmasked = session.role === "SUPER_ADMIN";
 
     const now = new Date();
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const last30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // ── Parallel data fetches ──────────────────────────────
     const [
       securityAlerts,
       recentLogins,
@@ -28,92 +70,58 @@ export async function GET() {
       backupStats,
       readiness,
     ] = await Promise.all([
-      // Security alerts from monitor
       getRecentSecurityEvents(100),
-
-      // Recent successful logins (last 7 days)
       prisma.adminAuditLog.findMany({
         where: { action: "LOGIN", createdAt: { gte: last7d } },
         orderBy: { createdAt: "desc" },
         take: 50,
         select: { adminUserId: true, ipAddress: true, createdAt: true },
       }),
-
-      // Failed login count (from durable auth audit entries in last 24h)
       prisma.adminAuditLog.count({
         where: {
           action: "LOGIN_FAILED",
           createdAt: { gte: last24h },
         },
       }),
-
-      // Total audit log entries in 7 days
       prisma.adminAuditLog.count({
         where: { createdAt: { gte: last7d } },
       }),
-
-      // Sensitive operations in last 7 days
       prisma.adminAuditLog.findMany({
         where: {
-          action: {
-            in: [
-              "DELETE_USER",
-              "GRANT_PREMIUM",
-              "KEY_ROTATION",
-              "IMPORT_BACKUP",
-              "IMPORT_BACKUP_FAILED",
-              "CREATE_BACKUP",
-              "ADD_IP_RULE",
-              "DELETE_IP_RULE",
-              "TOGGLE_IP_RULE",
-              "UPDATE_GDPR",
-            ],
-          },
+          action: { in: SENSITIVE_OPERATION_ACTIONS },
           createdAt: { gte: last7d },
         },
         orderBy: { createdAt: "desc" },
         take: 20,
         select: { adminUserId: true, action: true, entityType: true, entityId: true, createdAt: true, ipAddress: true },
       }),
-
-      // Active IP rules
       prisma.iPRule.findMany({
         where: { isActive: true },
-        select: { ipAddress: true, type: true, reason: true, expiresAt: true, createdAt: true },
+        select: { type: true },
       }),
-
-      // Blocked requests in last 24h
       prisma.rateLimitLog.count({
         where: { blocked: true, createdAt: { gte: last24h } },
       }).catch(() => 0),
-
-      // Active admin users
       prisma.adminUser.findMany({
         where: { isActive: true },
         select: { id: true, email: true, role: true, lastLoginAt: true },
       }),
-
-      // Recent GDPR requests
       prisma.gDPRRequest.findMany({
         where: { status: "PENDING" },
         select: { id: true, type: true, createdAt: true },
       }).catch(() => []),
-
-      // Backup health
       prisma.backupRecord.findFirst({
         where: { status: "COMPLETED" },
         orderBy: { createdAt: "desc" },
         select: { createdAt: true, type: true, recordCount: true },
       }).catch(() => null),
-
       getSecurityReadinessSnapshot(),
     ]);
 
-    // ── Analyze alerts by severity ──────────────────────────
     const alertsBySeverity = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
     const alertsByType: Record<string, number> = {};
     for (const alert of securityAlerts) {
-      const severity = alert.entityId as string; // We stored severity in entityId
+      const severity = alert.entityId as string;
       if (severity in alertsBySeverity) {
         alertsBySeverity[severity as keyof typeof alertsBySeverity]++;
       }
@@ -121,10 +129,6 @@ export async function GET() {
       alertsByType[type] = (alertsByType[type] || 0) + 1;
     }
 
-    // ── Unique login IPs per admin (detect unusual patterns) ──
-    // adminUserId is nullable because P0-2 changed the FK to onDelete:
-    // SetNull so audit entries survive admin deletion. Skip the orphaned
-    // rows here — there's no admin to attribute the IP set to.
     const loginIPMap: Record<string, Set<string>> = {};
     for (const login of recentLogins) {
       const adminId = login.adminUserId;
@@ -134,20 +138,21 @@ export async function GET() {
     }
     const multiIPAdmins = Object.entries(loginIPMap)
       .filter(([, ips]) => ips.size > 3)
-      .map(([adminId, ips]) => ({ adminId, ipCount: ips.size, ips: [...ips] }));
+      .map(([adminId, ips]) => ({
+        adminId,
+        ipCount: ips.size,
+        ips: unmasked ? [...ips] : undefined,
+        ipSamples: unmasked ? undefined : [...ips].slice(0, 3).map((ip) => maskIpAddress(ip)),
+      }));
 
-    // ── Admins not logged in for 30+ days (stale accounts) ──
     const staleAdmins = activeAdmins.filter(
-      (a: any) => !a.lastLoginAt || new Date(a.lastLoginAt) < last30d
+      (a: any) => !a.lastLoginAt || new Date(a.lastLoginAt) < last30d,
     );
 
-    // ── Encryption health ──────────────────────────────────
     const encryptionKeyConfigured = Boolean(process.env.FIELD_ENCRYPTION_KEY && process.env.FIELD_ENCRYPTION_KEY.length === 64);
 
-    // ── Build response ─────────────────────────────────────
-    return NextResponse.json({
+    const responseBody = {
       generatedAt: now.toISOString(),
-
       overview: {
         totalSecurityAlerts: securityAlerts.length,
         criticalAlerts: alertsBySeverity.CRITICAL,
@@ -157,22 +162,28 @@ export async function GET() {
         totalAuditLogs7d,
         pendingGDPR: recentGDPR.length,
       },
-
       alerts: {
         bySeverity: alertsBySeverity,
         byType: alertsByType,
-        recent: securityAlerts.slice(0, 20).map((a: any) => ({
-          type: a.entityType,
-          severity: a.entityId,
-          ip: a.ipAddress,
-          details: a.changes ? JSON.parse(a.changes)?.details : null,
-          time: a.createdAt,
-        })),
+        recent: securityAlerts.slice(0, 20).map((a: any) => {
+          const parsed = safeJson(a.changes) as any;
+          return {
+            type: a.entityType,
+            severity: a.entityId,
+            ip: redactIp(a.ipAddress, unmasked),
+            details: unmasked ? redactAuditPayload(parsed?.details ?? null) : { redacted: true },
+            time: a.createdAt,
+          };
+        }),
       },
-
       accessControl: {
         activeAdmins: activeAdmins.length,
-        staleAdmins: staleAdmins.map((a: any) => ({ id: a.id, email: a.email, role: a.role, lastLoginAt: a.lastLoginAt })),
+        staleAdmins: staleAdmins.map((a: any) => ({
+          id: a.id,
+          email: redactAdminEmail(a.email, unmasked),
+          role: a.role,
+          lastLoginAt: a.lastLoginAt,
+        })),
         multiIPAdmins,
         activeIPRules: {
           total: activeIPRules.length,
@@ -180,24 +191,22 @@ export async function GET() {
           whitelisted: activeIPRules.filter((r: any) => r.type === "WHITELIST").length,
         },
       },
-
-      sensitiveOperations: sensitiveOps7d,
-
+      sensitiveOperations: sensitiveOps7d.map((op: any) => ({
+        ...op,
+        ipAddress: redactIp(op.ipAddress, unmasked),
+      })),
       encryption: {
         keyConfigured: encryptionKeyConfigured,
         algorithm: "AES-256-GCM",
         encryptedTables: ["services (accountNumber, username, phone, email, notes)", "addresses (formattedAddress)"],
       },
-
       backup: {
         lastBackup: backupStats
           ? { date: backupStats.createdAt, type: backupStats.type, records: backupStats.recordCount }
           : null,
         backupConfigured: Boolean(backupStats),
       },
-
       readiness,
-
       recommendations: generateRecommendations({
         criticalAlerts: alertsBySeverity.CRITICAL,
         staleAdmins: staleAdmins.length,
@@ -209,16 +218,36 @@ export async function GET() {
         readinessUnknown: readiness.summary.unknown,
         missingRequired: readiness.summary.missingRequired,
       }),
+    };
+
+    await writeAdminAudit(session, {
+      action: "SECURITY_DASHBOARD_VIEWED",
+      entityType: "SecurityDashboard",
+      entityId: "overview",
+      metadata: {
+        timeRange: { last24h: last24h.toISOString(), last7d: last7d.toISOString(), last30d: last30d.toISOString() },
+        counts: {
+          alerts: securityAlerts.length,
+          sensitiveOperations: sensitiveOps7d.length,
+          activeAdmins: activeAdmins.length,
+          staleAdmins: staleAdmins.length,
+          multiIPAdmins: multiIPAdmins.length,
+        },
+        rowCount: {
+          alerts: responseBody.alerts.recent.length,
+          sensitiveOperations: responseBody.sensitiveOperations.length,
+        },
+      },
+      request: getAuditRequestMeta(request),
     });
+
+    return NextResponse.json(responseBody);
   } catch (error: any) {
     if (error?.message === "UNAUTHORIZED") return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     if (error?.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    console.error("Security dashboard failed:", error);
     return NextResponse.json({ error: "Failed to generate security report" }, { status: 500 });
   }
 }
-
-// ── Recommendation engine ──────────────────────────────────
 
 interface RecommendationInput {
   criticalAlerts: number;

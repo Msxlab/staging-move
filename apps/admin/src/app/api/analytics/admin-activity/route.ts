@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requirePermission } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
+import { maskEmail, maskIpAddress } from "@/lib/privacy";
 
 export async function GET(request: NextRequest) {
   try {
-    await requirePermission("audit_logs", "canRead", { minimumRole: "ADMIN" });
+    const session = await requirePermission("audit_logs", "canRead", { minimumRole: "ADMIN" });
+    const unmasked = session.role === "SUPER_ADMIN";
 
     const now = new Date();
     const day7 = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -34,9 +37,12 @@ export async function GET(request: NextRequest) {
       .map((a) => {
         const adminId = a.adminUserId;
         const admin = adminId ? adminMap.get(adminId) : undefined;
+        const safeAdmin = admin
+          ? { ...admin, email: unmasked ? admin.email : maskEmail(admin.email) }
+          : undefined;
         return {
           admin:
-            admin ||
+            safeAdmin ||
             {
               id: adminId || "deleted",
               email: adminId ? "Unknown" : "Deleted admin",
@@ -100,6 +106,22 @@ export async function GET(request: NextRequest) {
       take: 20,
     });
 
+    await writeAdminAudit(session, {
+      action: "AUDIT_LOGS_VIEWED",
+      entityType: "AdminActivity",
+      entityId: "analytics",
+      metadata: {
+        surface: "admin_activity",
+        timeRange: { days: 30 },
+        rowCount: {
+          perAdmin: perAdmin.length,
+          criticalActions: criticalActions.length,
+          dailyActivity: dailyActivity.length,
+        },
+      },
+      request: getAuditRequestMeta(request),
+    });
+
     return NextResponse.json({
       perAdmin,
       actionTypes: actionTypes.map((a) => ({ action: a.action, count: a._count.id })),
@@ -111,8 +133,8 @@ export async function GET(request: NextRequest) {
         action: c.action,
         entityType: c.entityType,
         entityId: c.entityId,
-        admin: c.adminUser,
-        ipAddress: c.ipAddress,
+        admin: c.adminUser ? { ...c.adminUser, email: unmasked ? c.adminUser.email : maskEmail(c.adminUser.email) } : null,
+        ipAddress: unmasked ? c.ipAddress : maskIpAddress(c.ipAddress),
         createdAt: c.createdAt,
       })),
     });

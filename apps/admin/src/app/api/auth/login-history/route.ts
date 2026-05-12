@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireAdmin, requireRole } from "@/lib/auth";
+import { requireAdmin, requirePermission, requireRole } from "@/lib/auth";
+import { getAuditRequestMeta, writeAdminAudit } from "@/lib/audit";
 import { parsePaginationParams } from "@/lib/pagination";
+import { maskEmail, maskIpAddress } from "@/lib/privacy";
 
 // GET /api/auth/login-history — list admin login history
 export async function GET(request: NextRequest) {
   try {
     const session = await requireAdmin();
+    const requestMeta = getAuditRequestMeta(request);
     const { searchParams } = new URL(request.url);
     const { page, perPage, skip } = parsePaginationParams(searchParams, {
       defaultPerPage: 50,
@@ -14,11 +17,17 @@ export async function GET(request: NextRequest) {
     const all = searchParams.get("all") === "true";
     const successOnly = searchParams.get("success");
 
-        let isSuperAdmin = false;
-    try { await requireRole("SUPER_ADMIN"); isSuperAdmin = true; } catch {}
+    let isSuperAdmin = false;
+    if (all) {
+      await requirePermission("audit_logs", "canRead", { minimumRole: "SUPER_ADMIN" });
+      isSuperAdmin = true;
+    } else {
+      try { await requireRole("SUPER_ADMIN"); isSuperAdmin = true; } catch {}
+    }
+    const unmasked = isSuperAdmin;
 
     const where: any = {};
-    if (!all || !isSuperAdmin) {
+    if (!all) {
       where.adminUserId = session.adminId;
     }
     if (successOnly === "true") where.success = true;
@@ -51,14 +60,32 @@ export async function GET(request: NextRequest) {
       prisma.adminLoginLog.count({ where: { ...statsWhere, createdAt: { gte: last7d }, success: false } }),
     ]);
 
+    await writeAdminAudit(session, {
+      action: "SECURITY_LOGIN_HISTORY_VIEWED",
+      entityType: "AdminLoginLog",
+      entityId: all ? "all" : "self",
+      metadata: {
+        scope: all ? "all" : "self",
+        successFilter: successOnly === "true" ? "success" : successOnly === "false" ? "failed" : "all",
+        page,
+        perPage,
+        rowCount: logs.length,
+        total,
+      },
+      request: requestMeta,
+    });
+
     return NextResponse.json({
       logs: logs.map((l: any) => ({
         id: l.id,
-        adminUser: l.adminUser,
-        email: l.email,
+        adminUser: l.adminUser ? {
+          ...l.adminUser,
+          email: unmasked ? l.adminUser.email : maskEmail(l.adminUser.email),
+        } : null,
+        email: unmasked ? l.email : maskEmail(l.email),
         success: l.success,
         failReason: l.failReason,
-        ipAddress: l.ipAddress,
+        ipAddress: unmasked ? l.ipAddress : maskIpAddress(l.ipAddress),
         browser: l.browser,
         os: l.os,
         country: l.country,

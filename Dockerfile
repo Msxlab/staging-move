@@ -2,7 +2,7 @@
 # LocateFlow web app image for DigitalOcean App Platform.
 # Uses Next.js standalone output from apps/web.
 
-FROM node:26-bookworm-slim AS pnpm-base
+FROM node:22-bookworm-slim AS pnpm-base
 
 ENV PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH \
@@ -82,7 +82,7 @@ RUN pnpm --filter @locateflow/db generate \
  && test -d apps/web/.next/static \
  && test -d apps/web/public
 
-FROM node:26-bookworm-slim AS runner
+FROM node:22-bookworm-slim AS runner
 
 ENV NODE_ENV=production \
     APP_ENV=production \

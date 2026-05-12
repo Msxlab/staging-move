@@ -16,5 +16,5 @@ const SENSITIVE_ASYNC_STORAGE_KEYS = [
 export async function clearSensitiveLocalState(queryClient?: QueryClient) {
   queryClient?.clear();
   setAnalyticsEnabled(false);
-  await AsyncStorage.multiRemove(SENSITIVE_ASYNC_STORAGE_KEYS).catch(() => {});
+  await Promise.all(SENSITIVE_ASYNC_STORAGE_KEYS.map((key) => AsyncStorage.removeItem(key))).catch(() => {});
 }

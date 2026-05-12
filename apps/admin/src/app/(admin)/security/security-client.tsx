@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Lock, Shield, Plus, Trash2, ToggleLeft, ToggleRight, AlertTriangle, Globe, FileText, CheckCircle2, CircleHelp, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
-import { PasswordConfirmModal } from "@/components/password-confirm-modal";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 interface IPRule { id: string; ipAddress: string; type: string; reason: string | null; isActive: boolean; expiresAt: string | null; createdAt: string }
 interface RateLimitLog { id: string; ipAddress: string; endpoint: string; count: number; blocked: boolean; windowStart: string; createdAt: string }
@@ -18,7 +18,7 @@ interface SecurityReadiness {
   lastBackup: { createdAt: string; fileName: string | null; recordCount: number | null; type: string } | null;
   groups: SecurityReadinessGroup[];
 }
-interface StepUpRequest { title: string; description: string; confirmLabel: string; run: (confirmPassword: string) => Promise<boolean> }
+interface StepUpRequest { title: string; description: string; confirmLabel: string; run: (values: StepUpValues) => Promise<boolean> }
 
 export default function SecurityClient() {
   const [ipRules, setIpRules] = useState<IPRule[]>([]);
@@ -58,12 +58,12 @@ export default function SecurityClient() {
 
   const requestStepUp = (request: StepUpRequest) => { setStepUp(request); setStepUpError(null); };
   const closeStepUp = () => { if (!stepUpBusy) { setStepUp(null); setStepUpError(null); } };
-  const confirmStepUp = async (confirmPassword: string) => {
+  const confirmStepUp = async (_confirmPassword: string, values: StepUpValues) => {
     if (!stepUp) return;
     setStepUpBusy(true);
     setStepUpError(null);
     try {
-      const ok = await stepUp.run(confirmPassword);
+      const ok = await stepUp.run(values);
       if (ok) setStepUp(null);
     } finally {
       setStepUpBusy(false);
@@ -72,19 +72,28 @@ export default function SecurityClient() {
 
   const runSecurityMutation = async (
     requestBody: Record<string, unknown>,
-    confirmPassword: string,
+    values: StepUpValues,
     successMessage: string | null,
     afterSuccess?: () => void,
   ) => {
     const res = await fetch("/api/security", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...requestBody, confirmPassword }),
+      body: JSON.stringify({
+        ...requestBody,
+        confirmPassword: values.confirmPassword,
+        mfaCode: values.mfaCode,
+        backupCode: values.backupCode,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       const message = data.error || "Failed";
-      if (data.requiresPassword || res.status === 401 || res.status === 403) setStepUpError(message);
+      if (data.requiresMfa) {
+        setStepUpError("Enter an authenticator code or backup code for this security action.");
+      } else if (data.requiresPassword || res.status === 401 || res.status === 403) {
+        setStepUpError(message);
+      }
       toast.error(message);
       return false;
     }
@@ -99,9 +108,9 @@ export default function SecurityClient() {
     const payload = { action: "add_ip_rule", ...form };
     requestStepUp({
       title: "Confirm IP rule change",
-      description: "Enter your admin password before adding an IP rule.",
+      description: "Enter your admin password plus an authenticator or backup code before adding an IP rule.",
       confirmLabel: "Add IP rule",
-      run: (confirmPassword) => runSecurityMutation(payload, confirmPassword, "IP rule added", () => {
+      run: (values) => runSecurityMutation(payload, values, "IP rule added", () => {
         setShowForm(false);
         setForm({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "" });
       }),
@@ -112,29 +121,29 @@ export default function SecurityClient() {
     if (!confirm("Delete this rule?")) return;
     requestStepUp({
       title: "Confirm IP rule deletion",
-      description: "Enter your admin password before deleting this IP rule.",
+      description: "Enter your admin password plus an authenticator or backup code before deleting this IP rule.",
       confirmLabel: "Delete rule",
-      run: (confirmPassword) => runSecurityMutation({ action: "delete_ip_rule", id }, confirmPassword, "Deleted"),
+      run: (values) => runSecurityMutation({ action: "delete_ip_rule", id }, values, "Deleted"),
     });
   };
 
   const toggleIPRule = async (id: string) => {
     requestStepUp({
       title: "Confirm IP rule toggle",
-      description: "Enter your admin password before changing this IP rule status.",
+      description: "Enter your admin password plus an authenticator or backup code before changing this IP rule status.",
       confirmLabel: "Update rule",
-      run: (confirmPassword) => runSecurityMutation({ action: "toggle_ip_rule", id }, confirmPassword, null),
+      run: (values) => runSecurityMutation({ action: "toggle_ip_rule", id }, values, null),
     });
   };
 
   const updateGDPR = async (id: string, status: string) => {
     requestStepUp({
       title: "Confirm GDPR status change",
-      description: "Enter your admin password before updating this GDPR request.",
+      description: "Enter your admin password plus an authenticator or backup code before updating this GDPR request.",
       confirmLabel: "Update request",
-      run: (confirmPassword) => runSecurityMutation(
+      run: (values) => runSecurityMutation(
         { action: "update_gdpr", id, status },
-        confirmPassword,
+        values,
         `GDPR request ${status.toLowerCase()}`,
       ),
     });

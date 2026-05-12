@@ -7,6 +7,7 @@
 
 import { prisma } from "./db";
 import { dispatchAlert } from "./alert-dispatcher";
+import { maskIpAddress } from "./privacy";
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -91,6 +92,49 @@ async function resolveSystemAdminId(): Promise<string | null> {
   }
 }
 
+function uniqueValues(values: Iterable<string>) {
+  return [...new Set([...values].filter(Boolean))];
+}
+
+function extractEmailDomains(details: string) {
+  const matches = details.match(/[a-z0-9._%+-]+@([a-z0-9.-]+\.[a-z]{2,})/gi) || [];
+  return uniqueValues(matches.map((email) => email.split("@")[1]?.toLowerCase() || ""));
+}
+
+function extractIpCount(details: string, eventIp: string) {
+  const ipv4Matches = details.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || [];
+  const ipv6Matches = details.match(/\b[0-9a-f]{1,4}(?::[0-9a-f]{0,4}){2,7}\b/gi) || [];
+  return uniqueValues([...ipv4Matches, ...ipv6Matches, eventIp]).length;
+}
+
+function extractFirstNumber(details: string) {
+  const match = details.match(/\b(\d{1,6})\b/);
+  return match ? Number(match[1]) : undefined;
+}
+
+function sanitizeSecurityEvent(event: SecurityEvent) {
+  const emailDomains = extractEmailDomains(event.details);
+  return {
+    alertType: event.type,
+    severity: event.severity,
+    targetAdminId: event.adminId || null,
+    maskedIp: maskIpAddress(event.ip),
+    emailDomain: emailDomains.length === 1 ? emailDomains[0] : undefined,
+    emailDomainCount: emailDomains.length,
+    ipCount: extractIpCount(event.details, event.ip),
+    count: extractFirstNumber(event.details),
+    reasonCode: event.type.toLowerCase(),
+    detailLength: event.details.length,
+  };
+}
+
+function autoBanReasonCode(reason: string) {
+  const lower = reason.toLowerCase();
+  if (lower.includes("credential")) return "credential_stuffing";
+  if (lower.includes("brute")) return "brute_force";
+  return "automated_security_rule";
+}
+
 async function flushEvents(): Promise<void> {
   if (eventQueue.length === 0) return;
   const batch = eventQueue.splice(0, 50);
@@ -105,8 +149,8 @@ async function flushEvents(): Promise<void> {
         action: "SECURITY_ALERT",
         entityType: event.type,
         entityId: event.severity,
-        changes: JSON.stringify({ details: event.details, ip: event.ip }),
-        ipAddress: event.ip,
+        changes: JSON.stringify({ metadata: sanitizeSecurityEvent(event) }),
+        ipAddress: maskIpAddress(event.ip),
       }];
     });
     if (persistedBatch.length === 0) return;
@@ -124,7 +168,8 @@ async function flushEvents(): Promise<void> {
 
 function emitEvent(event: SecurityEvent): void {
   eventQueue.push(event);
-  console.warn(`[SECURITY-ALERT] ${event.severity} | ${event.type} | IP: ${event.ip} | ${event.details}`);
+  const safeMetadata = sanitizeSecurityEvent(event);
+  console.warn(`[SECURITY-ALERT] ${event.severity} | ${event.type} | metadata=${JSON.stringify(safeMetadata)}`);
 
   // Debounce flush — persist after 2 seconds of quiet
   if (flushTimer) clearTimeout(flushTimer);
@@ -138,7 +183,13 @@ function emitEvent(event: SecurityEvent): void {
 
   // Dispatch real-time alert for HIGH/CRITICAL (non-blocking)
   if (event.severity === "HIGH" || event.severity === "CRITICAL") {
-    dispatchAlert(event.type, event.severity, event.ip, event.details, event.adminId).catch(() => {});
+    dispatchAlert(
+      event.type,
+      event.severity,
+      safeMetadata.maskedIp || "unknown",
+      JSON.stringify(safeMetadata),
+      event.adminId,
+    ).catch(() => {});
   }
 }
 
@@ -150,6 +201,7 @@ const recentBans = new Set<string>(); // Prevent duplicate bans in same process
 async function autoBlacklistIP(ip: string, reason: string): Promise<void> {
   if (!ip || ip === "unknown" || recentBans.has(ip)) return;
   recentBans.add(ip);
+  const safeReason = autoBanReasonCode(reason);
 
   try {
     await prisma.iPRule.upsert({
@@ -157,18 +209,18 @@ async function autoBlacklistIP(ip: string, reason: string): Promise<void> {
       create: {
         ipAddress: ip,
         type: "BLACKLIST",
-        reason: `[AUTO] ${reason}`,
+        reason: `[AUTO] ${safeReason}`,
         isActive: true,
         createdBy: "SYSTEM",
         expiresAt: new Date(Date.now() + AUTO_BAN_DURATION_MS),
       },
       update: {
-        reason: `[AUTO] ${reason}`,
+        reason: `[AUTO] ${safeReason}`,
         isActive: true,
         expiresAt: new Date(Date.now() + AUTO_BAN_DURATION_MS),
       },
     });
-    console.warn(`[AUTO-BAN] IP ${ip} blacklisted for 24h: ${reason}`);
+    console.warn(`[AUTO-BAN] ${maskIpAddress(ip) || "unknown"} blacklisted for 24h: ${safeReason}`);
   } catch (err) {
     console.error("[AUTO-BAN] Failed to blacklist IP:", err);
   }

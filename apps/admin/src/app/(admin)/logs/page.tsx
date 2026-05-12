@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { PasswordConfirmModal, type StepUpValues } from "@/components/password-confirm-modal";
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
@@ -47,6 +48,9 @@ export default function LogsPage() {
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
   const [filterOptions, setFilterOptions] = useState<any>({ actions: [], entityTypes: [], admins: [] });
   const [filters, setFilters] = useState({ action: "", entityType: "", adminId: "", dateFrom: "", dateTo: "" });
+  const [exportStepUpOpen, setExportStepUpOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const perPage = 30;
 
   const fetchLogs = useCallback(async () => {
@@ -78,22 +82,18 @@ export default function LogsPage() {
     setPage(1);
   }
 
-  async function exportCSV() {
-    // Server-side export at /api/logs/export. The previous in-page Blob
-    // path bypassed step-up confirmation, audit logging, CSV-injection
-    // escaping, and the row cap — and only exported the rows currently
-    // in React state, silently truncating exports without telling the
-    // operator. The endpoint asks for a password confirm out-of-band
-    // (browser prompt or operators' password manager).
-    const password = window.prompt("Confirm your admin password to export logs:");
-    if (!password) return;
+  async function exportCSV(values: StepUpValues) {
+    setExportBusy(true);
+    setExportError(null);
     try {
       const res = await fetch("/api/logs/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tab,
-          confirmPassword: password,
+          confirmPassword: values.confirmPassword,
+          mfaCode: values.mfaCode,
+          backupCode: values.backupCode,
           search,
           action: filters.action || undefined,
           entityType: filters.entityType || undefined,
@@ -104,7 +104,11 @@ export default function LogsPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        toast.error(data?.error || `Export failed (${res.status})`);
+        const message = data?.requiresMfa
+          ? "Enter an authenticator code or backup code to export audit logs."
+          : data?.error || `Export failed (${res.status})`;
+        setExportError(message);
+        toast.error(data?.error || message);
         return;
       }
       const blob = await res.blob();
@@ -114,9 +118,13 @@ export default function LogsPage() {
       a.download = `${tab}-logs-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+      setExportStepUpOpen(false);
       toast.success("Export downloaded");
     } catch {
+      setExportError("Export failed");
       toast.error("Export failed");
+    } finally {
+      setExportBusy(false);
     }
   }
 
@@ -127,6 +135,20 @@ export default function LogsPage() {
 
   return (
     <div className="space-y-5">
+      <PasswordConfirmModal
+        open={exportStepUpOpen}
+        title="Confirm audit export"
+        description="Enter your admin password plus an authenticator or backup code before exporting audit logs."
+        confirmLabel="Export logs"
+        busy={exportBusy}
+        error={exportError}
+        onClose={() => {
+          if (exportBusy) return;
+          setExportStepUpOpen(false);
+          setExportError(null);
+        }}
+        onConfirm={(_password, values) => exportCSV(values)}
+      />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
@@ -136,7 +158,7 @@ export default function LogsPage() {
           <a href="/logs/activity" className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90">
             <BarChart3 className="h-3.5 w-3.5" /> Activity Analytics
           </a>
-          <button onClick={exportCSV} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
+          <button onClick={() => setExportStepUpOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent">
             <Download className="h-3.5 w-3.5" /> Export CSV
           </button>
         </div>

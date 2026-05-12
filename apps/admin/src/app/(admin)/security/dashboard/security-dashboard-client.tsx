@@ -11,7 +11,7 @@ import {
 
 type Tab = "sessions" | "login-history" | "events";
 type PendingSessionAction =
-  | { type: "revoke"; sessionId: string; currentSession: boolean; requiresStepUp: boolean }
+  | { type: "revoke"; revokeHandle: string; currentSession: boolean; requiresStepUp: boolean }
   | { type: "revoke_all"; scope: string; currentSession: boolean; requiresStepUp: boolean };
 
 function relativeTime(date: string) {
@@ -39,7 +39,7 @@ export default function SecurityDashboardClient() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loginPage, setLoginPage] = useState(1);
   const [loginTotal, setLoginTotal] = useState(0);
-  const [showAll, setShowAll] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const [successFilter, setSuccessFilter] = useState("");
   const [pendingSessionAction, setPendingSessionAction] = useState<PendingSessionAction | null>(null);
   const [sessionStepUp, setSessionStepUp] = useState({ confirmPassword: "", mfaCode: "", backupCode: "" });
@@ -95,7 +95,7 @@ export default function SecurityDashboardClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           action.type === "revoke"
-            ? { action: "revoke", sessionId: action.sessionId, ...stepUpPayload }
+            ? { action: "revoke", sessionHandle: action.revokeHandle, ...stepUpPayload }
             : { action: "revoke_all", revokeAll: action.scope, ...stepUpPayload },
         ),
       });
@@ -122,9 +122,13 @@ export default function SecurityDashboardClient() {
   async function revokeSession(target: any) {
     if (!confirm("Revoke this session? The admin will be signed out.")) return;
     const requiresStepUp = target.adminUser?.id && target.adminUser.id !== currentAdminId;
+    if (!target.revokeHandle) {
+      toast.error("This session cannot be revoked from the current view. Refresh and try again.");
+      return;
+    }
     const action: PendingSessionAction = {
       type: "revoke",
-      sessionId: target.id,
+      revokeHandle: target.revokeHandle,
       currentSession: Boolean(target.isCurrent),
       requiresStepUp: Boolean(requiresStepUp),
     };
@@ -259,7 +263,7 @@ export default function SecurityDashboardClient() {
           ) : (
             <div className="grid gap-3">
               {activeSessions.map((s) => (
-                <div key={s.id} className={`rounded-xl border p-5 transition ${s.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                <div key={s.revokeHandle || s.displayId} className={`rounded-xl border p-5 transition ${s.isCurrent ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className={`rounded-lg p-2.5 ${s.deviceType === "Mobile" ? "bg-tone-sky-bg" : "bg-tone-emerald-bg"}`}>
