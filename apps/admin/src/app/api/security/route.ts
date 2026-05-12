@@ -256,8 +256,32 @@ export async function POST(req: NextRequest) {
         });
         return failureResponse(400, "Rule id required");
       }
-      const existing = await prisma.iPRule.findUnique({ where: { id: data.id } });
+      const rulesRaw = await prisma.iPRule.findMany({
+        select: { id: true, ipAddress: true, type: true, isActive: true, expiresAt: true },
+      });
+      const existing = rulesRaw.find((item) => item.id === data.id);
       if (!existing) return failureResponse(404, "Not found");
+
+      // Lockout guard. Without this an admin can delete the only active
+      // WHITELIST rule covering their network and brick the panel —
+      // recovery would require DB surgery (see audit P0-1). The guard
+      // simulates the post-delete rule set and refuses if the current
+      // request IP would lose access.
+      const nextRules = rulesRaw
+        .filter((item) => item.id !== data.id)
+        .map(asIPRuleLike);
+      const lockout = await assertCurrentIpAllowedAfterChange(req, nextRules);
+      if (!lockout.ok) {
+        await writeSecurityAudit(session, req, "IP_RULE_FAILED", {
+          operation: "delete",
+          status: "failed",
+          reasonCode: lockout.reasonCode,
+          ruleType: existing.type,
+          rule: ipRuleSummary(existing.ipAddress),
+        }, "IPRule", data.id);
+        return failureResponse(409, "Deleting this rule would block the current request IP", { reasonCode: lockout.reasonCode });
+      }
+
       await prisma.iPRule.delete({ where: { id: data.id } });
       await writeSecurityAudit(session, req, "IP_RULE_DELETED", {
         operation: "delete",

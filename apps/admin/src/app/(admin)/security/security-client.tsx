@@ -29,10 +29,21 @@ export default function SecurityClient() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"ip" | "ratelimit" | "gdpr">("ip");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "" });
+  const [form, setForm] = useState({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "", breakGlass: false });
   const [stepUp, setStepUp] = useState<StepUpRequest | null>(null);
   const [stepUpBusy, setStepUpBusy] = useState(false);
   const [stepUpError, setStepUpError] = useState<string | null>(null);
+  const [stepUpRequiresMfa, setStepUpRequiresMfa] = useState(false);
+  const [currentAdminRole, setCurrentAdminRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => setCurrentAdminRole(typeof data?.admin?.role === "string" ? data.admin.role : null))
+      .catch(() => null);
+  }, []);
+
+  const isSuperAdmin = currentAdminRole === "SUPER_ADMIN";
 
   const load = () => {
     fetch("/api/security").then(r => r.json()).then(d => {
@@ -56,15 +67,18 @@ export default function SecurityClient() {
     unknown: "bg-tone-slate-bg text-muted-foreground",
   };
 
-  const requestStepUp = (request: StepUpRequest) => { setStepUp(request); setStepUpError(null); };
-  const closeStepUp = () => { if (!stepUpBusy) { setStepUp(null); setStepUpError(null); } };
+  const requestStepUp = (request: StepUpRequest) => { setStepUp(request); setStepUpError(null); setStepUpRequiresMfa(false); };
+  const closeStepUp = () => { if (!stepUpBusy) { setStepUp(null); setStepUpError(null); setStepUpRequiresMfa(false); } };
   const confirmStepUp = async (_confirmPassword: string, values: StepUpValues) => {
     if (!stepUp) return;
     setStepUpBusy(true);
     setStepUpError(null);
     try {
       const ok = await stepUp.run(values);
-      if (ok) setStepUp(null);
+      if (ok) {
+        setStepUp(null);
+        setStepUpRequiresMfa(false);
+      }
     } finally {
       setStepUpBusy(false);
     }
@@ -90,8 +104,10 @@ export default function SecurityClient() {
     if (!res.ok) {
       const message = data.error || "Failed";
       if (data.requiresMfa) {
+        setStepUpRequiresMfa(true);
         setStepUpError("Enter an authenticator code or backup code for this security action.");
       } else if (data.requiresPassword || res.status === 401 || res.status === 403) {
+        setStepUpRequiresMfa(false);
         setStepUpError(message);
       }
       toast.error(message);
@@ -105,34 +121,62 @@ export default function SecurityClient() {
 
   const addIPRule = async () => {
     if (!form.ipAddress) { toast.error("IP address required"); return; }
-    const payload = { action: "add_ip_rule", ...form };
+    if (form.type === "WHITELIST" && !isSuperAdmin) {
+      toast.error("Only SUPER_ADMIN can create whitelist rules.");
+      return;
+    }
+    if (form.type === "WHITELIST" && !form.breakGlass) {
+      toast.error("Confirm the break-glass acknowledgement before creating a whitelist rule.");
+      return;
+    }
+    // Backend requires `breakGlass:true` (and SUPER_ADMIN) for any
+    // active WHITELIST mutation; otherwise the rule cannot be created
+    // and the admin would see a generic 403. We forward the flag only
+    // when the operator has explicitly checked the acknowledgement.
+    const payload: Record<string, unknown> = { action: "add_ip_rule", ipAddress: form.ipAddress, type: form.type, reason: form.reason, expiresAt: form.expiresAt };
+    if (form.type === "WHITELIST") payload.breakGlass = true;
+    const description = form.type === "WHITELIST"
+      ? "You are creating an active whitelist rule. Confirm with admin password and MFA — get the IP wrong and SUPER_ADMINs can still reach /login (break-glass), but every other admin path will refuse non-whitelisted IPs."
+      : "Enter your admin password plus an authenticator or backup code before adding an IP rule.";
     requestStepUp({
-      title: "Confirm IP rule change",
-      description: "Enter your admin password plus an authenticator or backup code before adding an IP rule.",
-      confirmLabel: "Add IP rule",
+      title: form.type === "WHITELIST" ? "Confirm whitelist break-glass" : "Confirm IP rule change",
+      description,
+      confirmLabel: form.type === "WHITELIST" ? "Add whitelist rule" : "Add IP rule",
       run: (values) => runSecurityMutation(payload, values, "IP rule added", () => {
         setShowForm(false);
-        setForm({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "" });
+        setForm({ ipAddress: "", type: "BLACKLIST", reason: "", expiresAt: "", breakGlass: false });
       }),
     });
   };
 
-  const deleteIPRule = async (id: string) => {
+  const deleteIPRule = async (rule: IPRule) => {
     if (!confirm("Delete this rule?")) return;
     requestStepUp({
       title: "Confirm IP rule deletion",
       description: "Enter your admin password plus an authenticator or backup code before deleting this IP rule.",
       confirmLabel: "Delete rule",
-      run: (values) => runSecurityMutation({ action: "delete_ip_rule", id }, values, "Deleted"),
+      run: (values) => runSecurityMutation({ action: "delete_ip_rule", id: rule.id }, values, "Deleted"),
     });
   };
 
-  const toggleIPRule = async (id: string) => {
+  const toggleIPRule = async (rule: IPRule) => {
+    // Re-enabling an inactive WHITELIST also requires SUPER_ADMIN +
+    // breakGlass on the server; surface that to non-SUPER_ADMINs early
+    // rather than letting the server 403 with a generic error.
+    if (rule.type === "WHITELIST" && !rule.isActive && !isSuperAdmin) {
+      toast.error("Only SUPER_ADMIN can re-enable a whitelist rule.");
+      return;
+    }
+    const reactivating = rule.type === "WHITELIST" && !rule.isActive;
+    const body: Record<string, unknown> = { action: "toggle_ip_rule", id: rule.id };
+    if (reactivating) body.breakGlass = true;
     requestStepUp({
-      title: "Confirm IP rule toggle",
-      description: "Enter your admin password plus an authenticator or backup code before changing this IP rule status.",
-      confirmLabel: "Update rule",
-      run: (values) => runSecurityMutation({ action: "toggle_ip_rule", id }, values, null),
+      title: reactivating ? "Confirm whitelist re-activation" : "Confirm IP rule toggle",
+      description: reactivating
+        ? "Re-activating a whitelist rule requires SUPER_ADMIN break-glass acknowledgement. Confirm with admin password and MFA."
+        : "Enter your admin password plus an authenticator or backup code before changing this IP rule status.",
+      confirmLabel: reactivating ? "Re-activate whitelist" : "Update rule",
+      run: (values) => runSecurityMutation(body, values, null),
     });
   };
 
@@ -166,6 +210,7 @@ export default function SecurityClient() {
         confirmLabel={stepUp?.confirmLabel || "Confirm"}
         busy={stepUpBusy}
         error={stepUpError}
+        requiresMfa={stepUpRequiresMfa}
         onClose={closeStepUp}
         onConfirm={confirmStepUp}
       />
@@ -272,11 +317,47 @@ export default function SecurityClient() {
           <h2 className="text-lg font-semibold text-foreground">Add IP Rule</h2>
           <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">IP Address</label><input value={form.ipAddress} onChange={e => setForm({ ...form, ipAddress: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="192.168.1.1" /></div>
-            <div><label className="block text-sm font-medium text-muted-foreground mb-1">Type</label><select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"><option value="BLACKLIST">Blacklist</option><option value="WHITELIST">Whitelist</option></select></div>
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Type</label>
+              <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value, breakGlass: false })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground">
+                <option value="BLACKLIST">Blacklist</option>
+                <option value="WHITELIST" disabled={!isSuperAdmin}>Whitelist {isSuperAdmin ? "" : "(SUPER_ADMIN only)"}</option>
+              </select>
+            </div>
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Reason</label><input value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" placeholder="Reason..." /></div>
             <div><label className="block text-sm font-medium text-muted-foreground mb-1">Expires At (optional)</label><input type="datetime-local" value={form.expiresAt} onChange={e => setForm({ ...form, expiresAt: e.target.value })} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground" /></div>
           </div>
-          <div className="flex gap-2"><button onClick={addIPRule} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">Add Rule</button><button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">Cancel</button></div>
+
+          {form.type === "WHITELIST" && (
+            <div className="rounded-lg border border-tone-honey-br bg-tone-honey-bg p-4 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-tone-honey-fg mt-0.5 shrink-0" />
+                <p className="text-xs text-foreground">
+                  Once any active whitelist exists, every admin path is deny-by-default for IPs that don&apos;t match. <strong>/login, /api/auth/login and /api/healthz remain reachable</strong> via the break-glass bypass so you can recover from a wrong rule, but every other admin route will refuse non-whitelisted IPs immediately. Verify the IP/CIDR is correct before confirming.
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.breakGlass}
+                  onChange={(e) => setForm({ ...form, breakGlass: e.target.checked })}
+                  className="accent-primary"
+                />
+                I understand this is a break-glass operation and accept the risk.
+              </label>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={addIPRule}
+              disabled={form.type === "WHITELIST" && (!isSuperAdmin || !form.breakGlass)}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              Add Rule
+            </button>
+            <button onClick={() => setShowForm(false)} className="rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent">Cancel</button>
+          </div>
         </div>
       )}
 
@@ -293,8 +374,8 @@ export default function SecurityClient() {
                   <td className="px-4 py-3"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.isActive ? "bg-tone-sage-bg text-tone-sage-fg" : "bg-tone-slate-bg text-muted-foreground"}`}>{r.isActive ? "Active" : "Inactive"}</span></td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">{r.expiresAt ? new Date(r.expiresAt).toLocaleString() : "Never"}</td>
                   <td className="px-4 py-3 flex gap-1">
-                    <button onClick={() => toggleIPRule(r.id)} className="rounded p-1 text-muted-foreground hover:bg-accent">{r.isActive ? <ToggleRight className="h-4 w-4 text-tone-sage-fg" /> : <ToggleLeft className="h-4 w-4" />}</button>
-                    <button onClick={() => deleteIPRule(r.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => toggleIPRule(r)} className="rounded p-1 text-muted-foreground hover:bg-accent">{r.isActive ? <ToggleRight className="h-4 w-4 text-tone-sage-fg" /> : <ToggleLeft className="h-4 w-4" />}</button>
+                    <button onClick={() => deleteIPRule(r)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}

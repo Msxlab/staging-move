@@ -20,6 +20,28 @@ const PUBLIC_EXACT_PATHS = new Set(["/login", "/api/auth/login", "/api/healthz"]
 const PUBLIC_PREFIX_PATHS: string[] = [];
 const PUBLIC_STATIC_PATHS = ["/sw.js", "/robots.txt"];
 
+/**
+ * Paths that must reach the request handler even when an IP rule would
+ * normally deny the caller — otherwise an admin who self-bans (or
+ * deletes the only WHITELIST rule covering their network) can never
+ * sign back in to fix it. The login form, the login POST, and the
+ * health probe are always reachable; every other public surface still
+ * goes through the deny check.
+ *
+ * The bypass is logged via an `IP_RULE_BYPASSED_FOR_BREAK_GLASS`
+ * security event so a real attack on the login surface is still
+ * visible in audit history.
+ */
+const BREAK_GLASS_BYPASS_PATHS = new Set([
+  "/login",
+  "/api/auth/login",
+  "/api/healthz",
+]);
+
+function isBreakGlassBypassPath(pathname: string): boolean {
+  return BREAK_GLASS_BYPASS_PATHS.has(pathname);
+}
+
 export function isPublicStaticPath(pathname: string): boolean {
   return PUBLIC_STATIC_PATHS.includes(pathname);
 }
@@ -51,7 +73,7 @@ function resolveClientIP(request: NextRequest): string {
 
 async function emitSecurityEvent(
   request: NextRequest,
-  event: { type: "BLOCKED_IP_ATTEMPT" | "SESSION_HIJACK_ATTEMPT"; ip: string; pathname: string; adminId?: string }
+  event: { type: "BLOCKED_IP_ATTEMPT" | "SESSION_HIJACK_ATTEMPT" | "IP_RULE_BYPASSED_FOR_BREAK_GLASS"; ip: string; pathname: string; adminId?: string }
 ) {
   const secret = getInternalCallerSecret("internal");
   if (!secret) return;
@@ -407,22 +429,35 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // IP rule enforcement — runs before auth to block banned IPs early
+  // Allow truly public static assets unconditionally (favicon, sw.js, etc).
+  if (isPublicStaticPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  // IP rule enforcement — runs before auth to block banned IPs early.
+  // CRITICAL: skip the deny path for the break-glass surface (/login,
+  // /api/auth/login, /api/healthz) so a SUPER_ADMIN who self-locks via
+  // an IP rule can still get back in and fix it. The bypass is logged
+  // as a security event so the attempted block is still auditable.
   const ip = resolveClientIP(request);
   const baseUrl = request.nextUrl.origin;
   const ipCheck = await checkIPAccess(ip, baseUrl);
   if (ipCheck.blocked) {
-    await emitSecurityEvent(request, { type: "BLOCKED_IP_ATTEMPT", ip, pathname });
-    if (pathname.startsWith("/api/")) {
-      return hardenEarlyResponse(
-        NextResponse.json({ error: ipCheck.reason || "Access denied" }, { status: 403 }),
-      );
+    if (isBreakGlassBypassPath(pathname)) {
+      await emitSecurityEvent(request, {
+        type: "IP_RULE_BYPASSED_FOR_BREAK_GLASS",
+        ip,
+        pathname,
+      });
+    } else {
+      await emitSecurityEvent(request, { type: "BLOCKED_IP_ATTEMPT", ip, pathname });
+      if (pathname.startsWith("/api/")) {
+        return hardenEarlyResponse(
+          NextResponse.json({ error: ipCheck.reason || "Access denied" }, { status: 403 }),
+        );
+      }
+      return hardenEarlyResponse(new NextResponse(ipCheck.reason || "Access denied", { status: 403 }));
     }
-    return hardenEarlyResponse(new NextResponse(ipCheck.reason || "Access denied", { status: 403 }));
-  }
-
-  if (isPublicStaticPath(pathname)) {
-    return NextResponse.next();
   }
 
   // Body size limit check

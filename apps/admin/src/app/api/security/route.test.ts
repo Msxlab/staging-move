@@ -270,12 +270,20 @@ describe("security admin mutations", () => {
   });
 
   it("deletes an IP rule with password plus backup-code step-up", async () => {
-    mocks.ipRuleFindUnique.mockResolvedValue({
-      id: "rule-1",
-      ipAddress: "203.0.113.20",
-      type: "BLACKLIST",
-      reason: null,
-    });
+    // Delete branch now reads the full rule set via findMany so it can
+    // simulate the post-delete state and refuse if removing the rule
+    // would lock the current request IP out (audit P0-1). For a
+    // BLACKLIST rule that doesn't cover the test request IP, deletion
+    // is safe and proceeds.
+    mocks.ipRuleFindMany.mockResolvedValue([
+      {
+        id: "rule-1",
+        ipAddress: "203.0.113.20",
+        type: "BLACKLIST",
+        isActive: true,
+        expiresAt: null,
+      },
+    ]);
     mocks.ipRuleDelete.mockResolvedValue({});
 
     const response = await POST(request({
