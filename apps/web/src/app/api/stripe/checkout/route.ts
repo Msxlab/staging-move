@@ -55,15 +55,17 @@ const MANAGED_SUBSCRIPTION_BLOCKING_STATUSES = new Set([
 ]);
 
 function isMissingStripeCustomerError(error: unknown) {
+  // Called only inside the customers.retrieve(id) catch — the only thing
+  // that can be missing is the customer. Stripe returns param: 'id' for
+  // retrieve-by-id and param: 'customer' when the customer is referenced
+  // from another call, so we don't pin to param.
   const stripeError = error as {
     code?: string;
-    param?: string;
-    raw?: { code?: string; param?: string };
+    raw?: { code?: string };
   };
   return (
-    (stripeError?.code === "resource_missing" ||
-      stripeError?.raw?.code === "resource_missing") &&
-    (stripeError?.param === "customer" || stripeError?.raw?.param === "customer")
+    stripeError?.code === "resource_missing" ||
+    stripeError?.raw?.code === "resource_missing"
   );
 }
 

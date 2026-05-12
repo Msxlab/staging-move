@@ -274,6 +274,35 @@ describe("stripe checkout route", () => {
     );
   });
 
+  it("replaces a stored Stripe customer ID when Stripe returns resource_missing with param='id'", async () => {
+    // Real production shape: customers.retrieve(id) returns param: 'id',
+    // not 'customer'. Reproduces the live 500 on locateflow.com checkout.
+    subscriptionMock.findUnique.mockResolvedValue({
+      userId: "user_1",
+      stripeCustomerId: "cus_stale_from_other_account",
+      stripeSubscriptionId: null,
+      provider: "STRIPE",
+      accessType: "FREE_ACCESS",
+      status: "FREE_ACCESS",
+      platform: "web",
+    });
+    mocks.customersRetrieve.mockRejectedValueOnce({
+      code: "resource_missing",
+      param: "id",
+      raw: { code: "resource_missing", param: "id" },
+      statusCode: 404,
+    });
+    mocks.customersCreate.mockResolvedValueOnce({ id: "cus_live_replacement" });
+
+    const response = await POST(checkoutRequest({ plan: "INDIVIDUAL", billingInterval: "YEAR", acceptedSubscriptionTerms: true }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.customersCreate).toHaveBeenCalled();
+    expect(mocks.sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ customer: "cus_live_replacement" }),
+    );
+  });
+
   it("does not replace a stored Stripe customer ID when Stripe returns a non-missing error", async () => {
     subscriptionMock.findUnique.mockResolvedValue({
       userId: "user_1",
