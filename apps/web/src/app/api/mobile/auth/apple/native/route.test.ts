@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   findOrLinkOAuthUserWithStatus: vi.fn(() =>
     Promise.resolve({ userId: "user-1", isNewUser: false, wasLinkedNow: false }),
   ),
+  normalizeAcceptedLegalConsents: vi.fn((value) => value),
+  recordLegalAcceptance: vi.fn(() => Promise.resolve()),
   createUserSession: vi.fn(() => Promise.resolve("mobile-session-token")),
   generateMobileFingerprint: vi.fn(() => Promise.resolve("mobile-fingerprint")),
   enforceRateLimitPolicy: vi.fn(() =>
@@ -64,6 +66,11 @@ vi.mock("@/lib/oauth", () => ({
   summarizeOAuthError: (e: unknown) => ({ message: (e as Error)?.message || "err" }),
 }));
 
+vi.mock("@/lib/legal-acceptance", () => ({
+  normalizeAcceptedLegalConsents: (value: any) => (mocks.normalizeAcceptedLegalConsents as any)(value),
+  recordLegalAcceptance: (input: any) => (mocks.recordLegalAcceptance as any)(input),
+}));
+
 vi.mock("@/lib/user-auth", () => ({
   createUserSession: (input: any) => (mocks.createUserSession as any)(input),
   findOrLinkOAuthUserWithStatus: (input: any) => (mocks.findOrLinkOAuthUserWithStatus as any)(input),
@@ -101,6 +108,14 @@ const VALID_BODY = {
   email: "user@example.com",
 };
 
+const VALID_LEGAL_CONSENTS = {
+  termsAccepted: true,
+  disclaimerAccepted: true,
+  termsVersion: "2026-04-01",
+  disclaimerVersion: "2026-04-01",
+  acceptedAt: "2026-05-12T12:00:00.000Z",
+};
+
 describe("native Apple Sign-In mobile route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -117,6 +132,8 @@ describe("native Apple Sign-In mobile route", () => {
       isNewUser: false,
       wasLinkedNow: false,
     });
+    mocks.normalizeAcceptedLegalConsents.mockImplementation((value) => value);
+    mocks.recordLegalAcceptance.mockResolvedValue(undefined);
     mocks.prismaUserFindUnique.mockResolvedValue({
       id: "user-1",
       email: "user@example.com",
@@ -140,6 +157,24 @@ describe("native Apple Sign-In mobile route", () => {
     );
     expect(mocks.createUserSession).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "user-1", clientType: "mobile", deviceType: "Mobile" }),
+    );
+  });
+
+  it("records legal acceptance when native Apple sign-up sends consent metadata", async () => {
+    const response = await POST(request({
+      ...VALID_BODY,
+      legalConsents: VALID_LEGAL_CONSENTS,
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.normalizeAcceptedLegalConsents).toHaveBeenCalledWith(VALID_LEGAL_CONSENTS);
+    expect(mocks.recordLegalAcceptance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        page: "/sign-up?provider=apple",
+        source: "mobile_apple_native_signup",
+        consents: VALID_LEGAL_CONSENTS,
+      }),
     );
   });
 

@@ -14,6 +14,7 @@ import {
   logSafeOAuthEvent,
   summarizeOAuthError,
 } from "@/lib/oauth";
+import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { resolveClientIP } from "@/lib/rate-limit";
 
@@ -41,6 +42,16 @@ const bodySchema = z.object({
   user: z.string().max(64).nullable().optional(),
   fullName: fullNameSchema,
   email: z.string().email().max(320).nullable().optional(),
+  legalConsents: z
+    .object({
+      termsAccepted: z.boolean(),
+      disclaimerAccepted: z.boolean(),
+      termsVersion: z.string().optional(),
+      disclaimerVersion: z.string().optional(),
+      acceptedAt: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 function failApple(stage: string, err: unknown) {
@@ -213,7 +224,7 @@ export async function POST(request: NextRequest) {
 
   let userId: string;
   try {
-    const linked = await findOrLinkOAuthUserWithStatus({
+    const linkedUser = await findOrLinkOAuthUserWithStatus({
       provider: "apple",
       providerId: payload.sub,
       email,
@@ -221,7 +232,7 @@ export async function POST(request: NextRequest) {
       lastName,
       allowNewAccount: true,
     });
-    userId = linked.userId;
+    userId = linkedUser.userId;
   } catch (err: unknown) {
     const message = (err as { message?: string } | null)?.message;
     if (message === "LEGAL_ACCEPTANCE_REQUIRED") {
@@ -247,6 +258,25 @@ export async function POST(request: NextRequest) {
       { error: "Apple sign-in could not be completed." },
       { status: 500 },
     );
+  }
+
+  const acceptedLegalConsents = normalizeAcceptedLegalConsents(parsed.data.legalConsents);
+  if (acceptedLegalConsents) {
+    try {
+      await recordLegalAcceptance({
+        userId,
+        request,
+        page: "/sign-up?provider=apple",
+        source: "mobile_apple_native_signup",
+        consents: acceptedLegalConsents,
+      });
+    } catch (err) {
+      failApple("legal_acceptance", err);
+      return NextResponse.json(
+        { error: "Apple sign-in completed but legal acceptance could not be recorded." },
+        { status: 500 },
+      );
+    }
   }
 
   const user = await prisma.user.findUnique({

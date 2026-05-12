@@ -24,7 +24,7 @@
           "NSAllowsArbitraryLoads": false,
           "NSAllowsArbitraryLoadsForMedia": false,
           "NSAllowsArbitraryLoadsInWebContent": false,
-          "NSAllowsLocalNetworking": false
+          "NSAllowsLocalNetworking": true
         }
       },
       "privacyManifests": {

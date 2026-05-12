@@ -28,9 +28,9 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://staging.locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://staging.locateflow.com",
-        "EXPO_PUBLIC_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
+        "EXPO_PUBLIC_ENV": "preview",
         "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false",
         "EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED": "false",
         "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "false"
@@ -42,9 +42,9 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://staging.locateflow.com/api",
-        "EXPO_PUBLIC_APP_URL": "https://staging.locateflow.com",
-        "EXPO_PUBLIC_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://locateflow.com/api",
+        "EXPO_PUBLIC_APP_URL": "https://locateflow.com",
+        "EXPO_PUBLIC_ENV": "preview",
         "EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED": "false",
         "EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED": "false",
         "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "false"

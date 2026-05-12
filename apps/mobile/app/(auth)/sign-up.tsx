@@ -116,15 +116,14 @@ export default function SignUpScreen() {
       await setPendingLegalConsents(acceptedLegalConsents);
 
       if (provider === "apple" && Platform.OS === "ios" && nativeAppleAvailable) {
-        const native = await signInWithAppleNative();
+        const native = await signInWithAppleNative({ legalConsents: acceptedLegalConsents });
         if (native.status === "cancelled") {
           await setPendingLegalConsents(null);
           return;
         }
         if (native.status === "ok" && native.token && native.user) {
           await setSession(native.token, native.user);
-          // The backend should persist pending legal consents during the
-          // /api/mobile/auth/apple/native handoff; clear local state on success.
+          // The native Apple route persisted these consents during the handoff.
           await setPendingLegalConsents(null);
           hapticSuccess();
           router.replace("/onboarding");

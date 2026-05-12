@@ -16,6 +16,7 @@
 import { Platform } from "react-native";
 import { api } from "@/lib/api";
 import type { AuthUser } from "@/lib/auth-store";
+import type { LegalConsentState } from "@/lib/legal";
 import { captureException } from "@/lib/sentry";
 
 type AppleModule = typeof import("expo-apple-authentication");
@@ -58,12 +59,18 @@ interface AppleNativeExchangeResponse {
   error?: string;
 }
 
+interface NativeAppleSignInOptions {
+  legalConsents?: LegalConsentState | null;
+}
+
 /**
  * Trigger the native Apple sheet and exchange the identity token with the
  * backend for a mobile session JWT. The caller should hydrate the auth store
  * with the returned `token` + `user` on `status === "ok"`.
  */
-export async function signInWithAppleNative(): Promise<NativeAppleSignInResult> {
+export async function signInWithAppleNative(
+  options: NativeAppleSignInOptions = {},
+): Promise<NativeAppleSignInResult> {
   const mod = getAppleModule();
   if (!mod) return { status: "unavailable" };
 
@@ -88,6 +95,7 @@ export async function signInWithAppleNative(): Promise<NativeAppleSignInResult> 
       authorizationCode: credential.authorizationCode || null,
       nonce: (credential as { nonce?: string | null }).nonce || null,
       user: credential.user,
+      legalConsents: options.legalConsents ?? null,
       fullName: credential.fullName
         ? {
             givenName: credential.fullName.givenName || null,
