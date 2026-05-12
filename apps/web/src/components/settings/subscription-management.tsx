@@ -224,7 +224,14 @@ export default function SubscriptionManagementPage() {
     stuckCheckoutRecoveryRef.current = true;
     void (async () => {
       try {
-        await fetch("/api/stripe/checkout/cancel", { method: "POST" });
+        // The web CSRF middleware requires application/json or multipart on
+        // every mutation; an empty POST gets 403'd before the route runs.
+        // Send an empty JSON body so the request clears the check.
+        await fetch("/api/stripe/checkout/cancel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
       } catch {
         // best-effort; the cron sweep will catch it within 30 min
       }
