@@ -12,6 +12,17 @@ import {
 } from "@/lib/mobile-external-billing-guard";
 import Stripe from "stripe";
 
+function isMissingStripeCustomerError(error: unknown) {
+  const stripeError = error as {
+    code?: string;
+    raw?: { code?: string };
+  };
+  return (
+    stripeError?.code === "resource_missing" ||
+    stripeError?.raw?.code === "resource_missing"
+  );
+}
+
 // POST /api/stripe/portal — Create a Stripe Customer Portal session
 export async function POST(request: NextRequest) {
   try {
@@ -41,12 +52,29 @@ export async function POST(request: NextRequest) {
     const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
     const appUrl = await getConfiguredAppUrl();
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripeCustomerId,
-      return_url: `${appUrl}/settings/subscription`,
-    });
-
-    return NextResponse.json({ url: session.url });
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: subscription.stripeCustomerId,
+        return_url: `${appUrl}/settings/subscription`,
+      });
+      return NextResponse.json({ url: session.url });
+    } catch (sessionError) {
+      // Provider drift: the stored Stripe customer no longer exists in the
+      // configured Stripe account (e.g. test/live key swap, deleted account).
+      // Clear the stale ID so the next checkout creates a fresh customer,
+      // and return a clean 404 instead of a 500.
+      if (isMissingStripeCustomerError(sessionError)) {
+        await prisma.subscription.update({
+          where: { userId },
+          data: { stripeCustomerId: null, lastSyncedAt: new Date() },
+        }).catch(() => {});
+        return NextResponse.json(
+          { code: "STRIPE_CUSTOMER_MISSING", error: "No active subscription found" },
+          { status: 404 },
+        );
+      }
+      throw sessionError;
+    }
   } catch (error: any) {
     if (error?.name === "BILLING_CONFIG_ERROR" || error?.name === "APP_URL_CONFIG_ERROR") {
       const reason = error?.message || "Stripe not configured";
