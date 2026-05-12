@@ -94,7 +94,6 @@ export function ServicesClient({
   const [categoryFilter, setCategoryFilter] = useState("");
   const [addressFilter, setAddressFilter] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "cost-desc" | "cost-asc" | "newest" | "oldest">("name");
-  const [showInactive, setShowInactive] = useState(true);
   const [checklist, setChecklist] = useState<RelocationChecklist | null>(null);
 
   // Build filter groups with translated labels
@@ -165,7 +164,6 @@ export function ServicesClient({
       if (search && !s.providerName.toLowerCase().includes(search.toLowerCase())) return false;
       if (categoryFilter && !s.category.startsWith(categoryFilter)) return false;
       if (addressFilter && s.addressId !== addressFilter) return false;
-      if (!showInactive && s.isActive === false) return false;
       return true;
     })
     .sort((a, b) => {
@@ -347,16 +345,6 @@ export function ServicesClient({
             <option value="newest">{t("sort_newest")}</option>
             <option value="oldest">{t("sort_oldest")}</option>
           </select>
-          <button
-            onClick={() => setShowInactive(!showInactive)}
-            className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-medium transition whitespace-nowrap ${
-              showInactive
-                ? "border-border text-muted-foreground hover:bg-foreground/5"
-                : "border-tone-orange-br bg-tone-orange-bg text-tone-orange-fg"
-            }`}
-          >
-            {showInactive ? tCommon("all") : tCommon("active")}
-          </button>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {filterGroups.map((g) => {
