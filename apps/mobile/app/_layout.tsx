@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Alert, Linking } from "react-native";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -38,10 +38,7 @@ import {
   hasRequiredLegalConsents,
   setPendingLegalConsents,
 } from "@/lib/legal";
-import {
-  exchangeMobileOAuthCallbackUrl,
-  readMobileOAuthCallback,
-} from "@/lib/mobile-oauth-handoff";
+import { exchangeMobileOAuthCallbackUrl } from "@/lib/mobile-oauth-handoff";
 
 // Cache the last known onboarding-completion flag so a transient /api/profile
 // failure does not silently route a brand-new account into (tabs). Cache hits
@@ -87,7 +84,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { token, user, loading, hydrate, refreshUser, setSession } = useAuthStore();
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
-  const handledOAuthCodes = useRef<Set<string>>(new Set());
 
   // 1) On mount, load the persisted token from SecureStore.
   useEffect(() => {
@@ -96,19 +92,21 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleOAuthUrl = async (url: string | null) => {
-      const callback = readMobileOAuthCallback(url);
-      const code = callback?.code;
-      if (!code || handledOAuthCodes.current.has(code)) return;
-      handledOAuthCodes.current.add(code);
-
+      // exchangeMobileOAuthCallbackUrl is idempotent and coalesces concurrent
+      // callers (see apps/mobile/src/lib/mobile-oauth-handoff.ts). When the
+      // WebBrowser path in (auth)/sign-in.tsx already won the race, this
+      // call resolves to the same {token, user} from its in-process cache
+      // (or null if the code was consumed in a prior process). Either way we
+      // do not duplicate the request to the server.
       let exchanged: { token?: string; user?: any } | null = null;
       try {
         exchanged = await exchangeMobileOAuthCallbackUrl(url);
       } catch {
-        handledOAuthCodes.current.delete(code);
         Alert.alert(t("auth.mobileSignInFailedTitle"), t("auth.mobileSignInFailedBody"));
         return;
       }
+      // null = the URL was not an OAuth callback OR the code was already
+      // consumed in a prior app instance. Either way: nothing to do here.
       if (!exchanged?.token || !exchanged.user) return;
 
       await setSession(exchanged.token, exchanged.user);
