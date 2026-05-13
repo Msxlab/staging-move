@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState, useCallback } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -65,6 +65,13 @@ export default function ProvidersScreen() {
   const [primaryAddress, setPrimaryAddress] = useState<AddressOption | null>(null);
   const [addressLoaded, setAddressLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pageTimerRef.current) clearTimeout(pageTimerRef.current);
+    };
+  }, []);
 
   // Load primary address once
   useEffect(() => {
@@ -167,8 +174,13 @@ export default function ProvidersScreen() {
   const onEndReached = useCallback(() => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
-    // Small timeout to prevent thrashing; in-memory paging is instant.
-    setTimeout(() => {
+    // Small timeout to prevent thrashing; in-memory paging is instant. We
+    // track the handle so unmount cancels it — otherwise React fires a
+    // "state update on unmounted component" warning if the user backs out
+    // mid-scroll.
+    if (pageTimerRef.current) clearTimeout(pageTimerRef.current);
+    pageTimerRef.current = setTimeout(() => {
+      pageTimerRef.current = null;
       setPage((p) => p + 1);
       setLoadingMore(false);
     }, 50);

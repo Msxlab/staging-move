@@ -25,7 +25,6 @@ export interface MobileOAuthResult {
 }
 
 const OAUTH_CALLBACK_PATH = "oauth";
-const exchangeByCode = new Map<string, Promise<MobileOAuthResult>>();
 
 export function getMobileOAuthRedirectUri() {
   const configured = process.env.EXPO_PUBLIC_MOBILE_OAUTH_REDIRECT_URI?.trim();
@@ -99,7 +98,7 @@ function mobileOAuthErrorMessage(error?: string) {
     case "mobile-oauth-handoff-failed":
       return "Mobile sign-in could not be completed. Please try again.";
     default:
-      return "Google sign-in could not be completed. Please try again.";
+      return "Sign-in could not be completed. Please try again.";
   }
 }
 
@@ -125,11 +124,12 @@ async function exchangeOAuthUrl(url: string, setSession: SetSession): Promise<Mo
   try {
     const exchanged = await exchangeMobileOAuthCallbackUrl(url);
     if (!exchanged?.token || !exchanged.user) {
-      return {
-        handled: true,
-        success: false,
-        error: "Sign-in is already being completed.",
-      };
+      // null = the code was already consumed by another concurrent handler
+      // (e.g. the AuthGuard deep-link path raced ahead of this WebBrowser
+      // path). That handler has already called setSession and routed; we
+      // must NOT surface an error to the user just because we got here
+      // second. Treat as success — the auth-store now holds a valid token.
+      return { handled: true, success: true };
     }
 
     await setSession(exchanged.token, exchanged.user as AuthUser);
@@ -164,19 +164,14 @@ export async function completeMobileOAuthUrl(
     return {
       handled: true,
       success: false,
-      error: "Google sign-in returned without a handoff code. Please try again.",
+      error: "Sign-in returned without a handoff code. Please try again.",
     };
   }
 
-  let exchange = exchangeByCode.get(parsed.code);
-  if (!exchange) {
-    exchange = exchangeOAuthUrl(url!, setSession);
-    exchangeByCode.set(parsed.code, exchange);
-  }
-
-  const result = await exchange;
-  if (!result.success) exchangeByCode.delete(parsed.code);
-  return result;
+  // exchangeMobileOAuthCallbackUrl (called inside exchangeOAuthUrl) is itself
+  // idempotent and coalesces concurrent callers via an in-process promise
+  // cache, so a previous per-code Map here is no longer needed.
+  return exchangeOAuthUrl(url!, setSession);
 }
 
 export async function startMobileOAuthSession(
