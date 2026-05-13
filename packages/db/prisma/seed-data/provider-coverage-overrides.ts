@@ -11,6 +11,146 @@ export interface ProviderCoverageOverrideRecord {
   zipCodes?: string[];
 }
 
+const MD_WSSC_ZIPS = [
+  "20601", "20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20720", "20721", "20722", "20725", "20726", "20731", "20735", "20737", "20738", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20749", "20752", "20753", "20757", "20762", "20768", "20769", "20770", "20771", "20772", "20773", "20774", "20775", "20781", "20782", "20783", "20784", "20785", "20787", "20788", "20790", "20791", "20792", "20797", "20799",
+  "20812", "20814", "20815", "20816", "20817", "20818", "20832", "20833", "20837", "20838", "20839", "20841", "20842", "20850", "20851", "20852", "20853", "20854", "20855", "20857", "20859", "20860", "20861", "20862", "20866", "20868", "20871", "20872", "20874", "20876", "20877", "20878", "20879", "20880", "20882", "20886", "20889", "20892", "20895", "20896", "20898", "20899", "20901", "20902", "20903", "20904", "20905", "20906", "20910", "20912", "20914", "20915", "20916", "20918", "20993",
+];
+
+const CO_XCEL_ZIPS = [
+  "80002", "80003", "80004", "80005", "80007", "80010", "80011", "80012", "80013", "80014", "80015", "80016", "80017", "80018", "80019", "80020", "80021", "80022", "80023", "80026", "80027", "80030", "80031", "80033", "80045",
+  "80110", "80111", "80112", "80113", "80120", "80121", "80122", "80123", "80124", "80126", "80127", "80128", "80129", "80130", "80134", "80138",
+  "80202", "80203", "80204", "80205", "80206", "80207", "80209", "80210", "80211", "80212", "80216", "80218", "80219", "80220", "80221", "80222", "80223", "80224", "80227", "80230", "80231", "80236", "80237", "80238", "80239", "80246", "80247", "80249", "80260", "80264", "80265", "80290", "80293", "80294",
+  "80301", "80302", "80303", "80304", "80305", "80309", "80310", "80314",
+];
+
+const CO_EXPRESSTOLL_ZIPS = [
+  "80010", "80011", "80012", "80013", "80014", "80015", "80016", "80017", "80018", "80019", "80020", "80021", "80022", "80023", "80027", "80045",
+  "80111", "80112", "80124", "80134", "80138",
+  "80202", "80203", "80204", "80205", "80206", "80207", "80209", "80210", "80211", "80212", "80216", "80218", "80219", "80220", "80221", "80222", "80223", "80224", "80230", "80231", "80237", "80238", "80239", "80246", "80247", "80249",
+  "80301", "80302", "80303", "80304", "80305", "80401", "80501", "80504", "80601", "80602", "80603",
+];
+
+const CO_DENVER_WATER_ZIPS = [
+  "80002", "80003", "80004", "80010", "80011", "80012", "80014", "80033",
+  "80202", "80203", "80204", "80205", "80206", "80207", "80209", "80210", "80211", "80212", "80214", "80215", "80216", "80218", "80219", "80220", "80221", "80222", "80223", "80224", "80226", "80227", "80228", "80230", "80231", "80232", "80235", "80236", "80237", "80238", "80239", "80246", "80247", "80249",
+];
+
+const CO_BLACK_HILLS_ZIPS = [
+  "81001", "81003", "81004", "81005", "81006", "81007", "81008", "81050", "81052", "81067", "81082", "81212", "81226", "81240",
+];
+
+const UT_SLC_PUBLIC_UTILITIES_ZIPS = [
+  "84101", "84102", "84103", "84104", "84105", "84106", "84108", "84109", "84111", "84112", "84113", "84115", "84116", "84150", "84180",
+];
+
+const FL_DUKE_ENERGY_ZIPS = ["321", "326", "327", "328", "335", "337", "338", "344", "346", "347"];
+
+const FL_TAMPA_CITY_ZIPS = ["33602", "33603", "33604", "33605", "33606", "33607", "33609", "33610", "33611", "33612", "33614", "33615", "33616", "33617", "33618", "33619", "33620", "33621", "33629", "33634", "33635", "33637"];
+
+const GA_PEACH_PASS_ZIPS = [
+  "30004", "30005", "30009", "30022", "30024", "30030", "30040", "30041", "30043", "30044", "30046", "30060", "30062", "30064", "30066", "30067", "30068", "30071", "30075", "30076", "30080", "30092", "30093", "30096", "30097",
+  "30101", "30102", "30106", "30114", "30115", "30126", "30127", "30132", "30134", "30144", "30152", "30157", "30168",
+  "30213", "30214", "30215", "30228", "30236", "30238", "30253", "30269", "30274", "30281", "30290", "30291", "30296",
+  "30303", "30305", "30306", "30307", "30308", "30309", "30310", "30311", "30312", "30313", "30314", "30315", "30316", "30317", "30318", "30319", "30324", "30326", "30327", "30328", "30329", "30331", "30336", "30337", "30338", "30339", "30340", "30341", "30342", "30344", "30345", "30346", "30349", "30350", "30354",
+];
+
+const GA_ATLANTA_CORE_ZIPS = [
+  "30303", "30305", "30306", "30307", "30308", "30309", "30310", "30311", "30312", "30313", "30314", "30315", "30316", "30317", "30318", "30319", "30324", "30326", "30327", "30331", "30336", "30337", "30339", "30342", "30344", "30345", "30354", "30363",
+];
+
+const GA_NATURAL_GAS_MARKET_ZIPS = ["300", "301", "302", "303", "305", "306", "310", "312", "314"];
+
+const NC_DUKE_PREFILTER_ZIPS = ["270", "271", "272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286", "287", "288", "289"];
+
+const NC_QUICK_PASS_ZIPS = [
+  "27502", "27511", "27513", "27518", "27519", "27523", "27526", "27529", "27539", "27540", "27560", "27562", "27601", "27603", "27606", "27607", "27613", "27617",
+  "28012", "28031", "28036", "28078", "28104", "28105", "28110", "28112", "28173",
+  "28202", "28203", "28204", "28205", "28206", "28207", "28208", "28209", "28210", "28211", "28214", "28216", "28217", "28226", "28262", "28269", "28270", "28273", "28277", "28278",
+];
+
+const NC_CHARLOTTE_ZIPS = [
+  "28202", "28203", "28204", "28205", "28206", "28207", "28208", "28209", "28210", "28211", "28212", "28213", "28214", "28215", "28216", "28217", "28226", "28227", "28262", "28269", "28270", "28273", "28277", "28278", "28280", "28281", "28282",
+];
+
+const NC_RALEIGH_SERVICE_ZIPS = [
+  "27511", "27513", "27518", "27519", "27520", "27522", "27526", "27529", "27539", "27540", "27545", "27571", "27587", "27591", "27597",
+  "27601", "27603", "27604", "27605", "27606", "27607", "27608", "27609", "27610", "27612", "27613", "27614", "27615", "27616", "27617",
+];
+
+const NC_DURHAM_ZIPS = ["27701", "27703", "27704", "27705", "27707", "27709", "27712", "27713"];
+
+const NC_GREENSBORO_ZIPS = ["27401", "27403", "27405", "27406", "27407", "27408", "27409", "27410", "27455"];
+
+const NC_WINSTON_SALEM_ZIPS = ["27012", "27023", "27040", "27045", "27101", "27103", "27104", "27105", "27106", "27107", "27109", "27110", "27127"];
+
+const NC_OWASA_ZIPS = ["27510", "27514", "27516", "27517", "27599"];
+
+const NC_DOMINION_ELECTRIC_ZIPS = [
+  "27809", "27818", "27822", "27823", "27828", "27829", "27834", "27837", "27858", "27886",
+  "27909", "27910", "27917", "27921", "27923", "27932", "27937", "27939", "27941", "27942", "27944", "27946", "27948", "27949", "27954", "27956", "27957", "27958", "27959", "27962", "27964", "27966", "27970", "27974", "27976", "27980", "27981", "27983", "27986",
+];
+
+const NC_ENBRIDGE_GAS_ZIPS = ["272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286", "287", "288"];
+
+const NC_PIEDMONT_GAS_ZIPS = ["270", "271", "272", "273", "274", "275", "276", "277", "280", "281", "282", "286", "287", "288"];
+
+const NC_FRONTIER_GAS_ZIPS = ["270", "271", "286", "287"];
+
+const NC_ENERGYUNITED_ZIPS = [
+  "27006", "27013", "27028", "27054", "27127", "27284", "27360",
+  "28023", "28025", "28027", "28031", "28036", "28078",
+  "28115", "28117", "28120", "28124", "28125", "28144", "28147", "28159", "28166",
+  "28625", "28634", "28677", "28682",
+];
+
+const NC_BLUE_RIDGE_ENERGY_ZIPS = ["28604", "28605", "28607", "28615", "28618", "28624", "28626", "28640", "28645", "28646", "28659", "28665", "28670", "28681", "28684", "28694", "28697", "28698", "28717", "28741"];
+
+const NC_BRUNSWICK_ELECTRIC_ZIPS = ["28420", "28422", "28451", "28461", "28462", "28465", "28467", "28469", "28470", "28479", "28480", "29566", "29582"];
+
+const NC_PRIVATE_WATER_ZIPS = ["270", "271", "272", "273", "274", "275", "276", "277", "278", "280", "281", "282", "283", "284", "285", "286", "287"];
+
+const OH_AEP_ZIPS = ["430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456"];
+
+const OH_COLUMBIA_GAS_ZIPS = ["430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456", "457", "458"];
+
+const OH_TURNPIKE_ZIPS = ["434", "435", "436", "440", "441", "442", "443", "444", "445", "448", "449"];
+
+const OH_FIRSTENERGY_ZIPS = ["434", "435", "436", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449"];
+
+const OH_DUKE_ZIPS = ["450", "451", "452"];
+
+const OH_AES_ZIPS = ["453", "454", "455", "458"];
+
+const OH_ENBRIDGE_GAS_ZIPS = ["440", "441", "442", "443", "444", "445", "446", "447", "448", "449"];
+
+const OH_CENTERPOINT_GAS_ZIPS = ["453", "454", "455"];
+
+const OH_COLUMBUS_REGION_ZIPS = ["430", "431", "432"];
+
+const OH_CLEVELAND_REGION_ZIPS = ["440", "441", "442", "443"];
+
+const OH_CINCINNATI_REGION_ZIPS = ["450", "451", "452"];
+
+const OH_TOLEDO_REGION_ZIPS = ["434", "435", "436"];
+
+const OH_RUMPKE_ZIPS = ["430", "431", "432", "433", "450", "451", "452", "453", "454", "455", "456"];
+
+const VA_FAIRFAX_WATER_ZIPS = [
+  "20120", "20121", "20124", "20151", "20152", "20153",
+  "22003", "22015", "22027", "22030", "22031", "22032", "22033", "22034", "22035", "22039", "22041", "22042", "22043", "22044", "22046", "22060", "22066", "22079",
+  "22101", "22102", "22124", "22150", "22151", "22152", "22153", "22180", "22181", "22182", "22183", "22185", "22199",
+  "22303", "22306", "22307", "22308", "22309", "22310", "22312", "22315",
+];
+
+const CT_SCG_ZIPS = [
+  "06405", "06413", "06417", "06426", "06437", "06443", "06460", "06461", "06471", "06472", "06473", "06475", "06477", "06498",
+  "06510", "06511", "06512", "06513", "06514", "06515", "06516", "06517", "06518", "06519", "06520", "06525", "06530", "06531", "06532", "06533", "06534", "06535", "06536", "06537", "06538", "06540",
+  "06604", "06605", "06606", "06607", "06608", "06610", "06611", "06612", "06614", "06615", "06650", "06673", "06699",
+  "06824", "06825", "06828", "06880", "06881", "06883", "06890",
+];
+
+const CT_AQUARION_ZIP_PREFIXES = ["063", "064", "066", "067", "068", "069"];
+
 export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   {
     slug: "con-edison",
@@ -21,8 +161,14 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   {
     slug: "peco",
     zipCodes: ["189", "190", "191", "193", "194"],
-    sourceUrl: "https://www.peco.com/coverage-map",
-    note: "PECO coverage is concentrated in Philadelphia and the surrounding southeastern Pennsylvania suburbs.",
+    sourceUrl: "https://secure.peco.com/CustomerServices/service/landing",
+    note: "PECO coverage is concentrated in Philadelphia and surrounding southeastern Pennsylvania suburbs; final service availability should be confirmed by address.",
+  },
+  {
+    slug: "pa-ezpass",
+    zipCodes: ["150", "151", "152", "156", "159", "160", "161", "170", "171", "172", "173", "180", "181", "183", "189", "190", "191", "194"],
+    sourceUrl: "https://www.paturnpike.com/e-zpass/personal-account",
+    note: "Pennsylvania Turnpike E-ZPass is modeled against major Turnpike corridor ZIP prefixes; E-ZPass account portability may still make it relevant outside these prefixes.",
   },
   {
     slug: "comed",
@@ -33,20 +179,32 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   {
     slug: "bge",
     zipCodes: ["206", "207", "210", "211", "212", "214", "216", "217"],
-    sourceUrl: "https://www.bge.com/coverage-map",
-    note: "BGE coverage is centered on Baltimore and surrounding central Maryland counties.",
+    sourceUrl: "https://opc.maryland.gov/Consumer-Learning/Utility-Rates-and-Basics/BGE",
+    note: "BGE coverage is centered on Baltimore and surrounding central Maryland counties; ZIP prefixes are a prefilter and service should be confirmed by address.",
   },
   {
     slug: "pepco",
     zipCodes: ["200", "203", "204", "205", "207", "208", "209"],
-    sourceUrl: "https://www.pepco.com/coverage-map",
-    note: "Pepco covers the District of Columbia and nearby Maryland suburbs.",
+    sourceUrl: "https://opc.maryland.gov/Consumer-Learning/Utility-Rates-and-Basics/Pepco",
+    note: "Pepco covers the District of Columbia and nearby Maryland suburbs; ZIP prefixes are a prefilter and service should be confirmed by address.",
   },
   {
     slug: "seattle-city-light",
-    zipCodes: ["981"],
+    zipCodes: ["98055", "98056", "98057", "98058", "98059", "981"],
     sourceUrl: "https://www.seattle.gov/city-light",
-    note: "Seattle City Light is a municipal utility serving the Seattle core service area.",
+    note: "Seattle City Light serves Seattle and selected nearby King County communities; exact 9805x ZIPs catch Renton-area service while 981 covers the Seattle core.",
+  },
+  {
+    slug: "good-to-go",
+    zipCodes: ["980", "981", "982", "983", "984"],
+    sourceUrl: "https://wsdot.wa.gov/travel/roads-bridges/toll-roads-bridges-tunnels/good-go-accounts-passes",
+    note: "Good To Go! is Washington's toll account system; ZIP prefixes are Puget Sound toll-corridor prefilters rather than statewide residential coverage.",
+  },
+  {
+    slug: "pse-wa",
+    zipCodes: ["980", "981", "982", "983", "984", "985", "989"],
+    sourceUrl: "https://www.pse.com/en/Customer-Service/pse-locations-2",
+    note: "Puget Sound Energy electric and gas coverage spans Puget Sound and selected central Washington service areas; ZIP prefixes are a prefilter and require address confirmation.",
   },
   {
     slug: "aps-az",
@@ -117,8 +275,8 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   {
     slug: "philly-water",
     zipCodes: ["191"],
-    sourceUrl: "https://water.phila.gov",
-    note: "Philadelphia Water Department is city-scoped to Philadelphia ZIP ranges.",
+    sourceUrl: "https://www.phila.gov/services/water-gas-utilities/become-a-water-customer/",
+    note: "Philadelphia Water Department customer setup is city-scoped to Philadelphia ZIP ranges.",
   },
   {
     slug: "chicago-water",
@@ -128,21 +286,45 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "columbus-water",
-    zipCodes: ["430", "431", "432"],
-    sourceUrl: "https://www.columbus.gov/Services/Columbus-Water-Power/About-Columbus-Water-Power/Division-of-Power/Connecting-to-City-Power/Connect-to-City-Power-Service-Area-Map",
-    note: "Columbus municipal utilities cover Columbus and immediate metro suburbs.",
+    zipCodes: OH_COLUMBUS_REGION_ZIPS,
+    sourceUrl: "https://www.columbus.gov/Services/Columbus-Water-Power/Start-New-Utility-Service",
+    note: "Columbus Water & Power is modeled with central Ohio ZIP prefixes as prefilters; municipal water, sewer, and power service should be confirmed by address.",
   },
   {
     slug: "cincy-water",
-    zipCodes: ["450", "451", "452"],
-    sourceUrl: "https://www.cincinnati-oh.gov/water/about/outside-our-service-area/",
-    note: "Cincinnati Water Works serves Cincinnati and nearby suburbs in southwest Ohio.",
+    zipCodes: OH_CINCINNATI_REGION_ZIPS,
+    sourceUrl: "https://www.cincinnati-oh.gov/water/moving-or-selling-your-property1/",
+    note: "Greater Cincinnati Water Works is modeled with southwest Ohio ZIP prefixes as prefilters; exact water account coverage should be confirmed by address.",
   },
   {
     slug: "denver-water",
-    zipCodes: ["800", "801", "802", "803", "804"],
-    sourceUrl: "https://www.denverwater.org/about-us/how-we-operate/service-area",
-    note: "Denver Water serves Denver and the broader nearby metro footprint.",
+    zipCodes: CO_DENVER_WATER_ZIPS,
+    sourceUrl: "https://www.denverwater.org/residential/services-and-information/start-or-stop-service",
+    note: "Denver Water covers Denver and selected nearby service areas; exact ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "xcel-energy",
+    zipCodes: CO_XCEL_ZIPS,
+    sourceUrl: "https://corporate.my.xcelenergy.com/s/energy/service-areas/colorado",
+    note: "Xcel Energy Colorado electric and gas coverage is address-specific; exact ZIPs are Front Range prefilters from Colorado service-area evidence.",
+  },
+  {
+    slug: "expresstoll",
+    zipCodes: CO_EXPRESSTOLL_ZIPS,
+    sourceUrl: "https://www.expresstoll.com/",
+    note: "ExpressToll is the Colorado toll account surface for E-470, Northwest Parkway, and CDOT Express Lanes; ZIPs are Denver and Front Range corridor prefilters.",
+  },
+  {
+    slug: "bhe-co-gas",
+    zipCodes: CO_BLACK_HILLS_ZIPS,
+    sourceUrl: "https://www.blackhillsenergy.com/app-startstop/service-select",
+    note: "Black Hills Energy Colorado service is concentrated in selected southern Colorado communities; exact ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "slc-water-ut",
+    zipCodes: UT_SLC_PUBLIC_UTILITIES_ZIPS,
+    sourceUrl: "https://www.slc.gov/utilities/",
+    note: "Salt Lake City Department of Public Utilities is city-scoped; exact ZIPs are prefilters and service should be confirmed by address.",
   },
   {
     slug: "phoenix-water",
@@ -169,7 +351,7 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
     note: "Portland Water Bureau primarily serves Portland and nearby eastside service ZIPs.",
   },
   {
-    slug: "seattle-public-utilities",
+    slug: "spu-wa",
     zipCodes: ["981"],
     sourceUrl: "https://www.seattle.gov/utilities/construction-resources/water/water-drainage-and-wastewater-availability-certificate",
     note: "Seattle Public Utilities water availability is city-scoped to Seattle ZIP ranges.",
@@ -182,21 +364,21 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "raleigh-water",
-    zipCodes: ["275", "276"],
-    sourceUrl: "https://raleighnc.gov/apps-maps-and-open-data",
-    note: "Raleigh Water is concentrated in Raleigh and nearby Wake County ZIP ranges.",
+    zipCodes: NC_RALEIGH_SERVICE_ZIPS,
+    sourceUrl: "https://raleighnc.gov/water-and-sewer/services/start-stop-or-transfer-utility-services",
+    note: "Raleigh Water serves Raleigh and nearby partner municipalities; exact ZIPs are prefilters and service should be confirmed by address.",
   },
   {
     slug: "charlotte-water",
-    zipCodes: ["280", "281", "282"],
-    sourceUrl: "https://charlottenc.gov/Water",
-    note: "Charlotte Water serves Charlotte and adjacent Mecklenburg County suburbs.",
+    zipCodes: NC_CHARLOTTE_ZIPS,
+    sourceUrl: "https://www.charlottenc.gov/water/Customer-Care/Start-Stop-Service",
+    note: "Charlotte Water is modeled with Charlotte-area ZIP prefilters and should be confirmed by service address.",
   },
   {
     slug: "fairfax-water",
-    zipCodes: ["220", "221", "223"],
-    sourceUrl: "https://www.fairfaxwater.org",
-    note: "Fairfax Water is concentrated in Fairfax County and nearby Northern Virginia service ZIPs.",
+    zipCodes: VA_FAIRFAX_WATER_ZIPS,
+    sourceUrl: "https://www.fairfaxwater.org/start-service",
+    note: "Fairfax Water is concentrated in Fairfax County and nearby Northern Virginia service ZIPs; exact ZIPs are prefilters and water service should be confirmed by address.",
   },
   {
     slug: "milwaukee-water",
@@ -280,7 +462,7 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "sce",
-    zipCodes: ["910", "911", "912", "913", "914", "915", "916", "917", "918", "919", "920", "921", "922", "923", "924", "925", "926", "927", "928"],
+    zipCodes: ["910", "911", "912", "913", "914", "915", "916", "917", "918", "922", "923", "924", "925", "926", "927", "928", "930", "931", "932", "933", "934", "935"],
     sourceUrl: "https://www.sce.com/residential/service-area",
     note: "Southern California Edison serves most of Southern California excluding the City of LA (LADWP) and San Diego (SDG&E).",
   },
@@ -300,9 +482,15 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   // ── Pacific Northwest ──
   {
     slug: "cascade-wa-gas",
-    zipCodes: ["980", "981", "982", "983", "984", "985", "986", "987", "988", "989"],
+    zipCodes: ["982", "983", "985", "986", "988", "989", "993", "970", "971", "973", "977", "978"],
     sourceUrl: "https://www.cascadenaturalgas.com",
-    note: "Cascade Natural Gas serves western and central Washington state.",
+    note: "Cascade Natural Gas serves selected Washington and Oregon communities; ZIP prefixes are broad prefilters and require service-address confirmation.",
+  },
+  {
+    slug: "nw-natural",
+    zipCodes: ["970", "971", "972", "973", "974", "986"],
+    sourceUrl: "https://www.nwnatural.com/gas-availability",
+    note: "NW Natural serves Oregon and Southwest Washington; ZIP prefixes are regional prefilters and require address-based gas availability checks.",
   },
   {
     slug: "trimet",
@@ -343,20 +531,20 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   {
     slug: "eversource",
     zipCodes: ["010", "011", "012", "013", "014", "015", "016", "017", "018", "019", "020", "021", "022", "023", "024", "025", "026", "027", "060", "061", "062", "063", "064", "065", "066", "067", "068", "069"],
-    sourceUrl: "https://www.eversource.com/content/ct-c/about/about-us/company-overview/our-service-territory",
-    note: "Eversource serves Connecticut and Massachusetts for electric and gas service.",
+    sourceUrl: "https://www.eversource.com/residential/about/our-company/service-territory",
+    note: "Eversource serves Massachusetts and Connecticut electric/gas territories; ZIP prefixes are a prefilter and service should be confirmed by address.",
   },
   {
     slug: "eversource-nh",
     zipCodes: ["030", "031", "032", "033", "034", "035", "036", "037", "038"],
-    sourceUrl: "https://www.eversource.com/content/nh-c/about/about-us/company-overview/our-service-territory",
-    note: "Eversource New Hampshire serves the major service territories in New Hampshire.",
+    sourceUrl: "https://www.eversource.com/residential/services/communities-we-serve",
+    note: "Eversource New Hampshire serves many, but not all, New Hampshire communities; ZIP prefixes are a prefilter and service should be confirmed by address.",
   },
   {
     slug: "national-grid-ma",
     zipCodes: ["010", "011", "012", "013", "014", "015", "016", "017", "018", "019", "020", "021", "022", "023", "024", "025", "026", "027"],
-    sourceUrl: "https://www.nationalgridus.com/MA-Home/",
-    note: "National Grid MA provides natural gas service across Massachusetts.",
+    sourceUrl: "https://www.nationalgridus.com/MA-Home/Start-or-Transfer-Service",
+    note: "National Grid Massachusetts provides electric and natural gas service in selected Massachusetts communities; ZIP prefixes are a prefilter and service should be confirmed by address.",
   },
   {
     slug: "ri-energy",
@@ -372,9 +560,15 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "socogas-ct",
-    zipCodes: ["060", "061", "062", "063", "064", "065", "066", "067", "068", "069"],
-    sourceUrl: "https://www.socogas.com",
-    note: "Southern Connecticut Gas provides natural gas in southwestern Connecticut.",
+    zipCodes: CT_SCG_ZIPS,
+    sourceUrl: "https://www.soconngas.com/moving",
+    note: "Southern Connecticut Gas serves a defined greater New Haven, Bridgeport, and shoreline gas footprint; exact ZIPs are prefilters and availability should be confirmed by address.",
+  },
+  {
+    slug: "aquarion-ct",
+    zipCodes: CT_AQUARION_ZIP_PREFIXES,
+    sourceUrl: "https://www.aquarionwater.com/customer-care/start-or-stop-service",
+    note: "Aquarion Connecticut has a fragmented water/wastewater footprint; ZIP prefixes narrow the UI surface but service must be confirmed by address.",
   },
   {
     slug: "mbta",
@@ -419,20 +613,32 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   {
     slug: "dominion",
     zipCodes: ["220", "221", "222", "223", "224", "225", "226", "227", "228", "229", "230", "231", "232", "233", "234", "235", "236", "237", "238", "239", "240", "241", "242", "243", "244", "245", "246"],
-    sourceUrl: "https://www.dominionenergy.com/virginia",
-    note: "Dominion Energy Virginia serves the Commonwealth of Virginia as the primary electric utility.",
+    sourceUrl: "https://www.dominionenergy.com/en/Virginia/Start-Stop-Service",
+    note: "Dominion Energy Virginia electric service is not statewide despite broad ZIP prefilters; final service availability should be confirmed by address.",
   },
   {
     slug: "delmarva-power-de",
-    zipCodes: ["197", "198", "199"],
+    zipCodes: ["197", "198", "199", "216", "218", "219"],
     sourceUrl: "https://www.delmarva.com/contact-us/service-territory/",
-    note: "Delmarva Power serves Delaware and the Eastern Shore of Maryland for electric service.",
+    note: "Delmarva Power serves Delaware and Maryland's Eastern Shore for electric service; ZIP prefixes are a prefilter and require address confirmation.",
+  },
+  {
+    slug: "wssc-md",
+    zipCodes: MD_WSSC_ZIPS,
+    sourceUrl: "https://www.wsscwater.com/overview",
+    note: "WSSC Water serves Montgomery and Prince George's counties; exact ZIPs are county-scoped prefilters and require address confirmation.",
+  },
+  {
+    slug: "chpk-de-gas",
+    zipCodes: ["197", "198", "199", "216", "218", "219"],
+    sourceUrl: "https://www.chpkgas.com/about/service-areas/",
+    note: "Chesapeake Utilities serves Delaware and selected Maryland Eastern Shore communities; ZIP prefixes are a prefilter and require address confirmation.",
   },
   {
     slug: "ppl",
     zipCodes: ["170", "171", "172", "173", "174", "175", "176", "177", "178", "179", "180", "181", "182", "183", "184", "185", "186", "187", "188"],
-    sourceUrl: "https://www.pplelectric.com/about-ppl/our-territory",
-    note: "PPL Electric Utilities serves central and eastern Pennsylvania for electric service.",
+    sourceUrl: "https://pplelectric.com/site/My-Account/Start-Stop-Move-Service",
+    note: "PPL Electric Utilities serves central and eastern Pennsylvania for electric service; ZIP prefixes are a prefilter and service availability should be confirmed by address.",
   },
   {
     slug: "pittsburgh-water",
@@ -444,15 +650,63 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   // ── Southeast ──
   {
     slug: "duke-nc",
-    zipCodes: ["270", "271", "272", "273", "274", "275", "276", "277", "278", "279", "280", "281", "282", "283", "284", "285", "286", "287", "288", "289"],
-    sourceUrl: "https://www.duke-energy.com/home/company/service-territory",
-    note: "Duke Energy serves North Carolina as the primary electric utility.",
+    zipCodes: NC_DUKE_PREFILTER_ZIPS,
+    sourceUrl: "https://www.duke-energy.com/start-stop-move/landing",
+    note: "Duke Energy North Carolina covers Duke Energy Carolinas and Duke Energy Progress territories; ZIP prefixes are broad prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "nc-quick-pass",
+    zipCodes: NC_QUICK_PASS_ZIPS,
+    sourceUrl: "https://www.ncquickpass.com/open-account/",
+    note: "NC Quick Pass is modeled against Triangle, Monroe, and I-77 toll-corridor ZIPs; account relevance depends on toll-facility use.",
+  },
+  {
+    slug: "dominion-energy-nc",
+    zipCodes: NC_DOMINION_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.dominionenergy.com/en/North-Carolina/Start-Stop-Service",
+    note: "Dominion Energy North Carolina electric service is concentrated in northeastern North Carolina; exact ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "energyunited",
+    zipCodes: NC_ENERGYUNITED_ZIPS,
+    sourceUrl: "https://www.energyunited.com/member-guide/",
+    note: "EnergyUnited serves selected cooperative electric addresses across portions of multiple North Carolina counties.",
+  },
+  {
+    slug: "blue-ridge-energy",
+    zipCodes: NC_BLUE_RIDGE_ENERGY_ZIPS,
+    sourceUrl: "https://www.blueridgeenergy.com/residential/apply-for-service",
+    note: "Blue Ridge Energy ZIPs are northwestern North Carolina prefilters; cooperative service should be confirmed by address.",
+  },
+  {
+    slug: "brunswick-electric",
+    zipCodes: NC_BRUNSWICK_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.bemc.org/name-change-transfer-service/",
+    note: "BEMC serves selected southeastern North Carolina addresses; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "piedmont-carolinas",
+    zipCodes: NC_PIEDMONT_GAS_ZIPS,
+    sourceUrl: "https://www.piedmontng.com/home/start-stop-or-move",
+    note: "Piedmont Natural Gas service is fragmented across Carolinas markets and should be confirmed by address.",
+  },
+  {
+    slug: "psnc",
+    zipCodes: NC_ENBRIDGE_GAS_ZIPS,
+    sourceUrl: "https://www.enbridgegas.com/north-carolina/start-stop-service",
+    note: "Enbridge Gas North Carolina, formerly PSNC/Dominion Energy gas, uses broad ZIP prefilters and address-level service confirmation.",
+  },
+  {
+    slug: "frontier-natural-gas",
+    zipCodes: NC_FRONTIER_GAS_ZIPS,
+    sourceUrl: "https://www.frontiernaturalgas.com/natural-gas-conversion/service-area/",
+    note: "Frontier Natural Gas serves selected North Carolina communities and should be confirmed by service address.",
   },
   {
     slug: "duke-fl",
-    zipCodes: ["326", "327", "328", "329", "330", "331", "332", "333", "334", "335", "336", "337", "338", "339", "340", "341", "342", "343", "344", "345", "346", "347", "348", "349"],
-    sourceUrl: "https://www.duke-energy.com/home/company/service-territory",
-    note: "Duke Energy Florida serves the central Florida region.",
+    zipCodes: FL_DUKE_ENERGY_ZIPS,
+    sourceUrl: "https://www.duke-energy.com/start-stop-move/landing",
+    note: "Duke Energy Florida coverage is concentrated in central, west-central, and north-central Florida; ZIP prefixes are prefilters and service should be confirmed by address.",
   },
   {
     slug: "duke-in",
@@ -463,8 +717,14 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   {
     slug: "georgia-power",
     zipCodes: ["300", "301", "302", "303", "304", "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318", "319"],
-    sourceUrl: "https://www.georgiapower.com",
-    note: "Georgia Power is the primary electric utility serving the state of Georgia.",
+    sourceUrl: "https://www.georgiapower.com/residential/manage-your-account/start-stop-move.html",
+    note: "Georgia Power is a major Georgia electric utility; ZIP prefixes are broad prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "peach-pass",
+    zipCodes: GA_PEACH_PASS_ZIPS,
+    sourceUrl: "https://peachpass.com/",
+    note: "Peach Pass is modeled against Georgia Express Lanes corridor ZIPs; account relevance ultimately depends on toll-facility use.",
   },
   {
     slug: "alabama-power",
@@ -486,9 +746,21 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "atlanta-water",
-    zipCodes: ["300", "301", "302", "303", "304"],
-    sourceUrl: "https://www.atlantaga.gov/government/departments/watershed-management",
-    note: "Atlanta Department of Watershed Management serves Atlanta City limits.",
+    zipCodes: GA_ATLANTA_CORE_ZIPS,
+    sourceUrl: "https://atlantawatershed.org/start-my-service/",
+    note: "Atlanta Watershed water and sewer service is modeled with Atlanta city ZIP prefilters and should be confirmed by service address.",
+  },
+  {
+    slug: "gng",
+    zipCodes: GA_NATURAL_GAS_MARKET_ZIPS,
+    sourceUrl: "https://gng.com/shop-plans/movers",
+    note: "Georgia Natural Gas is a retail marketer in Atlanta Gas Light gas-market areas; ZIP prefixes are prefilters and availability should be confirmed by address.",
+  },
+  {
+    slug: "atlanta-gas-light",
+    zipCodes: GA_NATURAL_GAS_MARKET_ZIPS,
+    sourceUrl: "https://www.atlantagaslight.com/residential/start-stop-service.html",
+    note: "Atlanta Gas Light is the gas delivery utility for many Georgia service areas; ZIP prefixes are prefilters and service should be confirmed by address.",
   },
   {
     slug: "entergy-la",
@@ -516,15 +788,81 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "miami-water",
-    zipCodes: ["330", "331", "332", "333", "334", "335", "336", "337"],
-    sourceUrl: "https://www.miamidade.gov/water/",
-    note: "Miami-Dade Water and Sewer serves Miami-Dade County.",
+    zipCodes: ["330", "331", "332"],
+    sourceUrl: "https://www.miamidade.gov/global/water/my-account.page",
+    note: "Miami-Dade Water and Sewer serves Miami-Dade County; ZIP prefixes are county-scoped and require address confirmation.",
+  },
+  {
+    slug: "tampa-water",
+    zipCodes: FL_TAMPA_CITY_ZIPS,
+    sourceUrl: "https://www.tampa.gov/service/utility-service-starttransferstop-service",
+    note: "City of Tampa Utilities covers water, wastewater, and solid-waste account workflows for city service addresses and selected nearby service areas; exact ZIPs are prefilters.",
   },
   {
     slug: "durham-water",
-    zipCodes: ["277", "278"],
-    sourceUrl: "https://www.durhamnc.gov/205/Water-Management",
-    note: "Durham Water Management serves the City of Durham and surrounding service areas.",
+    zipCodes: NC_DURHAM_ZIPS,
+    sourceUrl: "https://www.durhamnc.gov/4097/Start-Stop-Transfer",
+    note: "Durham Water Management is city-scoped; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "charlotte-solid-waste",
+    zipCodes: NC_CHARLOTTE_ZIPS,
+    sourceUrl: "https://www.charlottenc.gov/Services/Trash-and-Recycling",
+    note: "Charlotte Solid Waste Services is city-scoped; ZIPs are prefilters for resident collection support.",
+  },
+  {
+    slug: "raleigh-solid-waste",
+    zipCodes: NC_RALEIGH_SERVICE_ZIPS,
+    sourceUrl: "https://raleighnc.gov/departments/solid-waste-services",
+    note: "Raleigh Solid Waste Services is city-scoped; ZIPs are prefilters for resident collection support.",
+  },
+  {
+    slug: "durham-solid-waste",
+    zipCodes: NC_DURHAM_ZIPS,
+    sourceUrl: "https://www.durhamnc.gov/832/Solid-Waste",
+    note: "Durham Solid Waste Management is city-scoped; ZIPs are prefilters for resident collection support.",
+  },
+  {
+    slug: "greensboro-water",
+    zipCodes: NC_GREENSBORO_ZIPS,
+    sourceUrl: "https://www.greensboro-nc.gov/departments/water-resources/customer-service-for-residents-and-businesses",
+    note: "Greensboro Water Resources is city-scoped and should be confirmed by service address.",
+  },
+  {
+    slug: "winston-salem-forsyth-utilities",
+    zipCodes: NC_WINSTON_SALEM_ZIPS,
+    sourceUrl: "https://www.cityofws.org/1237/Start-Stop-or-Transfer-Service",
+    note: "Winston-Salem/Forsyth County Utilities service varies by address; ZIPs are prefilters.",
+  },
+  {
+    slug: "winston-salem-solid-waste",
+    zipCodes: NC_WINSTON_SALEM_ZIPS,
+    sourceUrl: "https://www.cityofws.org/568/Solid-Waste-Collections",
+    note: "Winston-Salem Solid Waste Collections is resident-service scoped; ZIPs are prefilters.",
+  },
+  {
+    slug: "owasa",
+    zipCodes: NC_OWASA_ZIPS,
+    sourceUrl: "https://www.owasa.org/start-stop-move/",
+    note: "OWASA serves the Carrboro-Chapel Hill service area and should be confirmed by address.",
+  },
+  {
+    slug: "aqua-nc",
+    zipCodes: NC_PRIVATE_WATER_ZIPS,
+    sourceUrl: "https://www.aquawater.com/start-or-stop-service",
+    note: "Aqua North Carolina serves scattered water and wastewater systems; ZIP prefixes are prefilters and address confirmation is required.",
+  },
+  {
+    slug: "carolina-water-nc",
+    zipCodes: NC_PRIVATE_WATER_ZIPS,
+    sourceUrl: "https://www.mywater.us/north-carolina",
+    note: "Carolina Water Service of North Carolina serves scattered systems; ZIP prefixes are prefilters and address confirmation is required.",
+  },
+  {
+    slug: "old-north-state-water",
+    zipCodes: NC_PRIVATE_WATER_ZIPS,
+    sourceUrl: "https://onswc.com/customer-service/",
+    note: "Old North State Water Company serves scattered water and wastewater communities; ZIP prefixes are prefilters and address confirmation is required.",
   },
   {
     slug: "charleston-water-sc",
@@ -563,22 +901,94 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
 
   // ── Midwest — Ohio ──
   {
+    slug: "ohio-turnpike-ezpass",
+    zipCodes: OH_TURNPIKE_ZIPS,
+    sourceUrl: "https://www.ohioturnpike.org/e-zpass/e-zpass-hub",
+    note: "Ohio E-ZPass is a toll account surface for the Ohio Turnpike corridor; ZIP prefixes are a corridor prefilter and E-ZPass accounts may still be portable beyond them.",
+  },
+  {
+    slug: "ohio-edison",
+    zipCodes: OH_FIRSTENERGY_ZIPS,
+    sourceUrl: "https://www.firstenergycorp.com/service_requests/moving_customer_survey.html",
+    note: "FirstEnergy Ohio utilities include Ohio Edison, The Illuminating Company, and Toledo Edison; ZIP prefixes are northeast/northwest Ohio prefilters and service should be confirmed by address.",
+  },
+  {
     slug: "aep-ohio",
-    zipCodes: ["430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456"],
-    sourceUrl: "https://www.aepohio.com/about/",
-    note: "AEP Ohio serves electric customers throughout Ohio.",
+    zipCodes: OH_AEP_ZIPS,
+    sourceUrl: "https://www.aepohio.com/account/service/start-stop-transfer",
+    note: "AEP Ohio electric service is address-qualified; broad central/eastern/southern Ohio prefixes are used only as prefilters.",
+  },
+  {
+    slug: "duke-oh",
+    zipCodes: OH_DUKE_ZIPS,
+    sourceUrl: "https://www.duke-energy.com/start-stop-move/landing",
+    note: "Duke Energy Ohio serves southwest Ohio electric/gas customers; ZIP prefixes are Cincinnati-area prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "aes-ohio",
+    zipCodes: OH_AES_ZIPS,
+    sourceUrl: "https://www.aes-ohio.com/moving",
+    note: "AES Ohio serves Dayton and west-central Ohio electric customers; ZIP prefixes are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "cleveland-public-power",
+    zipCodes: ["441"],
+    sourceUrl: "https://www.cpp.org/Residential/Start-Service",
+    note: "Cleveland Public Power is city-scoped and should be confirmed by service address.",
   },
   {
     slug: "columbia-gas-oh",
-    zipCodes: ["430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456", "457", "458"],
-    sourceUrl: "https://www.columbiagasohio.com/about/service-territory",
-    note: "Columbia Gas of Ohio provides natural gas service throughout Ohio.",
+    zipCodes: OH_COLUMBIA_GAS_ZIPS,
+    sourceUrl: "https://www.columbiagasohio.com/services/start-stop-or-move-service",
+    note: "Columbia Gas of Ohio provides natural gas service across broad Ohio pockets; service should be confirmed by address.",
+  },
+  {
+    slug: "enbridge-gas-oh",
+    zipCodes: OH_ENBRIDGE_GAS_ZIPS,
+    sourceUrl: "https://www.enbridgegas.com/ohio/start-stop-service",
+    note: "Enbridge Gas Ohio is the current customer surface for former Dominion Energy Ohio gas service; northeast Ohio ZIP prefixes are prefilters.",
+  },
+  {
+    slug: "centerpoint-oh-gas",
+    zipCodes: OH_CENTERPOINT_GAS_ZIPS,
+    sourceUrl: "https://www.centerpointenergy.com/en-us/residential/customer-service/start-stop-transfer-service?sa=OH",
+    note: "CenterPoint Energy Ohio gas service is concentrated in west-central Ohio; CenterPoint says Ohio customer service remains unchanged during the pending National Fuel sale process, and service should be confirmed by address.",
   },
   {
     slug: "cleveland-water",
-    zipCodes: ["440", "441", "442", "443", "444"],
-    sourceUrl: "https://clevelandwater.com/service-area",
-    note: "Cleveland Water serves Cleveland and surrounding communities in northeast Ohio.",
+    zipCodes: OH_CLEVELAND_REGION_ZIPS,
+    sourceUrl: "https://www.clevelandwater.com/customer-service/faqs",
+    note: "Cleveland Water serves Cleveland and surrounding northeast Ohio communities; ZIP prefixes are prefilters and account setup should be confirmed by address.",
+  },
+  {
+    slug: "toledo-public-utilities",
+    zipCodes: OH_TOLEDO_REGION_ZIPS,
+    sourceUrl: "https://toledo.oh.gov/residents/water/customer-service/turn-on-new-water-service",
+    note: "Toledo Public Utilities is modeled with northwest Ohio ZIP prefixes as prefilters; water account eligibility should be confirmed by address.",
+  },
+  {
+    slug: "neorsd",
+    zipCodes: OH_CLEVELAND_REGION_ZIPS,
+    sourceUrl: "https://www.neorsd.org/about/service-area-and-facilities/",
+    note: "NEORSD serves Greater Cleveland sewer and stormwater customers across multiple communities; ZIP prefixes are regional prefilters.",
+  },
+  {
+    slug: "msd-greater-cincinnati",
+    zipCodes: OH_CINCINNATI_REGION_ZIPS,
+    sourceUrl: "https://msdgc.org/about-msd/who-we-are/",
+    note: "MSD Greater Cincinnati serves Cincinnati/Hamilton County sewer customers with some adjacent communities; ZIP prefixes are regional prefilters.",
+  },
+  {
+    slug: "rumpke-oh",
+    zipCodes: OH_RUMPKE_ZIPS,
+    sourceUrl: "https://www.rumpke.com/about-us/service-areas/oh",
+    note: "Rumpke service varies by municipal contract and address; ZIP prefixes model major Ohio residential service markets only as prefilters.",
+  },
+  {
+    slug: "columbus-refuse",
+    zipCodes: OH_COLUMBUS_REGION_ZIPS,
+    sourceUrl: "https://www.columbus.gov/Services/Trash-Recycling-Bulk-Collection",
+    note: "Columbus refuse collection is city-scoped; central Ohio ZIP prefixes are prefilters and city address should be confirmed.",
   },
 
   // ── Midwest — Missouri / Illinois ──
