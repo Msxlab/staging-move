@@ -1,9 +1,9 @@
 # State Provider Seed Diff
 
-Generated: 2026-05-07T14:39:20.656Z
+Generated: 2026-05-13T17:26:44.960Z
 
-- newly added: 143
-- already present: 0
+- newly added: 284
+- already present: 1
 - backlog: 7
 
 ## Newly Added
@@ -14,11 +14,25 @@ Generated: 2026-05-07T14:39:20.656Z
 - Entergy Arkansas | UTILITY_ELECTRIC | state | https://www.entergy-arkansas.com
 - San Diego Gas & Electric | UTILITY_ELECTRIC | zip_prefix | https://www.sdge.com/landservices
 - RTD Denver | TRANSPORTATION_TRANSIT | zip_prefix | https://www.rtd-denver.com/system-map
-- United Illuminating | UTILITY_ELECTRIC | zip_prefix | https://www.uinet.com/ourcompany/whoweare/servicearea
+- United Illuminating | UTILITY_ELECTRIC | live_address | https://www.uinet.com/moving
+- Connecticut Natural Gas | UTILITY_GAS | live_address | https://www.cngcorp.com/moving
+- Connecticut Water Company | UTILITY_WATER | live_address | https://www.ctwater.com/service-billing/your-service/developer-projects-and-new-service-connections/
 - DART First State | TRANSPORTATION_TRANSIT | state | https://dartfirststate.com/map/
 - DC Streetcar | TRANSPORTATION_TRANSIT | zip_prefix | https://dcstreetcar.com
-- Tampa Electric | UTILITY_ELECTRIC | zip_prefix | https://www.tampaelectric.com/economicdevelopment/serviceareaandreliability/
-- Atlanta Gas Light | UTILITY_GAS | state | https://www.atlantagaslight.com
+- Tampa Electric | UTILITY_ELECTRIC | live_address | https://www.tampaelectric.com/residential/start-service/
+- Georgia Department of Revenue Motor Vehicle Division | GOVERNMENT_DMV | state | https://dor.georgia.gov/change-address-registration
+- Atlanta Gas Light | UTILITY_GAS | live_address | https://www.atlantagaslight.com/residential/start-stop-service.html
+- Gas South | UTILITY_GAS | live_address | https://www.gassouth.com/move-transfer-service
+- Cobb EMC | UTILITY_ELECTRIC | live_address | https://www.cobbemc.com/start-stop-or-transfer-service
+- Sawnee EMC | UTILITY_ELECTRIC | live_address | https://sawnee.coop/start-or-stop-service
+- Marietta Power and Water | UTILITY_ELECTRIC | live_address | https://www.mariettaga.gov/431/Start-or-Stop-Your-Service
+- Fulton County Water Services | UTILITY_WATER | live_address | https://www.fultoncountyga.gov/services/water-services/start-your-water-service
+- DeKalb County Department of Watershed Management | UTILITY_WATER | live_address | https://dekalbcountyga.gov/departments/watershed-management
+- Gwinnett County Department of Water Resources | UTILITY_WATER | live_address | https://www.gwinnettcounty.com/government/departments/water
+- Cobb County Water System | UTILITY_WATER | live_address | https://www.cobbcounty.gov/water/customers/setup-service
+- DeKalb County Sanitation Division | UTILITY_TRASH | live_address | https://dekalbcountyga.gov/departments/public-works/sanitation/new-residential-service
+- Gwinnett County Solid Waste Management | UTILITY_TRASH | live_address | https://www.gwinnettcounty.com/services/solid-waste-management/start-service
+- City of Atlanta Office of Solid Waste Services | UTILITY_TRASH | live_address | https://www.atlantaga.gov/government/departments/public-works/office-of-solid-waste-services
 - Skyline | TRANSPORTATION_TRANSIT | zip_prefix | https://www.honolulu.gov/skyline
 - Idaho Power | UTILITY_ELECTRIC | state | https://www.idahopower.com
 - Ameren Illinois | UTILITY_ELECTRIC | state | https://www.ameren.com/illinois/about
@@ -40,17 +54,33 @@ Generated: 2026-05-07T14:39:20.656Z
 - PATCO Speedline | TRANSPORTATION_TRANSIT | zip_prefix | https://www.drpa.org/patco/index.html
 - ABQ RIDE | TRANSPORTATION_TRANSIT | zip_prefix | https://www.cabq.gov/transit/routes-and-schedules/system-map
 - PSEG Long Island | UTILITY_ELECTRIC | zip_prefix | https://www.psegliny.com
-- Piedmont Natural Gas | UTILITY_GAS | state | https://www.piedmontng.com
 - Montana-Dakota Utilities | UTILITY_GAS | state | https://www.montana-dakota.com
 - EMBARK | TRANSPORTATION_TRANSIT | zip_prefix | https://embarkok.com/system-map/
 - Pacific Power | UTILITY_ELECTRIC | state | https://www.pacificpower.net/about.html
-- Columbia Gas of Pennsylvania | UTILITY_GAS | state | https://www.columbiagaspa.com
+- Columbia Gas of Pennsylvania | UTILITY_GAS | zip_prefix | https://www.columbiagaspa.com
 - RIPTA | TRANSPORTATION_TRANSIT | state | https://ripta.com/statewide-system-map/
 - CARTA | TRANSPORTATION_TRANSIT | zip_prefix | https://ridecarta.com
 - Sioux Area Metro | TRANSPORTATION_TRANSIT | zip_prefix | https://www.siouxfalls.gov/sam
 - Memphis Light, Gas and Water | UTILITY_ELECTRIC | zip_prefix | https://www.mlgw.com
 - North Texas Tollway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.ntta.org
+- UDOT Express Pass | TRANSPORTATION_TOLL | polygon | https://www.expresspass.utah.gov/
 - Green Mountain Transit | TRANSPORTATION_TRANSIT | zip_prefix | https://ridegmt.com
+- E-ZPass Virginia | TRANSPORTATION_TOLL | state | https://www.ezpassva.com/
+- Old Dominion Power | UTILITY_ELECTRIC | live_address | https://lge-ku.com/odp
+- Northern Virginia Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.novec.com/Customer_Services/Apply-for-Service.cfm
+- Rappahannock Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.myrec.coop/startstop-service
+- Shenandoah Valley Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.svec.coop/member-services/start-stop-service/
+- Central Virginia Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.mycvec.com/member-services/start-stop-move-service/
+- Virginia Natural Gas | UTILITY_GAS | live_address | https://www.virginianaturalgas.com/residential/manage-your-account/start-stop-transfer-service.html
+- Columbia Gas of Virginia | UTILITY_GAS | live_address | https://www.columbiagasva.com/services/start-stop-or-move-service
+- Roanoke Gas Company | UTILITY_GAS | live_address | https://www.roanokegas.com/become-a-customer/residential-service/
+- Richmond Gas Works | UTILITY_GAS | live_address | https://richmondgasworks.com/service/start-stop-transfer-service/
+- Loudoun Water | UTILITY_WATER | live_address | https://www.loudounwater.org/content/start-service
+- Prince William Water | UTILITY_WATER | live_address | https://princewilliamwater.org/our-customers/how-to/start-service
+- City of Virginia Beach Public Utilities | UTILITY_WATER | live_address | https://pu.virginiabeach.gov/customer-service/online-services
+- Arlington County Water-Sewer-Refuse Utility | UTILITY_WATER | live_address | https://www.arlingtonva.us/Government/Programs/Water-Utilities/Customer-Service/Start-Stop-Service
+- Hampton Roads Sanitation District | UTILITY_SEWER | live_address | https://www.hrsd.com/customers
+- City of Virginia Beach Waste Management | UTILITY_TRASH | live_address | https://pw.virginiabeach.gov/trash-recycling
 - Hampton Roads Transit | TRANSPORTATION_TRANSIT | zip_prefix | https://gohrt.com/routes/
 - King County Metro | TRANSPORTATION_TRANSIT | zip_prefix | https://kingcounty.gov/en/dept/metro
 - Mountain Line Transit Authority | TRANSPORTATION_TRANSIT | zip_prefix | https://busride.org/routes/
@@ -61,8 +91,6 @@ Generated: 2026-05-07T14:39:20.656Z
 - 91 Express Lanes | TRANSPORTATION_TOLL | zip_prefix | https://www.91expresslanes.com
 - Metro ExpressLanes | TRANSPORTATION_TOLL | zip_prefix | https://www.metroexpresslanes.net
 - The Toll Roads | TRANSPORTATION_TOLL | zip_prefix | https://www.thetollroads.com
-- E-470 Public Highway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.e-470.com
-- Northwest Parkway | TRANSPORTATION_TOLL | zip_prefix | https://www.nwpky.com
 - Access Health CT | GOVERNMENT_HEALTH | zip_prefix | https://www.accesshealthct.com
 - HUSKY Health | GOVERNMENT_HEALTH | zip_prefix | https://portal.ct.gov/HUSKY
 - Connecticut Department of Revenue Services | GOVERNMENT_TAX | zip_prefix | https://portal.ct.gov/DRS
@@ -75,7 +103,7 @@ Generated: 2026-05-07T14:39:20.656Z
 - Florida KidCare | GOVERNMENT_HEALTH | zip_prefix | https://www.floridakidcare.org
 - Florida Medicaid / MyACCESS | GOVERNMENT_HEALTH | zip_prefix | https://myaccess.myflfamilies.com
 - Florida DOR e-Services | GOVERNMENT_TAX | zip_prefix | https://floridarevenue.com
-- E-PASS / Central Florida Expressway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.cfxway.com
+- E-PASS / Central Florida Expressway Authority | TRANSPORTATION_TOLL | zip_prefix | https://epass.cfxway.com/
 - Greater Miami Expressway Agency | TRANSPORTATION_TOLL | zip_prefix | https://www.gmx-way.com
 - I-4 Express | TRANSPORTATION_TOLL | zip_prefix | https://i4express.com
 - Tampa Hillsborough Expressway Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.tampa-xway.com
@@ -95,8 +123,9 @@ Generated: 2026-05-07T14:39:20.656Z
 - UniSource Energy Services Electric | UTILITY_ELECTRIC | zip_prefix | https://www.uesaz.com
 - Sacramento Municipal Utility District | UTILITY_ELECTRIC | zip_prefix | https://www.smud.org
 - Jewett City Department of Public Utilities | UTILITY_ELECTRIC | zip_prefix | https://www.jewettcitydpu.com
-- Norwich Public Utilities | UTILITY_ELECTRIC | zip_prefix | https://norwichpublicutilities.com
-- Wallingford Electric Division | UTILITY_ELECTRIC | zip_prefix | https://www.wallingfordct.gov/government/departments/electric-division/
+- Norwich Public Utilities | UTILITY_ELECTRIC | live_address | https://norwichpublicutilities.com
+- Wallingford Electric Division | UTILITY_ELECTRIC | live_address | https://www.wallingfordct.gov/government/departments/electric-division/
+- Groton Utilities | UTILITY_ELECTRIC | live_address | https://grotonutilities.com/221/Start-or-Stop-Service
 - City of Dover Electric Department | UTILITY_ELECTRIC | zip_prefix | https://www.cityofdover.gov/Public-Utilities/
 - City of Milford Electric | UTILITY_ELECTRIC | zip_prefix | https://www.cityofmilford.com
 - City of Newark Electric | UTILITY_ELECTRIC | zip_prefix | https://newarkde.gov/18/Electrical-Engineering
@@ -105,7 +134,7 @@ Generated: 2026-05-07T14:39:20.656Z
 - Municipal Services Commission of the City of New Castle Electric | UTILITY_ELECTRIC | zip_prefix | https://newcastlemsc.delaware.gov
 - Town of Middletown Electric | UTILITY_ELECTRIC | zip_prefix | https://www.middletown.delaware.gov
 - Town of Smyrna Electric | UTILITY_ELECTRIC | zip_prefix | https://smyrna.delaware.gov
-- Florida City Gas | UTILITY_GAS | zip_prefix | https://www.floridacitygas.com
+- Florida City Gas | UTILITY_GAS | live_address | https://www.floridacitygas.com/residential/start-stop-transfer-or-add/
 - City and Borough of Juneau Water Utility | UTILITY_WATER | zip_prefix | https://juneau.org
 - College & Golden Heart Utilities Water | UTILITY_WATER | zip_prefix | https://www.mywater.us/alaska/about-us-menu
 - City of Huntsville Water Pollution Control | UTILITY_SEWER | zip_prefix | https://www.huntsvilleal.gov
@@ -128,37 +157,149 @@ Generated: 2026-05-07T14:39:20.656Z
 - Town of Gilbert Water | UTILITY_WATER | zip_prefix | https://www.gilbertaz.gov/departments/public-works/water
 - City of Fresno Utilities Water | UTILITY_WATER | zip_prefix | https://www.fresno.gov/publicutilities/
 - City of Sacramento Department of Utilities Water | UTILITY_WATER | zip_prefix | https://www.cityofsacramento.gov/utilities
-- City of San Diego Public Utilities Water | UTILITY_WATER | zip_prefix | https://www.sandiego.gov/public-utilities
+- City of San Diego Water/Wastewater | UTILITY_WATER | zip_prefix | https://www.sandiego.gov/public-utilities/customer-support
 - East Bay Municipal Utility District Water | UTILITY_WATER | zip_prefix | https://www.ebmud.com
 - Long Beach Utilities Water | UTILITY_WATER | zip_prefix | https://www.longbeach.gov/utilityservices/
 - San Jose Water | UTILITY_WATER | zip_prefix | https://www.sjwater.com
-- Aurora Water | UTILITY_WATER | zip_prefix | https://www.auroragov.org/residents/water
-- City of Boulder Water Utilities | UTILITY_WATER | zip_prefix | https://bouldercolorado.gov/services/water-utilities
-- Colorado Springs Utilities Water | UTILITY_WATER | zip_prefix | https://www.csu.org
-- Fort Collins Utilities Water | UTILITY_WATER | zip_prefix | https://www.fcgov.com/utilities
+- Aurora Water | UTILITY_WATER | live_address | https://www.auroragov.org/residents/water/pay_my_water_bill/home_sellers_buyers_checklist/general_escrow_request_and_transfer_of_ownership
+- City of Boulder Utilities | UTILITY_WATER | live_address | https://bouldercolorado.gov/water-service-request-form
+- Colorado Springs Utilities | UTILITY_ELECTRIC | live_address | https://www.csu.org/my-account/start-stop-service
+- Fort Collins Utilities | UTILITY_ELECTRIC | live_address | https://secure.fcgov.com/utilities-service-request/
 - Bridgeport Water Pollution Control Authority | UTILITY_SEWER | zip_prefix | https://www.bridgeportct.gov/government/departments/water-pollution-control-authority-wpca
 - Greater New Haven Water Pollution Control Authority | UTILITY_SEWER | zip_prefix | https://gnhwpca.com
 - Stamford Water Pollution Control Authority | UTILITY_SEWER | zip_prefix | https://www.stamfordct.gov/government/operations/water-pollution-control-authority
-- Metropolitan District Commission | UTILITY_WATER | zip_prefix | https://themdc.org
-- South Central Connecticut Regional Water Authority | UTILITY_WATER | zip_prefix | https://www.rwater.com
+- Metropolitan District Commission | UTILITY_WATER | live_address | https://themdc.org/
+- South Central Connecticut Regional Water Authority | UTILITY_WATER | live_address | https://www.rwater.com/customer-care/start-or-stop-service
 - Kent County Wastewater Division | UTILITY_SEWER | zip_prefix | https://www.kentcountyde.gov/My-Government/Departments/Public-Works
 - New Castle County Sewer | UTILITY_SEWER | zip_prefix | https://www.newcastlede.gov
 - Sussex County Environmental Services | UTILITY_SEWER | zip_prefix | https://sussexcountyde.gov/sewer-water
 - Wilmington Water Utility | UTILITY_WATER | zip_prefix | https://www.wilmingtondewater.gov
-- Hillsborough County Water Resources | UTILITY_WATER | zip_prefix | https://hcfl.gov
+- Hillsborough County Water Resources | UTILITY_WATER | zip_prefix | https://hcfl.gov/residents/property-owners-and-renters/water-and-sewer/request-to-start-stop-or-move-water-service
 - Recology San Francisco | UTILITY_TRASH | zip_prefix | https://www.recology.com/recology-san-francisco/
 - Miami-Dade Solid Waste Management | UTILITY_TRASH | zip_prefix | https://www.miamidade.gov/solidwaste
-- Orange County Utilities Water | UTILITY_WATER | zip_prefix | https://www.orangecountyfl.net
+- Orange County Utilities Water | UTILITY_WATER | zip_prefix | https://www.orangecountyfl.net/WaterGarbageRecycling.aspx
 - Palm Beach County Water Utilities Department | UTILITY_WATER | zip_prefix | https://discover.pbcgov.org/waterutilities
-- Pinellas County Utilities Water | UTILITY_WATER | zip_prefix | https://pinellas.gov
+- Pinellas County Utilities | UTILITY_WATER | zip_prefix | https://pinellas.gov/services/request-utilities-service/
+- Texas Department of Motor Vehicles | GOVERNMENT_DMV | state | https://www.txdmv.gov
+- Harris County Toll Road Authority | TRANSPORTATION_TOLL | zip_prefix | https://www.hctra.org
+- Austin Energy | UTILITY_ELECTRIC | zip_prefix | https://austinenergy.com
+- CPS Energy | UTILITY_ELECTRIC | zip_prefix | https://www.cpsenergy.com
+- Fort Worth Water | UTILITY_WATER | zip_prefix | https://www.fortworthtexas.gov/departments/water
+- El Paso Electric | UTILITY_ELECTRIC | zip_prefix | https://www.epelectric.com
+- El Paso Water | UTILITY_WATER | zip_prefix | https://www.epwater.org
+- Texas Gas Service | UTILITY_GAS | zip_prefix | https://www.texasgasservice.com
+- National Grid Metro New York Gas | UTILITY_GAS | zip_prefix | https://www.nationalgridus.com/NY-Home
+- Central Hudson Gas & Electric | UTILITY_ELECTRIC | zip_prefix | https://www.cenhud.com
+- Orange & Rockland | UTILITY_ELECTRIC | zip_prefix | https://www.oru.com
+- New York State Electric & Gas | UTILITY_ELECTRIC | zip_prefix | https://www.nyseg.com
+- Rochester Gas & Electric | UTILITY_ELECTRIC | zip_prefix | https://www.rge.com
+- National Fuel Gas Distribution Corporation | UTILITY_GAS | zip_prefix | https://www.nationalfuel.com/utility/
+- Suffolk County Water Authority | UTILITY_WATER | zip_prefix | https://www.scwa.com
+- Duquesne Light Company | UTILITY_ELECTRIC | zip_prefix | https://duquesnelight.com/service-reliability
+- Met-Ed | UTILITY_ELECTRIC | zip_prefix | https://www.firstenergycorp.com/met_edison.html
+- Penelec | UTILITY_ELECTRIC | zip_prefix | https://www.firstenergycorp.com/penelec.html
+- Penn Power | UTILITY_ELECTRIC | zip_prefix | https://www.firstenergycorp.com/penn_power.html
+- West Penn Power | UTILITY_ELECTRIC | zip_prefix | https://www.firstenergycorp.com/west_penn_power.html
+- Peoples Natural Gas | UTILITY_GAS | zip_prefix | https://www.peoples-gas.com/my-account/start-or-modify-gas-service
+- Philadelphia Gas Works | UTILITY_GAS | zip_prefix | https://www.pgworks.com/customer-care/your-home/service
+- Aqua Pennsylvania | UTILITY_WATER | live_address | https://www.aquawater.com/start-or-stop-service
+- Pennsylvania American Water | UTILITY_WATER | live_address | https://www.amwater.com/paaw/customer-service-billing/
+- Delaware River Joint Toll Bridge Commission | TRANSPORTATION_TOLL | zip_prefix | https://www.drjtbc.org/e-zpass/
+- EZDriveMA / E-ZPass MA | TRANSPORTATION_TOLL | zip_prefix | https://www.mass.gov/ezdrivema
+- Unitil Massachusetts | UTILITY_ELECTRIC | zip_prefix | https://unitil.com/account-billing/start-stop-or-move-service
+- Berkshire Gas Company | UTILITY_GAS | zip_prefix | https://www.berkshiregas.com/moving
+- Liberty Utilities Massachusetts Gas | UTILITY_GAS | zip_prefix | https://massachusetts.libertyutilities.com/fall-river/residential/my-account/moving.html
+- Aquarion Water Company of Massachusetts | UTILITY_WATER | zip_prefix | https://www.aquarionwater.com/customer-care/start-or-stop-service
+- Springfield Water and Sewer Commission | UTILITY_WATER | zip_prefix | https://waterandsewer.org/request-service/
+- City of Worcester Water and Sewer Operations | UTILITY_WATER | zip_prefix | https://www.worcesterma.gov/water-sewer
+- City of Cambridge Water Department | UTILITY_WATER | zip_prefix | https://www.cambridgema.gov/departments/waterdepartment
+- City of Somerville Water and Sewer Department | UTILITY_WATER | zip_prefix | https://www.somervillema.gov/departments/water-and-sewer
+- Holyoke Gas and Electric | UTILITY_ELECTRIC | zip_prefix | https://www.hged.com/residential/start-stop-move-upgrade.aspx
+- Westfield Gas and Electric | UTILITY_ELECTRIC | zip_prefix | https://www.wgeld.org/forms/residential-start-stop-service/
+- Peabody Municipal Light Plant | UTILITY_ELECTRIC | zip_prefix | https://www.pmlp.com/235/Sign-Up-for-Electrical-Service
+- Taunton Municipal Lighting Plant | UTILITY_ELECTRIC | zip_prefix | https://www.tmlp.com/162/Stop-Start-Service
+- Reading Municipal Light Department | UTILITY_ELECTRIC | zip_prefix | https://www.rmld.com/291/Start-or-Stop-Service
+- Chicopee Electric Light | UTILITY_ELECTRIC | zip_prefix | https://www.celd.com/application-for-service
+- Braintree Electric Light Department | UTILITY_ELECTRIC | zip_prefix | https://www.beld.com/
+- City of Boston Public Works Trash and Recycling | UTILITY_TRASH | zip_prefix | https://www.boston.gov/departments/public-works/trash-and-recycling-day-schedule-and-search
+- City of Cambridge Curbside Collections | UTILITY_TRASH | zip_prefix | https://www.cambridgema.gov/services/curbsidecollections
+- City of Worcester Trash and Recycling | UTILITY_TRASH | zip_prefix | https://www.worcesterma.gov/trash-recycling
+- City of Somerville Trash and Recycling | UTILITY_TRASH | zip_prefix | https://www.somervillema.gov/trash-and-recycling
+- NH E-ZPass / New Hampshire Turnpike System | TRANSPORTATION_TOLL | zip_prefix | https://www.ezpassnh.com/
+- Unitil Energy Systems New Hampshire Electric | UTILITY_ELECTRIC | zip_prefix | https://unitil.com/account-billing/start-stop-or-move-service
+- New Hampshire Electric Cooperative | UTILITY_ELECTRIC | zip_prefix | https://www.nhec.com/request-service/
+- Liberty Utilities New Hampshire Gas | UTILITY_GAS | zip_prefix | https://new-hampshire.libertyutilities.com/pelham/residential/contact/service-requests/
+- Aquarion Water Company of New Hampshire | UTILITY_WATER | zip_prefix | https://www.aquarionwater.com/customer-care/start-or-stop-service
+- Hampstead Area Water Company | UTILITY_WATER | zip_prefix | https://www.hampsteadwater.com/new-service
+- Manchester Water Works | UTILITY_WATER | zip_prefix | https://manchesterwater.org/start%2Fstop-service
+- City of Manchester Sewer and Stormwater | UTILITY_SEWER | zip_prefix | https://www.manchesternh.gov/Departments/sewer-and-stormwater
+- City of Manchester Trash and Recycling | UTILITY_TRASH | zip_prefix | https://www.manchesternh.gov/Departments/Trash-and-Recycling/Trash-Collection
+- City of Concord General Services Water and Sewer Utility Billing | UTILITY_WATER | zip_prefix | https://www.concordnh.gov/1339/Utility-Billing
+- City of Concord Trash and Recycling | UTILITY_TRASH | zip_prefix | https://www.concordnh.gov/536/Trash-Recycling
+- City of Nashua Solid Waste Department | UTILITY_TRASH | zip_prefix | https://www.nashuanh.gov/441/Residential-Collections
+- City of Nashua Wastewater Department | UTILITY_SEWER | zip_prefix | https://www.nashuanh.gov/392/Wastewater-Department
+- Florida Public Utilities | UTILITY_GAS | live_address | https://fpuc.com/customer-care/start-stop-transfer-service/
+- Lakeland Electric | UTILITY_ELECTRIC | zip_prefix | https://lakelandelectric.com/billing-and-payment/moving
+- Kissimmee Utility Authority | UTILITY_ELECTRIC | zip_prefix | https://kua.com/contact-information/contact-kua/
+- Gainesville Regional Utilities | UTILITY_ELECTRIC | zip_prefix | https://www.gru.com
+- LeeWay | TRANSPORTATION_TOLL | zip_prefix | https://www.leegov.com/tolls
+- Golden State Water | UTILITY_WATER | zip_prefix | https://www.gswater.com/your-service-area
+- Riverside Express | TRANSPORTATION_TOLL | zip_prefix | https://www.riversideexpress.com
+- SANDAG FasTrak | TRANSPORTATION_TOLL | zip_prefix | https://www.myfastrak.511sd.com
+- DriveEzMD | TRANSPORTATION_TOLL | zip_prefix | https://driveezmd.com/sign-up/
+- Potomac Edison | UTILITY_ELECTRIC | live_address | https://www.firstenergycorp.com/potomac_edison.html
+- Southern Maryland Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.smeco.coop/my-account/service-management/connect-service/
+- Choptank Electric Cooperative | UTILITY_ELECTRIC | live_address | https://choptankelectric.coop/apply-service
+- Columbia Gas of Maryland | UTILITY_GAS | live_address | https://www.columbiagasmd.com/services/start-stop-or-move-service
+- Anne Arundel County Bureau of Utility Operations | UTILITY_WATER | live_address | https://www.aacounty.org/services/sewer-water
+- Howard County Bureau of Utilities | UTILITY_WATER | live_address | https://www.howardcountymd.gov/public-works/bureau-utilities
+- Maryland American Water | UTILITY_WATER | live_address | https://amwater.com/mdaw/
+- Prince George's County Residential Collections | UTILITY_TRASH | live_address | https://www.princegeorgescountymd.gov/departments-offices/environment/waste-recycling/residential-collections
+- Baltimore County Bureau of Solid Waste Management | UTILITY_TRASH | live_address | https://www.baltimorecountymd.gov/departments/public-works/solid-waste
+- City and County of Denver Solid Waste Management | UTILITY_TRASH | live_address | https://denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Recycle-Compost-Trash
+- City of Westminster Utilities | UTILITY_WATER | live_address | https://www.westminsterco.gov/184/Utility-Billing
+- CORE Electric Cooperative | UTILITY_ELECTRIC | live_address | https://core.coop/start-stop-service/
+- United Power | UTILITY_ELECTRIC | live_address | https://www.unitedpower.com/start-transfer-stop
+- Poudre Valley REA | UTILITY_ELECTRIC | live_address | https://pvrea.coop/for-members/account-management/start-stop-service/
+- Holy Cross Energy | UTILITY_ELECTRIC | live_address | https://www.holycross.com/account-services/services/service-requests/start-stop-transfer-service
+- City of Longmont Utilities | UTILITY_ELECTRIC | live_address | https://longmontcolorado.gov/utilities-and-public-works/utility-bill/start-or-stop-service/
+- City of Loveland Utilities | UTILITY_ELECTRIC | live_address | https://www.lovelandwaterandpower.org/about-us/start-stop-or-move-service
+- Utah DMV Motor Vehicle Portal | GOVERNMENT_DMV | state | https://mvp.tax.utah.gov/
+- Provo City Utilities | UTILITY_ELECTRIC | live_address | https://www.provo.gov/181/City-Utilities
+- City of St. George Utilities | UTILITY_ELECTRIC | live_address | https://sgcityutah.gov/departments/apply_for_utility_services.php
+- Wasatch Front Waste & Recycling District | UTILITY_TRASH | live_address | https://wfwrdutah.gov/services-and-request/services-requests
+- City and County of Honolulu Division of Motor Vehicles, Licensing and Permits | GOVERNMENT_DMV | zip_prefix | https://www.honolulu.gov/csd/vehicle/
+- Maui County Division of Motor Vehicles & Licensing | GOVERNMENT_DMV | zip_prefix | https://www.mauicounty.gov/1328/DMV
+- County of Hawaii Vehicle Registration & Licensing Division | GOVERNMENT_DMV | zip_prefix | https://www.vrl.hawaiicounty.gov/motor-vehicle-registration
+- County of Kauai Division of Motor Vehicles | GOVERNMENT_DMV | zip_prefix | https://www.kauai.gov/Government/Departments-Agencies/Finance/Drivers-Licensing-and-Motor-Vehicles
+- Maui Electric Company | UTILITY_ELECTRIC | zip_prefix | https://www.hawaiianelectric.com/customer-service/maui-county-directory
+- Hawaii Electric Light Company | UTILITY_ELECTRIC | zip_prefix | https://www.hawaiianelectric.com/customer-service/hawaii-island-directory
+- Kauai Island Utility Cooperative | UTILITY_ELECTRIC | zip_prefix | https://kiuc.coop/start-or-stop-service
+- Department of Water Supply, County of Maui | UTILITY_WATER | zip_prefix | https://www.mauicounty.gov/215/Fiscal-Division
+- Department of Water Supply, County of Hawaii | UTILITY_WATER | zip_prefix | https://customerconnect.hawaiidws.org/moving/start-service
+- Department of Water, County of Kauai | UTILITY_WATER | zip_prefix | https://www.kauaiwater.org/sign-up-or-transfer-water-service/
+- Hawaii Department of Taxation | GOVERNMENT_TAX | state | https://tax.hawaii.gov/faq/
+- Hawaii Med-QUEST / KOLEA | GOVERNMENT_HEALTH | state | https://medquest.hawaii.gov/en/members-applicants/already-covered/change-update-information.html
+- Snohomish County PUD | UTILITY_ELECTRIC | zip_prefix | https://www.snopud.com/account/my-account/start-stop-service/
+- Tacoma Public Utilities | UTILITY_ELECTRIC | zip_prefix | https://www.mytpu.org/payment-billing/start-stop-service/
+- Clark Public Utilities | UTILITY_ELECTRIC | zip_prefix | https://www.clarkpublicutilities.com/start-stop-transfer-service/
+- Avista Utilities | UTILITY_ELECTRIC | zip_prefix | https://www.myavista.com/your-account/moving
+- Pacific Power Washington | UTILITY_ELECTRIC | zip_prefix | https://www.pacificpower.net/my-account/start-stop-move.html
+- City of Spokane Utilities | UTILITY_WATER | zip_prefix | https://my.spokanecity.org/publicworks/utility-billing/
+- Chelan County PUD | UTILITY_ELECTRIC | zip_prefix | https://www.chelanpud.org/my-pud-services/start-stop-services
+- Grant PUD | UTILITY_ELECTRIC | zip_prefix | https://www.grantpud.org/start-stop-service
+- Benton PUD | UTILITY_ELECTRIC | zip_prefix | https://www.bentonpud.org/manage-my-account/start-stop-service
+- Cowlitz County Public Utility District | UTILITY_ELECTRIC | zip_prefix | https://www.cowlitzpud.org/new-services/start-stop-or-transfer-service/
+- Lewis County PUD | UTILITY_ELECTRIC | zip_prefix | https://www.lcpud.org/services/start-stop-service/
+- Mason County PUD No. 3 | UTILITY_ELECTRIC | zip_prefix | https://www.pud3.org/electric-service/electric-start-new-service/
 
 ## Backlog
 
 - Alaska Communications | UTILITY_INTERNET | live_address | https://www.alaskacommunications.com/Residential
-- Connecticut Natural Gas | UTILITY_GAS | zip_prefix | https://www.cngcorp.com
-- Ohio Turnpike E-ZPass | TRANSPORTATION_TOLL | polygon | https://www.ezpassoh.com
 - Oncor Electric Delivery | UTILITY_ELECTRIC | polygon | https://www.oncor.com
-- Express Pass | TRANSPORTATION_TOLL | polygon | https://www.expresspass.utah.gov
+- E-470 Public Highway Authority | TRANSPORTATION_TOLL | polygon | https://www.e470.com
+- Northwest Parkway | TRANSPORTATION_TOLL | polygon | https://www.nwpky.com
 - Southeast Gas | UTILITY_GAS | live_address | https://southeastgas.com
 - Summit Utilities Arkansas | UTILITY_GAS | live_address | https://summitutilities.com
+- Colorado Natural Gas | UTILITY_GAS | live_address | https://www.coloradonaturalgas.com/service-areas
 
