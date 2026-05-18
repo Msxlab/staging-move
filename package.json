@@ -53,7 +53,7 @@
     "rate-limit:check": "pnpm exec tsx scripts/check-rate-limiter-health.ts"
   },
   "devDependencies": {
-    "turbo": "^2.9.12"
+    "turbo": "^2.9.14"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
