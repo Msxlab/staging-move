@@ -239,7 +239,7 @@ describe("email-service logging", () => {
     );
   });
 
-  it("logs missing or inactive templates as failed email diagnostics", async () => {
+  it("falls back to inline welcome content when the Welcome template is unavailable", async () => {
     mocks.emailTemplateFindUnique.mockResolvedValue(null);
 
     const result = await sendWelcomeEmail({
@@ -248,24 +248,27 @@ describe("email-service logging", () => {
       dedupeKey: "welcome:user-missing-template",
     });
 
-    expect(result).toBe(false);
-    expect(mocks.sendEmailWithResult).not.toHaveBeenCalled();
+    expect(result).toBe(true);
     expect(mocks.emailLogCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         templateId: null,
         dedupeKey: "welcome:user-missing-template",
         to: "new@example.com",
-        subject: "Email template unavailable: welcome",
-        status: "FAILED",
-        error: "Email template 'welcome' is missing or inactive.",
+        subject: "Welcome to LocateFlow",
+        status: "PENDING",
       }),
     });
     expect(JSON.parse(mocks.emailLogCreate.mock.calls[0][0].data.metadata)).toEqual(
       expect.objectContaining({
-        kind: "template-unavailable",
+        kind: "welcome",
         templateSlug: "welcome",
         templateUnavailable: true,
-        retryAvailable: true,
+      }),
+    );
+    expect(mocks.sendEmailWithResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        html: expect.stringContaining("Welcome to LocateFlow"),
+        text: expect.stringContaining("Open Dashboard: https://locateflow.com/dashboard"),
       }),
     );
   });

@@ -114,6 +114,10 @@ function buildSimpleContent(opts: {
   return { subject: opts.subject, html, text: htmlToPlainText(html) };
 }
 
+function hasRenderableEmailBody(content: Pick<EmailContent, "html" | "text"> | null | undefined) {
+  return Boolean(content?.html?.trim() || content?.text?.trim());
+}
+
 function buildEmailMetadata(metadata?: Record<string, unknown>) {
   if (!metadata) return null;
   const safe: Record<string, string | number | boolean | null> = {};
@@ -400,8 +404,8 @@ export async function sendTemplatedEmail(opts: {
   unsubscribeUrl?: string | null;
 }): Promise<boolean> {
   const rendered = await renderTemplate(opts.slug, opts.variables, opts.locale);
-  if (!rendered) {
-    console.warn(`[EMAIL] Template '${opts.slug}' not found or inactive`);
+  if (!rendered || !hasRenderableEmailBody(rendered)) {
+    console.warn(`[EMAIL] Template '${opts.slug}' not found, inactive, or empty`);
     await logUnavailableTemplateEmail({
       to: opts.to,
       slug: opts.slug,
@@ -451,17 +455,46 @@ export async function sendWelcomeEmail(user: {
   dedupeKey?: string;
 }): Promise<boolean> {
   const appUrl = await resolveAppUrl();
-  return sendTemplatedEmail({
+  const variables = {
+    firstName: user.firstName || "there",
+    dashboardLink: `${appUrl}/dashboard`,
+    appUrl,
+  };
+  const rendered = await renderTemplate("welcome", variables, user.locale);
+  const renderedWelcome = hasRenderableEmailBody(rendered) ? rendered : null;
+  const content = renderedWelcome
+    ? renderedWelcome
+    : buildSimpleContent({
+        subject: "Welcome to LocateFlow",
+        title: "Welcome to LocateFlow",
+        preheader: "Your LocateFlow account is ready.",
+        userName: user.firstName || "there",
+        bodyLines: [
+          "Welcome to LocateFlow. You can now organize addresses, services, reminders, and moving tasks in one place.",
+        ],
+        details: [["Start", "Review your dashboard"]],
+        cta: { href: `${appUrl}/dashboard`, label: "Open Dashboard" },
+        locale: user.locale,
+      });
+
+  if (!renderedWelcome) {
+    console.warn("[EMAIL] Welcome template missing or empty; using inline fallback");
+  }
+
+  const result = await sendLoggedEmail({
     to: user.email,
-    slug: "welcome",
-    locale: user.locale,
+    subject: content.subject,
+    html: content.html,
+    text: content.text,
+    templateId: renderedWelcome?.templateId,
+    templateSlug: renderedWelcome?.slug || "welcome",
     dedupeKey: user.dedupeKey,
-    variables: {
-      firstName: user.firstName || "there",
-      dashboardLink: `${appUrl}/dashboard`,
-      appUrl,
+    metadata: {
+      kind: "welcome",
+      templateUnavailable: !renderedWelcome,
     },
   });
+  return result.success;
 }
 
 /**
