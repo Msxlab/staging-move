@@ -356,6 +356,23 @@ describe("transactional email layout", () => {
     );
   });
 
+  it("fails before Resend when both HTML and text bodies are empty", async () => {
+    const result = await sendEmailWithResult({
+      to: "alice@example.com",
+      subject: "Test",
+      html: "   ",
+      text: "",
+    });
+
+    expect(result).toEqual({
+      success: false,
+      providerMessageId: null,
+      error: "EMAIL_BODY_MISSING: html or text content is required",
+      fromEmail: "LocateFlow <noreply@locateflow.com>",
+    });
+    expect(mocks.resendSend).not.toHaveBeenCalled();
+  });
+
   it("redacts API-looking secrets from Resend failure details", async () => {
     mocks.resendSend.mockResolvedValue({
       data: null,
