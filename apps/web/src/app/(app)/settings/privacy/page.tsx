@@ -652,8 +652,6 @@ export default function PrivacyPage() {
         userEmail={user?.email}
         hasPasswordLogin={hasPasswordLogin}
         mfaEnabled={twoFaEnabled}
-        onRequestSetPasswordEmail={handleRequestSetPasswordEmail}
-        setPasswordBusy={passwordSetupBusy}
       />
     </div>
   );

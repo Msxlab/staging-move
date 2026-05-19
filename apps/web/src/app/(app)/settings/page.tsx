@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { User, Bell, CreditCard, Download, Shield, DollarSign, Loader2, Lock } from "lucide-react";
+import { User, Bell, CreditCard, Download, Shield, DollarSign, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { AppearanceCard } from "@/components/settings/appearance-card";
@@ -50,7 +50,6 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showBudget, setShowBudget] = useState<boolean | null>(null);
   const [hasPasswordLogin, setHasPasswordLogin] = useState<boolean | null>(null);
-  const [passwordSetupBusy, setPasswordSetupBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,40 +87,18 @@ export default function SettingsPage() {
     setConfirmPassword("");
   };
 
-  const requestSetPasswordEmail = async () => {
-    setPasswordSetupBusy(true);
-    try {
-      const res = await fetch("/api/auth/security", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "request_set_password" }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        toast.error(data.error || "Failed to send password setup email");
-        return;
-      }
-      toast.success(data.message || "Password setup email sent. Check your inbox.");
-      setHasPasswordLogin(data.account?.hasPasswordLogin === true);
-    } catch {
-      toast.error("Failed to send password setup email");
-    } finally {
-      setPasswordSetupBusy(false);
-    }
-  };
-
   const handleDeleteAccount = async () => {
-    if (hasPasswordLogin === false) {
-      toast.error("Set a password from the emailed link before deleting this account.");
-      return;
-    }
-    if (confirmText !== "DELETE" || !confirmPassword) return;
+    const oauthOnly = hasPasswordLogin === false;
+    if (confirmText !== "DELETE" || (!oauthOnly && !confirmPassword)) return;
     setDeleteStep("deleting");
     try {
       const res = await fetch("/api/account/delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmPassword }),
+        body: JSON.stringify({
+          confirmText,
+          ...(oauthOnly ? { confirmAccountDeletion: true } : { confirmPassword }),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -193,34 +170,16 @@ export default function SettingsPage() {
               </button>
             )}
           </div>
-          {deleteStep !== "idle" && hasPasswordLogin === false && (
-            <div className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-4 space-y-3">
-              <p className="text-sm text-muted-foreground">
-                This account uses Google or Apple sign-in. Before deletion, set a password from a secure email link so we can confirm it is you.
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <button
-                  onClick={requestSetPasswordEmail}
-                  disabled={passwordSetupBusy}
-                  className="flex items-center justify-center gap-2 rounded-xl bg-tone-orange-fg px-4 py-2 text-sm font-medium text-white transition hover:bg-tone-orange-bg disabled:opacity-50"
-                >
-                  {passwordSetupBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                  Email Setup Link
-                </button>
-                <button
-                  onClick={resetDeleteFlow}
-                  className="rounded-xl px-4 py-2 text-sm text-muted-foreground transition hover:bg-foreground/5 hover:text-foreground"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-          {deleteStep !== "idle" && hasPasswordLogin !== false && (
+          {deleteStep !== "idle" && (
             <div className="rounded-xl border border-destructive bg-destructive/5 p-4 space-y-3">
               <p className="text-sm text-muted-foreground">
                 This action is <span className="font-semibold text-destructive">irreversible</span>. All your addresses, services, documents, moving plans, and account data will be permanently deleted.
               </p>
+              {hasPasswordLogin === false && (
+                <p className="rounded-xl border border-tone-honey-br bg-tone-honey-bg p-3 text-xs text-tone-honey-fg/80">
+                  Your Google or Apple sign-in session is already verified. No password setup is required.
+                </p>
+              )}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Type DELETE to confirm</label>
                 <input
@@ -231,21 +190,23 @@ export default function SettingsPage() {
                   disabled={deleteStep === "deleting"}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Confirm your password</label>
-                <PasswordInput
-                  className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/30"
-                  autoComplete="current-password"
-                  placeholder="Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={deleteStep === "deleting"}
-                />
-              </div>
+              {hasPasswordLogin !== false && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Confirm your password</label>
+                  <PasswordInput
+                    className="w-full rounded-xl border border-destructive bg-foreground/5 px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-destructive/30"
+                    autoComplete="current-password"
+                    placeholder="Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={deleteStep === "deleting"}
+                  />
+                </div>
+              )}
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <button
                   onClick={handleDeleteAccount}
-                  disabled={confirmText !== "DELETE" || !confirmPassword || deleteStep === "deleting"}
+                  disabled={confirmText !== "DELETE" || (hasPasswordLogin !== false && !confirmPassword) || deleteStep === "deleting"}
                   className="flex items-center justify-center gap-2 rounded-xl bg-destructive px-4 py-2 text-sm font-medium text-white transition hover:bg-destructive/80 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {deleteStep === "deleting" ? <><Loader2 className="h-4 w-4 animate-spin" />Deleting...</> : "Permanently Delete My Account"}

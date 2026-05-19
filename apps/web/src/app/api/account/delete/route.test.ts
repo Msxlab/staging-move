@@ -146,6 +146,37 @@ describe("account deletion route", () => {
     }));
   });
 
+  it("blocks OAuth-only deletion bypass without a server-side confirmation phrase", async () => {
+    const response = await POST(request({ confirmAccountDeletion: true }));
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("DELETE_CONFIRMATION_REQUIRED");
+    expect(mocks.verifyUserStepUp).not.toHaveBeenCalled();
+    expect(mocks.createAccountDeletionRequest).not.toHaveBeenCalled();
+  });
+
+  it("passes OAuth-only deletion through when DELETE is confirmed server-side", async () => {
+    mocks.verifyUserStepUp.mockResolvedValue({ ok: true, method: "oauth_only_account_deletion" });
+
+    const response = await POST(request({ confirmAccountDeletion: true, confirmText: "DELETE" }));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.status).toBe("COMPLETED");
+    expect(mocks.verifyUserStepUp).toHaveBeenCalledWith({
+      userId: "user-1",
+      confirmPassword: null,
+      mfaCode: null,
+      backupCode: null,
+      confirmAccountDeletion: true,
+    });
+    expect(mocks.createAuditLog).toHaveBeenCalledWith(expect.objectContaining({
+      action: "ACCOUNT_DELETE",
+      changes: expect.objectContaining({ stepUpMethod: "oauth_only_account_deletion" }),
+    }));
+  });
+
   it("applies a user-scoped cooldown before repeated delete attempts", async () => {
     rateLimitPolicyMock.mockResolvedValueOnce({
       success: false,

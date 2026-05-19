@@ -71,10 +71,10 @@ export default function PrivacyPage() {
       <PublicSection title="Information LocateFlow may collect">
         <ul className="list-disc space-y-1 pl-6">
           <li>Account and profile data, such as name, email, password hash, locale, authentication status, OAuth provider identifiers, and legal consent records.</li>
-          <li>Address, moving, service, custom-provider, provider recommendation, task, checklist, document metadata, note, and budget or expense records you enter.</li>
+          <li>User-entered address, ZIP, city, approximate relocation context, moving, service, custom-provider, provider recommendation, task, checklist, document metadata, note, and budget or expense records you enter. LocateFlow does not use device GPS location in the mobile app.</li>
           <li>Support tickets, support messages, billing-support requests, privacy requests, security reports, and related communications.</li>
           <li>Subscription and billing data, such as plan, trial, renewal, cancellation, Stripe customer/subscription identifiers, store purchase status, receipt metadata, invoice status, and refund status.</li>
-          <li>Device, app, mobile, push notification, IP address, user-agent, session, cookie consent, CCPA opt-out, analytics event, crash/error, rate-limit, admin, audit, and security log data.</li>
+          <li>Device, app, mobile, push notification, IP address, user-agent, session, cookie consent, CCPA opt-out, consent-gated analytics events such as screen views, taps, and search length, crash/error, rate-limit, admin, audit, and security log data.</li>
           <li>Optional sensitive profile information only when the product asks for explicit consent and you choose to provide it.</li>
         </ul>
       </PublicSection>
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
 
       <PublicSection title="Sharing and processors">
         <p>
-          LocateFlow does not sell user-entered relocation data for commercial advertising or broker-style resale. We do share limited data with processors when needed to operate the product.
+          LocateFlow does not sell user-entered relocation data for commercial advertising or broker-style resale. We transfer limited data to service providers and processors acting on LocateFlow's instructions when needed to operate the product.
         </p>
         <p>
           Processors may include Stripe for web payments, Apple App Store and Google Play for mobile purchases, email providers such as Resend, hosting/database providers, Cloudflare R2 or other object storage, Google Analytics or Google Tag Manager when consented and configured, Google Maps/address autocomplete when configured, push notification providers such as Expo, and error-monitoring providers such as Sentry or GlitchTip when configured.
