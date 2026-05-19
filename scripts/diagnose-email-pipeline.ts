@@ -269,7 +269,7 @@ async function buildEmailLogReport(prisma: PrismaClient, days: number, recentLim
     }),
     prisma.emailTemplate.findMany({
       where: { slug: { in: [...REQUIRED_TEMPLATE_SLUGS] } },
-      select: { slug: true, isActive: true },
+      select: { slug: true, isActive: true, subject: true, body: true },
     }),
   ]);
 
@@ -326,11 +326,15 @@ async function buildEmailLogReport(prisma: PrismaClient, days: number, recentLim
 
   const knownTemplateSlugs = new Map(requiredTemplates.map((template) => [template.slug, template]));
   const missingOrInactiveRequiredTemplates = REQUIRED_TEMPLATE_SLUGS
-    .filter((slug) => !knownTemplateSlugs.get(slug)?.isActive)
-    .map((slug) => ({
-      slug,
-      reason: knownTemplateSlugs.has(slug) ? "inactive" : "missing",
-    }));
+    .map((slug) => {
+      const template = knownTemplateSlugs.get(slug);
+      if (!template) return { slug, reason: "missing" };
+      if (!template.isActive) return { slug, reason: "inactive" };
+      if (!template.subject.trim()) return { slug, reason: "empty_subject" };
+      if (!template.body.trim()) return { slug, reason: "empty_body" };
+      return null;
+    })
+    .filter(Boolean);
 
   return {
     windowDays: days,
