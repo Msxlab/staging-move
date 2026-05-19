@@ -149,7 +149,19 @@ export async function sendEmailWithResult(
     };
   }
   const { resendApiKey, fromEmail, replyTo } = config;
-  const text = options.text || htmlToPlainText(options.html);
+  const html = options.html?.trim() ? options.html : "";
+  const text = options.text?.trim() ? options.text : html ? htmlToPlainText(html) : "";
+
+  if (!html && !text) {
+    const bodyError = "EMAIL_BODY_MISSING: html or text content is required";
+    console.error("[EMAIL] Body error:", { message: bodyError });
+    return {
+      success: false,
+      providerMessageId: null,
+      error: bodyError,
+      fromEmail,
+    };
+  }
 
   if (!resendApiKey) {
     console.log(`[EMAIL-DEV] To: ${options.to} | Subject: ${options.subject}`);
@@ -166,7 +178,7 @@ export async function sendEmailWithResult(
       from: fromEmail,
       to: options.to,
       subject: options.subject,
-      html: options.html,
+      html,
       text,
       replyTo: options.replyTo || replyTo,
       ...(options.headers ? { headers: options.headers } : {}),

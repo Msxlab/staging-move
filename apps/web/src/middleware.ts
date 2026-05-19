@@ -26,6 +26,7 @@ const PUBLIC_PATHS = [
   "/disclaimer",
   "/cookie-policy",
   "/contact",
+  "/account/delete",
   "/about",
   "/provider-coverage",
   "/data-deletion",

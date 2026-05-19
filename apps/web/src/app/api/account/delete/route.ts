@@ -8,6 +8,14 @@ import { createAccountDeletionRequest, getActiveAccountDeletionRequest, processA
 import { sendSecurityNoticeEmail } from "@/lib/email-service";
 import { verifyUserStepUp } from "@/lib/user-step-up";
 
+function isAccountDeletionConfirmationValid(value: unknown, email: string): boolean {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim();
+  if (!normalized) return false;
+  const upper = normalized.toUpperCase();
+  return upper === "DELETE" || upper === "ELIMINAR" || normalized.toLowerCase() === email.toLowerCase();
+}
+
 // POST /api/account/delete — GDPR right to erasure
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +62,28 @@ export async function POST(request: NextRequest) {
     }
 
     const body: any = await request.json().catch(() => ({}));
+    const wantsOAuthOnlyAccountDeletion = body?.confirmAccountDeletion === true;
+    if (
+      wantsOAuthOnlyAccountDeletion &&
+      !isAccountDeletionConfirmationValid(body?.confirmText, user.email)
+    ) {
+      await createAuditLog({
+        userId,
+        action: "STEP_UP_FAIL",
+        entityType: "User",
+        entityId: userId,
+        changes: { operation: "account_delete", code: "DELETE_CONFIRMATION_REQUIRED" },
+        ...meta,
+      });
+      return NextResponse.json(
+        {
+          code: "DELETE_CONFIRMATION_REQUIRED",
+          error: "Type DELETE or your account email before deleting your account.",
+        },
+        { status: 400 },
+      );
+    }
+
     const hasMfaAttempt =
       typeof body?.mfaCode === "string" || typeof body?.backupCode === "string";
     if (hasMfaAttempt) {
@@ -89,7 +119,7 @@ export async function POST(request: NextRequest) {
       // no password set. The step-up helper only honors it if the account
       // truly has no password AND no MFA, so this cannot weaken security
       // for accounts that have either factor configured.
-      confirmAccountDeletion: body?.confirmAccountDeletion === true,
+      confirmAccountDeletion: wantsOAuthOnlyAccountDeletion,
     });
     if (!stepUp.ok) {
       await createAuditLog({

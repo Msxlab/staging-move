@@ -48,7 +48,9 @@ export default function DeleteAccountScreen() {
 
   const handleDelete = async () => {
     const oauthOnly = hasPasswordLogin === false;
-    if (!confirmPhrases.includes(confirmText)) {
+    const normalizedConfirmText = confirmText.trim().toUpperCase();
+    const normalizedConfirmPhrases = confirmPhrases.map((phrase) => phrase.trim().toUpperCase());
+    if (!normalizedConfirmPhrases.includes(normalizedConfirmText)) {
       Alert.alert(t("settings.delete_confirmTitle"), t("settings.delete_confirmDescription"));
       return;
     }
@@ -62,11 +64,11 @@ export default function DeleteAccountScreen() {
     // OAuth-only accounts (no password set) cannot satisfy the password-based
     // step-up gate. The current bearer token already proves the user signed
     // in via their identity provider; pair that with the typed "DELETE"
-    // intent and pass `confirmAccountDeletion: true` so the backend can
-    // accept the request without a password.
+    // intent and pass it to the backend with `confirmAccountDeletion: true`
+    // so the backend can accept the request without a password.
     const payload: Record<string, unknown> = oauthOnly
-      ? { confirmAccountDeletion: true }
-      : { confirmPassword };
+      ? { confirmAccountDeletion: true, confirmText: normalizedConfirmText }
+      : { confirmPassword, confirmText: normalizedConfirmText };
     const res = await api.post("/api/account/delete", payload);
     setDeleting(false);
 
