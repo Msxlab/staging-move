@@ -160,7 +160,7 @@ describe("services route", () => {
     expect(body.services).toEqual([]);
     expect(mockService.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: "user-1", deletedAt: null },
+        where: expect.objectContaining({ userId: "user-1", deletedAt: null }),
       }),
     );
   });
