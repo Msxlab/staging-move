@@ -1,60 +1,57 @@
 # Provider Coverage Surface Inventory
 
-Generated: 2026-04-18T17:23:41.410Z
+Generated: 2026-05-13T21:11:49.240Z
 
 ## Summary
 
-- Raw provider records: 700
-- Sanitized provider records: 700
-- Location-sensitive providers: 291
-- Location-sensitive providers with ZIP rules: 74
-- State-scoped overbroad candidates: 210
-- Federal/address-qualified candidates: 32
+- Raw provider records: 1123
+- Sanitized provider records: 1122
+- Location-sensitive providers: 562
+- Location-sensitive providers with ZIP rules: 434
+- State-scoped overbroad candidates: 118
+- Federal/address-qualified candidates: 39
 
 ## Category Precision
 
-- TRANSPORTATION_TOLL (Toll Pass): total=14, federal=1, state=13, withZip=2, exactRows=0, prefixRows=17, stateRows=11
-- TRANSPORTATION_TRANSIT (Transit): total=66, federal=0, state=66, withZip=33, exactRows=0, prefixRows=94, stateRows=35
-- UTILITY_ELECTRIC (Electric): total=71, federal=0, state=71, withZip=15, exactRows=0, prefixRows=82, stateRows=86
-- UTILITY_GAS (Gas): total=56, federal=0, state=56, withZip=3, exactRows=0, prefixRows=19, stateRows=66
-- UTILITY_INTERNET (Internet): total=17, federal=6, state=11, withZip=0, exactRows=0, prefixRows=0, stateRows=94
-- UTILITY_WATER (Water): total=67, federal=0, state=67, withZip=21, exactRows=0, prefixRows=68, stateRows=48
+- TRANSPORTATION_TOLL (Toll Pass): total=38, federal=1, state=37, withZip=29, exactRows=289, prefixRows=127, stateRows=8
+- TRANSPORTATION_TRANSIT (Transit): total=66, federal=0, state=66, withZip=41, exactRows=0, prefixRows=157, stateRows=27
+- UTILITY_ELECTRIC (Electric): total=199, federal=0, state=199, withZip=177, exactRows=1077, prefixRows=738, stateRows=37
+- UTILITY_GAS (Gas): total=83, federal=0, state=83, withZip=57, exactRows=411, prefixRows=475, stateRows=32
+- UTILITY_INTERNET (Internet): total=20, federal=9, state=11, withZip=0, exactRows=0, prefixRows=0, stateRows=94
+- UTILITY_WATER (Water): total=156, federal=0, state=156, withZip=130, exactRows=1040, prefixRows=304, stateRows=26
 
 ## Highest-Risk States
 
-- CA: highRiskLocalProviders=8, locationSensitiveProviders=23
-- FL: highRiskLocalProviders=7, locationSensitiveProviders=21
-- TX: highRiskLocalProviders=4, locationSensitiveProviders=26
-- PA: highRiskLocalProviders=4, locationSensitiveProviders=19
-- NC: highRiskLocalProviders=3, locationSensitiveProviders=20
-- GA: highRiskLocalProviders=3, locationSensitiveProviders=16
-- NJ: highRiskLocalProviders=3, locationSensitiveProviders=16
-- LA: highRiskLocalProviders=3, locationSensitiveProviders=15
-- MA: highRiskLocalProviders=3, locationSensitiveProviders=15
-- MD: highRiskLocalProviders=3, locationSensitiveProviders=15
-- NH: highRiskLocalProviders=3, locationSensitiveProviders=15
-- DE: highRiskLocalProviders=3, locationSensitiveProviders=11
-- IL: highRiskLocalProviders=2, locationSensitiveProviders=20
-- OH: highRiskLocalProviders=2, locationSensitiveProviders=19
-- CO: highRiskLocalProviders=2, locationSensitiveProviders=17
-- KS: highRiskLocalProviders=2, locationSensitiveProviders=17
-- NY: highRiskLocalProviders=2, locationSensitiveProviders=16
-- SD: highRiskLocalProviders=2, locationSensitiveProviders=16
-- VA: highRiskLocalProviders=2, locationSensitiveProviders=16
-- MN: highRiskLocalProviders=2, locationSensitiveProviders=15
+- CA: highRiskLocalProviders=6, locationSensitiveProviders=39
+- TX: highRiskLocalProviders=4, locationSensitiveProviders=36
+- PA: highRiskLocalProviders=3, locationSensitiveProviders=33
+- LA: highRiskLocalProviders=3, locationSensitiveProviders=18
+- FL: highRiskLocalProviders=2, locationSensitiveProviders=38
+- NC: highRiskLocalProviders=2, locationSensitiveProviders=33
+- VA: highRiskLocalProviders=2, locationSensitiveProviders=33
+- NY: highRiskLocalProviders=2, locationSensitiveProviders=26
+- DE: highRiskLocalProviders=2, locationSensitiveProviders=24
+- IL: highRiskLocalProviders=2, locationSensitiveProviders=23
+- AL: highRiskLocalProviders=2, locationSensitiveProviders=22
+- KS: highRiskLocalProviders=2, locationSensitiveProviders=20
+- SD: highRiskLocalProviders=2, locationSensitiveProviders=19
+- OK: highRiskLocalProviders=2, locationSensitiveProviders=18
+- WY: highRiskLocalProviders=2, locationSensitiveProviders=18
+- IN: highRiskLocalProviders=2, locationSensitiveProviders=17
+- ND: highRiskLocalProviders=2, locationSensitiveProviders=16
+- RI: highRiskLocalProviders=2, locationSensitiveProviders=15
+- CO: highRiskLocalProviders=1, locationSensitiveProviders=30
+- NV: highRiskLocalProviders=1, locationSensitiveProviders=30
 
 ## State-Scoped Overbroad Candidates
 
-- ExpressToll | TRANSPORTATION_TOLL | CO | high | location-sensitive category has only state coverage | https://www.expresstoll.com
-- FasTrak | TRANSPORTATION_TOLL | CA | high | location-sensitive category has only state coverage | https://www.bayareafastrak.org
+- Alabama Freedom Pass | TRANSPORTATION_TOLL | AL | high | location-sensitive category has only state coverage | https://freedompass.americanroads.com
+- E-ZPass Virginia | TRANSPORTATION_TOLL | VA | high | location-sensitive category has only state coverage | https://www.ezpassva.com/
 - GeauxPass | TRANSPORTATION_TOLL | LA | high | location-sensitive category has only state coverage | https://www.geauxpass.com
-- Good To Go! | TRANSPORTATION_TOLL | WA | high | location-sensitive category has only state coverage | https://www.wsdot.wa.gov/goodtogo
 - K-TAG | TRANSPORTATION_TOLL | KS | high | location-sensitive category has only state coverage | https://www.ksturnpike.com
 - NJ E-ZPass | TRANSPORTATION_TOLL | NJ | high | location-sensitive category has only state coverage | https://www.ezpassnj.com
 - NY E-ZPass | TRANSPORTATION_TOLL | NY | high | location-sensitive category has only state coverage | https://www.e-zpassny.com
-- PA Turnpike E-ZPass | TRANSPORTATION_TOLL | PA | high | location-sensitive category has only state coverage | https://www.paturnpike.com/ezpass
-- Peach Pass | TRANSPORTATION_TOLL | GA | high | location-sensitive category has only state coverage | https://www.peachpass.com
-- SunPass | TRANSPORTATION_TOLL | FL | high | location-sensitive category has only state coverage | https://www.sunpass.com
+- SunPass | TRANSPORTATION_TOLL | FL | high | location-sensitive category has only state coverage | https://www.sunpass.com/
 - TxTag | TRANSPORTATION_TOLL | TX | high | location-sensitive category has only state coverage | https://www.txtag.org
 - BART | TRANSPORTATION_TRANSIT | CA | high | locality signal in name/description with state-only coverage | https://www.bart.gov
 - Caltrain | TRANSPORTATION_TRANSIT | CA | high | location-sensitive category has only state coverage | https://www.caltrain.com
@@ -66,16 +63,9 @@ Generated: 2026-04-18T17:23:41.410Z
 - IndyGo | TRANSPORTATION_TRANSIT | IN | high | locality signal in name/description with state-only coverage | https://www.indygo.net
 - LA Metro | TRANSPORTATION_TRANSIT | CA | high | locality signal in name/description with state-only coverage | https://www.metro.net
 - Lynx | TRANSPORTATION_TRANSIT | FL | high | locality signal in name/description with state-only coverage | https://www.golynx.com
-- MARTA | TRANSPORTATION_TRANSIT | GA | high | locality signal in name/description with state-only coverage | https://www.itsmarta.com
-- MBTA | TRANSPORTATION_TRANSIT | MA | high | locality signal in name/description with state-only coverage | https://www.mbta.com
 - Metra | TRANSPORTATION_TRANSIT | IL | high | location-sensitive category has only state coverage | https://www.metrarail.com
-- Metro Transit MN | TRANSPORTATION_TRANSIT | MN | high | locality signal in name/description with state-only coverage | https://www.metrotransit.org
-- Metro Transit St. Louis | TRANSPORTATION_TRANSIT | MO | high | locality signal in name/description with state-only coverage | https://www.metrostlouis.org
-- Miami-Dade Transit | TRANSPORTATION_TRANSIT | FL | high | locality signal in name/description with state-only coverage | https://www.miamidade.gov/transit
 - MTA | TRANSPORTATION_TRANSIT | NY | high | locality signal in name/description with state-only coverage | https://www.mta.info
 - New Orleans Regional Transit Authority | TRANSPORTATION_TRANSIT | LA | high | locality signal in name/description with state-only coverage | https://www.norta.com
-- NJ Transit | TRANSPORTATION_TRANSIT | NJ | high | locality signal in name/description with state-only coverage | https://www.njtransit.com
-- Pittsburgh Port Authority | TRANSPORTATION_TRANSIT | PA | high | locality signal in name/description with state-only coverage | https://www.rideprt.org
 - RIPTA | TRANSPORTATION_TRANSIT | RI | high | locality signal in name/description with state-only coverage | https://ripta.com
 - RTA Cleveland | TRANSPORTATION_TRANSIT | OH | high | locality signal in name/description with state-only coverage | https://www.riderta.com
 - RTC Southern Nevada | TRANSPORTATION_TRANSIT | NV | high | locality signal in name/description with state-only coverage | https://www.rtcsnv.com
@@ -83,48 +73,58 @@ Generated: 2026-04-18T17:23:41.410Z
 - San Diego MTS | TRANSPORTATION_TRANSIT | CA | high | location-sensitive category has only state coverage | https://www.sdmts.com
 - SF Muni | TRANSPORTATION_TRANSIT | CA | high | location-sensitive category has only state coverage | https://www.sfmta.com
 - TheBus | TRANSPORTATION_TRANSIT | HI | high | locality signal in name/description with state-only coverage | https://www.thebus.org
-- TriMet | TRANSPORTATION_TRANSIT | OR | high | locality signal in name/description with state-only coverage | https://www.trimet.org
 - UTA | TRANSPORTATION_TRANSIT | UT | high | locality signal in name/description with state-only coverage | https://www.rideuta.com
 - VIA Metropolitan Transit | TRANSPORTATION_TRANSIT | TX | high | locality signal in name/description with state-only coverage | https://www.viainfo.net
 - VTA | TRANSPORTATION_TRANSIT | CA | high | locality signal in name/description with state-only coverage | https://www.vta.org
 - WeGo Public Transit | TRANSPORTATION_TRANSIT | TN | high | locality signal in name/description with state-only coverage | https://www.wegotransit.com
 - WMATA (Metro) | TRANSPORTATION_TRANSIT | VA,DC,MD | high | locality signal in name/description with state-only coverage | https://www.wmata.com
-- AEP Ohio | UTILITY_ELECTRIC | OH | medium | location-sensitive category has only state coverage | https://www.aepohio.com
-- Alabama Power | UTILITY_ELECTRIC | AL | high | locality signal in name/description with state-only coverage | https://www.alabamapower.com
 - Alliant Energy | UTILITY_ELECTRIC | IA,WI | high | locality signal in name/description with state-only coverage | https://www.alliantenergy.com
 - Ameren Illinois | UTILITY_ELECTRIC | IL | high | locality signal in name/description with state-only coverage | https://www.ameren.com/illinois
-- Ameren Missouri | UTILITY_ELECTRIC | MO,IL | medium | location-sensitive category has only state coverage | https://www.ameren.com
-- Appalachian Power WV | UTILITY_ELECTRIC | WV,VA | medium | location-sensitive category has only state coverage | https://www.appalachianpower.com
-- Black Hills Energy SD | UTILITY_ELECTRIC | SD,CO,WY,NE,IA,KS,AR | medium | location-sensitive category has only state coverage | https://www.blackhillsenergy.com
+- Appalachian Power | UTILITY_ELECTRIC | WV,VA | medium | location-sensitive category has only state coverage | https://www.appalachianpower.com/account/service/start-stop-transfer
+- Black Hills Energy SD | UTILITY_ELECTRIC | SD,WY,NE,IA,KS | medium | location-sensitive category has only state coverage | https://www.blackhillsenergy.com
 - Central Maine Power | UTILITY_ELECTRIC | ME | high | locality signal in name/description with state-only coverage | https://www.cmpco.com
 - Chugach Electric | UTILITY_ELECTRIC | AK | high | locality signal in name/description with state-only coverage | https://www.chugachelectric.com
-- Delmarva Power | UTILITY_ELECTRIC | DE,MD | high | locality signal in name/description with state-only coverage | https://www.delmarva.com
-- Dominion Energy | UTILITY_ELECTRIC | VA,NC,SC | medium | location-sensitive category has only state coverage | https://www.dominionenergy.com
-- DTE Energy | UTILITY_ELECTRIC | MI | medium | location-sensitive category has only state coverage | https://www.dteenergy.com
-- Duke Energy Florida | UTILITY_ELECTRIC | FL | high | locality signal in name/description with state-only coverage | https://www.duke-energy.com/florida
-- Duke Energy Indiana | UTILITY_ELECTRIC | IN | medium | location-sensitive category has only state coverage | https://www.duke-energy.com/indiana
-- Duke Energy NC | UTILITY_ELECTRIC | NC,SC | high | locality signal in name/description with state-only coverage | https://www.duke-energy.com/north-carolina
-- Entergy Arkansas | UTILITY_ELECTRIC | AR | high | locality signal in name/description with state-only coverage | https://www.entergy-arkansas.com
-- Entergy Louisiana | UTILITY_ELECTRIC | LA | medium | location-sensitive category has only state coverage | https://www.entergy-louisiana.com
-- Entergy Mississippi | UTILITY_ELECTRIC | MS | high | locality signal in name/description with state-only coverage | https://www.entergy-mississippi.com
 - Evergy | UTILITY_ELECTRIC | KS,MO | medium | location-sensitive category has only state coverage | https://www.evergy.com
-- Eversource | UTILITY_ELECTRIC | MA,CT,NH | medium | location-sensitive category has only state coverage | https://www.eversource.com
-- Eversource NH | UTILITY_ELECTRIC | NH,CT,MA | high | locality signal in name/description with state-only coverage | https://www.eversource.com
-- FPL (Florida Power & Light) | UTILITY_ELECTRIC | FL | high | locality signal in name/description with state-only coverage | https://www.fpl.com
-- Georgia Power | UTILITY_ELECTRIC | GA | high | locality signal in name/description with state-only coverage | https://www.georgiapower.com
+- Florida Power & Light Company | UTILITY_ELECTRIC | FL | medium | location-sensitive category has only state coverage | https://www.fpl.com/landing/service-order.html
 - Green Mountain Power | UTILITY_ELECTRIC | VT | high | locality signal in name/description with state-only coverage | https://www.greenmountainpower.com
-- Hawaiian Electric (HECO) | UTILITY_ELECTRIC | HI | high | locality signal in name/description with state-only coverage | https://www.hawaiianelectric.com
 - Idaho Power | UTILITY_ELECTRIC | ID | high | locality signal in name/description with state-only coverage | https://www.idahopower.com
-- JCP&L | UTILITY_ELECTRIC | NJ | medium | location-sensitive category has only state coverage | https://www.firstenergycorp.com/jcpl
 - Kentucky Utilities | UTILITY_ELECTRIC | KY | high | locality signal in name/description with state-only coverage | https://www.lge-ku.com
-- Liberty Utilities NH | UTILITY_ELECTRIC | NH | high | locality signal in name/description with state-only coverage | https://www.libertyutilities.com
 - MDU Resources | UTILITY_ELECTRIC | ND,MT,SD,WY | medium | location-sensitive category has only state coverage | https://www.montana-dakota.com
 - MidAmerican Energy | UTILITY_ELECTRIC | IA | medium | location-sensitive category has only state coverage | https://www.midamericanenergy.com
-- Mississippi Power | UTILITY_ELECTRIC | MS | high | locality signal in name/description with state-only coverage | https://www.mississippipower.com
 - Mon Power | UTILITY_ELECTRIC | WV | medium | location-sensitive category has only state coverage | https://www.firstenergycorp.com/monpower
 - Nashville Electric Service | UTILITY_ELECTRIC | TN | medium | location-sensitive category has only state coverage | https://www.nespower.com
-- NV Energy | UTILITY_ELECTRIC | NV | medium | location-sensitive category has only state coverage | https://www.nvenergy.com
-- OG&E | UTILITY_ELECTRIC | OK,AR | high | locality signal in name/description with state-only coverage | https://www.oge.com
+- OG&E | UTILITY_ELECTRIC | OK | high | locality signal in name/description with state-only coverage | https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview
+- PNM | UTILITY_ELECTRIC | NM | medium | location-sensitive category has only state coverage | https://www.pnm.com
+- Public Service Oklahoma (PSO) | UTILITY_ELECTRIC | OK | high | locality signal in name/description with state-only coverage | https://www.psoklahoma.com
+- Reliant Energy | UTILITY_ELECTRIC | TX | medium | location-sensitive category has only state coverage | https://www.reliant.com
+- Rocky Mountain Power | UTILITY_ELECTRIC | UT,WY,ID | medium | location-sensitive category has only state coverage | https://www.rockymountainpower.net/my-account/start-stop-move.html
+- Versant Power | UTILITY_ELECTRIC | ME | high | locality signal in name/description with state-only coverage | https://www.versantpower.com
+- Xcel Energy ND | UTILITY_ELECTRIC | ND,MN,WI,SD | high | locality signal in name/description with state-only coverage | https://www.xcelenergy.com
+- Atmos Energy Kentucky | UTILITY_GAS | KY | medium | location-sensitive category has only state coverage | https://www.atmosenergy.com
+- Atmos Energy Louisiana | UTILITY_GAS | LA | high | locality signal in name/description with state-only coverage | https://www.atmosenergy.com
+- Atmos Energy Mississippi | UTILITY_GAS | MS | high | locality signal in name/description with state-only coverage | https://www.atmosenergy.com
+- Black Hills Energy Iowa | UTILITY_GAS | IA | high | locality signal in name/description with state-only coverage | https://www.blackhillsenergy.com
+- Black Hills Energy Nebraska | UTILITY_GAS | NE | high | locality signal in name/description with state-only coverage | https://www.blackhillsenergy.com
+- CenterPoint Energy | UTILITY_GAS | TX | medium | location-sensitive category has only state coverage | https://www.centerpointenergy.com
+- CenterPoint Energy Minnesota | UTILITY_GAS | MN | high | locality signal in name/description with state-only coverage | https://www.centerpointenergy.com/minnesota
+- Citizens Energy Group | UTILITY_GAS | IN | high | locality signal in name/description with state-only coverage | https://www.citizensenergygroup.com
+- Enbridge Gas Utah | UTILITY_GAS | UT,WY,ID | medium | location-sensitive category has only state coverage | https://www.enbridgegas.com/utwyid/start-stop-service
+- ENSTAR Natural Gas | UTILITY_GAS | AK | high | locality signal in name/description with state-only coverage | https://www.enstarnaturalgas.com
+- Hawaii Gas | UTILITY_GAS | HI | high | locality signal in name/description with state-only coverage | https://www.hawaiigas.com/contact-us
+- Intermountain Gas | UTILITY_GAS | ID | high | locality signal in name/description with state-only coverage | https://www.intgas.com
+- Kansas Gas Service | UTILITY_GAS | KS | high | locality signal in name/description with state-only coverage | https://www.kansasgasservice.com
+- MDU Resources South Dakota Gas | UTILITY_GAS | SD | high | locality signal in name/description with state-only coverage | https://www.montana-dakota.com
+- Minnesota Energy Resources | UTILITY_GAS | MN | high | locality signal in name/description with state-only coverage | https://www.minnesotaenergyresources.com
+- Montana-Dakota Utilities | UTILITY_GAS | ND,SD,WY | high | locality signal in name/description with state-only coverage | https://www.montana-dakota.com
+- Mountaineer Gas | UTILITY_GAS | WV | high | locality signal in name/description with state-only coverage | https://www.mountaineergas.com
+- NJ Natural Gas | UTILITY_GAS | NJ | medium | location-sensitive category has only state coverage | https://www.njng.com
+- NorthWestern Energy | UTILITY_GAS | MT,SD,NE | high | locality signal in name/description with state-only coverage | https://www.northwesternenergy.com
+- Oklahoma Natural Gas (ONE Gas) | UTILITY_GAS | OK | high | locality signal in name/description with state-only coverage | https://www.oklahomanaturalgas.com
+- Piedmont Natural Gas Tennessee | UTILITY_GAS | TN | high | locality signal in name/description with state-only coverage | https://www.piedmontng.com/home/start-stop-or-move
+- Source Gas Distribution Wyoming | UTILITY_GAS | WY | high | locality signal in name/description with state-only coverage | https://www.blackhillsenergy.com
+- Spire Missouri | UTILITY_GAS | MO | high | locality signal in name/description with state-only coverage | https://www.spireenergy.com
+- Summit Natural Gas of Maine | UTILITY_GAS | ME | high | locality signal in name/description with state-only coverage | https://www.summitnaturalgas.com
+- UGI Utilities | UTILITY_GAS | PA | high | locality signal in name/description with state-only coverage | https://www.ugi.com/start-stop-transfer-service/
 
 ## Federal Address-Qualified Candidates
 
@@ -135,14 +135,18 @@ Generated: 2026-04-18T17:23:41.410Z
 - Instacart | GROCERY_DELIVERY | medium | national brand likely requires address-level serviceability check | https://www.instacart.com
 - Shipt | GROCERY_DELIVERY | medium | national brand likely requires address-level serviceability check | https://www.shipt.com
 - Walmart+ Delivery | GROCERY_DELIVERY | medium | national brand likely requires address-level serviceability check | https://www.walmart.com/plus
+- Ace Hardware | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.acehardware.com
 - Angi (Angie's List) | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.angi.com
 - Home Depot | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.homedepot.com
+- HomeAdvisor | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.homeadvisor.com
 - Lowe's | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.lowes.com
+- Mr. Handyman | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.mrhandyman.com
 - Ring | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.ring.com
 - Roto-Rooter | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.rotorooter.com
 - ServPro | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.servpro.com
 - TaskRabbit | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.taskrabbit.com
 - Thumbtack | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.thumbtack.com
+- True Value | HOUSING_HOME_SERVICE | medium | national brand likely requires address-level serviceability check | https://www.truevalue.com
 - 1-800-GOT-JUNK | HOUSING_MOVING | medium | national brand likely requires address-level serviceability check | https://www.1800gotjunk.com
 - Allied Van Lines | HOUSING_MOVING | medium | national brand likely requires address-level serviceability check | https://www.allied.com
 - Budget Truck Rental | HOUSING_MOVING | medium | national brand likely requires address-level serviceability check | https://www.budgettruck.com
@@ -152,11 +156,14 @@ Generated: 2026-04-18T17:23:41.410Z
 - Two Men and a Truck | HOUSING_MOVING | medium | national brand likely requires address-level serviceability check | https://www.twomenandatruck.com
 - U-Haul | HOUSING_MOVING | medium | national brand likely requires address-level serviceability check | https://www.uhaul.com
 - United Van Lines | HOUSING_MOVING | medium | national brand likely requires address-level serviceability check | https://www.unitedvanlines.com
+- Astound Broadband | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.astound.com
 - AT&T Fiber | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.att.com/internet/fiber
 - Spectrum | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.spectrum.com
 - Starlink | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.starlink.com
 - T-Mobile Home Internet | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.t-mobile.com/home-internet
+- Verizon 5G Home Internet | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.verizon.com/home/5g-home-internet
 - Verizon Fios | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.verizon.com/fios
+- WOW! Internet | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.wowway.com
 - Xfinity (Comcast) | UTILITY_INTERNET | medium | national brand likely requires address-level serviceability check | https://www.xfinity.com
 - Republic Services | UTILITY_TRASH | medium | national brand likely requires address-level serviceability check | https://www.republicservices.com
 - Waste Management | UTILITY_TRASH | medium | national brand likely requires address-level serviceability check | https://www.wm.com

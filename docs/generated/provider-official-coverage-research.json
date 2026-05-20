@@ -12388,51 +12388,43 @@
       }
     },
     {
-      "name": "CenterPoint Energy Arkansas",
-      "slug": "centerpoint-ar",
+      "name": "Summit Utilities Arkansas",
+      "slug": "summit-utilities-ar",
       "category": "UTILITY_GAS",
       "scope": "STATE",
       "states": [
         "AR"
       ],
-      "website": "https://www.centerpointenergy.com",
-      "domain": "centerpointenergy.com",
+      "website": "https://summitutilities.com/contact/start-stop-transfer-service",
+      "domain": "summitutilities.com",
       "repoCoverage": {
-        "zipRules": 0,
-        "modeledAsStateOnly": true
+        "zipRules": 14,
+        "modeledAsStateOnly": false
       },
       "officialResearch": {
         "status": "resolved",
-        "sourceType": "territory_list",
+        "sourceType": "service_area",
         "zipRemediationPath": "seed_exact_or_prefix_after_lookup",
-        "bestUrl": "https://www.centerpointenergy.com/en-us/home-service-plus/about-hsp/areas-we-serve",
-        "title": "AC & Furnace Repair Minneapolis/St. Paul | CenterPoint Energy Home Service Plus",
-        "snippet": "y your bill, manage communication preferences and more! Don't have an online access? Register today Service Area : Minnesota Change Sign In / Register Search: &times; Select a Service Area To serve you better please select from the list of service areas below to see relevant CenterPoint Energy information. State Select",
+        "bestUrl": "https://summitutilities.com/about-summit/service-area",
+        "title": "Summit Utilities Service Area",
+        "snippet": "Summit Utilities provides natural gas service in Arkansas, Oklahoma, and the Texarkana, Texas area; exact service availability should be confirmed by address.",
         "sourceConfidence": "high",
         "discoveries": [
           {
-            "url": "https://www.centerpointenergy.com/en-us/home-service-plus/about-hsp/areas-we-serve",
-            "title": "AC & Furnace Repair Minneapolis/St. Paul | CenterPoint Energy Home Service Plus",
-            "snippet": "y your bill, manage communication preferences and more! Don't have an online access? Register today Service Area : Minnesota Change Sign In / Register Search: &times; Select a Service Area To serve you better please select from the list of service areas below to see relevant CenterPoint Energy information. State Select",
-            "sourceType": "territory_list",
+            "url": "https://summitutilities.com/about-summit/service-area",
+            "title": "Summit Utilities Service Area",
+            "snippet": "Summit Utilities provides natural gas service throughout Arkansas, Oklahoma, and the Texarkana, Texas area.",
+            "sourceType": "service_area",
             "score": 40,
-            "discovery": "sitemap"
+            "discovery": "seed"
           },
           {
-            "url": "https://www.centerpointenergy.com/en-us/pages/changeservicearea.aspx?requesturl=/en-us/hsp/pages/cities-served-by-home-service-plus.aspx",
-            "title": "",
-            "snippet": "n be unsupported. Please update to the latest version or view our site in another browser. Select a Service Area To serve you better please select from the list of service areas below to see relevant CenterPoint Energy information. Audience Type Business Residential State Select Toggle Dropdown Indiana Louisiana Minnes",
-            "sourceType": "territory_list",
-            "score": 28,
-            "discovery": "sitemap"
-          },
-          {
-            "url": "https://www.centerpointenergy.com/en-us/pages/changeservicearea.aspx?requesturl=/en-us/hsp/pages/parts-coverage.aspx",
-            "title": "",
-            "snippet": "n be unsupported. Please update to the latest version or view our site in another browser. Select a Service Area To serve you better please select from the list of service areas below to see relevant CenterPoint Energy information. Audience Type Business Residential State Select Toggle Dropdown Indiana Louisiana Minnes",
-            "sourceType": "territory_list",
-            "score": 25,
-            "discovery": "sitemap"
+            "url": "https://summitutilities.com/contact/start-stop-transfer-service",
+            "title": "Summit Utilities Start, Stop, Transfer Service",
+            "snippet": "Summit Utilities provides start, stop, and transfer service workflows for customers in its service areas.",
+            "sourceType": "account_flow",
+            "score": 34,
+            "discovery": "seed"
           }
         ],
         "error": null

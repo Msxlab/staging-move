@@ -5,14 +5,14 @@ Generated: 2026-04-18T17:41:23.376Z
 ## Summary
 
 - States covered: 51
-- Unique state-scoped providers in registry: 498
-- State provider assignments: 626
-- Existing seed providers: 258
-- Catalog-added providers: 233
-- Catalog backlog providers: 7
-- ZIP-modeled providers: 365
-- State-only providers: 126
-- Second wave backlog: promote_zip=45, live_address=68, polygon=59, manual_research=105
+- Unique state-scoped providers in registry: 558
+- State provider assignments: 685
+- Existing seed providers: 301
+- Catalog-added providers: 251
+- Catalog backlog providers: 6
+- ZIP-modeled providers: 434
+- State-only providers: 118
+- Second wave backlog: promote_zip=40, live_address=91, polygon=60, manual_research=103
 
 ## AK
 
@@ -116,45 +116,45 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ## AR
 
-- Totals: total=17, existing_seed=6, catalog_added=10, catalog_backlog=1, zip_modeled=9, state_only=7, promote_zip=2, live_address=2, polygon=0, manual_research=4
+- Totals: total=19, existing_seed=8, catalog_added=11, catalog_backlog=0, zip_modeled=17, state_only=2, promote_zip=0, live_address=3, polygon=0, manual_research=1
 
 ### Electric
 
-- Black Hills Energy SD | existing_seed | current=state | next=manual_research | official=https://www.blackhillsenergy.com/ | status=partial | confidence=medium
-  note: Stay safe during extreme cold | Black Hills Energy
-- Conway Corp Electric | catalog_added | current=zip_prefix | next=none | official=https://www.conwaycorp.com | status=catalog_only | confidence=catalog
-  note: Real municipal electric utility; modeled with Conway-area ZIP prefix and address confirmation language.
-- Entergy Arkansas | catalog_added | current=state | next=manual_research | official=https://www.entergy-arkansas.com | status=partial | confidence=medium
-  note: Major Arkansas electric utility identified in state rules but missing from seed.
-- North Little Rock Electric | catalog_added | current=zip_prefix | next=none | official=https://nlrelectric.com | status=catalog_only | confidence=catalog
+- Carroll Electric Cooperative Corporation | existing_seed | current=zip_prefix | next=none | official=https://www.carrollecc.com/apply-for-service | status=catalog_only | confidence=catalog
+- City of Bentonville Utilities | catalog_added | current=zip_prefix | next=live_address | official=https://www.bentonvillear.com/565/Utility-Service | status=catalog_only | confidence=catalog
+  note: Bentonville municipal utility surface covers electric, water, wastewater, irrigation, and solid waste; service must be confirmed by address.
+- Conway Corporation | catalog_added | current=zip_prefix | next=none | official=https://conwaycorp.com/sign-up-for-a-service/ | status=catalog_only | confidence=catalog
+  note: Municipal multi-utility serving Conway electric, water, wastewater, and account workflows; modeled with Conway-area ZIP prefix and address confirmation language.
+- Entergy Arkansas | catalog_added | current=zip_prefix | next=live_address | official=https://www.entergyarkansas.com/ | status=partial | confidence=medium
+  note: Major Arkansas electric utility with broad county-level coverage; ZIPs are broad prefilters and service should be confirmed by address.
+- First Electric Cooperative Corporation | existing_seed | current=zip_prefix | next=none | official=https://www.firstelectric.coop/services/electrical-service/set-up-new-service | status=catalog_only | confidence=catalog
+- North Little Rock Electric | catalog_added | current=zip_prefix | next=none | official=https://nlrelectric.com/forms/ | status=catalog_only | confidence=catalog
   note: Real municipal electric utility; modeled with North Little Rock ZIP prefix and address confirmation language.
-- OG&E | existing_seed | current=state | next=manual_research | official=https://www.oge.com/ | status=partial | confidence=medium
-  note: OG&E - Home
-- Southwestern Electric Power Company (SWEPCO) | catalog_added | current=zip_prefix | next=none | official=https://www.swepco.com | status=catalog_only | confidence=catalog
+- Oklahoma Gas & Electric (OG&E) - Arkansas Service Area | existing_seed | current=zip_prefix | next=none | official=https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview | status=catalog_only | confidence=catalog
+- Southwestern Electric Power Company (SWEPCO) | catalog_added | current=zip_prefix | next=none | official=https://www.swepco.com/account/service/start-stop-transfer | status=catalog_only | confidence=catalog
   note: Real electric utility; modeled with cautious Arkansas ZIP prefixes and address confirmation language.
 
 ### Gas
 
-- Arkansas Oklahoma Gas | catalog_added | current=zip_prefix | next=none | official=https://www.aogc.com | status=catalog_only | confidence=catalog
+- Arkansas Oklahoma Gas Corporation (AOG) | catalog_added | current=zip_prefix | next=none | official=https://www.aogc.com/RequestService | status=catalog_only | confidence=catalog
   note: Real gas utility; modeled with cautious western Arkansas ZIP prefix and address confirmation language.
-- CenterPoint Energy Arkansas | existing_seed | current=state | next=promote_zip | official=https://www.centerpointenergy.com/en-us/home-service-plus/about-hsp/areas-we-serve | status=resolved | confidence=high
-  note: AC & Furnace Repair Minneapolis/St. Paul | CenterPoint Energy Home Service Plus
-- Summit Utilities Arkansas | catalog_backlog | current=catalog_only | next=live_address | official=https://summitutilities.com | status=catalog_only | confidence=catalog
-  note: Real gas utility from Batch 1, but the candidate had unknown territory; catalog-only until ZIP/service-area confirmation.
+- Black Hills Energy Arkansas | existing_seed | current=zip_prefix | next=none | official=https://www.blackhillsenergy.com/app-startstop/service-select | status=catalog_only | confidence=catalog
+- Summit Utilities Arkansas | existing_seed | current=zip_prefix | next=none | official=https://summitutilities.com/about-summit/service-area | status=resolved | confidence=high
+  note: Summit Utilities Service Area
 
 ### Water
 
-- Bentonville Water Utilities | catalog_added | current=zip_prefix | next=none | official=https://www.bentonvillear.com | status=catalog_only | confidence=catalog
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Central Arkansas Water | existing_seed | current=state | next=promote_zip | official=https://carkw.com/about/supporting-our-communities/ | status=resolved | confidence=high
+- Central Arkansas Water | existing_seed | current=zip_prefix | next=none | official=https://carkw.com/about/supporting-our-communities/ | status=resolved | confidence=high
   note: Supporting Our Communities | Central Arkansas Water
-- Fayetteville Water and Sewer | catalog_added | current=zip_prefix | next=none | official=https://www.fayetteville-ar.gov | status=catalog_only | confidence=catalog
+- City of Fayetteville Utilities | catalog_added | current=zip_prefix | next=none | official=https://www.fayetteville-ar.gov/1368/New-Water-and-Sewer-Services | status=catalog_only | confidence=catalog
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Fort Smith Utilities Water | catalog_added | current=zip_prefix | next=none | official=https://www.fortsmithar.gov | status=catalog_only | confidence=catalog
+- City of Fort Smith Utilities | catalog_added | current=zip_prefix | next=none | official=https://www.fortsmithar.gov/resident-services/water-utilities | status=catalog_only | confidence=catalog
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 - Jonesboro City Water and Light Water | catalog_added | current=zip_prefix | next=none | official=https://www.jonesborocwl.org | status=catalog_only | confidence=catalog
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Rogers Water Utilities | catalog_added | current=zip_prefix | next=none | official=https://www.rwu.org | status=catalog_only | confidence=catalog
+- Rogers Water Utilities | catalog_added | current=zip_prefix | next=none | official=https://www.rogerswaterar.gov/residential/services-and-information/start-or-stop-service/ | status=catalog_only | confidence=catalog
+  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Springdale Water Utilities | catalog_added | current=zip_prefix | next=none | official=https://springdalewaterar.gov/new-customer/ | status=catalog_only | confidence=catalog
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### Internet
@@ -166,38 +166,45 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ## AZ
 
-- Totals: total=18, existing_seed=10, catalog_added=8, catalog_backlog=0, zip_modeled=13, state_only=5, promote_zip=0, live_address=3, polygon=0, manual_research=5
+- Totals: total=25, existing_seed=17, catalog_added=8, catalog_backlog=0, zip_modeled=21, state_only=4, promote_zip=0, live_address=8, polygon=0, manual_research=5
 
 ### Electric
 
-- APS (Arizona Public Service) | existing_seed | current=zip_prefix | next=none | official=https://www.aps.com/en/Business/Service-Plans/Service-Area-Maps | status=resolved | confidence=high
+- Arizona Public Service | existing_seed | current=zip_prefix | next=none | official=https://www.aps.com/en/Business/Service-Plans/Service-Area-Maps | status=resolved | confidence=high
   note: Business service area map
-- SRP (Salt River Project) | existing_seed | current=state | next=manual_research | official=https://www.srpnet.com/ | status=blocked | confidence=low
+- Mohave Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://www.mohaveelectric.com/member-service/apply-for-service/ | status=catalog_only | confidence=catalog
+- Salt River Project | existing_seed | current=zip_prefix | next=manual_research | official=https://www.srpnet.com/ | status=blocked | confidence=low
   note: Homepage fetch failed (403)
-- Tucson Electric Power | catalog_added | current=zip_prefix | next=none | official=https://www.tep.com | status=catalog_only | confidence=catalog
-  note: Real electric utility; modeled with Tucson-area ZIP prefixes and address confirmation language.
-- UniSource Energy Services | catalog_added | current=zip_prefix | next=none | official=https://www.uesaz.com | status=catalog_only | confidence=catalog
-  note: Real utility account provider; gas duplicate is folded into this single provider row.
+- Sulphur Springs Valley Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://www.ssvec.org/services/new-service.php | status=catalog_only | confidence=catalog
+- Trico Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://trico.coop/start-stop-transfer-service/ | status=catalog_only | confidence=catalog
+- Tucson Electric Power | catalog_added | current=zip_prefix | next=live_address | official=https://www.tep.com/im-moving/ | status=catalog_only | confidence=catalog
+  note: Primary Tucson-area electric utility; Tucson ZIP prefixes are only prefilters and start/stop/transfer service should be confirmed by address.
+- UniSource Energy Services | catalog_added | current=zip_prefix | next=live_address | official=https://www.uesaz.com/im-moving/ | status=catalog_only | confidence=catalog
+  note: UniSource electric service is territory-specific in selected Arizona communities; gas is modeled separately for relocation workflows.
 
 ### Gas
 
 - Southwest Gas | existing_seed | current=zip_prefix | next=none | official=https://www.swgas.com/en/pipeline-safety | status=resolved | confidence=high
   note: Natural Gas Pipeline Safety
+- UniSource Energy Services Gas | existing_seed | current=zip_prefix | next=none | official=https://www.uesaz.com/im-moving/ | status=catalog_only | confidence=catalog
 
 ### Water
 
-- City of Chandler Water | catalog_added | current=zip_prefix | next=none | official=https://www.chandleraz.gov/residents/water | status=catalog_only | confidence=catalog
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- City of Tempe Water Services | catalog_added | current=zip_prefix | next=none | official=https://www.tempe.gov | status=catalog_only | confidence=catalog
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Arizona Water Company | existing_seed | current=zip_prefix | next=none | official=https://www.azwater.com/ | status=catalog_only | confidence=catalog
+- City of Chandler Utility Services | catalog_added | current=zip_prefix | next=live_address | official=https://www.chandleraz.gov/residents/utility-services | status=catalog_only | confidence=catalog
+  note: Chandler utility services cover water, sewer, and solid waste account workflows; service should be confirmed by address.
+- City of Mesa Utilities | existing_seed | current=zip_prefix | next=none | official=https://www.mesaaz.gov/Government/Management-Budget/Valley-Cities-Affordability-and-Homeowners-Comparisons | status=resolved | confidence=high
+  note: Valley Cities Affordability and Homeowner's Comparisons - City of Mesa
+- City of Phoenix Water Services | existing_seed | current=zip_prefix | next=manual_research | official=https://www.phoenix.gov/administration/departments/cityclerk/programs-services/annexations/phoenix-boundary-maps.html | status=resolved | confidence=high
+  note: Phoenix Boundary Maps | City of Phoenix
+- City of Scottsdale Utilities | catalog_added | current=zip_prefix | next=live_address | official=https://www.scottsdaleaz.gov/utilities/establish-service | status=catalog_only | confidence=catalog
+  note: Scottsdale utilities require address confirmation before establishing water or related municipal utility service.
+- City of Tempe Customer Services | catalog_added | current=zip_prefix | next=live_address | official=https://www.tempe.gov/i-want-to/start-stop-water-service | status=catalog_only | confidence=catalog
+  note: Tempe customer services cover water, sewer, and solid waste start, transfer, and stop workflows; service should be confirmed by address.
+- EPCOR Water Arizona | existing_seed | current=zip_prefix | next=none | official=https://www.epcor.com/us/en/az/account/start-service.html | status=catalog_only | confidence=catalog
 - Glendale Water Services | catalog_added | current=zip_prefix | next=none | official=https://www.glendaleaz.com/live/city_services/water_services | status=catalog_only | confidence=catalog
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Mesa Utilities | existing_seed | current=zip_prefix | next=none | official=https://www.mesaaz.gov/Government/Management-Budget/Valley-Cities-Affordability-and-Homeowners-Comparisons | status=resolved | confidence=high
-  note: Valley Cities Affordability and Homeowner's Comparisons - City of Mesa
-- Phoenix Water Services | existing_seed | current=zip_prefix | next=manual_research | official=https://www.phoenix.gov/administration/departments/cityclerk/programs-services/annexations/phoenix-boundary-maps.html | status=resolved | confidence=high
-  note: Phoenix Boundary Maps | City of Phoenix
-- Scottsdale Water | catalog_added | current=zip_prefix | next=none | official=https://www.scottsdaleaz.gov/water | status=catalog_only | confidence=catalog
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- Liberty Utilities Arizona Water and Wastewater | existing_seed | current=zip_prefix | next=none | official=https://arizona.libertyutilities.com/rio-rico/commercial/new-services/water-service-transfer.html | status=catalog_only | confidence=catalog
 - Town of Gilbert Water | catalog_added | current=zip_prefix | next=none | official=https://www.gilbertaz.gov/departments/public-works/water | status=catalog_only | confidence=catalog
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 - Tucson Water | existing_seed | current=zip_prefix | next=manual_research | official=https://www.tucsonaz.gov/Departments/Transportation-Mobility/Maps-and-Records/Maps-Records-Downloads | status=partial | confidence=medium
@@ -1445,12 +1452,18 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ## NV
 
-- Totals: total=8, existing_seed=7, catalog_added=1, catalog_backlog=0, zip_modeled=4, state_only=4, promote_zip=0, live_address=2, polygon=1, manual_research=2
+- Totals: total=20, existing_seed=19, catalog_added=1, catalog_backlog=0, zip_modeled=16, state_only=4, promote_zip=0, live_address=2, polygon=1, manual_research=2
 
 ### Electric
 
+- Boulder City Utilities | existing_seed | current=zip_prefix | next=none | official=https://bcnv.org/321/Utilities---Billing | status=catalog_only | confidence=catalog
+- Lincoln County Power District No. 1 | existing_seed | current=zip_prefix | next=none | official=https://www.lcpd1.com/form/start-or-stop-service | status=catalog_only | confidence=catalog
+- Mt. Wheeler Power | existing_seed | current=zip_prefix | next=none | official=https://www.mwpower.net/new-service-upgrade-request | status=catalog_only | confidence=catalog
 - NV Energy | existing_seed | current=zip_prefix | next=none | official=https://www.nvenergy.com/about-nvenergy/economic-development/counties | status=partial | confidence=medium
   note: NV Energy
+- Overton Power District No. 5 | existing_seed | current=zip_prefix | next=none | official=https://opd5.com/customer-information/application-for-new-service/ | status=catalog_only | confidence=catalog
+- Valley Electric Association | existing_seed | current=zip_prefix | next=none | official=https://www.vea.coop/member-services/start-stop/ | status=catalog_only | confidence=catalog
+- Wells Rural Electric Company | existing_seed | current=zip_prefix | next=none | official=https://www.wrec.coop/member-services/start-stop-transfer-service/ | status=catalog_only | confidence=catalog
 
 ### Gas
 
@@ -1459,8 +1472,14 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ### Water
 
-- Las Vegas Valley Water | existing_seed | current=zip_prefix | next=none | official=https://www.lvvwd.com/customer-service/service-areas/index.html | status=resolved | confidence=high
+- Carson City Utility Billing | existing_seed | current=zip_prefix | next=none | official=https://www.carson.org/business/water-and-sewer-services | status=catalog_only | confidence=catalog
+- City of Henderson Utility Services | existing_seed | current=zip_prefix | next=none | official=https://www.cityofhenderson.com/government/departments/utility-services/businesses/start-stop-and-transfer-service | status=catalog_only | confidence=catalog
+- City of North Las Vegas Utilities Department | existing_seed | current=zip_prefix | next=none | official=https://payutil.cityofnorthlasvegas.com/ | status=catalog_only | confidence=catalog
+- Great Basin Water | existing_seed | current=zip_prefix | next=none | official=https://www.myutility.us/greatbasinwater | status=catalog_only | confidence=catalog
+- Las Vegas Valley Water District | existing_seed | current=zip_prefix | next=none | official=https://www.lvvwd.com/customer-service/service-areas/index.html | status=resolved | confidence=high
   note: Other Service Areas
+- Truckee Meadows Water Authority | existing_seed | current=zip_prefix | next=none | official=https://tmwa.com/start-stop-or-transfer-service/ | status=catalog_only | confidence=catalog
+- Virgin Valley Water District | existing_seed | current=zip_prefix | next=none | official=https://vvwdnv.com/sign-up-for-service | status=catalog_only | confidence=catalog
 
 ### Internet
 
@@ -1621,19 +1640,39 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ## OR
 
-- Totals: total=9, existing_seed=7, catalog_added=2, catalog_backlog=0, zip_modeled=4, state_only=5, promote_zip=2, live_address=1, polygon=1, manual_research=4
+- Totals: total=26, existing_seed=7, catalog_added=19, catalog_backlog=0, zip_modeled=24, state_only=2, promote_zip=0, live_address=18, polygon=2, manual_research=3
 
 ### Electric
 
 - Avista Utilities | catalog_added | current=zip_prefix | next=none | official=https://www.myavista.com/your-account/moving | status=catalog_only | confidence=catalog
   note: Avista provides electric and natural gas service across eastern Washington, northern Idaho, and parts of Oregon; ZIP prefixes are regional prefilters and service address confirmation is required.
-- Pacific Power | catalog_added | current=state | next=manual_research | official=https://www.pacificpower.net/about.html | status=partial | confidence=medium
-  note: Pacific Power is a major Oregon utility missing from seed.
-- Portland General Electric | existing_seed | current=state | next=promote_zip | official=https://portlandgeneral.com/about/info/service-area | status=resolved | confidence=high
+- Central Lincoln People's Utility District | catalog_added | current=zip_prefix | next=live_address | official=https://clpud.org/customer-information/start-or-stop-service/ | status=catalog_only | confidence=catalog
+  note: Central Lincoln PUD serves coastal Oregon communities; ZIPs are broad coastal prefilters and service should be confirmed by address.
+- Consumers Power Inc. | catalog_added | current=zip_prefix | next=live_address | official=https://cpi.coop/service/stop-service | status=catalog_only | confidence=catalog
+  note: Consumers Power Inc. serves selected Oregon addresses in multiple operating zones; address confirmation is required.
+- Eugene Water & Electric Board | catalog_added | current=zip_prefix | next=live_address | official=https://www.eweb.org/start-stop | status=catalog_only | confidence=catalog
+  note: EWEB is Eugene's electric and water utility; service should be confirmed by address, especially near Lane Electric boundaries.
+- Idaho Power Oregon Service Area | catalog_added | current=zip_prefix | next=live_address | official=https://www.idahopower.com/accounts-service/start-stop-transfer/ | status=catalog_only | confidence=catalog
+  note: Idaho Power has an eastern Oregon service area; keep it distinct from Oregon Trail Electric until any service-area transfer is completed operationally.
+- Lane Electric Cooperative | catalog_added | current=zip_prefix | next=live_address | official=https://www.laneelectric.com/member-services/new-member-guide/ | status=catalog_only | confidence=catalog
+  note: Lane Electric serves rural Lane County and surrounding areas; service should be confirmed by address near EWEB and Springfield Utility Board boundaries.
+- Oregon Trail Electric Cooperative | catalog_added | current=zip_prefix | next=live_address | official=https://www.otec.coop/ | status=catalog_only | confidence=catalog
+  note: OTEC is an eastern Oregon electric cooperative; keep distinct from Idaho Power while the Oregon service-area transfer remains an operational change to monitor.
+- Pacific Power | catalog_added | current=zip_prefix | next=live_address | official=https://www.pacificpower.net/my-account/start-stop-move.html | status=partial | confidence=medium
+  note: Pacific Power serves many Oregon communities outside the Portland General Electric footprint; ZIP prefixes are broad prefilters and service should be confirmed by address.
+- Portland General Electric | existing_seed | current=zip_prefix | next=none | official=https://portlandgeneral.com/about/info/service-area | status=resolved | confidence=high
   note: PGE Service Area | PGE
+- Springfield Utility Board | catalog_added | current=zip_prefix | next=live_address | official=https://www.subutil.com/customer-service/start-stop-service/ | status=catalog_only | confidence=catalog
+  note: Springfield Utility Board provides municipal electric and water service in Springfield; exact service is address-specific.
+- Tillamook People's Utility District | catalog_added | current=zip_prefix | next=live_address | official=https://www.tpud.org/customer-service/start-or-stop-service/ | status=catalog_only | confidence=catalog
+  note: Tillamook PUD service is local and address-specific across Tillamook County and nearby areas.
+- Umatilla Electric Cooperative | catalog_added | current=zip_prefix | next=live_address | official=https://www.umatillaelectric.com/member-services/start-stop-service/ | status=catalog_only | confidence=catalog
+  note: Umatilla Electric Cooperative serves selected northeastern Oregon addresses; ZIPs are prefilters.
 
 ### Gas
 
+- Avista Utilities Oregon Gas | catalog_added | current=zip_prefix | next=live_address | official=https://www.myavista.com/your-account/moving | status=catalog_only | confidence=catalog
+  note: Avista's Oregon utility service is address-qualified and should remain distinct from Cascade Natural Gas and NW Natural.
 - Cascade Natural Gas | existing_seed | current=zip_prefix | next=manual_research | official=https://www.cngc.com/ | status=partial | confidence=medium
   note: Home - Cascade Natural Gas Corporation
 - NW Natural | existing_seed | current=zip_prefix | next=manual_research | official=https://www.nwnatural.com/gas-availability | status=partial | confidence=medium
@@ -1641,8 +1680,20 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ### Water
 
-- Portland Water Bureau | existing_seed | current=state | next=promote_zip | official=https://www.portland.gov/service-areas/public-works | status=resolved | confidence=high
+- City of Bend Water Services | catalog_added | current=zip_prefix | next=live_address | official=https://bendoregon.gov/service/water-sewer-start-or-stop-service/ | status=catalog_only | confidence=catalog
+  note: Bend water and sewer service is municipal and address-specific.
+- City of Gresham Utility Services | catalog_added | current=zip_prefix | next=live_address | official=https://www.greshamoregon.gov/services/utilities/stop-or-start-utility-services/ | status=catalog_only | confidence=catalog
+  note: Gresham utility services cover municipal water, wastewater/sewer, and stormwater for eligible addresses.
+- City of Hillsboro Utility Billing | catalog_added | current=zip_prefix | next=live_address | official=https://www.hillsboro-oregon.gov/services/utility-billing/start-or-stop-service | status=catalog_only | confidence=catalog
+  note: Hillsboro utility billing is municipal and should be confirmed by service address.
+- City of Portland Water Bureau | existing_seed | current=zip_prefix | next=none | official=https://www.portland.gov/service-areas/public-works | status=resolved | confidence=high
   note: Public Works | Portland.gov
+- City of Salem Utility Service | catalog_added | current=zip_prefix | next=live_address | official=https://www.cityofsalem.net/community/household/water-utilities/utility-payments-and-your-utility-account/manage-your-city-of-salem-utility-service-account | status=catalog_only | confidence=catalog
+  note: City of Salem utility account setup is municipal and should be confirmed by service address.
+- Medford Water | catalog_added | current=zip_prefix | next=live_address | official=https://www.medfordwater.org/services/customer-service/ | status=catalog_only | confidence=catalog
+  note: Medford Water service is regional and should be confirmed by service address.
+- Tualatin Valley Water District | catalog_added | current=zip_prefix | next=live_address | official=https://www.tvwd.org/district/page/startstop-service-interim-billing | status=catalog_only | confidence=catalog
+  note: TVWD is a Washington County-area water district; address confirmation is required near Beaverton and other providers.
 
 ### Internet
 
@@ -1655,6 +1706,11 @@ Generated: 2026-04-18T17:41:23.376Z
 
 - TriMet | existing_seed | current=zip_prefix | next=polygon | official=http://www.trimet.org/map/ | status=partial | confidence=medium
   note: Plan and track your trip on TriMet
+
+### Toll
+
+- BreezeBy Electronic Tolling | catalog_added | current=zip_prefix | next=polygon | official=https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling | status=catalog_only | confidence=catalog
+  note: BreezeBy is the Columbia River bridge toll account surface for Hood River-White Salmon Bridge and Bridge of the Gods corridor users.
 
 ## PA
 
@@ -1754,28 +1810,51 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ## SC
 
-- Totals: total=5, existing_seed=4, catalog_added=1, catalog_backlog=0, zip_modeled=4, state_only=1, promote_zip=1, live_address=0, polygon=0, manual_research=3
+- Totals: total=25, existing_seed=24, catalog_added=1, catalog_backlog=0, zip_modeled=25, state_only=0, promote_zip=0, live_address=0, polygon=0, manual_research=3
 
 ### Electric
 
-- Dominion Energy South Carolina | existing_seed | current=zip_prefix | next=none | official=https://www.dominionenergy.com/south-carolina/start-stop-service | status=catalog_only | confidence=catalog
+- Berkeley Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://www.berkeleyelectric.coop/service-territory | status=catalog_only | confidence=catalog
+- Blue Ridge Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://blueridge.coop/start-service | status=catalog_only | confidence=catalog
+- Dominion Energy South Carolina | existing_seed | current=zip_prefix | next=none | official=https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service | status=catalog_only | confidence=catalog
+- Duke Energy South Carolina | existing_seed | current=zip_prefix | next=none | official=https://www.duke-energy.com/start-stop-move/landing | status=catalog_only | confidence=catalog
+- Horry Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://horryelectric.com/services/electric-service/ | status=catalog_only | confidence=catalog
+- Laurens Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://laurenselectric.com/my-account/start-service/ | status=catalog_only | confidence=catalog
+- Mid-Carolina Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://www.mcecoop.com/my-account/start-service/ | status=catalog_only | confidence=catalog
+- Palmetto Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://palmetto.coop/startstop-service | status=catalog_only | confidence=catalog
+- Santee Cooper | existing_seed | current=zip_prefix | next=none | official=https://www.santeecooper.com/residential/start-move-stop-service/ | status=catalog_only | confidence=catalog
+- Santee Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://santee.org/service | status=catalog_only | confidence=catalog
+- York Electric Cooperative | existing_seed | current=zip_prefix | next=none | official=https://www.yorkelectric.net/my-service/residential-accounts/start-residential-electric-service/ | status=catalog_only | confidence=catalog
 
 ### Gas
 
-- Dominion Energy South Carolina Gas | existing_seed | current=state | next=promote_zip | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
+- Dominion Energy South Carolina Gas | existing_seed | current=zip_prefix | next=none | official=https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map | status=resolved | confidence=high
   note: Infrastructure Availability Map | South Carolina | Dominion Energy
+- Fort Hill Natural Gas Authority | existing_seed | current=zip_prefix | next=none | official=https://www.fhnga.com/customer-support/start-stop-transfer.stml | status=catalog_only | confidence=catalog
+- Lancaster County Natural Gas Authority | existing_seed | current=zip_prefix | next=none | official=https://lcngasc.com/ | status=catalog_only | confidence=catalog
 - Piedmont Natural Gas | existing_seed | current=zip_prefix | next=manual_research | official=https://www.piedmontng.com/ | status=blocked | confidence=low
   note: Homepage fetch failed (403)
+- York County Natural Gas Authority | existing_seed | current=zip_prefix | next=none | official=https://ycnga.com/start-stop-change-service/ | status=catalog_only | confidence=catalog
 
 ### Water
 
+- Beaufort-Jasper Water & Sewer Authority | existing_seed | current=zip_prefix | next=none | official=https://www.bjwsa.org/167/StartStop-Services | status=catalog_only | confidence=catalog
 - Charleston Water System | existing_seed | current=zip_prefix | next=manual_research | official=https://experience.arcgis.com/experience/e77bdcce1f464add853e3aae4d274897/ | status=partial | confidence=medium
   note: Experience
+- Columbia Water | existing_seed | current=zip_prefix | next=none | official=https://columbiascwater.net/new-transfer-service/ | status=catalog_only | confidence=catalog
+- Grand Strand Water & Sewer Authority | existing_seed | current=zip_prefix | next=none | official=https://www.gswsa.com/customer-service.cfm?page=44 | status=catalog_only | confidence=catalog
+- Greenville Water | existing_seed | current=zip_prefix | next=none | official=https://www.greenvillewater.com/customer-service/start-stop-move | status=catalog_only | confidence=catalog
+- Mount Pleasant Waterworks | existing_seed | current=zip_prefix | next=none | official=https://www.mountpleasantwaterworks.com/customers/service___account_requests/start_or_stop_service.php | status=catalog_only | confidence=catalog
+- Spartanburg Water | existing_seed | current=zip_prefix | next=none | official=https://www.spartanburgwater.org/manage-water-service | status=catalog_only | confidence=catalog
 
 ### Transit
 
 - CARTA | catalog_added | current=zip_prefix | next=manual_research | official=https://ridecarta.com | status=blocked | confidence=low
   note: Charleston Area Regional Transportation Authority adds a South Carolina transit option beyond utility-only coverage.
+
+### Toll
+
+- Southern Connector / Palmetto Pass | existing_seed | current=zip_prefix | next=none | official=https://southernconnector.com/index.html | status=catalog_only | confidence=catalog
 
 ## SD
 
@@ -2060,7 +2139,7 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ## WA
 
-- Totals: total=21, existing_seed=8, catalog_added=13, catalog_backlog=0, zip_modeled=19, state_only=2, promote_zip=0, live_address=1, polygon=1, manual_research=5
+- Totals: total=22, existing_seed=8, catalog_added=14, catalog_backlog=0, zip_modeled=20, state_only=2, promote_zip=0, live_address=1, polygon=2, manual_research=5
 
 ### Electric
 
@@ -2119,6 +2198,8 @@ Generated: 2026-04-18T17:41:23.376Z
 
 ### Toll
 
+- BreezeBy Electronic Tolling | catalog_added | current=zip_prefix | next=polygon | official=https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling | status=catalog_only | confidence=catalog
+  note: BreezeBy is the Columbia River bridge toll account surface for Hood River-White Salmon Bridge and Bridge of the Gods corridor users.
 - Good To Go! | existing_seed | current=zip_prefix | next=manual_research | official=https://wsdot.wa.gov/goodtogo | status=blocked | confidence=low
   note: Homepage fetch failed (403)
 

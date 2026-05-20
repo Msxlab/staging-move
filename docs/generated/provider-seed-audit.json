@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-04-24T03:42:57.999Z",
-  "rawCount": 777,
-  "sanitizedCount": 776,
+  "generatedAt": "2026-05-13T21:11:43.362Z",
+  "rawCount": 1123,
+  "sanitizedCount": 1122,
   "renamed": [],
   "deduped": [
     {
@@ -14,13 +14,18 @@
   "categoryStats": [
     {
       "category": "UTILITY_ELECTRIC",
-      "count": 71,
+      "count": 199,
       "label": "Electric"
     },
     {
       "category": "UTILITY_WATER",
-      "count": 67,
+      "count": 156,
       "label": "Water"
+    },
+    {
+      "category": "UTILITY_GAS",
+      "count": 83,
+      "label": "Gas"
     },
     {
       "category": "TRANSPORTATION_TRANSIT",
@@ -28,9 +33,9 @@
       "label": "Transit"
     },
     {
-      "category": "UTILITY_GAS",
-      "count": 56,
-      "label": "Gas"
+      "category": "GOVERNMENT_DMV",
+      "count": 59,
+      "label": "DMV"
     },
     {
       "category": "GOVERNMENT_VOTER",
@@ -38,19 +43,24 @@
       "label": "Voter Registration"
     },
     {
-      "category": "GOVERNMENT_DMV",
-      "count": 51,
-      "label": "DMV"
-    },
-    {
       "category": "FINANCIAL_INSURANCE_HEALTH",
       "count": 44,
       "label": "Health Insurance"
     },
     {
+      "category": "TRANSPORTATION_TOLL",
+      "count": 38,
+      "label": "Toll Pass"
+    },
+    {
       "category": "SHOPPING_RETAIL",
-      "count": 24,
+      "count": 33,
       "label": "Shopping"
+    },
+    {
+      "category": "UTILITY_TRASH",
+      "count": 27,
+      "label": "Trash & Waste"
     },
     {
       "category": "FINANCIAL_BANK",
@@ -64,8 +74,13 @@
     },
     {
       "category": "SHOPPING_SUBSCRIPTION",
-      "count": 16,
+      "count": 17,
       "label": "Subscriptions"
+    },
+    {
+      "category": "UTILITY_SEWER",
+      "count": 17,
+      "label": "Sewer"
     },
     {
       "category": "UTILITY_PHONE",
@@ -73,13 +88,8 @@
       "label": "Phone"
     },
     {
-      "category": "TRANSPORTATION_TOLL",
-      "count": 14,
-      "label": "Toll Pass"
-    },
-    {
       "category": "FINANCIAL_CREDIT_CARD",
-      "count": 12,
+      "count": 13,
       "label": "Credit Cards"
     },
     {
@@ -103,6 +113,16 @@
       "label": "Payment Apps"
     },
     {
+      "category": "GOVERNMENT_HEALTH",
+      "count": 11,
+      "label": "Healthcare.gov"
+    },
+    {
+      "category": "HEALTHCARE_PHARMACY",
+      "count": 11,
+      "label": "Pharmacy"
+    },
+    {
       "category": "FINANCIAL_INSURANCE_RENTERS",
       "count": 10,
       "label": "Renters Insurance"
@@ -116,6 +136,11 @@
       "category": "FITNESS_STUDIO",
       "count": 8,
       "label": "Studio"
+    },
+    {
+      "category": "GOVERNMENT_TAX",
+      "count": 8,
+      "label": "Tax (IRS)"
     },
     {
       "category": "HOUSING_SECURITY",
@@ -141,11 +166,6 @@
       "category": "GROCERY_DELIVERY",
       "count": 7,
       "label": "Grocery Delivery"
-    },
-    {
-      "category": "HEALTHCARE_PHARMACY",
-      "count": 7,
-      "label": "Pharmacy"
     },
     {
       "category": "FINANCIAL_INSURANCE_HOME",
@@ -238,16 +258,6 @@
       "label": "Benefits"
     },
     {
-      "category": "GOVERNMENT_HEALTH",
-      "count": 3,
-      "label": "Healthcare.gov"
-    },
-    {
-      "category": "GOVERNMENT_TAX",
-      "count": 3,
-      "label": "Tax (IRS)"
-    },
-    {
       "category": "HEALTHCARE_SENIOR",
       "count": 3,
       "label": "Senior Care"
@@ -308,11 +318,6 @@
       "label": "Cable / TV"
     },
     {
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "label": "Trash & Waste"
-    },
-    {
       "category": "FINANCIAL_INSURANCE_BOAT",
       "count": 1,
       "label": "Boat Insurance"
@@ -351,11 +356,11 @@
   "scopeStats": [
     {
       "scope": "STATE",
-      "count": 433
+      "count": 764
     },
     {
       "scope": "FEDERAL",
-      "count": 343
+      "count": 358
     }
   ],
   "slugDuplicates": [],
@@ -369,6 +374,12 @@
           "name": "Black Hills Energy SD",
           "slug": "bhe-sd",
           "category": "UTILITY_ELECTRIC",
+          "website": "blackhillsenergy.com"
+        },
+        {
+          "name": "Black Hills Energy Arkansas",
+          "slug": "black-hills-energy-ar",
+          "category": "UTILITY_GAS",
           "website": "blackhillsenergy.com"
         },
         {
@@ -394,6 +405,64 @@
           "slug": "source-gas-wy",
           "category": "UTILITY_GAS",
           "website": "blackhillsenergy.com"
+        }
+      ]
+    },
+    {
+      "key": "dominionenergy.com",
+      "providers": [
+        {
+          "name": "Dominion Energy Virginia",
+          "slug": "dominion",
+          "category": "UTILITY_ELECTRIC",
+          "website": "dominionenergy.com"
+        },
+        {
+          "name": "Dominion Energy North Carolina",
+          "slug": "dominion-energy-nc",
+          "category": "UTILITY_ELECTRIC",
+          "website": "dominionenergy.com"
+        },
+        {
+          "name": "Dominion Energy South Carolina",
+          "slug": "dominion-energy-sc",
+          "category": "UTILITY_ELECTRIC",
+          "website": "dominionenergy.com"
+        },
+        {
+          "name": "Dominion Energy South Carolina Gas",
+          "slug": "dominion-sc-gas",
+          "category": "UTILITY_GAS",
+          "website": "dominionenergy.com"
+        }
+      ]
+    },
+    {
+      "key": "portal.ct.gov",
+      "providers": [
+        {
+          "name": "Connecticut Department of Motor Vehicles",
+          "slug": "dmv-ct",
+          "category": "GOVERNMENT_DMV",
+          "website": "portal.ct.gov"
+        },
+        {
+          "name": "Connecticut Secretary of State — Voter",
+          "slug": "vote-ct",
+          "category": "GOVERNMENT_VOTER",
+          "website": "portal.ct.gov"
+        },
+        {
+          "name": "HUSKY Health",
+          "slug": "husky-health-ct",
+          "category": "GOVERNMENT_HEALTH",
+          "website": "portal.ct.gov"
+        },
+        {
+          "name": "Connecticut Department of Revenue Services",
+          "slug": "ct-drs",
+          "category": "GOVERNMENT_TAX",
+          "website": "portal.ct.gov"
         }
       ]
     },
@@ -450,29 +519,6 @@
       ]
     },
     {
-      "key": "dominionenergy.com",
-      "providers": [
-        {
-          "name": "Dominion Energy",
-          "slug": "dominion",
-          "category": "UTILITY_ELECTRIC",
-          "website": "dominionenergy.com"
-        },
-        {
-          "name": "Dominion Energy South Carolina Gas",
-          "slug": "dominion-sc-gas",
-          "category": "UTILITY_GAS",
-          "website": "dominionenergy.com"
-        },
-        {
-          "name": "Dominion Energy Utah",
-          "slug": "dominion-ut-gas",
-          "category": "UTILITY_GAS",
-          "website": "dominionenergy.com"
-        }
-      ]
-    },
-    {
       "key": "geico.com",
       "providers": [
         {
@@ -496,6 +542,29 @@
       ]
     },
     {
+      "key": "miamidade.gov",
+      "providers": [
+        {
+          "name": "Miami-Dade Water and Sewer Department",
+          "slug": "miami-water",
+          "category": "UTILITY_WATER",
+          "website": "miamidade.gov"
+        },
+        {
+          "name": "Miami-Dade Transit",
+          "slug": "miami-transit",
+          "category": "TRANSPORTATION_TRANSIT",
+          "website": "miamidade.gov"
+        },
+        {
+          "name": "Miami-Dade Solid Waste Management",
+          "slug": "miami-dade-solid-waste",
+          "category": "UTILITY_TRASH",
+          "website": "miamidade.gov"
+        }
+      ]
+    },
+    {
       "key": "montana-dakota.com",
       "providers": [
         {
@@ -515,6 +584,29 @@
           "slug": "mdu",
           "category": "UTILITY_GAS",
           "website": "montana-dakota.com"
+        }
+      ]
+    },
+    {
+      "key": "nationalgridus.com",
+      "providers": [
+        {
+          "name": "National Grid Upstate New York",
+          "slug": "national-grid-ny",
+          "category": "UTILITY_ELECTRIC",
+          "website": "nationalgridus.com"
+        },
+        {
+          "name": "National Grid Massachusetts",
+          "slug": "national-grid-ma",
+          "category": "UTILITY_ELECTRIC",
+          "website": "nationalgridus.com"
+        },
+        {
+          "name": "National Grid Metro New York Gas",
+          "slug": "national-grid-metro-ny-gas",
+          "category": "UTILITY_GAS",
+          "website": "nationalgridus.com"
         }
       ]
     },
@@ -565,6 +657,29 @@
       ]
     },
     {
+      "key": "unitil.com",
+      "providers": [
+        {
+          "name": "Unitil Northern Utilities New Hampshire Gas",
+          "slug": "unitil-nh",
+          "category": "UTILITY_GAS",
+          "website": "unitil.com"
+        },
+        {
+          "name": "Unitil Massachusetts",
+          "slug": "unitil-ma",
+          "category": "UTILITY_ELECTRIC",
+          "website": "unitil.com"
+        },
+        {
+          "name": "Unitil Energy Systems New Hampshire Electric",
+          "slug": "unitil-nh-electric",
+          "category": "UTILITY_ELECTRIC",
+          "website": "unitil.com"
+        }
+      ]
+    },
+    {
       "key": "verizon.com",
       "providers": [
         {
@@ -588,25 +703,25 @@
       ]
     },
     {
-      "key": "xcelenergy.com",
+      "key": "walmart.com",
       "providers": [
         {
-          "name": "Xcel Energy",
-          "slug": "xcel-energy",
-          "category": "UTILITY_ELECTRIC",
-          "website": "xcelenergy.com"
+          "name": "Walmart Pharmacy",
+          "slug": "walmart-pharmacy",
+          "category": "HEALTHCARE_PHARMACY",
+          "website": "walmart.com"
         },
         {
-          "name": "Xcel Energy ND",
-          "slug": "xcel-nd",
-          "category": "UTILITY_ELECTRIC",
-          "website": "xcelenergy.com"
+          "name": "Walmart",
+          "slug": "walmart",
+          "category": "SHOPPING_RETAIL",
+          "website": "walmart.com"
         },
         {
-          "name": "Xcel Energy North Dakota Gas",
-          "slug": "xcel-nd-gas",
-          "category": "UTILITY_GAS",
-          "website": "xcelenergy.com"
+          "name": "Walmart+ Delivery",
+          "slug": "walmart-plus",
+          "category": "GROCERY_DELIVERY",
+          "website": "walmart.com"
         }
       ]
     },
@@ -713,6 +828,23 @@
       ]
     },
     {
+      "key": "cambridgema.gov",
+      "providers": [
+        {
+          "name": "City of Cambridge Water Department",
+          "slug": "cambridge-water",
+          "category": "UTILITY_WATER",
+          "website": "cambridgema.gov"
+        },
+        {
+          "name": "City of Cambridge Curbside Collections",
+          "slug": "cambridge-curbside-collections",
+          "category": "UTILITY_TRASH",
+          "website": "cambridgema.gov"
+        }
+      ]
+    },
+    {
       "key": "capitalone.com",
       "providers": [
         {
@@ -726,6 +858,23 @@
           "slug": "capital-one-cards",
           "category": "FINANCIAL_CREDIT_CARD",
           "website": "capitalone.com"
+        }
+      ]
+    },
+    {
+      "key": "charlottenc.gov",
+      "providers": [
+        {
+          "name": "Charlotte Water",
+          "slug": "charlotte-water",
+          "category": "UTILITY_WATER",
+          "website": "charlottenc.gov"
+        },
+        {
+          "name": "City of Charlotte Solid Waste Services",
+          "slug": "charlotte-solid-waste",
+          "category": "UTILITY_TRASH",
+          "website": "charlottenc.gov"
         }
       ]
     },
@@ -764,6 +913,57 @@
       ]
     },
     {
+      "key": "cityofws.org",
+      "providers": [
+        {
+          "name": "Winston-Salem/Forsyth County Utilities",
+          "slug": "winston-salem-forsyth-utilities",
+          "category": "UTILITY_WATER",
+          "website": "cityofws.org"
+        },
+        {
+          "name": "Winston-Salem Solid Waste Collections",
+          "slug": "winston-salem-solid-waste",
+          "category": "UTILITY_TRASH",
+          "website": "cityofws.org"
+        }
+      ]
+    },
+    {
+      "key": "columbus.gov",
+      "providers": [
+        {
+          "name": "City of Columbus Water & Power",
+          "slug": "columbus-water",
+          "category": "UTILITY_WATER",
+          "website": "columbus.gov"
+        },
+        {
+          "name": "City of Columbus Division of Refuse Collection",
+          "slug": "columbus-refuse",
+          "category": "UTILITY_TRASH",
+          "website": "columbus.gov"
+        }
+      ]
+    },
+    {
+      "key": "concordnh.gov",
+      "providers": [
+        {
+          "name": "City of Concord General Services Water and Sewer Utility Billing",
+          "slug": "concord-utility-billing",
+          "category": "UTILITY_WATER",
+          "website": "concordnh.gov"
+        },
+        {
+          "name": "City of Concord Trash and Recycling",
+          "slug": "concord-trash-recycling",
+          "category": "UTILITY_TRASH",
+          "website": "concordnh.gov"
+        }
+      ]
+    },
+    {
       "key": "cvs.com",
       "providers": [
         {
@@ -781,6 +981,23 @@
       ]
     },
     {
+      "key": "dekalbcountyga.gov",
+      "providers": [
+        {
+          "name": "DeKalb County Department of Watershed Management",
+          "slug": "dekalb-watershed",
+          "category": "UTILITY_WATER",
+          "website": "dekalbcountyga.gov"
+        },
+        {
+          "name": "DeKalb County Sanitation Division",
+          "slug": "dekalb-sanitation",
+          "category": "UTILITY_TRASH",
+          "website": "dekalbcountyga.gov"
+        }
+      ]
+    },
+    {
       "key": "discover.com",
       "providers": [
         {
@@ -794,6 +1011,74 @@
           "slug": "discover-card",
           "category": "FINANCIAL_CREDIT_CARD",
           "website": "discover.com"
+        }
+      ]
+    },
+    {
+      "key": "durhamnc.gov",
+      "providers": [
+        {
+          "name": "City of Durham Department of Water Management",
+          "slug": "durham-water",
+          "category": "UTILITY_WATER",
+          "website": "durhamnc.gov"
+        },
+        {
+          "name": "City of Durham Solid Waste Management",
+          "slug": "durham-solid-waste",
+          "category": "UTILITY_TRASH",
+          "website": "durhamnc.gov"
+        }
+      ]
+    },
+    {
+      "key": "gwinnettcounty.com",
+      "providers": [
+        {
+          "name": "Gwinnett County Department of Water Resources",
+          "slug": "gwinnett-water-resources",
+          "category": "UTILITY_WATER",
+          "website": "gwinnettcounty.com"
+        },
+        {
+          "name": "Gwinnett County Solid Waste Management",
+          "slug": "gwinnett-solid-waste",
+          "category": "UTILITY_TRASH",
+          "website": "gwinnettcounty.com"
+        }
+      ]
+    },
+    {
+      "key": "honolulu.gov",
+      "providers": [
+        {
+          "name": "Skyline",
+          "slug": "skyline-hi",
+          "category": "TRANSPORTATION_TRANSIT",
+          "website": "honolulu.gov"
+        },
+        {
+          "name": "City and County of Honolulu DMV",
+          "slug": "honolulu-county-dmv",
+          "category": "GOVERNMENT_DMV",
+          "website": "honolulu.gov"
+        }
+      ]
+    },
+    {
+      "key": "kroger.com",
+      "providers": [
+        {
+          "name": "Kroger Pharmacy",
+          "slug": "kroger-pharmacy",
+          "category": "HEALTHCARE_PHARMACY",
+          "website": "kroger.com"
+        },
+        {
+          "name": "Kroger",
+          "slug": "kroger",
+          "category": "SHOPPING_RETAIL",
+          "website": "kroger.com"
         }
       ]
     },
@@ -849,19 +1134,104 @@
       ]
     },
     {
-      "key": "miamidade.gov",
+      "key": "manchesternh.gov",
       "providers": [
         {
-          "name": "Miami-Dade Water & Sewer",
-          "slug": "miami-water",
-          "category": "UTILITY_WATER",
-          "website": "miamidade.gov"
+          "name": "City of Manchester Sewer and Stormwater",
+          "slug": "manchester-sewer-stormwater",
+          "category": "UTILITY_SEWER",
+          "website": "manchesternh.gov"
         },
         {
-          "name": "Miami-Dade Transit",
-          "slug": "miami-transit",
-          "category": "TRANSPORTATION_TRANSIT",
-          "website": "miamidade.gov"
+          "name": "City of Manchester Trash and Recycling",
+          "slug": "manchester-trash-recycling",
+          "category": "UTILITY_TRASH",
+          "website": "manchesternh.gov"
+        }
+      ]
+    },
+    {
+      "key": "mass.gov",
+      "providers": [
+        {
+          "name": "Massachusetts Registry of Motor Vehicles (RMV)",
+          "slug": "dmv-ma",
+          "category": "GOVERNMENT_DMV",
+          "website": "mass.gov"
+        },
+        {
+          "name": "EZDriveMA / E-ZPass MA",
+          "slug": "ezdrivema",
+          "category": "TRANSPORTATION_TOLL",
+          "website": "mass.gov"
+        }
+      ]
+    },
+    {
+      "key": "mauicounty.gov",
+      "providers": [
+        {
+          "name": "Maui County Division of Motor Vehicles & Licensing",
+          "slug": "maui-county-dmv",
+          "category": "GOVERNMENT_DMV",
+          "website": "mauicounty.gov"
+        },
+        {
+          "name": "Department of Water Supply, County of Maui",
+          "slug": "maui-dws",
+          "category": "UTILITY_WATER",
+          "website": "mauicounty.gov"
+        }
+      ]
+    },
+    {
+      "key": "myavista.com",
+      "providers": [
+        {
+          "name": "Avista Utilities",
+          "slug": "avista-utilities",
+          "category": "UTILITY_ELECTRIC",
+          "website": "myavista.com"
+        },
+        {
+          "name": "Avista Utilities Oregon Gas",
+          "slug": "avista-utilities-or-gas",
+          "category": "UTILITY_GAS",
+          "website": "myavista.com"
+        }
+      ]
+    },
+    {
+      "key": "nashuanh.gov",
+      "providers": [
+        {
+          "name": "City of Nashua Solid Waste Department",
+          "slug": "nashua-solid-waste",
+          "category": "UTILITY_TRASH",
+          "website": "nashuanh.gov"
+        },
+        {
+          "name": "City of Nashua Wastewater Department",
+          "slug": "nashua-wastewater",
+          "category": "UTILITY_SEWER",
+          "website": "nashuanh.gov"
+        }
+      ]
+    },
+    {
+      "key": "new-hampshire.libertyutilities.com",
+      "providers": [
+        {
+          "name": "Liberty Utilities New Hampshire Electric",
+          "slug": "liberty-nh",
+          "category": "UTILITY_ELECTRIC",
+          "website": "new-hampshire.libertyutilities.com"
+        },
+        {
+          "name": "Liberty Utilities New Hampshire Gas",
+          "slug": "liberty-nh-gas",
+          "category": "UTILITY_GAS",
+          "website": "new-hampshire.libertyutilities.com"
         }
       ]
     },
@@ -900,19 +1270,19 @@
       ]
     },
     {
-      "key": "portal.ct.gov",
+      "key": "raleighnc.gov",
       "providers": [
         {
-          "name": "Connecticut DMV",
-          "slug": "dmv-ct",
-          "category": "GOVERNMENT_DMV",
-          "website": "portal.ct.gov"
+          "name": "Raleigh Water",
+          "slug": "raleigh-water",
+          "category": "UTILITY_WATER",
+          "website": "raleighnc.gov"
         },
         {
-          "name": "Connecticut Secretary of State — Voter",
-          "slug": "vote-ct",
-          "category": "GOVERNMENT_VOTER",
-          "website": "portal.ct.gov"
+          "name": "City of Raleigh Solid Waste Services",
+          "slug": "raleigh-solid-waste",
+          "category": "UTILITY_TRASH",
+          "website": "raleighnc.gov"
         }
       ]
     },
@@ -968,6 +1338,23 @@
       ]
     },
     {
+      "key": "somervillema.gov",
+      "providers": [
+        {
+          "name": "City of Somerville Water and Sewer Department",
+          "slug": "somerville-water-sewer",
+          "category": "UTILITY_WATER",
+          "website": "somervillema.gov"
+        },
+        {
+          "name": "City of Somerville Trash and Recycling",
+          "slug": "somerville-trash-recycling",
+          "category": "UTILITY_TRASH",
+          "website": "somervillema.gov"
+        }
+      ]
+    },
+    {
       "key": "t-mobile.com",
       "providers": [
         {
@@ -981,6 +1368,23 @@
           "slug": "tmobile-home-internet",
           "category": "UTILITY_INTERNET",
           "website": "t-mobile.com"
+        }
+      ]
+    },
+    {
+      "key": "uesaz.com",
+      "providers": [
+        {
+          "name": "UniSource Energy Services Gas",
+          "slug": "unisource-gas-az",
+          "category": "UTILITY_GAS",
+          "website": "uesaz.com"
+        },
+        {
+          "name": "UniSource Energy Services",
+          "slug": "unisource-electric-az",
+          "category": "UTILITY_ELECTRIC",
+          "website": "uesaz.com"
         }
       ]
     },
@@ -1019,19 +1423,36 @@
       ]
     },
     {
-      "key": "walmart.com",
+      "key": "worcesterma.gov",
       "providers": [
         {
-          "name": "Walmart",
-          "slug": "walmart",
-          "category": "SHOPPING_RETAIL",
-          "website": "walmart.com"
+          "name": "City of Worcester Water and Sewer Operations",
+          "slug": "worcester-water-sewer",
+          "category": "UTILITY_WATER",
+          "website": "worcesterma.gov"
         },
         {
-          "name": "Walmart+ Delivery",
-          "slug": "walmart-plus",
-          "category": "GROCERY_DELIVERY",
-          "website": "walmart.com"
+          "name": "City of Worcester Trash and Recycling",
+          "slug": "worcester-trash-recycling",
+          "category": "UTILITY_TRASH",
+          "website": "worcesterma.gov"
+        }
+      ]
+    },
+    {
+      "key": "xcelenergy.com",
+      "providers": [
+        {
+          "name": "Xcel Energy ND",
+          "slug": "xcel-nd",
+          "category": "UTILITY_ELECTRIC",
+          "website": "xcelenergy.com"
+        },
+        {
+          "name": "Xcel Energy North Dakota Gas",
+          "slug": "xcel-nd-gas",
+          "category": "UTILITY_GAS",
+          "website": "xcelenergy.com"
         }
       ]
     },
@@ -1054,10 +1475,10 @@
     }
   ],
   "coverageSummary": {
-    "exactZipRules": 0,
-    "prefixZipRules": 1009,
-    "stateWideRows": 558,
-    "emptyCoverageRows": 343,
+    "exactZipRules": 3501,
+    "prefixZipRules": 1983,
+    "stateWideRows": 514,
+    "emptyCoverageRows": 358,
     "anomalies": []
   },
   "qualitySummary": {
@@ -1065,7 +1486,7 @@
       {
         "code": "missing_logo",
         "label": "Missing logo",
-        "count": 776,
+        "count": 1122,
         "examples": [
           {
             "name": "USPS",
@@ -1192,7 +1613,7 @@
       {
         "code": "missing_phone",
         "label": "Missing phone",
-        "count": 301,
+        "count": 454,
         "examples": [
           {
             "name": "Vote.gov",
@@ -1317,263 +1738,9 @@
         ]
       },
       {
-        "code": "broad_state_coverage",
-        "label": "Broad state coverage",
-        "count": 155,
-        "examples": [
-          {
-            "name": "NJ E-ZPass",
-            "slug": "nj-ezpass",
-            "category": "TRANSPORTATION_TOLL",
-            "website": "ezpassnj.com"
-          },
-          {
-            "name": "NJ Natural Gas",
-            "slug": "njng",
-            "category": "UTILITY_GAS",
-            "website": "njng.com"
-          },
-          {
-            "name": "National Grid NY",
-            "slug": "national-grid-ny",
-            "category": "UTILITY_GAS",
-            "website": "nationalgridus.com"
-          },
-          {
-            "name": "MTA",
-            "slug": "mta",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "mta.info"
-          },
-          {
-            "name": "NY E-ZPass",
-            "slug": "ny-ezpass",
-            "category": "TRANSPORTATION_TOLL",
-            "website": "e-zpassny.com"
-          },
-          {
-            "name": "Optimum",
-            "slug": "optimum",
-            "category": "UTILITY_INTERNET",
-            "website": "optimum.com"
-          },
-          {
-            "name": "Reliant Energy",
-            "slug": "reliant",
-            "category": "UTILITY_ELECTRIC",
-            "website": "reliant.com"
-          },
-          {
-            "name": "CenterPoint Energy",
-            "slug": "centerpoint",
-            "category": "UTILITY_GAS",
-            "website": "centerpointenergy.com"
-          },
-          {
-            "name": "TxTag",
-            "slug": "txtag",
-            "category": "TRANSPORTATION_TOLL",
-            "website": "txtag.org"
-          },
-          {
-            "name": "DART",
-            "slug": "dart",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "dart.org"
-          },
-          {
-            "name": "Houston METRO",
-            "slug": "metro-houston",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "ridemetro.org"
-          },
-          {
-            "name": "VIA Metropolitan Transit",
-            "slug": "via-sa",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "viainfo.net"
-          },
-          {
-            "name": "FasTrak",
-            "slug": "fastrak",
-            "category": "TRANSPORTATION_TOLL",
-            "website": "bayareafastrak.org"
-          },
-          {
-            "name": "LA Metro",
-            "slug": "la-metro",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "metro.net"
-          },
-          {
-            "name": "BART",
-            "slug": "bart",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "bart.gov"
-          },
-          {
-            "name": "SF Muni",
-            "slug": "muni",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "sfmta.com"
-          },
-          {
-            "name": "Caltrain",
-            "slug": "caltrain",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "caltrain.com"
-          },
-          {
-            "name": "San Diego MTS",
-            "slug": "mts-sd",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "sdmts.com"
-          },
-          {
-            "name": "VTA",
-            "slug": "vta",
-            "category": "TRANSPORTATION_TRANSIT",
-            "website": "vta.org"
-          },
-          {
-            "name": "FPL (Florida Power & Light)",
-            "slug": "fpl",
-            "category": "UTILITY_ELECTRIC",
-            "website": "fpl.com"
-          }
-        ]
-      },
-      {
-        "code": "generic_description",
-        "label": "Generic description",
-        "count": 133,
-        "examples": [
-          {
-            "name": "Wells Fargo",
-            "slug": "wells-fargo",
-            "category": "FINANCIAL_BANK",
-            "website": "wellsfargo.com"
-          },
-          {
-            "name": "Capital One",
-            "slug": "capital-one",
-            "category": "FINANCIAL_BANK",
-            "website": "capitalone.com"
-          },
-          {
-            "name": "GEICO",
-            "slug": "geico",
-            "category": "FINANCIAL_INSURANCE_AUTO",
-            "website": "geico.com"
-          },
-          {
-            "name": "Progressive",
-            "slug": "progressive",
-            "category": "FINANCIAL_INSURANCE_AUTO",
-            "website": "progressive.com"
-          },
-          {
-            "name": "Allstate",
-            "slug": "allstate",
-            "category": "FINANCIAL_INSURANCE_AUTO",
-            "website": "allstate.com"
-          },
-          {
-            "name": "Choice Home Warranty",
-            "slug": "choice-warranty",
-            "category": "FINANCIAL_INSURANCE_HOME",
-            "website": "choicehomewarranty.com"
-          },
-          {
-            "name": "Cigna",
-            "slug": "cigna",
-            "category": "FINANCIAL_INSURANCE_HEALTH",
-            "website": "cigna.com"
-          },
-          {
-            "name": "MetLife Dental",
-            "slug": "metlife-dental",
-            "category": "FINANCIAL_INSURANCE_HEALTH",
-            "website": "metlife.com"
-          },
-          {
-            "name": "New York Life",
-            "slug": "ny-life",
-            "category": "FINANCIAL_INSURANCE_LIFE",
-            "website": "newyorklife.com"
-          },
-          {
-            "name": "Healthy Paws",
-            "slug": "healthy-paws",
-            "category": "FINANCIAL_INSURANCE_PET",
-            "website": "healthypawspetinsurance.com"
-          },
-          {
-            "name": "Rocket Mortgage",
-            "slug": "rocket-mortgage",
-            "category": "FINANCIAL_MORTGAGE",
-            "website": "rocketmortgage.com"
-          },
-          {
-            "name": "Better.com",
-            "slug": "better",
-            "category": "FINANCIAL_MORTGAGE",
-            "website": "better.com"
-          },
-          {
-            "name": "T-Mobile",
-            "slug": "t-mobile",
-            "category": "UTILITY_PHONE",
-            "website": "t-mobile.com"
-          },
-          {
-            "name": "Total Wireless",
-            "slug": "total-wireless",
-            "category": "UTILITY_PHONE",
-            "website": "totalwireless.com"
-          },
-          {
-            "name": "Spectrum",
-            "slug": "spectrum",
-            "category": "UTILITY_INTERNET",
-            "website": "spectrum.com"
-          },
-          {
-            "name": "AT&T Fiber",
-            "slug": "att-fiber",
-            "category": "UTILITY_INTERNET",
-            "website": "att.com"
-          },
-          {
-            "name": "DirecTV",
-            "slug": "directv",
-            "category": "UTILITY_CABLE",
-            "website": "directv.com"
-          },
-          {
-            "name": "YouTube TV",
-            "slug": "youtube-tv",
-            "category": "UTILITY_CABLE",
-            "website": "tv.youtube.com"
-          },
-          {
-            "name": "Republic Services",
-            "slug": "republic-services",
-            "category": "UTILITY_TRASH",
-            "website": "republicservices.com"
-          },
-          {
-            "name": "Planet Fitness",
-            "slug": "planet-fitness",
-            "category": "FITNESS_GYM",
-            "website": "planetfitness.com"
-          }
-        ]
-      },
-      {
         "code": "duplicate_domain",
         "label": "Duplicate domain candidate",
-        "count": 127,
+        "count": 210,
         "examples": [
           {
             "name": "IRS",
@@ -1694,6 +1861,260 @@
             "slug": "allstate",
             "category": "FINANCIAL_INSURANCE_AUTO",
             "website": "allstate.com"
+          }
+        ]
+      },
+      {
+        "code": "broad_state_coverage",
+        "label": "Broad state coverage",
+        "count": 118,
+        "examples": [
+          {
+            "name": "NJ E-ZPass",
+            "slug": "nj-ezpass",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "ezpassnj.com"
+          },
+          {
+            "name": "NJ Natural Gas",
+            "slug": "njng",
+            "category": "UTILITY_GAS",
+            "website": "njng.com"
+          },
+          {
+            "name": "MTA",
+            "slug": "mta",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "mta.info"
+          },
+          {
+            "name": "NY E-ZPass",
+            "slug": "ny-ezpass",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "e-zpassny.com"
+          },
+          {
+            "name": "Optimum",
+            "slug": "optimum",
+            "category": "UTILITY_INTERNET",
+            "website": "optimum.com"
+          },
+          {
+            "name": "Reliant Energy",
+            "slug": "reliant",
+            "category": "UTILITY_ELECTRIC",
+            "website": "reliant.com"
+          },
+          {
+            "name": "CenterPoint Energy",
+            "slug": "centerpoint",
+            "category": "UTILITY_GAS",
+            "website": "centerpointenergy.com"
+          },
+          {
+            "name": "TxTag",
+            "slug": "txtag",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "txtag.org"
+          },
+          {
+            "name": "DART",
+            "slug": "dart",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "dart.org"
+          },
+          {
+            "name": "Houston METRO",
+            "slug": "metro-houston",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "ridemetro.org"
+          },
+          {
+            "name": "VIA Metropolitan Transit",
+            "slug": "via-sa",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "viainfo.net"
+          },
+          {
+            "name": "LA Metro",
+            "slug": "la-metro",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "metro.net"
+          },
+          {
+            "name": "BART",
+            "slug": "bart",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "bart.gov"
+          },
+          {
+            "name": "SF Muni",
+            "slug": "muni",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "sfmta.com"
+          },
+          {
+            "name": "Caltrain",
+            "slug": "caltrain",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "caltrain.com"
+          },
+          {
+            "name": "San Diego MTS",
+            "slug": "mts-sd",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "sdmts.com"
+          },
+          {
+            "name": "VTA",
+            "slug": "vta",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "vta.org"
+          },
+          {
+            "name": "Florida Power & Light Company",
+            "slug": "fpl",
+            "category": "UTILITY_ELECTRIC",
+            "website": "fpl.com"
+          },
+          {
+            "name": "SunPass",
+            "slug": "sunpass",
+            "category": "TRANSPORTATION_TOLL",
+            "website": "sunpass.com"
+          },
+          {
+            "name": "Lynx",
+            "slug": "lynx",
+            "category": "TRANSPORTATION_TRANSIT",
+            "website": "golynx.com"
+          }
+        ]
+      },
+      {
+        "code": "generic_description",
+        "label": "Generic description",
+        "count": 101,
+        "examples": [
+          {
+            "name": "Wells Fargo",
+            "slug": "wells-fargo",
+            "category": "FINANCIAL_BANK",
+            "website": "wellsfargo.com"
+          },
+          {
+            "name": "Capital One",
+            "slug": "capital-one",
+            "category": "FINANCIAL_BANK",
+            "website": "capitalone.com"
+          },
+          {
+            "name": "GEICO",
+            "slug": "geico",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "geico.com"
+          },
+          {
+            "name": "Progressive",
+            "slug": "progressive",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "progressive.com"
+          },
+          {
+            "name": "Allstate",
+            "slug": "allstate",
+            "category": "FINANCIAL_INSURANCE_AUTO",
+            "website": "allstate.com"
+          },
+          {
+            "name": "Choice Home Warranty",
+            "slug": "choice-warranty",
+            "category": "FINANCIAL_INSURANCE_HOME",
+            "website": "choicehomewarranty.com"
+          },
+          {
+            "name": "Cigna",
+            "slug": "cigna",
+            "category": "FINANCIAL_INSURANCE_HEALTH",
+            "website": "cigna.com"
+          },
+          {
+            "name": "MetLife Dental",
+            "slug": "metlife-dental",
+            "category": "FINANCIAL_INSURANCE_HEALTH",
+            "website": "metlife.com"
+          },
+          {
+            "name": "New York Life",
+            "slug": "ny-life",
+            "category": "FINANCIAL_INSURANCE_LIFE",
+            "website": "newyorklife.com"
+          },
+          {
+            "name": "Healthy Paws",
+            "slug": "healthy-paws",
+            "category": "FINANCIAL_INSURANCE_PET",
+            "website": "healthypawspetinsurance.com"
+          },
+          {
+            "name": "Rocket Mortgage",
+            "slug": "rocket-mortgage",
+            "category": "FINANCIAL_MORTGAGE",
+            "website": "rocketmortgage.com"
+          },
+          {
+            "name": "Better.com",
+            "slug": "better",
+            "category": "FINANCIAL_MORTGAGE",
+            "website": "better.com"
+          },
+          {
+            "name": "T-Mobile",
+            "slug": "t-mobile",
+            "category": "UTILITY_PHONE",
+            "website": "t-mobile.com"
+          },
+          {
+            "name": "Total Wireless",
+            "slug": "total-wireless",
+            "category": "UTILITY_PHONE",
+            "website": "totalwireless.com"
+          },
+          {
+            "name": "Spectrum",
+            "slug": "spectrum",
+            "category": "UTILITY_INTERNET",
+            "website": "spectrum.com"
+          },
+          {
+            "name": "AT&T Fiber",
+            "slug": "att-fiber",
+            "category": "UTILITY_INTERNET",
+            "website": "att.com"
+          },
+          {
+            "name": "DirecTV",
+            "slug": "directv",
+            "category": "UTILITY_CABLE",
+            "website": "directv.com"
+          },
+          {
+            "name": "YouTube TV",
+            "slug": "youtube-tv",
+            "category": "UTILITY_CABLE",
+            "website": "tv.youtube.com"
+          },
+          {
+            "name": "Republic Services",
+            "slug": "republic-services",
+            "category": "UTILITY_TRASH",
+            "website": "republicservices.com"
+          },
+          {
+            "name": "Planet Fitness",
+            "slug": "planet-fitness",
+            "category": "FITNESS_GYM",
+            "website": "planetfitness.com"
           }
         ]
       },
@@ -1827,7 +2248,7 @@
       {
         "code": "marketing_description",
         "label": "Marketing language",
-        "count": 21,
+        "count": 18,
         "examples": [
           {
             "name": "Chase",
@@ -1908,24 +2329,6 @@
             "website": "fsresidential.com"
           },
           {
-            "name": "FPL (Florida Power & Light)",
-            "slug": "fpl",
-            "category": "UTILITY_ELECTRIC",
-            "website": "fpl.com"
-          },
-          {
-            "name": "Georgia Power",
-            "slug": "georgia-power",
-            "category": "UTILITY_ELECTRIC",
-            "website": "georgiapower.com"
-          },
-          {
-            "name": "APS (Arizona Public Service)",
-            "slug": "aps-az",
-            "category": "UTILITY_ELECTRIC",
-            "website": "aps.com"
-          },
-          {
             "name": "Alabama Power",
             "slug": "alabama-power",
             "category": "UTILITY_ELECTRIC",
@@ -1948,6 +2351,12 @@
             "slug": "merry-maids",
             "category": "HOUSING_CLEANING",
             "website": "merrymaids.com"
+          },
+          {
+            "name": "Primrose Schools",
+            "slug": "primrose-schools",
+            "category": "KIDS_DAYCARE",
+            "website": "primroseschools.com"
           }
         ]
       }
@@ -2515,27 +2924,27 @@
         ]
       },
       {
-        "name": "ExpressToll",
-        "slug": "expresstoll",
+        "name": "Alabama Freedom Pass",
+        "slug": "alabama-freedom-pass",
         "category": "TRANSPORTATION_TOLL",
         "scope": "STATE",
         "states": [
-          "CO"
+          "AL"
         ],
-        "website": "expresstoll.com",
+        "website": "freedompass.americanroads.com",
         "warnings": [
           "Broad state coverage"
         ]
       },
       {
-        "name": "FasTrak",
-        "slug": "fastrak",
+        "name": "E-ZPass Virginia",
+        "slug": "ezpass-va",
         "category": "TRANSPORTATION_TOLL",
         "scope": "STATE",
         "states": [
-          "CA"
+          "VA"
         ],
-        "website": "bayareafastrak.org",
+        "website": "ezpassva.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -2549,19 +2958,6 @@
           "LA"
         ],
         "website": "geauxpass.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Good To Go!",
-        "slug": "good-to-go",
-        "category": "TRANSPORTATION_TOLL",
-        "scope": "STATE",
-        "states": [
-          "WA"
-        ],
-        "website": "wsdot.wa.gov",
         "warnings": [
           "Broad state coverage"
         ]
@@ -2601,32 +2997,6 @@
           "NY"
         ],
         "website": "e-zpassny.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "PA Turnpike E-ZPass",
-        "slug": "pa-ezpass",
-        "category": "TRANSPORTATION_TOLL",
-        "scope": "STATE",
-        "states": [
-          "PA"
-        ],
-        "website": "paturnpike.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Peach Pass",
-        "slug": "peach-pass",
-        "category": "TRANSPORTATION_TOLL",
-        "scope": "STATE",
-        "states": [
-          "GA"
-        ],
-        "website": "peachpass.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -2827,19 +3197,6 @@
         ]
       },
       {
-        "name": "Pittsburgh Port Authority",
-        "slug": "pittsburgh-port-auth",
-        "category": "TRANSPORTATION_TRANSIT",
-        "scope": "STATE",
-        "states": [
-          "PA"
-        ],
-        "website": "rideprt.org",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "RIPTA",
         "slug": "ripta",
         "category": "TRANSPORTATION_TRANSIT",
@@ -3025,7 +3382,7 @@
         ]
       },
       {
-        "name": "Appalachian Power WV",
+        "name": "Appalachian Power",
         "slug": "apco-wv",
         "category": "UTILITY_ELECTRIC",
         "scope": "STATE",
@@ -3045,12 +3402,10 @@
         "scope": "STATE",
         "states": [
           "SD",
-          "CO",
           "WY",
           "NE",
           "IA",
-          "KS",
-          "AR"
+          "KS"
         ],
         "website": "blackhillsenergy.com",
         "warnings": [
@@ -3084,19 +3439,6 @@
         ]
       },
       {
-        "name": "Entergy Arkansas",
-        "slug": "entergy-ar",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "AR"
-        ],
-        "website": "entergy-arkansas.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Evergy",
         "slug": "evergy",
         "category": "UTILITY_ELECTRIC",
@@ -3111,7 +3453,7 @@
         ]
       },
       {
-        "name": "FPL (Florida Power & Light)",
+        "name": "Florida Power & Light Company",
         "slug": "fpl",
         "category": "UTILITY_ELECTRIC",
         "scope": "STATE",
@@ -3132,19 +3474,6 @@
           "VT"
         ],
         "website": "greenmountainpower.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Hawaiian Electric (HECO)",
-        "slug": "heco",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "HI"
-        ],
-        "website": "hawaiianelectric.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3171,19 +3500,6 @@
           "KY"
         ],
         "website": "lge-ku.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Liberty Utilities NH",
-        "slug": "liberty-nh",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "NH"
-        ],
-        "website": "libertyutilities.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3249,49 +3565,9 @@
         "category": "UTILITY_ELECTRIC",
         "scope": "STATE",
         "states": [
-          "OK",
-          "AR"
+          "OK"
         ],
         "website": "oge.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Ohio Edison",
-        "slug": "ohio-edison",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "OH"
-        ],
-        "website": "firstenergycorp.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Orlando Utilities Commission",
-        "slug": "ouc",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "FL"
-        ],
-        "website": "ouc.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Pacific Power",
-        "slug": "pacific-power-or",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "OR"
-        ],
-        "website": "pacificpower.net",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3310,19 +3586,6 @@
         ]
       },
       {
-        "name": "Portland General Electric",
-        "slug": "pge-or",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "OR"
-        ],
-        "website": "portlandgeneral.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Public Service Oklahoma (PSO)",
         "slug": "pso-ok",
         "category": "UTILITY_ELECTRIC",
@@ -3331,19 +3594,6 @@
           "OK"
         ],
         "website": "psoklahoma.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Puget Sound Energy",
-        "slug": "pse-wa",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "WA"
-        ],
-        "website": "pse.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3377,19 +3627,6 @@
         ]
       },
       {
-        "name": "SRP (Salt River Project)",
-        "slug": "srp-az",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "AZ"
-        ],
-        "website": "srpnet.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Versant Power",
         "slug": "versant-me",
         "category": "UTILITY_ELECTRIC",
@@ -3403,21 +3640,6 @@
         ]
       },
       {
-        "name": "Xcel Energy",
-        "slug": "xcel-energy",
-        "category": "UTILITY_ELECTRIC",
-        "scope": "STATE",
-        "states": [
-          "CO",
-          "MN",
-          "WI"
-        ],
-        "website": "xcelenergy.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Xcel Energy ND",
         "slug": "xcel-nd",
         "category": "UTILITY_ELECTRIC",
@@ -3425,24 +3647,10 @@
         "states": [
           "ND",
           "MN",
-          "CO",
           "WI",
           "SD"
         ],
         "website": "xcelenergy.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Atlanta Gas Light",
-        "slug": "atlanta-gas-light",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "GA"
-        ],
-        "website": "atlantagaslight.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3487,19 +3695,6 @@
         ]
       },
       {
-        "name": "Black Hills Energy Colorado",
-        "slug": "bhe-co-gas",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "CO"
-        ],
-        "website": "blackhillsenergy.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Black Hills Energy Iowa",
         "slug": "bhe-ia-gas",
         "category": "UTILITY_GAS",
@@ -3539,19 +3734,6 @@
         ]
       },
       {
-        "name": "CenterPoint Energy Arkansas",
-        "slug": "centerpoint-ar",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "AR"
-        ],
-        "website": "centerpointenergy.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "CenterPoint Energy Minnesota",
         "slug": "centerpoint-mn",
         "category": "UTILITY_GAS",
@@ -3560,20 +3742,6 @@
           "MN"
         ],
         "website": "centerpointenergy.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Chesapeake Utilities Delaware",
-        "slug": "chpk-de-gas",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "DE",
-          "MD"
-        ],
-        "website": "chpkgas.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3592,33 +3760,7 @@
         ]
       },
       {
-        "name": "Columbia Gas of Pennsylvania",
-        "slug": "columbia-gas-pa",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "PA"
-        ],
-        "website": "columbiagaspa.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Dominion Energy South Carolina Gas",
-        "slug": "dominion-sc-gas",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "SC"
-        ],
-        "website": "dominionenergy.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Dominion Energy Utah",
+        "name": "Enbridge Gas Utah",
         "slug": "dominion-ut-gas",
         "category": "UTILITY_GAS",
         "scope": "STATE",
@@ -3627,7 +3769,7 @@
           "WY",
           "ID"
         ],
-        "website": "dominionenergy.com",
+        "website": "enbridgegas.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3641,19 +3783,6 @@
           "AK"
         ],
         "website": "enstarnaturalgas.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Georgia Natural Gas",
-        "slug": "gng",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "GA"
-        ],
-        "website": "gng.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3752,19 +3881,6 @@
         ]
       },
       {
-        "name": "National Grid NY",
-        "slug": "national-grid-ny",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "NY"
-        ],
-        "website": "nationalgridus.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "NJ Natural Gas",
         "slug": "njng",
         "category": "UTILITY_GAS",
@@ -3793,19 +3909,6 @@
         ]
       },
       {
-        "name": "NW Natural Gas",
-        "slug": "nw-natural",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "OR"
-        ],
-        "website": "nwnatural.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Oklahoma Natural Gas (ONE Gas)",
         "slug": "ong-ok",
         "category": "UTILITY_GAS",
@@ -3819,43 +3922,14 @@
         ]
       },
       {
-        "name": "Piedmont Natural Gas",
-        "slug": "piedmont-carolinas",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "NC",
-          "SC"
-        ],
-        "website": "piedmontng.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Piedmont Natural Gas Tennessee",
         "slug": "piedmont-tn",
         "category": "UTILITY_GAS",
         "scope": "STATE",
         "states": [
-          "TN",
-          "NC",
-          "SC"
+          "TN"
         ],
         "website": "piedmontng.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "PSNC Energy",
-        "slug": "psnc",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "NC"
-        ],
-        "website": "psncenergy.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -3900,19 +3974,6 @@
         ]
       },
       {
-        "name": "TECO Peoples Gas",
-        "slug": "teco-gas",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "FL"
-        ],
-        "website": "tecoenergy.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "UGI Utilities",
         "slug": "ugi",
         "category": "UTILITY_GAS",
@@ -3921,20 +3982,6 @@
           "PA"
         ],
         "website": "ugi.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Unitil New Hampshire",
-        "slug": "unitil-nh",
-        "category": "UTILITY_GAS",
-        "scope": "STATE",
-        "states": [
-          "NH",
-          "MA"
-        ],
-        "website": "unitil.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -4326,16 +4373,14 @@
         ]
       },
       {
-        "name": "Aquarion Water",
-        "slug": "aquarion-ct",
+        "name": "Aqua Pennsylvania",
+        "slug": "aqua-pa",
         "category": "UTILITY_WATER",
         "scope": "STATE",
         "states": [
-          "CT",
-          "MA",
-          "NH"
+          "PA"
         ],
-        "website": "aquarionwater.com",
+        "website": "aquawater.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -4367,32 +4412,6 @@
         ]
       },
       {
-        "name": "Board of Water Supply (Honolulu)",
-        "slug": "honolulu-water",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "HI"
-        ],
-        "website": "boardofwatersupply.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Boston Water and Sewer Commission",
-        "slug": "bwsc-ma",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "MA"
-        ],
-        "website": "bwsc.org",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Burlington Department of Public Works Water",
         "slug": "burlington-water-vt",
         "category": "UTILITY_WATER",
@@ -4401,19 +4420,6 @@
           "VT"
         ],
         "website": "burlingtonvt.gov",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Central Arkansas Water",
-        "slug": "central-ar-water",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "AR"
-        ],
-        "website": "carkw.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -4523,19 +4529,6 @@
         ]
       },
       {
-        "name": "JEA",
-        "slug": "jea",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "FL"
-        ],
-        "website": "jea.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Maine Water Company",
         "slug": "maine-water",
         "category": "UTILITY_WATER",
@@ -4588,27 +4581,14 @@
         ]
       },
       {
-        "name": "Pennichuck Water",
-        "slug": "pennichuck-nh",
+        "name": "Pennsylvania American Water",
+        "slug": "pa-american-water",
         "category": "UTILITY_WATER",
         "scope": "STATE",
         "states": [
-          "NH"
+          "PA"
         ],
-        "website": "pennichuck.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Portland Water Bureau",
-        "slug": "portland-water-or",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "OR"
-        ],
-        "website": "portland.gov",
+        "website": "amwater.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -4622,32 +4602,6 @@
           "RI"
         ],
         "website": "provwater.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Salt Lake City Public Utilities",
-        "slug": "slc-water-ut",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "UT"
-        ],
-        "website": "slc.gov",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Seattle Public Utilities",
-        "slug": "spu-wa",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "WA"
-        ],
-        "website": "seattle.gov",
         "warnings": [
           "Broad state coverage"
         ]
@@ -4692,19 +4646,6 @@
         ]
       },
       {
-        "name": "Tampa Water Department",
-        "slug": "tampa-water",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "FL"
-        ],
-        "website": "tampa.gov",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
         "name": "Tulsa Water",
         "slug": "tulsa-water-ok",
         "category": "UTILITY_WATER",
@@ -4713,19 +4654,6 @@
           "OK"
         ],
         "website": "cityoftulsa.org",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "Virginia American Water",
-        "slug": "va-american-water",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "VA"
-        ],
-        "website": "amwater.com",
         "warnings": [
           "Broad state coverage"
         ]
@@ -4752,19 +4680,6 @@
           "WV"
         ],
         "website": "amwater.com",
-        "warnings": [
-          "Broad state coverage"
-        ]
-      },
-      {
-        "name": "WSSC Water",
-        "slug": "wssc-md",
-        "category": "UTILITY_WATER",
-        "scope": "STATE",
-        "states": [
-          "MD"
-        ],
-        "website": "wsscwater.com",
         "warnings": [
           "Broad state coverage"
         ]

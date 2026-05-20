@@ -61,6 +61,72 @@ const UT_SLC_PUBLIC_UTILITIES_ZIPS = [
 
 const FL_TAMPA_CITY_ZIPS = ["33602", "33603", "33604", "33605", "33606", "33607", "33609", "33610", "33611", "33612", "33614", "33615", "33616", "33617", "33618", "33619", "33620", "33621", "33629", "33634", "33635", "33637"];
 
+const AR_STATE_ZIPS = ["716", "717", "718", "719", "720", "721", "722", "723", "724", "725", "726", "727", "728", "729"];
+
+const AR_OGE_ZIPS = ["729"];
+
+const AR_SUMMIT_GAS_ZIPS = AR_STATE_ZIPS;
+
+const AR_BLACK_HILLS_GAS_ZIPS = ["720", "721", "724", "725", "726", "727", "728", "729"];
+
+const AR_CARROLL_ELECTRIC_ZIPS = ["726", "727", "728"];
+
+const AR_FIRST_ELECTRIC_ZIPS = ["720", "721", "722", "723"];
+
+const AR_CENTRAL_WATER_ZIPS = ["720", "721", "722"];
+
+const OR_PORTLAND_METRO_ZIPS = ["970", "971", "972"];
+
+const OR_PGE_ZIPS = ["970", "971", "972", "973"];
+
+const PNW_NW_NATURAL_ZIPS = ["970", "971", "972", "973", "974", "986"];
+
+const PNW_CASCADE_GAS_ZIPS = ["970", "971", "973", "977", "978", "982", "983", "985", "986", "988", "989", "993"];
+
+const AZ_STATE_ZIPS = ["850", "851", "852", "853", "855", "856", "857", "859", "860", "863", "864", "865"];
+
+const AZ_PHOENIX_METRO_ZIPS = ["850", "851", "852", "853"];
+
+const AZ_PHOENIX_CITY_ZIPS = ["850"];
+
+const AZ_TUCSON_ZIPS = ["856", "857"];
+
+const AZ_APS_ZIPS = ["850", "851", "852", "853", "855", "859", "860", "863"];
+
+const AZ_SRP_ZIPS = AZ_PHOENIX_METRO_ZIPS;
+
+const AZ_SOUTHWEST_GAS_ZIPS = ["850", "851", "852", "853", "855", "856", "857", "859", "860"];
+
+const AZ_SOUTHWEST_GAS_NV_ZIPS = ["889", "890", "891"];
+
+const AZ_NV_SOUTHWEST_GAS_ZIPS = [...AZ_SOUTHWEST_GAS_ZIPS, ...AZ_SOUTHWEST_GAS_NV_ZIPS];
+
+const AZ_UNISOURCE_ZIPS = ["856", "864"];
+
+const AZ_PRIVATE_WATER_ZIPS = AZ_STATE_ZIPS;
+
+const AZ_TRICO_ZIPS = AZ_TUCSON_ZIPS;
+
+const AZ_MOHAVE_ELECTRIC_ZIPS = ["864"];
+
+const AZ_SSVEC_ZIPS = ["856", "859"];
+
+const NV_STATE_ZIPS = ["889", "890", "891", "893", "894", "895", "896", "897", "898"];
+
+const NV_SOUTHERN_ZIPS = ["889", "890", "891"];
+
+const NV_LAS_VEGAS_VALLEY_ZIPS = NV_SOUTHERN_ZIPS;
+
+const NV_RENO_SPARKS_ZIPS = ["894", "895"];
+
+const NV_CARSON_CITY_ZIPS = ["897"];
+
+const NV_ENERGY_ZIPS = NV_STATE_ZIPS;
+
+const NV_WM_ZIPS = ["894", "895", "897", "898"];
+
+const NV_PRIVATE_WATER_ZIPS = NV_STATE_ZIPS;
+
 const VA_FAIRFAX_WATER_ZIPS = [
   "20120", "20121", "20124", "20151", "20152", "20153",
   "22003", "22015", "22027", "22030", "22031", "22032", "22033", "22034", "22035", "22039", "22041", "22042", "22043", "22044", "22046", "22060", "22066", "22079",
@@ -122,6 +188,60 @@ const NC_BLUE_RIDGE_ENERGY_ZIPS = ["28604", "28605", "28607", "28615", "28618", 
 const NC_BRUNSWICK_ELECTRIC_ZIPS = ["28420", "28422", "28451", "28461", "28462", "28465", "28467", "28469", "28470", "28479", "28480", "29566", "29582"];
 
 const NC_PRIVATE_WATER_ZIPS = ["270", "271", "272", "273", "274", "275", "276", "277", "278", "280", "281", "282", "283", "284", "285", "286", "287"];
+
+const SC_STATE_ZIPS = ["290", "291", "292", "293", "294", "295", "296", "297", "298", "299"];
+
+const SC_UPSTATE_ZIPS = ["293", "296"];
+
+const SC_MIDLANDS_ZIPS = ["290", "291", "292"];
+
+const SC_GRAND_STRAND_ZIPS = ["295"];
+
+const SC_YORK_LANCASTER_ZIPS = ["297"];
+
+const SC_CHARLESTON_ZIPS = ["294"];
+
+const SC_GREENVILLE_WATER_ZIPS = ["296"];
+
+const SC_COLUMBIA_WATER_ZIPS = SC_MIDLANDS_ZIPS;
+
+const SC_SPARTANBURG_WATER_ZIPS = ["293"];
+
+const SC_BEAUFORT_JASPER_WATER_ZIPS = ["299"];
+
+const SC_GRAND_STRAND_WATER_ZIPS = SC_GRAND_STRAND_ZIPS;
+
+const SC_MOUNT_PLEASANT_WATER_ZIPS = SC_CHARLESTON_ZIPS;
+
+const SC_PIEDMONT_GAS_ZIPS = ["293", "296", "297"];
+
+const CAROLINAS_PIEDMONT_GAS_ZIPS = [...NC_PIEDMONT_GAS_ZIPS, ...SC_PIEDMONT_GAS_ZIPS];
+
+const SC_DOMINION_ELECTRIC_ZIPS = SC_STATE_ZIPS;
+
+const SC_DOMINION_GAS_ZIPS = SC_STATE_ZIPS;
+
+const SC_DUKE_ZIPS = ["290", "291", "293", "296", "297"];
+
+const SC_SOUTHERN_CONNECTOR_ZIPS = ["296"];
+
+const SC_SANTEE_COOPER_ZIPS = ["294", "295"];
+
+const SC_BERKELEY_ELECTRIC_ZIPS = ["294"];
+
+const SC_HORRY_ELECTRIC_ZIPS = SC_GRAND_STRAND_ZIPS;
+
+const SC_BLUE_RIDGE_ELECTRIC_ZIPS = ["296"];
+
+const SC_LAURENS_ELECTRIC_ZIPS = SC_UPSTATE_ZIPS;
+
+const SC_MID_CAROLINA_ELECTRIC_ZIPS = SC_MIDLANDS_ZIPS;
+
+const SC_PALMETTO_ELECTRIC_ZIPS = ["299"];
+
+const SC_YORK_ELECTRIC_ZIPS = SC_YORK_LANCASTER_ZIPS;
+
+const SC_SANTEE_ELECTRIC_ZIPS = ["290", "291", "295"];
 
 const OH_AEP_ZIPS = ["430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456"];
 
@@ -564,8 +684,8 @@ export const FEDERAL_NEW = [
 export const STATE_DMVS = [
   { name: "Alabama DMV", slug: "dmv-al", states: ["AL"], website: "https://www.alea.gov", phone: "1-334-242-4400", description: "Alabama Law Enforcement Agency - Driver License", popularityScore: 90 },
   { name: "Alaska DMV", slug: "dmv-ak", states: ["AK"], website: "https://doa.alaska.gov/dmv", phone: "1-907-269-5551", description: "Alaska Division of Motor Vehicles", popularityScore: 85 },
-  { name: "Arizona MVD", slug: "dmv-az", states: ["AZ"], website: "https://azdot.gov/mvd", phone: "1-602-255-0072", description: "Arizona Motor Vehicle Division", popularityScore: 92 },
-  { name: "Arkansas DFA", slug: "dmv-ar", states: ["AR"], website: "https://www.dfa.arkansas.gov", phone: "1-501-682-4692", description: "Arkansas Dept of Finance and Administration", popularityScore: 85 },
+  { name: "Arizona Department of Transportation Motor Vehicle Division", slug: "dmv-az", states: ["AZ"], website: "https://azdot.gov/mvd/services/driver-license-ID/change-your-address", phone: "1-602-255-0072", description: "Arizona driver license, ID, vehicle registration, title, out-of-state registration, and address-change services", popularityScore: 92 },
+  { name: "Arkansas Department of Finance and Administration - MyDMV", slug: "dmv-ar", states: ["AR"], website: "https://www.dfa.arkansas.gov/office/mydmv/", phone: "1-501-682-4692", description: "Arkansas driver license, ID, vehicle registration, renewal mailing-address, and address-change services through DFA MyDMV", popularityScore: 88 },
   { name: "California DMV", slug: "dmv-ca", states: ["CA"], website: "https://www.dmv.ca.gov", phone: "1-800-777-0133", description: "California Department of Motor Vehicles, including New to California resident driver license, ID, and vehicle registration guidance", popularityScore: 98 },
   { name: "Colorado Division of Motor Vehicles", slug: "dmv-co", states: ["CO"], website: "https://dmv.colorado.gov/change-your-address", phone: "1-303-205-5600", description: "Colorado driver license, ID, address-change, title, and vehicle registration services", popularityScore: 90 },
   { name: "Connecticut Department of Motor Vehicles", slug: "dmv-ct", states: ["CT"], website: "https://portal.ct.gov/dmv/licenses-permits-ids/change-driver-license", phone: "1-860-263-5700", description: "Connecticut driver license, ID, vehicle registration, address-change, and new-resident transfer services", popularityScore: 88 },
@@ -590,7 +710,7 @@ export const STATE_DMVS = [
   { name: "Missouri DMV", slug: "dmv-mo", states: ["MO"], website: "https://dor.mo.gov/motor-vehicle", phone: "1-573-526-3669", description: "Missouri Dept of Revenue Motor Vehicle", popularityScore: 88 },
   { name: "Montana MVD", slug: "dmv-mt", states: ["MT"], website: "https://dojmt.gov/driving", phone: "1-406-444-3933", description: "Montana Motor Vehicle Division", popularityScore: 80 },
   { name: "Nebraska DMV", slug: "dmv-ne", states: ["NE"], website: "https://dmv.nebraska.gov", phone: "1-402-471-3861", description: "Nebraska Dept of Motor Vehicles", popularityScore: 85 },
-  { name: "Nevada DMV", slug: "dmv-nv", states: ["NV"], website: "https://dmvnv.com", phone: "1-702-486-4368", description: "Nevada Department of Motor Vehicles", popularityScore: 90 },
+  { name: "Nevada Department of Motor Vehicles", slug: "dmv-nv", states: ["NV"], website: "https://dmv.nv.gov/newresident.htm", phone: "1-702-486-4368", description: "Nevada driver license, ID, address-change, vehicle registration, title, and new-resident services", popularityScore: 90 },
   { name: "New Hampshire Division of Motor Vehicles", slug: "dmv-nh", states: ["NH"], website: "https://www.dmv.nh.gov/drivers-licensenon-driver-ids/update-personal-information", phone: "1-603-227-4000", description: "New Hampshire driver license, ID, address-change, title, and registration services", popularityScore: 88 },
   { name: "New Jersey MVC", slug: "dmv-nj", states: ["NJ"], website: "https://www.nj.gov/mvc", phone: "1-609-292-6500", description: "New Jersey Motor Vehicle Commission", popularityScore: 92 },
   { name: "New Mexico MVD", slug: "dmv-nm", states: ["NM"], website: "https://www.mvd.newmexico.gov", phone: "1-888-683-4636", description: "New Mexico Motor Vehicle Division", popularityScore: 85 },
@@ -599,10 +719,10 @@ export const STATE_DMVS = [
   { name: "North Dakota DOT", slug: "dmv-nd", states: ["ND"], website: "https://www.dot.nd.gov/divisions/drivers", phone: "1-701-328-2725", description: "North Dakota Drivers License Division", popularityScore: 80 },
   { name: "Ohio Bureau of Motor Vehicles", slug: "dmv-oh", states: ["OH"], website: "https://bmvonline.dps.ohio.gov/", phone: "1-844-644-6268", description: "Ohio driver license, ID, title, registration, plate renewal, new-resident, and address-change services", popularityScore: 90 },
   { name: "Oklahoma DPS", slug: "dmv-ok", states: ["OK"], website: "https://oklahoma.gov/dps", phone: "1-405-425-2424", description: "Oklahoma Dept of Public Safety", popularityScore: 85 },
-  { name: "Oregon DMV", slug: "dmv-or", states: ["OR"], website: "https://www.oregon.gov/odot/dmv", phone: "1-503-945-5000", description: "Oregon Driver and Motor Vehicle Services", popularityScore: 88 },
+  { name: "Oregon Driver & Motor Vehicle Services", slug: "dmv-or", states: ["OR"], website: "https://www.oregon.gov/odot/dmv/pages/dv/chgaddress.aspx", phone: "1-503-945-5000", description: "Oregon driver license, ID, address-change, vehicle registration, renewal, and transfer services", popularityScore: 90 },
   { name: "PennDOT Driver & Vehicle Services", slug: "dmv-pa", states: ["PA"], website: "https://www.pa.gov/agencies/dmv/resources/relocation/moving-within-pa", phone: "1-717-412-5300", description: "Pennsylvania driver license, photo ID, address-change, title, and registration relocation services", popularityScore: 92 },
   { name: "Rhode Island DMV", slug: "dmv-ri", states: ["RI"], website: "https://dmv.ri.gov", phone: "1-401-462-4368", description: "Rhode Island Division of Motor Vehicles", popularityScore: 82 },
-  { name: "South Carolina DMV", slug: "dmv-sc", states: ["SC"], website: "https://www.scdmvonline.com", phone: "1-803-896-5000", description: "South Carolina Dept of Motor Vehicles", popularityScore: 88 },
+  { name: "South Carolina Department of Motor Vehicles", slug: "dmv-sc", states: ["SC"], website: "https://dmv.sc.gov/driver-services/moving-to-sc", phone: "1-803-896-5000", description: "South Carolina driver license, ID, title, registration, new-resident, and address-change services", popularityScore: 88 },
   { name: "South Dakota DPS", slug: "dmv-sd", states: ["SD"], website: "https://dps.sd.gov/driver-licensing", phone: "1-605-773-6883", description: "South Dakota Driver Licensing", popularityScore: 80 },
   { name: "Tennessee DOR", slug: "dmv-tn", states: ["TN"], website: "https://www.tn.gov/revenue/title-and-registration", phone: "1-615-741-3101", description: "Tennessee Dept of Revenue Driver Services", popularityScore: 88 },
   { name: "Texas DPS", slug: "dmv-tx", states: ["TX"], website: "https://www.dps.texas.gov/section/driver-license", phone: "1-512-424-2600", description: "Texas Dept of Public Safety Driver License", popularityScore: 95 },
@@ -759,12 +879,19 @@ export const STATE_PROVIDERS = [
   { name: "Denver Water", slug: "denver-water", category: "UTILITY_WATER", description: "Denver-area water start, stop, final bill, and transfer-of-service support; confirm service availability by address", website: "https://www.denverwater.org/residential/services-and-information/start-or-stop-service", phone: "1-303-893-2444", scope: "STATE", states: ["CO"], zipCodes: CO_DENVER_WATER_ZIPS, popularityScore: 80, tags: ["water", "utility", "denver", "address-check"] },
 
   // ── Arizona ──
-  { name: "APS (Arizona Public Service)", slug: "aps-az", category: "UTILITY_ELECTRIC", description: "Largest electric utility in AZ", website: "https://www.aps.com", phone: "1-602-371-7171", scope: "STATE", states: ["AZ"], popularityScore: 90, tags: ["electric"] },
-  { name: "SRP (Salt River Project)", slug: "srp-az", category: "UTILITY_ELECTRIC", description: "Electric and water for Phoenix area", website: "https://www.srpnet.com", scope: "STATE", states: ["AZ"], popularityScore: 85, tags: ["electric", "water"] },
-  { name: "Phoenix Water Services", slug: "phoenix-water", category: "UTILITY_WATER", description: "Water for Phoenix metro", website: "https://www.phoenix.gov/waterservices", scope: "STATE", states: ["AZ"], popularityScore: 78, tags: ["water"] },
-  { name: "Tucson Water", slug: "tucson-water", category: "UTILITY_WATER", description: "Water for Tucson", website: "https://www.tucsonaz.gov/water", phone: "1-520-791-3242", scope: "STATE", states: ["AZ"], popularityScore: 72, tags: ["water"] },
-  { name: "Mesa Utilities", slug: "mesa-utilities", category: "UTILITY_WATER", description: "Water for Mesa", website: "https://www.mesaaz.gov/utilities", phone: "1-480-644-2221", scope: "STATE", states: ["AZ"], popularityScore: 68, tags: ["water"] },
-  { name: "Southwest Gas", slug: "southwest-gas", category: "UTILITY_GAS", description: "Natural gas for AZ/NV", website: "https://www.swgas.com", phone: "1-877-860-6020", scope: "STATE", states: ["AZ", "NV"], popularityScore: 75, tags: ["gas"] },
+  { name: "Arizona Public Service", slug: "aps-az", category: "UTILITY_ELECTRIC", description: "Arizona Public Service electric start, stop, move, and account support; confirm service availability by address", website: "https://www.aps.com/en/Residential/Account/Start-Stop-and-Move-Service", phone: "1-602-371-7171", scope: "STATE", states: ["AZ"], zipCodes: AZ_APS_ZIPS, popularityScore: 90, tags: ["electric", "utility", "aps", "address-check"] },
+  { name: "Salt River Project", slug: "srp-az", category: "UTILITY_ELECTRIC", description: "Central Arizona electric and water start, stop, transfer, and account support; confirm service availability by address", website: "https://myaccount.srpnet.com/power/residentialelectric", scope: "STATE", states: ["AZ"], zipCodes: AZ_SRP_ZIPS, popularityScore: 85, tags: ["electric", "water", "utility", "phoenix-metro", "address-check"] },
+  { name: "City of Phoenix Water Services", slug: "phoenix-water", category: "UTILITY_WATER", description: "City of Phoenix water, sewer, trash, and city services billing start, stop, and transfer support", website: "https://www.phoenix.gov/residents/water-sewer.html", scope: "STATE", states: ["AZ"], zipCodes: AZ_PHOENIX_CITY_ZIPS, popularityScore: 78, tags: ["water", "sewer", "trash", "utility", "phoenix", "address-check"] },
+  { name: "Tucson Water", slug: "tucson-water", category: "UTILITY_WATER", description: "Tucson-area water start, stop, billing, and account support; confirm service availability by address", website: "https://www.tucsonaz.gov/Departments/Water", phone: "1-520-791-3242", scope: "STATE", states: ["AZ"], zipCodes: AZ_TUCSON_ZIPS, popularityScore: 72, tags: ["water", "utility", "tucson", "address-check"] },
+  { name: "City of Mesa Utilities", slug: "mesa-utilities", category: "UTILITY_WATER", description: "Mesa municipal electric, natural gas, water, wastewater, trash, and recycling start or cancel service support", website: "https://www.mesaaz.gov/Utilities", phone: "1-480-644-2221", scope: "STATE", states: ["AZ"], zipCodes: ["852"], popularityScore: 68, tags: ["water", "electric", "gas", "trash", "utility", "mesa", "address-check"] },
+  { name: "Southwest Gas", slug: "southwest-gas", category: "UTILITY_GAS", description: "Arizona and Nevada natural gas start, stop, move, and account support; confirm service availability by address", website: "https://www.swgas.com/en/residential", phone: "1-877-860-6020", scope: "STATE", states: ["AZ", "NV"], zipCodes: AZ_NV_SOUTHWEST_GAS_ZIPS, popularityScore: 75, tags: ["gas", "utility", "arizona", "nevada", "address-check"] },
+  { name: "UniSource Energy Services Gas", slug: "unisource-gas-az", category: "UTILITY_GAS", description: "Arizona UniSource natural gas start, stop, transfer, and account support; confirm service availability by address", website: "https://www.uesaz.com/im-moving/", scope: "STATE", states: ["AZ"], zipCodes: AZ_UNISOURCE_ZIPS, popularityScore: 72, tags: ["gas", "utility", "unisource", "address-check"] },
+  { name: "EPCOR Water Arizona", slug: "epcor-water-az", category: "UTILITY_WATER", description: "Arizona private water and wastewater start, stop, account, and service support for non-contiguous districts; confirm by address", website: "https://www.epcor.com/us/en/az/account/start-service.html", scope: "STATE", states: ["AZ"], zipCodes: AZ_PRIVATE_WATER_ZIPS, popularityScore: 74, tags: ["water", "wastewater", "utility", "epcor", "address-check"] },
+  { name: "Arizona Water Company", slug: "arizona-water-company", category: "UTILITY_WATER", description: "Arizona private water utility account, start, stop, and address update support across multiple systems; confirm by address", website: "https://www.azwater.com/", scope: "STATE", states: ["AZ"], zipCodes: AZ_PRIVATE_WATER_ZIPS, popularityScore: 72, tags: ["water", "utility", "address-check"] },
+  { name: "Liberty Utilities Arizona Water and Wastewater", slug: "liberty-utilities-az-water", category: "UTILITY_WATER", description: "Arizona Liberty Utilities water and wastewater transfer, account, and customer-service support for selected communities; confirm by address", website: "https://arizona.libertyutilities.com/rio-rico/commercial/new-services/water-service-transfer.html", scope: "STATE", states: ["AZ"], zipCodes: AZ_PRIVATE_WATER_ZIPS, popularityScore: 68, tags: ["water", "wastewater", "utility", "liberty", "address-check"] },
+  { name: "Trico Electric Cooperative", slug: "trico-electric", category: "UTILITY_ELECTRIC", description: "Tucson-area cooperative electric start, stop, transfer, and account support; confirm service by address", website: "https://trico.coop/start-stop-transfer-service/", scope: "STATE", states: ["AZ"], zipCodes: AZ_TRICO_ZIPS, popularityScore: 70, tags: ["electric", "cooperative", "tucson", "address-check"] },
+  { name: "Mohave Electric Cooperative", slug: "mohave-electric", category: "UTILITY_ELECTRIC", description: "Northwest Arizona cooperative electric application and account setup support; confirm service by address", website: "https://www.mohaveelectric.com/member-service/apply-for-service/", scope: "STATE", states: ["AZ"], zipCodes: AZ_MOHAVE_ELECTRIC_ZIPS, popularityScore: 68, tags: ["electric", "cooperative", "mohave", "address-check"] },
+  { name: "Sulphur Springs Valley Electric Cooperative", slug: "ssvec", category: "UTILITY_ELECTRIC", description: "Southeastern Arizona cooperative electric new-service and account support; confirm service by address", website: "https://www.ssvec.org/services/new-service.php", scope: "STATE", states: ["AZ"], zipCodes: AZ_SSVEC_ZIPS, popularityScore: 68, tags: ["electric", "cooperative", "southeast-arizona", "address-check"] },
 
   // ── Virginia / DC / Maryland ──
   { name: "Dominion Energy Virginia", slug: "dominion", category: "UTILITY_ELECTRIC", description: "Virginia electric start, stop, move, and account support; confirm service availability by address", website: "https://www.dominionenergy.com/en/Virginia/Start-Stop-Service", phone: "1-866-366-4357", scope: "STATE", states: ["VA"], popularityScore: 88, tags: ["electric", "utility", "virginia", "address-check"] },
@@ -789,7 +916,7 @@ export const STATE_PROVIDERS = [
   { name: "EnergyUnited", slug: "energyunited", category: "UTILITY_ELECTRIC", description: "North Carolina electric cooperative member service, account, and start-service support; confirm service availability by address", website: "https://www.energyunited.com/member-guide/", phone: "1-800-522-3793", scope: "STATE", states: ["NC"], zipCodes: NC_ENERGYUNITED_ZIPS, popularityScore: 72, tags: ["electric", "cooperative", "utility", "address-check"] },
   { name: "Blue Ridge Energy", slug: "blue-ridge-energy", category: "UTILITY_ELECTRIC", description: "Northwestern North Carolina electric cooperative apply-for-service and member account support; confirm service availability by address", website: "https://www.blueridgeenergy.com/residential/apply-for-service", phone: "1-800-451-5474", scope: "STATE", states: ["NC"], zipCodes: NC_BLUE_RIDGE_ENERGY_ZIPS, popularityScore: 70, tags: ["electric", "cooperative", "utility", "address-check"] },
   { name: "Brunswick Electric Membership Corporation", slug: "brunswick-electric", category: "UTILITY_ELECTRIC", description: "Southeastern North Carolina electric cooperative account transfer, new service, and member support; confirm service availability by address", website: "https://www.bemc.org/", phone: "1-800-842-5871", scope: "STATE", states: ["NC"], zipCodes: NC_BRUNSWICK_ELECTRIC_ZIPS, popularityScore: 70, tags: ["electric", "cooperative", "utility", "brunswick", "address-check"] },
-  { name: "Piedmont Natural Gas", slug: "piedmont-carolinas", category: "UTILITY_GAS", description: "Natural gas start, stop, move, and account support for North Carolina and South Carolina service areas; confirm availability by address", website: "https://www.piedmontng.com/home/start-stop-or-move", phone: "1-800-752-7504", scope: "STATE", states: ["NC", "SC"], zipCodes: NC_PIEDMONT_GAS_ZIPS, popularityScore: 84, tags: ["gas", "utility", "carolinas", "address-check"] },
+  { name: "Piedmont Natural Gas", slug: "piedmont-carolinas", category: "UTILITY_GAS", description: "Natural gas start, stop, move, and account support for North Carolina and South Carolina service areas; confirm availability by address", website: "https://www.piedmontng.com/home/start-stop-or-move", phone: "1-800-752-7504", scope: "STATE", states: ["NC", "SC"], zipCodes: CAROLINAS_PIEDMONT_GAS_ZIPS, popularityScore: 84, tags: ["gas", "utility", "carolinas", "address-check"] },
   { name: "Enbridge Gas North Carolina", slug: "psnc", category: "UTILITY_GAS", description: "North Carolina natural gas start, stop, transfer, and account support; formerly PSNC and Dominion Energy North Carolina gas", website: "https://www.enbridgegas.com/north-carolina/start-stop-service", phone: "1-877-776-2427", scope: "STATE", states: ["NC"], zipCodes: NC_ENBRIDGE_GAS_ZIPS, popularityScore: 82, tags: ["gas", "utility", "enbridge", "psnc", "dominion-energy-nc-gas", "address-check"] },
   { name: "Frontier Natural Gas Company", slug: "frontier-natural-gas", category: "UTILITY_GAS", description: "North Carolina natural gas availability and sign-up support for selected western and foothills service areas; confirm service by address", website: "https://www.frontiernaturalgas.com/sign-up-for-service/", phone: "1-888-806-7015", scope: "STATE", states: ["NC"], zipCodes: NC_FRONTIER_GAS_ZIPS, popularityScore: 64, tags: ["gas", "utility", "address-check"] },
   { name: "Charlotte Water", slug: "charlotte-water", category: "UTILITY_WATER", description: "Charlotte-area water and sewer move-in, move-out, account, and service support; confirm service availability by address", website: "https://www.charlottenc.gov/water/Customer-Care/Start-Stop-Service", phone: "1-704-336-7600", scope: "STATE", states: ["NC"], zipCodes: NC_CHARLOTTE_ZIPS, popularityScore: 80, tags: ["water", "sewer", "utility", "charlotte", "address-check"] },
@@ -869,14 +996,30 @@ export const STATE_PROVIDERS = [
   { name: "Metro Transit St. Louis", slug: "metro-stl", category: "TRANSPORTATION_TRANSIT", description: "Bus and MetroLink transit in St. Louis", website: "https://www.metrostlouis.org", scope: "STATE", states: ["MO"], popularityScore: 72, tags: ["transit", "bus", "train"] },
 
   // ── Nevada ──
-  { name: "NV Energy", slug: "nv-energy", category: "UTILITY_ELECTRIC", description: "Electric and gas for Nevada", website: "https://www.nvenergy.com", phone: "1-702-402-5555", scope: "STATE", states: ["NV"], popularityScore: 92, tags: ["electric", "gas"] },
-  { name: "Las Vegas Valley Water", slug: "lvvwd", category: "UTILITY_WATER", description: "Water for Las Vegas", website: "https://www.lvvwd.com", phone: "1-702-870-4194", scope: "STATE", states: ["NV"], popularityScore: 82, tags: ["water"] },
+  { name: "NV Energy", slug: "nv-energy", category: "UTILITY_ELECTRIC", description: "Nevada electric and limited natural gas start, stop, move, and account support; confirm service availability by address", website: "https://www.nvenergy.com/my-account/ss-landing", phone: "1-702-402-5555", scope: "STATE", states: ["NV"], zipCodes: NV_ENERGY_ZIPS, popularityScore: 92, tags: ["electric", "gas", "utility", "nevada", "address-check"] },
+  { name: "Las Vegas Valley Water District", slug: "lvvwd", category: "UTILITY_WATER", description: "Southern Nevada retail water start, stop, transfer, and customer account support; confirm service availability by address", website: "https://www.lvvwd.com/customer-service/water-service/start-stop-service.html", phone: "1-702-870-4194", scope: "STATE", states: ["NV"], zipCodes: NV_LAS_VEGAS_VALLEY_ZIPS, popularityScore: 82, tags: ["water", "utility", "las-vegas", "address-check"] },
+  { name: "Truckee Meadows Water Authority", slug: "tmwa", category: "UTILITY_WATER", description: "Reno-Sparks-area water start, stop, transfer, and account support; confirm service availability by address", website: "https://tmwa.com/start-stop-or-transfer-service/", scope: "STATE", states: ["NV"], zipCodes: NV_RENO_SPARKS_ZIPS, popularityScore: 76, tags: ["water", "utility", "reno", "sparks", "address-check"] },
+  { name: "City of Henderson Utility Services", slug: "henderson-utility-services", category: "UTILITY_WATER", description: "Henderson municipal water and sewer start, stop, transfer, and utility account support", website: "https://www.cityofhenderson.com/government/departments/utility-services/businesses/start-stop-and-transfer-service", scope: "STATE", states: ["NV"], zipCodes: ["890", "891"], popularityScore: 74, tags: ["water", "sewer", "utility", "henderson", "address-check"] },
+  { name: "City of North Las Vegas Utilities Department", slug: "north-las-vegas-utilities", category: "UTILITY_WATER", description: "North Las Vegas municipal utility billing, new-location service requests, and account support", website: "https://payutil.cityofnorthlasvegas.com/", scope: "STATE", states: ["NV"], zipCodes: ["890", "891"], popularityScore: 72, tags: ["water", "trash", "utility", "north-las-vegas", "address-check"] },
+  { name: "Clark County Water Reclamation District", slug: "clark-county-water-reclamation", category: "UTILITY_SEWER", description: "Southern Nevada sewer billing, account, owner, and address-change support; confirm service availability by address", website: "https://www.cleanwaterteam.com/", scope: "STATE", states: ["NV"], zipCodes: NV_SOUTHERN_ZIPS, popularityScore: 72, tags: ["sewer", "wastewater", "utility", "clark-county", "address-check"] },
+  { name: "City of Reno Sewer Service", slug: "reno-sewer-service", category: "UTILITY_SEWER", description: "Reno sewer billing, new account, mailing-address change, and utility service support", website: "https://www.reno.gov/government/departments/finance/sewer-service", scope: "STATE", states: ["NV"], zipCodes: NV_RENO_SPARKS_ZIPS, popularityScore: 68, tags: ["sewer", "utility", "reno", "address-check"] },
+  { name: "Carson City Utility Billing", slug: "carson-city-utility-billing", category: "UTILITY_WATER", description: "Carson City water, sewer, stormwater, residential application, and utility billing support", website: "https://www.carson.org/business/water-and-sewer-services", scope: "STATE", states: ["NV"], zipCodes: NV_CARSON_CITY_ZIPS, popularityScore: 68, tags: ["water", "sewer", "stormwater", "utility", "carson-city", "address-check"] },
+  { name: "Virgin Valley Water District", slug: "virgin-valley-water-district", category: "UTILITY_WATER", description: "Mesquite-area water sign-up, stop-service, and account support; confirm service availability by address", website: "https://vvwdnv.com/sign-up-for-service", scope: "STATE", states: ["NV"], zipCodes: ["890"], popularityScore: 64, tags: ["water", "utility", "mesquite", "address-check"] },
+  { name: "Great Basin Water", slug: "great-basin-water", category: "UTILITY_WATER", description: "Nevada private water and wastewater account, billing, and customer service support; confirm service availability by address", website: "https://www.myutility.us/greatbasinwater", scope: "STATE", states: ["NV"], zipCodes: NV_PRIVATE_WATER_ZIPS, popularityScore: 64, tags: ["water", "wastewater", "utility", "address-check"] },
+  { name: "Republic Services of Southern Nevada", slug: "republic-services-southern-nevada", category: "UTILITY_TRASH", description: "Southern Nevada waste and recycling customer service, pickup, and account support; confirm service by address", website: "https://www.republicservices.com/municipality/southern-nevada", scope: "STATE", states: ["NV"], zipCodes: NV_SOUTHERN_ZIPS, popularityScore: 72, tags: ["trash", "recycling", "waste", "southern-nevada", "address-check"] },
+  { name: "WM Nevada", slug: "wm-nevada", category: "UTILITY_TRASH", description: "Nevada residential trash and recycling service support, especially Northern Nevada; confirm availability by address", website: "https://www.wm.com/us/en/location/nv", scope: "STATE", states: ["NV"], zipCodes: NV_WM_ZIPS, popularityScore: 68, tags: ["trash", "recycling", "waste", "nevada", "address-check"] },
+  { name: "Valley Electric Association", slug: "valley-electric-association", category: "UTILITY_ELECTRIC", description: "Southern Nevada cooperative electric start, stop, and account support; confirm service availability by address", website: "https://www.vea.coop/member-services/start-stop/", scope: "STATE", states: ["NV"], zipCodes: ["890"], popularityScore: 66, tags: ["electric", "cooperative", "southern-nevada", "address-check"] },
+  { name: "Overton Power District No. 5", slug: "overton-power-district", category: "UTILITY_ELECTRIC", description: "Moapa Valley and Mesquite-area public power new-service, transfer, and account support", website: "https://opd5.com/customer-information/application-for-new-service/", scope: "STATE", states: ["NV"], zipCodes: ["890"], popularityScore: 64, tags: ["electric", "public-power", "moapa-valley", "mesquite", "address-check"] },
+  { name: "Lincoln County Power District No. 1", slug: "lincoln-county-power-district", category: "UTILITY_ELECTRIC", description: "Lincoln County electric start, stop, new-service, and account support; confirm service availability by address", website: "https://www.lcpd1.com/form/start-or-stop-service", scope: "STATE", states: ["NV"], zipCodes: ["890"], popularityScore: 62, tags: ["electric", "public-power", "lincoln-county", "address-check"] },
+  { name: "Mt. Wheeler Power", slug: "mt-wheeler-power", category: "UTILITY_ELECTRIC", description: "Eastern Nevada cooperative electric new-service and member account support; confirm service availability by address", website: "https://www.mwpower.net/new-service-upgrade-request", scope: "STATE", states: ["NV"], zipCodes: ["893", "898"], popularityScore: 62, tags: ["electric", "cooperative", "eastern-nevada", "address-check"] },
+  { name: "Wells Rural Electric Company", slug: "wells-rural-electric", category: "UTILITY_ELECTRIC", description: "Northeastern Nevada rural cooperative electric start, stop, transfer, and account support", website: "https://www.wrec.coop/member-services/start-stop-transfer-service/", scope: "STATE", states: ["NV"], zipCodes: ["898"], popularityScore: 62, tags: ["electric", "cooperative", "rural-nevada", "address-check"] },
+  { name: "Boulder City Utilities", slug: "boulder-city-utilities", category: "UTILITY_ELECTRIC", description: "Boulder City municipal electric, water, wastewater, start/stop notice, and utility billing support", website: "https://bcnv.org/321/Utilities---Billing", scope: "STATE", states: ["NV"], zipCodes: ["890"], popularityScore: 62, tags: ["electric", "water", "wastewater", "municipal-utility", "boulder-city", "address-check"] },
   { name: "Nevada Health Link", slug: "nevada-health-link", category: "FINANCIAL_INSURANCE_HEALTH", description: "Nevada's health insurance marketplace", website: "https://www.nevadahealthlink.com", scope: "STATE", states: ["NV"], popularityScore: 78, tags: ["health", "marketplace"] },
   { name: "RTC Southern Nevada", slug: "rtc-snv", category: "TRANSPORTATION_TRANSIT", description: "Public transit service in Las Vegas and Southern Nevada", website: "https://www.rtcsnv.com", scope: "STATE", states: ["NV"], popularityScore: 72, tags: ["transit", "bus"] },
 
   // ── Oregon ──
-  { name: "Portland General Electric", slug: "pge-or", category: "UTILITY_ELECTRIC", description: "Electric for Portland area", website: "https://www.portlandgeneral.com", phone: "1-503-228-6322", scope: "STATE", states: ["OR"], popularityScore: 88, tags: ["electric"] },
-  { name: "NW Natural", slug: "nw-natural", category: "UTILITY_GAS", description: "Oregon and Southwest Washington natural gas utility account support; confirm service availability by address", website: "https://www.nwnatural.com/account/start-stop-transfer", phone: "1-800-422-4012", scope: "STATE", states: ["OR", "WA"], popularityScore: 82, tags: ["gas", "utility", "oregon", "southwest-washington", "address-check"] },
+  { name: "Portland General Electric", slug: "pge-or", category: "UTILITY_ELECTRIC", description: "Portland metro and northern Willamette Valley electric start, stop, move, and account support; confirm service availability by address", website: "https://portlandgeneral.com/start-stop-move", phone: "1-503-228-6322", scope: "STATE", states: ["OR"], zipCodes: OR_PGE_ZIPS, popularityScore: 88, tags: ["electric", "utility", "portland", "willamette-valley", "address-check"] },
+  { name: "NW Natural", slug: "nw-natural", category: "UTILITY_GAS", description: "Oregon and Southwest Washington natural gas start, stop, transfer, and account support; confirm service availability by address", website: "https://www.nwnatural.com/account/start-stop-transfer", phone: "1-800-422-4012", scope: "STATE", states: ["OR", "WA"], zipCodes: PNW_NW_NATURAL_ZIPS, popularityScore: 82, tags: ["gas", "utility", "oregon", "southwest-washington", "address-check"] },
   { name: "TriMet", slug: "trimet", category: "TRANSPORTATION_TRANSIT", description: "Portland area transit", website: "https://www.trimet.org", phone: "1-503-238-7433", scope: "STATE", states: ["OR"], popularityScore: 85, tags: ["transit", "bus", "train"] },
 
   // ── Tennessee ──
@@ -939,7 +1082,7 @@ export const STATE_PROVIDERS = [
   { name: "Anthem BCBS NH", slug: "bcbs-nh", category: "FINANCIAL_INSURANCE_HEALTH", description: "Blue Cross Blue Shield of NH", website: "https://www.anthem.com", scope: "STATE", states: ["NH"], popularityScore: 85, tags: ["health"] },
 
   // ── South Dakota (SD) — Coverage Gap Fix ──
-  { name: "Black Hills Energy SD", slug: "bhe-sd", category: "UTILITY_ELECTRIC", description: "Electric and gas for SD", website: "https://www.blackhillsenergy.com", phone: "1-800-742-8948", scope: "STATE", states: ["SD", "WY", "NE", "IA", "KS", "AR"], popularityScore: 82, tags: ["electric", "gas"] },
+  { name: "Black Hills Energy SD", slug: "bhe-sd", category: "UTILITY_ELECTRIC", description: "Electric and gas for South Dakota and nearby Black Hills Energy operating territories", website: "https://www.blackhillsenergy.com", phone: "1-800-742-8948", scope: "STATE", states: ["SD", "WY", "NE", "IA", "KS"], popularityScore: 82, tags: ["electric", "gas"] },
   { name: "Avera Health", slug: "avera-sd", category: "FINANCIAL_INSURANCE_HEALTH", description: "Major health system in SD", website: "https://www.avera.org", scope: "STATE", states: ["SD"], popularityScore: 80, tags: ["health"] },
 
   // ── West Virginia (WV) — Coverage Gap Fix ──
@@ -1012,14 +1155,15 @@ export const STATE_PROVIDERS = [
   { name: "Mississippi Power", slug: "mississippi-power", category: "UTILITY_ELECTRIC", description: "Electric utility for southeast Mississippi", website: "https://www.mississippipower.com", phone: "1-800-532-1502", scope: "STATE", states: ["MS"], popularityScore: 86, tags: ["electric"] },
   { name: "Entergy Mississippi", slug: "entergy-ms", category: "UTILITY_ELECTRIC", description: "Electric utility for west-central Mississippi", website: "https://www.entergy-mississippi.com", phone: "1-800-368-3749", scope: "STATE", states: ["MS"], popularityScore: 82, tags: ["electric"] },
   { name: "PNM", slug: "pnm-nm", category: "UTILITY_ELECTRIC", description: "Public Service Company of New Mexico", website: "https://www.pnm.com", phone: "1-888-342-5766", scope: "STATE", states: ["NM"], popularityScore: 88, tags: ["electric"] },
-  { name: "OG&E", slug: "oge-ok", category: "UTILITY_ELECTRIC", description: "Oklahoma Gas & Electric — electric utility for OK and western AR", website: "https://www.oge.com", phone: "1-405-272-9741", scope: "STATE", states: ["OK", "AR"], popularityScore: 88, tags: ["electric"] },
+  { name: "OG&E", slug: "oge-ok", category: "UTILITY_ELECTRIC", description: "Oklahoma Gas & Electric electric utility account support; confirm service availability by address", website: "https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview", phone: "1-405-272-9741", scope: "STATE", states: ["OK"], popularityScore: 88, tags: ["electric", "utility", "address-check"] },
+  { name: "Oklahoma Gas & Electric (OG&E) - Arkansas Service Area", slug: "oge-ar", category: "UTILITY_ELECTRIC", description: "Fort Smith-area Arkansas electric start, stop, transfer, and account support from OG&E; confirm service availability by address", website: "https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview", phone: "1-405-272-9741", scope: "STATE", states: ["AR"], zipCodes: AR_OGE_ZIPS, popularityScore: 70, tags: ["electric", "utility", "fort-smith", "western-arkansas", "address-check"] },
   { name: "Public Service Oklahoma (PSO)", slug: "pso-ok", category: "UTILITY_ELECTRIC", description: "Electric utility for eastern Oklahoma", website: "https://www.psoklahoma.com", phone: "1-888-216-3523", scope: "STATE", states: ["OK"], popularityScore: 78, tags: ["electric"] },
   { name: "Rhode Island Energy", slug: "ri-energy", category: "UTILITY_ELECTRIC", description: "Electric and gas utility for Rhode Island (successor to National Grid RI)", website: "https://www.rienergy.com", phone: "1-855-743-1101", scope: "STATE", states: ["RI"], popularityScore: 90, tags: ["electric", "gas"] },
 
   // ══════════════════════════════════════════════════════════
   // PR-E: COVERAGE GAP FILLS — WATER (2026-04-17)
   // ══════════════════════════════════════════════════════════
-  { name: "Central Arkansas Water", slug: "central-ar-water", category: "UTILITY_WATER", description: "Water utility for Little Rock and central Arkansas", website: "https://carkw.com", phone: "1-501-372-5161", scope: "STATE", states: ["AR"], popularityScore: 72, tags: ["water"] },
+  { name: "Central Arkansas Water", slug: "central-ar-water", category: "UTILITY_WATER", description: "Little Rock and central Arkansas water start, stop, move, billing, and account support; confirm service availability by address", website: "https://carkw.com/customer-service/start-or-stop-service/", phone: "1-501-372-5161", scope: "STATE", states: ["AR"], zipCodes: AR_CENTRAL_WATER_ZIPS, popularityScore: 76, tags: ["water", "utility", "little-rock", "central-arkansas", "address-check"] },
   { name: "Aquarion Water Company of Connecticut", slug: "aquarion-ct", category: "UTILITY_WATER", description: "Connecticut water start, stop, property-transfer, tenant account, and service-availability support; confirm service by address", website: "https://www.aquarionwater.com/customer-care/start-or-stop-service", phone: "1-800-732-9678", scope: "STATE", states: ["CT"], popularityScore: 75, tags: ["water", "utility", "connecticut", "property-transfer", "address-check"] },
   { name: "Artesian Water Company", slug: "artesian-de", category: "UTILITY_WATER", description: "Water utility for Delaware", website: "https://www.artesianwater.com", phone: "1-302-453-6900", scope: "STATE", states: ["DE"], popularityScore: 72, tags: ["water"] },
   { name: "Suez Idaho (Veolia)", slug: "veolia-id", category: "UTILITY_WATER", description: "Water utility for Boise metro", website: "https://www.mywater.veolia.us", phone: "1-208-362-7300", scope: "STATE", states: ["ID"], popularityScore: 70, tags: ["water"] },
@@ -1036,10 +1180,27 @@ export const STATE_PROVIDERS = [
   { name: "Fargo Water", slug: "fargo-water-nd", category: "UTILITY_WATER", description: "Water utility for Fargo, North Dakota", website: "https://www.fargond.gov/city-government/departments/water", phone: "1-701-241-1324", scope: "STATE", states: ["ND"], popularityScore: 70, tags: ["water"] },
   { name: "Oklahoma City Utilities", slug: "okc-water", category: "UTILITY_WATER", description: "Water utility for Oklahoma City", website: "https://www.okc.gov/departments/utilities", phone: "1-405-297-2833", scope: "STATE", states: ["OK"], popularityScore: 74, tags: ["water"] },
   { name: "Tulsa Water", slug: "tulsa-water-ok", category: "UTILITY_WATER", description: "Water utility for Tulsa", website: "https://www.cityoftulsa.org/government/departments/water-and-sewer", phone: "1-918-596-9511", scope: "STATE", states: ["OK"], popularityScore: 72, tags: ["water"] },
-  { name: "Portland Water Bureau", slug: "portland-water-or", category: "UTILITY_WATER", description: "Water utility for Portland, Oregon", website: "https://www.portland.gov/water", phone: "1-503-823-7770", scope: "STATE", states: ["OR"], popularityScore: 78, tags: ["water"] },
+  { name: "City of Portland Water Bureau", slug: "portland-water-or", category: "UTILITY_WATER", description: "Portland water, sewer, stormwater, start, stop, transfer, and utility account support; confirm service by address", website: "https://www.portland.gov/water/customer-service/pay-your-utility-bill/start-stop-or-transfer-service", phone: "1-503-823-7770", scope: "STATE", states: ["OR"], zipCodes: OR_PORTLAND_METRO_ZIPS, popularityScore: 80, tags: ["water", "sewer", "stormwater", "utility", "portland", "address-check"] },
   { name: "Providence Water", slug: "providence-water-ri", category: "UTILITY_WATER", description: "Water utility for Providence and most of Rhode Island", website: "https://www.provwater.com", phone: "1-401-521-6300", scope: "STATE", states: ["RI"], popularityScore: 76, tags: ["water"] },
-  { name: "Charleston Water System", slug: "charleston-water-sc", category: "UTILITY_WATER", description: "Water and sewer utility for Charleston, SC", website: "https://www.charlestonwater.com", phone: "1-843-727-6800", scope: "STATE", states: ["SC"], popularityScore: 74, tags: ["water"] },
-  { name: "Dominion Energy South Carolina", slug: "dominion-energy-sc", category: "UTILITY_ELECTRIC", description: "South Carolina electric start, stop, move, reconnect, and account support; confirm service availability by address", website: "https://www.dominionenergy.com/south-carolina/start-stop-service", phone: "1-800-251-7234", scope: "STATE", states: ["SC"], zipCodes: ["290", "291", "292", "293", "294", "295", "296", "297", "298", "299"], popularityScore: 86, tags: ["electric", "utility", "south-carolina", "address-check"] },
+  { name: "Charleston Water System", slug: "charleston-water-sc", category: "UTILITY_WATER", description: "Charleston-area water and sewer open-account, close-account, and customer-service support; confirm by address", website: "https://www.charlestonwater.com/180/Open-or-Close-an-Account", phone: "1-843-727-6800", scope: "STATE", states: ["SC"], zipCodes: SC_CHARLESTON_ZIPS, popularityScore: 80, tags: ["water", "sewer", "utility", "charleston", "address-check"] },
+  { name: "Greenville Water", slug: "greenville-water", category: "UTILITY_WATER", description: "Greenville-area water start, stop, move, and customer account support; confirm service by address", website: "https://www.greenvillewater.com/customer-service/start-stop-move", scope: "STATE", states: ["SC"], zipCodes: SC_GREENVILLE_WATER_ZIPS, popularityScore: 78, tags: ["water", "utility", "greenville", "address-check"] },
+  { name: "Columbia Water", slug: "columbia-water-sc", category: "UTILITY_WATER", description: "Columbia-area water and sewer new, transfer, stop, and customer account support; confirm service by address", website: "https://columbiascwater.net/new-transfer-service/", scope: "STATE", states: ["SC"], zipCodes: SC_COLUMBIA_WATER_ZIPS, popularityScore: 78, tags: ["water", "sewer", "utility", "columbia", "address-check"] },
+  { name: "Spartanburg Water", slug: "spartanburg-water", category: "UTILITY_WATER", description: "Spartanburg-area water establish-service, disconnect-service, and customer support; confirm service by address", website: "https://www.spartanburgwater.org/manage-water-service", scope: "STATE", states: ["SC"], zipCodes: SC_SPARTANBURG_WATER_ZIPS, popularityScore: 74, tags: ["water", "utility", "spartanburg", "address-check"] },
+  { name: "Beaufort-Jasper Water & Sewer Authority", slug: "beaufort-jasper-water", category: "UTILITY_WATER", description: "Beaufort and Jasper county water and sewer start, stop, and customer account support; confirm service by address", website: "https://www.bjwsa.org/167/StartStop-Services", scope: "STATE", states: ["SC"], zipCodes: SC_BEAUFORT_JASPER_WATER_ZIPS, popularityScore: 74, tags: ["water", "sewer", "utility", "lowcountry", "address-check"] },
+  { name: "Grand Strand Water & Sewer Authority", slug: "grand-strand-water", category: "UTILITY_WATER", description: "Grand Strand and Horry-area water and sewer service application, discontinue-service, and account support; confirm service by address", website: "https://www.gswsa.com/customer-service.cfm?page=44", scope: "STATE", states: ["SC"], zipCodes: SC_GRAND_STRAND_WATER_ZIPS, popularityScore: 76, tags: ["water", "sewer", "utility", "grand-strand", "address-check"] },
+  { name: "Mount Pleasant Waterworks", slug: "mount-pleasant-waterworks", category: "UTILITY_WATER", description: "Mount Pleasant water and sewer start, stop, transfer, and account-service support; confirm service by address", website: "https://www.mountpleasantwaterworks.com/customers/service___account_requests/start_or_stop_service.php", scope: "STATE", states: ["SC"], zipCodes: SC_MOUNT_PLEASANT_WATER_ZIPS, popularityScore: 72, tags: ["water", "sewer", "utility", "mount-pleasant", "address-check"] },
+  { name: "Southern Connector / Palmetto Pass", slug: "palmetto-pass", category: "TRANSPORTATION_TOLL", description: "Greenville-area Southern Connector toll road and Palmetto Pass account, payment, vehicle, and customer-service support", website: "https://southernconnector.com/index.html", scope: "STATE", states: ["SC"], zipCodes: SC_SOUTHERN_CONNECTOR_ZIPS, popularityScore: 74, tags: ["toll", "palmetto-pass", "southern-connector", "greenville"] },
+  { name: "Dominion Energy South Carolina", slug: "dominion-energy-sc", category: "UTILITY_ELECTRIC", description: "South Carolina electric start, stop, move, reconnect, and account support; confirm service availability by address", website: "https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service", phone: "1-800-251-7234", scope: "STATE", states: ["SC"], zipCodes: SC_DOMINION_ELECTRIC_ZIPS, popularityScore: 86, tags: ["electric", "utility", "south-carolina", "address-check"] },
+  { name: "Duke Energy South Carolina", slug: "duke-energy-sc", category: "UTILITY_ELECTRIC", description: "South Carolina Duke Energy electric start, stop, move, and account support across Duke Energy Carolinas and Duke Energy Progress territories; confirm service by address", website: "https://www.duke-energy.com/start-stop-move/landing", phone: "1-800-777-9898", scope: "STATE", states: ["SC"], zipCodes: SC_DUKE_ZIPS, popularityScore: 84, tags: ["electric", "utility", "duke-energy", "address-check"] },
+  { name: "Santee Cooper", slug: "santee-cooper", category: "UTILITY_ELECTRIC", description: "South Carolina public power and water start, move, stop, transfer, and customer account support; confirm service by address", website: "https://www.santeecooper.com/residential/start-move-stop-service/", phone: "1-800-804-7424", scope: "STATE", states: ["SC"], zipCodes: SC_SANTEE_COOPER_ZIPS, popularityScore: 82, tags: ["electric", "water", "utility", "public-power", "address-check"] },
+  { name: "Berkeley Electric Cooperative", slug: "berkeley-electric", category: "UTILITY_ELECTRIC", description: "Lowcountry cooperative electric service, membership, and account setup support; confirm service by address", website: "https://www.berkeleyelectric.coop/service-territory", scope: "STATE", states: ["SC"], zipCodes: SC_BERKELEY_ELECTRIC_ZIPS, popularityScore: 76, tags: ["electric", "cooperative", "lowcountry", "address-check"] },
+  { name: "Horry Electric Cooperative", slug: "horry-electric", category: "UTILITY_ELECTRIC", description: "Horry County and Myrtle Beach-area cooperative electric start, stop, and account support; confirm service by address", website: "https://horryelectric.com/services/electric-service/", scope: "STATE", states: ["SC"], zipCodes: SC_HORRY_ELECTRIC_ZIPS, popularityScore: 78, tags: ["electric", "cooperative", "horry", "myrtle-beach", "address-check"] },
+  { name: "Blue Ridge Electric Cooperative", slug: "blue-ridge-electric-sc", category: "UTILITY_ELECTRIC", description: "Upstate South Carolina cooperative electric start-service and member account support; confirm service by address", website: "https://blueridge.coop/start-service", scope: "STATE", states: ["SC"], zipCodes: SC_BLUE_RIDGE_ELECTRIC_ZIPS, popularityScore: 72, tags: ["electric", "cooperative", "upstate", "address-check"] },
+  { name: "Laurens Electric Cooperative", slug: "laurens-electric", category: "UTILITY_ELECTRIC", description: "Upstate cooperative electric start, stop, and account update support; confirm service by address", website: "https://laurenselectric.com/my-account/start-service/", scope: "STATE", states: ["SC"], zipCodes: SC_LAURENS_ELECTRIC_ZIPS, popularityScore: 72, tags: ["electric", "cooperative", "upstate", "address-check"] },
+  { name: "Mid-Carolina Electric Cooperative", slug: "mid-carolina-electric", category: "UTILITY_ELECTRIC", description: "Midlands cooperative electric start-service and account-form support; confirm eligibility by address", website: "https://www.mcecoop.com/my-account/start-service/", scope: "STATE", states: ["SC"], zipCodes: SC_MID_CAROLINA_ELECTRIC_ZIPS, popularityScore: 70, tags: ["electric", "cooperative", "midlands", "address-check"] },
+  { name: "Palmetto Electric Cooperative", slug: "palmetto-electric", category: "UTILITY_ELECTRIC", description: "Lowcountry cooperative electric membership, start-service, and stop-service support; confirm service by address", website: "https://palmetto.coop/startstop-service", scope: "STATE", states: ["SC"], zipCodes: SC_PALMETTO_ELECTRIC_ZIPS, popularityScore: 72, tags: ["electric", "cooperative", "lowcountry", "address-check"] },
+  { name: "York Electric Cooperative", slug: "york-electric", category: "UTILITY_ELECTRIC", description: "York, Lancaster, Chester, and Cherokee-area cooperative electric start and stop residential service support; confirm service by address", website: "https://www.yorkelectric.net/my-service/residential-accounts/start-residential-electric-service/", scope: "STATE", states: ["SC"], zipCodes: SC_YORK_ELECTRIC_ZIPS, popularityScore: 74, tags: ["electric", "cooperative", "york", "address-check"] },
+  { name: "Santee Electric Cooperative", slug: "santee-electric", category: "UTILITY_ELECTRIC", description: "Regional South Carolina cooperative electric connect, disconnect, and account-service support; confirm service by address", website: "https://santee.org/service", scope: "STATE", states: ["SC"], zipCodes: SC_SANTEE_ELECTRIC_ZIPS, popularityScore: 70, tags: ["electric", "cooperative", "address-check"] },
   { name: "Sioux Falls Water", slug: "sioux-falls-water-sd", category: "UTILITY_WATER", description: "Water utility for Sioux Falls, South Dakota", website: "https://www.siouxfalls.org/public-works/water", phone: "1-605-367-8131", scope: "STATE", states: ["SD"], popularityScore: 70, tags: ["water"] },
   { name: "Salt Lake City Department of Public Utilities", slug: "slc-water-ut", category: "UTILITY_WATER", description: "Salt Lake City water, sewer, stormwater, street lighting, utility billing, and service support", website: "https://www.slc.gov/utilities/", phone: "1-801-483-6900", scope: "STATE", states: ["UT"], zipCodes: UT_SLC_PUBLIC_UTILITIES_ZIPS, popularityScore: 78, tags: ["water", "sewer", "stormwater", "utility", "salt-lake-city", "address-check"] },
   { name: "Burlington Department of Public Works Water", slug: "burlington-water-vt", category: "UTILITY_WATER", description: "Water utility for Burlington, Vermont", website: "https://www.burlingtonvt.gov/DPW/Water", phone: "1-802-863-4501", scope: "STATE", states: ["VT"], popularityScore: 68, tags: ["water"] },
@@ -1050,7 +1211,10 @@ export const STATE_PROVIDERS = [
   // PR-E: COVERAGE GAP FILLS — GAS (2026-04-17)
   // ══════════════════════════════════════════════════════════
   { name: "ENSTAR Natural Gas", slug: "enstar-ak", category: "UTILITY_GAS", description: "Natural gas utility for Anchorage and south-central Alaska", website: "https://www.enstarnaturalgas.com", phone: "1-907-277-5551", scope: "STATE", states: ["AK"], popularityScore: 80, tags: ["gas"] },
-  { name: "CenterPoint Energy Arkansas", slug: "centerpoint-ar", category: "UTILITY_GAS", description: "Natural gas utility for Arkansas", website: "https://www.centerpointenergy.com", phone: "1-800-992-7552", scope: "STATE", states: ["AR"], popularityScore: 78, tags: ["gas"] },
+  { name: "Summit Utilities Arkansas", slug: "summit-utilities-ar", category: "UTILITY_GAS", description: "Arkansas natural gas start, stop, transfer, and account support; formerly CenterPoint/Arkla service areas, confirm by address", website: "https://summitutilities.com/contact/start-stop-transfer-service", phone: "1-800-992-7552", scope: "STATE", states: ["AR"], zipCodes: AR_SUMMIT_GAS_ZIPS, popularityScore: 82, tags: ["gas", "utility", "summit", "centerpoint", "arkla", "address-check"] },
+  { name: "Black Hills Energy Arkansas", slug: "black-hills-energy-ar", category: "UTILITY_GAS", description: "Arkansas natural gas start, stop, transfer, and account support for Black Hills Energy service communities; confirm by address", website: "https://www.blackhillsenergy.com/app-startstop/service-select", phone: "1-888-890-5554", scope: "STATE", states: ["AR"], zipCodes: AR_BLACK_HILLS_GAS_ZIPS, popularityScore: 76, tags: ["gas", "utility", "black-hills", "arkansas-western-gas", "address-check"] },
+  { name: "Carroll Electric Cooperative Corporation", slug: "carroll-electric-ar", category: "UTILITY_ELECTRIC", description: "Northwest Arkansas cooperative electric connect, transfer, account, and member service support; confirm service availability by address", website: "https://www.carrollecc.com/apply-for-service", scope: "STATE", states: ["AR"], zipCodes: AR_CARROLL_ELECTRIC_ZIPS, popularityScore: 70, tags: ["electric", "cooperative", "northwest-arkansas", "address-check"] },
+  { name: "First Electric Cooperative Corporation", slug: "first-electric-ar", category: "UTILITY_ELECTRIC", description: "Central and southeast Arkansas cooperative electric setup and account support; confirm service availability by address", website: "https://www.firstelectric.coop/services/electrical-service/set-up-new-service", scope: "STATE", states: ["AR"], zipCodes: AR_FIRST_ELECTRIC_ZIPS, popularityScore: 70, tags: ["electric", "cooperative", "central-arkansas", "southeast-arkansas", "address-check"] },
   { name: "Black Hills Energy Colorado", slug: "bhe-co-gas", category: "UTILITY_GAS", description: "Colorado natural gas and electric start, stop, transfer, and account support; confirm service availability by address", website: "https://www.blackhillsenergy.com/app-startstop/service-select", phone: "1-888-890-5554", scope: "STATE", states: ["CO"], zipCodes: CO_BLACK_HILLS_ZIPS, popularityScore: 70, tags: ["gas", "electric", "utility", "colorado", "address-check"] },
   { name: "Southern Connecticut Gas Company", slug: "socogas-ct", category: "UTILITY_GAS", description: "Southern Connecticut natural gas start, stop, transfer, locator, and customer account support; confirm gas availability by address", website: "https://www.soconngas.com/moving", phone: "1-877-944-6427", scope: "STATE", states: ["CT"], popularityScore: 74, tags: ["gas", "utility", "southern-connecticut", "start-stop-service", "address-check"] },
   { name: "Chesapeake Utilities", slug: "chpk-de-gas", category: "UTILITY_GAS", description: "Natural gas start, stop, transfer, and account support for Delaware and Maryland Eastern Shore service areas", website: "https://www.chpkgas.com/customer-care/manage-my-account/start-stop-transfer-service/", phone: "1-800-427-2883", scope: "STATE", states: ["DE", "MD"], zipCodes: ["197", "198", "199", "216", "218", "219"], popularityScore: 72, tags: ["gas", "utility", "delaware", "maryland", "eastern-shore", "address-check"] },
@@ -1068,11 +1232,14 @@ export const STATE_PROVIDERS = [
   { name: "New Mexico Gas Company", slug: "nmgas", category: "UTILITY_GAS", description: "Natural gas utility for New Mexico", website: "https://www.nmgco.com", phone: "1-888-664-2726", scope: "STATE", states: ["NM"], popularityScore: 80, tags: ["gas"] },
   { name: "Xcel Energy North Dakota Gas", slug: "xcel-nd-gas", category: "UTILITY_GAS", description: "Natural gas utility for eastern North Dakota", website: "https://www.xcelenergy.com", phone: "1-800-895-4999", scope: "STATE", states: ["ND"], popularityScore: 78, tags: ["gas"] },
   { name: "Oklahoma Natural Gas (ONE Gas)", slug: "ong-ok", category: "UTILITY_GAS", description: "Natural gas utility for Oklahoma", website: "https://www.oklahomanaturalgas.com", phone: "1-800-664-5463", scope: "STATE", states: ["OK"], popularityScore: 85, tags: ["gas"] },
-  { name: "Dominion Energy South Carolina Gas", slug: "dominion-sc-gas", category: "UTILITY_GAS", description: "Natural gas utility for South Carolina", website: "https://www.dominionenergy.com/south-carolina", phone: "1-800-251-7234", scope: "STATE", states: ["SC"], popularityScore: 80, tags: ["gas"] },
+  { name: "Dominion Energy South Carolina Gas", slug: "dominion-sc-gas", category: "UTILITY_GAS", description: "South Carolina natural gas start, stop, move, and availability-check support; confirm service by address", website: "https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service/Check-Availability", phone: "1-800-251-7234", scope: "STATE", states: ["SC"], zipCodes: SC_DOMINION_GAS_ZIPS, popularityScore: 80, tags: ["gas", "utility", "south-carolina", "address-check"] },
+  { name: "York County Natural Gas Authority", slug: "york-county-natural-gas", category: "UTILITY_GAS", description: "York County and nearby natural gas start, stop, change-service, and account support; confirm service by address", website: "https://ycnga.com/start-stop-change-service/", scope: "STATE", states: ["SC"], zipCodes: SC_YORK_LANCASTER_ZIPS, popularityScore: 72, tags: ["gas", "utility", "york", "address-check"] },
+  { name: "Fort Hill Natural Gas Authority", slug: "fort-hill-natural-gas", category: "UTILITY_GAS", description: "Oconee, Pickens, and Anderson-area natural gas start, stop, transfer, and new-customer support; confirm service by address", website: "https://www.fhnga.com/customer-support/start-stop-transfer.stml", scope: "STATE", states: ["SC"], zipCodes: SC_UPSTATE_ZIPS, popularityScore: 70, tags: ["gas", "utility", "upstate", "address-check"] },
+  { name: "Lancaster County Natural Gas Authority", slug: "lancaster-county-natural-gas", category: "UTILITY_GAS", description: "Lancaster County natural gas application, account, and customer-service support; confirm service by address", website: "https://lcngasc.com/", scope: "STATE", states: ["SC"], zipCodes: SC_YORK_LANCASTER_ZIPS, popularityScore: 68, tags: ["gas", "utility", "lancaster", "address-check"] },
   { name: "MDU Resources South Dakota Gas", slug: "mdu-sd-gas", category: "UTILITY_GAS", description: "Natural gas utility for South Dakota", website: "https://www.montana-dakota.com", phone: "1-800-638-3278", scope: "STATE", states: ["SD"], popularityScore: 76, tags: ["gas"] },
   { name: "Piedmont Natural Gas Tennessee", slug: "piedmont-tn", category: "UTILITY_GAS", description: "Natural gas utility for Tennessee", website: "https://www.piedmontng.com/home/start-stop-or-move", phone: "1-800-752-7504", scope: "STATE", states: ["TN"], popularityScore: 80, tags: ["gas", "utility", "tennessee", "address-check"] },
   { name: "Enbridge Gas Utah", slug: "dominion-ut-gas", category: "UTILITY_GAS", description: "Natural gas start, stop, move, and account support in Utah, Idaho, and Wyoming; formerly Dominion Energy Utah and Questar Gas", website: "https://www.enbridgegas.com/utwyid/start-stop-service", phone: "1-800-323-5517", scope: "STATE", states: ["UT", "WY", "ID"], popularityScore: 86, tags: ["gas", "utility", "enbridge", "dominion-energy-utah", "questar-gas", "address-check"] },
-  { name: "Cascade Natural Gas", slug: "cascade-wa-gas", category: "UTILITY_GAS", description: "Washington and Oregon natural gas utility account support; confirm service availability by address", website: "https://www.cngc.com/customer-service/start-stop-or-transfer-service/", phone: "1-888-522-1130", scope: "STATE", states: ["WA", "OR"], popularityScore: 75, tags: ["gas", "utility", "washington", "oregon", "address-check"] },
+  { name: "Cascade Natural Gas", slug: "cascade-wa-gas", category: "UTILITY_GAS", description: "Washington and Oregon natural gas start, stop, transfer, and account support; confirm service availability by address", website: "https://www.cngc.com/customer-service/start-stop-or-transfer-service/", phone: "1-888-522-1130", scope: "STATE", states: ["WA", "OR"], zipCodes: PNW_CASCADE_GAS_ZIPS, popularityScore: 75, tags: ["gas", "utility", "washington", "oregon", "address-check"] },
   { name: "Mountaineer Gas", slug: "mountaineer-wv", category: "UTILITY_GAS", description: "Natural gas utility for West Virginia", website: "https://www.mountaineergas.com", phone: "1-800-834-2070", scope: "STATE", states: ["WV"], popularityScore: 76, tags: ["gas"] },
   { name: "Wisconsin Public Service Gas", slug: "wps-wi-gas", category: "UTILITY_GAS", description: "Natural gas utility for northeast and central Wisconsin", website: "https://www.wisconsinpublicservice.com", phone: "1-800-450-7260", scope: "STATE", states: ["WI"], popularityScore: 76, tags: ["gas"] },
   { name: "Source Gas Distribution Wyoming", slug: "source-gas-wy", category: "UTILITY_GAS", description: "Natural gas utility for Wyoming (Black Hills Energy)", website: "https://www.blackhillsenergy.com", phone: "1-888-890-5554", scope: "STATE", states: ["WY"], popularityScore: 72, tags: ["gas"] },

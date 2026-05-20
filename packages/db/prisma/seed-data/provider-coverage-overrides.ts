@@ -47,6 +47,93 @@ const FL_DUKE_ENERGY_ZIPS = ["321", "326", "327", "328", "335", "337", "338", "3
 
 const FL_TAMPA_CITY_ZIPS = ["33602", "33603", "33604", "33605", "33606", "33607", "33609", "33610", "33611", "33612", "33614", "33615", "33616", "33617", "33618", "33619", "33620", "33621", "33629", "33634", "33635", "33637"];
 
+const AR_STATE_ZIPS = ["716", "717", "718", "719", "720", "721", "722", "723", "724", "725", "726", "727", "728", "729"];
+
+const AR_SWEPCO_ZIPS = ["718", "727", "728", "729"];
+
+const AR_OGE_ZIPS = ["729"];
+
+const AR_SUMMIT_GAS_ZIPS = AR_STATE_ZIPS;
+
+const AR_BLACK_HILLS_GAS_ZIPS = ["720", "721", "724", "725", "726", "727", "728", "729"];
+
+const AR_AOG_ZIPS = ["728", "729"];
+
+const AR_CARROLL_ELECTRIC_ZIPS = ["726", "727", "728"];
+
+const AR_FIRST_ELECTRIC_ZIPS = ["720", "721", "722", "723"];
+
+const AR_CENTRAL_WATER_ZIPS = ["720", "721", "722"];
+
+const AR_NORTH_LITTLE_ROCK_ZIPS = ["721", "722"];
+
+const AR_CONWAY_ZIPS = ["720"];
+
+const AR_NWA_ZIPS = ["727"];
+
+const AR_FORT_SMITH_ZIPS = ["729"];
+
+const OR_PORTLAND_METRO_ZIPS = ["970", "971", "972"];
+const OR_PGE_ZIPS = ["970", "971", "972", "973"];
+const OR_PACIFIC_POWER_ZIPS = ["970", "973", "974", "975", "976", "977", "978"];
+const OR_IDAHO_POWER_ZIPS = ["979"];
+const OR_BREEZEBY_ZIPS = ["970", "986"];
+const PNW_NW_NATURAL_ZIPS = ["970", "971", "972", "973", "974", "986"];
+const PNW_CASCADE_GAS_ZIPS = ["970", "971", "973", "977", "978", "982", "983", "985", "986", "988", "989", "993"];
+const OR_AVISTA_GAS_ZIPS = ["976", "978"];
+const OR_EUGENE_ZIPS = ["974"];
+const OR_COASTAL_ZIPS = ["971", "973", "974"];
+const OR_EASTERN_ZIPS = ["978", "979"];
+const OR_CENTRAL_ZIPS = ["977"];
+const OR_MEDFORD_ZIPS = ["975"];
+const OR_SALEM_ZIPS = ["973"];
+const OR_TVWD_HILLSBORO_ZIPS = ["970", "971"];
+const OR_GRESHAM_ZIPS = ["970", "972"];
+
+const AZ_STATE_ZIPS = ["850", "851", "852", "853", "855", "856", "857", "859", "860", "863", "864", "865"];
+
+const AZ_PHOENIX_METRO_ZIPS = ["850", "851", "852", "853"];
+
+const AZ_PHOENIX_CITY_ZIPS = ["850"];
+
+const AZ_TUCSON_ZIPS = ["856", "857"];
+
+const AZ_APS_ZIPS = ["850", "851", "852", "853", "855", "859", "860", "863"];
+
+const AZ_SRP_ZIPS = AZ_PHOENIX_METRO_ZIPS;
+
+const AZ_SOUTHWEST_GAS_ZIPS = ["850", "851", "852", "853", "855", "856", "857", "859", "860"];
+
+const AZ_SOUTHWEST_GAS_NV_ZIPS = ["889", "890", "891"];
+
+const AZ_NV_SOUTHWEST_GAS_ZIPS = [...AZ_SOUTHWEST_GAS_ZIPS, ...AZ_SOUTHWEST_GAS_NV_ZIPS];
+
+const AZ_UNISOURCE_ZIPS = ["856", "864"];
+
+const AZ_PRIVATE_WATER_ZIPS = AZ_STATE_ZIPS;
+
+const AZ_TRICO_ZIPS = AZ_TUCSON_ZIPS;
+
+const AZ_MOHAVE_ELECTRIC_ZIPS = ["864"];
+
+const AZ_SSVEC_ZIPS = ["856", "859"];
+
+const NV_STATE_ZIPS = ["889", "890", "891", "893", "894", "895", "896", "897", "898"];
+
+const NV_SOUTHERN_ZIPS = ["889", "890", "891"];
+
+const NV_LAS_VEGAS_VALLEY_ZIPS = NV_SOUTHERN_ZIPS;
+
+const NV_RENO_SPARKS_ZIPS = ["894", "895"];
+
+const NV_CARSON_CITY_ZIPS = ["897"];
+
+const NV_ENERGY_ZIPS = NV_STATE_ZIPS;
+
+const NV_WM_ZIPS = ["894", "895", "897", "898"];
+
+const NV_PRIVATE_WATER_ZIPS = NV_STATE_ZIPS;
+
 const GA_PEACH_PASS_ZIPS = [
   "30004", "30005", "30009", "30022", "30024", "30030", "30040", "30041", "30043", "30044", "30046", "30060", "30062", "30064", "30066", "30067", "30068", "30071", "30075", "30076", "30080", "30092", "30093", "30096", "30097",
   "30101", "30102", "30106", "30114", "30115", "30126", "30127", "30132", "30134", "30144", "30152", "30157", "30168",
@@ -108,6 +195,60 @@ const NC_BLUE_RIDGE_ENERGY_ZIPS = ["28604", "28605", "28607", "28615", "28618", 
 const NC_BRUNSWICK_ELECTRIC_ZIPS = ["28420", "28422", "28451", "28461", "28462", "28465", "28467", "28469", "28470", "28479", "28480", "29566", "29582"];
 
 const NC_PRIVATE_WATER_ZIPS = ["270", "271", "272", "273", "274", "275", "276", "277", "278", "280", "281", "282", "283", "284", "285", "286", "287"];
+
+const SC_STATE_ZIPS = ["290", "291", "292", "293", "294", "295", "296", "297", "298", "299"];
+
+const SC_UPSTATE_ZIPS = ["293", "296"];
+
+const SC_MIDLANDS_ZIPS = ["290", "291", "292"];
+
+const SC_GRAND_STRAND_ZIPS = ["295"];
+
+const SC_YORK_LANCASTER_ZIPS = ["297"];
+
+const SC_CHARLESTON_ZIPS = ["294"];
+
+const SC_GREENVILLE_WATER_ZIPS = ["296"];
+
+const SC_COLUMBIA_WATER_ZIPS = SC_MIDLANDS_ZIPS;
+
+const SC_SPARTANBURG_WATER_ZIPS = ["293"];
+
+const SC_BEAUFORT_JASPER_WATER_ZIPS = ["299"];
+
+const SC_GRAND_STRAND_WATER_ZIPS = SC_GRAND_STRAND_ZIPS;
+
+const SC_MOUNT_PLEASANT_WATER_ZIPS = SC_CHARLESTON_ZIPS;
+
+const SC_PIEDMONT_GAS_ZIPS = ["293", "296", "297"];
+
+const CAROLINAS_PIEDMONT_GAS_ZIPS = [...NC_PIEDMONT_GAS_ZIPS, ...SC_PIEDMONT_GAS_ZIPS];
+
+const SC_DOMINION_ELECTRIC_ZIPS = SC_STATE_ZIPS;
+
+const SC_DOMINION_GAS_ZIPS = SC_STATE_ZIPS;
+
+const SC_DUKE_ZIPS = ["290", "291", "293", "296", "297"];
+
+const SC_SOUTHERN_CONNECTOR_ZIPS = ["296"];
+
+const SC_SANTEE_COOPER_ZIPS = ["294", "295"];
+
+const SC_BERKELEY_ELECTRIC_ZIPS = ["294"];
+
+const SC_HORRY_ELECTRIC_ZIPS = SC_GRAND_STRAND_ZIPS;
+
+const SC_BLUE_RIDGE_ELECTRIC_ZIPS = ["296"];
+
+const SC_LAURENS_ELECTRIC_ZIPS = SC_UPSTATE_ZIPS;
+
+const SC_MID_CAROLINA_ELECTRIC_ZIPS = SC_MIDLANDS_ZIPS;
+
+const SC_PALMETTO_ELECTRIC_ZIPS = ["299"];
+
+const SC_YORK_ELECTRIC_ZIPS = SC_YORK_LANCASTER_ZIPS;
+
+const SC_SANTEE_ELECTRIC_ZIPS = ["290", "291", "295"];
 
 const OH_AEP_ZIPS = ["430", "431", "432", "433", "434", "435", "436", "437", "438", "439", "440", "441", "442", "443", "444", "445", "446", "447", "448", "449", "450", "451", "452", "453", "454", "455", "456"];
 
@@ -206,17 +347,121 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
     sourceUrl: "https://www.pse.com/en/Customer-Service/pse-locations-2",
     note: "Puget Sound Energy electric and gas coverage spans Puget Sound and selected central Washington service areas; ZIP prefixes are a prefilter and require address confirmation.",
   },
+
+  // Arkansas
   {
-    slug: "aps-az",
-    zipCodes: ["850", "851", "852", "853", "855"],
-    sourceUrl: "https://www.aps.com/en/Business/Service-Plans/Service-Area-Maps",
-    note: "APS service territory is concentrated in central and northern Arizona.",
+    slug: "entergy-ar",
+    zipCodes: AR_STATE_ZIPS,
+    sourceUrl: "https://www.entergy.com/communities/areas",
+    note: "Entergy Arkansas has broad county-level coverage across Arkansas; ZIPs are statewide prefilters and service should be confirmed by address.",
   },
   {
-    slug: "portland-general-electric",
-    zipCodes: ["970", "971", "972", "973"],
-    sourceUrl: "https://portlandgeneral.com/about/info/service-area",
-    note: "Portland General Electric serves the Portland metro area and the northern Willamette Valley.",
+    slug: "swepco-ar",
+    zipCodes: AR_SWEPCO_ZIPS,
+    sourceUrl: "https://www.swepco.com/account/service/start-stop-transfer",
+    note: "SWEPCO Arkansas service is concentrated in western and northwest Arkansas; ZIPs are prefilters and electric service should be confirmed by address.",
+  },
+  {
+    slug: "oge-ar",
+    zipCodes: AR_OGE_ZIPS,
+    sourceUrl: "https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview",
+    note: "OG&E's Arkansas service area is concentrated around Fort Smith and nearby western Arkansas communities; confirm by service address.",
+  },
+  {
+    slug: "summit-utilities-ar",
+    zipCodes: AR_SUMMIT_GAS_ZIPS,
+    sourceUrl: "https://summitutilities.com/contact/start-stop-transfer-service",
+    note: "Summit Utilities Arkansas is a broad natural-gas provider, but service must be verified by address.",
+  },
+  {
+    slug: "black-hills-energy-ar",
+    zipCodes: AR_BLACK_HILLS_GAS_ZIPS,
+    sourceUrl: "https://www.blackhillsenergy.com/app-startstop/service-select",
+    note: "Black Hills Energy Arkansas serves selected natural gas communities; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "arkansas-oklahoma-gas",
+    zipCodes: AR_AOG_ZIPS,
+    sourceUrl: "https://www.aogc.com/RequestService",
+    note: "Arkansas Oklahoma Gas serves selected western Arkansas counties; ZIPs are prefilters and gas service should be confirmed by address.",
+  },
+  {
+    slug: "carroll-electric-ar",
+    zipCodes: AR_CARROLL_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.carrollecc.com/apply-for-service",
+    note: "Carroll Electric Cooperative serves selected Northwest Arkansas addresses; confirm by service address.",
+  },
+  {
+    slug: "first-electric-ar",
+    zipCodes: AR_FIRST_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.firstelectric.coop/services/electrical-service/set-up-new-service",
+    note: "First Electric Cooperative serves portions of central and southeast Arkansas; confirm by service address.",
+  },
+  {
+    slug: "central-ar-water",
+    zipCodes: AR_CENTRAL_WATER_ZIPS,
+    sourceUrl: "https://carkw.com/customer-service/start-or-stop-service/",
+    note: "Central Arkansas Water is modeled with Little Rock-area ZIP prefilters; exact water service should be confirmed by address.",
+  },
+  {
+    slug: "north-little-rock-electric",
+    zipCodes: AR_NORTH_LITTLE_ROCK_ZIPS,
+    sourceUrl: "https://nlrelectric.com/forms/",
+    note: "North Little Rock Electric is a municipal utility; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "conway-corp-electric",
+    zipCodes: AR_CONWAY_ZIPS,
+    sourceUrl: "https://conwaycorp.com/sign-up-for-a-service/",
+    note: "Conway Corporation is city-scoped for municipal utility accounts; confirm service by address.",
+  },
+  {
+    slug: "springdale-water-utilities",
+    zipCodes: AR_NWA_ZIPS,
+    sourceUrl: "https://springdalewaterar.gov/new-customer/",
+    note: "Springdale Water Utilities serves selected Springdale-area water and wastewater addresses.",
+  },
+  {
+    slug: "bentonville-utilities",
+    zipCodes: AR_NWA_ZIPS,
+    sourceUrl: "https://www.bentonvillear.com/565/Utility-Service",
+    note: "City of Bentonville Utilities is municipal and address-specific for electric, water, wastewater, and solid waste accounts.",
+  },
+  {
+    slug: "fayetteville-utilities",
+    zipCodes: AR_NWA_ZIPS,
+    sourceUrl: "https://www.fayetteville-ar.gov/1368/New-Water-and-Sewer-Services",
+    note: "Fayetteville utility accounts include water, sewer, trash, and recycling; service should be confirmed by address.",
+  },
+  {
+    slug: "fort-smith-utilities",
+    zipCodes: AR_FORT_SMITH_ZIPS,
+    sourceUrl: "https://www.fortsmithar.gov/resident-services/water-utilities",
+    note: "Fort Smith utilities are municipal and address-specific for water, sewer, and sanitation billing.",
+  },
+  {
+    slug: "rogers-water-utilities",
+    zipCodes: AR_NWA_ZIPS,
+    sourceUrl: "https://www.rogerswaterar.gov/residential/services-and-information/start-or-stop-service/",
+    note: "Rogers Water Utilities serves selected Rogers-area water addresses; confirm service by address.",
+  },
+  {
+    slug: "aps-az",
+    zipCodes: AZ_APS_ZIPS,
+    sourceUrl: "https://www.aps.com/en/Residential/Service-Plans/Service-Area-Maps",
+    note: "Arizona Public Service serves central and northern Arizona; ZIPs are prefilters and electric service should be confirmed by address.",
+  },
+  {
+    slug: "srp-az",
+    zipCodes: AZ_SRP_ZIPS,
+    sourceUrl: "https://www.srpnet.com/about/service-area-territory",
+    note: "Salt River Project electric service is concentrated in the Phoenix metro; exact electric and water service should be confirmed by address.",
+  },
+  {
+    slug: "pge-or",
+    zipCodes: OR_PGE_ZIPS,
+    sourceUrl: "https://portlandgeneral.com/start-stop-move",
+    note: "Portland General Electric serves the Portland metro area and northern Willamette Valley; service should be confirmed by address.",
   },
   {
     slug: "washington-gas",
@@ -328,27 +573,27 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "phoenix-water",
-    zipCodes: ["850"],
-    sourceUrl: "https://www.phoenix.gov/waterservices",
-    note: "Phoenix Water Services is concentrated in the City of Phoenix ZIP area.",
+    zipCodes: AZ_PHOENIX_CITY_ZIPS,
+    sourceUrl: "https://www.phoenix.gov/residents/water-sewer.html",
+    note: "City of Phoenix water, sewer, trash, and city services billing are scoped to eligible Phoenix addresses.",
   },
   {
     slug: "mesa-utilities",
     zipCodes: ["852"],
-    sourceUrl: "https://www.mesaaz.gov/utilities",
-    note: "Mesa Utilities is concentrated in Mesa ZIP ranges.",
+    sourceUrl: "https://www.mesaaz.gov/Utilities",
+    note: "City of Mesa utilities include electric, natural gas, water, wastewater, trash, and recycling in address-specific municipal service areas.",
   },
   {
     slug: "lvvwd",
-    zipCodes: ["890", "891"],
-    sourceUrl: "https://www.lvvwd.com/customer-service/service-areas/index.html",
-    note: "Las Vegas Valley Water District serves the Las Vegas Valley core ZIP ranges.",
+    zipCodes: NV_LAS_VEGAS_VALLEY_ZIPS,
+    sourceUrl: "https://www.lvvwd.com/customer-service/water-service/start-stop-service.html",
+    note: "Las Vegas Valley Water District uses Las Vegas Valley ZIP prefilters; retail water service should be confirmed by address.",
   },
   {
-    slug: "portland-water",
-    zipCodes: ["970", "972"],
-    sourceUrl: "https://www.portland.gov/service-areas/public-works",
-    note: "Portland Water Bureau primarily serves Portland and nearby eastside service ZIPs.",
+    slug: "portland-water-or",
+    zipCodes: OR_PORTLAND_METRO_ZIPS,
+    sourceUrl: "https://www.portland.gov/water/customer-service/pay-your-utility-bill/start-stop-or-transfer-service",
+    note: "City of Portland utility service is municipal and address-specific for water, sewer, and stormwater accounts.",
   },
   {
     slug: "spu-wa",
@@ -394,9 +639,9 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "tucson-water",
-    zipCodes: ["856", "857"],
-    sourceUrl: "https://www.tucsonaz.gov/water",
-    note: "Tucson Water is concentrated in Tucson and southern Pima County ZIP ranges.",
+    zipCodes: AZ_TUCSON_ZIPS,
+    sourceUrl: "https://www.tucsonaz.gov/Departments/Water",
+    note: "Tucson Water is concentrated in Tucson and southern Pima County ZIP ranges; service should be confirmed by address.",
   },
   {
     slug: "ac-transit",
@@ -481,16 +726,88 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
 
   // ── Pacific Northwest ──
   {
+    slug: "breezeby-electronic-tolling",
+    zipCodes: OR_BREEZEBY_ZIPS,
+    sourceUrl: "https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling",
+    note: "BreezeBy is tied to the Hood River and Cascade Locks Columbia River bridge toll corridors.",
+  },
+  {
+    slug: "pacific-power-or",
+    zipCodes: OR_PACIFIC_POWER_ZIPS,
+    sourceUrl: "https://www.pacificpower.net/my-account/start-stop-move.html",
+    note: "Pacific Power uses broad Oregon ZIP prefilters outside PGE's core footprint; service should be confirmed by address.",
+  },
+  {
+    slug: "idaho-power-or",
+    zipCodes: OR_IDAHO_POWER_ZIPS,
+    sourceUrl: "https://www.idahopower.com/accounts-service/start-stop-transfer/",
+    note: "Idaho Power's Oregon service area is concentrated in eastern Oregon and should be confirmed by address.",
+  },
+  {
     slug: "cascade-wa-gas",
-    zipCodes: ["982", "983", "985", "986", "988", "989", "993", "970", "971", "973", "977", "978"],
-    sourceUrl: "https://www.cascadenaturalgas.com",
+    zipCodes: PNW_CASCADE_GAS_ZIPS,
+    sourceUrl: "https://www.cngc.com/customer-service/start-stop-or-transfer-service/",
     note: "Cascade Natural Gas serves selected Washington and Oregon communities; ZIP prefixes are broad prefilters and require service-address confirmation.",
   },
   {
     slug: "nw-natural",
-    zipCodes: ["970", "971", "972", "973", "974", "986"],
+    zipCodes: PNW_NW_NATURAL_ZIPS,
     sourceUrl: "https://www.nwnatural.com/gas-availability",
     note: "NW Natural serves Oregon and Southwest Washington; ZIP prefixes are regional prefilters and require address-based gas availability checks.",
+  },
+  {
+    slug: "avista-utilities-or-gas",
+    zipCodes: OR_AVISTA_GAS_ZIPS,
+    sourceUrl: "https://www.myavista.com/your-account/moving",
+    note: "Avista Oregon gas service is a narrow prefilter and must be confirmed by service address.",
+  },
+  {
+    slug: "eweb",
+    zipCodes: OR_EUGENE_ZIPS,
+    sourceUrl: "https://www.eweb.org/start-stop",
+    note: "EWEB serves Eugene-area electric and water customers; service should be confirmed by address near utility boundaries.",
+  },
+  {
+    slug: "springfield-utility-board",
+    zipCodes: OR_EUGENE_ZIPS,
+    sourceUrl: "https://www.subutil.com/customer-service/start-stop-service/",
+    note: "Springfield Utility Board serves Springfield electric and water customers; exact service is address-specific.",
+  },
+  {
+    slug: "central-lincoln-pud",
+    zipCodes: OR_COASTAL_ZIPS,
+    sourceUrl: "https://clpud.org/customer-information/start-or-stop-service/",
+    note: "Central Lincoln PUD uses coastal Oregon ZIP prefilters and should be confirmed by address.",
+  },
+  {
+    slug: "tillamook-pud",
+    zipCodes: OR_COASTAL_ZIPS,
+    sourceUrl: "https://www.tpud.org/customer-service/start-or-stop-service/",
+    note: "Tillamook PUD service is regional on the Oregon coast and should be confirmed by address.",
+  },
+  {
+    slug: "oregon-trail-electric",
+    zipCodes: OR_EASTERN_ZIPS,
+    sourceUrl: "https://www.otec.coop/",
+    note: "Oregon Trail Electric Cooperative serves selected eastern Oregon addresses.",
+  },
+  {
+    slug: "umatilla-electric",
+    zipCodes: OR_EASTERN_ZIPS,
+    sourceUrl: "https://www.umatillaelectric.com/member-services/start-stop-service/",
+    note: "Umatilla Electric Cooperative is northeastern Oregon scoped and should be confirmed by address.",
+  },
+  {
+    slug: "consumers-power-or",
+    zipCodes: ["973", "974"],
+    sourceUrl: "https://cpi.coop/service/stop-service",
+    note: "Consumers Power Inc. serves selected Oregon zones; exact service should be confirmed by address.",
+  },
+  {
+    slug: "lane-electric",
+    zipCodes: OR_EUGENE_ZIPS,
+    sourceUrl: "https://www.laneelectric.com/member-services/new-member-guide/",
+    note: "Lane Electric Cooperative serves rural Lane County areas and should be confirmed by address.",
   },
   {
     slug: "trimet",
@@ -501,16 +818,220 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
 
   // ── Nevada / Southwest ──
   {
+    slug: "city-of-salem-utilities",
+    zipCodes: OR_SALEM_ZIPS,
+    sourceUrl: "https://www.cityofsalem.net/community/household/water-utilities/utility-payments-and-your-utility-account/manage-your-city-of-salem-utility-service-account",
+    note: "City of Salem utility account workflows are municipal and should be confirmed by address.",
+  },
+  {
+    slug: "city-of-bend-water",
+    zipCodes: OR_CENTRAL_ZIPS,
+    sourceUrl: "https://bendoregon.gov/service/water-sewer-start-or-stop-service/",
+    note: "City of Bend water and sewer service is municipal and address-specific.",
+  },
+  {
+    slug: "medford-water",
+    zipCodes: OR_MEDFORD_ZIPS,
+    sourceUrl: "https://www.medfordwater.org/services/customer-service/",
+    note: "Medford Water is a regional water provider and should be confirmed by service address.",
+  },
+  {
+    slug: "tualatin-valley-water",
+    zipCodes: OR_TVWD_HILLSBORO_ZIPS,
+    sourceUrl: "https://www.tvwd.org/district/page/startstop-service-interim-billing",
+    note: "Tualatin Valley Water District serves selected Washington County-area addresses.",
+  },
+  {
+    slug: "hillsboro-utility-billing",
+    zipCodes: OR_TVWD_HILLSBORO_ZIPS,
+    sourceUrl: "https://www.hillsboro-oregon.gov/services/utility-billing/start-or-stop-service",
+    note: "Hillsboro utility billing is city-scoped and should be confirmed by address.",
+  },
+  {
+    slug: "gresham-utility-services",
+    zipCodes: OR_GRESHAM_ZIPS,
+    sourceUrl: "https://www.greshamoregon.gov/services/utilities/stop-or-start-utility-services/",
+    note: "Gresham water, wastewater, and stormwater utility service should be confirmed by address.",
+  },
+  {
     slug: "nv-energy",
-    zipCodes: ["889", "890", "891", "893", "894", "895", "897", "898"],
-    sourceUrl: "https://www.nvenergy.com/about-nvenergy/our-company/our-service-area",
-    note: "NV Energy serves Nevada including Las Vegas (south) and Reno (north) service territories.",
+    zipCodes: NV_ENERGY_ZIPS,
+    sourceUrl: "https://www.nvenergy.com/my-account/ss-landing",
+    note: "NV Energy serves most Nevada electric customers plus selected gas customers; ZIPs are broad prefilters and service should be confirmed by address.",
   },
   {
     slug: "southwest-gas",
-    zipCodes: ["850", "851", "852", "853", "855", "856", "857", "859", "860", "889", "890", "891"],
+    zipCodes: AZ_NV_SOUTHWEST_GAS_ZIPS,
     sourceUrl: "https://www.swgas.com/en/service-territory",
-    note: "Southwest Gas serves Arizona (Phoenix, Tucson) and Nevada (Las Vegas) for natural gas.",
+    note: "Southwest Gas serves Arizona and Nevada natural gas territories; ZIPs are broad prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "tmwa",
+    zipCodes: NV_RENO_SPARKS_ZIPS,
+    sourceUrl: "https://tmwa.com/start-stop-or-transfer-service/",
+    note: "Truckee Meadows Water Authority serves Reno-Sparks-area water addresses; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "henderson-utility-services",
+    zipCodes: ["890", "891"],
+    sourceUrl: "https://www.cityofhenderson.com/government/departments/utility-services/businesses/start-stop-and-transfer-service",
+    note: "City of Henderson utility services are municipal and address-specific for water and sewer accounts.",
+  },
+  {
+    slug: "north-las-vegas-utilities",
+    zipCodes: ["890", "891"],
+    sourceUrl: "https://payutil.cityofnorthlasvegas.com/",
+    note: "City of North Las Vegas utility billing and service requests are address-specific within city service boundaries.",
+  },
+  {
+    slug: "clark-county-water-reclamation",
+    zipCodes: NV_SOUTHERN_ZIPS,
+    sourceUrl: "https://www.cleanwaterteam.com/services",
+    note: "Clark County Water Reclamation District sewer account applicability is separate from water service and should be confirmed by address.",
+  },
+  {
+    slug: "reno-sewer-service",
+    zipCodes: NV_RENO_SPARKS_ZIPS,
+    sourceUrl: "https://www.reno.gov/government/departments/finance/sewer-service",
+    note: "City of Reno sewer billing is separate from TMWA water service and should be confirmed by address.",
+  },
+  {
+    slug: "carson-city-utility-billing",
+    zipCodes: NV_CARSON_CITY_ZIPS,
+    sourceUrl: "https://www.carson.org/business/water-and-sewer-services",
+    note: "Carson City water, sewer, and stormwater utility billing is city-scoped and address-specific.",
+  },
+  {
+    slug: "virgin-valley-water-district",
+    zipCodes: ["890"],
+    sourceUrl: "https://vvwdnv.com/sign-up-for-service",
+    note: "Virgin Valley Water District serves Mesquite-area addresses; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "great-basin-water",
+    zipCodes: NV_PRIVATE_WATER_ZIPS,
+    sourceUrl: "https://www.myutility.us/greatbasinwater",
+    note: "Great Basin Water has multiple Nevada water and wastewater divisions; ZIPs are broad prefilters and service must be confirmed by address.",
+  },
+  {
+    slug: "republic-services-southern-nevada",
+    zipCodes: NV_SOUTHERN_ZIPS,
+    sourceUrl: "https://www.republicservices.com/municipality/southern-nevada",
+    note: "Republic Services of Southern Nevada serves address-specific municipal trash and recycling areas in Southern Nevada.",
+  },
+  {
+    slug: "wm-nevada",
+    zipCodes: NV_WM_ZIPS,
+    sourceUrl: "https://www.wm.com/us/en/location/nv",
+    note: "WM Nevada service varies by locality and should be confirmed by address, especially outside Southern Nevada Republic service areas.",
+  },
+  {
+    slug: "valley-electric-association",
+    zipCodes: ["890"],
+    sourceUrl: "https://www.vea.coop/member-services/start-stop/",
+    note: "Valley Electric Association serves selected southern Nevada cooperative addresses and should be confirmed by address.",
+  },
+  {
+    slug: "overton-power-district",
+    zipCodes: ["890"],
+    sourceUrl: "https://opd5.com/customer-information/application-for-new-service/",
+    note: "Overton Power District No. 5 serves Moapa Valley and Mesquite-area public-power addresses; confirm by address.",
+  },
+  {
+    slug: "lincoln-county-power-district",
+    zipCodes: ["890"],
+    sourceUrl: "https://www.lcpd1.com/form/start-or-stop-service",
+    note: "Lincoln County Power District No. 1 serves selected Lincoln County electric addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "mt-wheeler-power",
+    zipCodes: ["893", "898"],
+    sourceUrl: "https://www.mwpower.net/new-service-upgrade-request",
+    note: "Mt. Wheeler Power serves selected eastern Nevada addresses; service should be confirmed by address.",
+  },
+  {
+    slug: "wells-rural-electric",
+    zipCodes: ["898"],
+    sourceUrl: "https://www.wrec.coop/member-services/start-stop-transfer-service/",
+    note: "Wells Rural Electric Company serves selected northeastern Nevada cooperative addresses; confirm by address.",
+  },
+  {
+    slug: "boulder-city-utilities",
+    zipCodes: ["890"],
+    sourceUrl: "https://bcnv.org/321/Utilities---Billing",
+    note: "Boulder City municipal utilities are city-scoped and address-specific for electric, water, wastewater, and billing.",
+  },
+  {
+    slug: "unisource-gas-az",
+    zipCodes: AZ_UNISOURCE_ZIPS,
+    sourceUrl: "https://www.uesaz.com/im-moving/",
+    note: "UniSource natural gas service is limited to selected Arizona communities; confirm availability by service address.",
+  },
+  {
+    slug: "tucson-electric-power",
+    zipCodes: AZ_TUCSON_ZIPS,
+    sourceUrl: "https://www.tep.com/service-territory/",
+    note: "Tucson Electric Power serves Tucson and surrounding areas; ZIPs are prefilters and electric service should be confirmed by address.",
+  },
+  {
+    slug: "unisource-electric-az",
+    zipCodes: AZ_UNISOURCE_ZIPS,
+    sourceUrl: "https://www.uesaz.com/im-moving/",
+    note: "UniSource electric service is territory-specific in selected Arizona communities; confirm availability by address.",
+  },
+  {
+    slug: "epcor-water-az",
+    zipCodes: AZ_PRIVATE_WATER_ZIPS,
+    sourceUrl: "https://www.epcor.com/us/en/az/account/start-service.html",
+    note: "EPCOR Water Arizona serves non-contiguous water and wastewater districts; ZIPs are broad prefilters and service must be confirmed by address.",
+  },
+  {
+    slug: "arizona-water-company",
+    zipCodes: AZ_PRIVATE_WATER_ZIPS,
+    sourceUrl: "https://www.azwater.com/development/service-area/",
+    note: "Arizona Water Company operates multiple non-contiguous Arizona water systems; ZIPs are broad prefilters and service must be confirmed by address.",
+  },
+  {
+    slug: "liberty-utilities-az-water",
+    zipCodes: AZ_PRIVATE_WATER_ZIPS,
+    sourceUrl: "https://libertyutilities.com/residential/about/what-we-do/water-and-wastewater.html",
+    note: "Liberty Utilities Arizona water and wastewater service is community-specific; ZIPs are broad prefilters and service must be confirmed by address.",
+  },
+  {
+    slug: "trico-electric",
+    zipCodes: AZ_TRICO_ZIPS,
+    sourceUrl: "https://trico.coop/start-stop-transfer-service/",
+    note: "Trico Electric Cooperative serves selected Tucson-area addresses; cooperative electric service should be confirmed by address.",
+  },
+  {
+    slug: "mohave-electric",
+    zipCodes: AZ_MOHAVE_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.mohaveelectric.com/member-service/apply-for-service/",
+    note: "Mohave Electric Cooperative serves selected northwest Arizona addresses around Mohave County; confirm service by address.",
+  },
+  {
+    slug: "ssvec",
+    zipCodes: AZ_SSVEC_ZIPS,
+    sourceUrl: "https://www.ssvec.org/services/new-service.php",
+    note: "Sulphur Springs Valley Electric Cooperative serves southeastern Arizona communities; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "chandler-water",
+    zipCodes: ["852"],
+    sourceUrl: "https://www.chandleraz.gov/residents/utility-services",
+    note: "City of Chandler utility services include water, wastewater, trash, and recycling; account eligibility should be confirmed by address.",
+  },
+  {
+    slug: "tempe-water-services",
+    zipCodes: ["852"],
+    sourceUrl: "https://www.tempe.gov/i-want-to/start-stop-water-service",
+    note: "City of Tempe customer services cover water, sewer, and solid waste start, transfer, and stop workflows; confirm by address.",
+  },
+  {
+    slug: "scottsdale-water",
+    zipCodes: ["852"],
+    sourceUrl: "https://www.scottsdaleaz.gov/utilities/establish-service",
+    note: "City of Scottsdale utility service requires address confirmation before establishing water or related city utility service.",
   },
 
   // ── Texas ──
@@ -686,7 +1207,7 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "piedmont-carolinas",
-    zipCodes: NC_PIEDMONT_GAS_ZIPS,
+    zipCodes: CAROLINAS_PIEDMONT_GAS_ZIPS,
     sourceUrl: "https://www.piedmontng.com/home/start-stop-or-move",
     note: "Piedmont Natural Gas service is fragmented across Carolinas markets and should be confirmed by address.",
   },
@@ -866,9 +1387,141 @@ export const PROVIDER_COVERAGE_OVERRIDES: ProviderCoverageOverride[] = [
   },
   {
     slug: "charleston-water-sc",
-    zipCodes: ["294", "295"],
-    sourceUrl: "https://www.charlestonwater.com",
-    note: "Charleston Water System serves the Charleston, SC metro area.",
+    zipCodes: SC_CHARLESTON_ZIPS,
+    sourceUrl: "https://www.charlestonwater.com/180/Open-or-Close-an-Account",
+    note: "Charleston Water System uses Charleston-area ZIP prefilters; water and sewer service should be confirmed by service address.",
+  },
+  {
+    slug: "greenville-water",
+    zipCodes: SC_GREENVILLE_WATER_ZIPS,
+    sourceUrl: "https://www.greenvillewater.com/customer-service/start-stop-move",
+    note: "Greenville Water is modeled with Greenville-area ZIP prefilters and should be confirmed by service address.",
+  },
+  {
+    slug: "columbia-water-sc",
+    zipCodes: SC_COLUMBIA_WATER_ZIPS,
+    sourceUrl: "https://columbiascwater.net/new-transfer-service/",
+    note: "Columbia Water serves the Columbia/Midlands area; ZIP prefixes are prefilters and account eligibility should be confirmed by address.",
+  },
+  {
+    slug: "spartanburg-water",
+    zipCodes: SC_SPARTANBURG_WATER_ZIPS,
+    sourceUrl: "https://www.spartanburgwater.org/manage-water-service",
+    note: "Spartanburg Water uses Spartanburg-area ZIP prefilters and should be confirmed by address.",
+  },
+  {
+    slug: "beaufort-jasper-water",
+    zipCodes: SC_BEAUFORT_JASPER_WATER_ZIPS,
+    sourceUrl: "https://www.bjwsa.org/167/StartStop-Services",
+    note: "BJWSA serves selected Beaufort and Jasper service addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "grand-strand-water",
+    zipCodes: SC_GRAND_STRAND_WATER_ZIPS,
+    sourceUrl: "https://www.gswsa.com/customer-service.cfm?page=44",
+    note: "Grand Strand Water & Sewer Authority is modeled with Grand Strand/Horry ZIP prefilters and should be confirmed by address.",
+  },
+  {
+    slug: "mount-pleasant-waterworks",
+    zipCodes: SC_MOUNT_PLEASANT_WATER_ZIPS,
+    sourceUrl: "https://www.mountpleasantwaterworks.com/customers/service___account_requests/start_or_stop_service.php",
+    note: "Mount Pleasant Waterworks is town-scoped; ZIPs are prefilters and service should be confirmed by address.",
+  },
+  {
+    slug: "palmetto-pass",
+    zipCodes: SC_SOUTHERN_CONNECTOR_ZIPS,
+    sourceUrl: "https://southernconnector.com/index.html",
+    note: "Southern Connector / Palmetto Pass is tied to the Greenville-area I-185 toll corridor.",
+  },
+  {
+    slug: "dominion-energy-sc",
+    zipCodes: SC_DOMINION_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service",
+    note: "Dominion Energy South Carolina electric uses broad South Carolina ZIP prefilters; service should be confirmed by address.",
+  },
+  {
+    slug: "duke-energy-sc",
+    zipCodes: SC_DUKE_ZIPS,
+    sourceUrl: "https://www.duke-energy.com/start-stop-move/landing",
+    note: "Duke Energy South Carolina covers Duke Energy Carolinas and Progress territories; ZIPs are prefilters and address confirmation is required.",
+  },
+  {
+    slug: "santee-cooper",
+    zipCodes: SC_SANTEE_COOPER_ZIPS,
+    sourceUrl: "https://www.santeecooper.com/residential/start-move-stop-service/",
+    note: "Santee Cooper service is concentrated in coastal South Carolina and should be confirmed by address.",
+  },
+  {
+    slug: "berkeley-electric",
+    zipCodes: SC_BERKELEY_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.berkeleyelectric.coop/service-territory",
+    note: "Berkeley Electric Cooperative serves selected Lowcountry addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "horry-electric",
+    zipCodes: SC_HORRY_ELECTRIC_ZIPS,
+    sourceUrl: "https://horryelectric.com/services/electric-service/",
+    note: "Horry Electric Cooperative serves selected Grand Strand addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "blue-ridge-electric-sc",
+    zipCodes: SC_BLUE_RIDGE_ELECTRIC_ZIPS,
+    sourceUrl: "https://blueridge.coop/start-service",
+    note: "Blue Ridge Electric Cooperative is an Upstate South Carolina provider; ZIPs are prefilters.",
+  },
+  {
+    slug: "laurens-electric",
+    zipCodes: SC_LAURENS_ELECTRIC_ZIPS,
+    sourceUrl: "https://laurenselectric.com/my-account/start-service/",
+    note: "Laurens Electric Cooperative serves selected Upstate South Carolina addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "mid-carolina-electric",
+    zipCodes: SC_MID_CAROLINA_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.mcecoop.com/my-account/start-service/",
+    note: "Mid-Carolina Electric Cooperative requires address eligibility confirmation before service application.",
+  },
+  {
+    slug: "palmetto-electric",
+    zipCodes: SC_PALMETTO_ELECTRIC_ZIPS,
+    sourceUrl: "https://palmetto.coop/startstop-service",
+    note: "Palmetto Electric Cooperative serves selected Lowcountry addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "york-electric",
+    zipCodes: SC_YORK_ELECTRIC_ZIPS,
+    sourceUrl: "https://www.yorkelectric.net/my-service/residential-accounts/start-residential-electric-service/",
+    note: "York Electric Cooperative is modeled with York/Lancaster-area ZIP prefilters and should be confirmed by address.",
+  },
+  {
+    slug: "santee-electric",
+    zipCodes: SC_SANTEE_ELECTRIC_ZIPS,
+    sourceUrl: "https://santee.org/service",
+    note: "Santee Electric Cooperative is distinct from Santee Cooper and should be confirmed by address.",
+  },
+  {
+    slug: "dominion-sc-gas",
+    zipCodes: SC_DOMINION_GAS_ZIPS,
+    sourceUrl: "https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service/Check-Availability",
+    note: "Dominion Energy South Carolina gas uses broad ZIP prefilters; gas availability must be checked by address.",
+  },
+  {
+    slug: "york-county-natural-gas",
+    zipCodes: SC_YORK_LANCASTER_ZIPS,
+    sourceUrl: "https://ycnga.com/start-stop-change-service/",
+    note: "York County Natural Gas Authority serves selected York and nearby service addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "fort-hill-natural-gas",
+    zipCodes: SC_UPSTATE_ZIPS,
+    sourceUrl: "https://www.fhnga.com/customer-support/start-stop-transfer.stml",
+    note: "Fort Hill Natural Gas Authority serves selected Oconee, Pickens, and Anderson-area addresses; ZIPs are prefilters.",
+  },
+  {
+    slug: "lancaster-county-natural-gas",
+    zipCodes: SC_YORK_LANCASTER_ZIPS,
+    sourceUrl: "https://lcngasc.com/",
+    note: "Lancaster County Natural Gas Authority is modeled with Lancaster/York-area ZIP prefilters and should be confirmed by address.",
   },
 
   // ── Midwest — Michigan ──

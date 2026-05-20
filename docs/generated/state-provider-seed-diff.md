@@ -1,17 +1,17 @@
 # State Provider Seed Diff
 
-Generated: 2026-05-13T17:26:44.960Z
+Generated: 2026-05-20T14:23:14.507Z
 
-- newly added: 284
-- already present: 1
-- backlog: 7
+- newly added: 301
+- already present: 3
+- backlog: 6
 
 ## Newly Added
 
 - MAX Transit | TRANSPORTATION_TRANSIT | zip_prefix | https://maxtransit.org
 - People Mover | TRANSPORTATION_TRANSIT | zip_prefix | https://www.muni.org/Departments/transit/PeopleMover/pages/mapsandstops.aspx
 - Valley Metro | TRANSPORTATION_TRANSIT | zip_prefix | https://www.valleymetro.org/maps-schedules
-- Entergy Arkansas | UTILITY_ELECTRIC | state | https://www.entergy-arkansas.com
+- Entergy Arkansas | UTILITY_ELECTRIC | live_address | https://www.entergyarkansas.com/
 - San Diego Gas & Electric | UTILITY_ELECTRIC | zip_prefix | https://www.sdge.com/landservices
 - RTD Denver | TRANSPORTATION_TRANSIT | zip_prefix | https://www.rtd-denver.com/system-map
 - United Illuminating | UTILITY_ELECTRIC | live_address | https://www.uinet.com/moving
@@ -56,7 +56,7 @@ Generated: 2026-05-13T17:26:44.960Z
 - PSEG Long Island | UTILITY_ELECTRIC | zip_prefix | https://www.psegliny.com
 - Montana-Dakota Utilities | UTILITY_GAS | state | https://www.montana-dakota.com
 - EMBARK | TRANSPORTATION_TRANSIT | zip_prefix | https://embarkok.com/system-map/
-- Pacific Power | UTILITY_ELECTRIC | state | https://www.pacificpower.net/about.html
+- Pacific Power | UTILITY_ELECTRIC | live_address | https://www.pacificpower.net/my-account/start-stop-move.html
 - Columbia Gas of Pennsylvania | UTILITY_GAS | zip_prefix | https://www.columbiagaspa.com
 - RIPTA | TRANSPORTATION_TRANSIT | state | https://ripta.com/statewide-system-map/
 - CARTA | TRANSPORTATION_TRANSIT | zip_prefix | https://ridecarta.com
@@ -115,12 +115,12 @@ Generated: 2026-05-13T17:26:44.960Z
 - Interior Gas Utility | UTILITY_GAS | zip_prefix | https://www.interiorgas.com
 - Decatur Utilities Electric | UTILITY_ELECTRIC | zip_prefix | https://www.decaturutilities.com
 - Huntsville Utilities Electric | UTILITY_ELECTRIC | zip_prefix | https://www.hsvutil.org
-- Conway Corp Electric | UTILITY_ELECTRIC | zip_prefix | https://www.conwaycorp.com
-- North Little Rock Electric | UTILITY_ELECTRIC | zip_prefix | https://nlrelectric.com
-- Southwestern Electric Power Company (SWEPCO) | UTILITY_ELECTRIC | zip_prefix | https://www.swepco.com
-- Arkansas Oklahoma Gas | UTILITY_GAS | zip_prefix | https://www.aogc.com
-- Tucson Electric Power | UTILITY_ELECTRIC | zip_prefix | https://www.tep.com
-- UniSource Energy Services Electric | UTILITY_ELECTRIC | zip_prefix | https://www.uesaz.com
+- Conway Corporation | UTILITY_ELECTRIC | zip_prefix | https://conwaycorp.com/sign-up-for-a-service/
+- North Little Rock Electric | UTILITY_ELECTRIC | zip_prefix | https://nlrelectric.com/forms/
+- Southwestern Electric Power Company (SWEPCO) | UTILITY_ELECTRIC | zip_prefix | https://www.swepco.com/account/service/start-stop-transfer
+- Arkansas Oklahoma Gas Corporation (AOG) | UTILITY_GAS | zip_prefix | https://www.aogc.com/RequestService
+- Tucson Electric Power | UTILITY_ELECTRIC | live_address | https://www.tep.com/im-moving/
+- UniSource Energy Services Electric | UTILITY_ELECTRIC | live_address | https://www.uesaz.com/im-moving/
 - Sacramento Municipal Utility District | UTILITY_ELECTRIC | zip_prefix | https://www.smud.org
 - Jewett City Department of Public Utilities | UTILITY_ELECTRIC | zip_prefix | https://www.jewettcitydpu.com
 - Norwich Public Utilities | UTILITY_ELECTRIC | live_address | https://norwichpublicutilities.com
@@ -143,17 +143,17 @@ Generated: 2026-05-13T17:26:44.960Z
 - Madison County Water Department | UTILITY_WATER | zip_prefix | https://www.madisoncountyal.gov/departments/water-department
 - Mobile Area Water and Sewer System Water | UTILITY_WATER | zip_prefix | https://www.mawss.com
 - Little Rock Water Reclamation Authority | UTILITY_SEWER | zip_prefix | https://lrwra.com
-- Springdale Water Utilities Wastewater | UTILITY_SEWER | zip_prefix | https://springdalewater.com
-- Bentonville Water Utilities | UTILITY_WATER | zip_prefix | https://www.bentonvillear.com
-- Fayetteville Water and Sewer | UTILITY_WATER | zip_prefix | https://www.fayetteville-ar.gov
-- Fort Smith Utilities Water | UTILITY_WATER | zip_prefix | https://www.fortsmithar.gov
+- Springdale Water Utilities | UTILITY_WATER | zip_prefix | https://springdalewaterar.gov/new-customer/
+- City of Bentonville Utilities | UTILITY_ELECTRIC | live_address | https://www.bentonvillear.com/565/Utility-Service
+- City of Fayetteville Utilities | UTILITY_WATER | zip_prefix | https://www.fayetteville-ar.gov/1368/New-Water-and-Sewer-Services
+- City of Fort Smith Utilities | UTILITY_WATER | zip_prefix | https://www.fortsmithar.gov/resident-services/water-utilities
 - Jonesboro City Water and Light Water | UTILITY_WATER | zip_prefix | https://www.jonesborocwl.org
-- Rogers Water Utilities | UTILITY_WATER | zip_prefix | https://www.rwu.org
+- Rogers Water Utilities | UTILITY_WATER | zip_prefix | https://www.rogerswaterar.gov/residential/services-and-information/start-or-stop-service/
 - Pima County Regional Wastewater Reclamation Department | UTILITY_SEWER | zip_prefix | https://www.pima.gov/wastewater
-- City of Chandler Water | UTILITY_WATER | zip_prefix | https://www.chandleraz.gov/residents/water
-- City of Tempe Water Services | UTILITY_WATER | zip_prefix | https://www.tempe.gov
+- City of Chandler Utility Services | UTILITY_WATER | live_address | https://www.chandleraz.gov/residents/utility-services
+- City of Tempe Customer Services | UTILITY_WATER | live_address | https://www.tempe.gov/i-want-to/start-stop-water-service
 - Glendale Water Services | UTILITY_WATER | zip_prefix | https://www.glendaleaz.com/live/city_services/water_services
-- Scottsdale Water | UTILITY_WATER | zip_prefix | https://www.scottsdaleaz.gov/water
+- City of Scottsdale Utilities | UTILITY_WATER | live_address | https://www.scottsdaleaz.gov/utilities/establish-service
 - Town of Gilbert Water | UTILITY_WATER | zip_prefix | https://www.gilbertaz.gov/departments/public-works/water
 - City of Fresno Utilities Water | UTILITY_WATER | zip_prefix | https://www.fresno.gov/publicutilities/
 - City of Sacramento Department of Utilities Water | UTILITY_WATER | zip_prefix | https://www.cityofsacramento.gov/utilities
@@ -292,6 +292,23 @@ Generated: 2026-05-13T17:26:44.960Z
 - Cowlitz County Public Utility District | UTILITY_ELECTRIC | zip_prefix | https://www.cowlitzpud.org/new-services/start-stop-or-transfer-service/
 - Lewis County PUD | UTILITY_ELECTRIC | zip_prefix | https://www.lcpud.org/services/start-stop-service/
 - Mason County PUD No. 3 | UTILITY_ELECTRIC | zip_prefix | https://www.pud3.org/electric-service/electric-start-new-service/
+- BreezeBy Electronic Tolling | TRANSPORTATION_TOLL | polygon | https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling
+- Idaho Power Oregon Service Area | UTILITY_ELECTRIC | live_address | https://www.idahopower.com/accounts-service/start-stop-transfer/
+- Avista Utilities Oregon Gas | UTILITY_GAS | live_address | https://www.myavista.com/your-account/moving
+- Eugene Water & Electric Board | UTILITY_ELECTRIC | live_address | https://www.eweb.org/start-stop
+- Springfield Utility Board | UTILITY_ELECTRIC | live_address | https://www.subutil.com/customer-service/start-stop-service/
+- Central Lincoln People's Utility District | UTILITY_ELECTRIC | live_address | https://clpud.org/customer-information/start-or-stop-service/
+- Tillamook People's Utility District | UTILITY_ELECTRIC | live_address | https://www.tpud.org/customer-service/start-or-stop-service/
+- Oregon Trail Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.otec.coop/
+- Umatilla Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.umatillaelectric.com/member-services/start-stop-service/
+- Consumers Power Inc. | UTILITY_ELECTRIC | live_address | https://cpi.coop/service/stop-service
+- Lane Electric Cooperative | UTILITY_ELECTRIC | live_address | https://www.laneelectric.com/member-services/new-member-guide/
+- City of Salem Utility Service | UTILITY_WATER | live_address | https://www.cityofsalem.net/community/household/water-utilities/utility-payments-and-your-utility-account/manage-your-city-of-salem-utility-service-account
+- City of Bend Water Services | UTILITY_WATER | live_address | https://bendoregon.gov/service/water-sewer-start-or-stop-service/
+- Medford Water | UTILITY_WATER | live_address | https://www.medfordwater.org/services/customer-service/
+- Tualatin Valley Water District | UTILITY_WATER | live_address | https://www.tvwd.org/district/page/startstop-service-interim-billing
+- City of Hillsboro Utility Billing | UTILITY_WATER | live_address | https://www.hillsboro-oregon.gov/services/utility-billing/start-or-stop-service
+- City of Gresham Utility Services | UTILITY_WATER | live_address | https://www.greshamoregon.gov/services/utilities/stop-or-start-utility-services/
 
 ## Backlog
 
@@ -300,6 +317,5 @@ Generated: 2026-05-13T17:26:44.960Z
 - E-470 Public Highway Authority | TRANSPORTATION_TOLL | polygon | https://www.e470.com
 - Northwest Parkway | TRANSPORTATION_TOLL | polygon | https://www.nwpky.com
 - Southeast Gas | UTILITY_GAS | live_address | https://southeastgas.com
-- Summit Utilities Arkansas | UTILITY_GAS | live_address | https://summitutilities.com
 - Colorado Natural Gas | UTILITY_GAS | live_address | https://www.coloradonaturalgas.com/service-areas
 

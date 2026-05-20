@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T17:45:19.357Z",
-  "providerCount": 939,
+  "generatedAt": "2026-05-13T21:11:54.708Z",
+  "providerCount": 1122,
   "criticalCategories": [
     "UTILITY_ELECTRIC",
     "UTILITY_GAS",
@@ -465,10 +465,10 @@
     {
       "state": "AZ",
       "category": "UTILITY_ELECTRIC",
-      "count": 4,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 4,
-      "zipRuleCount": 3,
+      "stateCount": 7,
+      "zipRuleCount": 7,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -479,10 +479,10 @@
     {
       "state": "AZ",
       "category": "UTILITY_GAS",
-      "count": 1,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 2,
+      "zipRuleCount": 2,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -493,10 +493,10 @@
     {
       "state": "AZ",
       "category": "UTILITY_WATER",
-      "count": 8,
+      "count": 11,
       "federalCount": 0,
-      "stateCount": 8,
-      "zipRuleCount": 8,
+      "stateCount": 11,
+      "zipRuleCount": 11,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -675,10 +675,10 @@
     {
       "state": "AR",
       "category": "UTILITY_ELECTRIC",
-      "count": 6,
+      "count": 8,
       "federalCount": 0,
-      "stateCount": 6,
-      "zipRuleCount": 3,
+      "stateCount": 8,
+      "zipRuleCount": 8,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -689,10 +689,10 @@
     {
       "state": "AR",
       "category": "UTILITY_GAS",
-      "count": 2,
+      "count": 3,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 1,
+      "stateCount": 3,
+      "zipRuleCount": 3,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -706,7 +706,7 @@
       "count": 6,
       "federalCount": 0,
       "stateCount": 6,
-      "zipRuleCount": 5,
+      "zipRuleCount": 6,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -717,10 +717,10 @@
     {
       "state": "AR",
       "category": "UTILITY_SEWER",
-      "count": 2,
+      "count": 1,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -1095,38 +1095,38 @@
     {
       "state": "CO",
       "category": "UTILITY_ELECTRIC",
-      "count": 3,
+      "count": 9,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 9,
+      "zipRuleCount": 9,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "CO",
       "category": "UTILITY_GAS",
-      "count": 1,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 2,
+      "zipRuleCount": 2,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "CO",
       "category": "UTILITY_WATER",
-      "count": 5,
+      "count": 4,
       "federalCount": 0,
-      "stateCount": 5,
-      "zipRuleCount": 5,
+      "stateCount": 4,
+      "zipRuleCount": 4,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -1151,16 +1151,16 @@
     {
       "state": "CO",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 3,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 1,
+      "zipRuleCount": 1,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "CO",
@@ -1221,10 +1221,10 @@
     {
       "state": "CO",
       "category": "TRANSPORTATION_TOLL",
-      "count": 4,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 3,
-      "zipRuleCount": 2,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -1319,10 +1319,10 @@
     {
       "state": "CT",
       "category": "UTILITY_GAS",
-      "count": 1,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 2,
+      "zipRuleCount": 2,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -1333,10 +1333,10 @@
     {
       "state": "CT",
       "category": "UTILITY_WATER",
-      "count": 3,
+      "count": 4,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 2,
+      "stateCount": 4,
+      "zipRuleCount": 4,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -1935,10 +1935,10 @@
     {
       "state": "FL",
       "category": "UTILITY_ELECTRIC",
-      "count": 7,
+      "count": 8,
       "federalCount": 0,
-      "stateCount": 7,
-      "zipRuleCount": 6,
+      "stateCount": 8,
+      "zipRuleCount": 7,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -1963,9 +1963,9 @@
     {
       "state": "FL",
       "category": "UTILITY_WATER",
-      "count": 7,
+      "count": 6,
       "federalCount": 0,
-      "stateCount": 7,
+      "stateCount": 6,
       "zipRuleCount": 6,
       "broadOnly": false,
       "gapType": "covered",
@@ -2145,10 +2145,10 @@
     {
       "state": "GA",
       "category": "UTILITY_ELECTRIC",
-      "count": 1,
+      "count": 4,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 4,
+      "zipRuleCount": 4,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -2159,24 +2159,24 @@
     {
       "state": "GA",
       "category": "UTILITY_GAS",
-      "count": 2,
+      "count": 3,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 3,
+      "zipRuleCount": 3,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "GA",
       "category": "UTILITY_WATER",
-      "count": 1,
+      "count": 5,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 5,
+      "zipRuleCount": 5,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -2201,16 +2201,16 @@
     {
       "state": "GA",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 5,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 3,
+      "zipRuleCount": 3,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "GA",
@@ -2243,9 +2243,9 @@
     {
       "state": "GA",
       "category": "GOVERNMENT_DMV",
-      "count": 1,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 1,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": false,
       "gapType": "covered",
@@ -2274,7 +2274,7 @@
       "count": 2,
       "federalCount": 1,
       "stateCount": 1,
-      "zipRuleCount": 0,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -4273,10 +4273,10 @@
     {
       "state": "MD",
       "category": "UTILITY_WATER",
-      "count": 1,
+      "count": 4,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 4,
+      "zipRuleCount": 4,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -4301,16 +4301,16 @@
     {
       "state": "MD",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 4,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 2,
+      "zipRuleCount": 2,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "MD",
@@ -4455,10 +4455,10 @@
     {
       "state": "MA",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 10,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
+      "stateCount": 10,
+      "zipRuleCount": 10,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -4472,7 +4472,7 @@
       "count": 2,
       "federalCount": 0,
       "stateCount": 2,
-      "zipRuleCount": 1,
+      "zipRuleCount": 2,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -4483,10 +4483,10 @@
     {
       "state": "MA",
       "category": "UTILITY_WATER",
-      "count": 3,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 1,
+      "stateCount": 7,
+      "zipRuleCount": 7,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -4511,16 +4511,16 @@
     {
       "state": "MA",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 6,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 4,
+      "zipRuleCount": 4,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "MA",
@@ -4581,10 +4581,10 @@
     {
       "state": "MA",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -4875,9 +4875,9 @@
     {
       "state": "MN",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 1,
       "federalCount": 0,
-      "stateCount": 2,
+      "stateCount": 1,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -5925,10 +5925,10 @@
     {
       "state": "NV",
       "category": "UTILITY_ELECTRIC",
-      "count": 1,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 7,
+      "zipRuleCount": 7,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -5953,10 +5953,10 @@
     {
       "state": "NV",
       "category": "UTILITY_WATER",
-      "count": 1,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 7,
+      "zipRuleCount": 7,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -5967,30 +5967,30 @@
     {
       "state": "NV",
       "category": "UTILITY_SEWER",
-      "count": 0,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 2,
+      "zipRuleCount": 2,
       "broadOnly": false,
-      "gapType": "missing",
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NV",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 4,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 2,
+      "zipRuleCount": 2,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NV",
@@ -6135,10 +6135,10 @@
     {
       "state": "NH",
       "category": "UTILITY_ELECTRIC",
-      "count": 3,
+      "count": 4,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 2,
+      "stateCount": 4,
+      "zipRuleCount": 4,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -6149,58 +6149,58 @@
     {
       "state": "NH",
       "category": "UTILITY_GAS",
-      "count": 1,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 2,
+      "zipRuleCount": 2,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NH",
       "category": "UTILITY_WATER",
-      "count": 2,
+      "count": 5,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 5,
+      "zipRuleCount": 5,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NH",
       "category": "UTILITY_SEWER",
-      "count": 0,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 2,
+      "zipRuleCount": 2,
       "broadOnly": false,
-      "gapType": "missing",
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NH",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 5,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 3,
+      "zipRuleCount": 3,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NH",
@@ -6261,10 +6261,10 @@
     {
       "state": "NH",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -6471,10 +6471,10 @@
     {
       "state": "NJ",
       "category": "TRANSPORTATION_TOLL",
-      "count": 2,
+      "count": 3,
       "federalCount": 1,
-      "stateCount": 1,
-      "zipRuleCount": 0,
+      "stateCount": 2,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -6975,10 +6975,10 @@
     {
       "state": "NC",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 5,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
+      "stateCount": 5,
+      "zipRuleCount": 5,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -6992,21 +6992,21 @@
       "count": 3,
       "federalCount": 0,
       "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "zipRuleCount": 3,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NC",
       "category": "UTILITY_WATER",
-      "count": 3,
+      "count": 9,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 3,
+      "stateCount": 9,
+      "zipRuleCount": 9,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -7031,16 +7031,16 @@
     {
       "state": "NC",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 6,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 4,
+      "zipRuleCount": 4,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "NC",
@@ -7101,10 +7101,10 @@
     {
       "state": "NC",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -7395,10 +7395,10 @@
     {
       "state": "OH",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 5,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 1,
+      "stateCount": 5,
+      "zipRuleCount": 5,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -7409,20 +7409,6 @@
     {
       "state": "OH",
       "category": "UTILITY_GAS",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
-      "broadOnly": false,
-      "gapType": "covered",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
-      "priority": "LOW",
-      "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "OH",
-      "category": "UTILITY_WATER",
       "count": 3,
       "federalCount": 0,
       "stateCount": 3,
@@ -7436,31 +7422,45 @@
     },
     {
       "state": "OH",
-      "category": "UTILITY_SEWER",
-      "count": 0,
+      "category": "UTILITY_WATER",
+      "count": 4,
       "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 4,
+      "zipRuleCount": 4,
       "broadOnly": false,
-      "gapType": "missing",
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
+    },
+    {
+      "state": "OH",
+      "category": "UTILITY_SEWER",
+      "count": 2,
+      "federalCount": 0,
+      "stateCount": 2,
+      "zipRuleCount": 2,
+      "broadOnly": false,
+      "gapType": "covered",
+      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "OH",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 4,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 2,
+      "zipRuleCount": 2,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "OH",
@@ -7521,10 +7521,10 @@
     {
       "state": "OH",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -7815,10 +7815,10 @@
     {
       "state": "OR",
       "category": "UTILITY_ELECTRIC",
-      "count": 3,
+      "count": 12,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 1,
+      "stateCount": 12,
+      "zipRuleCount": 12,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -7829,10 +7829,10 @@
     {
       "state": "OR",
       "category": "UTILITY_GAS",
-      "count": 2,
+      "count": 3,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
+      "stateCount": 3,
+      "zipRuleCount": 3,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -7843,16 +7843,16 @@
     {
       "state": "OR",
       "category": "UTILITY_WATER",
-      "count": 1,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 7,
+      "zipRuleCount": 7,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "OR",
@@ -7941,10 +7941,10 @@
     {
       "state": "OR",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -8025,10 +8025,10 @@
     {
       "state": "PA",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
+      "stateCount": 7,
+      "zipRuleCount": 7,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -8039,10 +8039,10 @@
     {
       "state": "PA",
       "category": "UTILITY_GAS",
-      "count": 3,
+      "count": 5,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 1,
+      "stateCount": 5,
+      "zipRuleCount": 4,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -8053,9 +8053,9 @@
     {
       "state": "PA",
       "category": "UTILITY_WATER",
-      "count": 2,
+      "count": 4,
       "federalCount": 0,
-      "stateCount": 2,
+      "stateCount": 4,
       "zipRuleCount": 2,
       "broadOnly": false,
       "gapType": "covered",
@@ -8151,10 +8151,10 @@
     {
       "state": "PA",
       "category": "TRANSPORTATION_TOLL",
-      "count": 2,
+      "count": 3,
       "federalCount": 1,
-      "stateCount": 1,
-      "zipRuleCount": 0,
+      "stateCount": 2,
+      "zipRuleCount": 2,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -8168,7 +8168,7 @@
       "count": 3,
       "federalCount": 0,
       "stateCount": 3,
-      "zipRuleCount": 2,
+      "zipRuleCount": 3,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -8445,10 +8445,10 @@
     {
       "state": "SC",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 11,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 2,
+      "stateCount": 11,
+      "zipRuleCount": 11,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -8459,24 +8459,24 @@
     {
       "state": "SC",
       "category": "UTILITY_GAS",
-      "count": 3,
+      "count": 5,
       "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 5,
+      "zipRuleCount": 5,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "SC",
       "category": "UTILITY_WATER",
-      "count": 1,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 7,
+      "zipRuleCount": 7,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -8571,10 +8571,10 @@
     {
       "state": "SC",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -9285,16 +9285,16 @@
     {
       "state": "UT",
       "category": "UTILITY_ELECTRIC",
-      "count": 1,
+      "count": 3,
       "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 3,
+      "zipRuleCount": 2,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "UT",
@@ -9316,13 +9316,13 @@
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "zipRuleCount": 1,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "UT",
@@ -9341,16 +9341,16 @@
     {
       "state": "UT",
       "category": "UTILITY_TRASH",
-      "count": 2,
+      "count": 3,
       "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
+      "stateCount": 1,
+      "zipRuleCount": 1,
+      "broadOnly": false,
+      "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
     },
     {
       "state": "UT",
@@ -9383,9 +9383,9 @@
     {
       "state": "UT",
       "category": "GOVERNMENT_DMV",
-      "count": 1,
+      "count": 2,
       "federalCount": 0,
-      "stateCount": 1,
+      "stateCount": 2,
       "zipRuleCount": 0,
       "broadOnly": false,
       "gapType": "covered",
@@ -9411,10 +9411,10 @@
     {
       "state": "UT",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
-      "zipRuleCount": 0,
+      "stateCount": 1,
+      "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -9705,10 +9705,10 @@
     {
       "state": "VA",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 7,
       "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 1,
+      "stateCount": 7,
+      "zipRuleCount": 6,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
@@ -9719,6 +9719,34 @@
     {
       "state": "VA",
       "category": "UTILITY_GAS",
+      "count": 5,
+      "federalCount": 0,
+      "stateCount": 5,
+      "zipRuleCount": 5,
+      "broadOnly": false,
+      "gapType": "covered",
+      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
+    },
+    {
+      "state": "VA",
+      "category": "UTILITY_WATER",
+      "count": 6,
+      "federalCount": 0,
+      "stateCount": 6,
+      "zipRuleCount": 6,
+      "broadOnly": false,
+      "gapType": "covered",
+      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
+      "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
+      "priority": "LOW",
+      "adminQueue": "Provider Quality Queue"
+    },
+    {
+      "state": "VA",
+      "category": "UTILITY_SEWER",
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
@@ -9732,10 +9760,10 @@
     },
     {
       "state": "VA",
-      "category": "UTILITY_WATER",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
+      "category": "UTILITY_TRASH",
+      "count": 3,
+      "federalCount": 2,
+      "stateCount": 1,
       "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
@@ -9743,34 +9771,6 @@
       "riskIfIgnored": "No current critical gap by broad catalog rules; still not proof of address availability.",
       "priority": "LOW",
       "adminQueue": "Provider Quality Queue"
-    },
-    {
-      "state": "VA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "VA",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "VA",
@@ -9831,9 +9831,9 @@
     {
       "state": "VA",
       "category": "TRANSPORTATION_TOLL",
-      "count": 1,
+      "count": 2,
       "federalCount": 1,
-      "stateCount": 0,
+      "stateCount": 1,
       "zipRuleCount": 0,
       "broadOnly": false,
       "gapType": "covered",
@@ -10041,10 +10041,10 @@
     {
       "state": "WA",
       "category": "TRANSPORTATION_TOLL",
-      "count": 2,
+      "count": 3,
       "federalCount": 1,
-      "stateCount": 1,
-      "zipRuleCount": 1,
+      "stateCount": 2,
+      "zipRuleCount": 2,
       "broadOnly": false,
       "gapType": "covered",
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
@@ -10335,9 +10335,9 @@
     {
       "state": "WI",
       "category": "UTILITY_ELECTRIC",
-      "count": 4,
+      "count": 3,
       "federalCount": 0,
-      "stateCount": 4,
+      "stateCount": 3,
       "zipRuleCount": 1,
       "broadOnly": false,
       "gapType": "covered",
@@ -11161,34 +11161,6 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
-      "state": "NV",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NH",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
       "state": "NJ",
       "category": "UTILITY_SEWER",
       "count": 0,
@@ -11270,20 +11242,6 @@
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OH",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
     },
     {
@@ -11414,20 +11372,6 @@
     },
     {
       "state": "VT",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "VA",
       "category": "UTILITY_SEWER",
       "count": 0,
       "federalCount": 0,
@@ -11626,48 +11570,6 @@
     },
     {
       "state": "CO",
-      "category": "UTILITY_ELECTRIC",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "CO",
-      "category": "UTILITY_GAS",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "CO",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "CO",
       "category": "UTILITY_INTERNET",
       "count": 11,
       "federalCount": 9,
@@ -11794,34 +11696,6 @@
     },
     {
       "state": "GA",
-      "category": "UTILITY_GAS",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "GA",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "GA",
       "category": "UTILITY_INTERNET",
       "count": 12,
       "federalCount": 9,
@@ -12340,20 +12214,6 @@
     },
     {
       "state": "MD",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "MD",
       "category": "UTILITY_INTERNET",
       "count": 9,
       "federalCount": 9,
@@ -12362,20 +12222,6 @@
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "MA",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
@@ -12439,9 +12285,9 @@
     {
       "state": "MN",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 1,
       "federalCount": 0,
-      "stateCount": 2,
+      "stateCount": 1,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -12732,20 +12578,6 @@
     },
     {
       "state": "NV",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NV",
       "category": "UTILITY_INTERNET",
       "count": 12,
       "federalCount": 9,
@@ -12754,48 +12586,6 @@
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NH",
-      "category": "UTILITY_GAS",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NH",
-      "category": "UTILITY_WATER",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NH",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
@@ -12924,34 +12714,6 @@
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NC",
-      "category": "UTILITY_GAS",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NC",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -13048,20 +12810,6 @@
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "OH",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
@@ -13152,20 +12900,6 @@
     },
     {
       "state": "OR",
-      "category": "UTILITY_WATER",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "OR",
       "category": "UTILITY_TRASH",
       "count": 2,
       "federalCount": 2,
@@ -13274,20 +13008,6 @@
       "suggestedSourceType": "Official toll, transit, or transportation agency pages",
       "riskIfIgnored": "Users may miss toll/transit account updates or local transportation requirements.",
       "priority": "MEDIUM",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "SC",
-      "category": "UTILITY_GAS",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
@@ -13474,52 +13194,10 @@
     },
     {
       "state": "UT",
-      "category": "UTILITY_ELECTRIC",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "UT",
       "category": "UTILITY_GAS",
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "UT",
-      "category": "UTILITY_WATER",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "UT",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -13608,20 +13286,6 @@
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "VA",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
@@ -13980,34 +13644,6 @@
     },
     {
       "state": "CO",
-      "category": "UTILITY_ELECTRIC",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "CO",
-      "category": "UTILITY_GAS",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "CO",
       "category": "UTILITY_INTERNET",
       "count": 11,
       "federalCount": 9,
@@ -14033,20 +13669,6 @@
       "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
       "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "CO",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "CT",
@@ -14176,20 +13798,6 @@
     },
     {
       "state": "GA",
-      "category": "UTILITY_GAS",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "GA",
       "category": "UTILITY_INTERNET",
       "count": 12,
       "federalCount": 9,
@@ -14215,20 +13823,6 @@
       "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
       "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "GA",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "HI",
@@ -14791,20 +14385,6 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
-      "state": "MA",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
       "state": "MD",
       "category": "UTILITY_INTERNET",
       "count": 9,
@@ -14833,20 +14413,6 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
-      "state": "MD",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
       "state": "ME",
       "category": "UTILITY_ELECTRIC",
       "count": 2,
@@ -14989,9 +14555,9 @@
     {
       "state": "MN",
       "category": "UTILITY_ELECTRIC",
-      "count": 2,
+      "count": 1,
       "federalCount": 0,
-      "stateCount": 2,
+      "stateCount": 1,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -15282,20 +14848,6 @@
     },
     {
       "state": "NC",
-      "category": "UTILITY_GAS",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NC",
       "category": "UTILITY_INTERNET",
       "count": 12,
       "federalCount": 9,
@@ -15321,20 +14873,6 @@
       "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
       "priority": "HIGH",
       "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NC",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
     },
     {
       "state": "ND",
@@ -15492,20 +15030,6 @@
     },
     {
       "state": "NH",
-      "category": "UTILITY_GAS",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NH",
       "category": "UTILITY_INTERNET",
       "count": 10,
       "federalCount": 9,
@@ -15514,48 +15038,6 @@
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NH",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NH",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NH",
-      "category": "UTILITY_WATER",
-      "count": 2,
-      "federalCount": 0,
-      "stateCount": 2,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
@@ -15668,34 +15150,6 @@
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "NV",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "NV",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
@@ -15757,34 +15211,6 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
-      "state": "OH",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "OH",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
       "state": "OK",
       "category": "UTILITY_ELECTRIC",
       "count": 2,
@@ -15911,20 +15337,6 @@
       "adminQueue": "Broad Coverage Review Queue"
     },
     {
-      "state": "OR",
-      "category": "UTILITY_WATER",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
       "state": "PA",
       "category": "UTILITY_INTERNET",
       "count": 11,
@@ -16014,20 +15426,6 @@
       "count": 1,
       "federalCount": 0,
       "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "SC",
-      "category": "UTILITY_GAS",
-      "count": 3,
-      "federalCount": 0,
-      "stateCount": 3,
       "zipRuleCount": 0,
       "broadOnly": true,
       "gapType": "broad_only",
@@ -16262,20 +15660,6 @@
     },
     {
       "state": "UT",
-      "category": "UTILITY_ELECTRIC",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "UT",
       "category": "UTILITY_GAS",
       "count": 1,
       "federalCount": 0,
@@ -16317,34 +15701,6 @@
       "adminQueue": "Coverage Gap Queue"
     },
     {
-      "state": "UT",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "UT",
-      "category": "UTILITY_WATER",
-      "count": 1,
-      "federalCount": 0,
-      "stateCount": 1,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
       "state": "VA",
       "category": "UTILITY_INTERNET",
       "count": 11,
@@ -16354,34 +15710,6 @@
       "broadOnly": true,
       "gapType": "broad_only",
       "suggestedSourceType": "FCC broadband data/map plus official provider availability pages",
-      "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
-      "priority": "HIGH",
-      "adminQueue": "Broad Coverage Review Queue"
-    },
-    {
-      "state": "VA",
-      "category": "UTILITY_SEWER",
-      "count": 0,
-      "federalCount": 0,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": false,
-      "gapType": "missing",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
-      "riskIfIgnored": "Users may have no current-product guidance for starting required destination utility service.",
-      "priority": "HIGH",
-      "adminQueue": "Coverage Gap Queue"
-    },
-    {
-      "state": "VA",
-      "category": "UTILITY_TRASH",
-      "count": 2,
-      "federalCount": 2,
-      "stateCount": 0,
-      "zipRuleCount": 0,
-      "broadOnly": true,
-      "gapType": "broad_only",
-      "suggestedSourceType": "State public utility commission, EIA/FERC/state utility data, and official utility pages",
       "riskIfIgnored": "Users may see broad utility listings that are not correct for their exact address or service territory.",
       "priority": "HIGH",
       "adminQueue": "Broad Coverage Review Queue"
@@ -16901,7 +16229,7 @@
     {
       "code": "missing_logo",
       "label": "Missing logo",
-      "count": 939,
+      "count": 1122,
       "examples": [
         "USPS (GOVERNMENT_POSTAL)",
         "USPS Movers Guide (GOVERNMENT_POSTAL)",
@@ -16933,7 +16261,7 @@
     {
       "code": "missing_phone",
       "label": "Missing phone",
-      "count": 398,
+      "count": 454,
       "examples": [
         "Vote.gov (GOVERNMENT_VOTER)",
         "Regions Bank (FINANCIAL_BANK)",
@@ -16965,7 +16293,7 @@
     {
       "code": "duplicate_domain",
       "label": "Duplicate domain candidate",
-      "count": 144,
+      "count": 210,
       "examples": [
         "IRS (GOVERNMENT_TAX)",
         "IRS Form 8822 (GOVERNMENT_TAX)",
@@ -16997,7 +16325,7 @@
     {
       "code": "broad_state_coverage",
       "label": "Broad state coverage",
-      "count": 143,
+      "count": 118,
       "examples": [
         "NJ E-ZPass (TRANSPORTATION_TOLL)",
         "NJ Natural Gas (UTILITY_GAS)",
@@ -17016,20 +16344,20 @@
         "Caltrain (TRANSPORTATION_TRANSIT)",
         "San Diego MTS (TRANSPORTATION_TRANSIT)",
         "VTA (TRANSPORTATION_TRANSIT)",
-        "FPL (Florida Power & Light) (UTILITY_ELECTRIC)",
+        "Florida Power & Light Company (UTILITY_ELECTRIC)",
         "SunPass (TRANSPORTATION_TOLL)",
-        "Tampa Water Department (UTILITY_WATER)",
         "Lynx (TRANSPORTATION_TRANSIT)",
-        "PA Turnpike E-ZPass (TRANSPORTATION_TOLL)",
         "UGI Utilities (UTILITY_GAS)",
-        "Pittsburgh Port Authority (TRANSPORTATION_TRANSIT)",
-        "Illinois American Water (UTILITY_WATER)"
+        "Illinois American Water (UTILITY_WATER)",
+        "Metra (TRANSPORTATION_TRANSIT)",
+        "RTA Cleveland (TRANSPORTATION_TRANSIT)",
+        "RTD (TRANSPORTATION_TRANSIT)"
       ]
     },
     {
       "code": "generic_description",
       "label": "Generic description",
-      "count": 129,
+      "count": 101,
       "examples": [
         "Wells Fargo (FINANCIAL_BANK)",
         "Capital One (FINANCIAL_BANK)",
@@ -17093,7 +16421,7 @@
     {
       "code": "marketing_description",
       "label": "Marketing language",
-      "count": 21,
+      "count": 18,
       "examples": [
         "Chase (FINANCIAL_BANK)",
         "Bank of America (FINANCIAL_BANK)",
@@ -17108,9 +16436,6 @@
         "CycleBar (FITNESS_STUDIO)",
         "Public Storage (HOUSING_STORAGE)",
         "FirstService Residential (HOUSING_HOA)",
-        "FPL (Florida Power & Light) (UTILITY_ELECTRIC)",
-        "Georgia Power (UTILITY_ELECTRIC)",
-        "APS (Arizona Public Service) (UTILITY_ELECTRIC)",
         "Alabama Power (UTILITY_ELECTRIC)",
         "Chugach Electric (UTILITY_ELECTRIC)",
         "Green Mountain Power (UTILITY_ELECTRIC)",
@@ -17122,7 +16447,7 @@
   "duplicateDomains": [
     {
       "domain": "amwater.com",
-      "count": 7,
+      "count": 9,
       "categories": [
         "UTILITY_WATER"
       ],
@@ -17143,6 +16468,11 @@
           "category": "UTILITY_WATER"
         },
         {
+          "name": "Maryland American Water",
+          "slug": "maryland-american-water",
+          "category": "UTILITY_WATER"
+        },
+        {
           "name": "Missouri American Water",
           "slug": "missouri-american-water",
           "category": "UTILITY_WATER"
@@ -17150,6 +16480,11 @@
         {
           "name": "New Jersey American Water",
           "slug": "nj-american-water",
+          "category": "UTILITY_WATER"
+        },
+        {
+          "name": "Pennsylvania American Water",
+          "slug": "pa-american-water",
           "category": "UTILITY_WATER"
         },
         {
@@ -17165,8 +16500,57 @@
       ]
     },
     {
+      "domain": "firstenergycorp.com",
+      "count": 8,
+      "categories": [
+        "UTILITY_ELECTRIC"
+      ],
+      "providers": [
+        {
+          "name": "FirstEnergy Ohio Utilities",
+          "slug": "ohio-edison",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "JCP&L",
+          "slug": "jcpl",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Met-Ed",
+          "slug": "met-ed",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Mon Power",
+          "slug": "mon-power-wv",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Penelec",
+          "slug": "penelec",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Penn Power",
+          "slug": "penn-power",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Potomac Edison",
+          "slug": "potomac-edison",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "West Penn Power",
+          "slug": "west-penn-power",
+          "category": "UTILITY_ELECTRIC"
+        }
+      ]
+    },
+    {
       "domain": "blackhillsenergy.com",
-      "count": 5,
+      "count": 6,
       "categories": [
         "UTILITY_ELECTRIC",
         "UTILITY_GAS"
@@ -17176,6 +16560,11 @@
           "name": "Black Hills Energy SD",
           "slug": "bhe-sd",
           "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Black Hills Energy Arkansas",
+          "slug": "black-hills-energy-ar",
+          "category": "UTILITY_GAS"
         },
         {
           "name": "Black Hills Energy Colorado",
@@ -17196,6 +16585,74 @@
           "name": "Source Gas Distribution Wyoming",
           "slug": "source-gas-wy",
           "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
+      "domain": "atmosenergy.com",
+      "count": 5,
+      "categories": [
+        "UTILITY_GAS"
+      ],
+      "providers": [
+        {
+          "name": "Atmos Energy",
+          "slug": "atmos-energy",
+          "category": "UTILITY_GAS"
+        },
+        {
+          "name": "Atmos Energy Colorado",
+          "slug": "atmos-co",
+          "category": "UTILITY_GAS"
+        },
+        {
+          "name": "Atmos Energy Kentucky",
+          "slug": "atmos-ky",
+          "category": "UTILITY_GAS"
+        },
+        {
+          "name": "Atmos Energy Louisiana",
+          "slug": "atmos-la",
+          "category": "UTILITY_GAS"
+        },
+        {
+          "name": "Atmos Energy Mississippi",
+          "slug": "atmos-ms",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
+      "domain": "duke-energy.com",
+      "count": 5,
+      "categories": [
+        "UTILITY_ELECTRIC"
+      ],
+      "providers": [
+        {
+          "name": "Duke Energy Florida",
+          "slug": "duke-fl",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Duke Energy Indiana",
+          "slug": "duke-in",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Duke Energy North Carolina",
+          "slug": "duke-nc",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Duke Energy Ohio",
+          "slug": "duke-oh",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Duke Energy South Carolina",
+          "slug": "duke-energy-sc",
+          "category": "UTILITY_ELECTRIC"
         }
       ]
     },
@@ -17229,60 +16686,32 @@
       ]
     },
     {
-      "domain": "atmosenergy.com",
+      "domain": "dominionenergy.com",
       "count": 4,
       "categories": [
+        "UTILITY_ELECTRIC",
         "UTILITY_GAS"
       ],
       "providers": [
         {
-          "name": "Atmos Energy",
-          "slug": "atmos-energy",
-          "category": "UTILITY_GAS"
-        },
-        {
-          "name": "Atmos Energy Kentucky",
-          "slug": "atmos-ky",
-          "category": "UTILITY_GAS"
-        },
-        {
-          "name": "Atmos Energy Louisiana",
-          "slug": "atmos-la",
-          "category": "UTILITY_GAS"
-        },
-        {
-          "name": "Atmos Energy Mississippi",
-          "slug": "atmos-ms",
-          "category": "UTILITY_GAS"
-        }
-      ]
-    },
-    {
-      "domain": "firstenergycorp.com",
-      "count": 4,
-      "categories": [
-        "UTILITY_ELECTRIC"
-      ],
-      "providers": [
-        {
-          "name": "JCP&L",
-          "slug": "jcpl",
+          "name": "Dominion Energy North Carolina",
+          "slug": "dominion-energy-nc",
           "category": "UTILITY_ELECTRIC"
         },
         {
-          "name": "Mon Power",
-          "slug": "mon-power-wv",
+          "name": "Dominion Energy South Carolina",
+          "slug": "dominion-energy-sc",
           "category": "UTILITY_ELECTRIC"
         },
         {
-          "name": "Ohio Edison",
-          "slug": "ohio-edison",
+          "name": "Dominion Energy Virginia",
+          "slug": "dominion",
           "category": "UTILITY_ELECTRIC"
         },
         {
-          "name": "Potomac Edison",
-          "slug": "potomac-edison",
-          "category": "UTILITY_ELECTRIC"
+          "name": "Dominion Energy South Carolina Gas",
+          "slug": "dominion-sc-gas",
+          "category": "UTILITY_GAS"
         }
       ]
     },
@@ -17297,7 +16726,7 @@
       ],
       "providers": [
         {
-          "name": "Connecticut DMV",
+          "name": "Connecticut Department of Motor Vehicles",
           "slug": "dmv-ct",
           "category": "GOVERNMENT_DMV"
         },
@@ -17351,6 +16780,30 @@
       ]
     },
     {
+      "domain": "aquarionwater.com",
+      "count": 3,
+      "categories": [
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "Aquarion Water Company of Connecticut",
+          "slug": "aquarion-ct",
+          "category": "UTILITY_WATER"
+        },
+        {
+          "name": "Aquarion Water Company of Massachusetts",
+          "slug": "aquarion-ma",
+          "category": "UTILITY_WATER"
+        },
+        {
+          "name": "Aquarion Water Company of New Hampshire",
+          "slug": "aquarion-nh",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "centerpointenergy.com",
       "count": 3,
       "categories": [
@@ -17363,13 +16816,13 @@
           "category": "UTILITY_GAS"
         },
         {
-          "name": "CenterPoint Energy Arkansas",
-          "slug": "centerpoint-ar",
+          "name": "CenterPoint Energy Minnesota",
+          "slug": "centerpoint-mn",
           "category": "UTILITY_GAS"
         },
         {
-          "name": "CenterPoint Energy Minnesota",
-          "slug": "centerpoint-mn",
+          "name": "CenterPoint Energy Ohio",
+          "slug": "centerpoint-oh-gas",
           "category": "UTILITY_GAS"
         }
       ]
@@ -17400,51 +16853,26 @@
       ]
     },
     {
-      "domain": "dominionenergy.com",
+      "domain": "enbridgegas.com",
       "count": 3,
       "categories": [
-        "UTILITY_ELECTRIC",
         "UTILITY_GAS"
       ],
       "providers": [
         {
-          "name": "Dominion Energy",
-          "slug": "dominion",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Dominion Energy South Carolina Gas",
-          "slug": "dominion-sc-gas",
+          "name": "Enbridge Gas North Carolina",
+          "slug": "psnc",
           "category": "UTILITY_GAS"
         },
         {
-          "name": "Dominion Energy Utah",
+          "name": "Enbridge Gas Ohio",
+          "slug": "enbridge-gas-oh",
+          "category": "UTILITY_GAS"
+        },
+        {
+          "name": "Enbridge Gas Utah",
           "slug": "dominion-ut-gas",
           "category": "UTILITY_GAS"
-        }
-      ]
-    },
-    {
-      "domain": "duke-energy.com",
-      "count": 3,
-      "categories": [
-        "UTILITY_ELECTRIC"
-      ],
-      "providers": [
-        {
-          "name": "Duke Energy Florida",
-          "slug": "duke-fl",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Duke Energy Indiana",
-          "slug": "duke-in",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Duke Energy NC",
-          "slug": "duke-nc",
-          "category": "UTILITY_ELECTRIC"
         }
       ]
     },
@@ -17494,6 +16922,30 @@
         {
           "name": "Maui Electric Company",
           "slug": "maui-electric",
+          "category": "UTILITY_ELECTRIC"
+        }
+      ]
+    },
+    {
+      "domain": "lge-ku.com",
+      "count": 3,
+      "categories": [
+        "UTILITY_ELECTRIC"
+      ],
+      "providers": [
+        {
+          "name": "Kentucky Utilities",
+          "slug": "ky-utilities",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Louisville Gas & Electric",
+          "slug": "lge-ky",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Old Dominion Power",
+          "slug": "old-dominion-power",
           "category": "UTILITY_ELECTRIC"
         }
       ]
@@ -17558,14 +17010,14 @@
       ],
       "providers": [
         {
-          "name": "National Grid Upstate New York",
-          "slug": "national-grid-ny",
+          "name": "National Grid Massachusetts",
+          "slug": "national-grid-ma",
           "category": "UTILITY_ELECTRIC"
         },
         {
-          "name": "National Grid MA",
-          "slug": "national-grid-ma",
-          "category": "UTILITY_GAS"
+          "name": "National Grid Upstate New York",
+          "slug": "national-grid-ny",
+          "category": "UTILITY_ELECTRIC"
         },
         {
           "name": "National Grid Metro New York Gas",
@@ -17626,6 +17078,31 @@
       ]
     },
     {
+      "domain": "unitil.com",
+      "count": 3,
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "providers": [
+        {
+          "name": "Unitil Energy Systems New Hampshire Electric",
+          "slug": "unitil-nh-electric",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Unitil Massachusetts",
+          "slug": "unitil-ma",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Unitil Northern Utilities New Hampshire Gas",
+          "slug": "unitil-nh",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
       "domain": "verizon.com",
       "count": 3,
       "categories": [
@@ -17673,31 +17150,6 @@
           "name": "Walmart",
           "slug": "walmart",
           "category": "SHOPPING_RETAIL"
-        }
-      ]
-    },
-    {
-      "domain": "xcelenergy.com",
-      "count": 3,
-      "categories": [
-        "UTILITY_ELECTRIC",
-        "UTILITY_GAS"
-      ],
-      "providers": [
-        {
-          "name": "Xcel Energy",
-          "slug": "xcel-energy",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Xcel Energy ND",
-          "slug": "xcel-nd",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Xcel Energy North Dakota Gas",
-          "slug": "xcel-nd-gas",
-          "category": "UTILITY_GAS"
         }
       ]
     },
@@ -17781,6 +17233,25 @@
       ]
     },
     {
+      "domain": "aquawater.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "Aqua North Carolina",
+          "slug": "aqua-nc",
+          "category": "UTILITY_WATER"
+        },
+        {
+          "name": "Aqua Pennsylvania",
+          "slug": "aqua-pa",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "assurant.com",
       "count": 2,
       "categories": [
@@ -17841,6 +17312,26 @@
       ]
     },
     {
+      "domain": "cambridgema.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Cambridge Curbside Collections",
+          "slug": "cambridge-curbside-collections",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Cambridge Water Department",
+          "slug": "cambridge-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "capitalone.com",
       "count": 2,
       "categories": [
@@ -17857,6 +17348,26 @@
           "name": "Capital One Credit Cards",
           "slug": "capital-one-cards",
           "category": "FINANCIAL_CREDIT_CARD"
+        }
+      ]
+    },
+    {
+      "domain": "charlottenc.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Charlotte Solid Waste Services",
+          "slug": "charlotte-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Charlotte Water",
+          "slug": "charlotte-water",
+          "category": "UTILITY_WATER"
         }
       ]
     },
@@ -17901,6 +17412,66 @@
       ]
     },
     {
+      "domain": "cityofws.org",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "Winston-Salem Solid Waste Collections",
+          "slug": "winston-salem-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Winston-Salem/Forsyth County Utilities",
+          "slug": "winston-salem-forsyth-utilities",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "columbus.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Columbus Division of Refuse Collection",
+          "slug": "columbus-refuse",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Columbus Water & Power",
+          "slug": "columbus-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "concordnh.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Concord Trash and Recycling",
+          "slug": "concord-trash-recycling",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Concord General Services Water and Sewer Utility Billing",
+          "slug": "concord-utility-billing",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "cvs.com",
       "count": 2,
       "categories": [
@@ -17917,6 +17488,26 @@
           "name": "CVS Pharmacy",
           "slug": "cvs",
           "category": "HEALTHCARE_PHARMACY"
+        }
+      ]
+    },
+    {
+      "domain": "dekalbcountyga.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "DeKalb County Sanitation Division",
+          "slug": "dekalb-sanitation",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "DeKalb County Department of Watershed Management",
+          "slug": "dekalb-watershed",
+          "category": "UTILITY_WATER"
         }
       ]
     },
@@ -17941,6 +17532,26 @@
       ]
     },
     {
+      "domain": "durhamnc.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Durham Solid Waste Management",
+          "slug": "durham-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Durham Department of Water Management",
+          "slug": "durham-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "eversource.com",
       "count": 2,
       "categories": [
@@ -17948,14 +17559,34 @@
       ],
       "providers": [
         {
-          "name": "Eversource",
+          "name": "Eversource Energy",
           "slug": "eversource",
           "category": "UTILITY_ELECTRIC"
         },
         {
-          "name": "Eversource NH",
+          "name": "Eversource Energy New Hampshire Electric",
           "slug": "eversource-nh",
           "category": "UTILITY_ELECTRIC"
+        }
+      ]
+    },
+    {
+      "domain": "gwinnettcounty.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "Gwinnett County Solid Waste Management",
+          "slug": "gwinnett-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Gwinnett County Department of Water Resources",
+          "slug": "gwinnett-water-resources",
+          "category": "UTILITY_WATER"
         }
       ]
     },
@@ -17976,6 +17607,25 @@
           "name": "Skyline",
           "slug": "skyline-hi",
           "category": "TRANSPORTATION_TRANSIT"
+        }
+      ]
+    },
+    {
+      "domain": "idahopower.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_ELECTRIC"
+      ],
+      "providers": [
+        {
+          "name": "Idaho Power",
+          "slug": "idaho-power",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Idaho Power Oregon Service Area",
+          "slug": "idaho-power-or",
+          "category": "UTILITY_ELECTRIC"
         }
       ]
     },
@@ -18039,25 +17689,6 @@
       ]
     },
     {
-      "domain": "lge-ku.com",
-      "count": 2,
-      "categories": [
-        "UTILITY_ELECTRIC"
-      ],
-      "providers": [
-        {
-          "name": "Kentucky Utilities",
-          "slug": "ky-utilities",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Louisville Gas & Electric",
-          "slug": "lge-ky",
-          "category": "UTILITY_ELECTRIC"
-        }
-      ]
-    },
-    {
       "domain": "libertymutual.com",
       "count": 2,
       "categories": [
@@ -18098,6 +17729,46 @@
       ]
     },
     {
+      "domain": "manchesternh.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_SEWER",
+        "UTILITY_TRASH"
+      ],
+      "providers": [
+        {
+          "name": "City of Manchester Sewer and Stormwater",
+          "slug": "manchester-sewer-stormwater",
+          "category": "UTILITY_SEWER"
+        },
+        {
+          "name": "City of Manchester Trash and Recycling",
+          "slug": "manchester-trash-recycling",
+          "category": "UTILITY_TRASH"
+        }
+      ]
+    },
+    {
+      "domain": "mass.gov",
+      "count": 2,
+      "categories": [
+        "GOVERNMENT_DMV",
+        "TRANSPORTATION_TOLL"
+      ],
+      "providers": [
+        {
+          "name": "Massachusetts Registry of Motor Vehicles (RMV)",
+          "slug": "dmv-ma",
+          "category": "GOVERNMENT_DMV"
+        },
+        {
+          "name": "EZDriveMA / E-ZPass MA",
+          "slug": "ezdrivema",
+          "category": "TRANSPORTATION_TOLL"
+        }
+      ]
+    },
+    {
       "domain": "mauicounty.gov",
       "count": 2,
       "categories": [
@@ -18118,6 +17789,85 @@
       ]
     },
     {
+      "domain": "myavista.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "providers": [
+        {
+          "name": "Avista Utilities",
+          "slug": "avista-utilities",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Avista Utilities Oregon Gas",
+          "slug": "avista-utilities-or-gas",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
+      "domain": "mywater.us",
+      "count": 2,
+      "categories": [
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "Carolina Water Service of North Carolina",
+          "slug": "carolina-water-nc",
+          "category": "UTILITY_WATER"
+        },
+        {
+          "name": "College & Golden Heart Utilities Water",
+          "slug": "college-golden-heart-utilities-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "nashuanh.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_SEWER",
+        "UTILITY_TRASH"
+      ],
+      "providers": [
+        {
+          "name": "City of Nashua Wastewater Department",
+          "slug": "nashua-wastewater",
+          "category": "UTILITY_SEWER"
+        },
+        {
+          "name": "City of Nashua Solid Waste Department",
+          "slug": "nashua-solid-waste",
+          "category": "UTILITY_TRASH"
+        }
+      ]
+    },
+    {
+      "domain": "new-hampshire.libertyutilities.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "providers": [
+        {
+          "name": "Liberty Utilities New Hampshire Electric",
+          "slug": "liberty-nh",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Liberty Utilities New Hampshire Gas",
+          "slug": "liberty-nh-gas",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
       "domain": "nj.gov",
       "count": 2,
       "categories": [
@@ -18134,6 +17884,25 @@
           "name": "NJ Division of Taxation",
           "slug": "nj-tax",
           "category": "GOVERNMENT_TAX"
+        }
+      ]
+    },
+    {
+      "domain": "oge.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_ELECTRIC"
+      ],
+      "providers": [
+        {
+          "name": "OG&E",
+          "slug": "oge-ok",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Oklahoma Gas & Electric (OG&E) - Arkansas Service Area",
+          "slug": "oge-ar",
+          "category": "UTILITY_ELECTRIC"
         }
       ]
     },
@@ -18192,6 +17961,45 @@
           "name": "Piedmont Natural Gas Tennessee",
           "slug": "piedmont-tn",
           "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
+      "domain": "raleighnc.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Raleigh Solid Waste Services",
+          "slug": "raleigh-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Raleigh Water",
+          "slug": "raleigh-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "republicservices.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH"
+      ],
+      "providers": [
+        {
+          "name": "Republic Services",
+          "slug": "republic-services",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Republic Services of Southern Nevada",
+          "slug": "republic-services-southern-nevada",
+          "category": "UTILITY_TRASH"
         }
       ]
     },
@@ -18275,6 +18083,26 @@
       ]
     },
     {
+      "domain": "somervillema.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Somerville Trash and Recycling",
+          "slug": "somerville-trash-recycling",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Somerville Water and Sewer Department",
+          "slug": "somerville-water-sewer",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "ssa.gov",
       "count": 2,
       "categories": [
@@ -18333,6 +18161,26 @@
       ]
     },
     {
+      "domain": "uesaz.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "providers": [
+        {
+          "name": "UniSource Energy Services",
+          "slug": "unisource-electric-az",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "UniSource Energy Services Gas",
+          "slug": "unisource-gas-az",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
       "domain": "usaa.com",
       "count": 2,
       "categories": [
@@ -18369,6 +18217,65 @@
           "name": "U.S. Bank Credit Cards",
           "slug": "us-bank-cards",
           "category": "FINANCIAL_CREDIT_CARD"
+        }
+      ]
+    },
+    {
+      "domain": "wm.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH"
+      ],
+      "providers": [
+        {
+          "name": "Waste Management",
+          "slug": "waste-management",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "WM Nevada",
+          "slug": "wm-nevada",
+          "category": "UTILITY_TRASH"
+        }
+      ]
+    },
+    {
+      "domain": "worcesterma.gov",
+      "count": 2,
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "providers": [
+        {
+          "name": "City of Worcester Trash and Recycling",
+          "slug": "worcester-trash-recycling",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Worcester Water and Sewer Operations",
+          "slug": "worcester-water-sewer",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "xcelenergy.com",
+      "count": 2,
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "providers": [
+        {
+          "name": "Xcel Energy ND",
+          "slug": "xcel-nd",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Xcel Energy North Dakota Gas",
+          "slug": "xcel-nd-gas",
+          "category": "UTILITY_GAS"
         }
       ]
     },
@@ -18917,12 +18824,12 @@
       ]
     },
     {
-      "name": "ExpressToll",
-      "slug": "expresstoll",
+      "name": "E-ZPass Virginia",
+      "slug": "ezpass-va",
       "category": "TRANSPORTATION_TOLL",
       "scope": "STATE",
       "states": [
-        "CO"
+        "VA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -18971,30 +18878,6 @@
       "scope": "STATE",
       "states": [
         "NY"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "PA Turnpike E-ZPass",
-      "slug": "pa-ezpass",
-      "category": "TRANSPORTATION_TOLL",
-      "scope": "STATE",
-      "states": [
-        "PA"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Peach Pass",
-      "slug": "peach-pass",
-      "category": "TRANSPORTATION_TOLL",
-      "scope": "STATE",
-      "states": [
-        "GA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -19181,18 +19064,6 @@
       ]
     },
     {
-      "name": "Pittsburgh Port Authority",
-      "slug": "pittsburgh-port-auth",
-      "category": "TRANSPORTATION_TRANSIT",
-      "scope": "STATE",
-      "states": [
-        "PA"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "RIPTA",
       "slug": "ripta",
       "category": "TRANSPORTATION_TRANSIT",
@@ -19364,7 +19235,7 @@
       ]
     },
     {
-      "name": "Appalachian Power WV",
+      "name": "Appalachian Power",
       "slug": "apco-wv",
       "category": "UTILITY_ELECTRIC",
       "scope": "STATE",
@@ -19383,12 +19254,10 @@
       "scope": "STATE",
       "states": [
         "SD",
-        "CO",
         "WY",
         "NE",
         "IA",
-        "KS",
-        "AR"
+        "KS"
       ],
       "warnings": [
         "Broad state coverage"
@@ -19419,18 +19288,6 @@
       ]
     },
     {
-      "name": "Entergy Arkansas",
-      "slug": "entergy-ar",
-      "category": "UTILITY_ELECTRIC",
-      "scope": "STATE",
-      "states": [
-        "AR"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "Evergy",
       "slug": "evergy",
       "category": "UTILITY_ELECTRIC",
@@ -19444,7 +19301,7 @@
       ]
     },
     {
-      "name": "FPL (Florida Power & Light)",
+      "name": "Florida Power & Light Company",
       "slug": "fpl",
       "category": "UTILITY_ELECTRIC",
       "scope": "STATE",
@@ -19486,18 +19343,6 @@
       "scope": "STATE",
       "states": [
         "KY"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Liberty Utilities NH",
-      "slug": "liberty-nh",
-      "category": "UTILITY_ELECTRIC",
-      "scope": "STATE",
-      "states": [
-        "NH"
       ],
       "warnings": [
         "Broad state coverage"
@@ -19560,32 +19405,7 @@
       "category": "UTILITY_ELECTRIC",
       "scope": "STATE",
       "states": [
-        "OK",
-        "AR"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Ohio Edison",
-      "slug": "ohio-edison",
-      "category": "UTILITY_ELECTRIC",
-      "scope": "STATE",
-      "states": [
-        "OH"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Pacific Power",
-      "slug": "pacific-power-or",
-      "category": "UTILITY_ELECTRIC",
-      "scope": "STATE",
-      "states": [
-        "OR"
+        "OK"
       ],
       "warnings": [
         "Broad state coverage"
@@ -19598,18 +19418,6 @@
       "scope": "STATE",
       "states": [
         "NM"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Portland General Electric",
-      "slug": "pge-or",
-      "category": "UTILITY_ELECTRIC",
-      "scope": "STATE",
-      "states": [
-        "OR"
       ],
       "warnings": [
         "Broad state coverage"
@@ -19654,38 +19462,12 @@
       ]
     },
     {
-      "name": "SRP (Salt River Project)",
-      "slug": "srp-az",
-      "category": "UTILITY_ELECTRIC",
-      "scope": "STATE",
-      "states": [
-        "AZ"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "Versant Power",
       "slug": "versant-me",
       "category": "UTILITY_ELECTRIC",
       "scope": "STATE",
       "states": [
         "ME"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Xcel Energy",
-      "slug": "xcel-energy",
-      "category": "UTILITY_ELECTRIC",
-      "scope": "STATE",
-      "states": [
-        "CO",
-        "MN",
-        "WI"
       ],
       "warnings": [
         "Broad state coverage"
@@ -19699,21 +19481,8 @@
       "states": [
         "ND",
         "MN",
-        "CO",
         "WI",
         "SD"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Atlanta Gas Light",
-      "slug": "atlanta-gas-light",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "GA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -19756,18 +19525,6 @@
       ]
     },
     {
-      "name": "Black Hills Energy Colorado",
-      "slug": "bhe-co-gas",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "CO"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "Black Hills Energy Iowa",
       "slug": "bhe-ia-gas",
       "category": "UTILITY_GAS",
@@ -19804,18 +19561,6 @@
       ]
     },
     {
-      "name": "CenterPoint Energy Arkansas",
-      "slug": "centerpoint-ar",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "AR"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "CenterPoint Energy Minnesota",
       "slug": "centerpoint-mn",
       "category": "UTILITY_GAS",
@@ -19840,31 +19585,7 @@
       ]
     },
     {
-      "name": "Columbia Gas of Pennsylvania",
-      "slug": "columbia-gas-pa",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "PA"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Dominion Energy South Carolina Gas",
-      "slug": "dominion-sc-gas",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "SC"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Dominion Energy Utah",
+      "name": "Enbridge Gas Utah",
       "slug": "dominion-ut-gas",
       "category": "UTILITY_GAS",
       "scope": "STATE",
@@ -19884,18 +19605,6 @@
       "scope": "STATE",
       "states": [
         "AK"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Georgia Natural Gas",
-      "slug": "gng",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "GA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20026,39 +19735,12 @@
       ]
     },
     {
-      "name": "Piedmont Natural Gas",
-      "slug": "piedmont-carolinas",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "NC",
-        "SC"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "Piedmont Natural Gas Tennessee",
       "slug": "piedmont-tn",
       "category": "UTILITY_GAS",
       "scope": "STATE",
       "states": [
-        "TN",
-        "NC",
-        "SC"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "PSNC Energy",
-      "slug": "psnc",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "NC"
+        "TN"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20107,19 +19789,6 @@
       "scope": "STATE",
       "states": [
         "PA"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Unitil New Hampshire",
-      "slug": "unitil-nh",
-      "category": "UTILITY_GAS",
-      "scope": "STATE",
-      "states": [
-        "NH",
-        "MA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20487,14 +20156,12 @@
       ]
     },
     {
-      "name": "Aquarion Water",
-      "slug": "aquarion-ct",
+      "name": "Aqua Pennsylvania",
+      "slug": "aqua-pa",
       "category": "UTILITY_WATER",
       "scope": "STATE",
       "states": [
-        "CT",
-        "MA",
-        "NH"
+        "PA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20525,36 +20192,12 @@
       ]
     },
     {
-      "name": "Boston Water and Sewer Commission",
-      "slug": "bwsc-ma",
-      "category": "UTILITY_WATER",
-      "scope": "STATE",
-      "states": [
-        "MA"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "Burlington Department of Public Works Water",
       "slug": "burlington-water-vt",
       "category": "UTILITY_WATER",
       "scope": "STATE",
       "states": [
         "VT"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Central Arkansas Water",
-      "slug": "central-ar-water",
-      "category": "UTILITY_WATER",
-      "scope": "STATE",
-      "states": [
-        "AR"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20705,24 +20348,12 @@
       ]
     },
     {
-      "name": "Pennichuck Water",
-      "slug": "pennichuck-nh",
+      "name": "Pennsylvania American Water",
+      "slug": "pa-american-water",
       "category": "UTILITY_WATER",
       "scope": "STATE",
       "states": [
-        "NH"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Portland Water Bureau",
-      "slug": "portland-water-or",
-      "category": "UTILITY_WATER",
-      "scope": "STATE",
-      "states": [
-        "OR"
+        "PA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20735,18 +20366,6 @@
       "scope": "STATE",
       "states": [
         "RI"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Salt Lake City Public Utilities",
-      "slug": "slc-water-ut",
-      "category": "UTILITY_WATER",
-      "scope": "STATE",
-      "states": [
-        "UT"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20789,36 +20408,12 @@
       ]
     },
     {
-      "name": "Tampa Water Department",
-      "slug": "tampa-water",
-      "category": "UTILITY_WATER",
-      "scope": "STATE",
-      "states": [
-        "FL"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
       "name": "Tulsa Water",
       "slug": "tulsa-water-ok",
       "category": "UTILITY_WATER",
       "scope": "STATE",
       "states": [
         "OK"
-      ],
-      "warnings": [
-        "Broad state coverage"
-      ]
-    },
-    {
-      "name": "Virginia American Water",
-      "slug": "va-american-water",
-      "category": "UTILITY_WATER",
-      "scope": "STATE",
-      "states": [
-        "VA"
       ],
       "warnings": [
         "Broad state coverage"
@@ -20853,13 +20448,19 @@
     {
       "category": "UTILITY_ELECTRIC",
       "label": "Electric",
-      "count": 123,
+      "count": 199,
       "reason": "High count; review for broad imports or over-splitting"
     },
     {
       "category": "UTILITY_WATER",
       "label": "Water",
-      "count": 107,
+      "count": 156,
+      "reason": "High count; review for broad imports or over-splitting"
+    },
+    {
+      "category": "UTILITY_GAS",
+      "label": "Gas",
+      "count": 83,
       "reason": "High count; review for broad imports or over-splitting"
     },
     {
@@ -20869,15 +20470,9 @@
       "reason": "High count; review for broad imports or over-splitting"
     },
     {
-      "category": "UTILITY_GAS",
-      "label": "Gas",
-      "count": 63,
-      "reason": "High count; review for broad imports or over-splitting"
-    },
-    {
       "category": "GOVERNMENT_DMV",
       "label": "DMV",
-      "count": 57,
+      "count": 59,
       "reason": "High count; review for broad imports or over-splitting"
     },
     {
@@ -20944,6 +20539,11 @@
           "category": "UTILITY_ELECTRIC"
         },
         {
+          "name": "Black Hills Energy Arkansas",
+          "slug": "black-hills-energy-ar",
+          "category": "UTILITY_GAS"
+        },
+        {
           "name": "Black Hills Energy Colorado",
           "slug": "bhe-co-gas",
           "category": "UTILITY_GAS"
@@ -20966,6 +20566,36 @@
       ]
     },
     {
+      "domain": "dominionenergy.com",
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Dominion Energy North Carolina",
+          "slug": "dominion-energy-nc",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Dominion Energy South Carolina",
+          "slug": "dominion-energy-sc",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Dominion Energy Virginia",
+          "slug": "dominion",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Dominion Energy South Carolina Gas",
+          "slug": "dominion-sc-gas",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
       "domain": "portal.ct.gov",
       "categories": [
         "GOVERNMENT_DMV",
@@ -20976,7 +20606,7 @@
       "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
       "providers": [
         {
-          "name": "Connecticut DMV",
+          "name": "Connecticut Department of Motor Vehicles",
           "slug": "dmv-ct",
           "category": "GOVERNMENT_DMV"
         },
@@ -21051,31 +20681,6 @@
           "name": "Costco",
           "slug": "costco",
           "category": "SHOPPING_SUBSCRIPTION"
-        }
-      ]
-    },
-    {
-      "domain": "dominionenergy.com",
-      "categories": [
-        "UTILITY_ELECTRIC",
-        "UTILITY_GAS"
-      ],
-      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
-      "providers": [
-        {
-          "name": "Dominion Energy",
-          "slug": "dominion",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Dominion Energy South Carolina Gas",
-          "slug": "dominion-sc-gas",
-          "category": "UTILITY_GAS"
-        },
-        {
-          "name": "Dominion Energy Utah",
-          "slug": "dominion-ut-gas",
-          "category": "UTILITY_GAS"
         }
       ]
     },
@@ -21165,14 +20770,14 @@
       "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
       "providers": [
         {
-          "name": "National Grid Upstate New York",
-          "slug": "national-grid-ny",
+          "name": "National Grid Massachusetts",
+          "slug": "national-grid-ma",
           "category": "UTILITY_ELECTRIC"
         },
         {
-          "name": "National Grid MA",
-          "slug": "national-grid-ma",
-          "category": "UTILITY_GAS"
+          "name": "National Grid Upstate New York",
+          "slug": "national-grid-ny",
+          "category": "UTILITY_ELECTRIC"
         },
         {
           "name": "National Grid Metro New York Gas",
@@ -21233,6 +20838,31 @@
       ]
     },
     {
+      "domain": "unitil.com",
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Unitil Energy Systems New Hampshire Electric",
+          "slug": "unitil-nh-electric",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Unitil Massachusetts",
+          "slug": "unitil-ma",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Unitil Northern Utilities New Hampshire Gas",
+          "slug": "unitil-nh",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
       "domain": "verizon.com",
       "categories": [
         "UTILITY_INTERNET",
@@ -21280,31 +20910,6 @@
           "name": "Walmart",
           "slug": "walmart",
           "category": "SHOPPING_RETAIL"
-        }
-      ]
-    },
-    {
-      "domain": "xcelenergy.com",
-      "categories": [
-        "UTILITY_ELECTRIC",
-        "UTILITY_GAS"
-      ],
-      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
-      "providers": [
-        {
-          "name": "Xcel Energy",
-          "slug": "xcel-energy",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Xcel Energy ND",
-          "slug": "xcel-nd",
-          "category": "UTILITY_ELECTRIC"
-        },
-        {
-          "name": "Xcel Energy North Dakota Gas",
-          "slug": "xcel-nd-gas",
-          "category": "UTILITY_GAS"
         }
       ]
     },
@@ -21429,6 +21034,26 @@
       ]
     },
     {
+      "domain": "cambridgema.gov",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Cambridge Curbside Collections",
+          "slug": "cambridge-curbside-collections",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Cambridge Water Department",
+          "slug": "cambridge-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "capitalone.com",
       "categories": [
         "FINANCIAL_BANK",
@@ -21445,6 +21070,26 @@
           "name": "Capital One Credit Cards",
           "slug": "capital-one-cards",
           "category": "FINANCIAL_CREDIT_CARD"
+        }
+      ]
+    },
+    {
+      "domain": "charlottenc.gov",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Charlotte Solid Waste Services",
+          "slug": "charlotte-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Charlotte Water",
+          "slug": "charlotte-water",
+          "category": "UTILITY_WATER"
         }
       ]
     },
@@ -21489,6 +21134,66 @@
       ]
     },
     {
+      "domain": "cityofws.org",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Winston-Salem Solid Waste Collections",
+          "slug": "winston-salem-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Winston-Salem/Forsyth County Utilities",
+          "slug": "winston-salem-forsyth-utilities",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "columbus.gov",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Columbus Division of Refuse Collection",
+          "slug": "columbus-refuse",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Columbus Water & Power",
+          "slug": "columbus-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "concordnh.gov",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Concord Trash and Recycling",
+          "slug": "concord-trash-recycling",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Concord General Services Water and Sewer Utility Billing",
+          "slug": "concord-utility-billing",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "cvs.com",
       "categories": [
         "HEALTHCARE_DOCTORS",
@@ -21509,6 +21214,26 @@
       ]
     },
     {
+      "domain": "dekalbcountyga.gov",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "DeKalb County Sanitation Division",
+          "slug": "dekalb-sanitation",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "DeKalb County Department of Watershed Management",
+          "slug": "dekalb-watershed",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
       "domain": "discover.com",
       "categories": [
         "FINANCIAL_BANK",
@@ -21525,6 +21250,46 @@
           "name": "Discover Card",
           "slug": "discover-card",
           "category": "FINANCIAL_CREDIT_CARD"
+        }
+      ]
+    },
+    {
+      "domain": "durhamnc.gov",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Durham Solid Waste Management",
+          "slug": "durham-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "City of Durham Department of Water Management",
+          "slug": "durham-water",
+          "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "gwinnettcounty.com",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Gwinnett County Solid Waste Management",
+          "slug": "gwinnett-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Gwinnett County Department of Water Resources",
+          "slug": "gwinnett-water-resources",
+          "category": "UTILITY_WATER"
         }
       ]
     },
@@ -21629,6 +21394,46 @@
       ]
     },
     {
+      "domain": "manchesternh.gov",
+      "categories": [
+        "UTILITY_SEWER",
+        "UTILITY_TRASH"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Manchester Sewer and Stormwater",
+          "slug": "manchester-sewer-stormwater",
+          "category": "UTILITY_SEWER"
+        },
+        {
+          "name": "City of Manchester Trash and Recycling",
+          "slug": "manchester-trash-recycling",
+          "category": "UTILITY_TRASH"
+        }
+      ]
+    },
+    {
+      "domain": "mass.gov",
+      "categories": [
+        "GOVERNMENT_DMV",
+        "TRANSPORTATION_TOLL"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Massachusetts Registry of Motor Vehicles (RMV)",
+          "slug": "dmv-ma",
+          "category": "GOVERNMENT_DMV"
+        },
+        {
+          "name": "EZDriveMA / E-ZPass MA",
+          "slug": "ezdrivema",
+          "category": "TRANSPORTATION_TOLL"
+        }
+      ]
+    },
+    {
       "domain": "mauicounty.gov",
       "categories": [
         "GOVERNMENT_DMV",
@@ -21645,6 +21450,66 @@
           "name": "Department of Water Supply, County of Maui",
           "slug": "maui-dws",
           "category": "UTILITY_WATER"
+        }
+      ]
+    },
+    {
+      "domain": "myavista.com",
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Avista Utilities",
+          "slug": "avista-utilities",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Avista Utilities Oregon Gas",
+          "slug": "avista-utilities-or-gas",
+          "category": "UTILITY_GAS"
+        }
+      ]
+    },
+    {
+      "domain": "nashuanh.gov",
+      "categories": [
+        "UTILITY_SEWER",
+        "UTILITY_TRASH"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Nashua Wastewater Department",
+          "slug": "nashua-wastewater",
+          "category": "UTILITY_SEWER"
+        },
+        {
+          "name": "City of Nashua Solid Waste Department",
+          "slug": "nashua-solid-waste",
+          "category": "UTILITY_TRASH"
+        }
+      ]
+    },
+    {
+      "domain": "new-hampshire.libertyutilities.com",
+      "categories": [
+        "UTILITY_ELECTRIC",
+        "UTILITY_GAS"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "Liberty Utilities New Hampshire Electric",
+          "slug": "liberty-nh",
+          "category": "UTILITY_ELECTRIC"
+        },
+        {
+          "name": "Liberty Utilities New Hampshire Gas",
+          "slug": "liberty-nh-gas",
+          "category": "UTILITY_GAS"
         }
       ]
     },
@@ -21685,6 +21550,26 @@
           "name": "Oklahoma State Election Board",
           "slug": "vote-ok",
           "category": "GOVERNMENT_VOTER"
+        }
+      ]
+    },
+    {
+      "domain": "raleighnc.gov",
+      "categories": [
+        "UTILITY_TRASH",
+        "UTILITY_WATER"
+      ],
+      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
+      "providers": [
+        {
+          "name": "City of Raleigh Solid Waste Services",
+          "slug": "raleigh-solid-waste",
+          "category": "UTILITY_TRASH"
+        },
+        {
+          "name": "Raleigh Water",
+          "slug": "raleigh-water",
+          "category": "UTILITY_WATER"
         }
       ]
     },
@@ -21745,86 +21630,6 @@
           "name": "Seattle Public Utilities",
           "slug": "spu-wa",
           "category": "UTILITY_WATER"
-        }
-      ]
-    },
-    {
-      "domain": "t-mobile.com",
-      "categories": [
-        "UTILITY_INTERNET",
-        "UTILITY_PHONE"
-      ],
-      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
-      "providers": [
-        {
-          "name": "T-Mobile Home Internet",
-          "slug": "tmobile-home-internet",
-          "category": "UTILITY_INTERNET"
-        },
-        {
-          "name": "T-Mobile",
-          "slug": "t-mobile",
-          "category": "UTILITY_PHONE"
-        }
-      ]
-    },
-    {
-      "domain": "usaa.com",
-      "categories": [
-        "FINANCIAL_INSURANCE_AUTO",
-        "FINANCIAL_INSURANCE_RENTERS"
-      ],
-      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
-      "providers": [
-        {
-          "name": "USAA",
-          "slug": "usaa",
-          "category": "FINANCIAL_INSURANCE_AUTO"
-        },
-        {
-          "name": "USAA Renters",
-          "slug": "usaa-renters",
-          "category": "FINANCIAL_INSURANCE_RENTERS"
-        }
-      ]
-    },
-    {
-      "domain": "usbank.com",
-      "categories": [
-        "FINANCIAL_BANK",
-        "FINANCIAL_CREDIT_CARD"
-      ],
-      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
-      "providers": [
-        {
-          "name": "US Bank",
-          "slug": "us-bank",
-          "category": "FINANCIAL_BANK"
-        },
-        {
-          "name": "U.S. Bank Credit Cards",
-          "slug": "us-bank-cards",
-          "category": "FINANCIAL_CREDIT_CARD"
-        }
-      ]
-    },
-    {
-      "domain": "xfinity.com",
-      "categories": [
-        "UTILITY_INTERNET",
-        "UTILITY_PHONE"
-      ],
-      "note": "Review as merge, split, or cross-link candidate. Do not auto-merge without official-source validation.",
-      "providers": [
-        {
-          "name": "Xfinity (Comcast)",
-          "slug": "xfinity",
-          "category": "UTILITY_INTERNET"
-        },
-        {
-          "name": "Xfinity Mobile",
-          "slug": "xfinity-mobile",
-          "category": "UTILITY_PHONE"
         }
       ]
     }
