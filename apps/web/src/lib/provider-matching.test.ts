@@ -61,6 +61,29 @@ describe("tierProvidersFromDb", () => {
     expect(result.providers.map((provider) => provider.id)).toEqual(["prefix", "state"]);
   });
 
+  it("drops ZIP-scoped providers that do not match the requested ZIP", () => {
+    const providers = [
+      {
+        id: "honolulu-water",
+        scope: "STATE",
+        coverageModel: "zip_prefix" as const,
+        coverages: [{ state: "HI", zipPrefix: null, zipExact: "96813" }],
+      },
+      {
+        id: "kauai-water",
+        scope: "STATE",
+        coverageModel: "zip_prefix" as const,
+        coverages: [{ state: "HI", zipPrefix: null, zipExact: "96766" }],
+      },
+    ];
+
+    const result = tierProvidersFromDb(providers, { state: "HI", zip: "96766" });
+
+    expect(result.zipMatchLevel).toBe("exact");
+    expect(result.providers.map((provider) => provider.id)).toEqual(["kauai-water"]);
+    expect(getProviderCoverageConfidenceFromDb(providers[0]!, { state: "HI", zip: "96766" })).toBe("UNKNOWN");
+  });
+
   it("keeps polygon providers when the address coordinates land inside their service envelope", () => {
     const result = tierProvidersFromDb(
       [

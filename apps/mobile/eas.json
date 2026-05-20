@@ -36,6 +36,12 @@
         "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "false"
       }
     },
+    "preview-simulator": {
+      "extends": "preview",
+      "ios": {
+        "simulator": true
+      }
+    },
     "staging-preview": {
       "distribution": "internal",
       "android": {
@@ -60,6 +66,13 @@
         "EXPO_PUBLIC_MOBILE_IOS_STORE_PURCHASES_ENABLED": "true",
         "EXPO_PUBLIC_MOBILE_ANDROID_STORE_PURCHASES_ENABLED": "true"
       }
+    },
+    "play-internal": {
+      "extends": "production",
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
@@ -68,6 +81,11 @@
         "track": "internal"
       },
       "ios": {}
+    },
+    "play-internal": {
+      "android": {
+        "track": "internal"
+      }
     }
   }
 }

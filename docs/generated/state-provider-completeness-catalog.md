@@ -1,16 +1,16 @@
 # State Provider Completeness Catalog
 
-Generated: 2026-05-13T17:26:44.960Z
+Generated: 2026-05-20T14:23:14.507Z
 
 ## Summary
 
-- Catalog entries: 292
-- States covered: 49
-- Already present in raw seed: 1
-- Newly added in merged seed: 284
-- Catalog-only backlog entries: 7
-- Coverage models: state=17, zip_prefix=202, polygon=4, live_address=69
-- Official URL validation: ok=292, redirect=0, error=0
+- Catalog entries: 310
+- States covered: 51
+- Already present in raw seed: 3
+- Newly added in merged seed: 301
+- Catalog-only backlog entries: 6
+- Coverage models: state=15, zip_prefix=197, polygon=5, live_address=93
+- Official URL validation: ok=310, redirect=0, error=0
 
 ## Per-State Diff
 
@@ -70,56 +70,54 @@ Generated: 2026-05-13T17:26:44.960Z
 
 ### AZ
 
-- Repo before: APS (Arizona Public Service), Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Frontier Communications, Google Fiber, Mesa Utilities, Phoenix Water Services, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Tucson Water, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: APS (Arizona Public Service), Astound Broadband, AT&T Fiber, CenturyLink (Lumen), City of Chandler Water, City of Tempe Water Services, Cox Communications, E-ZPass, Frontier Communications, Glendale Water Services, Google Fiber, Mesa Utilities, Phoenix Water Services, Scottsdale Water, Southwest Gas, Spectrum, SRP (Salt River Project), Starlink, T-Mobile Home Internet, Town of Gilbert Water, Tucson Electric Power, Tucson Water, UniSource Energy Services, Valley Metro, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo before: Arizona Public Service, Arizona Water Company, Astound Broadband, AT&T Fiber, CenturyLink (Lumen), City of Mesa Utilities, City of Phoenix Water Services, Cox Communications, E-ZPass, EPCOR Water Arizona, Frontier Communications, Google Fiber, Liberty Utilities Arizona Water and Wastewater, Mohave Electric Cooperative, Salt River Project, Southwest Gas, Spectrum, Starlink, Sulphur Springs Valley Electric Cooperative, T-Mobile Home Internet, Trico Electric Cooperative, Tucson Water, UniSource Energy Services Gas, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Arizona Public Service, Arizona Water Company, Astound Broadband, AT&T Fiber, CenturyLink (Lumen), City of Chandler Utility Services, City of Mesa Utilities, City of Phoenix Water Services, City of Scottsdale Utilities, City of Tempe Customer Services, Cox Communications, E-ZPass, EPCOR Water Arizona, Frontier Communications, Glendale Water Services, Google Fiber, Liberty Utilities Arizona Water and Wastewater, Mohave Electric Cooperative, Salt River Project, Southwest Gas, Spectrum, Starlink, Sulphur Springs Valley Electric Cooperative, T-Mobile Home Internet, Town of Gilbert Water, Trico Electric Cooperative, Tucson Electric Power, Tucson Water, UniSource Energy Services, UniSource Energy Services Gas, Valley Metro, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Valley Metro | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://www.valleymetro.org/maps-schedules
   note: Phoenix-area Valley Metro was absent from seed and is modeled with core metro ZIP prefixes.
-- Tucson Electric Power | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.tep.com
-  note: Real electric utility; modeled with Tucson-area ZIP prefixes and address confirmation language.
-- UniSource Energy Services Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.uesaz.com
-  note: Real utility account provider; gas duplicate is folded into this single provider row.
+- Tucson Electric Power | UTILITY_ELECTRIC | newly_added | live_address | https://www.tep.com/im-moving/
+  note: Primary Tucson-area electric utility; Tucson ZIP prefixes are only prefilters and start/stop/transfer service should be confirmed by address.
+- UniSource Energy Services Electric | UTILITY_ELECTRIC | newly_added | live_address | https://www.uesaz.com/im-moving/
+  note: UniSource electric service is territory-specific in selected Arizona communities; gas is modeled separately for relocation workflows.
 - Pima County Regional Wastewater Reclamation Department | UTILITY_SEWER | newly_added | zip_prefix | https://www.pima.gov/wastewater
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- City of Chandler Water | UTILITY_WATER | newly_added | zip_prefix | https://www.chandleraz.gov/residents/water
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- City of Tempe Water Services | UTILITY_WATER | newly_added | zip_prefix | https://www.tempe.gov
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of Chandler Utility Services | UTILITY_WATER | newly_added | live_address | https://www.chandleraz.gov/residents/utility-services
+  note: Chandler utility services cover water, sewer, and solid waste account workflows; service should be confirmed by address.
+- City of Tempe Customer Services | UTILITY_WATER | newly_added | live_address | https://www.tempe.gov/i-want-to/start-stop-water-service
+  note: Tempe customer services cover water, sewer, and solid waste start, transfer, and stop workflows; service should be confirmed by address.
 - Glendale Water Services | UTILITY_WATER | newly_added | zip_prefix | https://www.glendaleaz.com/live/city_services/water_services
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Scottsdale Water | UTILITY_WATER | newly_added | zip_prefix | https://www.scottsdaleaz.gov/water
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
+- City of Scottsdale Utilities | UTILITY_WATER | newly_added | live_address | https://www.scottsdaleaz.gov/utilities/establish-service
+  note: Scottsdale utilities require address confirmation before establishing water or related municipal utility service.
 - Town of Gilbert Water | UTILITY_WATER | newly_added | zip_prefix | https://www.gilbertaz.gov/departments/public-works/water
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### AR
 
-- Repo before: Astound Broadband, AT&T Fiber, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Cox Communications, E-ZPass, OG&E, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Arkansas Oklahoma Gas, Astound Broadband, AT&T Fiber, Bentonville Water Utilities, Black Hills Energy SD, CenterPoint Energy Arkansas, Central Arkansas Water, CenturyLink (Lumen), Conway Corp Electric, Cox Communications, E-ZPass, Entergy Arkansas, Fayetteville Water and Sewer, Fort Smith Utilities Water, Jonesboro City Water and Light Water, North Little Rock Electric, OG&E, Rogers Water Utilities, Southwestern Electric Power Company (SWEPCO), Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Entergy Arkansas | UTILITY_ELECTRIC | newly_added | state | https://www.entergy-arkansas.com
-  note: Major Arkansas electric utility identified in state rules but missing from seed.
-- Conway Corp Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.conwaycorp.com
-  note: Real municipal electric utility; modeled with Conway-area ZIP prefix and address confirmation language.
-- North Little Rock Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://nlrelectric.com
+- Repo before: Astound Broadband, AT&T Fiber, Black Hills Energy Arkansas, Carroll Electric Cooperative Corporation, Central Arkansas Water, CenturyLink (Lumen), Cox Communications, E-ZPass, First Electric Cooperative Corporation, Oklahoma Gas & Electric (OG&E) - Arkansas Service Area, Spectrum, Starlink, Summit Utilities Arkansas, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Arkansas Oklahoma Gas Corporation (AOG), Astound Broadband, AT&T Fiber, Black Hills Energy Arkansas, Carroll Electric Cooperative Corporation, Central Arkansas Water, CenturyLink (Lumen), City of Bentonville Utilities, City of Fayetteville Utilities, City of Fort Smith Utilities, Conway Corporation, Cox Communications, E-ZPass, Entergy Arkansas, First Electric Cooperative Corporation, Jonesboro City Water and Light Water, North Little Rock Electric, Oklahoma Gas & Electric (OG&E) - Arkansas Service Area, Rogers Water Utilities, Southwestern Electric Power Company (SWEPCO), Spectrum, Springdale Water Utilities, Starlink, Summit Utilities Arkansas, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Entergy Arkansas | UTILITY_ELECTRIC | newly_added | live_address | https://www.entergyarkansas.com/
+  note: Major Arkansas electric utility with broad county-level coverage; ZIPs are broad prefilters and service should be confirmed by address.
+- Conway Corporation | UTILITY_ELECTRIC | newly_added | zip_prefix | https://conwaycorp.com/sign-up-for-a-service/
+  note: Municipal multi-utility serving Conway electric, water, wastewater, and account workflows; modeled with Conway-area ZIP prefix and address confirmation language.
+- North Little Rock Electric | UTILITY_ELECTRIC | newly_added | zip_prefix | https://nlrelectric.com/forms/
   note: Real municipal electric utility; modeled with North Little Rock ZIP prefix and address confirmation language.
-- Southwestern Electric Power Company (SWEPCO) | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.swepco.com
+- Southwestern Electric Power Company (SWEPCO) | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.swepco.com/account/service/start-stop-transfer
   note: Real electric utility; modeled with cautious Arkansas ZIP prefixes and address confirmation language.
-- Arkansas Oklahoma Gas | UTILITY_GAS | newly_added | zip_prefix | https://www.aogc.com
+- Arkansas Oklahoma Gas Corporation (AOG) | UTILITY_GAS | newly_added | zip_prefix | https://www.aogc.com/RequestService
   note: Real gas utility; modeled with cautious western Arkansas ZIP prefix and address confirmation language.
-- Summit Utilities Arkansas | UTILITY_GAS | catalog_backlog | live_address | https://summitutilities.com
-  note: Real gas utility from Batch 1, but the candidate had unknown territory; catalog-only until ZIP/service-area confirmation.
 - Little Rock Water Reclamation Authority | UTILITY_SEWER | newly_added | zip_prefix | https://lrwra.com
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Springdale Water Utilities Wastewater | UTILITY_SEWER | newly_added | zip_prefix | https://springdalewater.com
+- Springdale Water Utilities | UTILITY_WATER | newly_added | zip_prefix | https://springdalewaterar.gov/new-customer/
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Bentonville Water Utilities | UTILITY_WATER | newly_added | zip_prefix | https://www.bentonvillear.com
+- City of Bentonville Utilities | UTILITY_ELECTRIC | newly_added | live_address | https://www.bentonvillear.com/565/Utility-Service
+  note: Bentonville municipal utility surface covers electric, water, wastewater, irrigation, and solid waste; service must be confirmed by address.
+- City of Fayetteville Utilities | UTILITY_WATER | newly_added | zip_prefix | https://www.fayetteville-ar.gov/1368/New-Water-and-Sewer-Services
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Fayetteville Water and Sewer | UTILITY_WATER | newly_added | zip_prefix | https://www.fayetteville-ar.gov
-  note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Fort Smith Utilities Water | UTILITY_WATER | newly_added | zip_prefix | https://www.fortsmithar.gov
+- City of Fort Smith Utilities | UTILITY_WATER | newly_added | zip_prefix | https://www.fortsmithar.gov/resident-services/water-utilities
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 - Jonesboro City Water and Light Water | UTILITY_WATER | newly_added | zip_prefix | https://www.jonesborocwl.org
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
-- Rogers Water Utilities | UTILITY_WATER | newly_added | zip_prefix | https://www.rwu.org
+- Rogers Water Utilities | UTILITY_WATER | newly_added | zip_prefix | https://www.rogerswaterar.gov/residential/services-and-information/start-or-stop-service/
   note: Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.
 
 ### CA
@@ -562,8 +560,8 @@ Generated: 2026-05-13T17:26:44.960Z
 
 ### NV
 
-- Repo before: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Google Fiber, Las Vegas Valley Water, NV Energy, RTC Southern Nevada, Southwest Gas, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, CenturyLink (Lumen), Cox Communications, E-ZPass, Google Fiber, Las Vegas Valley Water, NV Energy, RTC Southern Nevada, RTC Washoe, Southwest Gas, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo before: Astound Broadband, AT&T Fiber, Boulder City Utilities, Carson City Utility Billing, CenturyLink (Lumen), City of Henderson Utility Services, City of North Las Vegas Utilities Department, Cox Communications, E-ZPass, Google Fiber, Great Basin Water, Las Vegas Valley Water District, Lincoln County Power District No. 1, Mt. Wheeler Power, NV Energy, Overton Power District No. 5, RTC Southern Nevada, Southwest Gas, Spectrum, Starlink, T-Mobile Home Internet, Truckee Meadows Water Authority, Valley Electric Association, Verizon 5G Home Internet, Verizon Fios, Virgin Valley Water District, Wells Rural Electric Company, WOW! Internet, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, Boulder City Utilities, Carson City Utility Billing, CenturyLink (Lumen), City of Henderson Utility Services, City of North Las Vegas Utilities Department, Cox Communications, E-ZPass, Google Fiber, Great Basin Water, Las Vegas Valley Water District, Lincoln County Power District No. 1, Mt. Wheeler Power, NV Energy, Overton Power District No. 5, RTC Southern Nevada, RTC Washoe, Southwest Gas, Spectrum, Starlink, T-Mobile Home Internet, Truckee Meadows Water Authority, Valley Electric Association, Verizon 5G Home Internet, Verizon Fios, Virgin Valley Water District, Wells Rural Electric Company, WOW! Internet, Xfinity (Comcast)
 - RTC Washoe | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://rtcwashoe.com/public-transportation/system-map/
   note: RTC Washoe adds northern Nevada transit coverage beyond Las Vegas-area service already in seed.
 
@@ -645,7 +643,8 @@ Generated: 2026-05-13T17:26:44.960Z
 
 - Repo before: Aqua North Carolina, Astound Broadband, AT&T Fiber, Blue Ridge Energy, Brunswick Electric Membership Corporation, Carolina Water Service of North Carolina, CenturyLink (Lumen), Charlotte Water, City of Durham Department of Water Management, Dominion Energy North Carolina, Duke Energy North Carolina, E-ZPass, Enbridge Gas North Carolina, EnergyUnited, Frontier Natural Gas Company, Google Fiber, GoRaleigh, GoTriangle, Greensboro Water Resources, NC Quick Pass, Old North State Water Company, Orange Water and Sewer Authority, Piedmont Natural Gas, Raleigh Water, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, Winston-Salem/Forsyth County Utilities, WOW! Internet, Xfinity (Comcast)
 - Repo after: Aqua North Carolina, Astound Broadband, AT&T Fiber, Blue Ridge Energy, Brunswick Electric Membership Corporation, Carolina Water Service of North Carolina, CenturyLink (Lumen), Charlotte Water, City of Durham Department of Water Management, Dominion Energy North Carolina, Duke Energy North Carolina, E-ZPass, Enbridge Gas North Carolina, EnergyUnited, Frontier Natural Gas Company, Google Fiber, GoRaleigh, GoTriangle, Greensboro Water Resources, NC Quick Pass, Old North State Water Company, Orange Water and Sewer Authority, Piedmont Natural Gas, Raleigh Water, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, Winston-Salem/Forsyth County Utilities, WOW! Internet, Xfinity (Comcast)
-- External catalog: none
+- Duke Energy North Carolina | UTILITY_ELECTRIC | already_present | live_address | https://www.duke-energy.com/start-stop-move/landing
+  note: Duke Energy North Carolina is already present in the seed; service spans Duke Energy Carolinas and Progress territories and should be confirmed by address.
 
 ### ND
 
@@ -658,7 +657,8 @@ Generated: 2026-05-13T17:26:44.960Z
 
 - Repo before: AEP Ohio, AES Ohio, Astound Broadband, AT&T Fiber, CenterPoint Energy Ohio, CenturyLink (Lumen), City of Columbus Water & Power, City of Toledo Department of Public Utilities, Cleveland Public Power, Cleveland Water Department, Columbia Gas of Ohio, COTA, Cox Communications, Duke Energy Ohio, E-ZPass, Enbridge Gas Ohio, FirstEnergy Ohio Utilities, Frontier Communications, Greater Cincinnati Water Works, Ohio Turnpike E-ZPass, RTA Cleveland, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - Repo after: AEP Ohio, AES Ohio, Astound Broadband, AT&T Fiber, CenterPoint Energy Ohio, CenturyLink (Lumen), City of Columbus Water & Power, City of Toledo Department of Public Utilities, Cleveland Public Power, Cleveland Water Department, Columbia Gas of Ohio, COTA, Cox Communications, Duke Energy Ohio, E-ZPass, Enbridge Gas Ohio, FirstEnergy Ohio Utilities, Frontier Communications, Greater Cincinnati Water Works, Ohio Turnpike E-ZPass, RTA Cleveland, Spectrum, Spectrum Maine, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- External catalog: none
+- Ohio Turnpike E-ZPass | TRANSPORTATION_TOLL | already_present | zip_prefix | https://www.ezpassoh.com/
+  note: Ohio Turnpike E-ZPass is already present in the seed and is corridor-scoped rather than a statewide household utility.
 
 ### OK
 
@@ -669,12 +669,46 @@ Generated: 2026-05-13T17:26:44.960Z
 
 ### OR
 
-- Repo before: Astound Broadband, AT&T Fiber, Cascade Natural Gas, CenturyLink (Lumen), E-ZPass, Frontier Communications, NW Natural, Portland General Electric, Portland Water Bureau, Spectrum, Starlink, T-Mobile Home Internet, TriMet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, Avista Utilities, Cascade Natural Gas, CenturyLink (Lumen), E-ZPass, Frontier Communications, NW Natural, Pacific Power, Portland General Electric, Portland Water Bureau, Spectrum, Starlink, T-Mobile Home Internet, TriMet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Pacific Power | UTILITY_ELECTRIC | newly_added | state | https://www.pacificpower.net/about.html
-  note: Pacific Power is a major Oregon utility missing from seed.
+- Repo before: Astound Broadband, AT&T Fiber, Cascade Natural Gas, CenturyLink (Lumen), City of Portland Water Bureau, E-ZPass, Frontier Communications, NW Natural, Portland General Electric, Spectrum, Starlink, T-Mobile Home Internet, TriMet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, Avista Utilities, Avista Utilities Oregon Gas, BreezeBy Electronic Tolling, Cascade Natural Gas, Central Lincoln People's Utility District, CenturyLink (Lumen), City of Bend Water Services, City of Gresham Utility Services, City of Hillsboro Utility Billing, City of Portland Water Bureau, City of Salem Utility Service, Consumers Power Inc., E-ZPass, Eugene Water & Electric Board, Frontier Communications, Idaho Power Oregon Service Area, Lane Electric Cooperative, Medford Water, NW Natural, Oregon Trail Electric Cooperative, Pacific Power, Portland General Electric, Spectrum, Springfield Utility Board, Starlink, T-Mobile Home Internet, Tillamook People's Utility District, TriMet, Tualatin Valley Water District, Umatilla Electric Cooperative, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Pacific Power | UTILITY_ELECTRIC | newly_added | live_address | https://www.pacificpower.net/my-account/start-stop-move.html
+  note: Pacific Power serves many Oregon communities outside the Portland General Electric footprint; ZIP prefixes are broad prefilters and service should be confirmed by address.
 - Avista Utilities | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.myavista.com/your-account/moving
   note: Avista provides electric and natural gas service across eastern Washington, northern Idaho, and parts of Oregon; ZIP prefixes are regional prefilters and service address confirmation is required.
+- BreezeBy Electronic Tolling | TRANSPORTATION_TOLL | newly_added | polygon | https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling
+  note: BreezeBy is the Columbia River bridge toll account surface for Hood River-White Salmon Bridge and Bridge of the Gods corridor users.
+- Idaho Power Oregon Service Area | UTILITY_ELECTRIC | newly_added | live_address | https://www.idahopower.com/accounts-service/start-stop-transfer/
+  note: Idaho Power has an eastern Oregon service area; keep it distinct from Oregon Trail Electric until any service-area transfer is completed operationally.
+- Avista Utilities Oregon Gas | UTILITY_GAS | newly_added | live_address | https://www.myavista.com/your-account/moving
+  note: Avista's Oregon utility service is address-qualified and should remain distinct from Cascade Natural Gas and NW Natural.
+- Eugene Water & Electric Board | UTILITY_ELECTRIC | newly_added | live_address | https://www.eweb.org/start-stop
+  note: EWEB is Eugene's electric and water utility; service should be confirmed by address, especially near Lane Electric boundaries.
+- Springfield Utility Board | UTILITY_ELECTRIC | newly_added | live_address | https://www.subutil.com/customer-service/start-stop-service/
+  note: Springfield Utility Board provides municipal electric and water service in Springfield; exact service is address-specific.
+- Central Lincoln People's Utility District | UTILITY_ELECTRIC | newly_added | live_address | https://clpud.org/customer-information/start-or-stop-service/
+  note: Central Lincoln PUD serves coastal Oregon communities; ZIPs are broad coastal prefilters and service should be confirmed by address.
+- Tillamook People's Utility District | UTILITY_ELECTRIC | newly_added | live_address | https://www.tpud.org/customer-service/start-or-stop-service/
+  note: Tillamook PUD service is local and address-specific across Tillamook County and nearby areas.
+- Oregon Trail Electric Cooperative | UTILITY_ELECTRIC | newly_added | live_address | https://www.otec.coop/
+  note: OTEC is an eastern Oregon electric cooperative; keep distinct from Idaho Power while the Oregon service-area transfer remains an operational change to monitor.
+- Umatilla Electric Cooperative | UTILITY_ELECTRIC | newly_added | live_address | https://www.umatillaelectric.com/member-services/start-stop-service/
+  note: Umatilla Electric Cooperative serves selected northeastern Oregon addresses; ZIPs are prefilters.
+- Consumers Power Inc. | UTILITY_ELECTRIC | newly_added | live_address | https://cpi.coop/service/stop-service
+  note: Consumers Power Inc. serves selected Oregon addresses in multiple operating zones; address confirmation is required.
+- Lane Electric Cooperative | UTILITY_ELECTRIC | newly_added | live_address | https://www.laneelectric.com/member-services/new-member-guide/
+  note: Lane Electric serves rural Lane County and surrounding areas; service should be confirmed by address near EWEB and Springfield Utility Board boundaries.
+- City of Salem Utility Service | UTILITY_WATER | newly_added | live_address | https://www.cityofsalem.net/community/household/water-utilities/utility-payments-and-your-utility-account/manage-your-city-of-salem-utility-service-account
+  note: City of Salem utility account setup is municipal and should be confirmed by service address.
+- City of Bend Water Services | UTILITY_WATER | newly_added | live_address | https://bendoregon.gov/service/water-sewer-start-or-stop-service/
+  note: Bend water and sewer service is municipal and address-specific.
+- Medford Water | UTILITY_WATER | newly_added | live_address | https://www.medfordwater.org/services/customer-service/
+  note: Medford Water service is regional and should be confirmed by service address.
+- Tualatin Valley Water District | UTILITY_WATER | newly_added | live_address | https://www.tvwd.org/district/page/startstop-service-interim-billing
+  note: TVWD is a Washington County-area water district; address confirmation is required near Beaverton and other providers.
+- City of Hillsboro Utility Billing | UTILITY_WATER | newly_added | live_address | https://www.hillsboro-oregon.gov/services/utility-billing/start-or-stop-service
+  note: Hillsboro utility billing is municipal and should be confirmed by service address.
+- City of Gresham Utility Services | UTILITY_WATER | newly_added | live_address | https://www.greshamoregon.gov/services/utilities/stop-or-start-utility-services/
+  note: Gresham utility services cover municipal water, wastewater/sewer, and stormwater for eligible addresses.
 
 ### PA
 
@@ -716,8 +750,8 @@ Generated: 2026-05-13T17:26:44.960Z
 
 ### SC
 
-- Repo before: Astound Broadband, AT&T Fiber, Charleston Water System, Dominion Energy South Carolina, Dominion Energy South Carolina Gas, E-ZPass, Piedmont Natural Gas, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, CARTA, Charleston Water System, Dominion Energy South Carolina, Dominion Energy South Carolina Gas, E-ZPass, Piedmont Natural Gas, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo before: Astound Broadband, AT&T Fiber, Beaufort-Jasper Water & Sewer Authority, Berkeley Electric Cooperative, Blue Ridge Electric Cooperative, Charleston Water System, Columbia Water, Dominion Energy South Carolina, Dominion Energy South Carolina Gas, Duke Energy South Carolina, E-ZPass, Fort Hill Natural Gas Authority, Grand Strand Water & Sewer Authority, Greenville Water, Horry Electric Cooperative, Lancaster County Natural Gas Authority, Laurens Electric Cooperative, Mid-Carolina Electric Cooperative, Mount Pleasant Waterworks, Palmetto Electric Cooperative, Piedmont Natural Gas, Santee Cooper, Santee Electric Cooperative, Southern Connector / Palmetto Pass, Spartanburg Water, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast), York County Natural Gas Authority, York Electric Cooperative
+- Repo after: Astound Broadband, AT&T Fiber, Beaufort-Jasper Water & Sewer Authority, Berkeley Electric Cooperative, Blue Ridge Electric Cooperative, CARTA, Charleston Water System, Columbia Water, Dominion Energy South Carolina, Dominion Energy South Carolina Gas, Duke Energy South Carolina, E-ZPass, Fort Hill Natural Gas Authority, Grand Strand Water & Sewer Authority, Greenville Water, Horry Electric Cooperative, Lancaster County Natural Gas Authority, Laurens Electric Cooperative, Mid-Carolina Electric Cooperative, Mount Pleasant Waterworks, Palmetto Electric Cooperative, Piedmont Natural Gas, Santee Cooper, Santee Electric Cooperative, Southern Connector / Palmetto Pass, Spartanburg Water, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast), York County Natural Gas Authority, York Electric Cooperative
 - CARTA | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://ridecarta.com
   note: Charleston Area Regional Transportation Authority adds a South Carolina transit option beyond utility-only coverage.
 
@@ -826,7 +860,7 @@ Generated: 2026-05-13T17:26:44.960Z
 ### WA
 
 - Repo before: Astound Broadband, AT&T Fiber, Cascade Natural Gas, CenturyLink (Lumen), E-ZPass, Frontier Communications, Good To Go!, NW Natural, Puget Sound Energy, Seattle City Light, Seattle Public Utilities, Spectrum, Starlink, T-Mobile Home Internet, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
-- Repo after: Astound Broadband, AT&T Fiber, Avista Utilities, Benton PUD, Cascade Natural Gas, CenturyLink (Lumen), Chelan County PUD, City of Spokane Utilities, Clark Public Utilities, Cowlitz County Public Utility District, E-ZPass, Frontier Communications, Good To Go!, Grant PUD, King County Metro, Lewis County PUD, Mason County PUD No. 3, NW Natural, Pacific Power Washington, Puget Sound Energy, Seattle City Light, Seattle Public Utilities, Snohomish County PUD, Spectrum, Starlink, T-Mobile Home Internet, Tacoma Public Utilities, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
+- Repo after: Astound Broadband, AT&T Fiber, Avista Utilities, Benton PUD, BreezeBy Electronic Tolling, Cascade Natural Gas, CenturyLink (Lumen), Chelan County PUD, City of Spokane Utilities, Clark Public Utilities, Cowlitz County Public Utility District, E-ZPass, Frontier Communications, Good To Go!, Grant PUD, King County Metro, Lewis County PUD, Mason County PUD No. 3, NW Natural, Pacific Power Washington, Puget Sound Energy, Seattle City Light, Seattle Public Utilities, Snohomish County PUD, Spectrum, Starlink, T-Mobile Home Internet, Tacoma Public Utilities, Verizon 5G Home Internet, Verizon Fios, WOW! Internet, Xfinity (Comcast)
 - King County Metro | TRANSPORTATION_TRANSIT | newly_added | zip_prefix | https://kingcounty.gov/en/dept/metro
   note: King County Metro adds the largest Washington transit network beyond Seattle-only utilities.
 - Snohomish County PUD | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.snopud.com/account/my-account/start-stop-service/
@@ -853,6 +887,8 @@ Generated: 2026-05-13T17:26:44.960Z
   note: Lewis County PUD is a regional public electric utility; exact ZIPs are a conservative prefilter because Centralia City Light and other municipal overlaps exist.
 - Mason County PUD No. 3 | UTILITY_ELECTRIC | newly_added | zip_prefix | https://www.pud3.org/electric-service/electric-start-new-service/
   note: Mason PUD 3 serves most of Mason County and small adjacent areas; modeled with exact local ZIPs and address confirmation.
+- BreezeBy Electronic Tolling | TRANSPORTATION_TOLL | newly_added | polygon | https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling
+  note: BreezeBy is the Columbia River bridge toll account surface for Hood River-White Salmon Bridge and Bridge of the Gods corridor users.
 
 ### WV
 

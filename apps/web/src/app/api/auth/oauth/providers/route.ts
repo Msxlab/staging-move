@@ -23,6 +23,10 @@ export async function GET() {
       values.APPLE_OAUTH_PRIVATE_KEY,
   );
 
+  if (process.env.NODE_ENV !== "production") {
+    console.info("[OAUTH] provider status", { googleConfigured, appleConfigured });
+  }
+
   return NextResponse.json({
     providers: {
       google: {

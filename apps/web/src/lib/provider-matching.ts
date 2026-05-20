@@ -223,9 +223,13 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
   const normalizedZip = normalizeZip(options.zip);
 
   let hasPrefix = false;
+  let hasZipScopedCoverage = false;
   let hasStateOnly = provider.scope === "FEDERAL" && provider.coverages.length === 0;
 
   for (const cov of provider.coverages) {
+    if (cov.zipExact || cov.zipPrefix) {
+      hasZipScopedCoverage = true;
+    }
     if (normalizedZip && cov.zipExact && cov.zipExact === normalizedZip) {
       return "exact";
     }
@@ -243,6 +247,7 @@ function resolveProviderMatchLevelFromDb<T extends ProviderWithCoverages>(
   }
 
   if (hasPrefix) return "prefix";
+  if (hasZipScopedCoverage && !hasStateOnly) return "none";
   if (provider.coverageModel === "polygon") {
     const polygonMatch = resolvePolygonCoverageMatch(provider.slug, options.latitude, options.longitude);
     if (polygonMatch === true) return "polygon";
@@ -273,7 +278,8 @@ export function getProviderCoverageConfidenceFromDb<T extends ProviderWithCovera
   provider: T,
   options: ProviderMatchOptions
 ): CoverageConfidence {
-  const matchLevel = getProviderMatchLevelFromDb(provider, options);
+  const matchLevel = resolveProviderMatchLevelFromDb(provider, options);
+  if (matchLevel === "none") return "UNKNOWN";
   return mapCoverageMatchToConfidence(matchLevel, {
     scope: provider.scope,
     coverageModel: provider.coverageModel,

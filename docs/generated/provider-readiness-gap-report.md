@@ -1,21 +1,21 @@
 # Provider Readiness Gap Report
 
-Generated: 2026-05-13T17:45:19.357Z
+Generated: 2026-05-13T21:11:54.708Z
 
 ## Summary
 
-- Providers reviewed: 939
+- Providers reviewed: 1122
 - State/category matrix cells: 765
-- Missing critical state/category cells: 53
-- Broad-only state/category cells: 166
-- Duplicate-domain buckets: 56
-- Missing logo: 939
-- Missing phone: 398
-- Duplicate domain candidate: 144
-- Broad state coverage: 143
-- Generic description: 129
+- Missing critical state/category cells: 49
+- Broad-only state/category cells: 146
+- Duplicate-domain buckets: 82
+- Missing logo: 1122
+- Missing phone: 454
+- Duplicate domain candidate: 210
+- Broad state coverage: 118
+- Generic description: 101
 - Broad national listing: 62
-- Marketing language: 21
+- Marketing language: 18
 
 ## Missing Critical Categories By State
 
@@ -44,14 +44,11 @@ Generated: 2026-05-13T17:45:19.357Z
 - MO: UTILITY_SEWER
 - MT: UTILITY_SEWER
 - NE: UTILITY_SEWER, TRANSPORTATION_TRANSIT
-- NV: UTILITY_SEWER
-- NH: UTILITY_SEWER
 - NJ: UTILITY_SEWER
 - NM: UTILITY_SEWER
 - NY: UTILITY_SEWER
 - NC: UTILITY_SEWER
 - ND: UTILITY_SEWER, TRANSPORTATION_TRANSIT
-- OH: UTILITY_SEWER
 - OK: UTILITY_SEWER
 - OR: UTILITY_SEWER
 - PA: UTILITY_SEWER
@@ -62,7 +59,6 @@ Generated: 2026-05-13T17:45:19.357Z
 - TX: UTILITY_SEWER
 - UT: UTILITY_SEWER
 - VT: UTILITY_SEWER
-- VA: UTILITY_SEWER
 - WA: UTILITY_SEWER
 - WV: UTILITY_SEWER
 - WI: UTILITY_SEWER
@@ -79,9 +75,6 @@ Generated: 2026-05-13T17:45:19.357Z
 - AR UTILITY_TRASH: 2 providers, all broad or address-check-required
 - AR UTILITY_INTERNET: 11 providers, all broad or address-check-required
 - CA UTILITY_INTERNET: 12 providers, all broad or address-check-required
-- CO UTILITY_ELECTRIC: 3 providers, all broad or address-check-required
-- CO UTILITY_GAS: 1 providers, all broad or address-check-required
-- CO UTILITY_TRASH: 2 providers, all broad or address-check-required
 - CO UTILITY_INTERNET: 11 providers, all broad or address-check-required
 - CT UTILITY_TRASH: 2 providers, all broad or address-check-required
 - CT UTILITY_INTERNET: 12 providers, all broad or address-check-required
@@ -91,8 +84,6 @@ Generated: 2026-05-13T17:45:19.357Z
 - DC UTILITY_TRASH: 2 providers, all broad or address-check-required
 - DC UTILITY_INTERNET: 9 providers, all broad or address-check-required
 - FL UTILITY_INTERNET: 12 providers, all broad or address-check-required
-- GA UTILITY_GAS: 2 providers, all broad or address-check-required
-- GA UTILITY_TRASH: 2 providers, all broad or address-check-required
 - GA UTILITY_INTERNET: 12 providers, all broad or address-check-required
 - HI UTILITY_GAS: 1 providers, all broad or address-check-required
 - HI UTILITY_TRASH: 2 providers, all broad or address-check-required
@@ -130,14 +121,12 @@ Generated: 2026-05-13T17:45:19.357Z
 - ME UTILITY_WATER: 1 providers, all broad or address-check-required
 - ME UTILITY_TRASH: 2 providers, all broad or address-check-required
 - ME UTILITY_INTERNET: 11 providers, all broad or address-check-required
-- MD UTILITY_TRASH: 2 providers, all broad or address-check-required
 - MD UTILITY_INTERNET: 9 providers, all broad or address-check-required
-- MA UTILITY_TRASH: 2 providers, all broad or address-check-required
 - MA UTILITY_INTERNET: 9 providers, all broad or address-check-required
 - MI UTILITY_WATER: 1 providers, all broad or address-check-required
 - MI UTILITY_TRASH: 2 providers, all broad or address-check-required
 - MI UTILITY_INTERNET: 10 providers, all broad or address-check-required
-- MN UTILITY_ELECTRIC: 2 providers, all broad or address-check-required
+- MN UTILITY_ELECTRIC: 1 providers, all broad or address-check-required
 - MN UTILITY_GAS: 2 providers, all broad or address-check-required
 - MN UTILITY_TRASH: 2 providers, all broad or address-check-required
 - MN UTILITY_INTERNET: 11 providers, all broad or address-check-required
@@ -158,11 +147,7 @@ Generated: 2026-05-13T17:45:19.357Z
 - NE UTILITY_WATER: 1 providers, all broad or address-check-required
 - NE UTILITY_TRASH: 2 providers, all broad or address-check-required
 - NE UTILITY_INTERNET: 12 providers, all broad or address-check-required
-- NV UTILITY_TRASH: 2 providers, all broad or address-check-required
 - NV UTILITY_INTERNET: 12 providers, all broad or address-check-required
-- NH UTILITY_GAS: 1 providers, all broad or address-check-required
-- NH UTILITY_WATER: 2 providers, all broad or address-check-required
-- NH UTILITY_TRASH: 2 providers, all broad or address-check-required
 - NH UTILITY_INTERNET: 10 providers, all broad or address-check-required
 - NJ UTILITY_TRASH: 2 providers, all broad or address-check-required
 - NJ UTILITY_INTERNET: 10 providers, all broad or address-check-required
@@ -172,8 +157,6 @@ Generated: 2026-05-13T17:45:19.357Z
 - NY UTILITY_TRASH: 2 providers, all broad or address-check-required
 - NY UTILITY_INTERNET: 12 providers, all broad or address-check-required
 - NY TRANSPORTATION_TRANSIT: 1 providers, all broad or address-check-required
-- NC UTILITY_GAS: 3 providers, all broad or address-check-required
-- NC UTILITY_TRASH: 2 providers, all broad or address-check-required
 - NC UTILITY_INTERNET: 12 providers, all broad or address-check-required
 - NC TRANSPORTATION_TRANSIT: 2 providers, all broad or address-check-required
 - ND UTILITY_ELECTRIC: 2 providers, all broad or address-check-required
@@ -181,59 +164,72 @@ Generated: 2026-05-13T17:45:19.357Z
 - ND UTILITY_WATER: 1 providers, all broad or address-check-required
 - ND UTILITY_TRASH: 2 providers, all broad or address-check-required
 - ND UTILITY_INTERNET: 10 providers, all broad or address-check-required
-- OH UTILITY_TRASH: 2 providers, all broad or address-check-required
 - OH UTILITY_INTERNET: 13 providers, all broad or address-check-required
 - OK UTILITY_ELECTRIC: 2 providers, all broad or address-check-required
 - OK UTILITY_GAS: 1 providers, all broad or address-check-required
 - OK UTILITY_WATER: 2 providers, all broad or address-check-required
 - OK UTILITY_TRASH: 2 providers, all broad or address-check-required
 - OK UTILITY_INTERNET: 11 providers, all broad or address-check-required
-- OR UTILITY_WATER: 1 providers, all broad or address-check-required
 - OR UTILITY_TRASH: 2 providers, all broad or address-check-required
-- 46 additional broad-only cells omitted from markdown; see JSON.
+- OR UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- PA UTILITY_TRASH: 2 providers, all broad or address-check-required
+- PA UTILITY_INTERNET: 11 providers, all broad or address-check-required
+- RI UTILITY_WATER: 1 providers, all broad or address-check-required
+- RI UTILITY_TRASH: 2 providers, all broad or address-check-required
+- RI UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- RI TRANSPORTATION_TRANSIT: 1 providers, all broad or address-check-required
+- SC UTILITY_TRASH: 2 providers, all broad or address-check-required
+- SC UTILITY_INTERNET: 9 providers, all broad or address-check-required
+- SD UTILITY_ELECTRIC: 3 providers, all broad or address-check-required
+- SD UTILITY_GAS: 3 providers, all broad or address-check-required
+- SD UTILITY_WATER: 1 providers, all broad or address-check-required
+- SD UTILITY_TRASH: 2 providers, all broad or address-check-required
+- SD UTILITY_INTERNET: 10 providers, all broad or address-check-required
+- TN UTILITY_GAS: 1 providers, all broad or address-check-required
+- 26 additional broad-only cells omitted from markdown; see JSON.
 
 ## Duplicate Domain Buckets
 
-- amwater.com: 7 records across UTILITY_WATER
-- blackhillsenergy.com: 5 records across UTILITY_ELECTRIC, UTILITY_GAS
+- amwater.com: 9 records across UTILITY_WATER
+- firstenergycorp.com: 8 records across UTILITY_ELECTRIC
+- blackhillsenergy.com: 6 records across UTILITY_ELECTRIC, UTILITY_GAS
+- atmosenergy.com: 5 records across UTILITY_GAS
+- duke-energy.com: 5 records across UTILITY_ELECTRIC
 - anthem.com: 4 records across FINANCIAL_INSURANCE_HEALTH
-- atmosenergy.com: 4 records across UTILITY_GAS
-- firstenergycorp.com: 4 records across UTILITY_ELECTRIC
+- dominionenergy.com: 4 records across UTILITY_ELECTRIC, UTILITY_GAS
 - portal.ct.gov: 4 records across GOVERNMENT_DMV, GOVERNMENT_HEALTH, GOVERNMENT_TAX, GOVERNMENT_VOTER
 - progressive.com: 4 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_BOAT, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
+- aquarionwater.com: 3 records across UTILITY_WATER
 - centerpointenergy.com: 3 records across UTILITY_GAS
 - costco.com: 3 records across HEALTHCARE_PHARMACY, SHOPPING_SUBSCRIPTION
-- dominionenergy.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
-- duke-energy.com: 3 records across UTILITY_ELECTRIC
+- enbridgegas.com: 3 records across UTILITY_GAS
 - geico.com: 3 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
 - hawaiianelectric.com: 3 records across UTILITY_ELECTRIC
+- lge-ku.com: 3 records across UTILITY_ELECTRIC
 - miamidade.gov: 3 records across TRANSPORTATION_TRANSIT, UTILITY_TRASH, UTILITY_WATER
 - montana-dakota.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
 - nationalgridus.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
 - spectrum.com: 3 records across UTILITY_INTERNET, UTILITY_PHONE
 - statefarm.com: 3 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
+- unitil.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
 - verizon.com: 3 records across UTILITY_INTERNET, UTILITY_PHONE
 - walmart.com: 3 records across GROCERY_DELIVERY, HEALTHCARE_PHARMACY, SHOPPING_RETAIL
-- xcelenergy.com: 3 records across UTILITY_ELECTRIC, UTILITY_GAS
 - allstate.com: 2 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
 - amazon.com: 2 records across GROCERY_DELIVERY, SHOPPING_SUBSCRIPTION
 - ameren.com: 2 records across UTILITY_ELECTRIC
 - apple.com: 2 records across FINANCIAL_FINTECH, SHOPPING_SUBSCRIPTION
+- aquawater.com: 2 records across UTILITY_WATER
 - assurant.com: 2 records across FINANCIAL_INSURANCE_FLOOD, FINANCIAL_INSURANCE_RENTERS
 - att.com: 2 records across UTILITY_INTERNET, UTILITY_PHONE
 - bankofamerica.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- cambridgema.gov: 2 records across UTILITY_TRASH, UTILITY_WATER
 - capitalone.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- charlottenc.gov: 2 records across UTILITY_TRASH, UTILITY_WATER
 - chewy.com: 2 records across HEALTHCARE_VET, SHOPPING_SUBSCRIPTION
 - citi.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
-- cvs.com: 2 records across HEALTHCARE_DOCTORS, HEALTHCARE_PHARMACY
-- discover.com: 2 records across FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
-- eversource.com: 2 records across UTILITY_ELECTRIC
-- honolulu.gov: 2 records across GOVERNMENT_DMV, TRANSPORTATION_TRANSIT
-- irs.gov: 2 records across GOVERNMENT_TAX
-- kroger.com: 2 records across HEALTHCARE_PHARMACY, SHOPPING_RETAIL
-- lemonade.com: 2 records across FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
-- lge-ku.com: 2 records across UTILITY_ELECTRIC
-- libertymutual.com: 2 records across FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
+- cityofws.org: 2 records across UTILITY_TRASH, UTILITY_WATER
+- columbus.gov: 2 records across UTILITY_TRASH, UTILITY_WATER
+- concordnh.gov: 2 records across UTILITY_TRASH, UTILITY_WATER
 
 ## Broad Coverage Provider Candidates
 
@@ -289,13 +285,11 @@ Generated: 2026-05-13T17:45:19.357Z
 - Uber Eats | LOCAL_DINING | FEDERAL | Broad national listing
 - Yelp | LOCAL_DINING | FEDERAL | Broad national listing
 - Alabama Freedom Pass | TRANSPORTATION_TOLL | STATE | Broad state coverage
-- ExpressToll | TRANSPORTATION_TOLL | STATE | Broad state coverage
+- E-ZPass Virginia | TRANSPORTATION_TOLL | STATE | Broad state coverage
 - GeauxPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
 - K-TAG | TRANSPORTATION_TOLL | STATE | Broad state coverage
 - NJ E-ZPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
 - NY E-ZPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
-- PA Turnpike E-ZPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
-- Peach Pass | TRANSPORTATION_TOLL | STATE | Broad state coverage
 - SunPass | TRANSPORTATION_TOLL | STATE | Broad state coverage
 - TxTag | TRANSPORTATION_TOLL | STATE | Broad state coverage
 - BART | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
@@ -311,20 +305,22 @@ Generated: 2026-05-13T17:45:19.357Z
 - Metra | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 - MTA | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 - New Orleans Regional Transit Authority | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
-- Pittsburgh Port Authority | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 - RIPTA | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 - RTA Cleveland | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 - RTC Southern Nevada | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 - RTD | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 - San Diego MTS | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- SF Muni | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- TheBus | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
+- UTA | TRANSPORTATION_TRANSIT | STATE | Broad state coverage
 
 ## Suspicious Category Counts
 
-- UTILITY_ELECTRIC (Electric): 123 - High count; review for broad imports or over-splitting
-- UTILITY_WATER (Water): 107 - High count; review for broad imports or over-splitting
+- UTILITY_ELECTRIC (Electric): 199 - High count; review for broad imports or over-splitting
+- UTILITY_WATER (Water): 156 - High count; review for broad imports or over-splitting
+- UTILITY_GAS (Gas): 83 - High count; review for broad imports or over-splitting
 - TRANSPORTATION_TRANSIT (Transit): 66 - High count; review for broad imports or over-splitting
-- UTILITY_GAS (Gas): 63 - High count; review for broad imports or over-splitting
-- GOVERNMENT_DMV (DMV): 57 - High count; review for broad imports or over-splitting
+- GOVERNMENT_DMV (DMV): 59 - High count; review for broad imports or over-splitting
 - GOVERNMENT_VOTER (Voter Registration): 52 - High count; review for broad imports or over-splitting
 - FINANCIAL_INSURANCE_BOAT (Boat Insurance): 1 - Suspiciously low catalog count
 - FINANCIAL_LOAN (Loans): 1 - Suspiciously low catalog count
@@ -337,35 +333,35 @@ Generated: 2026-05-13T17:45:19.357Z
 ## Split, Merge, Or Cross-Link Candidates
 
 - blackhillsenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
+- dominionenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
 - portal.ct.gov: GOVERNMENT_DMV, GOVERNMENT_HEALTH, GOVERNMENT_TAX, GOVERNMENT_VOTER
 - progressive.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_BOAT, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
 - costco.com: HEALTHCARE_PHARMACY, SHOPPING_SUBSCRIPTION
-- dominionenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
 - geico.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_MOTORCYCLE, FINANCIAL_INSURANCE_RENTERS
 - miamidade.gov: TRANSPORTATION_TRANSIT, UTILITY_TRASH, UTILITY_WATER
 - montana-dakota.com: UTILITY_ELECTRIC, UTILITY_GAS
 - nationalgridus.com: UTILITY_ELECTRIC, UTILITY_GAS
 - spectrum.com: UTILITY_INTERNET, UTILITY_PHONE
 - statefarm.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
+- unitil.com: UTILITY_ELECTRIC, UTILITY_GAS
 - verizon.com: UTILITY_INTERNET, UTILITY_PHONE
 - walmart.com: GROCERY_DELIVERY, HEALTHCARE_PHARMACY, SHOPPING_RETAIL
-- xcelenergy.com: UTILITY_ELECTRIC, UTILITY_GAS
 - allstate.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
 - amazon.com: GROCERY_DELIVERY, SHOPPING_SUBSCRIPTION
 - apple.com: FINANCIAL_FINTECH, SHOPPING_SUBSCRIPTION
 - assurant.com: FINANCIAL_INSURANCE_FLOOD, FINANCIAL_INSURANCE_RENTERS
 - att.com: UTILITY_INTERNET, UTILITY_PHONE
 - bankofamerica.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- cambridgema.gov: UTILITY_TRASH, UTILITY_WATER
 - capitalone.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- charlottenc.gov: UTILITY_TRASH, UTILITY_WATER
 - chewy.com: HEALTHCARE_VET, SHOPPING_SUBSCRIPTION
 - citi.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
+- cityofws.org: UTILITY_TRASH, UTILITY_WATER
+- columbus.gov: UTILITY_TRASH, UTILITY_WATER
+- concordnh.gov: UTILITY_TRASH, UTILITY_WATER
 - cvs.com: HEALTHCARE_DOCTORS, HEALTHCARE_PHARMACY
-- discover.com: FINANCIAL_BANK, FINANCIAL_CREDIT_CARD
-- honolulu.gov: GOVERNMENT_DMV, TRANSPORTATION_TRANSIT
-- kroger.com: HEALTHCARE_PHARMACY, SHOPPING_RETAIL
-- lemonade.com: FINANCIAL_INSURANCE_HOME, FINANCIAL_INSURANCE_RENTERS
-- libertymutual.com: FINANCIAL_INSURANCE_AUTO, FINANCIAL_INSURANCE_RENTERS
-- maine.gov: GOVERNMENT_DMV, GOVERNMENT_VOTER
+- dekalbcountyga.gov: UTILITY_TRASH, UTILITY_WATER
 
 ## Weak Utility States
 
@@ -374,12 +370,12 @@ Generated: 2026-05-13T17:45:19.357Z
 - AZ: missing [none], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
 - AR: missing [none], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
 - CA: missing [UTILITY_SEWER], broad-only [UTILITY_INTERNET]
-- CO: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
+- CO: missing [UTILITY_SEWER], broad-only [UTILITY_INTERNET]
 - CT: missing [none], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
 - DE: missing [none], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
 - DC: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
 - FL: missing [UTILITY_SEWER], broad-only [UTILITY_INTERNET]
-- GA: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
+- GA: missing [UTILITY_SEWER], broad-only [UTILITY_INTERNET]
 - HI: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
 - ID: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
 - IL: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
@@ -389,16 +385,16 @@ Generated: 2026-05-13T17:45:19.357Z
 - KY: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
 - LA: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
 - ME: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
-- MD: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
-- MA: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
+- MD: missing [UTILITY_SEWER], broad-only [UTILITY_INTERNET]
+- MA: missing [UTILITY_SEWER], broad-only [UTILITY_INTERNET]
 - MI: missing [UTILITY_SEWER], broad-only [UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
 - MN: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_TRASH, UTILITY_INTERNET]
 - MS: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
 - MO: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
 - MT: missing [UTILITY_SEWER], broad-only [UTILITY_ELECTRIC, UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
 - NE: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
-- NV: missing [UTILITY_SEWER], broad-only [UTILITY_TRASH, UTILITY_INTERNET]
-- NH: missing [UTILITY_SEWER], broad-only [UTILITY_GAS, UTILITY_WATER, UTILITY_TRASH, UTILITY_INTERNET]
+- NV: missing [none], broad-only [UTILITY_INTERNET]
+- NH: missing [none], broad-only [UTILITY_INTERNET]
 
 ## Weak Government Task States
 
@@ -438,21 +434,12 @@ Generated: 2026-05-13T17:45:19.357Z
 - HIGH | CA UTILITY_SEWER | missing | Coverage Gap Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may have no current-product guidance for starting required destination utility service.
-- HIGH | CO UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
-- HIGH | CO UTILITY_GAS | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | CO UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
   - Source type: FCC broadband data/map plus official provider availability pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | CO UTILITY_SEWER | missing | Coverage Gap Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may have no current-product guidance for starting required destination utility service.
-- HIGH | CO UTILITY_TRASH | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | CT UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
   - Source type: FCC broadband data/map plus official provider availability pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
@@ -480,18 +467,12 @@ Generated: 2026-05-13T17:45:19.357Z
 - HIGH | FL UTILITY_SEWER | missing | Coverage Gap Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may have no current-product guidance for starting required destination utility service.
-- HIGH | GA UTILITY_GAS | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | GA UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
   - Source type: FCC broadband data/map plus official provider availability pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | GA UTILITY_SEWER | missing | Coverage Gap Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may have no current-product guidance for starting required destination utility service.
-- HIGH | GA UTILITY_TRASH | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | HI UTILITY_GAS | broad_only | Broad Coverage Review Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
@@ -612,18 +593,12 @@ Generated: 2026-05-13T17:45:19.357Z
 - HIGH | MA UTILITY_SEWER | missing | Coverage Gap Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may have no current-product guidance for starting required destination utility service.
-- HIGH | MA UTILITY_TRASH | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | MD UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
   - Source type: FCC broadband data/map plus official provider availability pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | MD UTILITY_SEWER | missing | Coverage Gap Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may have no current-product guidance for starting required destination utility service.
-- HIGH | MD UTILITY_TRASH | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | ME UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
@@ -717,18 +692,12 @@ Generated: 2026-05-13T17:45:19.357Z
 - HIGH | MT UTILITY_WATER | broad_only | Broad Coverage Review Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
-- HIGH | NC UTILITY_GAS | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | NC UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
   - Source type: FCC broadband data/map plus official provider availability pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | NC UTILITY_SEWER | missing | Coverage Gap Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may have no current-product guidance for starting required destination utility service.
-- HIGH | NC UTILITY_TRASH | broad_only | Broad Coverage Review Queue
-  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
-  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
 - HIGH | ND UTILITY_ELECTRIC | broad_only | Broad Coverage Review Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
@@ -762,10 +731,37 @@ Generated: 2026-05-13T17:45:19.357Z
 - HIGH | NE UTILITY_WATER | broad_only | Broad Coverage Review Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
-- HIGH | NH UTILITY_GAS | broad_only | Broad Coverage Review Queue
+- HIGH | NH UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | NJ UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | NJ UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | NJ UTILITY_TRASH | broad_only | Broad Coverage Review Queue
   - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
   - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
-- 99 additional backlog items omitted from markdown; see JSON.
+- HIGH | NM UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | NM UTILITY_SEWER | missing | Coverage Gap Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may have no current-product guidance for starting required destination utility service.
+- HIGH | NM UTILITY_TRASH | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | NM UTILITY_WATER | broad_only | Broad Coverage Review Queue
+  - Source type: State public utility commission, EIA/FERC/state utility data, and official utility pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | NV UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- HIGH | NY UTILITY_INTERNET | broad_only | Broad Coverage Review Queue
+  - Source type: FCC broadband data/map plus official provider availability pages
+  - Risk: Users may see broad utility listings that are not correct for their exact address or service territory.
+- 75 additional backlog items omitted from markdown; see JSON.
 
 ## User-Created Provider Promotion Candidates
 

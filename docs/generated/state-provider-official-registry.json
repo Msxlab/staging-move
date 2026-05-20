@@ -2,18 +2,18 @@
   "summary": {
     "generatedAt": "2026-04-18T17:41:23.376Z",
     "statesCovered": 51,
-    "uniqueProviders": 498,
-    "stateAssignments": 626,
-    "existingSeedProviders": 258,
-    "catalogAddedProviders": 233,
-    "catalogBacklogProviders": 7,
-    "zipModeledProviders": 365,
-    "stateOnlyProviders": 126,
+    "uniqueProviders": 558,
+    "stateAssignments": 685,
+    "existingSeedProviders": 301,
+    "catalogAddedProviders": 251,
+    "catalogBacklogProviders": 6,
+    "zipModeledProviders": 434,
+    "stateOnlyProviders": 118,
     "secondWave": {
-      "promoteZip": 45,
-      "liveAddress": 68,
-      "polygon": 59,
-      "manualResearch": 105
+      "promoteZip": 40,
+      "liveAddress": 91,
+      "polygon": 60,
+      "manualResearch": 103
     }
   },
   "states": [
@@ -518,16 +518,16 @@
     {
       "state": "AR",
       "totals": {
-        "totalProviders": 17,
-        "existingSeed": 6,
-        "catalogAdded": 10,
-        "catalogBacklog": 1,
-        "zipModeled": 9,
-        "stateOnly": 7,
-        "promoteZip": 2,
-        "liveAddress": 2,
+        "totalProviders": 19,
+        "existingSeed": 8,
+        "catalogAdded": 11,
+        "catalogBacklog": 0,
+        "zipModeled": 17,
+        "stateOnly": 2,
+        "promoteZip": 0,
+        "liveAddress": 3,
         "polygon": 0,
-        "manualResearch": 4
+        "manualResearch": 1
       },
       "categories": [
         {
@@ -535,31 +535,45 @@
           "label": "Electric",
           "providers": [
             {
-              "name": "Black Hills Energy SD",
-              "slug": "bhe-sd",
+              "name": "Carroll Electric Cooperative Corporation",
+              "slug": "carroll-electric-ar",
               "category": "UTILITY_ELECTRIC",
               "source": "existing_seed",
-              "currentModel": "state",
-              "nextWave": "manual_research",
-              "officialUrl": "https://www.blackhillsenergy.com/",
-              "officialStatus": "partial",
-              "sourceConfidence": "medium",
-              "note": "Stay safe during extreme cold | Black Hills Energy",
-              "website": "https://www.blackhillsenergy.com",
-              "zipRuleCount": 0
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.carrollecc.com/apply-for-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.carrollecc.com/apply-for-service",
+              "zipRuleCount": 3
             },
             {
-              "name": "Conway Corp Electric",
+              "name": "City of Bentonville Utilities",
+              "slug": "bentonville-utilities",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.bentonvillear.com/565/Utility-Service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Bentonville municipal utility surface covers electric, water, wastewater, irrigation, and solid waste; service must be confirmed by address.",
+              "website": "https://www.bentonvillear.com/565/Utility-Service",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Conway Corporation",
               "slug": "conway-corp-electric",
               "category": "UTILITY_ELECTRIC",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.conwaycorp.com",
+              "officialUrl": "https://conwaycorp.com/sign-up-for-a-service/",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
-              "note": "Real municipal electric utility; modeled with Conway-area ZIP prefix and address confirmation language.",
-              "website": "https://www.conwaycorp.com",
+              "note": "Municipal multi-utility serving Conway electric, water, wastewater, and account workflows; modeled with Conway-area ZIP prefix and address confirmation language.",
+              "website": "https://conwaycorp.com/sign-up-for-a-service/",
               "zipRuleCount": 1
             },
             {
@@ -567,14 +581,28 @@
               "slug": "entergy-ar",
               "category": "UTILITY_ELECTRIC",
               "source": "catalog_added",
-              "currentModel": "state",
-              "nextWave": "manual_research",
-              "officialUrl": "https://www.entergy-arkansas.com",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.entergyarkansas.com/",
               "officialStatus": "partial",
               "sourceConfidence": "medium",
-              "note": "Major Arkansas electric utility identified in state rules but missing from seed.",
-              "website": "https://www.entergy-arkansas.com",
-              "zipRuleCount": 0
+              "note": "Major Arkansas electric utility with broad county-level coverage; ZIPs are broad prefilters and service should be confirmed by address.",
+              "website": "https://www.myentergy.com/s/newservice",
+              "zipRuleCount": 14
+            },
+            {
+              "name": "First Electric Cooperative Corporation",
+              "slug": "first-electric-ar",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.firstelectric.coop/services/electrical-service/set-up-new-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.firstelectric.coop/services/electrical-service/set-up-new-service",
+              "zipRuleCount": 4
             },
             {
               "name": "North Little Rock Electric",
@@ -583,26 +611,26 @@
               "source": "catalog_added",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://nlrelectric.com",
+              "officialUrl": "https://nlrelectric.com/forms/",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
               "note": "Real municipal electric utility; modeled with North Little Rock ZIP prefix and address confirmation language.",
-              "website": "https://nlrelectric.com",
-              "zipRuleCount": 1
+              "website": "https://nlrelectric.com/forms/",
+              "zipRuleCount": 2
             },
             {
-              "name": "OG&E",
-              "slug": "oge-ok",
+              "name": "Oklahoma Gas & Electric (OG&E) - Arkansas Service Area",
+              "slug": "oge-ar",
               "category": "UTILITY_ELECTRIC",
               "source": "existing_seed",
-              "currentModel": "state",
-              "nextWave": "manual_research",
-              "officialUrl": "https://www.oge.com/",
-              "officialStatus": "partial",
-              "sourceConfidence": "medium",
-              "note": "OG&E - Home",
-              "website": "https://www.oge.com",
-              "zipRuleCount": 0
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview",
+              "zipRuleCount": 1
             },
             {
               "name": "Southwestern Electric Power Company (SWEPCO)",
@@ -611,12 +639,12 @@
               "source": "catalog_added",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.swepco.com",
+              "officialUrl": "https://www.swepco.com/account/service/start-stop-transfer",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
               "note": "Real electric utility; modeled with cautious Arkansas ZIP prefixes and address confirmation language.",
-              "website": "https://www.swepco.com",
-              "zipRuleCount": 2
+              "website": "https://www.swepco.com/account/service/start-stop-transfer",
+              "zipRuleCount": 4
             }
           ]
         },
@@ -625,46 +653,46 @@
           "label": "Gas",
           "providers": [
             {
-              "name": "Arkansas Oklahoma Gas",
+              "name": "Arkansas Oklahoma Gas Corporation (AOG)",
               "slug": "arkansas-oklahoma-gas",
               "category": "UTILITY_GAS",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.aogc.com",
+              "officialUrl": "https://www.aogc.com/RequestService",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
               "note": "Real gas utility; modeled with cautious western Arkansas ZIP prefix and address confirmation language.",
-              "website": "https://www.aogc.com",
-              "zipRuleCount": 1
+              "website": "https://www.aogc.com/RequestService",
+              "zipRuleCount": 2
             },
             {
-              "name": "CenterPoint Energy Arkansas",
-              "slug": "centerpoint-ar",
+              "name": "Black Hills Energy Arkansas",
+              "slug": "black-hills-energy-ar",
               "category": "UTILITY_GAS",
               "source": "existing_seed",
-              "currentModel": "state",
-              "nextWave": "promote_zip",
-              "officialUrl": "https://www.centerpointenergy.com/en-us/home-service-plus/about-hsp/areas-we-serve",
-              "officialStatus": "resolved",
-              "sourceConfidence": "high",
-              "note": "AC & Furnace Repair Minneapolis/St. Paul | CenterPoint Energy Home Service Plus",
-              "website": "https://www.centerpointenergy.com",
-              "zipRuleCount": 0
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.blackhillsenergy.com/app-startstop/service-select",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.blackhillsenergy.com/app-startstop/service-select",
+              "zipRuleCount": 8
             },
             {
               "name": "Summit Utilities Arkansas",
-              "slug": null,
+              "slug": "summit-utilities-ar",
               "category": "UTILITY_GAS",
-              "source": "catalog_backlog",
-              "currentModel": "catalog_only",
-              "nextWave": "live_address",
-              "officialUrl": "https://summitutilities.com",
-              "officialStatus": "catalog_only",
-              "sourceConfidence": "catalog",
-              "note": "Real gas utility from Batch 1, but the candidate had unknown territory; catalog-only until ZIP/service-area confirmation.",
-              "website": null,
-              "zipRuleCount": 0
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://summitutilities.com/about-summit/service-area",
+              "officialStatus": "resolved",
+              "sourceConfidence": "high",
+              "note": "Summit Utilities Service Area",
+              "website": "https://summitutilities.com/contact/start-stop-transfer-service",
+              "zipRuleCount": 14
             }
           ]
         },
@@ -673,59 +701,45 @@
           "label": "Water",
           "providers": [
             {
-              "name": "Bentonville Water Utilities",
-              "slug": "bentonville-water-utilities",
-              "category": "UTILITY_WATER",
-              "source": "catalog_added",
-              "currentModel": "zip_prefix",
-              "nextWave": "none",
-              "officialUrl": "https://www.bentonvillear.com",
-              "officialStatus": "catalog_only",
-              "sourceConfidence": "catalog",
-              "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
-              "website": "https://www.bentonvillear.com",
-              "zipRuleCount": 1
-            },
-            {
               "name": "Central Arkansas Water",
               "slug": "central-ar-water",
               "category": "UTILITY_WATER",
               "source": "existing_seed",
-              "currentModel": "state",
-              "nextWave": "promote_zip",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
               "officialUrl": "https://carkw.com/about/supporting-our-communities/",
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "Supporting Our Communities | Central Arkansas Water",
-              "website": "https://carkw.com",
-              "zipRuleCount": 0
+              "website": "https://carkw.com/customer-service/start-or-stop-service/",
+              "zipRuleCount": 3
             },
             {
-              "name": "Fayetteville Water and Sewer",
-              "slug": "fayetteville-water",
+              "name": "City of Fayetteville Utilities",
+              "slug": "fayetteville-utilities",
               "category": "UTILITY_WATER",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.fayetteville-ar.gov",
+              "officialUrl": "https://www.fayetteville-ar.gov/1368/New-Water-and-Sewer-Services",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
               "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
-              "website": "https://www.fayetteville-ar.gov",
+              "website": "https://www.fayetteville-ar.gov/1368/New-Water-and-Sewer-Services",
               "zipRuleCount": 1
             },
             {
-              "name": "Fort Smith Utilities Water",
-              "slug": "fort-smith-water",
+              "name": "City of Fort Smith Utilities",
+              "slug": "fort-smith-utilities",
               "category": "UTILITY_WATER",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.fortsmithar.gov",
+              "officialUrl": "https://www.fortsmithar.gov/resident-services/water-utilities",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
               "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
-              "website": "https://www.fortsmithar.gov",
+              "website": "https://www.fortsmithar.gov/resident-services/water-utilities",
               "zipRuleCount": 1
             },
             {
@@ -749,11 +763,25 @@
               "source": "catalog_added",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.rwu.org",
+              "officialUrl": "https://www.rogerswaterar.gov/residential/services-and-information/start-or-stop-service/",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
               "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
-              "website": "https://www.rwu.org",
+              "website": "https://www.rogerswaterar.gov/residential/services-and-information/start-or-stop-service/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Springdale Water Utilities",
+              "slug": "springdale-water-utilities",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://springdalewaterar.gov/new-customer/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
+              "website": "https://springdalewaterar.gov/new-customer/",
               "zipRuleCount": 1
             }
           ]
@@ -797,14 +825,14 @@
     {
       "state": "AZ",
       "totals": {
-        "totalProviders": 18,
-        "existingSeed": 10,
+        "totalProviders": 25,
+        "existingSeed": 17,
         "catalogAdded": 8,
         "catalogBacklog": 0,
-        "zipModeled": 13,
-        "stateOnly": 5,
+        "zipModeled": 21,
+        "stateOnly": 4,
         "promoteZip": 0,
-        "liveAddress": 3,
+        "liveAddress": 8,
         "polygon": 0,
         "manualResearch": 5
       },
@@ -814,7 +842,7 @@
           "label": "Electric",
           "providers": [
             {
-              "name": "APS (Arizona Public Service)",
+              "name": "Arizona Public Service",
               "slug": "aps-az",
               "category": "UTILITY_ELECTRIC",
               "source": "existing_seed",
@@ -824,22 +852,64 @@
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "Business service area map",
-              "website": "https://www.aps.com",
-              "zipRuleCount": 5
+              "website": "https://www.aps.com/en/Residential/Account/Start-Stop-and-Move-Service",
+              "zipRuleCount": 8
             },
             {
-              "name": "SRP (Salt River Project)",
+              "name": "Mohave Electric Cooperative",
+              "slug": "mohave-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.mohaveelectric.com/member-service/apply-for-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.mohaveelectric.com/member-service/apply-for-service/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Salt River Project",
               "slug": "srp-az",
               "category": "UTILITY_ELECTRIC",
               "source": "existing_seed",
-              "currentModel": "state",
+              "currentModel": "zip_prefix",
               "nextWave": "manual_research",
               "officialUrl": "https://www.srpnet.com/",
               "officialStatus": "blocked",
               "sourceConfidence": "low",
               "note": "Homepage fetch failed (403)",
-              "website": "https://www.srpnet.com",
-              "zipRuleCount": 0
+              "website": "https://myaccount.srpnet.com/power/residentialelectric",
+              "zipRuleCount": 4
+            },
+            {
+              "name": "Sulphur Springs Valley Electric Cooperative",
+              "slug": "ssvec",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.ssvec.org/services/new-service.php",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.ssvec.org/services/new-service.php",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "Trico Electric Cooperative",
+              "slug": "trico-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://trico.coop/start-stop-transfer-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://trico.coop/start-stop-transfer-service/",
+              "zipRuleCount": 2
             },
             {
               "name": "Tucson Electric Power",
@@ -847,12 +917,12 @@
               "category": "UTILITY_ELECTRIC",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
-              "nextWave": "none",
-              "officialUrl": "https://www.tep.com",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.tep.com/im-moving/",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
-              "note": "Real electric utility; modeled with Tucson-area ZIP prefixes and address confirmation language.",
-              "website": "https://www.tep.com",
+              "note": "Primary Tucson-area electric utility; Tucson ZIP prefixes are only prefilters and start/stop/transfer service should be confirmed by address.",
+              "website": "https://www.tep.com/im-moving/",
               "zipRuleCount": 2
             },
             {
@@ -861,12 +931,12 @@
               "category": "UTILITY_ELECTRIC",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
-              "nextWave": "none",
-              "officialUrl": "https://www.uesaz.com",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.uesaz.com/im-moving/",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
-              "note": "Real utility account provider; gas duplicate is folded into this single provider row.",
-              "website": "https://www.uesaz.com",
+              "note": "UniSource electric service is territory-specific in selected Arizona communities; gas is modeled separately for relocation workflows.",
+              "website": "https://www.uesaz.com/im-moving/",
               "zipRuleCount": 2
             }
           ]
@@ -886,8 +956,22 @@
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "Natural Gas Pipeline Safety",
-              "website": "https://www.swgas.com",
+              "website": "https://www.swgas.com/en/residential",
               "zipRuleCount": 12
+            },
+            {
+              "name": "UniSource Energy Services Gas",
+              "slug": "unisource-gas-az",
+              "category": "UTILITY_GAS",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.uesaz.com/im-moving/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.uesaz.com/im-moving/",
+              "zipRuleCount": 2
             }
           ]
         },
@@ -896,32 +980,102 @@
           "label": "Water",
           "providers": [
             {
-              "name": "City of Chandler Water",
+              "name": "Arizona Water Company",
+              "slug": "arizona-water-company",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.azwater.com/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.azwater.com/",
+              "zipRuleCount": 12
+            },
+            {
+              "name": "City of Chandler Utility Services",
               "slug": "chandler-water",
               "category": "UTILITY_WATER",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
-              "nextWave": "none",
-              "officialUrl": "https://www.chandleraz.gov/residents/water",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.chandleraz.gov/residents/utility-services",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
-              "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
-              "website": "https://www.chandleraz.gov/residents/water",
+              "note": "Chandler utility services cover water, sewer, and solid waste account workflows; service should be confirmed by address.",
+              "website": "https://www.chandleraz.gov/residents/utility-services",
               "zipRuleCount": 1
             },
             {
-              "name": "City of Tempe Water Services",
+              "name": "City of Mesa Utilities",
+              "slug": "mesa-utilities",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.mesaaz.gov/Government/Management-Budget/Valley-Cities-Affordability-and-Homeowners-Comparisons",
+              "officialStatus": "resolved",
+              "sourceConfidence": "high",
+              "note": "Valley Cities Affordability and Homeowner's Comparisons - City of Mesa",
+              "website": "https://www.mesaaz.gov/Utilities",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "City of Phoenix Water Services",
+              "slug": "phoenix-water",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "manual_research",
+              "officialUrl": "https://www.phoenix.gov/administration/departments/cityclerk/programs-services/annexations/phoenix-boundary-maps.html",
+              "officialStatus": "resolved",
+              "sourceConfidence": "high",
+              "note": "Phoenix Boundary Maps | City of Phoenix",
+              "website": "https://www.phoenix.gov/residents/water-sewer.html",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "City of Scottsdale Utilities",
+              "slug": "scottsdale-water",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.scottsdaleaz.gov/utilities/establish-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Scottsdale utilities require address confirmation before establishing water or related municipal utility service.",
+              "website": "https://www.scottsdaleaz.gov/utilities/establish-service",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "City of Tempe Customer Services",
               "slug": "tempe-water-services",
               "category": "UTILITY_WATER",
               "source": "catalog_added",
               "currentModel": "zip_prefix",
-              "nextWave": "none",
-              "officialUrl": "https://www.tempe.gov",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.tempe.gov/i-want-to/start-stop-water-service",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
-              "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
-              "website": "https://www.tempe.gov",
+              "note": "Tempe customer services cover water, sewer, and solid waste start, transfer, and stop workflows; service should be confirmed by address.",
+              "website": "https://www.tempe.gov/i-want-to/start-stop-water-service",
               "zipRuleCount": 1
+            },
+            {
+              "name": "EPCOR Water Arizona",
+              "slug": "epcor-water-az",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.epcor.com/us/en/az/account/start-service.html",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.epcor.com/us/en/az/account/start-service.html",
+              "zipRuleCount": 12
             },
             {
               "name": "Glendale Water Services",
@@ -938,46 +1092,18 @@
               "zipRuleCount": 1
             },
             {
-              "name": "Mesa Utilities",
-              "slug": "mesa-utilities",
+              "name": "Liberty Utilities Arizona Water and Wastewater",
+              "slug": "liberty-utilities-az-water",
               "category": "UTILITY_WATER",
               "source": "existing_seed",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.mesaaz.gov/Government/Management-Budget/Valley-Cities-Affordability-and-Homeowners-Comparisons",
-              "officialStatus": "resolved",
-              "sourceConfidence": "high",
-              "note": "Valley Cities Affordability and Homeowner's Comparisons - City of Mesa",
-              "website": "https://www.mesaaz.gov/utilities",
-              "zipRuleCount": 1
-            },
-            {
-              "name": "Phoenix Water Services",
-              "slug": "phoenix-water",
-              "category": "UTILITY_WATER",
-              "source": "existing_seed",
-              "currentModel": "zip_prefix",
-              "nextWave": "manual_research",
-              "officialUrl": "https://www.phoenix.gov/administration/departments/cityclerk/programs-services/annexations/phoenix-boundary-maps.html",
-              "officialStatus": "resolved",
-              "sourceConfidence": "high",
-              "note": "Phoenix Boundary Maps | City of Phoenix",
-              "website": "https://www.phoenix.gov/waterservices",
-              "zipRuleCount": 1
-            },
-            {
-              "name": "Scottsdale Water",
-              "slug": "scottsdale-water",
-              "category": "UTILITY_WATER",
-              "source": "catalog_added",
-              "currentModel": "zip_prefix",
-              "nextWave": "none",
-              "officialUrl": "https://www.scottsdaleaz.gov/water",
+              "officialUrl": "https://arizona.libertyutilities.com/rio-rico/commercial/new-services/water-service-transfer.html",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
-              "note": "Batch 2A water/sewer utility customer account provider; ZIP-prefix scoped and address confirmation required before acting.",
-              "website": "https://www.scottsdaleaz.gov/water",
-              "zipRuleCount": 1
+              "note": null,
+              "website": "https://arizona.libertyutilities.com/rio-rico/commercial/new-services/water-service-transfer.html",
+              "zipRuleCount": 12
             },
             {
               "name": "Town of Gilbert Water",
@@ -1004,7 +1130,7 @@
               "officialStatus": "partial",
               "sourceConfidence": "medium",
               "note": "Maps & Records Downloads City of Tucson",
-              "website": "https://www.tucsonaz.gov/water",
+              "website": "https://www.tucsonaz.gov/Departments/Water",
               "zipRuleCount": 2
             }
           ]
@@ -6193,7 +6319,7 @@
               "sourceConfidence": "low",
               "note": "Homepage fetch failed (403)",
               "website": "https://www.piedmontng.com/home/start-stop-or-move",
-              "zipRuleCount": 14
+              "zipRuleCount": 17
             }
           ]
         },
@@ -7301,11 +7427,11 @@
     {
       "state": "NV",
       "totals": {
-        "totalProviders": 8,
-        "existingSeed": 7,
+        "totalProviders": 20,
+        "existingSeed": 19,
         "catalogAdded": 1,
         "catalogBacklog": 0,
-        "zipModeled": 4,
+        "zipModeled": 16,
         "stateOnly": 4,
         "promoteZip": 0,
         "liveAddress": 2,
@@ -7318,6 +7444,48 @@
           "label": "Electric",
           "providers": [
             {
+              "name": "Boulder City Utilities",
+              "slug": "boulder-city-utilities",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://bcnv.org/321/Utilities---Billing",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://bcnv.org/321/Utilities---Billing",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Lincoln County Power District No. 1",
+              "slug": "lincoln-county-power-district",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.lcpd1.com/form/start-or-stop-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.lcpd1.com/form/start-or-stop-service",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Mt. Wheeler Power",
+              "slug": "mt-wheeler-power",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.mwpower.net/new-service-upgrade-request",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.mwpower.net/new-service-upgrade-request",
+              "zipRuleCount": 2
+            },
+            {
               "name": "NV Energy",
               "slug": "nv-energy",
               "category": "UTILITY_ELECTRIC",
@@ -7328,8 +7496,50 @@
               "officialStatus": "partial",
               "sourceConfidence": "medium",
               "note": "NV Energy",
-              "website": "https://www.nvenergy.com",
-              "zipRuleCount": 8
+              "website": "https://www.nvenergy.com/my-account/ss-landing",
+              "zipRuleCount": 9
+            },
+            {
+              "name": "Overton Power District No. 5",
+              "slug": "overton-power-district",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://opd5.com/customer-information/application-for-new-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://opd5.com/customer-information/application-for-new-service/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Valley Electric Association",
+              "slug": "valley-electric-association",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.vea.coop/member-services/start-stop/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.vea.coop/member-services/start-stop/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Wells Rural Electric Company",
+              "slug": "wells-rural-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.wrec.coop/member-services/start-stop-transfer-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.wrec.coop/member-services/start-stop-transfer-service/",
+              "zipRuleCount": 1
             }
           ]
         },
@@ -7348,7 +7558,7 @@
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "Natural Gas Pipeline Safety",
-              "website": "https://www.swgas.com",
+              "website": "https://www.swgas.com/en/residential",
               "zipRuleCount": 12
             }
           ]
@@ -7358,7 +7568,63 @@
           "label": "Water",
           "providers": [
             {
-              "name": "Las Vegas Valley Water",
+              "name": "Carson City Utility Billing",
+              "slug": "carson-city-utility-billing",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.carson.org/business/water-and-sewer-services",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.carson.org/business/water-and-sewer-services",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "City of Henderson Utility Services",
+              "slug": "henderson-utility-services",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.cityofhenderson.com/government/departments/utility-services/businesses/start-stop-and-transfer-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.cityofhenderson.com/government/departments/utility-services/businesses/start-stop-and-transfer-service",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "City of North Las Vegas Utilities Department",
+              "slug": "north-las-vegas-utilities",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://payutil.cityofnorthlasvegas.com/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://payutil.cityofnorthlasvegas.com/",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "Great Basin Water",
+              "slug": "great-basin-water",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.myutility.us/greatbasinwater",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.myutility.us/greatbasinwater",
+              "zipRuleCount": 9
+            },
+            {
+              "name": "Las Vegas Valley Water District",
               "slug": "lvvwd",
               "category": "UTILITY_WATER",
               "source": "existing_seed",
@@ -7368,8 +7634,36 @@
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "Other Service Areas",
-              "website": "https://www.lvvwd.com",
+              "website": "https://www.lvvwd.com/customer-service/water-service/start-stop-service.html",
+              "zipRuleCount": 3
+            },
+            {
+              "name": "Truckee Meadows Water Authority",
+              "slug": "tmwa",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://tmwa.com/start-stop-or-transfer-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://tmwa.com/start-stop-or-transfer-service/",
               "zipRuleCount": 2
+            },
+            {
+              "name": "Virgin Valley Water District",
+              "slug": "virgin-valley-water-district",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://vvwdnv.com/sign-up-for-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://vvwdnv.com/sign-up-for-service",
+              "zipRuleCount": 1
             }
           ]
         },
@@ -8083,7 +8377,7 @@
               "officialStatus": "partial",
               "sourceConfidence": "medium",
               "note": "OG&E - Home",
-              "website": "https://www.oge.com",
+              "website": "https://www.oge.com/web/portal/label_ord/residential/startstoptransfer/overview",
               "zipRuleCount": 0
             },
             {
@@ -8215,16 +8509,16 @@
     {
       "state": "OR",
       "totals": {
-        "totalProviders": 9,
+        "totalProviders": 26,
         "existingSeed": 7,
-        "catalogAdded": 2,
+        "catalogAdded": 19,
         "catalogBacklog": 0,
-        "zipModeled": 4,
-        "stateOnly": 5,
-        "promoteZip": 2,
-        "liveAddress": 1,
-        "polygon": 1,
-        "manualResearch": 4
+        "zipModeled": 24,
+        "stateOnly": 2,
+        "promoteZip": 0,
+        "liveAddress": 18,
+        "polygon": 2,
+        "manualResearch": 3
       },
       "categories": [
         {
@@ -8246,32 +8540,158 @@
               "zipRuleCount": 9
             },
             {
+              "name": "Central Lincoln People's Utility District",
+              "slug": "central-lincoln-pud",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://clpud.org/customer-information/start-or-stop-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Central Lincoln PUD serves coastal Oregon communities; ZIPs are broad coastal prefilters and service should be confirmed by address.",
+              "website": "https://clpud.org/customer-information/start-or-stop-service/",
+              "zipRuleCount": 3
+            },
+            {
+              "name": "Consumers Power Inc.",
+              "slug": "consumers-power-or",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://cpi.coop/service/stop-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Consumers Power Inc. serves selected Oregon addresses in multiple operating zones; address confirmation is required.",
+              "website": "https://cpi.coop/service/stop-service",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "Eugene Water & Electric Board",
+              "slug": "eweb",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.eweb.org/start-stop",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "EWEB is Eugene's electric and water utility; service should be confirmed by address, especially near Lane Electric boundaries.",
+              "website": "https://www.eweb.org/start-stop",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Idaho Power Oregon Service Area",
+              "slug": "idaho-power-or",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.idahopower.com/accounts-service/start-stop-transfer/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Idaho Power has an eastern Oregon service area; keep it distinct from Oregon Trail Electric until any service-area transfer is completed operationally.",
+              "website": "https://www.idahopower.com/accounts-service/start-stop-transfer/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Lane Electric Cooperative",
+              "slug": "lane-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.laneelectric.com/member-services/new-member-guide/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Lane Electric serves rural Lane County and surrounding areas; service should be confirmed by address near EWEB and Springfield Utility Board boundaries.",
+              "website": "https://www.laneelectric.com/member-services/new-member-guide/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Oregon Trail Electric Cooperative",
+              "slug": "oregon-trail-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.otec.coop/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "OTEC is an eastern Oregon electric cooperative; keep distinct from Idaho Power while the Oregon service-area transfer remains an operational change to monitor.",
+              "website": "https://www.otec.coop/",
+              "zipRuleCount": 2
+            },
+            {
               "name": "Pacific Power",
               "slug": "pacific-power-or",
               "category": "UTILITY_ELECTRIC",
               "source": "catalog_added",
-              "currentModel": "state",
-              "nextWave": "manual_research",
-              "officialUrl": "https://www.pacificpower.net/about.html",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.pacificpower.net/my-account/start-stop-move.html",
               "officialStatus": "partial",
               "sourceConfidence": "medium",
-              "note": "Pacific Power is a major Oregon utility missing from seed.",
-              "website": "https://www.pacificpower.net",
-              "zipRuleCount": 0
+              "note": "Pacific Power serves many Oregon communities outside the Portland General Electric footprint; ZIP prefixes are broad prefilters and service should be confirmed by address.",
+              "website": "https://www.pacificpower.net/my-account/start-stop-move.html",
+              "zipRuleCount": 7
             },
             {
               "name": "Portland General Electric",
               "slug": "pge-or",
               "category": "UTILITY_ELECTRIC",
               "source": "existing_seed",
-              "currentModel": "state",
-              "nextWave": "promote_zip",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
               "officialUrl": "https://portlandgeneral.com/about/info/service-area",
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "PGE Service Area | PGE",
-              "website": "https://www.portlandgeneral.com",
-              "zipRuleCount": 0
+              "website": "https://portlandgeneral.com/start-stop-move",
+              "zipRuleCount": 4
+            },
+            {
+              "name": "Springfield Utility Board",
+              "slug": "springfield-utility-board",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.subutil.com/customer-service/start-stop-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Springfield Utility Board provides municipal electric and water service in Springfield; exact service is address-specific.",
+              "website": "https://www.subutil.com/customer-service/start-stop-service/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Tillamook People's Utility District",
+              "slug": "tillamook-pud",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.tpud.org/customer-service/start-or-stop-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Tillamook PUD service is local and address-specific across Tillamook County and nearby areas.",
+              "website": "https://www.tpud.org/customer-service/start-or-stop-service/",
+              "zipRuleCount": 3
+            },
+            {
+              "name": "Umatilla Electric Cooperative",
+              "slug": "umatilla-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.umatillaelectric.com/member-services/start-stop-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Umatilla Electric Cooperative serves selected northeastern Oregon addresses; ZIPs are prefilters.",
+              "website": "https://www.umatillaelectric.com/member-services/start-stop-service/",
+              "zipRuleCount": 2
             }
           ]
         },
@@ -8279,6 +8699,20 @@
           "category": "UTILITY_GAS",
           "label": "Gas",
           "providers": [
+            {
+              "name": "Avista Utilities Oregon Gas",
+              "slug": "avista-utilities-or-gas",
+              "category": "UTILITY_GAS",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.myavista.com/your-account/moving",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Avista's Oregon utility service is address-qualified and should remain distinct from Cascade Natural Gas and NW Natural.",
+              "website": "https://www.myavista.com/your-account/moving",
+              "zipRuleCount": 2
+            },
             {
               "name": "Cascade Natural Gas",
               "slug": "cascade-wa-gas",
@@ -8314,18 +8748,102 @@
           "label": "Water",
           "providers": [
             {
-              "name": "Portland Water Bureau",
+              "name": "City of Bend Water Services",
+              "slug": "city-of-bend-water",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://bendoregon.gov/service/water-sewer-start-or-stop-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Bend water and sewer service is municipal and address-specific.",
+              "website": "https://bendoregon.gov/service/water-sewer-start-or-stop-service/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "City of Gresham Utility Services",
+              "slug": "gresham-utility-services",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.greshamoregon.gov/services/utilities/stop-or-start-utility-services/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Gresham utility services cover municipal water, wastewater/sewer, and stormwater for eligible addresses.",
+              "website": "https://www.greshamoregon.gov/services/utilities/stop-or-start-utility-services/",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "City of Hillsboro Utility Billing",
+              "slug": "hillsboro-utility-billing",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.hillsboro-oregon.gov/services/utility-billing/start-or-stop-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Hillsboro utility billing is municipal and should be confirmed by service address.",
+              "website": "https://www.hillsboro-oregon.gov/services/utility-billing/start-or-stop-service",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "City of Portland Water Bureau",
               "slug": "portland-water-or",
               "category": "UTILITY_WATER",
               "source": "existing_seed",
-              "currentModel": "state",
-              "nextWave": "promote_zip",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
               "officialUrl": "https://www.portland.gov/service-areas/public-works",
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "Public Works | Portland.gov",
-              "website": "https://www.portland.gov/water",
-              "zipRuleCount": 0
+              "website": "https://www.portland.gov/water/customer-service/pay-your-utility-bill/start-stop-or-transfer-service",
+              "zipRuleCount": 3
+            },
+            {
+              "name": "City of Salem Utility Service",
+              "slug": "city-of-salem-utilities",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.cityofsalem.net/community/household/water-utilities/utility-payments-and-your-utility-account/manage-your-city-of-salem-utility-service-account",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "City of Salem utility account setup is municipal and should be confirmed by service address.",
+              "website": "https://www.cityofsalem.net/community/household/water-utilities/utility-payments-and-your-utility-account/manage-your-city-of-salem-utility-service-account",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Medford Water",
+              "slug": "medford-water",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.medfordwater.org/services/customer-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "Medford Water service is regional and should be confirmed by service address.",
+              "website": "https://www.medfordwater.org/services/customer-service/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Tualatin Valley Water District",
+              "slug": "tualatin-valley-water",
+              "category": "UTILITY_WATER",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "live_address",
+              "officialUrl": "https://www.tvwd.org/district/page/startstop-service-interim-billing",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "TVWD is a Washington County-area water district; address confirmation is required near Beaverton and other providers.",
+              "website": "https://www.tvwd.org/district/page/startstop-service-interim-billing",
+              "zipRuleCount": 2
             }
           ]
         },
@@ -8380,6 +8898,26 @@
               "note": "Plan and track your trip on TriMet",
               "website": "https://www.trimet.org",
               "zipRuleCount": 5
+            }
+          ]
+        },
+        {
+          "category": "TRANSPORTATION_TOLL",
+          "label": "Toll",
+          "providers": [
+            {
+              "name": "BreezeBy Electronic Tolling",
+              "slug": "breezeby-electronic-tolling",
+              "category": "TRANSPORTATION_TOLL",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "polygon",
+              "officialUrl": "https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "BreezeBy is the Columbia River bridge toll account surface for Hood River-White Salmon Bridge and Bridge of the Gods corridor users.",
+              "website": "https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling",
+              "zipRuleCount": 2
             }
           ]
         }
@@ -8880,13 +9418,13 @@
     {
       "state": "SC",
       "totals": {
-        "totalProviders": 5,
-        "existingSeed": 4,
+        "totalProviders": 25,
+        "existingSeed": 24,
         "catalogAdded": 1,
         "catalogBacklog": 0,
-        "zipModeled": 4,
-        "stateOnly": 1,
-        "promoteZip": 1,
+        "zipModeled": 25,
+        "stateOnly": 0,
+        "promoteZip": 0,
         "liveAddress": 0,
         "polygon": 0,
         "manualResearch": 3
@@ -8897,18 +9435,158 @@
           "label": "Electric",
           "providers": [
             {
+              "name": "Berkeley Electric Cooperative",
+              "slug": "berkeley-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.berkeleyelectric.coop/service-territory",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.berkeleyelectric.coop/service-territory",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Blue Ridge Electric Cooperative",
+              "slug": "blue-ridge-electric-sc",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://blueridge.coop/start-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://blueridge.coop/start-service",
+              "zipRuleCount": 1
+            },
+            {
               "name": "Dominion Energy South Carolina",
               "slug": "dominion-energy-sc",
               "category": "UTILITY_ELECTRIC",
               "source": "existing_seed",
               "currentModel": "zip_prefix",
               "nextWave": "none",
-              "officialUrl": "https://www.dominionenergy.com/south-carolina/start-stop-service",
+              "officialUrl": "https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service",
               "officialStatus": "catalog_only",
               "sourceConfidence": "catalog",
               "note": null,
-              "website": "https://www.dominionenergy.com/south-carolina/start-stop-service",
+              "website": "https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service",
               "zipRuleCount": 10
+            },
+            {
+              "name": "Duke Energy South Carolina",
+              "slug": "duke-energy-sc",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.duke-energy.com/start-stop-move/landing",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.duke-energy.com/start-stop-move/landing",
+              "zipRuleCount": 5
+            },
+            {
+              "name": "Horry Electric Cooperative",
+              "slug": "horry-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://horryelectric.com/services/electric-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://horryelectric.com/services/electric-service/",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Laurens Electric Cooperative",
+              "slug": "laurens-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://laurenselectric.com/my-account/start-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://laurenselectric.com/my-account/start-service/",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "Mid-Carolina Electric Cooperative",
+              "slug": "mid-carolina-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.mcecoop.com/my-account/start-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.mcecoop.com/my-account/start-service/",
+              "zipRuleCount": 3
+            },
+            {
+              "name": "Palmetto Electric Cooperative",
+              "slug": "palmetto-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://palmetto.coop/startstop-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://palmetto.coop/startstop-service",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Santee Cooper",
+              "slug": "santee-cooper",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.santeecooper.com/residential/start-move-stop-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.santeecooper.com/residential/start-move-stop-service/",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "Santee Electric Cooperative",
+              "slug": "santee-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://santee.org/service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://santee.org/service",
+              "zipRuleCount": 3
+            },
+            {
+              "name": "York Electric Cooperative",
+              "slug": "york-electric",
+              "category": "UTILITY_ELECTRIC",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.yorkelectric.net/my-service/residential-accounts/start-residential-electric-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.yorkelectric.net/my-service/residential-accounts/start-residential-electric-service/",
+              "zipRuleCount": 1
             }
           ]
         },
@@ -8921,14 +9599,42 @@
               "slug": "dominion-sc-gas",
               "category": "UTILITY_GAS",
               "source": "existing_seed",
-              "currentModel": "state",
-              "nextWave": "promote_zip",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
               "officialUrl": "https://www.dominionenergy.com/south-carolina/save-energy/electric-vehicles/infrastructure-availability-map",
               "officialStatus": "resolved",
               "sourceConfidence": "high",
               "note": "Infrastructure Availability Map | South Carolina | Dominion Energy",
-              "website": "https://www.dominionenergy.com/south-carolina",
-              "zipRuleCount": 0
+              "website": "https://www.dominionenergy.com/en/South-Carolina/Start-Stop-Service/Check-Availability",
+              "zipRuleCount": 10
+            },
+            {
+              "name": "Fort Hill Natural Gas Authority",
+              "slug": "fort-hill-natural-gas",
+              "category": "UTILITY_GAS",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.fhnga.com/customer-support/start-stop-transfer.stml",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.fhnga.com/customer-support/start-stop-transfer.stml",
+              "zipRuleCount": 2
+            },
+            {
+              "name": "Lancaster County Natural Gas Authority",
+              "slug": "lancaster-county-natural-gas",
+              "category": "UTILITY_GAS",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://lcngasc.com/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://lcngasc.com/",
+              "zipRuleCount": 1
             },
             {
               "name": "Piedmont Natural Gas",
@@ -8942,7 +9648,21 @@
               "sourceConfidence": "low",
               "note": "Homepage fetch failed (403)",
               "website": "https://www.piedmontng.com/home/start-stop-or-move",
-              "zipRuleCount": 14
+              "zipRuleCount": 17
+            },
+            {
+              "name": "York County Natural Gas Authority",
+              "slug": "york-county-natural-gas",
+              "category": "UTILITY_GAS",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://ycnga.com/start-stop-change-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://ycnga.com/start-stop-change-service/",
+              "zipRuleCount": 1
             }
           ]
         },
@@ -8950,6 +9670,20 @@
           "category": "UTILITY_WATER",
           "label": "Water",
           "providers": [
+            {
+              "name": "Beaufort-Jasper Water & Sewer Authority",
+              "slug": "beaufort-jasper-water",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.bjwsa.org/167/StartStop-Services",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.bjwsa.org/167/StartStop-Services",
+              "zipRuleCount": 1
+            },
             {
               "name": "Charleston Water System",
               "slug": "charleston-water-sc",
@@ -8961,8 +9695,78 @@
               "officialStatus": "partial",
               "sourceConfidence": "medium",
               "note": "Experience",
-              "website": "https://www.charlestonwater.com",
-              "zipRuleCount": 2
+              "website": "https://www.charlestonwater.com/180/Open-or-Close-an-Account",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Columbia Water",
+              "slug": "columbia-water-sc",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://columbiascwater.net/new-transfer-service/",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://columbiascwater.net/new-transfer-service/",
+              "zipRuleCount": 3
+            },
+            {
+              "name": "Grand Strand Water & Sewer Authority",
+              "slug": "grand-strand-water",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.gswsa.com/customer-service.cfm?page=44",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.gswsa.com/customer-service.cfm?page=44",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Greenville Water",
+              "slug": "greenville-water",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.greenvillewater.com/customer-service/start-stop-move",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.greenvillewater.com/customer-service/start-stop-move",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Mount Pleasant Waterworks",
+              "slug": "mount-pleasant-waterworks",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.mountpleasantwaterworks.com/customers/service___account_requests/start_or_stop_service.php",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.mountpleasantwaterworks.com/customers/service___account_requests/start_or_stop_service.php",
+              "zipRuleCount": 1
+            },
+            {
+              "name": "Spartanburg Water",
+              "slug": "spartanburg-water",
+              "category": "UTILITY_WATER",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://www.spartanburgwater.org/manage-water-service",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://www.spartanburgwater.org/manage-water-service",
+              "zipRuleCount": 1
             }
           ]
         },
@@ -8982,6 +9786,26 @@
               "sourceConfidence": "low",
               "note": "Charleston Area Regional Transportation Authority adds a South Carolina transit option beyond utility-only coverage.",
               "website": "https://www.ridecarta.com",
+              "zipRuleCount": 1
+            }
+          ]
+        },
+        {
+          "category": "TRANSPORTATION_TOLL",
+          "label": "Toll",
+          "providers": [
+            {
+              "name": "Southern Connector / Palmetto Pass",
+              "slug": "palmetto-pass",
+              "category": "TRANSPORTATION_TOLL",
+              "source": "existing_seed",
+              "currentModel": "zip_prefix",
+              "nextWave": "none",
+              "officialUrl": "https://southernconnector.com/index.html",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": null,
+              "website": "https://southernconnector.com/index.html",
               "zipRuleCount": 1
             }
           ]
@@ -10397,15 +11221,15 @@
     {
       "state": "WA",
       "totals": {
-        "totalProviders": 21,
+        "totalProviders": 22,
         "existingSeed": 8,
-        "catalogAdded": 13,
+        "catalogAdded": 14,
         "catalogBacklog": 0,
-        "zipModeled": 19,
+        "zipModeled": 20,
         "stateOnly": 2,
         "promoteZip": 0,
         "liveAddress": 1,
-        "polygon": 1,
+        "polygon": 2,
         "manualResearch": 5
       },
       "categories": [
@@ -10723,6 +11547,20 @@
           "category": "TRANSPORTATION_TOLL",
           "label": "Toll",
           "providers": [
+            {
+              "name": "BreezeBy Electronic Tolling",
+              "slug": "breezeby-electronic-tolling",
+              "category": "TRANSPORTATION_TOLL",
+              "source": "catalog_added",
+              "currentModel": "zip_prefix",
+              "nextWave": "polygon",
+              "officialUrl": "https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling",
+              "officialStatus": "catalog_only",
+              "sourceConfidence": "catalog",
+              "note": "BreezeBy is the Columbia River bridge toll account surface for Hood River-White Salmon Bridge and Bridge of the Gods corridor users.",
+              "website": "https://www.portofhoodriver.com/about-breezeby-electronic-bridge-tolling",
+              "zipRuleCount": 2
+            },
             {
               "name": "Good To Go!",
               "slug": "good-to-go",
