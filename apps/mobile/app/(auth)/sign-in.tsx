@@ -11,17 +11,18 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { registerForPushNotifications } from "@/lib/push";
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
-
-interface OAuthProviderStatus {
-  configured: boolean;
-  label: string;
-  message: string;
-}
+import {
+  canAttemptAppleOAuth,
+  canAttemptGoogleOAuth,
+  isOAuthProviderExplicitlyUnavailable,
+  shouldShowOAuthReadinessNote,
+  type OAuthProviderStatusMap,
+} from "@/lib/oauth-provider-status";
 
 export default function SignInScreen() {
 
@@ -41,13 +42,30 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState("");
-  const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+  const [oauthProviders, setOauthProviders] = useState<OAuthProviderStatusMap | null>(null);
   const [nativeAppleAvailable, setNativeAppleAvailable] = useState(false);
 
   useEffect(() => {
-    api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
-      .then((res) => setOauthProviders(res.data?.providers || null))
-      .catch(() => setOauthProviders(null));
+    api.get<{ providers?: OAuthProviderStatusMap }>("/api/auth/oauth/providers")
+      .then((res) => {
+        if (__DEV__) {
+          console.info("[OAuthProviders] sign-in", {
+            apiUrl: API_URL,
+            error: res.error,
+            providers: res.data?.providers ?? null,
+          });
+        }
+        setOauthProviders(res.data?.providers || null);
+      })
+      .catch((err) => {
+        if (__DEV__) {
+          console.warn("[OAuthProviders] sign-in fetch failed", {
+            apiUrl: API_URL,
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+        setOauthProviders(null);
+      });
   }, []);
 
   useEffect(() => {
@@ -61,10 +79,10 @@ export default function SignInScreen() {
     };
   }, []);
 
-  const googleReady = oauthProviders?.google?.configured === true;
-  const appleReady = oauthProviders?.apple?.configured === true;
-  const showOAuthReadinessNote =
-    Boolean(oauthProviders) && (!googleReady || !appleReady);
+  const googleReady = canAttemptGoogleOAuth(oauthProviders);
+  const appleReady = canAttemptAppleOAuth(oauthProviders);
+  const googleUnavailable = isOAuthProviderExplicitlyUnavailable(oauthProviders, "google");
+  const showOAuthReadinessNote = shouldShowOAuthReadinessNote(oauthProviders);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -165,7 +183,7 @@ export default function SignInScreen() {
         {!requiresMfa && (
           <>
             <Button
-              title={googleReady ? t("auth.continueWithGoogle") : t("auth.googleUnavailable")}
+              title={googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
               variant="outline"
               onPress={() => openOAuth("google")}
               disabled={!googleReady || Boolean(oauthLoading)}

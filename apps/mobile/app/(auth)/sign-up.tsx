@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { LegalConsentPanel } from "@/components/legal/LegalConsentPanel";
 import {
@@ -22,12 +22,13 @@ import {
 } from "@/lib/legal";
 import { startMobileOAuthSession, type OAuthProvider } from "@/lib/mobile-oauth";
 import { isNativeAppleSignInAvailable, signInWithAppleNative } from "@/lib/apple-auth";
-
-interface OAuthProviderStatus {
-  configured: boolean;
-  label: string;
-  message: string;
-}
+import {
+  canAttemptAppleOAuth,
+  canAttemptGoogleOAuth,
+  isOAuthProviderExplicitlyUnavailable,
+  shouldShowOAuthReadinessNote,
+  type OAuthProviderStatusMap,
+} from "@/lib/oauth-provider-status";
 
 export default function SignUpScreen() {
 
@@ -48,14 +49,31 @@ export default function SignUpScreen() {
   const [oauthLoading, setOauthLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
-  const [oauthProviders, setOauthProviders] = useState<Record<string, OAuthProviderStatus> | null>(null);
+  const [oauthProviders, setOauthProviders] = useState<OAuthProviderStatusMap | null>(null);
   const [legalConsents, setLegalConsents] = useState(() => getDefaultLegalConsents());
   const [nativeAppleAvailable, setNativeAppleAvailable] = useState(false);
 
   useEffect(() => {
-    api.get<{ providers?: Record<string, OAuthProviderStatus> }>("/api/auth/oauth/providers")
-      .then((res) => setOauthProviders(res.data?.providers || null))
-      .catch(() => setOauthProviders(null));
+    api.get<{ providers?: OAuthProviderStatusMap }>("/api/auth/oauth/providers")
+      .then((res) => {
+        if (__DEV__) {
+          console.info("[OAuthProviders] sign-up", {
+            apiUrl: API_URL,
+            error: res.error,
+            providers: res.data?.providers ?? null,
+          });
+        }
+        setOauthProviders(res.data?.providers || null);
+      })
+      .catch((err) => {
+        if (__DEV__) {
+          console.warn("[OAuthProviders] sign-up fetch failed", {
+            apiUrl: API_URL,
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+        setOauthProviders(null);
+      });
   }, []);
 
   useEffect(() => {
@@ -69,11 +87,11 @@ export default function SignUpScreen() {
     };
   }, []);
 
-  const googleReady = oauthProviders?.google?.configured === true;
-  const appleReady = oauthProviders?.apple?.configured === true;
+  const googleReady = canAttemptGoogleOAuth(oauthProviders);
+  const appleReady = canAttemptAppleOAuth(oauthProviders);
+  const googleUnavailable = isOAuthProviderExplicitlyUnavailable(oauthProviders, "google");
   const legalAccepted = hasRequiredLegalConsents(legalConsents);
-  const showOAuthReadinessNote =
-    Boolean(oauthProviders) && (!googleReady || !appleReady);
+  const showOAuthReadinessNote = shouldShowOAuthReadinessNote(oauthProviders);
 
   const handleSubmit = async () => {
     if (!legalAccepted) {
@@ -187,7 +205,7 @@ export default function SignUpScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Button
-          title={googleReady ? t("auth.continueWithGoogle") : t("auth.googleUnavailable")}
+          title={googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
           variant="outline"
           onPress={() => openOAuth("google")}
           disabled={!googleReady || Boolean(oauthLoading)}

@@ -6,6 +6,10 @@ describe("mobile release profiles", () => {
     expect(eas.build.production.env.EXPO_PUBLIC_API_URL).toBe("https://locateflow.com/api");
     expect(eas.build.production.env.EXPO_PUBLIC_ENV).toBe("production");
 
+    expect(eas.build["play-internal"].extends).toBe("production");
+    expect(eas.build["play-internal"].distribution).toBe("store");
+    expect(eas.build["play-internal"].android.buildType).toBe("app-bundle");
+
     expect(eas.build["staging-preview"].env.EXPO_PUBLIC_API_URL).toBe("https://locateflow.com/api");
     expect(eas.build["staging-preview"].env.EXPO_PUBLIC_ENV).toBe("preview");
     expect(eas.build["staging-preview"].env.EXPO_PUBLIC_MOBILE_STORE_PURCHASES_ENABLED).toBe("false");
