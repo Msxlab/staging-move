@@ -95,6 +95,7 @@ APPLE_OAUTH_CLIENT_ID=<services id>
 APPLE_OAUTH_TEAM_ID=<team id>
 APPLE_OAUTH_KEY_ID=<key id>
 APPLE_OAUTH_PRIVATE_KEY=<p8 contents>
+APPLE_TEAM_ID=<team id for AASA/universal links>
 STRIPE_SECRET_KEY=<for web checkout/portal>
 STRIPE_WEBHOOK_SECRET=<for Stripe webhook>
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<publishable key>
@@ -107,6 +108,7 @@ APPLE_APP_STORE_ISSUER_ID=<IAP>
 APPLE_APP_STORE_KEY_ID=<IAP>
 APPLE_APP_STORE_PRIVATE_KEY=<IAP>
 APPLE_APP_STORE_ENVIRONMENT=Sandbox
+APPLE_BUNDLE_ID=com.locateflow.mobile
 MOBILE_IOS_PRODUCT_INDIVIDUAL=com.locateflow.individual.monthly
 GOOGLE_PLAY_PACKAGE_NAME=com.locateflow.mobile
 GOOGLE_PLAY_SERVICE_ACCOUNT_EMAIL=<Play API service account>
@@ -167,6 +169,17 @@ Prerequisites:
 - `EAS_TOKEN` or interactive `eas login`.
 - Android: Java, Android SDK, `ANDROID_HOME` or `ANDROID_SDK_ROOT`, signing credentials or EAS-managed credentials.
 - iOS: Apple Developer account, bundle identifier access, certificates/profiles, or EAS-managed signing.
+- iOS App Store Connect app record uses bundle ID `com.locateflow.mobile`.
+- On Windows, if EAS/Expo API calls fail with `unable to verify the first certificate`, run `$env:NODE_OPTIONS='--use-system-ca'` in the same PowerShell session.
+
+iOS development client for a physical iPhone:
+
+```bash
+cd apps/mobile
+eas device:create
+eas build --platform ios --profile development
+pnpm dev:client
+```
 
 Android internal APK:
 
@@ -187,6 +200,21 @@ iOS TestFlight/App Store build:
 ```bash
 cd apps/mobile
 eas build --platform ios --profile production --non-interactive
+```
+
+iOS TestFlight guided flow, useful for the first interactive Apple credential
+setup:
+
+```bash
+cd apps/mobile
+npx testflight
+```
+
+iOS TestFlight explicit EAS build and auto-submit:
+
+```bash
+cd apps/mobile
+eas build --platform ios --profile production --auto-submit --what-to-test "Initial internal TestFlight build"
 ```
 
 ## Device Smoke Checklist

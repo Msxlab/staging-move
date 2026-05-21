@@ -282,7 +282,10 @@ async function buildAppleClientSecret(opts: {
   privateKeyPem: string;
 }): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const privateKey = createPrivateKey({ key: opts.privateKeyPem, format: "pem" });
+  const privateKey = createPrivateKey({
+    key: opts.privateKeyPem.replace(/\\n/g, "\n"),
+    format: "pem",
+  });
 
   return new SignJWT({ })
     .setProtectedHeader({ alg: "ES256", kid: opts.keyId })

@@ -8,12 +8,12 @@ import {
   generateMobileFingerprint,
 } from "@/lib/user-auth";
 import {
-  getAppleOAuthCredentials,
   hashForOAuthLog,
   isAppleEmailVerifiedClaim,
   logSafeOAuthEvent,
   summarizeOAuthError,
 } from "@/lib/oauth";
+import { getRuntimeConfigValue } from "@/lib/runtime-config";
 import { normalizeAcceptedLegalConsents, recordLegalAcceptance } from "@/lib/legal-acceptance";
 import { enforceRateLimitPolicy } from "@/lib/rate-limit-policy";
 import { resolveClientIP } from "@/lib/rate-limit";
@@ -126,8 +126,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { clientId } = await getAppleOAuthCredentials();
-  if (!clientId) {
+  const audience = await getRuntimeConfigValue("APPLE_BUNDLE_ID");
+  if (!audience) {
     return NextResponse.json(
       { error: "Apple sign-in is not configured for this environment." },
       { status: 503 },
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
   try {
     const { payload: verified } = await jwtVerify(parsed.data.identityToken, APPLE_JWKS, {
       issuer: APPLE_ISSUER,
-      audience: clientId,
+      audience,
     });
     payload = verified as typeof payload;
   } catch (err) {
