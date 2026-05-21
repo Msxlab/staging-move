@@ -41,6 +41,17 @@ Run EAS from `apps/mobile` so it uses this app's `app.json`, `eas.json`,
 bundle identifier, package name, and EAS project ID. From the monorepo root,
 use the `pnpm mobile:*` scripts or `pnpm --dir apps/mobile ...`.
 
+The iOS bundle identifier is `com.locateflow.mobile`. Keep App Store Connect,
+Apple capabilities, IAP runtime config, and backend Apple receipt validation on
+that same identifier unless you intentionally migrate all of them together.
+
+On this Windows machine, Expo/EAS API calls may need Node to use the system
+certificate store:
+
+```powershell
+$env:NODE_OPTIONS='--use-system-ca'
+```
+
 ```bash
 # Android APK (for testing)
 eas build -p android --profile staging-preview
@@ -50,6 +61,12 @@ eas build -p android --profile production
 
 # iOS (for App Store)
 eas build -p ios --profile production
+
+# iOS TestFlight guided flow
+npx testflight
+
+# iOS TestFlight via explicit EAS build + submit
+eas build -p ios --profile production --auto-submit --what-to-test "Initial internal TestFlight build"
 
 # Submit to stores
 eas submit -p android

@@ -25,8 +25,8 @@ const PATHS = [
   "/reset-password/*",
 ];
 
-export const dynamic = "force-static";
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export function GET() {
   const teamId =
@@ -57,7 +57,7 @@ export function GET() {
     status: 200,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=3600, s-maxage=3600",
+      "Cache-Control": "no-store",
     },
   });
 }

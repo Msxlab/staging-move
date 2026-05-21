@@ -3,13 +3,8 @@ import { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
   jwtVerify: vi.fn(),
-  getAppleOAuthCredentials: vi.fn(() =>
-    Promise.resolve({
-      clientId: "com.locateflow.mobile",
-      teamId: "TEAM123",
-      keyId: "KEY123",
-      privateKeyPem: "private",
-    }),
+  getRuntimeConfigValue: vi.fn((key: string) =>
+    Promise.resolve(key === "APPLE_BUNDLE_ID" ? "com.locateflow.mobile" : null),
   ),
   isAppleEmailVerifiedClaim: vi.fn(() => true),
   findOrLinkOAuthUserWithStatus: vi.fn(() =>
@@ -59,11 +54,14 @@ vi.mock("@/lib/db", () => ({
 }));
 
 vi.mock("@/lib/oauth", () => ({
-  getAppleOAuthCredentials: () => (mocks.getAppleOAuthCredentials as any)(),
   isAppleEmailVerifiedClaim: (v: any) => (mocks.isAppleEmailVerifiedClaim as any)(v),
   hashForOAuthLog: (v: string) => `hash:${v.slice(0, 3)}`,
   logSafeOAuthEvent: vi.fn(),
   summarizeOAuthError: (e: unknown) => ({ message: (e as Error)?.message || "err" }),
+}));
+
+vi.mock("@/lib/runtime-config", () => ({
+  getRuntimeConfigValue: (key: string) => (mocks.getRuntimeConfigValue as any)(key),
 }));
 
 vi.mock("@/lib/legal-acceptance", () => ({
@@ -239,12 +237,7 @@ describe("native Apple Sign-In mobile route", () => {
   });
 
   it("returns 503 when Apple OAuth is not configured", async () => {
-    mocks.getAppleOAuthCredentials.mockResolvedValueOnce({
-      clientId: "",
-      teamId: "",
-      keyId: "",
-      privateKeyPem: "",
-    });
+    mocks.getRuntimeConfigValue.mockResolvedValueOnce(null);
     const response = await POST(request(VALID_BODY));
     expect(response.status).toBe(503);
   });

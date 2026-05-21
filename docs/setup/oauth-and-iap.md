@@ -93,6 +93,13 @@ used for IAP, so you pay once).
    - `APPLE_OAUTH_PRIVATE_KEY` = the full contents of the `.p8` file,
      including the `-----BEGIN PRIVATE KEY-----` / `-----END PRIVATE KEY-----`
      lines. The runtime-config UI encrypts it at rest (AES-256-GCM).
+   - `APPLE_BUNDLE_ID` = `com.locateflow.mobile` for native iOS identity-token
+     audience validation.
+8. In deployment environment variables, also set:
+   - `APPLE_TEAM_ID` = your 10-char team ID. This makes
+     `/.well-known/apple-app-site-association` return the real
+     `<TEAM_ID>.com.locateflow.mobile` app ID for Universal Links and web
+     credentials.
 
 ---
 
