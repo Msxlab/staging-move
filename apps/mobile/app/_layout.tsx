@@ -203,9 +203,15 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     }
     if (!token || !user || needsOnboarding === null) return;
 
-    const needsPasswordSetup = user.hasPasswordLogin === false;
+    // Single source of truth: backend's getPostAuthUserState mirrors this
+    // computation (`oauthAccounts.length > 0 && !passwordHash`) and the API
+    // surfaces it as `needsPasswordSetup`. We intentionally do NOT derive
+    // this from `hasPasswordLogin === false` — that would force legacy
+    // magic-link-only users (no OAuth, no password) into setup too, which
+    // is a different remediation path.
+    const needsPasswordSetup = user.needsPasswordSetup === true;
     if (needsPasswordSetup && !inPasswordSetup) {
-      router.replace("/setup-password" as any);
+      router.replace("/setup-password");
       return;
     }
     if (!needsPasswordSetup && inPasswordSetup) {

@@ -27,11 +27,11 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { hapticError, hapticSuccess, hapticWarning } from "@/lib/haptics";
-import { api } from "@/lib/api";
+import { api, APP_WEB_URL } from "@/lib/api";
 import { setAnalyticsEnabled } from "@/lib/analytics";
 import { useAppLockStore } from "@/lib/app-lock-store";
 
-const PRIVACY_POLICY_URL = "https://locateflow.com/privacy";
+const PRIVACY_POLICY_URL = `${APP_WEB_URL}/privacy`;
 
 interface AccountSecurityState {
   account: {

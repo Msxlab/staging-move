@@ -24,6 +24,14 @@ export interface AuthUser {
   imageUrl: string | null;
   emailVerified: boolean;
   hasPasswordLogin?: boolean;
+  /**
+   * Server-computed: true when the account has at least one OAuth provider
+   * linked but no password yet. Single source of truth for the password-setup
+   * gate — mirrors `getPostAuthUserState` on the web side. Optional for
+   * forward-compat with older API responses; treat undefined as "unknown,
+   * don't gate".
+   */
+  needsPasswordSetup?: boolean;
   mfaEnabled: boolean;
 }
 
@@ -35,6 +43,13 @@ interface AuthState {
   setSession: (token: string, user: AuthUser) => Promise<void>;
   clearSession: () => Promise<void>;
   refreshUser: (apiBaseUrl: string) => Promise<void>;
+  /**
+   * Apply a partial patch to the in-memory user record. Use this after a
+   * client-driven mutation (e.g. setting a password from setup-password)
+   * so the UI does not have to wait for the next /api/auth/me round-trip
+   * and the AuthGuard gate clears immediately without a redirect loop.
+   */
+  patchUser: (patch: Partial<AuthUser>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -59,6 +74,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async clearSession() {
     await tokenCache.clearToken(TOKEN_KEY);
     set({ token: null, user: null, loading: false });
+  },
+
+  patchUser(patch) {
+    const current = get().user;
+    if (!current) return;
+    set({ user: { ...current, ...patch } });
   },
 
   async refreshUser(apiBaseUrl) {

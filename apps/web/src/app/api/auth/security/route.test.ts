@@ -146,7 +146,7 @@ describe("auth security route - request_set_password", () => {
     expect(sendPasswordResetEmailMock).not.toHaveBeenCalled();
     expect(sendSecurityNoticeEmailMock).toHaveBeenCalledWith(expect.objectContaining({
       userEmail: "user@example.com",
-      kind: "password-changed",
+      kind: "password-set",
     }));
   });
 });

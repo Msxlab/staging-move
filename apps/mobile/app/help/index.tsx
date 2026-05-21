@@ -24,7 +24,7 @@ import {
 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
-import { api } from "@/lib/api";
+import { api, APP_WEB_URL } from "@/lib/api";
 import { Card } from "@/components/ui/Card";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { Button } from "@/components/ui/Button";
@@ -167,7 +167,7 @@ export default function HelpScreen() {
     : articles;
 
   const handleContactUs = useCallback(async () => {
-    const supportUrl = "https://locateflow.com/contact";
+    const supportUrl = `${APP_WEB_URL}/contact`;
     const canOpen = await Linking.canOpenURL(supportUrl);
     if (canOpen) {
       await Linking.openURL(supportUrl);

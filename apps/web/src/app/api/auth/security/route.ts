@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
     void sendSecurityNoticeEmail({
       userEmail: user.email,
       userName: user.firstName || "there",
-      kind: "password-changed",
+      kind: "password-set",
       occurredAt: changedAt,
       locale: user.preferredLocale,
       dedupeKey: `pwd-set:${session.userId}:${changedAt.getTime()}`,

@@ -68,6 +68,10 @@ function shapeUser(user: {
   passwordHash: string | null;
   mfaEnabled: boolean;
 }) {
+  const hasPasswordLogin = Boolean(user.passwordHash);
+  // Apple-native flow always links an oauthAccount for this user before we
+  // shape the response, so any user shaped here has at least one OAuth
+  // account by construction.
   return {
     id: user.id,
     email: user.email,
@@ -75,7 +79,8 @@ function shapeUser(user: {
     lastName: user.lastName,
     imageUrl: user.imageUrl,
     emailVerified: Boolean(user.emailVerifiedAt),
-    hasPasswordLogin: Boolean(user.passwordHash),
+    hasPasswordLogin,
+    needsPasswordSetup: !hasPasswordLogin,
     mfaEnabled: user.mfaEnabled,
   };
 }

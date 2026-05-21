@@ -59,12 +59,16 @@ export async function GET(request?: NextRequest) {
       passwordHash: true,
       mfaEnabled: true,
       createdAt: true,
+      oauthAccounts: { select: { id: true }, take: 1 },
     },
   });
   if (!user) {
     await destroyUserSession().catch(() => null);
     return loggedOutResponse(optional);
   }
+
+  const hasPasswordLogin = Boolean(user.passwordHash);
+  const needsPasswordSetup = !hasPasswordLogin && user.oauthAccounts.length > 0;
 
   return NextResponse.json(
     {
@@ -76,7 +80,8 @@ export async function GET(request?: NextRequest) {
         lastName: user.lastName,
         imageUrl: user.imageUrl,
         emailVerified: Boolean(user.emailVerifiedAt),
-        hasPasswordLogin: Boolean(user.passwordHash),
+        hasPasswordLogin,
+        needsPasswordSetup,
         mfaEnabled: user.mfaEnabled,
         createdAt: user.createdAt,
         impersonatedByAdminId: session.impersonatedByAdminId ?? null,

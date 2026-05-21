@@ -4,12 +4,13 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Apple, Mail, Lock, ArrowRight } from "lucide-react-native";
+import { Mail, Lock, ArrowRight } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useAppTheme, type Theme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoBrand } from "@/components/ui/LogoBrand";
+import { AppleLogoMark, GoogleGMark } from "@/components/ui/BrandLogos";
 import { hapticSuccess, hapticError } from "@/lib/haptics";
 import { api, API_URL } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -187,10 +188,10 @@ export default function SignInScreen() {
               disabled={!googleReady || Boolean(oauthLoading)}
               activeOpacity={0.78}
               style={[styles.oauthButton, styles.oauthGoogle, (!googleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+              accessibilityLabel={t("auth.continueWithGoogle")}
+              accessibilityRole="button"
             >
-              <View style={styles.googleMarkWrap}>
-                <Text style={styles.googleMark}>G</Text>
-              </View>
+              <GoogleGMark size={20} />
               <Text style={styles.oauthGoogleText}>
                 {googleUnavailable ? t("auth.googleUnavailable") : t("auth.continueWithGoogle")}
               </Text>
@@ -200,8 +201,10 @@ export default function SignInScreen() {
               disabled={!appleReady || Boolean(oauthLoading)}
               activeOpacity={0.78}
               style={[styles.oauthButton, styles.oauthApple, (!appleReady || Boolean(oauthLoading)) && styles.oauthDisabled]}
+              accessibilityLabel={t("auth.continueWithApple")}
+              accessibilityRole="button"
             >
-              <Apple size={20} color="#fff" />
+              <AppleLogoMark size={18} color="#fff" />
               <Text style={styles.oauthAppleText}>
                 {appleReady ? t("auth.continueWithApple") : t("auth.appleUnavailable")}
               </Text>
@@ -318,15 +321,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     ...theme.shadow.sm,
   },
   oauthDisabled: { opacity: 0.5 },
-  googleMarkWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-  },
-  googleMark: { color: "#1a73e8", fontSize: 18, fontWeight: "800" },
   oauthGoogleText: { color: "#14202F", fontSize: 15, fontWeight: "700" },
   oauthAppleText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   divider: { flexDirection: "row", alignItems: "center", marginVertical: 12, gap: 8 },

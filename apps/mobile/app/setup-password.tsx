@@ -8,7 +8,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { KeyRound, ShieldCheck } from "lucide-react-native";
+import { Check, KeyRound, ShieldCheck, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
@@ -19,19 +19,44 @@ import { hapticError, hapticSuccess } from "@/lib/haptics";
 import { useAuthStore } from "@/lib/auth-store";
 import { useAppTheme, type Theme } from "@/lib/theme";
 
+// Mirrors validatePasswordPolicy in apps/web/src/lib/user-auth.ts. The server
+// is still the authority — this is purely for live, pre-submit feedback so a
+// user is not surprised by a 400 after typing a full password.
+type PasswordRule = { key: string; labelKey: string; test: (pw: string) => boolean };
+const PASSWORD_RULES: PasswordRule[] = [
+  { key: "length", labelKey: "auth.passwordRuleLength", test: (pw) => pw.length >= 12 },
+  { key: "uppercase", labelKey: "auth.passwordRuleUppercase", test: (pw) => /[A-Z]/.test(pw) },
+  { key: "lowercase", labelKey: "auth.passwordRuleLowercase", test: (pw) => /[a-z]/.test(pw) },
+  { key: "digit", labelKey: "auth.passwordRuleDigit", test: (pw) => /[0-9]/.test(pw) },
+  { key: "special", labelKey: "auth.passwordRuleSpecial", test: (pw) => /[^A-Za-z0-9]/.test(pw) },
+];
+
 export default function SetupPasswordScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const refreshUser = useAuthStore((s) => s.refreshUser);
+  const patchUser = useAuthStore((s) => s.patchUser);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const ruleResults = useMemo(
+    () => PASSWORD_RULES.map((rule) => ({ ...rule, passed: rule.test(password) })),
+    [password],
+  );
+  const policyMet = ruleResults.every((rule) => rule.passed);
+  const canSubmit = !saving && policyMet && password === confirmPassword;
+
   const savePassword = async () => {
     setError("");
+    if (!policyMet) {
+      setError(t("auth.setupPasswordHelper"));
+      hapticError();
+      return;
+    }
     if (password !== confirmPassword) {
       setError(t("auth.setupPasswordMismatch"));
       hapticError();
@@ -39,21 +64,32 @@ export default function SetupPasswordScreen() {
     }
 
     setSaving(true);
-    const res = await api.post<any>("/api/auth/security", {
-      action: "set_password",
-      newPassword: password,
-    });
-    setSaving(false);
+    try {
+      const res = await api.post<any>("/api/auth/security", {
+        action: "set_password",
+        newPassword: password,
+      });
 
-    if (res.error) {
-      setError(res.error || t("auth.setupPasswordFailed"));
+      if (res.error) {
+        setError(res.error || t("auth.setupPasswordFailed"));
+        hapticError();
+        return;
+      }
+
+      // Optimistically clear the gate locally so the AuthGuard does not bounce
+      // us straight back to this screen while /api/auth/me is still in flight.
+      // refreshUser then reconciles with the server; if it fails (timeout/5xx)
+      // the local patch keeps the user moving forward instead of looping.
+      patchUser({ hasPasswordLogin: true, needsPasswordSetup: false });
+      hapticSuccess();
+      await refreshUser(API_URL.replace(/\/api\/?$/, "")).catch(() => {});
+      router.replace("/onboarding");
+    } catch {
+      setError(t("auth.setupPasswordFailed"));
       hapticError();
-      return;
+    } finally {
+      setSaving(false);
     }
-
-    await refreshUser(API_URL.replace(/\/api\/?$/, ""));
-    hapticSuccess();
-    router.replace("/onboarding");
   };
 
   return (
@@ -90,13 +126,32 @@ export default function SetupPasswordScreen() {
             autoComplete="password-new"
           />
 
-          <Text style={styles.helper}>{t("auth.setupPasswordHelper")}</Text>
+          <View style={styles.rulesBox}>
+            {ruleResults.map((rule) => {
+              const active = password.length > 0;
+              const color = !active
+                ? theme.colors.textTertiary
+                : rule.passed
+                ? theme.colors.success
+                : theme.colors.textMuted;
+              return (
+                <View key={rule.key} style={styles.ruleRow}>
+                  {rule.passed && active ? (
+                    <Check size={14} color={theme.colors.success} />
+                  ) : (
+                    <X size={14} color={active ? theme.colors.textMuted : theme.colors.textTertiary} />
+                  )}
+                  <Text style={[styles.ruleText, { color }]}>{t(rule.labelKey)}</Text>
+                </View>
+              );
+            })}
+          </View>
 
           <Button
             title={saving ? t("common.loading") : t("auth.setupPasswordCta")}
             onPress={savePassword}
             loading={saving}
-            disabled={saving || !password || !confirmPassword}
+            disabled={!canSubmit}
             fullWidth
             style={{ marginTop: 8 }}
           />
@@ -150,9 +205,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
   },
-  helper: {
-    color: theme.colors.textTertiary,
-    fontSize: 12,
-    lineHeight: 18,
+  rulesBox: {
+    gap: 6,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: 12,
   },
+  ruleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  ruleText: { fontSize: 12, lineHeight: 18 },
 });

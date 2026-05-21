@@ -773,6 +773,7 @@ export function paymentFailedContent(data: {
 }
 
 export type SecurityNoticeKind =
+  | "password-set"
   | "password-changed"
   | "mfa-enabled"
   | "mfa-disabled"
@@ -797,6 +798,14 @@ const SECURITY_NOTICE_STRINGS: Record<EmailLocale, {
     greeting: (name) => `Hi <strong>${escapeHtml(name)}</strong>,`,
     whenLabel: "When",
     copy: {
+      "password-set": {
+        subject: "You added a password to your LocateFlow account",
+        title: "Password added",
+        body: (detail) => detail
+          ? `${detail} You can now sign in with your email and password in addition to your existing sign-in method. If this wasn't you, secure your account immediately.`
+          : "You just added a password to your account. You can now sign in with your email and password in addition to your existing sign-in method. If this wasn't you, secure your account immediately.",
+        cta: "Review Account Security",
+      },
       "password-changed": {
         subject: "Your LocateFlow password was changed",
         title: "Password changed",
@@ -840,6 +849,14 @@ const SECURITY_NOTICE_STRINGS: Record<EmailLocale, {
     greeting: (name) => `Hola <strong>${escapeHtml(name)}</strong>,`,
     whenLabel: "Cuándo",
     copy: {
+      "password-set": {
+        subject: "Añadiste una contraseña a tu cuenta de LocateFlow",
+        title: "Contraseña añadida",
+        body: (detail) => detail
+          ? `${detail} Ahora puedes iniciar sesión con tu correo y contraseña además de tu método existente. Si no fuiste tú, asegura tu cuenta de inmediato.`
+          : "Acabas de añadir una contraseña a tu cuenta. Ahora puedes iniciar sesión con tu correo y contraseña además de tu método existente. Si no fuiste tú, asegura tu cuenta de inmediato.",
+        cta: "Revisar la seguridad de la cuenta",
+      },
       "password-changed": {
         subject: "Cambiaste la contraseña de tu cuenta de LocateFlow",
         title: "Contraseña cambiada",
